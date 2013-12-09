@@ -1,0 +1,12 @@
+﻿#
+# List of style checkers that are disabled
+#
+
+#AccessorIndentChecker
+#ElseIfOnNewLineChecker
+#EndOfLineChecker
+#LongLineChecker
+OpenBraceAfterNewLineChecker
+#SpaceAfterForKeywordChecker
+#TabCharacterChecker
+#TrailingSpacesChecker

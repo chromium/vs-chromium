@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+  <Extern href="msobtnid.h"/>
+  <Commands package="guidVsChromiumPkg">
+    <Groups>
+      <Group guid="guidVsChromiumCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS"/>
+      </Group>
+    </Groups>
+    <Buttons>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidFormatComment" priority="0x0100" type="Button">
+        <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS" />
+        <Icon guid="guidImages" id="bmpPic1" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <CommandName>cmdidMFormatComment</CommandName>
+          <ButtonText>Format Comment</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidChromiumExplorerToolWindow" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+        <Icon guid="guidImages" id="bmpPic2" />
+        <Strings>
+          <CommandName>cmdidChromiumExplorerToolWindow</CommandName>
+          <ButtonText>Chromium Explorer</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" priority="0x0101" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup"/>
+        <Icon guid="guidImages" id="bmpPic1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <CommandName>cmdidSearch</CommandName>
+          <ButtonText>Chromium find file names</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup"/>
+        <Icon guid="guidImages" id="bmpPic1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <CommandName>cmdidSearch</CommandName>
+          <ButtonText>Chromium find directory names</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchFileContents" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup"/>
+        <Icon guid="guidImages" id="bmpPic1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <CommandName>cmdidSearch</CommandName>
+          <ButtonText>Chromium find in files</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+    <Bitmaps>
+      <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
+    </Bitmaps>
+  </Commands>
+  <KeyBindings>
+    <!-- Note: VK_OEM_1 is the semicolon character on US keyboards. -->
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt Shift"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileContents" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c"/>
+  </KeyBindings>
+  <Symbols>
+    <!-- This is the package guid. -->
+    <GuidSymbol name="guidVsChromiumPkg" value="{a10cf7af-5f0a-4502-b44b-51ff1b7c8a87}" />
+    <!-- This is the guid used to group the menu commands together -->
+    <GuidSymbol name="guidVsChromiumCmdSet" value="{1d4bc583-de49-4113-af8d-81c62fd4b61b}">
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="cmdidFormatComment" value="0x0100" />
+      <IDSymbol name="cmdidChromiumExplorerToolWindow" value="0x0101" />
+      <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
+      <IDSymbol name="cmdidSearchDirectoryNames" value="0x0103" />
+      <IDSymbol name="cmdidSearchFileContents" value="0x0104" />
+    </GuidSymbol>
+    <GuidSymbol name="guidImages" value="{80c1b9c8-d097-4934-aa9c-e5ad6bc2408d}" >
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

@@ -1,0 +1,166 @@
+﻿#
+# This file is used to determine which files should be ignored by the "Search File Contents"
+# feature.
+#
+# Note that the list of files considered is already pre-filtered by ChromiumTree.ignore file.
+#
+# Note also that even if a file is not ignored here, it still has to match an inclusion
+# rule in "SearchableFiles.include".
+#
+# ==========================================================================================
+# SYNTAX
+# ------
+# The supported syntax is currently a subset of .gitignore syntax.
+#
+# * Empty lines (or lines starting with "#") are ignored
+# * Support "/" at end of name to indicate directory name matching only.
+# * Support "/" at the beginning to indicate path relative to "root" ("root" being the 
+#   Chromium root enlistment in this case).
+# * Support "*" and "**" wildcards
+# * NO support for "!"
+# ==========================================================================================
+
+# This directory contains big (10MB+) json files
+third_party/trace-viewer/test_data/
+
+# Lots of big (1MB+) generated cc files.
+out/Debug/**/third_party/ffmpeg/
+out/Release/**/third_party/ffmpeg/
+build/Debug/**/third_party/ffmpeg/
+build/Release/**/third_party/ffmpeg/
+
+# 27MB
+third_party/cld_2/src/internal/cld2_generated_quad0720.cc
+
+# Big json files (14MB)
+third_party/trace-viewer/test_data
+
+# More or less dead project
+chrome_frame/
+
+# pnacl C++ sdk files
+native_client/toolchain/pnacl_win_x86/usr/include/c++/4.6.2/
+native_client/toolchain/pnacl_win_x86/usr/include/
+native_client/toolchain/pnacl_win_x86/usr-bc-x86-64/
+native_client/toolchain/win_x86/lib/gcc/x86_64-nacl/4.4.3/
+native_client/toolchain/win_x86/x86_64-nacl/
+native_client/toolchain/win_x86/x86_64-nacl/include/
+native_client/toolchain/win_x86_newlib/lib/gcc/x86_64-nacl/
+native_client/toolchain/win_x86_newlib/x86_64-nacl/
+
+out/Debug/gen/sdk/toolchain/win_x86_glibc/
+out/Release/gen/sdk/toolchain/win_x86_glibc/
+build/Debug/gen/sdk/toolchain/win_x86_glibc/
+build/Release/gen/sdk/toolchain/win_x86_glibc/
+
+out/Debug/gen/sdk/toolchain/win_x86_newlib/
+out/Release/gen/sdk/toolchain/win_x86_newlib/
+build/Debug/gen/sdk/toolchain/win_x86_newlib/
+build/Release/gen/sdk/toolchain/win_x86_newlib/
+
+out/Debug/gen/sdk/toolchain/win_x86_pnacl/
+out/Release/gen/sdk/toolchain/win_x86_pnacl/
+build/Debug/gen/sdk/toolchain/win_x86_pnacl/
+build/Release/gen/sdk/toolchain/win_x86_pnacl/
+
+# Blink bindings
+out/Debug/gen/blink/bindings/
+out/Release/gen/blink/bindings/
+build/Debug/gen/blink/bindings/
+build/Release/gen/blink/bindings/
+
+out/Debug/gen/webcore/bindings/
+out/Release/gen/webcore/bindings/
+build/Debug/gen/webcore/bindings/
+build/Release/gen/webcore/bindings/
+
+out/Debug/gen/webkit/bindings/
+out/Release/gen/webkit/bindings/
+build/Debug/gen/webkit/bindings/
+build/Release/gen/webkit/bindings/
+
+# WebKit has a lot of test files
+/third_party/WebKit/LayoutTests/
+
+# pnacl and nacl stuff
+/out/Debug/obj/ppapi/
+/out/Release/obj/ppapi/
+/build/Debug/obj/ppapi/
+/build/Release/obj/ppapi/
+
+/out/Debug/nacl_test_data/
+/out/Release/nacl_test_data/
+/build/Debug/nacl_test_data/
+/build/Release/nacl_test_data/
+
+#
+# File extensions of files to ignore.
+#
+*.pdb
+*.obj
+*.pack
+*.rsp
+*.pch
+*.lib
+*.ilk
+*.exe
+*.dll
+*.a
+*.sdf
+*.opensdf
+*.o
+*.7z
+*.pak
+*.nexe
+*.res
+*.tgz
+*.gz
+*.ninja
+*.s
+*.mo
+*.so
+*.so.*
+*.d
+*.debug
+*.dic
+*.tlog
+*.pyd
+*.bdic
+*.bz2
+*.bdic
+*.info
+*.data
+*.tmp
+*.exp
+*.xtb
+*.pm
+*.ninja_deps
+*.stamp
+*.zip
+*.crx
+*.adm
+*.cct
+*.pod
+*.ucm
+*.jar
+*.ninja_log
+*.svg
+*.test
+*.adml
+*.webm
+*.aff
+*.dat
+*.filters
+*.pcm
+*.pexe
+*.xib
+*.out
+*.suo
+*.patch
+*.sym
+*.dmp
+*.rtpdump
+*.output
+*.po
+*.pdf
+*.raw

@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6F70C76F-5A3A-4657-A073-075A08555BAD}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>VsChromiumCore</RootNamespace>
+    <AssemblyName>VsChromiumCore</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Chromium\ChromiumDiscovery.cs" />
+    <Compile Include="Chromium\ChromiumDiscoveryWithCache.cs" />
+    <Compile Include="Chromium\IChromiumDiscovery.cs" />
+    <Compile Include="Chromium\IChromiumDiscoveryWithCache.cs" />
+    <Compile Include="Configuration\ConfigurationFilenames.cs" />
+    <Compile Include="Configuration\ConfigurationFileSectionProvider.cs" />
+    <Compile Include="Configuration\FileWithSectionConfigurationProvider.cs" />
+    <Compile Include="Configuration\IConfigurationSectionProvider.cs" />
+    <Compile Include="Configuration\IFileWithSections.cs" />
+    <Compile Include="Configuration\FileWithSections.cs" />
+    <Compile Include="Configuration\ConfigurationFileProvider.cs" />
+    <Compile Include="Configuration\IConfigurationFileProvider.cs" />
+    <Compile Include="Configuration\IPathPatternsFile.cs" />
+    <Compile Include="Configuration\PathPatternsFile.cs" />
+    <Compile Include="FileNames\PathHelpers.cs" />
+    <Compile Include="FileNames\SystemPathComparer.cs" />
+    <Compile Include="FileNames\FullPathNameSet.cs" />
+    <Compile Include="FileNames\CaseInsensitivePathComparer.cs" />
+    <Compile Include="FileNames\CaseSensitivePathComparer.cs" />
+    <Compile Include="FileNames\IPathComparer.cs" />
+    <Compile Include="FileNames\PatternMatching\IPathMatcher.cs" />
+    <Compile Include="FileNames\PatternMatching\AggregatePathMatcher.cs" />
+    <Compile Include="FileNames\PatternMatching\PatternParser.cs" />
+    <Compile Include="FileNames\PatternMatching\IPrePassWontMatch.cs" />
+    <Compile Include="FileNames\PatternMatching\OpRelativeDirectory.cs" />
+    <Compile Include="FileNames\PatternMatching\OpRecursiveDir.cs" />
+    <Compile Include="FileNames\PatternMatching\OpAsterisk.cs" />
+    <Compile Include="FileNames\PatternMatching\BaseOperator.cs" />
+    <Compile Include="FileNames\PatternMatching\OpDirectoryOnly.cs" />
+    <Compile Include="FileNames\PatternMatching\FileNameMatching.cs" />
+    <Compile Include="FileNames\FullPathName.cs" />
+    <Compile Include="FileNames\PatternMatching\PathMatcher.cs" />
+    <Compile Include="FileNames\PatternMatching\MatchKind.cs" />
+    <Compile Include="FileNames\PatternMatching\OpNoMatch.cs" />
+    <Compile Include="FileNames\PatternMatching\PatternWrapper.cs" />
+    <Compile Include="FileNames\PatternMatching\OpText.cs" />
+    <Compile Include="FileNames\RelativePathName.cs" />
+    <Compile Include="Ipc\IIpcRequestIdFactory.cs" />
+    <Compile Include="Ipc\IpcEvent.cs" />
+    <Compile Include="Ipc\IpcMessage.cs" />
+    <Compile Include="Ipc\TypedMessages\FileExtract.cs" />
+    <Compile Include="Ipc\TypedMessages\FilePositionSpan.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSystemTreeComputing.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSystemTreeComputed.cs" />
+    <Compile Include="Ipc\TypedMessages\GetFileExtractsRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetFileExtractsResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\IOperationIdFactory.cs" />
+    <Compile Include="Ipc\TypedMessages\PairedTypedEvent.cs" />
+    <Compile Include="Ipc\TypedMessages\ProgressReportEvent.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchEngineFilesLoaded.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchEngineFilesLoading.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchParams.cs" />
+    <Compile Include="Ipc\TypedMessages\TypedEvent.cs" />
+    <Compile Include="Collections\ArrayWrapper.cs" />
+    <Compile Include="Collections\IHeap.cs" />
+    <Compile Include="Collections\MaxHeap.cs" />
+    <Compile Include="Collections\MinHeap.cs" />
+    <Compile Include="Linq\PLinqExtensions.cs" />
+    <Compile Include="Linq\EnumerableExtensions.cs" />
+    <Compile Include="Ipc\IIpcStream.cs" />
+    <Compile Include="Ipc\ExceptionData.cs" />
+    <Compile Include="Ipc\IpcMessageData.cs" />
+    <Compile Include="Ipc\IpcStreamOverNetworkStream.cs" />
+    <Compile Include="Ipc\IpcProtocols.cs" />
+    <Compile Include="Ipc\HelloWorldProtocol.cs" />
+    <Compile Include="Ipc\IpcRequestIdFactory.cs" />
+    <Compile Include="Ipc\IpcStringData.cs" />
+    <Compile Include="Ipc\TypedMessages\FilePositionsData.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSearchResult.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSystemEntryData.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchDirectoryNamesRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchDirectoryNamesResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\GetFileSystemVersionRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetFileSystemVersionResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchFileContentsResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchFileNamesResponse.cs" />
+    <Compile Include="Collections\ListSegment.cs" />
+    <Compile Include="Collections\ReverseComparer.cs" />
+    <Compile Include="NameInterning.cs" />
+    <Compile Include="JobObjects\JobObject.cs" />
+    <Compile Include="Ipc\ProtoBuf\IProtoBufSerializer.cs" />
+    <Compile Include="Ipc\TypedMessages\DirectoryEntry.cs" />
+    <Compile Include="Ipc\TypedMessages\DoneResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\FileEntry.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSystemEntry.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSystemTree.cs" />
+    <Compile Include="Ipc\TypedMessages\GetFileSystemResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\TypedMessage.cs" />
+    <Compile Include="Ipc\IpcResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\AddFileNameRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchFileContentsRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchFileNamesRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetFileSystemRequest.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="Ipc\IpcRequest.cs" />
+    <Compile Include="Debugger\DebuggerThread.cs" />
+    <Compile Include="Debugger\DebuggerApi.cs" />
+    <Compile Include="Debugger\DebuggerObject.cs" />
+    <Compile Include="Ipc\TypedMessages\TypedRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\TypedResponse.cs" />
+    <Compile Include="Win32\Files\SafeFindHandle.cs" />
+    <Compile Include="Win32\Files\SlimFileInfo.cs" />
+    <Compile Include="Win32\Files\Win32FindData.cs" />
+    <Compile Include="Win32\Files\NativeMethods.cs" />
+    <Compile Include="Win32\Files\WIN32_FILE_ATTRIBUTE_DATA.cs" />
+    <Compile Include="Win32\Handles\NativeMethods.cs" />
+    <Compile Include="Win32\Memory\SafeLocalMemHandle.cs" />
+    <Compile Include="Win32\Memory\HeapFlags.cs" />
+    <Compile Include="Win32\NamedPipes\NativeMethods.cs" />
+    <Compile Include="Win32\Processes\ProcessCreationFlags.cs" />
+    <Compile Include="Win32\Processes\ProcessInformation.cs" />
+    <Compile Include="Win32\Interop\SecurityAttributes.cs" />
+    <Compile Include="Win32\Processes\Startupinfo.cs" />
+    <Compile Include="Win32\Memory\HeapAlloc.cs" />
+    <Compile Include="Win32\Memory\HeapAllocStatic.cs" />
+    <Compile Include="Win32\Memory\IHeapAlloc.cs" />
+    <Compile Include="Win32\Memory\NativeMethods.cs" />
+    <Compile Include="Win32\Memory\SafeHeapBlockHandle.cs" />
+    <Compile Include="Win32\Files\NativeFile.cs" />
+    <Compile Include="Win32\Memory\SafeProcessHeapHandle.cs" />
+    <Compile Include="Win32\Memory\SafeHeapHandle.cs" />
+    <Compile Include="Win32\Memory\SafeHGlobalHandle.cs" />
+    <Compile Include="Win32\Processes\SafeThreadHandle.cs" />
+    <Compile Include="Win32\Processes\NativeMethods.cs" />
+    <Compile Include="Processes\IProcessCreator.cs" />
+    <Compile Include="Processes\ProcessCreator.cs" />
+    <Compile Include="Win32\Processes\SafeProcessHandle.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Ipc\ProtoBuf\ProtoSerializer.cs" />
+    <Compile Include="Win32\Strings\Conversion.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Key.snk" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

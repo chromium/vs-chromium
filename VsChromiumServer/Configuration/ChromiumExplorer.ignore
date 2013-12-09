@@ -1,0 +1,114 @@
+﻿#
+# This file is used to filter (i.e. ignore) files and directories when traversing the file
+# system of a local Chromium enlistment.
+#
+# All the files/directories *not* filtered out end up being displayed in the "Chromium Explorer"
+# tool window.
+#
+# The purpose is mainly to avoid loading a bunch of files that are not useful for day to day
+# work in an IDE. Commenting out the entire file won't have any adverse effect (other than
+# making the initial directory traversal slightly slower due to the increased number of
+# directories to explore).
+#
+# ==========================================================================================
+# SYNTAX
+# ------
+# The supported syntax is currently a subset of .gitignore syntax.
+#
+# * Empty lines (or lines starting with "#") are ignored
+# * Support "/" at end of name to indicate directory name matching only.
+# * Support "/" at the beginning to indicate path relative to "root" ("root" being the 
+#   Chromium root enlistment in this case).
+# * Support "*" and "**" wildcards
+# * NO support for "!"
+# ==========================================================================================
+#
+
+# WebKit has a lot of test files
+/third_party/WebKit/LayoutTests/
+
+# pnacl and nacl stuff
+/out/Debug/obj/ppapi/
+/out/Release/obj/ppapi/
+/build/Debug/obj/ppapi/
+/build/Release/obj/ppapi/
+
+/out/Debug/nacl_test_data/
+/out/Release/nacl_test_data/
+/build/Debug/nacl_test_data/
+/build/Release/nacl_test_data/
+
+# .git, etc. directories
+.*/
+
+#
+# File extensions of files to ignore.
+#
+*.pdb
+*.obj
+*.pack
+*.rsp
+*.pch
+*.lib
+*.ilk
+*.exe
+*.dll
+*.a
+*.sdf
+*.opensdf
+*.o
+*.7z
+*.pak
+*.nexe
+*.res
+*.tgz
+*.gz
+*.ninja
+*.s
+*.mo
+*.so
+*.so.*
+*.d
+*.debug
+*.dic
+*.tlog
+*.pyd
+*.bdic
+*.bz2
+*.bdic
+*.info
+*.data
+*.tmp
+*.exp
+*.xtb
+*.pm
+*.ninja_deps
+*.stamp
+*.zip
+*.crx
+*.adm
+*.cct
+*.pod
+*.ucm
+*.jar
+*.ninja_log
+*.svg
+*.test
+*.adml
+*.webm
+*.aff
+*.dat
+*.filters
+*.pcm
+*.pexe
+*.xib
+*.out
+*.suo
+*.patch
+*.sym
+*.dmp
+*.rtpdump
+*.output
+*.po
+*.pdf
+*.raw

@@ -1,0 +1,10 @@
+﻿#
+# List of directory/file names used to determine if a directory is a local chromium enlistment.
+#
+# Note that we only allow simple names (i.e. we don't allow sub-path such as "foo/bar/test.cs").
+#
+
+base/
+chrome/
+content/
+PRESUBMIT.py

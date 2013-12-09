@@ -1,0 +1,19 @@
+﻿#
+# List of patterns to filter out the files/directories of a Chromium enlistment that do not follow
+# the Chromium Coding Style guideline (http://www.chromium.org/developers/coding-style).
+#
+# ==========================================================================================
+# SYNTAX
+# ------
+# The supported syntax is currently a subset of .gitignore syntax.
+#
+# * Empty lines (or lines starting with "#") are ignored
+# * Support "/" at end of name to indicate directory name matching only.
+# * Support "/" at the beginning to indicate path relative to "root" ("root" being the 
+#   Chromium root enlistment in this case).
+# * Support "*" and "**" wildcards
+# * NO support for "!"
+# ==========================================================================================
+
+/build/
+/out/

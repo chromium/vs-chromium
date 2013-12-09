@@ -1,0 +1,75 @@
+﻿#
+# This file is used to determine which files should be included in the "Search File Contents"
+# feature.
+#
+# Note that the list of files considered is already pre-filtered by SearchFiles.ignore file.
+#
+# Note also that if this list contains patterns for files which are not ASCII (or UTF8 to some extent),
+# the File Contents search will still perform an ascii text search in those files.
+#
+# ==========================================================================================
+# SYNTAX: The syntax is similar to .gitingore (See ChromiumExplorer.ignore file), except of
+#   course it has the opposite semantics in this case (it's a list of patterns to *include*).
+# ==========================================================================================
+
+AUTHORS
+ChangeLog
+COPYING
+DEPS
+History
+LICENSE
+Makefile
+NEWS
+NOTICE
+OWNERS
+PATENTS
+README
+VERSIONS
+WATCHLISTS
+
+*.h
+*.hpp
+*.inl
+*.inc
+
+*.c
+*.cc
+*.cpp
+*.cxx
+*.tcc
+*.mm
+
+*.csc
+
+*.asm
+
+*.txt
+*.ini
+*.cfg
+
+*.grd
+*.rc
+*.manifest
+*.def
+
+*.gyp
+*.gypi
+*.vcproj
+*.mk
+*.mak
+
+*.js
+*.css
+*.htm
+*.html
+*.xml
+
+*.idl
+*.json
+
+*.py
+*.pl
+*.sh
+*.php
+*.bat
+*.tcl

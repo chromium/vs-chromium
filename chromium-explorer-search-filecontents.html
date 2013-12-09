@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="css/site.css" rel="stylesheet" type="text/css" />
+  <title>Vs Chromium - Chromium Explorer</title>
+</head>
+<body>
+
+<div id="container">
+
+<div id="sidebar">
+  <ul>
+    <li><a href="index.html">Overview</a></li>
+    <li><a href="chromium-explorer.html">Chromium Explorer</a></li>
+    <ul class="ul-second">
+      <li><a href="chromium-explorer-indexing.html">Opening files</a></li>
+      <li><a href="chromium-explorer-navigating.html">Navigating</a></li>
+      <li><a href="chromium-explorer-search-filenames.html">File name search</a></li>
+      <li><a href="chromium-explorer-search-directorynames.html">Directory name search</a></li>
+      <li><a href="chromium-explorer-search-filecontents.html">Text search</a></li>
+      <li><a href="chromium-explorer-keyboard-shortcuts.html">Keyboard shortcuts</a></li>
+    </ul>
+    <li><a href="chromium-style-checker.html">Chromium Coding Style checker</a></li>
+    <li><a href="configuration.html">Configuration</a></li>
+    <li><a href="installation.html">Installation Instructions</a></li>
+    <li><a href="requirements.html">Requirements</a></li>
+    <li><a href="tech-specs.html">Technical Specifications</a></li>
+  </ul>
+</div> <!-- sidebar -->
+
+
+<div id="content">
+
+<h1>Chromium Explorer - Text search</h1>
+
+  <p>The "Text search" feature is equivalent to the "Find in files" built-in feature of
+    Visual Studio with the difference that it performs <b>much</b> faster due to the
+    indexing process. On a typical developer machine, a text search takes about 100 milliseconds,
+    where as the equivalent "Find in files" search takes 30+ seconds.</p>
+    
+  <p>The search engine performs a "raw" string search in the text of the files, so the search pattern
+    can be any combination of characters (including space, tabs and special characters such as
+    &lt;, &gt;, &amp;, etc This can be useful to search for specific C++ constructs. For example, 
+    to look for all classes derived from <span class="inline-code">"Foo"</span>, search for the pattern
+    <span class="inline-code">"public Foo"</span> or <span class="inline-code">": public Foo"</span></p>
+    
+  <p>The search results contain one entry per file, and one sub-entry per match in the file. Both can be clicked
+    in the Tree View to navigate to the corresponding location.</p>
+
+  <p>Note that there is currently no support for wildcards and the search is always case <b>sensitive</b>.</p>
+
+<img src="Screenshots/SearchFileContents.png"></img>
+
+</div> <!-- content -->
+</div> <!-- container -->
+
+</body>
+</html>

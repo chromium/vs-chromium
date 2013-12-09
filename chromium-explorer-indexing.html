@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="css/site.css" rel="stylesheet" type="text/css" />
+  <title>Vs Chromium - Chromium Explorer</title>
+</head>
+<body>
+
+<div id="container">
+
+<div id="sidebar">
+  <ul>
+    <li><a href="index.html">Overview</a></li>
+    <li><a href="chromium-explorer.html">Chromium Explorer</a></li>
+    <ul class="ul-second">
+      <li><a href="chromium-explorer-indexing.html">Opening files</a></li>
+      <li><a href="chromium-explorer-navigating.html">Navigating</a></li>
+      <li><a href="chromium-explorer-search-filenames.html">File name search</a></li>
+      <li><a href="chromium-explorer-search-directorynames.html">Directory name search</a></li>
+      <li><a href="chromium-explorer-search-filecontents.html">Text search</a></li>
+      <li><a href="chromium-explorer-keyboard-shortcuts.html">Keyboard shortcuts</a></li>
+    </ul>
+    <li><a href="chromium-style-checker.html">Chromium Coding Style checker</a></li>
+    <li><a href="configuration.html">Configuration</a></li>
+    <li><a href="installation.html">Installation Instructions</a></li>
+    <li><a href="requirements.html">Requirements</a></li>
+    <li><a href="tech-specs.html">Technical Specifications</a></li>
+  </ul>
+</div> <!-- sidebar -->
+
+
+<div id="content">
+
+<h1>Chromium Explorer - Opening files and indexing</h1>
+
+<p>Once the Chromium Explorer tool winow is active, it detects when a source
+file from a local Chromium enlistment is opened in the Visual Studio
+editor and starts indexing <bold>all</bold> source files from that enlistement.
+The indexing process typically takes only about 10 seconds on a modern
+multi-core machine with an SSD drive.</p>
+
+<p class="warning">Warning: The indexing process can take significantly
+longer if the enlistment is located on an HDD drive. This is expected, as
+the indexing process has to read 90,000+ source files from disk.
+An HDD makes this process a lot slower due to disk seek times.</p>
+
+<p class="warning">Warning: We also saw significant performance degradation on a SSD
+when "Real Time" disk activity monitoring of certain Anti Virus programs is
+active. This can be easily worked around by configuring the Anti Virus software
+to exclude the directory containing the local Chromium enlistment.</p>
+
+<p class="note">
+Note: The "indexing" process is technically very straighforward: after
+enumerating all the files and directories of the Chromium enlistement, relevant
+source files are all loaded in memory so they can be searched extremely
+efficiently later on. This process assumes there is enough memory
+available to keep all files in physical memory. With a recent (as of October
+2013) Chromium enlistment, this requires about 1.5GB of memory.</p>
+
+<p class="note">
+Note: Similar to the coding style checkers, there is no requirement to have
+a Chromium solution/project open, although having one doesn't hurt either.</p>
+
+<p>Once the indexing process is over (there are progress indicators in the UI),
+the Chromium Explorer tool window displays a tree containing the files and
+directories of the enlistment.</p>
+
+<img src="Screenshots/ChromiumExplorerIndexing.png"></img>
+
+</div> <!-- content -->
+</div> <!-- container -->
+
+</body>
+</html>

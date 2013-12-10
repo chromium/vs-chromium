@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -9,55 +9,480 @@
 
 <div id="container">
 
-<div id="sidebar">
+<div id="sidebar" class="floating">
   <ul>
-    <li><a href="index.html">Overview</a></li>
-    <li><a href="chromium-explorer.html">Chromium Explorer</a></li>
-    <ul class="ul-second">
-      <li><a href="chromium-explorer-indexing.html">Opening files</a></li>
-      <li><a href="chromium-explorer-navigating.html">Navigating</a></li>
-      <li><a href="chromium-explorer-search-filenames.html">File name search</a></li>
-      <li><a href="chromium-explorer-search-directorynames.html">Directory name search</a></li>
-      <li><a href="chromium-explorer-search-filecontents.html">Text search</a></li>
-      <li><a href="chromium-explorer-keyboard-shortcuts.html">Keyboard shortcuts</a></li>
-    </ul>
-    <li><a href="chromium-style-checker.html">Chromium Coding Style checker</a></li>
-    <li><a href="configuration.html">Configuration</a></li>
-    <li><a href="installation.html">Installation Instructions</a></li>
-    <li><a href="requirements.html">Requirements</a></li>
-    <li><a href="tech-specs.html">Technical Specifications</a></li>
+    <li><a href="#index">Overview</a></li>
+    <li><a href="#chromium-explorer">Chromium Explorer</a></li>
+    <li>
+      <ul class="ul-second">
+        <li><a href="#chromium-explorer-indexing">Opening files</a></li>
+        <li><a href="#chromium-explorer-navigating">Navigating</a></li>
+        <li><a href="#chromium-explorer-search-filenames">File name search</a></li>
+        <li><a href="#chromium-explorer-search-directorynames">Directory name search</a></li>
+        <li><a href="#chromium-explorer-search-filecontents">Text search</a></li>
+        <li><a href="#chromium-explorer-keyboard-shortcuts">Keyboard shortcuts</a></li>
+      </ul>
+    </li>
+    <li><a href="#chromium-style-checker">Chromium Coding Style checker</a></li>
+    <li><a href="#configuration">Configuration</a></li>
+    <li><a href="#installation">Installation Instructions</a></li>
+    <li><a href="#requirements">Requirements</a></li>
+    <li><a href="#tech-specs">Technical Specifications</a></li>
   </ul>
 </div> <!-- sidebar -->
 
 <div id="content">
-  <h1>Overview</h1>
-  <p>VsChromium is a Visual Studio Extension containing a collection of tools
-  to help contributing code to the Chromium project when using Visual Studio
-  as code editor.</p>
+  <!-------------------------------------------------------------------------------->
+  <div id ="index">
+    <h1>Overview</h1>
+    <p>
+      VsChromium is a Visual Studio Extension containing a collection of tools
+      to help contributing code to the Chromium project when using Visual Studio
+      as code editor.
+    </p>
+    <p>VsChromium currently offers 2 distinct sets of features:</p>
+    <ul>
+      <li>
+        Source code navigation and <b>instant</b> search capabilities in a new
+        tool window named <a href="#chromium-explorer">Chromium Explorer</a>.
+      </li>
+      <li>
+        Highlighting in the VS editor of a (currently small) subset of
+        <a href="#chromium-style-checker">Chromium Coding Style violations</a>.
+      </li>
+    </ul>
 
-  <p>VsChromium currently offers 2 distinct sets of features:</p>
+    <div class="example">Example</div>
+    <div class="example-text">
+      In the picture below, a developer opened the
+      "Chromium Explorer" Tool Window and searched for the "class SocketPermission"
+      text in a local Chromium enlistment (3 matches were found in 0.07s). The
+      developer then clicked the first match to open the "socker_permission.h" file
+      in the editor. At that point, the Chromium Coding Style checker started
+      highlighting (in red background color) coding style violations in the file.
+      In this case, usage of TAB characters, indented "public:" accessor, invalid
+      CRLF end of line, and trailing spaces.
+    </div>
+    <img src="Screenshots/Overview.png" />
+  </div>
+  <hr />
 
-  <ul>
-   <li>Source code navigation and <b>instant</b> search capabilities in a new
-       tool window named <a href="chromium-explorer.html">Chromium Explorer</a>.
-   </li>
-   <li>Highlighting in the VS editor of a (currently small) subset of
-   <a href="chromium-style-checker.html">Chromium Coding Style violations</a>.
-   </li>
-  </ul>
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-explorer">
+    <h1>Chromium Explorer</h1>
+    <p>
+      "Chromium Explorer" is a custom Tool Window aimed at making it easy and
+      <b>fast</b> to navigate and search a Chromium local enlistment.  The tool
+      window is accessible from the "View | Other Windows | Chromium Explorer"
+      menu entry.
+    </p>
+    <img src="Screenshots/ToolWindowMenuItem.png"></img>
 
+    <ul>
+      <li><a href="#chromium-explorer-indexing">Opening files and indexing</a></li>
+      <li><a href="#chromium-explorer-navigating">Navigating</a></li>
+    </ul>
+    <p>
+      At the top of the window, there are 3 search boxes that allow searching files
+      and folders of the Chromium enlistement. As noted above, the main focus here is
+      to enable <b>precise</b>, <b>powerful</b> and <b>fast</b> searches.
+    </p>
+    <ul>
+      <li><a href="#chromium-explorer-search-filenames">File name search</a></li>
+      <li><a href="#chromium-explorer-search-directorynames">Directory name search</a></li>
+      <li><a href="#chromium-explorer-search-filecontents">Text search</a></li>
+    </ul>
+  </div>
+  <hr />
 
-  <div class="example">Example</div>
-  <div class="example-text">In the picture below, a developer opened the
-  "Chromium Explorer" Tool Window and searched for the "class SocketPermission"
-  text in a local Chromium enlistment (3 matches were found in 0.07s). The
-  developer then clicked the first match to open the "socker_permission.h" file
-  in the editor. At that point, the Chromium Coding Style checker started
-  highlighting (in red background color) coding style violations in the file.
-  In this case, usage of TAB characters, indented "public:" accessor, invalid
-  CRLF end of line, and trailing spaces.</div>
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-explorer-indexing">
+    <h1>Chromium Explorer - Opening files and indexing</h1>
+    <p>
+      Once the Chromium Explorer tool winow is active, it detects when a source
+      file from a local Chromium enlistment is opened in the Visual Studio
+      editor and starts indexing <bold>all</bold> source files from that enlistement.
+      The indexing process typically takes only about 10 seconds on a modern
+      multi-core machine with an SSD drive.
+    </p>
+    <p class="warning">
+      Warning: The indexing process can take significantly
+      longer if the enlistment is located on an HDD drive. This is expected, as
+      the indexing process has to read 90,000+ source files from disk.
+      An HDD makes this process a lot slower due to disk seek times.
+    </p>
+    <p class="warning">
+      Warning: We also saw significant performance degradation on a SSD
+      when "Real Time" disk activity monitoring of certain Anti Virus programs is
+      active. This can be easily worked around by configuring the Anti Virus software
+      to exclude the directory containing the local Chromium enlistment.
+    </p>
+    <p class="note">
+      Note: The "indexing" process is technically very straighforward: after
+      enumerating all the files and directories of the Chromium enlistement, relevant
+      source files are all loaded in memory so they can be searched extremely
+      efficiently later on. This process assumes there is enough memory
+      available to keep all files in physical memory. With a recent (as of October
+      2013) Chromium enlistment, this requires about 1.5GB of memory.
+    </p>
+    <p class="note">
+      Note: Similar to the coding style checkers, there is no requirement to have
+      a Chromium solution/project open, although having one doesn't hurt either.
+    </p>
+    <p>
+      Once the indexing process is over (there are progress indicators in the UI),
+      the Chromium Explorer tool window displays a tree containing the files and
+      directories of the enlistment.
+    </p>
+    <img src="Screenshots/ChromiumExplorerIndexing.png"></img>
+  </div>
+  <hr />
 
-  <img src="Screenshots/Overview.png"/>
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-explorer-navigating">
+    <h1>Chromium Explorer - Navigating</h1>
+    <p>
+      The explorer tree is similar to a Windows File Explorer, except that opening
+      files (by double clicking an entry) happens directly in the Visual Studio editor.
+    </p>
+    <img src="Screenshots/ChromiumExplorerOpeningFile.png"></img>
+
+    <p>Note: There is curretly not support for a Context Menu with advanced options.</p>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-explorer-search-filenames">
+    <h1>Chromium Explorer - File name search</h1>
+    <p>
+      The top search box can be used to search for file names matching a given
+      pattern. As shown in the picture below, a "file name" search should take at most a few
+      milliseconds on a typical developer machine:
+    </p>
+    <img src="Screenshots/SearchFileNames.png"></img>
+
+    <h2>Search pattern format</h2>
+
+    <p>
+      The rules for "pattern" are similar to the syntax used in .gitignore
+      files, except for the first rule below.
+    </p>
+    <ul>
+      <li>
+        A simple string without the "/", "\" or "*" characters matches any file
+        name <b>containing</b> the simple string. This rule enables making the
+        "common case" faster to type, as without the wildcards, the pattern
+        would only match full file names (including the extension).
+      </li>
+      <li>
+        The pattern can contain one or many "*" character to perform wildcard
+        matching.
+      </li>
+      <li>
+        The pattern may contain "/" or "\" characters to match part of the path
+        forming the file name.
+      </li>
+      <li>
+        The pattern may start with "**/" or contain "/**/" characters to match
+        zero or more directories of the path forming the file name.
+      </li>
+    </ul>
+    <p>Examples</p>
+
+    <table>
+      <thead>
+        <tr><th style="text-align: left">Pattern</th><th style="text-align: left">Matches</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>foo</td>
+          <td>"foobar.cc", "afoobar.txt", etc. anywhere in folder hierarchy.</td>
+        </tr>
+        <tr>
+          <td>f*oo*.txt</td>
+          <td>"foo.txt", "f123oo.txt", "f123oo4bar.txt" etc. anywhere in folder hierarchy.</td>
+        </tr>
+        <tr>
+          <td>foo/bar.txt</td>
+          <td>any file named "bar.txt" inside a "foo" directory anywhere in folder hierarchy.</td>
+        </tr>
+        <tr>
+          <td>foo/</td>
+          <td>All files under a "foo" directory (recursively) anywhere in folder hierarchy.</td>
+        </tr>
+        <tr>
+          <td>foo/**/bar.txt</td>
+          <td>any file named "bar.txt" residing in any sub-directory of "foo" anywhere in folder hierarchy.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-explorer-search-directorynames">
+    <h1>Chromium Explorer - Directory name search</h1>
+    <p>
+      The middle search box can be used to search for directory names matching a
+      given pattern. The rules for "pattern" are similar to the rules for file name
+      search.
+    </p>
+    <img src="Screenshots/SearchDirectoryNames.png"></img>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-explorer-search-filecontents">
+    <h1>Chromium Explorer - Text search</h1>
+    <p>
+      The "Text search" feature is equivalent to the "Find in files" built-in feature of
+      Visual Studio with the difference that it performs <b>much</b> faster due to the
+      indexing process. On a typical developer machine, a text search takes about 100 milliseconds,
+      where as the equivalent "Find in files" search takes 30+ seconds.
+    </p>
+
+    <p>
+      The search engine performs a "raw" string search in the text of the files, so the search pattern
+      can be any combination of characters (including space, tabs and special characters such as
+      &lt;, &gt;, &amp;, etc This can be useful to search for specific C++ constructs. For example,
+      to look for all classes derived from <span class="inline-code">"Foo"</span>, search for the pattern
+      <span class="inline-code">"public Foo"</span> or <span class="inline-code">": public Foo"</span>
+    </p>
+
+    <p>
+      The search results contain one entry per file, and one sub-entry per match in the file. Both can be clicked
+      in the Tree View to navigate to the corresponding location.
+    </p>
+    <p>Note that there is currently no support for wildcards and the search is always case <b>sensitive</b>.</p>
+    <img src="Screenshots/SearchFileContents.png"></img>
+
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-explorer-keyboard-shortcuts">
+    <h1>Chromium Explorer - Keyboard shortcuts</h1>
+    <table>
+      <thead><tr><th>Feature</th><th>Shortcut</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#chromium-explorer-search-filenames">File name search</a></td><td><span class="keyboard-shortcut">Alt-;</span></td></tr>
+        <tr><td><a href="#chromium-explorer-search-directorynames">Directory name search</a></td><td><span class="keyboard-shortcut">Alt-Shift-;</span></td></tr>
+        <tr><td><a href="#chromium-explorer-search-filecontents">Text search</a></td><td><span class="keyboard-shortcut">Ctrl-Shift-;</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="chromium-style-checker">
+    <h1>Chromium Coding Style checker</h1>
+    <p>
+      When a source file belonging to a Chromium enlistement is opened in the
+      Visual studio editor, a few custom "classifiers" (or "colorizers") kick off
+      and inspect the code for Coding Style violations. Each violation is indicated
+      with a red background highlighing of the text violating a rule.
+    </p>
+    <p class="note">
+      Note: There is no requirement to have a Chromium solution open, as the
+      discovery is based on the content of the file system, not on the list of
+      projects/solutions opened in Visual Studio.
+    </p>
+    <p>
+      The set of rules currently supported is minimal but is helpful for a
+      developer new to the Chromium Coding Style rules.
+    </p>
+    <div class="example">Example</div>
+    <div class="example-text">
+      The image below shows a source file violating a few rules: extra spaces
+      at the end of a line, usage of the TAB character, incorrect indendation
+      of the "public:" accessor keyword.
+    </div>
+    <p><img src="Screenshots/InvalidCharactersHighlight.png"></img></p>
+    <p>List of supported style violations</p>
+    <ul>
+      <li>Lines longer than 80 columns</li>
+      <li>Trailing spaces</li>
+      <li>TAB instead of space characters</li>
+      <li>Invalid use of "else if" on new line</li>
+      <li>Invalid indentation of "public:", etc. modifiers</li>
+      <li>Space after "for" keyword</li>
+      <li>Usage of CRLF instead of LF as end of line characters</li>
+    </ul>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="configuration">
+    <h1>Configuration files</h1>
+    <p>
+      One of the goals of VsChromium is to work "out of the box". To enable this,
+      a certain number of assumptions had to be made. Most of these assumptions
+      are customizable through text based configuration files.
+    </p>
+    <p>
+      By default, configuration files are installed and stored in the "Configuration"
+      sub directory of the VsChromium installtion directory, typically the Visual Studio
+      extension directory. Overriding a configuration file is as easy as creating a
+      "VsChromium" directory in the Windows' user folder ("c:\users\username"),
+      make a copy of the relevant configuration file below, and edit it.
+    </p>
+    <p>
+      After changing one or more configuration files, it is required to restart
+      Visual Studio for the changes to take effect.
+    </p>
+    <table>
+      <tr>
+        <td valign="top"><b>ChromiumEnlistmentDetection.patterns</b></td>
+        <td>
+          This file is used to determine whether file belongs to a Chromium enlistment.
+          It is simply a list of directory and files names to look for when looking at
+          the parent directories of a file. There should be no need to customize this
+          file unless the Chromium enlistement significanly changes.
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>ChromiumStyleCheckers.disabled</b></td>
+        <td>
+          This file can be used to disable various style checkers. Simply un-comment
+          the corresponding line.
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>ChromiumCodingStyle.ignore</b></td>
+        <td>
+          This file uses a ".gitignore" syntax to determine which files should
+          <b>not</b> be validated by the Chromium Coding Style checker. This is needed
+          because a Chromium enlistment contains third party libraries and generated
+          files that don't always follow the Chromium Coding Style conventions.
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>ChromiumExplorer.ignore</b></td>
+        <td>
+          This file uses a ".gitignore" syntax to filter the list fo directories
+          and files to display in the Chromium Explorer tool window. The file could be
+          in theory empty, but it is sometimes useful to ignore files/directories that
+          don't contains files meaningful to day to day development (e.g. *.pdb, *.obj,
+          etc. files).
+          Note this file is also implicitly used to filter the results
+          of "search file names" and "search directory names".
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>SearchableFiles.ignore</b></td>
+        <td>
+          This file uses a ".gitignore" syntax to exclude files from the
+          "text search" feature. This is required to avoid loading GBs of irrelevant
+          files in memory (e.g. build output files such as .obj, .exe, etc. fiels).
+          This allows decreasing the amount of files loaded in memory from 30+GB
+          typically found in a local Chromium enlistement directory to a more reasonable
+          ~1.2GB of relevant source files.
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>SearchableFiles.include</b></td>
+        <td>
+          This file uses a (reverse) ".gitignore" syntax to include files into
+          the "text seach" feature. This file is used as a 2nd pass after
+          "SearchableFile.ignore" to filter out even more using inclusion rules.
+        </td>
+      </tr>
+    </table>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="installation">
+    <h1>Installation Instructions</h1>
+    <ul>
+      <li>Download <a href="latest/VsChromiumPackage.vsix">VsChromiumPackage.vsix</a></li>
+      <li>Open the file: this will open a Visul Studio Installation dialog.</li>
+      <li><img src="Screenshots/VsixInstall.png" /></li>
+      <li>Click "Install"</li>
+      <li>Start Visual Studio</li>
+      <li>Go to "Tools | Extensions Manager..."</li>
+      <li>Ensure "VsChromium" is present and enabled.</li>
+      <li><img src="Screenshots/VsixEnable.png" /></li>
+    </ul>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="requirements">
+    <h1>Requirements</h1>
+    <ul>
+      <li>VsChromium is compatible with Visual Studio Pro 2010 and up.</li>
+      <li>A Windows 64-bit operating system is required. Only tested on Windows 7.</li>
+      <li>Visual Studio 2012 themes are supported (to some extent).</li>
+      <li>
+        Express editions of Visual Studio are <b>not</b> supported due to
+        limitations of VS extensibility framework for Express.
+      </li>
+    </ul>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="tech-specs">
+    <h1>Technical specifications</h1>
+    <p>
+      From a technical perpective, the "search engine" used by VsChromium has
+      been designed with the assumption that a good amount (e.g. at least 2GB) of
+      physical memory is available. This allows the search engine to load all
+      relevant source files in memory for fast brute-force text search.
+    </p>
+    <p>
+      The search engine has been carefully optimized to make use of
+      multi-core processors for many internal operations. So, in general, the more
+      cores are available, the faster the engine is.
+    </p>
+    <p>
+      For example, a HP Z620 with 2x8 cores processors and hyperthreading enabled,
+      the search engine uses 32 worker threads (1 thread per logical processor).
+    </p>
+    <ul>
+      <li>
+        During initial file loading from an SSD, the engine loads 90,000+ files in
+        parrallel and achieves ~80% CPU utilization. All files are usually loaded in
+        less than 10 sec.
+      </li>
+      <li>
+        During a "Text Search" operation, the engine paritions the files to search
+        into 32 equally sized partitions, runs a search query accross 32 threads,
+        then merge the results before sending back to the VsChromium package. Using
+        efficient string search algorithms (<a href="http://www-igm.univ-mlv.fr/~lecroq/string/bndm.html">
+          bndm<a>
+            and <a href="http://en.wikipedia.org/wiki/Boyer-Moore_string_search_algorithm">Boyer-Moore</a>),
+            the search engine achieves throughputs of 15+GB/s, meaning a text search
+            usually takes less than 0.1s with 1.2GB of source files.
+      </li>
+    </ul>
+    <h2>Server process</h2>
+    <p>
+      To avoid competing with the VM address space of the Visual Studio process
+      (devenv.exe), the VsChromium search engine runs as a child process of
+      Visual Studio.
+    </p>
+    <p>
+      Example of memory usage and process relationship after loading ~1.2GB of
+      source files:
+    </p>
+    <img src="Screenshots/ProcessExplorer.png"></img>
+
+    <p>
+      The server process is always automatically terminated when the Visual Studio
+      process is terminated. Each instance of Visual Studio uses its own instance
+      of the VsChromium server process.
+    </p>
+    <p>
+      IPC: The VsChromium package and the VsChromium server process use protobuf
+      over a local TCP connection as IPC mechanism.
+    </p>
+    <p>
+      To avoid running out of VM address space, the search engine runs as a
+      64-bit process.
+    </p>
+  </div>
 
 </div> <!-- content -->
 </div> <!-- container -->

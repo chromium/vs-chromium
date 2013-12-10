@@ -9,6 +9,10 @@ div {
   display: block;
 }
 
+h1 {
+padding-top: 10px;
+}
+
 div.example {
 font-weight: bold;
 }
@@ -58,6 +62,12 @@ width: 180px;
 float: left;
 font-weight: bold;
 color: black;
+}
+
+#sidebar.floating {
+  overflow: auto;
+  position: fixed;
+  top: 0; bottom: 0;
 }
 
 #sidebar ul {

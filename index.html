@@ -23,7 +23,13 @@
         <li><a href="#chromium-explorer-keyboard-shortcuts">Keyboard shortcuts</a></li>
       </ul>
     </li>
-    <li><a href="#chromium-style-checker">Chromium Coding Style checker</a></li>
+    <li><a href="#editor-features">Editor features</a></li>
+    <li>
+      <ul class="ul-second">
+        <li><a href="#chromium-style-checker">Chromium Coding Style checker</a></li>
+        <li><a href="#format-comment">Format comment</a></li>
+      </ul>
+    </li>
     <li><a href="#configuration">Configuration</a></li>
     <li><a href="#installation">Installation Instructions</a></li>
     <li><a href="#requirements">Requirements</a></li>
@@ -274,21 +280,37 @@
   <hr />
 
   <!-------------------------------------------------------------------------------->
+  <div id="editor-features">
+    <h1>Editor features</h1>
+  </div>
+
+  <!-------------------------------------------------------------------------------->
   <div id="chromium-style-checker">
     <h1>Chromium Coding Style checker</h1>
     <p>
       When a source file belonging to a Chromium enlistement is opened in the
       Visual studio editor, a few custom "classifiers" (or "colorizers") kick off
-      and inspect the code for Coding Style violations. Each violation is indicated
-      with a red background highlighing of the text violating a rule.
+      and inspect the code for <a href="http://www.chromium.org/developers/coding-style">Coding Style</a>
+      violations. Each violation is indicated with a red background highlighing the text
+      violating a rule.
     </p>
     <p class="note">
       Note: There is no requirement to have a Chromium solution open, as the
       discovery is based on the content of the file system, not on the list of
       projects/solutions opened in Visual Studio.
     </p>
+    <p>List of supported style violations</p>
+    <ul>
+      <li>Lines longer than 80 columns (all text files)</li>
+      <li>Trailing spaces (all text files)</li>
+      <li>TAB instead of space characters (all text files)</li>
+      <li>Invalid use of "else if" on new line (C++ file)</li>
+      <li>Invalid indentation of "public:", etc. modifiers (C++ files)</li>
+      <li>Space after "for" keyword (c++ files)</li>
+      <li>Usage of CRLF instead of LF as end of line characters (all text files)</li>
+    </ul>
     <p>
-      The set of rules currently supported is minimal but is helpful for a
+      Note: The set of rules currently supported is minimal but is helpful for a
       developer new to the Chromium Coding Style rules.
     </p>
     <div class="example">Example</div>
@@ -298,15 +320,21 @@
       of the "public:" accessor keyword.
     </div>
     <p><img src="Screenshots/InvalidCharactersHighlight.png"></img></p>
-    <p>List of supported style violations</p>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="format-comment">
+    <h1>Format comment</h1>
+    <p>
+      The Format Comment command (Ctrl-K C) allows formatting c++ style comment block
+      (i.e. list of lines starting with "//") to wrap at 80 columns.
+    </p>
     <ul>
-      <li>Lines longer than 80 columns</li>
-      <li>Trailing spaces</li>
-      <li>TAB instead of space characters</li>
-      <li>Invalid use of "else if" on new line</li>
-      <li>Invalid indentation of "public:", etc. modifiers</li>
-      <li>Space after "for" keyword</li>
-      <li>Usage of CRLF instead of LF as end of line characters</li>
+      <li>If there is no text selection, Format Comment first expands the selection to
+      contains the first line and last line of the comment block.</li>
+      <li>If there is a text selection active, Format Comment formats only the
+      block comment covered by the selection start and end lines.</li>
     </ul>
   </div>
   <hr />

@@ -18,16 +18,16 @@ namespace VsChromiumServer.Threads {
 
     [ImportingConstructor]
     public SendResponsesThread(IIpcResponseQueue ipcResponseQueue) {
-      this._ipcResponseQeueue = ipcResponseQueue;
+      _ipcResponseQeueue = ipcResponseQueue;
     }
 
     public void Start(IIpcStream ipcStream) {
-      this._ipcStream = ipcStream;
-      new Thread(Run) { IsBackground = true }.Start();
+      _ipcStream = ipcStream;
+      new Thread(Run) {IsBackground = true}.Start();
     }
 
     public void WaitOne() {
-      this._waitHandle.WaitOne();
+      _waitHandle.WaitOne();
     }
 
     public void Run() {
@@ -35,19 +35,19 @@ namespace VsChromiumServer.Threads {
         Loop();
       }
       finally {
-        this._waitHandle.Set();
+        _waitHandle.Set();
       }
     }
 
     private void Loop() {
       try {
         while (true) {
-          var response = this._ipcResponseQeueue.Dequeue();
+          var response = _ipcResponseQeueue.Dequeue();
           if (response == null) {
             Logger.Log("No more response to send. Time to terminate thread.");
             break;
           }
-          this._ipcStream.WriteResponse(response);
+          _ipcStream.WriteResponse(response);
         }
       }
       catch (Exception e) {

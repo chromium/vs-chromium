@@ -17,11 +17,11 @@ namespace VsChromiumServer.Threads {
     private readonly ThreadPool _threadPool;
 
     public CustomThreadPool() {
-      this._threadPool = new ThreadPool(10);
+      _threadPool = new ThreadPool(10);
     }
 
     public CustomThreadPool(int capacity) {
-      this._threadPool = new ThreadPool(capacity);
+      _threadPool = new ThreadPool(capacity);
     }
 
     public void RunAsync(Action task) {
@@ -30,28 +30,28 @@ namespace VsChromiumServer.Threads {
     }
 
     public IEnumerable<TDest> RunInParallel<TSource, TDest>(
-        IList<TSource> source,
-        Func<TSource, TDest> selector,
-        CancellationToken token) {
-      lock (this._lock) {
+      IList<TSource> source,
+      Func<TSource, TDest> selector,
+      CancellationToken token) {
+      lock (_lock) {
         return RunInParallelWorker(source, selector, token);
       }
     }
 
     private IEnumerable<TDest> RunInParallelWorker<TSource, TDest>(
-        IList<TSource> source,
-        Func<TSource, TDest> selector,
-        CancellationToken token) {
+      IList<TSource> source,
+      Func<TSource, TDest> selector,
+      CancellationToken token) {
       var partitions = source
-          .CreatePartitions(this._threadPool.Capacity)
-          .Select(items => new Partition<TSource, TDest> {
-            Items = items,
-            ThreadObject = null,
-            WaitHandle = new ManualResetEvent(false),
-            Selector = selector,
-            Result = new List<TDest>()
-          })
-          .ToList();
+        .CreatePartitions(_threadPool.Capacity)
+        .Select(items => new Partition<TSource, TDest> {
+          Items = items,
+          ThreadObject = null,
+          WaitHandle = new ManualResetEvent(false),
+          Selector = selector,
+          Result = new List<TDest>()
+        })
+        .ToList();
 
       try {
         partitions.ForAll(t => t.ThreadObject = AcquireThread());
@@ -107,7 +107,7 @@ namespace VsChromiumServer.Threads {
     }
 
     private ThreadObject AcquireThread() {
-      return this._threadPool.AcquireThread();
+      return _threadPool.AcquireThread();
     }
 
     private void ReleaseThread(ThreadObject thread) {

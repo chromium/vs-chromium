@@ -9,14 +9,14 @@ using VsChromiumCore.Win32.Files;
 namespace VsChromiumServer.FileSystem {
   public static class RelativePathNameExtensions {
     public static void GetFileSystemEntries(
-        this RelativePathName path,
-        string rootPath,
-        out RelativePathName[] directories,
-        out RelativePathName[] files) {
+      this RelativePathName path,
+      string rootPath,
+      out RelativePathName[] directories,
+      out RelativePathName[] files) {
       IList<string> shortDirectoryNames;
       IList<string> shortFileNames;
       NativeFile.GetDirectoryEntries(PathHelpers.PathCombine(rootPath, path.RelativeName), out shortDirectoryNames,
-          out shortFileNames);
+                                     out shortFileNames);
       directories = CreateChildren(path, shortDirectoryNames);
       files = CreateChildren(path, shortFileNames);
     }

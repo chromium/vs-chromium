@@ -10,7 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using VsChromiumCore;
-using VsChromiumPackage.ToolWindows.FileExplorer;
+using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage.Wpf {
   public class DispatchOptions {
@@ -116,10 +116,10 @@ namespace VsChromiumPackage.Wpf {
     }
 
     private static ItemsControl BringViewItemToView(
-        DispatcherObject dispatcher,
-        ItemsControl itemsControl,
-        IHierarchyObject parentViewItem,
-        IHierarchyObject viewItem) {
+      DispatcherObject dispatcher,
+      ItemsControl itemsControl,
+      IHierarchyObject parentViewItem,
+      IHierarchyObject viewItem) {
       // Access the custom VSP that exposes BringIntoView 
       var itemsHost = FindVisualChild<MyVirtualizingStackPanel>(itemsControl);
       if (itemsHost == null) {
@@ -135,14 +135,14 @@ namespace VsChromiumPackage.Wpf {
 
       // Due to virtualization, BringIntoView may not predict the offset correctly the first time. 
       return TryAction(
-          dispatcher,
-          () => itemsHost.BringIntoView(index),
-          () => (ItemsControl)itemsControl.ItemContainerGenerator.ContainerFromIndex(index),
-          10);
+        dispatcher,
+        () => itemsHost.BringIntoView(index),
+        () => (ItemsControl)itemsControl.ItemContainerGenerator.ContainerFromIndex(index),
+        10);
     }
 
     private static T TryAction<T>(DispatcherObject dispatcher, Action action, Func<T> func, int maxLoops)
-        where T : class {
+      where T : class {
       for (var i = 0; i < maxLoops; i++) {
         action();
         var result = WpfUtilities.Invoke(dispatcher, DispatcherPriority.Background, func);

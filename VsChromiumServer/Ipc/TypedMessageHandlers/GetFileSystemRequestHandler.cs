@@ -13,12 +13,12 @@ namespace VsChromiumServer.Ipc.TypedMessageHandlers {
 
     [ImportingConstructor]
     public GetFileSystemRequestHandler(IFileSystemProcessor processor) {
-      this._processor = processor;
+      _processor = processor;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (GetFileSystemRequest)typedRequest;
-      var tree = this._processor.GetTree();
+      var tree = _processor.GetTree();
       if (tree.Version != request.KnownVersion) {
       }
       return new GetFileSystemResponse {

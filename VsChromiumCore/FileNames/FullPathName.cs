@@ -16,43 +16,27 @@ namespace VsChromiumCore.FileNames {
     public FullPathName(string path) {
       if (!PathHelpers.IsAbsolutePath(path))
         throw new ArgumentException("Path must be absolute.", "path");
-      this._path = path;
+      _path = path;
     }
 
     public FullPathName Parent {
       get {
-        var parent = Directory.GetParent(this._path);
+        var parent = Directory.GetParent(_path);
         return parent == null ? default(FullPathName) : new FullPathName(parent.FullName);
       }
     }
 
-    public string FullName {
-      get {
-        return this._path;
-      }
-    }
+    public string FullName { get { return _path; } }
 
-    public string Name {
-      get {
-        return Path.GetFileName(this._path);
-      }
-    }
+    public string Name { get { return Path.GetFileName(_path); } }
 
     public FullPathName Combine(string name) {
-      return new FullPathName(PathHelpers.PathCombine(this._path, name));
+      return new FullPathName(PathHelpers.PathCombine(_path, name));
     }
 
-    public bool FileExists {
-      get {
-        return File.Exists(this._path);
-      }
-    }
+    public bool FileExists { get { return File.Exists(_path); } }
 
-    public bool DirectoryExists {
-      get {
-        return Directory.Exists(this._path);
-      }
-    }
+    public bool DirectoryExists { get { return Directory.Exists(_path); } }
 
     public static bool operator ==(FullPathName x, FullPathName y) {
       return x.Equals(y);
@@ -63,11 +47,11 @@ namespace VsChromiumCore.FileNames {
     }
 
     public bool Equals(FullPathName other) {
-      return SystemPathComparer.Instance.Comparer.Equals(this._path, other._path);
+      return SystemPathComparer.Instance.Comparer.Equals(_path, other._path);
     }
 
     public override string ToString() {
-      return this._path;
+      return _path;
     }
 
     public override bool Equals(object obj) {
@@ -77,15 +61,15 @@ namespace VsChromiumCore.FileNames {
     }
 
     public override int GetHashCode() {
-      return SystemPathComparer.Instance.Comparer.GetHashCode(this._path);
+      return SystemPathComparer.Instance.Comparer.GetHashCode(_path);
     }
 
     public bool StartsWith(FullPathName x) {
-      return this._path.StartsWith(x._path, SystemPathComparer.Instance.Comparison);
+      return _path.StartsWith(x._path, SystemPathComparer.Instance.Comparison);
     }
 
     public IEnumerable<FullPathName> EnumerateParents() {
-      for (var parent = this.Parent; parent != default(FullPathName); parent = parent.Parent) {
+      for (var parent = Parent; parent != default(FullPathName); parent = parent.Parent) {
         yield return parent;
       }
     }

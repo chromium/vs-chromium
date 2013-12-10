@@ -13,19 +13,19 @@ namespace VsChromiumServer.Search {
     private readonly FileSystemTree _tree;
 
     public FileSystemTreeVisitor(IFileSystemNameFactory fileSystemNameFactory, FileSystemTree tree) {
-      this._fileSystemNameFactory = fileSystemNameFactory;
-      this._tree = tree;
+      _fileSystemNameFactory = fileSystemNameFactory;
+      _tree = tree;
     }
 
     public Action<DirectoryName, DirectoryEntry> VisitDirectory { get; set; }
     public Action<FileName, FileEntry> VisitFile { get; set; }
 
     public void Visit() {
-      VisitWorker(this._fileSystemNameFactory.Root, this._tree.Root);
+      VisitWorker(_fileSystemNameFactory.Root, _tree.Root);
     }
 
     public IEnumerable<KeyValuePair<FileName, FileEntry>> Traverse() {
-      return VisitWorker2(this._fileSystemNameFactory.Root, this._tree.Root);
+      return VisitWorker2(_fileSystemNameFactory.Root, _tree.Root);
     }
 
     private void VisitWorker(DirectoryName directory, DirectoryEntry entry) {
@@ -38,12 +38,12 @@ namespace VsChromiumServer.Search {
         foreach (var child in head.DirectoryEntry.Entries) {
           var fileEntry = child as FileEntry;
           if (fileEntry != null) {
-            var fileName = this._fileSystemNameFactory.CreateFileName(head.DirectoryName, fileEntry.RelativePathName);
+            var fileName = _fileSystemNameFactory.CreateFileName(head.DirectoryName, fileEntry.RelativePathName);
             VisitFile(fileName, fileEntry);
           } else {
             var directoryName = child.RelativePathName.RelativeName == ""
-                ? this._fileSystemNameFactory.CombineDirectoryNames(head.DirectoryName, child.Name)
-                : this._fileSystemNameFactory.CreateDirectoryName(head.DirectoryName, child.RelativePathName);
+                                  ? _fileSystemNameFactory.CombineDirectoryNames(head.DirectoryName, child.Name)
+                                  : _fileSystemNameFactory.CreateDirectoryName(head.DirectoryName, child.RelativePathName);
             stack.Push(new Entry(directoryName, (DirectoryEntry)child));
           }
         }
@@ -59,13 +59,13 @@ namespace VsChromiumServer.Search {
         foreach (var child in head.DirectoryEntry.Entries) {
           var fileEntry = child as FileEntry;
           if (fileEntry != null) {
-            FileName fileName = this._fileSystemNameFactory.CreateFileName(head.DirectoryName,
-                fileEntry.RelativePathName);
+            FileName fileName = _fileSystemNameFactory.CreateFileName(head.DirectoryName,
+                                                                      fileEntry.RelativePathName);
             yield return new KeyValuePair<FileName, FileEntry>(fileName, fileEntry);
           } else {
             DirectoryName directoryName = child.RelativePathName.RelativeName == ""
-                ? this._fileSystemNameFactory.CombineDirectoryNames(head.DirectoryName, child.Name)
-                : this._fileSystemNameFactory.CreateDirectoryName(head.DirectoryName, child.RelativePathName);
+                                            ? _fileSystemNameFactory.CombineDirectoryNames(head.DirectoryName, child.Name)
+                                            : _fileSystemNameFactory.CreateDirectoryName(head.DirectoryName, child.RelativePathName);
             stack.Push(new Entry(directoryName, (DirectoryEntry)child));
           }
         }
@@ -77,21 +77,13 @@ namespace VsChromiumServer.Search {
       private readonly DirectoryName _directoryName;
 
       public Entry(DirectoryName directoryName, DirectoryEntry directoryEntry) {
-        this._directoryName = directoryName;
-        this._directoryEntry = directoryEntry;
+        _directoryName = directoryName;
+        _directoryEntry = directoryEntry;
       }
 
-      public DirectoryName DirectoryName {
-        get {
-          return this._directoryName;
-        }
-      }
+      public DirectoryName DirectoryName { get { return _directoryName; } }
 
-      public DirectoryEntry DirectoryEntry {
-        get {
-          return this._directoryEntry;
-        }
-      }
+      public DirectoryEntry DirectoryEntry { get { return _directoryEntry; } }
     }
   }
 }

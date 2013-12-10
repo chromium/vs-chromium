@@ -9,49 +9,37 @@ namespace VsChromiumCore.Collections {
     private readonly MaxHeap<T> _maxpHeap;
 
     public MinHeap() {
-      this._maxpHeap = new MaxHeap<T>(ReverseComparer<T>.Default);
+      _maxpHeap = new MaxHeap<T>(ReverseComparer<T>.Default);
     }
 
     public MinHeap(int capacity) {
-      this._maxpHeap = new MaxHeap<T>(capacity, ReverseComparer<T>.Default);
+      _maxpHeap = new MaxHeap<T>(capacity, ReverseComparer<T>.Default);
     }
 
     public MinHeap(int capacity, IComparer<T> comparer) {
-      this._maxpHeap = new MaxHeap<T>(capacity, new ReverseComparer<T>(comparer));
+      _maxpHeap = new MaxHeap<T>(capacity, new ReverseComparer<T>(comparer));
     }
 
     public MinHeap(IComparer<T> comparer) {
-      this._maxpHeap = new MaxHeap<T>(new ReverseComparer<T>(comparer));
+      _maxpHeap = new MaxHeap<T>(new ReverseComparer<T>(comparer));
     }
 
-    public T Min {
-      get {
-        return Root;
-      }
-    }
+    public T Min { get { return Root; } }
 
     public void Clear() {
-      this._maxpHeap.Clear();
+      _maxpHeap.Clear();
     }
 
     public void Add(T item) {
-      this._maxpHeap.Add(item);
+      _maxpHeap.Add(item);
     }
 
     public T Remove() {
-      return this._maxpHeap.Remove();
+      return _maxpHeap.Remove();
     }
 
-    public int Count {
-      get {
-        return this._maxpHeap.Count;
-      }
-    }
+    public int Count { get { return _maxpHeap.Count; } }
 
-    public T Root {
-      get {
-        return this._maxpHeap.Root;
-      }
-    }
+    public T Root { get { return _maxpHeap.Root; } }
   }
 }

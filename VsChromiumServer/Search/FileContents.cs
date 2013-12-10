@@ -12,14 +12,10 @@ namespace VsChromiumServer.Search {
     private readonly DateTime _utcLastWriteTime;
 
     protected FileContents(DateTime utcLastWriteTime) {
-      this._utcLastWriteTime = utcLastWriteTime;
+      _utcLastWriteTime = utcLastWriteTime;
     }
 
-    public DateTime UtcLastModified {
-      get {
-        return this._utcLastWriteTime;
-      }
-    }
+    public DateTime UtcLastModified { get { return _utcLastWriteTime; } }
 
     public abstract long ByteLength { get; }
 

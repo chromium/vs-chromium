@@ -24,26 +24,26 @@ namespace VsChromiumPackage.Server {
 
     [ImportingConstructor]
     public TypedRequestProcessProxy(IServerProcessProxy serverProcessProxy, IIpcRequestIdFactory ipcRequestIdFactory) {
-      this._serverProcessProxy = serverProcessProxy;
-      this._ipcRequestIdFactory = ipcRequestIdFactory;
-      this._serverProcessProxy.EventReceived += ServerProcessProxyOnEventReceived;
+      _serverProcessProxy = serverProcessProxy;
+      _ipcRequestIdFactory = ipcRequestIdFactory;
+      _serverProcessProxy.EventReceived += ServerProcessProxyOnEventReceived;
     }
 
     public void RunAsync(TypedRequest request, Action<TypedResponse> callback) {
       var sw = Stopwatch.StartNew();
 
       var ipcRequest = new IpcRequest {
-        RequestId = this._ipcRequestIdFactory.GetNextId(),
+        RequestId = _ipcRequestIdFactory.GetNextId(),
         Protocol = IpcProtocols.TypedMessage,
         Data = request
       };
 
       // Note: We capture the value outside the RunAsync callback.
-      var localSequenceNumber = Interlocked.Increment(ref this._currentSequenceNumber);
+      var localSequenceNumber = Interlocked.Increment(ref _currentSequenceNumber);
 
-      this._serverProcessProxy.RunAsync(ipcRequest, ipcResponse => {
-        lock (this._lock) {
-          this._bufferedResponses.Add(new BufferedResponse {
+      _serverProcessProxy.RunAsync(ipcRequest, ipcResponse => {
+        lock (_lock) {
+          _bufferedResponses.Add(new BufferedResponse {
             SequenceNumber = localSequenceNumber,
             IpcRequest = ipcRequest,
             IpcResponse = ipcResponse,
@@ -58,7 +58,7 @@ namespace VsChromiumPackage.Server {
     public event Action<TypedEvent> EventReceived;
 
     public void Dispose() {
-      this._serverProcessProxy.Dispose();
+      _serverProcessProxy.Dispose();
     }
 
     private void ServerProcessProxyOnEventReceived(IpcEvent ipcEvent) {
@@ -75,17 +75,17 @@ namespace VsChromiumPackage.Server {
 
     private void OnResponseReceived() {
       var reponsesToSend = new List<BufferedResponse>();
-      lock (this._lock) {
-        foreach (var entry in this._bufferedResponses) {
-          if (entry.SequenceNumber != this._nextExpectedSequenceNumber)
+      lock (_lock) {
+        foreach (var entry in _bufferedResponses) {
+          if (entry.SequenceNumber != _nextExpectedSequenceNumber)
             break;
 
           reponsesToSend.Add(entry);
-          this._nextExpectedSequenceNumber++;
+          _nextExpectedSequenceNumber++;
         }
 
         foreach (var entry in reponsesToSend) {
-          this._bufferedResponses.Remove(entry);
+          _bufferedResponses.Remove(entry);
         }
       }
 
@@ -95,8 +95,8 @@ namespace VsChromiumPackage.Server {
     private static void SendResponses(IEnumerable<BufferedResponse> reponsesToSend) {
       reponsesToSend.ForAll(bufferedResponse => {
         Logger.Log("Request {0} of type \"{1}\" took {2:n0} msec to handle.",
-            bufferedResponse.IpcRequest.RequestId, bufferedResponse.IpcRequest.Data.GetType().Name,
-            bufferedResponse.Elapsed.TotalMilliseconds);
+                   bufferedResponse.IpcRequest.RequestId, bufferedResponse.IpcRequest.Data.GetType().Name,
+                   bufferedResponse.Elapsed.TotalMilliseconds);
 
         // TODO(rpaquay): The reponse protocol might be |IpcProtocols.Exception|.
         // Should we handle this case it here?

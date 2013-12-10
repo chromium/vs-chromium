@@ -38,16 +38,9 @@ namespace VsChromiumPackage.Wpf {
     #region CursorBrush
 
     public static readonly DependencyProperty CursorBrushProperty = DependencyProperty.Register("CursorBrush",
-        typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnCursorBrushPropertyChanged));
+                                                                                                typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnCursorBrushPropertyChanged));
 
-    public Brush CursorBrush {
-      get {
-        return GetValue(CursorBrushProperty) as Brush;
-      }
-      set {
-        SetValue(CursorBrushProperty, value);
-      }
-    }
+    public Brush CursorBrush { get { return GetValue(CursorBrushProperty) as Brush; } set { SetValue(CursorBrushProperty, value); } }
 
     private static void OnCursorBrushPropertyChanged(DependencyObject source, DependencyPropertyChangedEventArgs e) {
       var control = (EditableComboBox)source;
@@ -61,16 +54,9 @@ namespace VsChromiumPackage.Wpf {
     #region ArrowBrush
 
     public static readonly DependencyProperty ArrowBrushProperty = DependencyProperty.Register("ArrowBrush",
-        typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnArrowBrushPropertyChanged));
+                                                                                               typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnArrowBrushPropertyChanged));
 
-    public Brush ArrowBrush {
-      get {
-        return GetValue(ArrowBrushProperty) as Brush;
-      }
-      set {
-        SetValue(ArrowBrushProperty, value);
-      }
-    }
+    public Brush ArrowBrush { get { return GetValue(ArrowBrushProperty) as Brush; } set { SetValue(ArrowBrushProperty, value); } }
 
     private static void OnArrowBrushPropertyChanged(DependencyObject source, DependencyPropertyChangedEventArgs e) {
       var control = (EditableComboBox)source;
@@ -84,16 +70,9 @@ namespace VsChromiumPackage.Wpf {
     #region DropDownBrush
 
     public static readonly DependencyProperty DropDownBrushProperty = DependencyProperty.Register("DropDownBrush",
-        typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnDropDownBrushPropertyChanged));
+                                                                                                  typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnDropDownBrushPropertyChanged));
 
-    public Brush DropDownBrush {
-      get {
-        return GetValue(DropDownBrushProperty) as Brush;
-      }
-      set {
-        SetValue(DropDownBrushProperty, value);
-      }
-    }
+    public Brush DropDownBrush { get { return GetValue(DropDownBrushProperty) as Brush; } set { SetValue(DropDownBrushProperty, value); } }
 
     private static void OnDropDownBrushPropertyChanged(DependencyObject source, DependencyPropertyChangedEventArgs e) {
       var control = (EditableComboBox)source;
@@ -133,29 +112,13 @@ namespace VsChromiumPackage.Wpf {
 
     #endregion
 
-    protected TextBox EditableTextBox {
-      get {
-        return GetTemplateChild("PART_EditableTextBox") as TextBox;
-      }
-    }
+    protected TextBox EditableTextBox { get { return GetTemplateChild("PART_EditableTextBox") as TextBox; } }
 
-    protected ToggleButton ToggleButton {
-      get {
-        return GetTemplateChild("5_T") as ToggleButton;
-      }
-    }
+    protected ToggleButton ToggleButton { get { return GetTemplateChild("5_T") as ToggleButton; } }
 
-    protected Popup DropDownPopup {
-      get {
-        return GetTemplateChild("PART_Popup") as Popup;
-      }
-    }
+    protected Popup DropDownPopup { get { return GetTemplateChild("PART_Popup") as Popup; } }
 
-    protected Border DropDownBorder {
-      get {
-        return GetTemplateChild("DropDownBorder") as Border;
-      }
-    }
+    protected Border DropDownBorder { get { return GetTemplateChild("DropDownBorder") as Border; } }
 
     protected Path ArrowPath {
       get {
@@ -191,12 +154,12 @@ namespace VsChromiumPackage.Wpf {
     private void OnLoaded(object sender, RoutedEventArgs routedEventArgs) {
       if (CursorBrush != null)
         OnCursorBrushPropertyChanged(this,
-            new DependencyPropertyChangedEventArgs(CursorBrushProperty, null, CursorBrush));
+                                     new DependencyPropertyChangedEventArgs(CursorBrushProperty, null, CursorBrush));
       if (ArrowBrush != null)
         OnArrowBrushPropertyChanged(this, new DependencyPropertyChangedEventArgs(ArrowBrushProperty, null, ArrowBrush));
       if (DropDownBrush != null)
         OnDropDownBrushPropertyChanged(this,
-            new DependencyPropertyChangedEventArgs(DropDownBrushProperty, null, DropDownBrush));
+                                       new DependencyPropertyChangedEventArgs(DropDownBrushProperty, null, DropDownBrush));
     }
   }
 }

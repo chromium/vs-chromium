@@ -5,7 +5,7 @@
 namespace VsChromiumServer.VsChromiumNative {
   public class AsciiStringSearchBoyerMoore : AsciiStringSearchNative {
     public AsciiStringSearchBoyerMoore(string pattern, NativeMethods.SearchOptions searchOptions)
-        : base(NativeMethods.SearchAlgorithmKind.kBoyerMoore, pattern, searchOptions) {
+      : base(NativeMethods.SearchAlgorithmKind.kBoyerMoore, pattern, searchOptions) {
     }
   }
 }

@@ -1,10 +1,14 @@
+// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromiumPackage.Commands;
-using VsChromiumPackage.ToolWindows.FileExplorer;
+using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage.Package.CommandHandlers {
   [Export(typeof(IPackageCommandHandler))]
@@ -13,17 +17,13 @@ namespace VsChromiumPackage.Package.CommandHandlers {
 
     [ImportingConstructor]
     public ShowChromiumExplorerCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
-      this._visualStudioPackageProvider = visualStudioPackageProvider;
+      _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public CommandID CommandId {
-      get {
-        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidChromiumExplorerToolWindow);
-      }
-    }
+    public CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidChromiumExplorerToolWindow); } }
 
     public void Execute(object sender, EventArgs e) {
-      var window = this._visualStudioPackageProvider.Package.FindToolWindow(typeof(FileExplorerToolWindow), 0 /*instance id*/, true /*create*/);
+      var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(ChromiumExplorerToolWindow), 0 /*instance id*/, true /*create*/);
       if (window == null || window.Frame == null) {
         throw new NotSupportedException("Can not create \"Chromium Explorer\" tool window.");
       }

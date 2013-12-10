@@ -15,17 +15,13 @@ namespace VsChromiumServer.Search {
     private int _count;
 
     public TaskResultCounter(int maxResults) {
-      this._maxResults = maxResults;
+      _maxResults = maxResults;
     }
 
-    public bool Done {
-      get {
-        return this._count >= this._maxResults;
-      }
-    }
+    public bool Done { get { return _count >= _maxResults; } }
 
     public void Add(int count) {
-      this._count += count;
+      _count += count;
     }
 
     public void Increment() {

@@ -24,7 +24,7 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (this._chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
         if (line.Length > 80) {
           if (!IsAllowedOverflow(line)) {
             yield return new TextLineCheckerError {
@@ -44,8 +44,8 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
         "#endif",
       };
       var text =
-          line.GetFragment(line.Start.Position, line.Start.Position + 30, TextLineFragment.Options.Default)
-              .SnapshotSpan.GetText();
+        line.GetFragment(line.Start.Position, line.Start.Position + 30, TextLineFragment.Options.Default)
+          .SnapshotSpan.GetText();
       return keywords.Any(k => text.Contains(k));
     }
   }

@@ -17,10 +17,10 @@ namespace VsChromiumPackage.Threads {
     private bool _disposed;
 
     public void Enqueue(IpcRequest request) {
-      lock (this._lock) {
-        this._requests.Enqueue(request);
+      lock (_lock) {
+        _requests.Enqueue(request);
       }
-      this._waitHandle.Set();
+      _waitHandle.Set();
     }
 
     public IpcRequest Dequeue() {
@@ -29,25 +29,25 @@ namespace VsChromiumPackage.Threads {
         if (response != null)
           return response;
 
-        this._waitHandle.WaitOne();
-        if (this._disposed)
+        _waitHandle.WaitOne();
+        if (_disposed)
           return null;
       }
     }
 
     private IpcRequest TryDequeue() {
-      lock (this._lock) {
-        if (this._requests.Count == 0)
+      lock (_lock) {
+        if (_requests.Count == 0)
           return null;
 
-        return this._requests.Dequeue();
+        return _requests.Dequeue();
       }
     }
 
     public void Dispose() {
       Logger.Log("Disposing RequestQueue.");
-      this._disposed = true;
-      this._waitHandle.Set();
+      _disposed = true;
+      _waitHandle.Set();
     }
   }
 }

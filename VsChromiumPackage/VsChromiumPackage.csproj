@@ -195,28 +195,28 @@
     <Compile Include="Threads\RequestQueue.cs" />
     <Compile Include="Threads\SendRequestsThread.cs" />
     <Compile Include="Threads\UIRequestProcess.cs" />
-    <Compile Include="ToolWindows\FileExplorer\FileExplorerRootNodes.cs" />
-    <Compile Include="ToolWindows\FileExplorer\FilePositionViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerRootNodes.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\FilePositionViewModel.cs" />
     <Compile Include="Threads\UIRequest.cs" />
-    <Compile Include="ToolWindows\FileExplorer\FileSystemEntryDataViewModelFactory.cs" />
-    <Compile Include="ToolWindows\FileExplorer\ILazyObservableCollection.cs" />
-    <Compile Include="ToolWindows\FileExplorer\ITreeViewItemViewModelHost.cs" />
-    <Compile Include="ToolWindows\FileExplorer\LazyItemViewModel.cs" />
-    <Compile Include="ToolWindows\FileExplorer\LazyObservableCollection.cs" />
-    <Compile Include="ToolWindows\FileExplorer\DirectoryEntryViewModel.cs" />
-    <Compile Include="ToolWindows\FileExplorer\FileEntryViewModel.cs" />
-    <Compile Include="ToolWindows\FileExplorer\FileSystemEntryViewModel.cs" />
-    <Compile Include="ToolWindows\FileExplorer\MyVirtualizingStackPanel.cs" />
-    <Compile Include="ToolWindows\FileExplorer\ProgressBarTracker.cs" />
-    <Compile Include="ToolWindows\FileExplorer\FileExplorerViewModel.cs" />
-    <Compile Include="ToolWindows\FileExplorer\TextItemViewModel.cs" />
-    <Compile Include="ToolWindows\FileExplorer\TreeViewItemViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\FileSystemEntryDataViewModelFactory.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\ILazyObservableCollection.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\ITreeViewItemViewModelHost.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\LazyItemViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\LazyObservableCollection.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\DirectoryEntryViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\FileEntryViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\FileSystemEntryViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\MyVirtualizingStackPanel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\ProgressBarTracker.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\TextItemViewModel.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\TreeViewItemViewModel.cs" />
     <Compile Include="Properties\GlobalSuppressions.cs" />
     <Compile Include="Commands\Guids.cs" />
-    <Compile Include="ToolWindows\FileExplorer\FileExplorerControl.xaml.cs">
-      <DependentUpon>FileExplorerControl.xaml</DependentUpon>
+    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerControl.xaml.cs">
+      <DependentUpon>ChromiumExplorerControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ToolWindows\FileExplorer\TreeViewItemViewModelHost.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\TreeViewItemViewModelHost.cs" />
     <Compile Include="Commands\CommandTargetWrapper.cs" />
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
     <Compile Include="Commands\ICommandTarget.cs" />
@@ -229,11 +229,11 @@
     <Compile Include="Wpf\StringListViewModel.cs" />
     <Compile Include="Wpf\IHierarchyObject.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
-    <Page Include="ToolWindows\FileExplorer\FileExplorerControl.xaml">
+    <Page Include="ToolWindows\ChromiumExplorer\ChromiumExplorerControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Compile Include="ToolWindows\FileExplorer\FileExplorerToolWindow.cs" />
+    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerToolWindow.cs" />
     <Compile Include="Views\IOpenDocumentHelper.cs" />
     <Compile Include="Views\OpenDocumentHelper.cs" />
     <Compile Include="Views\IViewHandler.cs" />

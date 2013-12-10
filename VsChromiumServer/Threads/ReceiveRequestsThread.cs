@@ -18,16 +18,16 @@ namespace VsChromiumServer.Threads {
 
     [ImportingConstructor]
     public ReceiveRequestsThread(IIpcRequestDispatcher ipcRequestDispatcher) {
-      this._ipcRequestDispatcher = ipcRequestDispatcher;
+      _ipcRequestDispatcher = ipcRequestDispatcher;
     }
 
     public void Start(IIpcStream ipcStream) {
-      this._ipcStream = ipcStream;
-      new Thread(Run) { IsBackground = true }.Start();
+      _ipcStream = ipcStream;
+      new Thread(Run) {IsBackground = true}.Start();
     }
 
     public void WaitOne() {
-      this._waitHandle.WaitOne();
+      _waitHandle.WaitOne();
     }
 
     private void Run() {
@@ -35,19 +35,19 @@ namespace VsChromiumServer.Threads {
         Loop();
       }
       finally {
-        this._waitHandle.Set();
+        _waitHandle.Set();
       }
     }
 
     private void Loop() {
       try {
         while (true) {
-          var request = this._ipcStream.ReadRequest();
+          var request = _ipcStream.ReadRequest();
           if (request == null) {
             Logger.Log("EOF reached on stdin. Time to terminate server.");
             break;
           }
-          this._ipcRequestDispatcher.ProcessRequestAsync(request);
+          _ipcRequestDispatcher.ProcessRequestAsync(request);
         }
       }
       catch (Exception e) {

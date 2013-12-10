@@ -26,7 +26,7 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (this._chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
         int indent = 0;
         var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
         foreach (var point in fragment.GetPoints()) {
@@ -41,7 +41,7 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
                 Span = new SnapshotSpan(point, marker.Length),
                 Message =
                   string.Format("Accessor \"{0}\" should always be indented 1 character less than rest of class body.",
-                      marker)
+                                marker)
               };
             }
           } else {
@@ -60,8 +60,8 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
       };
 
       return markers
-          .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
-          .FirstOrDefault();
+        .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
+        .FirstOrDefault();
     }
   }
 }

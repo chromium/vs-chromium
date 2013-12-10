@@ -1,7 +1,11 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using Microsoft.VisualStudio.Text;
 
 namespace VsChromiumTests.Mocks {
-  internal class TextSnapshotLineMock : ITextSnapshotLine {
+  class TextSnapshotLineMock : ITextSnapshotLine {
     private readonly ITextSnapshot _snapshot;
     private readonly int _lineNumber;
     private readonly int _index;
@@ -9,83 +13,43 @@ namespace VsChromiumTests.Mocks {
     private readonly string _lineSeparatorText;
 
     public TextSnapshotLineMock(TextSnapshotMock textSnapshotMock, int lineNumber, int index, int length, string lineSeparatorText) {
-      this._snapshot = textSnapshotMock;
-      this._lineNumber = lineNumber;
-      this._index = index;
-      this._length = length;
-      this._lineSeparatorText = lineSeparatorText;
+      _snapshot = textSnapshotMock;
+      _lineNumber = lineNumber;
+      _index = index;
+      _length = length;
+      _lineSeparatorText = lineSeparatorText;
     }
 
     public string GetText() {
-      return this._snapshot.GetText(this._index, this._length);
+      return _snapshot.GetText(_index, _length);
     }
 
     public string GetTextIncludingLineBreak() {
-      return this._snapshot.GetText(this._index, this._length + this._lineSeparatorText.Length);
+      return _snapshot.GetText(_index, _length + _lineSeparatorText.Length);
     }
 
     public string GetLineBreakText() {
-      return this._lineSeparatorText;
+      return _lineSeparatorText;
     }
 
-    public ITextSnapshot Snapshot {
-      get {
-        return this._snapshot;
-      }
-    }
+    public ITextSnapshot Snapshot { get { return _snapshot; } }
 
-    public SnapshotSpan Extent {
-      get {
-        return new SnapshotSpan(this._snapshot, this._index, this._length);
-      }
-    }
+    public SnapshotSpan Extent { get { return new SnapshotSpan(_snapshot, _index, _length); } }
 
-    public SnapshotSpan ExtentIncludingLineBreak {
-      get {
-        return new SnapshotSpan(this._snapshot, this._index, this._length + this._lineSeparatorText.Length);
-      }
-    }
+    public SnapshotSpan ExtentIncludingLineBreak { get { return new SnapshotSpan(_snapshot, _index, _length + _lineSeparatorText.Length); } }
 
-    public int LineNumber {
-      get {
-        return this._lineNumber;
-      }
-    }
+    public int LineNumber { get { return _lineNumber; } }
 
-    public SnapshotPoint Start {
-      get {
-        return this.Extent.Start;
-      }
-    }
+    public SnapshotPoint Start { get { return Extent.Start; } }
 
-    public int Length {
-      get {
-        return this._length;
-      }
-    }
+    public int Length { get { return _length; } }
 
-    public int LengthIncludingLineBreak {
-      get {
-        return this._length + this._lineSeparatorText.Length;
-      }
-    }
+    public int LengthIncludingLineBreak { get { return _length + _lineSeparatorText.Length; } }
 
-    public SnapshotPoint End {
-      get {
-        return this.Extent.End;
-      }
-    }
+    public SnapshotPoint End { get { return Extent.End; } }
 
-    public SnapshotPoint EndIncludingLineBreak {
-      get {
-        return this.ExtentIncludingLineBreak.End;
-      }
-    }
+    public SnapshotPoint EndIncludingLineBreak { get { return ExtentIncludingLineBreak.End; } }
 
-    public int LineBreakLength {
-      get {
-        return this._lineSeparatorText.Length;
-      }
-    }
+    public int LineBreakLength { get { return _lineSeparatorText.Length; } }
   }
 }

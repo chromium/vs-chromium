@@ -17,25 +17,25 @@ namespace VsChromiumCore.Linq {
       var additionalItems = source.Count % partitionCount;
 
       return Enumerable
-          .Range(0, partitionCount)
-          .Select(i => {
-            var actualSize = baseSize;
-            if (additionalItems > 0) {
-              additionalItems--;
-              actualSize++;
-            }
-            return actualSize;
-          });
+        .Range(0, partitionCount)
+        .Select(i => {
+          var actualSize = baseSize;
+          if (additionalItems > 0) {
+            additionalItems--;
+            actualSize++;
+          }
+          return actualSize;
+        });
     }
 
     public static IList<IList<TSource>> CreatePartitions<TSource>(this IList<TSource> source, int partitionCount) {
       var sourceIndex = 0;
       return GetPartitionSizes(source, partitionCount).
-          Select(size => {
-            IList<TSource> result = new ListSegment<TSource>(source, sourceIndex, size);
-            sourceIndex += size;
-            return result;
-          }).ToList();
+        Select(size => {
+          IList<TSource> result = new ListSegment<TSource>(source, sourceIndex, size);
+          sourceIndex += size;
+          return result;
+        }).ToList();
     }
 
     public static void ForAll<TSource>(this IEnumerable<TSource> source, Action<TSource> action) {

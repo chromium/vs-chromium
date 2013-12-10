@@ -17,17 +17,17 @@ namespace VsChromiumServer.Ipc.ProtocolHandlers {
 
     [ImportingConstructor]
     public TypedMessageProtocolHandler([ImportMany] IEnumerable<ITypedMessageRequestHandler> handlers)
-        : base(IpcProtocols.TypedMessage) {
-      this._handlers = handlers;
+      : base(IpcProtocols.TypedMessage) {
+      _handlers = handlers;
     }
 
     public override IpcResponse Process(IpcRequest request) {
       var jsonRequest = (TypedRequest)request.Data;
 
-      var handler = this._handlers.FirstOrDefault(x => x.CanProcess(jsonRequest));
+      var handler = _handlers.FirstOrDefault(x => x.CanProcess(jsonRequest));
       if (handler == null) {
         throw new InvalidOperationException(string.Format("No TypedMessage handler for request of type {0}",
-            request.GetType().Name));
+                                                          request.GetType().Name));
       }
 
       var jsonResponse = handler.Process(jsonRequest);

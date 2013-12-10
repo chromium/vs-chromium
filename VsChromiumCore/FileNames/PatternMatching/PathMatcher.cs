@@ -12,15 +12,11 @@ namespace VsChromiumCore.FileNames.PatternMatching {
     private readonly IPrePassWontMatch[] _prePassOperators;
 
     public PathMatcher(IEnumerable<BaseOperator> operators) {
-      this._operators = operators.ToArray();
-      this._prePassOperators = this._operators.OfType<IPrePassWontMatch>().ToArray();
+      _operators = operators.ToArray();
+      _prePassOperators = _operators.OfType<IPrePassWontMatch>().ToArray();
     }
 
-    public IList<BaseOperator> Operators {
-      get {
-        return this._operators;
-      }
-    }
+    public IList<BaseOperator> Operators { get { return _operators; } }
 
     public bool MatchDirectoryName(string path, IPathComparer comparer) {
       CheckPath(path);
@@ -28,7 +24,7 @@ namespace VsChromiumCore.FileNames.PatternMatching {
       if (PrePassWontMatch(MatchKind.Directory, path, comparer))
         return false;
 
-      var result = BaseOperator.Match(MatchKind.Directory, comparer, this.Operators, 0, path, 0);
+      var result = BaseOperator.Match(MatchKind.Directory, comparer, Operators, 0, path, 0);
       return IsMatch(path, result);
     }
 
@@ -63,8 +59,8 @@ namespace VsChromiumCore.FileNames.PatternMatching {
 
     private bool PrePassWontMatch(MatchKind kind, string path, IPathComparer comparer) {
       // Note: Use a "for" loop to avoid allocation with "Any"
-      for (var index = 0; index < this._prePassOperators.Length; index++) {
-        if (this._prePassOperators[index].PrePassWontMatch(kind, path, comparer))
+      for (var index = 0; index < _prePassOperators.Length; index++) {
+        if (_prePassOperators[index].PrePassWontMatch(kind, path, comparer))
           return true;
       }
       return false;

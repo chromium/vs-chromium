@@ -13,44 +13,30 @@ namespace VsChromiumCore.Collections {
     private readonly int _offset;
 
     public ListSegment(IList<T> list, int offset, int count) {
-      this._list = list;
-      this._offset = offset;
-      this._count = count;
+      _list = list;
+      _offset = offset;
+      _count = count;
     }
 
-    public int Offset {
-      get {
-        return this._offset;
-      }
-    }
+    public int Offset { get { return _offset; } }
 
-    public int Count {
-      get {
-        return this._count;
-      }
-    }
+    public int Count { get { return _count; } }
 
     public T this[int index] {
       get {
-        if (index < 0 || index >= this._count) {
+        if (index < 0 || index >= _count) {
           throw new ArgumentOutOfRangeException("index");
         }
-        return this._list[this._offset + index];
+        return _list[_offset + index];
       }
 
-      set {
-        throw new NotImplementedException();
-      }
+      set { throw new NotImplementedException(); }
     }
 
-    public bool IsReadOnly {
-      get {
-        return true;
-      }
-    }
+    public bool IsReadOnly { get { return true; } }
 
     public int IndexOf(T item) {
-      for (var i = 0; i < this._count; i++)
+      for (var i = 0; i < _count; i++)
         if (Equals(this[i], item))
           return i;
       return -1;
@@ -77,7 +63,7 @@ namespace VsChromiumCore.Collections {
     }
 
     public void CopyTo(T[] array, int arrayIndex) {
-      for (var i = 0; i < this._count; i++)
+      for (var i = 0; i < _count; i++)
         array[arrayIndex + i] = this[i];
     }
 

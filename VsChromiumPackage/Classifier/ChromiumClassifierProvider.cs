@@ -16,7 +16,7 @@ namespace VsChromiumPackage.Classifier {
   /// </summary>
   [Export(typeof(IClassifierProvider))]
   [ContentType("text")]
-  internal class ChromiumClassifierProvider : IClassifierProvider {
+  class ChromiumClassifierProvider : IClassifierProvider {
     /// <summary>
     /// Import the classification registry to be used for getting a reference
     /// to the custom classification type later.
@@ -32,10 +32,10 @@ namespace VsChromiumPackage.Classifier {
 
     public IClassifier GetClassifier(ITextBuffer buffer) {
       return
-          buffer.Properties.GetOrCreateSingletonProperty<ChromiumClassifier>(
-              () =>
-                  new ChromiumClassifier(this.ClassificationRegistry, this.TextLineCheckers,
-                      this.ConfigurationFileProvider));
+        buffer.Properties.GetOrCreateSingletonProperty<ChromiumClassifier>(
+          () =>
+          new ChromiumClassifier(ClassificationRegistry, TextLineCheckers,
+                                 ConfigurationFileProvider));
     }
   }
 }

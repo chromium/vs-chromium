@@ -57,29 +57,17 @@ namespace VsChromiumPackage.Views {
       if (position >= line.EndIncludingLineBreak.Position)
         throw new ArgumentException("Position can not be after line end", "position");
 
-      this._line = line;
-      this._position = position;
-      this._count = count;
-      this._options = options;
+      _line = line;
+      _position = position;
+      _count = count;
+      _options = options;
     }
 
-    public ITextSnapshotLine Line {
-      get {
-        return this._line;
-      }
-    }
+    public ITextSnapshotLine Line { get { return _line; } }
 
-    public Span Span {
-      get {
-        return new Span(this._position, this._count);
-      }
-    }
+    public Span Span { get { return new Span(_position, _count); } }
 
-    public SnapshotSpan SnapshotSpan {
-      get {
-        return new SnapshotSpan(this._line.Snapshot, Span);
-      }
-    }
+    public SnapshotSpan SnapshotSpan { get { return new SnapshotSpan(_line.Snapshot, Span); } }
 
     /// <summary>
     /// Return a fragment of a text line, safely ensuring that "start" and "end" position are within the boundaries
@@ -107,31 +95,31 @@ namespace VsChromiumPackage.Views {
     }
 
     public IEnumerable<SnapshotPoint> GetPoints() {
-      if ((this._options & Options.Reverse) == Options.Reverse) {
-        for (var i = this._position + this._count - 1; i >= this._position; i--) {
-          yield return new SnapshotPoint(this._line.Snapshot, i);
+      if ((_options & Options.Reverse) == Options.Reverse) {
+        for (var i = _position + _count - 1; i >= _position; i--) {
+          yield return new SnapshotPoint(_line.Snapshot, i);
         }
       } else {
-        for (var i = this._position; i < this._position + this._count; i++) {
-          yield return new SnapshotPoint(this._line.Snapshot, i);
+        for (var i = _position; i < _position + _count; i++) {
+          yield return new SnapshotPoint(_line.Snapshot, i);
         }
       }
     }
 
     public string GetText() {
-      return GetText(0, this._count);
+      return GetText(0, _count);
     }
 
     public string GetText(int start, int count) {
       if (start < 0)
         start = 0;
-      if (start >= this._count)
+      if (start >= _count)
         return string.Empty;
       if (count < 0)
         count = 0;
-      if (count > this._count - start)
-        count = this._count - start;
-      return this._line.Snapshot.GetText(this._position + start, count);
+      if (count > _count - start)
+        count = _count - start;
+      return _line.Snapshot.GetText(_position + start, count);
     }
   }
 }

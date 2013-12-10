@@ -22,14 +22,14 @@ namespace VsChromiumServer {
 
     [ImportingConstructor]
     public ServerOverNetworkStream(
-        IProtoBufSerializer serializer,
-        IReceiveRequestsThread receiveThread,
-        ISendResponsesThread sendThread,
-        ITypedEventForwarder typedEventForwarder) {
-      this._serializer = serializer;
-      this._sendThread = sendThread;
-      this._typedEventForwarder = typedEventForwarder;
-      this._receiveThread = receiveThread;
+      IProtoBufSerializer serializer,
+      IReceiveRequestsThread receiveThread,
+      ISendResponsesThread sendThread,
+      ITypedEventForwarder typedEventForwarder) {
+      _serializer = serializer;
+      _sendThread = sendThread;
+      _typedEventForwarder = typedEventForwarder;
+      _receiveThread = receiveThread;
     }
 
     public void Run(int port) {
@@ -37,16 +37,16 @@ namespace VsChromiumServer {
       client.NoDelay = true;
       client.Connect(IPAddress.Loopback, port);
       Logger.Log("Server connected to host port {0}.", port);
-      this._stream = new IpcStreamOverNetworkStream(this._serializer, client.GetStream());
+      _stream = new IpcStreamOverNetworkStream(_serializer, client.GetStream());
 
-      this._stream.WriteResponse(HelloWorldProtocol.Response);
+      _stream.WriteResponse(HelloWorldProtocol.Response);
 
-      this._sendThread.Start(this._stream);
-      this._receiveThread.Start(this._stream);
-      this._typedEventForwarder.RegisterEventHandlers();
+      _sendThread.Start(_stream);
+      _receiveThread.Start(_stream);
+      _typedEventForwarder.RegisterEventHandlers();
 
-      this._sendThread.WaitOne();
-      this._receiveThread.WaitOne();
+      _sendThread.WaitOne();
+      _receiveThread.WaitOne();
       Logger.Log("Server terminating properly.");
     }
   }

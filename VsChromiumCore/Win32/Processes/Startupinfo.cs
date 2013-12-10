@@ -8,7 +8,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Processes {
   [StructLayout(LayoutKind.Sequential)]
-  internal class Startupinfo {
+  class Startupinfo {
     public int cb;
     public IntPtr lpReserved = IntPtr.Zero;
     public IntPtr lpDesktop = IntPtr.Zero;
@@ -29,21 +29,21 @@ namespace VsChromiumCore.Win32.Processes {
     public SafeFileHandle hStdError = new SafeFileHandle(IntPtr.Zero, false);
 
     public Startupinfo() {
-      this.cb = Marshal.SizeOf(this);
+      cb = Marshal.SizeOf(this);
     }
 
     public void Dispose() {
-      if (this.hStdInput != null && !this.hStdInput.IsInvalid) {
-        this.hStdInput.Close();
-        this.hStdInput = null;
+      if (hStdInput != null && !hStdInput.IsInvalid) {
+        hStdInput.Close();
+        hStdInput = null;
       }
-      if (this.hStdOutput != null && !this.hStdOutput.IsInvalid) {
-        this.hStdOutput.Close();
-        this.hStdOutput = null;
+      if (hStdOutput != null && !hStdOutput.IsInvalid) {
+        hStdOutput.Close();
+        hStdOutput = null;
       }
-      if (this.hStdError != null && !this.hStdError.IsInvalid) {
-        this.hStdError.Close();
-        this.hStdError = null;
+      if (hStdError != null && !hStdError.IsInvalid) {
+        hStdError.Close();
+        hStdError = null;
       }
     }
   }

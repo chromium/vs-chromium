@@ -16,30 +16,30 @@ namespace VsChromiumServer.Ipc.TypedEvents {
 
     [ImportingConstructor]
     public TypedEventForwarder(
-        ITypedEventSender typedEventSender,
-        IFileSystemProcessor fileSystemProcessor,
-        ISearchEngine searchEngine) {
-      this._typedEventSender = typedEventSender;
-      this._fileSystemProcessor = fileSystemProcessor;
-      this._searchEngine = searchEngine;
+      ITypedEventSender typedEventSender,
+      IFileSystemProcessor fileSystemProcessor,
+      ISearchEngine searchEngine) {
+      _typedEventSender = typedEventSender;
+      _fileSystemProcessor = fileSystemProcessor;
+      _searchEngine = searchEngine;
     }
 
     public void RegisterEventHandlers() {
-      this._fileSystemProcessor.TreeComputing += FileSystemProcessorOnTreeComputing;
-      this._fileSystemProcessor.TreeComputed += FileSystemProcessorOnTreeComputed;
+      _fileSystemProcessor.TreeComputing += FileSystemProcessorOnTreeComputing;
+      _fileSystemProcessor.TreeComputed += FileSystemProcessorOnTreeComputed;
 
-      this._searchEngine.FilesLoading += SearchEngineOnFilesLoading;
-      this._searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
+      _searchEngine.FilesLoading += SearchEngineOnFilesLoading;
+      _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
     private void FileSystemProcessorOnTreeComputing(long operationId) {
-      this._typedEventSender.SendEventAsync(new FileSystemTreeComputing {
+      _typedEventSender.SendEventAsync(new FileSystemTreeComputing {
         OperationId = operationId
       });
     }
 
     private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemTree oldTree, FileSystemTree newTree) {
-      this._typedEventSender.SendEventAsync(new FileSystemTreeComputed {
+      _typedEventSender.SendEventAsync(new FileSystemTreeComputed {
         OperationId = operationId,
         OldVersion = oldTree.Version,
         NewVersion = newTree.Version
@@ -47,13 +47,13 @@ namespace VsChromiumServer.Ipc.TypedEvents {
     }
 
     private void SearchEngineOnFilesLoading(long operationId) {
-      this._typedEventSender.SendEventAsync(new SearchEngineFilesLoading {
+      _typedEventSender.SendEventAsync(new SearchEngineFilesLoading {
         OperationId = operationId
       });
     }
 
     private void SearchEngineOnFilesLoaded(long operationId) {
-      this._typedEventSender.SendEventAsync(new SearchEngineFilesLoaded {
+      _typedEventSender.SendEventAsync(new SearchEngineFilesLoaded {
         OperationId = operationId
       });
     }

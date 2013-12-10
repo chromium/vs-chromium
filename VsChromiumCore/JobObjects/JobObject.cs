@@ -26,7 +26,7 @@ namespace VsChromiumCore.JobObjects {
   }
 
   [StructLayout(LayoutKind.Sequential)]
-  internal struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
+  struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
     public Int64 PerProcessUserTimeLimit;
     public Int64 PerJobUserTimeLimit;
     public Int16 LimitFlags;
@@ -39,7 +39,7 @@ namespace VsChromiumCore.JobObjects {
   }
 
   [StructLayout(LayoutKind.Sequential)]
-  internal struct IO_COUNTERS {
+  struct IO_COUNTERS {
     public UInt64 ReadOperationCount;
     public UInt64 WriteOperationCount;
     public UInt64 OtherOperationCount;
@@ -49,7 +49,7 @@ namespace VsChromiumCore.JobObjects {
   }
 
   [StructLayout(LayoutKind.Sequential)]
-  internal struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+  struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
     public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
     public IO_COUNTERS IoInfo;
     public UInt32 ProcessMemoryLimit;
@@ -62,7 +62,7 @@ namespace VsChromiumCore.JobObjects {
     private readonly SafeFileHandle _handle;
 
     public JobObject() {
-      this._handle = CreateJobObject(IntPtr.Zero, null);
+      _handle = CreateJobObject(IntPtr.Zero, null);
 
       var info = new JOBOBJECT_BASIC_LIMIT_INFORMATION();
       info.LimitFlags = 0x2000;
@@ -75,13 +75,13 @@ namespace VsChromiumCore.JobObjects {
       Marshal.StructureToPtr(extendedInfo, extendedInfoPtr, false);
 
       if (
-          !SetInformationJobObject(this._handle, JobObjectInfoType.ExtendedLimitInformation, extendedInfoPtr,
-              (uint)length))
+        !SetInformationJobObject(_handle, JobObjectInfoType.ExtendedLimitInformation, extendedInfoPtr,
+                                 (uint)length))
         throw new Exception(string.Format("Unable to set information.  Error: {0}", Marshal.GetLastWin32Error()));
     }
 
     public void Dispose() {
-      this._handle.Dispose();
+      _handle.Dispose();
     }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
@@ -89,10 +89,10 @@ namespace VsChromiumCore.JobObjects {
 
     [DllImport("kernel32.dll")]
     private static extern bool SetInformationJobObject(
-        SafeFileHandle hJob,
-        JobObjectInfoType infoType,
-        IntPtr lpJobObjectInfo,
-        uint cbJobObjectInfoLength);
+      SafeFileHandle hJob,
+      JobObjectInfoType infoType,
+      IntPtr lpJobObjectInfo,
+      uint cbJobObjectInfoLength);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool AssignProcessToJobObject(SafeFileHandle job, IntPtr process);
@@ -101,7 +101,7 @@ namespace VsChromiumCore.JobObjects {
     private static extern bool IsProcessInJob(IntPtr processHandle, IntPtr jobHandle, out bool result);
 
     public bool AddProcessHandle(IntPtr processHandle) {
-      return AssignProcessToJobObject(this._handle, processHandle);
+      return AssignProcessToJobObject(_handle, processHandle);
     }
 
     public static bool IsProcessInJob(Process process) {

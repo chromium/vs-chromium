@@ -17,46 +17,46 @@ namespace VsChromiumServer.ProgressTracking {
     private DateTime _lastUpdatedUtc;
 
     protected ProgressTrackerBase(ITypedEventSender typedEventSender) {
-      this._typedEventSender = typedEventSender;
-      this._lastUpdatedUtc = DateTime.UtcNow;
+      _typedEventSender = typedEventSender;
+      _lastUpdatedUtc = DateTime.UtcNow;
     }
 
     public abstract int TotalStepCount { get; }
 
     public void Step(ProgressTrackerDisplayTextProvider progressTrackerDisplayTextProvider) {
-      Interlocked.Increment(ref this._currentStep);
+      Interlocked.Increment(ref _currentStep);
 
       if (IsTimeToSendEvent()) {
-        this._eventsSent = true;
+        _eventsSent = true;
         SendProgressEvent(progressTrackerDisplayTextProvider);
       }
     }
 
     public void Dispose() {
       // Notify of end only if we notified at least once
-      if (this._eventsSent) {
-        this._currentStep = TotalStepCount;
+      if (_eventsSent) {
+        _currentStep = TotalStepCount;
         SendProgressEvent((x, y) => "Done!");
       }
     }
 
     private bool IsTimeToSendEvent() {
       var now = DateTime.UtcNow;
-      var timespan = now - this._lastUpdatedUtc;
-      if (timespan < this._refreshDelay)
+      var timespan = now - _lastUpdatedUtc;
+      if (timespan < _refreshDelay)
         return false;
 
-      lock (this._lock) {
-        timespan = now - this._lastUpdatedUtc;
-        this._lastUpdatedUtc = now;
-        return (timespan >= this._refreshDelay);
+      lock (_lock) {
+        timespan = now - _lastUpdatedUtc;
+        _lastUpdatedUtc = now;
+        return (timespan >= _refreshDelay);
       }
     }
 
     private void SendProgressEvent(ProgressTrackerDisplayTextProvider progressTrackerDisplayTextProvider) {
-      this._typedEventSender.SendEventAsync(new ProgressReportEvent {
-        DisplayText = progressTrackerDisplayTextProvider(this._currentStep, TotalStepCount),
-        Completed = this._currentStep,
+      _typedEventSender.SendEventAsync(new ProgressReportEvent {
+        DisplayText = progressTrackerDisplayTextProvider(_currentStep, TotalStepCount),
+        Completed = _currentStep,
         Total = TotalStepCount,
       });
     }

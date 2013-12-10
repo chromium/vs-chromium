@@ -17,7 +17,7 @@ namespace VsChromiumPackage.Classifier {
   [Name("VsChromiumPackage")]
   [UserVisible(true)] //this should be visible to the end user
   [Order(Before = Priority.Default)] //set the priority to be after the default classifiers
-  internal sealed class VsChromiumPackageFormat : ClassificationFormatDefinition {
+  sealed class VsChromiumPackageFormat : ClassificationFormatDefinition {
     /// <summary>
     /// Defines the visual format for the "VsChromiumPackage" classification type
     /// </summary>

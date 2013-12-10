@@ -9,11 +9,11 @@ namespace VsChromiumServer.Ipc.ProtocolHandlers {
     private readonly string _protocol;
 
     protected ProtocolHandler(string protocol) {
-      this._protocol = protocol;
+      _protocol = protocol;
     }
 
     public bool CanProcess(IpcRequest request) {
-      return request.Protocol == this._protocol;
+      return request.Protocol == _protocol;
     }
 
     public abstract IpcResponse Process(IpcRequest request);

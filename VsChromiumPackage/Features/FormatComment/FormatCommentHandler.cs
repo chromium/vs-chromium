@@ -30,19 +30,19 @@ namespace VsChromiumPackage.Features.FormatComment {
     private IVsTextView _textViewAdapter;
 
     public void Attach(IVsTextView textViewAdapter) {
-      if (this._textViewAdapter != null)
+      if (_textViewAdapter != null)
         throw new InvalidOperationException("ViewHandler instance is already attached to a view. Create a new instance?");
-      this._textViewAdapter = textViewAdapter;
-      this._textView = this.AdapterService.GetWpfTextView(textViewAdapter);
+      _textViewAdapter = textViewAdapter;
+      _textView = AdapterService.GetWpfTextView(textViewAdapter);
 
       var target = new SimpleCommandTarget(new CommandID(GuidList.GuidVsChromiumCmdSet, PkgCmdIdList.CmdidFormatComment), Execute);
       var targetWrapper = new CommandTargetWrapper(target);
-      this._textViewAdapter.AddCommandFilter(targetWrapper, out targetWrapper.NextCommandTarget);
+      _textViewAdapter.AddCommandFilter(targetWrapper, out targetWrapper.NextCommandTarget);
     }
 
     private void Execute() {
       var commentFormatter = new CommentFormatter();
-      var lines = commentFormatter.ExtendSpan(this._textView.Selection.StreamSelectionSpan.SnapshotSpan);
+      var lines = commentFormatter.ExtendSpan(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
       if (lines == null)
         return;
 
@@ -50,7 +50,7 @@ namespace VsChromiumPackage.Features.FormatComment {
       if (result == null)
         return;
 
-      using (var edit = this._textView.TextBuffer.CreateEdit()) {
+      using (var edit = _textView.TextBuffer.CreateEdit()) {
         if (commentFormatter.ApplyChanges(edit, result))
           edit.Apply();
       }

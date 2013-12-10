@@ -14,17 +14,17 @@ namespace VsChromiumServer.Ipc.TypedEvents {
 
     [ImportingConstructor]
     public TypedEventSender(IIpcResponseQueue responseQueue, IIpcRequestIdFactory requestIdFactory) {
-      this._responseQueue = responseQueue;
-      this._requestIdFactory = requestIdFactory;
+      _responseQueue = responseQueue;
+      _requestIdFactory = requestIdFactory;
     }
 
     public void SendEventAsync(TypedEvent typedEvent) {
       var ipcEvent = new IpcEvent {
-        RequestId = this._requestIdFactory.GetNextId(),
+        RequestId = _requestIdFactory.GetNextId(),
         Protocol = IpcProtocols.TypedMessage,
         Data = typedEvent
       };
-      this._responseQueue.Enqueue(ipcEvent);
+      _responseQueue.Enqueue(ipcEvent);
     }
   }
 }

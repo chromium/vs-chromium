@@ -30,13 +30,13 @@ namespace VsChromiumPackage.Server {
 
     [ImportingConstructor]
     public ProxyServerCreator(IProcessCreator processCreator) {
-      this._processCreator = processCreator;
+      _processCreator = processCreator;
     }
 
     public void CreateProxy(PreCreate preCreate, PostCreate postCreate) {
-      if (this._serverProcess == null) {
-        lock (this._serverProcessLock) {
-          if (this._serverProcess == null) {
+      if (_serverProcess == null) {
+        lock (_serverProcessLock) {
+          if (_serverProcess == null) {
             CreateServerProcessWorker(preCreate, postCreate);
           }
         }
@@ -44,8 +44,8 @@ namespace VsChromiumPackage.Server {
     }
 
     public void Dispose() {
-      if (this._serverProcess != null) {
-        this._serverProcess.Dispose();
+      if (_serverProcess != null) {
+        _serverProcess.Dispose();
       }
     }
 
@@ -61,11 +61,11 @@ namespace VsChromiumPackage.Server {
 #endif
 
       var argumentLine = arguments.Aggregate("", (x, v) => x + QuoteArgument(v) + " ");
-      this._serverProcess = this._processCreator.CreateProcess(path, argumentLine,
-          CreateProcessOptions.RedirectStdio | CreateProcessOptions.AttachDebugger |
-              CreateProcessOptions.BreakAwayFromJob);
+      _serverProcess = _processCreator.CreateProcess(path, argumentLine,
+                                                     CreateProcessOptions.RedirectStdio | CreateProcessOptions.AttachDebugger |
+                                                     CreateProcessOptions.BreakAwayFromJob);
 
-      postCreate(this._serverProcess);
+      postCreate(_serverProcess);
     }
 
     private string QuoteArgument(string argument) {
@@ -79,9 +79,9 @@ namespace VsChromiumPackage.Server {
 
     private string GetProcessPath() {
       var result = GetCandidateProcessPaths()
-          .Where(x => File.Exists(x))
-          .OrderByDescending(x => File.GetLastWriteTimeUtc(x))
-          .First();
+        .Where(x => File.Exists(x))
+        .OrderByDescending(x => File.GetLastWriteTimeUtc(x))
+        .First();
 
       return result;
     }

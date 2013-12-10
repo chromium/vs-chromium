@@ -6,7 +6,7 @@ using System;
 using VsChromiumCore;
 
 namespace VsChromiumServer {
-  internal class Program {
+  class Program {
     private static void Main(string[] args) {
       Logger.Log("Server process started");
       try {

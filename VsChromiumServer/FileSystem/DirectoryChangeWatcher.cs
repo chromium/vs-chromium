@@ -18,15 +18,15 @@ namespace VsChromiumServer.FileSystem {
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
 
     private readonly Dictionary<DirectoryName, FileSystemWatcher> _watchers =
-        new Dictionary<DirectoryName, FileSystemWatcher>();
+      new Dictionary<DirectoryName, FileSystemWatcher>();
 
     private readonly object _watchersLock = new object();
     private Dictionary<string, ChangeType> _changedPaths = new Dictionary<string, ChangeType>(SystemPathComparer.Instance.Comparer);
     private Thread _thread;
 
     public void WatchDirectories(IEnumerable<DirectoryName> directories) {
-      lock (this._watchersLock) {
-        var oldSet = new HashSet<DirectoryName>(this._watchers.Keys);
+      lock (_watchersLock) {
+        var oldSet = new HashSet<DirectoryName>(_watchers.Keys);
         var newSet = new HashSet<DirectoryName>(directories);
 
         var removed = new HashSet<DirectoryName>(oldSet);
@@ -44,16 +44,16 @@ namespace VsChromiumServer.FileSystem {
 
     private void AddDirectory(DirectoryName directory) {
       FileSystemWatcher watcher;
-      lock (this._watchersLock) {
-        if (this._thread == null) {
-          this._thread = new Thread(ThreadLoop) { IsBackground = true };
-          this._thread.Start();
+      lock (_watchersLock) {
+        if (_thread == null) {
+          _thread = new Thread(ThreadLoop) {IsBackground = true};
+          _thread.Start();
         }
-        if (this._watchers.TryGetValue(directory, out watcher))
+        if (_watchers.TryGetValue(directory, out watcher))
           return;
 
         watcher = new FileSystemWatcher();
-        this._watchers.Add(directory, watcher);
+        _watchers.Add(directory, watcher);
       }
 
       Logger.Log("Starting monitoring directory \"{0}\" for change notifications.", directory.GetFullName());
@@ -71,10 +71,10 @@ namespace VsChromiumServer.FileSystem {
 
     private void RemoveDirectory(DirectoryName directory) {
       FileSystemWatcher watcher;
-      lock (this._watchersLock) {
-        if (!this._watchers.TryGetValue(directory, out watcher))
+      lock (_watchersLock) {
+        if (!_watchers.TryGetValue(directory, out watcher))
           return;
-        this._watchers.Remove(directory);
+        _watchers.Remove(directory);
       }
       Logger.Log("Removing directory \"{0}\" from change notification monitoring.", directory.GetFullName());
       watcher.Dispose();
@@ -83,7 +83,7 @@ namespace VsChromiumServer.FileSystem {
     private void ThreadLoop() {
       Logger.Log("Starting directory change notification monitoring thread.");
       while (true) {
-        this._eventReceived.WaitOne(TimeSpan.FromSeconds(10.0));
+        _eventReceived.WaitOne(TimeSpan.FromSeconds(10.0));
 
         CheckDeletedRoots();
 
@@ -99,16 +99,16 @@ namespace VsChromiumServer.FileSystem {
     /// this kind of changes.
     /// </summary>
     private void CheckDeletedRoots() {
-      lock (this._watchersLock) {
-        var deletedWatchers = this._watchers
-            .Where(item => !Directory.Exists(item.Key.GetFullName()))
-            .ToList();
+      lock (_watchersLock) {
+        var deletedWatchers = _watchers
+          .Where(item => !Directory.Exists(item.Key.GetFullName()))
+          .ToList();
 
         deletedWatchers
-            .ForAll(item => {
-              EnqueueChangeEvent(item.Key.GetFullName(), ChangeType.Deleted);
-              RemoveDirectory(item.Key);
-            });
+          .ForAll(item => {
+            EnqueueChangeEvent(item.Key.GetFullName(), ChangeType.Deleted);
+            RemoveDirectory(item.Key);
+          });
       }
     }
 
@@ -130,8 +130,8 @@ namespace VsChromiumServer.FileSystem {
 
       //
       return paths
-          .Where(item => IncludeChange(item))
-          .ToList();
+        .Where(item => IncludeChange(item))
+        .ToList();
     }
 
     private bool IncludeChange(KeyValuePair<string, ChangeType> fileChange) {
@@ -153,9 +153,9 @@ namespace VsChromiumServer.FileSystem {
     }
 
     private Dictionary<string, ChangeType> DequeueEvents() {
-      lock (this._changedPathsLock) {
-        var temp = this._changedPaths;
-        this._changedPaths = new Dictionary<string, ChangeType>(SystemPathComparer.Instance.Comparer);
+      lock (_changedPathsLock) {
+        var temp = _changedPaths;
+        _changedPaths = new Dictionary<string, ChangeType>(SystemPathComparer.Instance.Comparer);
         return temp;
       }
     }
@@ -163,12 +163,12 @@ namespace VsChromiumServer.FileSystem {
     private void WatcherOnError(object sender, ErrorEventArgs errorEventArgs) {
       // TODO(rpaquay): Try to recover?
       Logger.LogException(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
-          ((FileSystemWatcher)sender).Path);
+                          ((FileSystemWatcher)sender).Path);
     }
 
     private void EnqueueChangeEvent(string path, ChangeType changeType) {
-      lock (this._changedPathsLock) {
-        AddFileChange(this._changedPaths, path, changeType);
+      lock (_changedPathsLock) {
+        AddFileChange(_changedPaths, path, changeType);
       }
     }
 
@@ -231,22 +231,22 @@ namespace VsChromiumServer.FileSystem {
     private void WatcherOnRenamed(object sender, RenamedEventArgs renamedEventArgs) {
       EnqueueChangeEvent(renamedEventArgs.OldFullPath, ChangeType.Deleted);
       EnqueueChangeEvent(renamedEventArgs.FullPath, ChangeType.Created);
-      this._eventReceived.Set();
+      _eventReceived.Set();
     }
 
     private void WatcherOnDeleted(object sender, FileSystemEventArgs fileSystemEventArgs) {
       EnqueueChangeEvent(fileSystemEventArgs.FullPath, ChangeType.Deleted);
-      this._eventReceived.Set();
+      _eventReceived.Set();
     }
 
     private void WatcherOnCreated(object sender, FileSystemEventArgs fileSystemEventArgs) {
       EnqueueChangeEvent(fileSystemEventArgs.FullPath, ChangeType.Created);
-      this._eventReceived.Set();
+      _eventReceived.Set();
     }
 
     private void WatcherOnChanged(object sender, FileSystemEventArgs fileSystemEventArgs) {
       EnqueueChangeEvent(fileSystemEventArgs.FullPath, ChangeType.Changed);
-      this._eventReceived.Set();
+      _eventReceived.Set();
     }
 
     protected virtual void OnPathsChanged(IList<KeyValuePair<string, ChangeType>> changes) {

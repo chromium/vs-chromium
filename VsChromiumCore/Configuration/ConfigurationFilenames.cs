@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 namespace VsChromiumCore.Configuration {
-   public static class ConfigurationFilenames {
-     public static readonly string ChromiumEnlistmentDetectionPatterns = "ChromiumEnlistmentDetection.patterns";
-     public static readonly string ProjectFileNameDetection = "project.vs-chromium-project";
-   }
+  public static class ConfigurationFilenames {
+    public static readonly string ChromiumEnlistmentDetectionPatterns = "ChromiumEnlistmentDetection.patterns";
+    public static readonly string ProjectFileNameDetection = "project.vs-chromium-project";
+  }
 
   public static class ConfigurationStyleFilenames {
     public static readonly string ChromiumCodingStyleIgnore = "ChromiumCodingStyle.ignore";

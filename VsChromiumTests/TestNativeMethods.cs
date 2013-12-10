@@ -60,15 +60,15 @@ namespace VsChromiumTests {
     }
 
     public unsafe void AsciiSearchForVariousPatternsWorks(
-        long blockByteLength,
-        string pattern,
-        NativeMethods.SearchOptions searchOptions,
-        int patternOccurrenceCount,
-        int iterationCount) {
+      long blockByteLength,
+      string pattern,
+      NativeMethods.SearchOptions searchOptions,
+      int patternOccurrenceCount,
+      int iterationCount) {
       Trace.WriteLine(
-          string.Format(
-              "Searching {0} time(s) for pattern \"{1}\" with {2} occurrence(s) in a memory block of {3:n0} bytes.",
-              iterationCount, pattern, patternOccurrenceCount, blockByteLength));
+        string.Format(
+          "Searching {0} time(s) for pattern \"{1}\" with {2} occurrence(s) in a memory block of {3:n0} bytes.",
+          iterationCount, pattern, patternOccurrenceCount, blockByteLength));
 
       Assert.IsTrue(iterationCount >= 1);
       using (var textBlock = HeapAllocStatic.Alloc(blockByteLength)) {
@@ -82,8 +82,8 @@ namespace VsChromiumTests {
           sw.Stop();
           Assert.AreEqual(patternOccurrenceCount, matchCount);
           Trace.WriteLine(string.Format("  StrStr: Found {0:n0} occurrence(s) {1} times in {2}s ({3:n0} KB/s.)",
-              matchCount, iterationCount, sw.Elapsed.TotalSeconds,
-              ComputeThroughput(sw, blockByteLength, iterationCount)));
+                                        matchCount, iterationCount, sw.Elapsed.TotalSeconds,
+                                        ComputeThroughput(sw, blockByteLength, iterationCount)));
         }
         using (var search = new AsciiStringSearchBoyerMoore(pattern, searchOptions)) {
           var sw = Stopwatch.StartNew();
@@ -91,8 +91,8 @@ namespace VsChromiumTests {
           sw.Stop();
           Assert.AreEqual(patternOccurrenceCount, matchCount);
           Trace.WriteLine(string.Format("  Boyer-Moore: Found {0:n0} occurrence(s) {1} times in {2} s ({3:n0} KB/s.)",
-              matchCount, iterationCount, sw.Elapsed.TotalSeconds,
-              ComputeThroughput(sw, blockByteLength, iterationCount)));
+                                        matchCount, iterationCount, sw.Elapsed.TotalSeconds,
+                                        ComputeThroughput(sw, blockByteLength, iterationCount)));
         }
         using (var search = new AsciiStringSearchBndm32(pattern, searchOptions)) {
           var sw = Stopwatch.StartNew();
@@ -100,8 +100,8 @@ namespace VsChromiumTests {
           sw.Stop();
           Assert.AreEqual(patternOccurrenceCount, matchCount);
           Trace.WriteLine(string.Format("  BNDM-32: Found {0:n0} occurrence(s) {1} times in {2} s ({3:n0} KB/s.)",
-              matchCount, iterationCount, sw.Elapsed.TotalSeconds,
-              ComputeThroughput(sw, blockByteLength, iterationCount)));
+                                        matchCount, iterationCount, sw.Elapsed.TotalSeconds,
+                                        ComputeThroughput(sw, blockByteLength, iterationCount)));
         }
         using (var search = new AsciiStringSearchBndm64(pattern, searchOptions)) {
           var sw = Stopwatch.StartNew();
@@ -109,8 +109,8 @@ namespace VsChromiumTests {
           sw.Stop();
           Assert.AreEqual(patternOccurrenceCount, matchCount);
           Trace.WriteLine(string.Format("  BNDM-64: Found {0:n0} occurrence(s) {1} times in {2} s ({3:n0} KB/s.)",
-              matchCount, iterationCount, sw.Elapsed.TotalSeconds,
-              ComputeThroughput(sw, blockByteLength, iterationCount)));
+                                        matchCount, iterationCount, sw.Elapsed.TotalSeconds,
+                                        ComputeThroughput(sw, blockByteLength, iterationCount)));
         }
       }
     }

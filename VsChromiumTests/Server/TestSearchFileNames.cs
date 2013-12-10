@@ -10,18 +10,13 @@ using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
 using VsChromiumPackage.Server;
 
-namespace VsChromiumTests.Server
-{
+namespace VsChromiumTests.Server {
   [TestClass]
-  public class TestSearchFileNames : TestServerBase
-  {
+  public class TestSearchFileNames : TestServerBase {
     [TestMethod]
-    public void SingleOccurrenceWorks()
-    {
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+    public void SingleOccurrenceWorks() {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -31,15 +26,12 @@ namespace VsChromiumTests.Server
     }
 
     [TestMethod]
-    public void MultipleOccurrenceWorks()
-    {
+    public void MultipleOccurrenceWorks() {
       const string fileName = "file_present_three_times.txt";
       const string searchPattern = "file_present_three_times.txt";
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -49,15 +41,12 @@ namespace VsChromiumTests.Server
     }
 
     [TestMethod]
-    public void WildcardWorks()
-    {
+    public void WildcardWorks() {
       const string fileName = "file_present_three_times.txt";
       const string searchPattern = "file_present_*_times.*";
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -67,16 +56,13 @@ namespace VsChromiumTests.Server
     }
 
     private static void VerifySearchFileNamesResponse(
-        ITypedRequestProcessProxy server,
-        string searchPattern,
-        DirectoryInfo chromiumDirectory,
-        string fileName,
-        int occurrenceCount)
-    {
-      var response = SendRequest<SearchFileNamesResponse>(server, new SearchFileNamesRequest
-      {
-        SearchParams = new SearchParams
-        {
+      ITypedRequestProcessProxy server,
+      string searchPattern,
+      DirectoryInfo chromiumDirectory,
+      string fileName,
+      int occurrenceCount) {
+      var response = SendRequest<SearchFileNamesResponse>(server, new SearchFileNamesRequest {
+        SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,
         }

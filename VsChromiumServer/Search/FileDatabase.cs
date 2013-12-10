@@ -28,51 +28,27 @@ namespace VsChromiumServer.Search {
     private bool _frozen;
 
     public FileDatabase(
-        IProjectDiscovery projectDiscovery,
-        IFileSystemNameFactory fileSystemNameFactory,
-        IFileContentsFactory fileContentsFactory,
-        IProgressTrackerFactory progressTrackerFactory) {
-      this._projectDiscovery = projectDiscovery;
-      this._fileSystemNameFactory = fileSystemNameFactory;
-      this._fileContentsFactory = fileContentsFactory;
-      this._progressTrackerFactory = progressTrackerFactory;
+      IProjectDiscovery projectDiscovery,
+      IFileSystemNameFactory fileSystemNameFactory,
+      IFileContentsFactory fileContentsFactory,
+      IProgressTrackerFactory progressTrackerFactory) {
+      _projectDiscovery = projectDiscovery;
+      _fileSystemNameFactory = fileSystemNameFactory;
+      _fileContentsFactory = fileContentsFactory;
+      _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public bool Frozen {
-      get {
-        return this._frozen;
-      }
-    }
+    public bool Frozen { get { return _frozen; } }
 
-    public FileSystemTree FileSystemTree {
-      get {
-        return this._fileSystemTree;
-      }
-    }
+    public FileSystemTree FileSystemTree { get { return _fileSystemTree; } }
 
-    public Dictionary<FileName, FileData> Files {
-      get {
-        return this._files;
-      }
-    }
+    public Dictionary<FileName, FileData> Files { get { return _files; } }
 
-    public IList<FileData> FilesWithContents {
-      get {
-        return this._filesWithContents;
-      }
-    }
+    public IList<FileData> FilesWithContents { get { return _filesWithContents; } }
 
-    public IList<FileName> FileNames {
-      get {
-        return this._fileNames;
-      }
-    }
+    public IList<FileName> FileNames { get { return _fileNames; } }
 
-    public IList<DirectoryName> DirectoryNames {
-      get {
-        return this._directoryNames;
-      }
-    }
+    public IList<DirectoryName> DirectoryNames { get { return _directoryNames; } }
 
     public void ComputeState(FileSystemTree newTree, FileDatabase oldState) {
       // Compute list of files from tree
@@ -85,7 +61,7 @@ namespace VsChromiumServer.Search {
       ReadMissingFileContents();
 
 #if false
-    // Note: For diagnostic only as this can be quite slow.
+  // Note: For diagnostic only as this can be quite slow.
       newState.FilesWithContents
         .GroupBy(x =>
         {
@@ -110,35 +86,35 @@ namespace VsChromiumServer.Search {
       Logger.Log("Freezing FileDatabase state.");
       var sw = Stopwatch.StartNew();
 
-      if (this._fileSystemTree == null) {
-        this._fileSystemTree = FileSystemTree.Empty;
-        this._files = new Dictionary<FileName, FileData>();
-        this._directoryNames = new List<DirectoryName>();
+      if (_fileSystemTree == null) {
+        _fileSystemTree = FileSystemTree.Empty;
+        _files = new Dictionary<FileName, FileData>();
+        _directoryNames = new List<DirectoryName>();
       }
 
       //
       // Compute additional data for fast search!
       //
 
-      Debug.Assert(this._files != null);
-      Debug.Assert(this._directoryNames != null);
+      Debug.Assert(_files != null);
+      Debug.Assert(_directoryNames != null);
 
       // Note: Partitioning evenly ensures that each processor used by PLinq will deal with 
       // a partition of equal "weight". In this case, we make sure each partition contains
       // not only the same amount of files, but also (as close to as possible) the same
       // amount of "bytes". For example, if we have 100 files totaling 32MB and 4 processors,
       // we will end up with 4 partitions of (exactly) 25 files totalling (approximately) 8MB each.
-      this._filesWithContents = this._files.Values
-          .Where(x => x.Contents != null)
-          .ToList()
-          .PartitionEvenly(fileData => fileData.Contents.ByteLength)
-          .SelectMany(x => x)
-          .ToArray();
+      _filesWithContents = _files.Values
+        .Where(x => x.Contents != null)
+        .ToList()
+        .PartitionEvenly(fileData => fileData.Contents.ByteLength)
+        .SelectMany(x => x)
+        .ToArray();
 
-      this._fileNames = this._files.Keys
-          .ToArray();
+      _fileNames = _files.Keys
+        .ToArray();
 
-      this._frozen = true;
+      _frozen = true;
 
       sw.Stop();
       Logger.Log("Done freezing FileDatabase state in {0:n0} msec.", sw.ElapsedMilliseconds);
@@ -149,15 +125,15 @@ namespace VsChromiumServer.Search {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
       var sw = Stopwatch.StartNew();
 
-      this._fileSystemTree = tree;
-      this._files = new Dictionary<FileName, FileData>();
-      this._directoryNames = new List<DirectoryName>();
+      _fileSystemTree = tree;
+      _files = new Dictionary<FileName, FileData>();
+      _directoryNames = new List<DirectoryName>();
 
-      var visitor = new FileSystemTreeVisitor(this._fileSystemNameFactory, tree);
-      visitor.VisitFile = (f, e) => this._files.Add(f, new FileData(f, null));
+      var visitor = new FileSystemTreeVisitor(_fileSystemNameFactory, tree);
+      visitor.VisitFile = (f, e) => _files.Add(f, new FileData(f, null));
       visitor.VisitDirectory = (d, e) => {
         if (!d.IsRoot)
-          this._directoryNames.Add(d);
+          _directoryNames.Add(d);
       };
       visitor.Visit();
 
@@ -171,21 +147,21 @@ namespace VsChromiumServer.Search {
       var sw = Stopwatch.StartNew();
 
       IList<FileData> commonOldFiles = GetCommonFiles(oldState).ToArray();
-      using (var progress = this._progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
+      using (var progress = _progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
         commonOldFiles
-            .AsParallel()
-            .Where(oldFileData => {
-              progress.Step(
-                  (i, n) =>
-                      string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n,
-                          oldFileData.FileName.GetFullName()));
-              return IsFileContentsUpToDate(oldFileData);
-            })
-            .ForAll(oldFileData => this._files[oldFileData.FileName].UpdateContents(oldFileData.Contents));
+          .AsParallel()
+          .Where(oldFileData => {
+            progress.Step(
+              (i, n) =>
+              string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n,
+                            oldFileData.FileName.GetFullName()));
+            return IsFileContentsUpToDate(oldFileData);
+          })
+          .ForAll(oldFileData => _files[oldFileData.FileName].UpdateContents(oldFileData.Contents));
       }
 
       Logger.Log("Done checking for {0:n0} out of date files in {1:n0} msec.", commonOldFiles.Count,
-          sw.ElapsedMilliseconds);
+                 sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
     }
 
@@ -205,10 +181,10 @@ namespace VsChromiumServer.Search {
     }
 
     private IEnumerable<FileData> GetCommonFiles(FileDatabase oldState) {
-      if (this._files.Count == 0 || oldState.Files.Count == 0)
+      if (_files.Count == 0 || oldState.Files.Count == 0)
         return Enumerable.Empty<FileData>();
 
-      return oldState.Files.Values.Intersect(this._files.Values, new FileDataComparer());
+      return oldState.Files.Values.Intersect(_files.Values, new FileDataComparer());
     }
 
     /// <summary>
@@ -220,18 +196,18 @@ namespace VsChromiumServer.Search {
       Logger.Log("Loading file contents from disk.");
       var sw = Stopwatch.StartNew();
 
-      using (var progress = this._progressTrackerFactory.CreateTracker(filesToRead.Count)) {
+      using (var progress = _progressTrackerFactory.CreateTracker(filesToRead.Count)) {
         filesToRead
-            .AsParallel()
-            .ForAll(x => {
-              progress.Step(
-                  (i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileName.GetFullName()));
-              x.UpdateContents(this._fileContentsFactory.GetFileContents(x.FileName.GetFullName()));
-            });
+          .AsParallel()
+          .ForAll(x => {
+            progress.Step(
+              (i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileName.GetFullName()));
+            x.UpdateContents(_fileContentsFactory.GetFileContents(x.FileName.GetFullName()));
+          });
       }
 
 #if false
-    // Note: This can be very slow (logging of 100,000+ files).
+  // Note: This can be very slow (logging of 100,000+ files).
       _files
         .Where(x => x.Value.Contents != null)
         //.OrderByDescending(x => x.Value.Contents.ByteLength)
@@ -241,7 +217,7 @@ namespace VsChromiumServer.Search {
 
       sw.Stop();
       Logger.Log("Done loading file contents from disk: loaded {0:n0} files in {1:n0} msec.", filesToRead.Count,
-          sw.ElapsedMilliseconds);
+                 sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
     }
 
@@ -250,12 +226,12 @@ namespace VsChromiumServer.Search {
       var sw = Stopwatch.StartNew();
 
       // Read all files in parallel
-      var filesToRead = this._files
-          .Select(x => x.Value)
-          .AsParallel()
-          .Where(x => x.Contents == null)
-          .Where(x => this._projectDiscovery.IsFileSearchable(x.FileName))
-          .ToArray();
+      var filesToRead = _files
+        .Select(x => x.Value)
+        .AsParallel()
+        .Where(x => x.Contents == null)
+        .Where(x => _projectDiscovery.IsFileSearchable(x.FileName))
+        .ToArray();
 
       sw.Stop();
       Logger.Log("Done computing list of files to read from disk in {0:n0} msec.", sw.ElapsedMilliseconds);

@@ -31,13 +31,13 @@ namespace VsChromiumPackage.Views {
     private IVsTextView _textViewAdapter;
 
     public void Attach(IVsTextView textViewAdapter) {
-      if (this._textViewAdapter != null)
+      if (_textViewAdapter != null)
         throw new InvalidOperationException("ViewHandler instance is already attached to a view. Create a new instance?");
-      this._textViewAdapter = textViewAdapter;
-      this._textView = this.AdapterService.GetWpfTextView(textViewAdapter);
+      _textViewAdapter = textViewAdapter;
+      _textView = AdapterService.GetWpfTextView(textViewAdapter);
 
       ITextDocument document;
-      if (!this._textView.TextBuffer.Properties.TryGetProperty<ITextDocument>(typeof(ITextDocument), out document))
+      if (!_textView.TextBuffer.Properties.TryGetProperty<ITextDocument>(typeof(ITextDocument), out document))
         return;
 
       var path = document.FilePath;
@@ -56,7 +56,7 @@ namespace VsChromiumPackage.Views {
         }
       };
 
-      this.RequestProcessor.Post(request);
+      RequestProcessor.Post(request);
     }
   }
 }

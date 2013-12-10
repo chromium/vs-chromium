@@ -6,9 +6,9 @@ using System;
 using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Processes {
-  internal sealed class SafeThreadHandle : SafeHandleZeroOrMinusOneIsInvalid {
+  sealed class SafeThreadHandle : SafeHandleZeroOrMinusOneIsInvalid {
     internal SafeThreadHandle()
-        : base(true) {
+      : base(true) {
     }
 
     internal void InitialSetHandle(IntPtr h) {

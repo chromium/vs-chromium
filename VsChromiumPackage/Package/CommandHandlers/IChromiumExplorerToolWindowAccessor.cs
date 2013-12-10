@@ -1,9 +1,13 @@
+// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System.ComponentModel.Design;
-using VsChromiumPackage.ToolWindows.FileExplorer;
+using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage.Package.CommandHandlers {
   public interface IChromiumExplorerToolWindowAccessor {
-    FileExplorerToolWindow GetToolWindow();
+    ChromiumExplorerToolWindow GetToolWindow();
     void FocusSearchTextBox(CommandID commandId);
   }
 }

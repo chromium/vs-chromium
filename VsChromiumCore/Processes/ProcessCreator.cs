@@ -48,7 +48,7 @@ namespace VsChromiumCore.Processes {
       var sb = new StringBuilder();
       executableFileName = executableFileName.Trim();
       bool isQuoted = executableFileName.StartsWith("\"", StringComparison.Ordinal) &&
-          executableFileName.EndsWith("\"", StringComparison.Ordinal);
+                      executableFileName.EndsWith("\"", StringComparison.Ordinal);
       if (!isQuoted) {
         sb.Append("\"");
       }
@@ -64,10 +64,10 @@ namespace VsChromiumCore.Processes {
     }
 
     private static void CreatePipeWithSecurityAttributes(
-        out SafeFileHandle hReadPipe,
-        out SafeFileHandle hWritePipe,
-        SecurityAttributes lpPipeAttributes,
-        int nSize) {
+      out SafeFileHandle hReadPipe,
+      out SafeFileHandle hWritePipe,
+      SecurityAttributes lpPipeAttributes,
+      int nSize) {
       bool flag = Win32.NamedPipes.NativeMethods.CreatePipe(out hReadPipe, out hWritePipe, lpPipeAttributes, nSize);
       if (!flag || hReadPipe.IsInvalid || hWritePipe.IsInvalid) {
         throw new Win32Exception();
@@ -85,8 +85,8 @@ namespace VsChromiumCore.Processes {
           CreatePipeWithSecurityAttributes(out safeFileHandle, out childHandle, securityAttributes, 0);
         }
         if (
-            !Win32.Handles.NativeMethods.DuplicateHandle(new HandleRef(this, NativeMethods.GetCurrentProcess()),
-                safeFileHandle, new HandleRef(this, NativeMethods.GetCurrentProcess()), out parentHandle, 0, false, 2)) {
+          !Win32.Handles.NativeMethods.DuplicateHandle(new HandleRef(this, NativeMethods.GetCurrentProcess()),
+                                                       safeFileHandle, new HandleRef(this, NativeMethods.GetCurrentProcess()), out parentHandle, 0, false, 2)) {
           throw new Win32Exception();
         }
       }
@@ -140,7 +140,7 @@ namespace VsChromiumCore.Processes {
         var environmentPtr = IntPtr.Zero;
         var lastError = 0;
         var result = NativeMethods.CreateProcess(null, stringBuilder, null, null, true, processCreationFlags,
-            environmentPtr, text, startupInfo, processInformation);
+                                                 environmentPtr, text, startupInfo, processInformation);
         if (!result) {
           lastError = Marshal.GetLastWin32Error();
         }
@@ -164,24 +164,24 @@ namespace VsChromiumCore.Processes {
 
       if (startInfo.RedirectStandardInput) {
         processResult.StandardInput = new StreamWriter(new FileStream(stdin, FileAccess.Write, 4096, false),
-            Console.InputEncoding, 4096);
+                                                       Console.InputEncoding, 4096);
         processResult.StandardInput.AutoFlush = true;
       }
 
       if (startInfo.RedirectStandardOutput) {
         Encoding encoding = (startInfo.StandardOutputEncoding != null)
-            ? startInfo.StandardOutputEncoding
-            : Console.OutputEncoding;
+                              ? startInfo.StandardOutputEncoding
+                              : Console.OutputEncoding;
         processResult.StandardOutput = new StreamReader(new FileStream(stdout, FileAccess.Read, 4096, false), encoding,
-            true, 4096);
+                                                        true, 4096);
       }
 
       if (startInfo.RedirectStandardError) {
         Encoding encoding = (startInfo.StandardErrorEncoding != null)
-            ? startInfo.StandardErrorEncoding
-            : Console.OutputEncoding;
+                              ? startInfo.StandardErrorEncoding
+                              : Console.OutputEncoding;
         processResult.StandardError = new StreamReader(new FileStream(stderr, FileAccess.Read, 4096, false), encoding,
-            true, 4096);
+                                                       true, 4096);
       }
 
       bool success = false;

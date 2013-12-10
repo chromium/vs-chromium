@@ -9,7 +9,7 @@ namespace VsChromiumCore.Win32.Files {
   [BestFitMapping(false)]
   [Serializable]
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-  internal struct WIN32_FIND_DATA {
+  struct WIN32_FIND_DATA {
     internal int dwFileAttributes;
     internal int ftCreationTime_dwLowDateTime;
     internal int ftCreationTime_dwHighDateTime;

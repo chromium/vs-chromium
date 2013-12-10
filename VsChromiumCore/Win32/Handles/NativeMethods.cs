@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Handles {
-  internal static class NativeMethods {
+  static class NativeMethods {
     public static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, ExactSpelling = true, SetLastError = true)]
@@ -18,12 +18,12 @@ namespace VsChromiumCore.Win32.Handles {
 
     [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Ansi, SetLastError = true)]
     public static extern bool DuplicateHandle(
-        HandleRef hSourceProcessHandle,
-        SafeHandle hSourceHandle,
-        HandleRef hTargetProcess,
-        out SafeFileHandle targetHandle,
-        int dwDesiredAccess,
-        bool bInheritHandle,
-        int dwOptions);
+      HandleRef hSourceProcessHandle,
+      SafeHandle hSourceHandle,
+      HandleRef hTargetProcess,
+      out SafeFileHandle targetHandle,
+      int dwDesiredAccess,
+      bool bInheritHandle,
+      int dwOptions);
   }
 }

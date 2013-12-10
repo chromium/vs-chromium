@@ -11,26 +11,18 @@ namespace VsChromiumServer.FileSystemNames {
     private readonly DirectoryName _parentName;
 
     public FileSystemNameKey(DirectoryName parentName, string name) {
-      this._parentName = parentName;
-      this._name = name;
+      _parentName = parentName;
+      _name = name;
     }
 
-    public DirectoryName ParentName {
-      get {
-        return this._parentName;
-      }
-    }
+    public DirectoryName ParentName { get { return _parentName; } }
 
-    public string Name {
-      get {
-        return this._name;
-      }
-    }
+    public string Name { get { return _name; } }
 
     public bool Equals(FileSystemNameKey other) {
       return
-          FileSystemNameComparer.Instance.Equals(this._parentName, other._parentName) &&
-              SystemPathComparer.Instance.Comparer.Equals(this._name, other._name);
+        FileSystemNameComparer.Instance.Equals(_parentName, other._parentName) &&
+        SystemPathComparer.Instance.Comparer.Equals(_name, other._name);
     }
   }
 }

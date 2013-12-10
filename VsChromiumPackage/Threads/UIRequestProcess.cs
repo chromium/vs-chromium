@@ -22,38 +22,38 @@ namespace VsChromiumPackage.Threads {
 
     [ImportingConstructor]
     public UIRequestProcess(ITypedRequestProcessProxy typedRequestProcessProxy, IDateTimeProvider dateTimeProvider) {
-      this._typedRequestProcessProxy = typedRequestProcessProxy;
-      this._dateTimeProvider = dateTimeProvider;
-      this._uiSynchronizationContext = SynchronizationContext.Current;
-      new Thread(ThreadLoop) { IsBackground = true }.Start();
+      _typedRequestProcessProxy = typedRequestProcessProxy;
+      _dateTimeProvider = dateTimeProvider;
+      _uiSynchronizationContext = SynchronizationContext.Current;
+      new Thread(ThreadLoop) {IsBackground = true}.Start();
     }
 
     public void Post(UIRequest request) {
-      lock (this._lock) {
+      lock (_lock) {
         // TODO(rpaquay): Consider a more efficient way if this becomes a bottleneck
-        for (var node = this._requests.First; node != null; node = node.Next) {
+        for (var node = _requests.First; node != null; node = node.Next) {
           if (node.Value.UIRequest.Id == request.Id)
-            this._requests.Remove(node);
+            _requests.Remove(node);
         }
-        this._requests.AddLast(new Entry {
-          DateEnqeued = this._dateTimeProvider.UtcNow,
+        _requests.AddLast(new Entry {
+          DateEnqeued = _dateTimeProvider.UtcNow,
           UIRequest = request,
         });
-        this._event.Set();
+        _event.Set();
       }
     }
 
     private void ThreadLoop() {
       try {
         while (true) {
-          this._event.WaitOne(10);
+          _event.WaitOne(10);
           var requestsToExecute = new List<UIRequest>();
-          lock (this._lock) {
+          lock (_lock) {
             // TODO(rpaquay): Consider a more efficient way if this becomes a bottleneck
-            for (var node = this._requests.First; node != null; node = node.Next) {
-              if (node.Value.DateEnqeued + node.Value.UIRequest.Delay <= this._dateTimeProvider.UtcNow) {
+            for (var node = _requests.First; node != null; node = node.Next) {
+              if (node.Value.DateEnqeued + node.Value.UIRequest.Delay <= _dateTimeProvider.UtcNow) {
                 requestsToExecute.Add(node.Value.UIRequest);
-                this._requests.Remove(node);
+                _requests.Remove(node);
               }
             }
           }
@@ -61,9 +61,9 @@ namespace VsChromiumPackage.Threads {
             if (request.OnRun != null)
               WrapActionInvocation(request.OnRun);
 
-            this._typedRequestProcessProxy.RunAsync(request.TypedRequest, response => {
+            _typedRequestProcessProxy.RunAsync(request.TypedRequest, response => {
               if (request.Callback != null) {
-                this._uiSynchronizationContext.Post(_ => WrapActionInvocation(() => request.Callback(response)), null);
+                _uiSynchronizationContext.Post(_ => WrapActionInvocation(() => request.Callback(response)), null);
               }
             });
           });

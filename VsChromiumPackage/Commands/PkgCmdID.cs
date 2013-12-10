@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 namespace VsChromiumPackage.Commands {
-  internal static class PkgCmdIdList {
+  static class PkgCmdIdList {
     public const int CmdidFormatComment = 0x100;
     public const int CmdidChromiumExplorerToolWindow = 0x101;
     public const int CmdidSearchFileNames = 0x102;

@@ -10,11 +10,11 @@ namespace VsChromiumCore.Configuration {
     private readonly IConfigurationFileProvider _configurationFileProvider;
 
     public ConfigurationFileSectionProvider(IConfigurationFileProvider configurationFileProvider) {
-      this._configurationFileProvider = configurationFileProvider;
+      _configurationFileProvider = configurationFileProvider;
     }
 
     public IEnumerable<string> GetSection(string name, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
-      return this._configurationFileProvider.ReadFile(name, postProcessing);
+      return _configurationFileProvider.ReadFile(name, postProcessing);
     }
   }
 }

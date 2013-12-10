@@ -13,15 +13,15 @@ namespace VsChromiumServer.ProgressTracking {
 
     [ImportingConstructor]
     public ProgressTrackerFactory(ITypedEventSender typedEventSender, IOperationIdFactory operationIdFactory) {
-      this._typedEventSender = typedEventSender;
+      _typedEventSender = typedEventSender;
     }
 
     public IProgressTracker CreateTracker(int totalStepCount) {
-      return new ProgressTracker(this._typedEventSender, totalStepCount);
+      return new ProgressTracker(_typedEventSender, totalStepCount);
     }
 
     public IProgressTracker CreateIndeterminateTracker() {
-      return new IndeterminateProgressTracker(this._typedEventSender);
+      return new IndeterminateProgressTracker(_typedEventSender);
     }
   }
 }

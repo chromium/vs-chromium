@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,7 +14,7 @@ namespace VsChromiumPackage.Features.FormatComment {
     private const string _defaultLineEnding = "\n";
     private const int _maxColumn = 80;
     private const string _commentToken = "//";
-    private const string _commentPrefixText= _commentToken + " ";
+    private const string _commentPrefixText = _commentToken + " ";
 
     public Tuple<ITextSnapshotLine, ITextSnapshotLine> ExtendSpan(SnapshotSpan span) {
       // If no selection, extend lines up and down.
@@ -137,34 +141,22 @@ namespace VsChromiumPackage.Features.FormatComment {
       }
     }
 
-    struct LineData {
+    private struct LineData {
       private readonly int _startIndex;
       private readonly int _length;
       private readonly int _newIndex;
 
       public LineData(int startIndex, int length, int newIndex) {
-        this._startIndex = startIndex;
-        this._length = length;
-        this._newIndex = newIndex;
+        _startIndex = startIndex;
+        _length = length;
+        _newIndex = newIndex;
       }
 
-      public int StartIndex {
-        get {
-          return this._startIndex;
-        }
-      }
+      public int StartIndex { get { return _startIndex; } }
 
-      public int Length {
-        get {
-          return this._length;
-        }
-      }
+      public int Length { get { return _length; } }
 
-      public int NewIndex {
-        get {
-          return this._newIndex;
-        }
-      }
+      public int NewIndex { get { return _newIndex; } }
     }
 
     private LineData ExtractLine(string text, int startIndex, int lineLength) {
@@ -235,8 +227,8 @@ namespace VsChromiumPackage.Features.FormatComment {
 
     private int GetCommentBlockIndent(ITextSnapshotLine start, ITextSnapshotLine end) {
       return Enumerable
-          .Range(start.LineNumber, end.LineNumber - start.LineNumber + 1)
-          .Min(n => GetCommentIndent(start.Snapshot.GetLineFromLineNumber(n)));
+        .Range(start.LineNumber, end.LineNumber - start.LineNumber + 1)
+        .Min(n => GetCommentIndent(start.Snapshot.GetLineFromLineNumber(n)));
     }
 
     private int GetCommentIndent(ITextSnapshotLine line) {

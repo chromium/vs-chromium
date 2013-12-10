@@ -14,11 +14,7 @@ namespace VsChromiumServer.FileSystemNames {
     /// Returns the root node of the file system name table. The Root node has no parent and an empty name.
     /// It can be used to create "real" directory and file names using the "CombineXxx" methods.
     /// </summary>
-    public DirectoryName Root {
-      get {
-        return this._root;
-      }
-    }
+    public DirectoryName Root { get { return _root; } }
 
     public FileName CombineFileName(DirectoryName parent, string fileName) {
       return new FileName(parent, fileName);

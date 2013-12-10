@@ -7,13 +7,9 @@ using VsChromiumServer.Ipc.TypedEvents;
 namespace VsChromiumServer.ProgressTracking {
   public class IndeterminateProgressTracker : ProgressTrackerBase {
     public IndeterminateProgressTracker(ITypedEventSender typedEventSender)
-        : base(typedEventSender) {
+      : base(typedEventSender) {
     }
 
-    public override int TotalStepCount {
-      get {
-        return int.MaxValue;
-      }
-    }
+    public override int TotalStepCount { get { return int.MaxValue; } }
   }
 }

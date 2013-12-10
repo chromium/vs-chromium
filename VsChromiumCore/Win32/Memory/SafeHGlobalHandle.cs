@@ -9,15 +9,11 @@ using Microsoft.Win32.SafeHandles;
 namespace VsChromiumCore.Win32.Memory {
   public class SafeHGlobalHandle : SafeHandleZeroOrMinusOneIsInvalid {
     public SafeHGlobalHandle(IntPtr handle)
-        : base(true) {
+      : base(true) {
       this.handle = handle;
     }
 
-    public IntPtr Pointer {
-      get {
-        return handle;
-      }
-    }
+    public IntPtr Pointer { get { return handle; } }
 
     protected override bool ReleaseHandle() {
       Marshal.FreeHGlobal(handle);

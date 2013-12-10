@@ -14,8 +14,8 @@ namespace VsChromiumCore.Ipc {
     private readonly object _writerLock = new object();
 
     public IpcStreamOverNetworkStream(IProtoBufSerializer serializer, NetworkStream stream) {
-      this._serializer = serializer;
-      this._stream = stream;
+      _serializer = serializer;
+      _stream = stream;
     }
 
     public void WriteRequest(IpcRequest request) {
@@ -35,15 +35,15 @@ namespace VsChromiumCore.Ipc {
     }
 
     private void WriteMessage(IpcMessage message) {
-      lock (this._writerLock) {
-        this._serializer.Serialize(this._stream, message);
+      lock (_writerLock) {
+        _serializer.Serialize(_stream, message);
       }
     }
 
     private T ReadMessage<T>() where T : IpcMessage, new() {
-      lock (this._readerLock) {
+      lock (_readerLock) {
         try {
-          return (T)this._serializer.Deserialize(this._stream);
+          return (T)_serializer.Deserialize(_stream);
         }
         catch (Exception e) {
           Logger.LogException(e, "Error reading string from NetworkStream");

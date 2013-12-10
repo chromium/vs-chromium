@@ -15,20 +15,20 @@ namespace VsChromiumServer.FileSystem {
     private readonly IProjectDiscovery _projectDiscovery;
 
     public FileSystemTreeValidator(
-        IFileSystemNameFactory fileSystemNameFactory,
-        IProjectDiscovery projectDiscovery) {
-      this._fileSystemNameFactory = fileSystemNameFactory;
-      this._projectDiscovery = projectDiscovery;
+      IFileSystemNameFactory fileSystemNameFactory,
+      IProjectDiscovery projectDiscovery) {
+      _fileSystemNameFactory = fileSystemNameFactory;
+      _projectDiscovery = projectDiscovery;
     }
 
     public FileSystemValidationResult ProcessPathsChangedEvent(IList<KeyValuePair<string, ChangeType>> changes) {
       // Skip files from filtered out directories
       var unfilteredChanges = changes
-          .Where(x => !PathIsExcluded(x.Key))
-          .ToList();
+        .Where(x => !PathIsExcluded(x.Key))
+        .ToList();
 
       Logger.Log("DirectoryChangeWatcherOnPathsChanged: {0:n0} items left out of {1:n0} after filtering.",
-          unfilteredChanges.Count, changes.Count);
+                 unfilteredChanges.Count, changes.Count);
       // Too verbose
       //unfilteredChanges.ForAll(change => Logger.Log("DirectoryChangeWatcherOnPathsChanged({0}).", change));
 
@@ -37,7 +37,7 @@ namespace VsChromiumServer.FileSystem {
         // raise a "files changes event".
         if (unfilteredChanges.All(change => change.Value == ChangeType.Changed)) {
           Logger.Log(
-              "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
+            "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
           var fileNames = unfilteredChanges.Select(change => PathToFileName(change.Key)).Where(name => name != null);
           return new FileSystemValidationResult {
             ChangeFiles = fileNames.ToList()
@@ -45,7 +45,7 @@ namespace VsChromiumServer.FileSystem {
         } else {
           // TODO(rpaquay): Could we be smarter here?
           Logger.Log(
-              "Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
+            "Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
           return new FileSystemValidationResult {
             RecomputeGraph = true
           };
@@ -56,7 +56,7 @@ namespace VsChromiumServer.FileSystem {
     }
 
     private bool PathIsExcluded(string path) {
-      var project = this._projectDiscovery.GetProject(path);
+      var project = _projectDiscovery.GetProject(path);
       if (project == null)
         return true;
 
@@ -94,7 +94,7 @@ namespace VsChromiumServer.FileSystem {
     }
 
     private FileName PathToFileName(string path) {
-      var rootPath = this._projectDiscovery.GetProjectPath(path);
+      var rootPath = _projectDiscovery.GetProjectPath(path);
       if (rootPath == null)
         return null;
 
@@ -102,16 +102,16 @@ namespace VsChromiumServer.FileSystem {
       if (rootPath.Last() == Path.DirectorySeparatorChar)
         rootLength--;
 
-      var directoryName = this._fileSystemNameFactory.CombineDirectoryNames(this._fileSystemNameFactory.Root, rootPath);
+      var directoryName = _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, rootPath);
       var relativePath = path.Substring(rootLength);
       var items = relativePath.Split(new char[] {
         Path.DirectorySeparatorChar
       });
       foreach (var item in items) {
         if (item == items.Last())
-          return this._fileSystemNameFactory.CombineFileName(directoryName, item);
+          return _fileSystemNameFactory.CombineFileName(directoryName, item);
 
-        directoryName = this._fileSystemNameFactory.CombineDirectoryNames(directoryName, item);
+        directoryName = _fileSystemNameFactory.CombineDirectoryNames(directoryName, item);
       }
       return null;
     }

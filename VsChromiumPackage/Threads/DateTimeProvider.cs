@@ -8,10 +8,6 @@ using System.ComponentModel.Composition;
 namespace VsChromiumPackage.Threads {
   [Export(typeof(IDateTimeProvider))]
   public class DateTimeProvider : IDateTimeProvider {
-    public DateTime UtcNow {
-      get {
-        return DateTime.UtcNow;
-      }
-    }
+    public DateTime UtcNow { get { return DateTime.UtcNow; } }
   }
 }

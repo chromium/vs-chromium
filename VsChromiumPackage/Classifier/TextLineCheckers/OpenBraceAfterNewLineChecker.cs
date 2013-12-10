@@ -26,7 +26,7 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (this._chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
         foreach (var point in line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default).GetPoints()) {
           if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
             // continue as long as we find whitespaces

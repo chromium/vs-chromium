@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.IO;
-using System.Linq;
 using VsChromiumCore.Configuration;
 using VsChromiumCore.FileNames;
 using VsChromiumCore.Linq;
@@ -17,26 +15,26 @@ namespace VsChromiumCore.Chromium {
     private readonly object _lock = new object();
 
     public ChromiumDiscoveryWithCache(IConfigurationSectionProvider configurationSectionProvider) {
-      this._chromiumDiscovery = new ChromiumDiscovery(configurationSectionProvider);
+      _chromiumDiscovery = new ChromiumDiscovery(configurationSectionProvider);
     }
 
     public T GetEnlistmentRootFromRootpath(FullPathName root, Func<FullPathName, T> factory) {
-      lock (this._lock) {
-        return this._chromiumRootDirectories.Get(root);
+      lock (_lock) {
+        return _chromiumRootDirectories.Get(root);
       }
     }
 
     public T GetEnlistmentRootFromFilename(FullPathName filename, Func<FullPathName, T> factory) {
-      lock (this._lock) {
+      lock (_lock) {
         // Cache hit?
         foreach (var parent in filename.EnumerateParents()) {
           T value;
-          if (this._chromiumRootDirectories.TryGet(parent, out value))
+          if (_chromiumRootDirectories.TryGet(parent, out value))
             return value;
         }
 
         // Negative cache hit?
-        if (this._nonChromiumDirectories.Contains(filename.Parent)) {
+        if (_nonChromiumDirectories.Contains(filename.Parent)) {
           return default(T);
         }
       }
@@ -46,25 +44,25 @@ namespace VsChromiumCore.Chromium {
     }
 
     public void ValidateCache() {
-      lock (this._lock) {
-        this._nonChromiumDirectories.RemoveWhere(x => !x.DirectoryExists);
-        this._chromiumRootDirectories.RemoveWhere(x => !x.DirectoryExists);
+      lock (_lock) {
+        _nonChromiumDirectories.RemoveWhere(x => !x.DirectoryExists);
+        _chromiumRootDirectories.RemoveWhere(x => !x.DirectoryExists);
       }
     }
 
     private T GetChromeRootFolderWorker(FullPathName filename, Func<FullPathName, T> factory) {
-      var root = this._chromiumDiscovery.GetEnlistmentRoot(filename);
+      var root = _chromiumDiscovery.GetEnlistmentRoot(filename);
       if (root == default(FullPathName)) {
         lock (_lock) {
           // No one in the parent chain is a Chromium directory.
-          filename.EnumerateParents().ForAll(x => this._nonChromiumDirectories.Add(x, null));
+          filename.EnumerateParents().ForAll(x => _nonChromiumDirectories.Add(x, null));
         }
         return default(T);
       }
 
       var result = factory(root);
       lock (_lock) {
-        this._chromiumRootDirectories.Add(root, result);
+        _chromiumRootDirectories.Add(root, result);
       }
       return result;
     }

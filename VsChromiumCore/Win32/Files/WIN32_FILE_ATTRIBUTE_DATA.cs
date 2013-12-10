@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace VsChromiumCore.Win32.Files {
   [Serializable]
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-  internal struct WIN32_FILE_ATTRIBUTE_DATA {
+  struct WIN32_FILE_ATTRIBUTE_DATA {
     internal int fileAttributes;
     internal uint ftCreationTimeLow;
     internal uint ftCreationTimeHigh;

@@ -12,14 +12,11 @@ using VsChromiumCore;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumPackage.Server;
 
-namespace VsChromiumTests.Server
-{
-  public abstract class TestServerBase : MefBaseTest
-  {
+namespace VsChromiumTests.Server {
+  public abstract class TestServerBase : MefBaseTest {
     protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5.0);
 
-    protected DirectoryInfo GetChromiumEnlistmentDirectory()
-    {
+    protected DirectoryInfo GetChromiumEnlistmentDirectory() {
       var assemblyFileInfo = new FileInfo(Assembly.GetExecutingAssembly().Location);
       var testDataPath = Path.Combine(assemblyFileInfo.Directory.Parent.Parent.FullName, "TestData", "src");
       var result = new DirectoryInfo(testDataPath);
@@ -27,8 +24,7 @@ namespace VsChromiumTests.Server
       return result;
     }
 
-    protected FileInfo GetChromiumEnlistmentFile()
-    {
+    protected FileInfo GetChromiumEnlistmentFile() {
 #if REAL_ENLISTMENT_TEST
       var filePath = @"D:\src\chromium\head\src\PRESUBMIT.py";
 #else
@@ -39,14 +35,11 @@ namespace VsChromiumTests.Server
 #endif
     }
 
-    protected FileSystemTree GetFileSystemTreeFromServer(ITypedRequestProcessProxy server, FileInfo testFile)
-    {
+    protected FileSystemTree GetFileSystemTreeFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
       // Handle used to wait for "FileSystemTreeComputed" event.
       var filesLoadedEvent = new ManualResetEvent(false);
-      server.EventReceived += @event =>
-      {
-        if (@event is SearchEngineFilesLoaded)
-        {
+      server.EventReceived += @event => {
+        if (@event is SearchEngineFilesLoaded) {
           filesLoadedEvent.Set();
         }
       };
@@ -58,11 +51,10 @@ namespace VsChromiumTests.Server
       }
 
       Assert.IsTrue(filesLoadedEvent.WaitOne(ServerResponseTimeout),
-          "Server did not compute new file system tree within timeout.");
+                    "Server did not compute new file system tree within timeout.");
 
       {
-        var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest
-        {
+        var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {
           KnownVersion = -1
         }, ServerResponseTimeout)();
         Assert.IsNotNull(response, "Server did not respond within timeout.");
@@ -82,27 +74,23 @@ namespace VsChromiumTests.Server
     }
 
     protected static Func<DoneResponse> SendAddFileRequest(
-        ITypedRequestProcessProxy server,
-        FileInfo filename,
-        TimeSpan timeout)
-    {
-      var request = new AddFileNameRequest
-      {
+      ITypedRequestProcessProxy server,
+      FileInfo filename,
+      TimeSpan timeout) {
+      var request = new AddFileNameRequest {
         FileName = filename.FullName
       };
       return SendRequest<DoneResponse>(server, request, timeout);
     }
 
     protected static Func<T> SendRequest<T>(ITypedRequestProcessProxy server, TypedRequest request, TimeSpan timeout)
-        where T : TypedResponse
-    {
+      where T : TypedResponse {
       var sw = new Stopwatch();
       var waitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
       T response = null;
 
       sw.Start();
-      server.RunAsync(request, x =>
-      {
+      server.RunAsync(request, x => {
         Assert.IsInstanceOfType(x, typeof(T));
         sw.Stop();
         Logger.Log("Request {0} took {1} msec to complete.", request.ClassName, sw.ElapsedMilliseconds);
@@ -110,8 +98,7 @@ namespace VsChromiumTests.Server
         waitHandle.Set();
       });
 
-      return () =>
-      {
+      return () => {
         if (!waitHandle.WaitOne(timeout))
           return null;
         return response;

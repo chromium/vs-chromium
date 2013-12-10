@@ -11,11 +11,11 @@ namespace VsChromiumServer.Threads {
 
     [ImportingConstructor]
     public TaskQueueFactory(ICustomThreadPool customThreadPool) {
-      this._customThreadPool = customThreadPool;
+      _customThreadPool = customThreadPool;
     }
 
     public ITaskQueue CreateQueue() {
-      return new TaskQueue(this._customThreadPool);
+      return new TaskQueue(_customThreadPool);
     }
   }
 }

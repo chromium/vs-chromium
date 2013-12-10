@@ -11,21 +11,15 @@ namespace VsChromiumPackage.Wpf {
     private readonly ObservableCollection<string> _items = new ObservableCollection<string>();
     private string _selectedItem;
 
-    public IEnumerable<string> Items {
-      get {
-        return this._items;
-      }
-    }
+    public IEnumerable<string> Items { get { return _items; } }
 
     public string SelectedItem {
-      get {
-        return this._selectedItem;
-      }
+      get { return _selectedItem; }
       set {
-        if (this._selectedItem == value)
+        if (_selectedItem == value)
           return;
 
-        this._selectedItem = value;
+        _selectedItem = value;
         OnPropertyChanged("SelectedItem");
       }
     }
@@ -39,8 +33,8 @@ namespace VsChromiumPackage.Wpf {
         if (string.IsNullOrEmpty(value))
           return;
 
-        if (!this._items.Contains(value))
-          this._items.Insert(0, value);
+        if (!_items.Contains(value))
+          _items.Insert(0, value);
 
         SelectedItem = value;
       }

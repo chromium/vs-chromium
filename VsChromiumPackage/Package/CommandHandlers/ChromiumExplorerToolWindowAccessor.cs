@@ -1,9 +1,13 @@
+// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromiumPackage.Commands;
-using VsChromiumPackage.ToolWindows.FileExplorer;
+using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage.Package.CommandHandlers {
   [Export(typeof(IChromiumExplorerToolWindowAccessor))]
@@ -12,11 +16,11 @@ namespace VsChromiumPackage.Package.CommandHandlers {
 
     [ImportingConstructor]
     public ChromiumExplorerToolWindowAccessor(IVisualStudioPackageProvider visualStudioPackageProvider) {
-      this._visualStudioPackageProvider = visualStudioPackageProvider;
+      _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
     public void FocusSearchTextBox(CommandID commandId) {
-      var toolWindow = this.GetToolWindow();
+      var toolWindow = GetToolWindow();
       if (toolWindow == null)
         return;
 
@@ -33,18 +37,18 @@ namespace VsChromiumPackage.Package.CommandHandlers {
       }
     }
 
-    public FileExplorerToolWindow GetToolWindow() {
-      var uiShell = this._visualStudioPackageProvider.Package.VsUIShell;
+    public ChromiumExplorerToolWindow GetToolWindow() {
+      var uiShell = _visualStudioPackageProvider.Package.VsUIShell;
       IVsWindowFrame windowFrame;
       uiShell.FindToolWindow((uint)(__VSFINDTOOLWIN.FTW_fFindFirst | __VSFINDTOOLWIN.FTW_fForceCreate),
-          new Guid(GuidList.GuidToolWindowPersistanceString), out windowFrame);
+                             new Guid(GuidList.GuidToolWindowPersistanceString), out windowFrame);
       if (windowFrame == null)
         return null;
       windowFrame.Show();
 
       object docView;
       windowFrame.GetProperty((int)__VSFPROPID.VSFPROPID_DocView, out docView);
-      return docView as FileExplorerToolWindow;
+      return docView as ChromiumExplorerToolWindow;
     }
   }
 }

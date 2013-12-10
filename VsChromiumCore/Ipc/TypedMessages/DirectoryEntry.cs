@@ -16,11 +16,7 @@ namespace VsChromiumCore.Ipc.TypedMessages {
     [ProtoMember(1)]
     public List<FileSystemEntry> Entries { get; set; }
 
-    public bool IsRoot {
-      get {
-        return Name == null;
-      }
-    }
+    public bool IsRoot { get { return Name == null; } }
 
     public override string ToString() {
       return string.Format("d:{0}, {1} children", Name ?? string.Empty, Entries.Count);

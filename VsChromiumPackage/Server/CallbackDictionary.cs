@@ -12,15 +12,15 @@ namespace VsChromiumPackage.Server {
     private readonly Object _lock = new object();
 
     public void Add(IpcRequest request, Action<IpcResponse> callback) {
-      lock (this._lock) {
-        this._callbacks.Add(request.RequestId, callback);
+      lock (_lock) {
+        _callbacks.Add(request.RequestId, callback);
       }
     }
 
     public Action<IpcResponse> Remove(long requestId) {
-      lock (this._lock) {
-        var result = this._callbacks[requestId];
-        this._callbacks.Remove(requestId);
+      lock (_lock) {
+        var result = _callbacks[requestId];
+        _callbacks.Remove(requestId);
         return result;
       }
     }

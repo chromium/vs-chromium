@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
@@ -10,7 +14,7 @@ namespace VsChromiumPackage.Commands {
     private readonly ICommandTarget _commandTarget;
 
     public CommandTargetWrapper(ICommandTarget commandTarget) {
-      this._commandTarget = commandTarget;
+      _commandTarget = commandTarget;
     }
 
     public IOleCommandTarget NextCommandTarget;
@@ -18,12 +22,12 @@ namespace VsChromiumPackage.Commands {
     public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
       var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[0].cmdID);
 
-      bool isSupported = this._commandTarget.HandlesCommand(commandId);
+      bool isSupported = _commandTarget.HandlesCommand(commandId);
       if (!isSupported) {
-        return this.NextCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+        return NextCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
       }
 
-      bool isEnabled = this._commandTarget.IsEnabled(commandId);
+      bool isEnabled = _commandTarget.IsEnabled(commandId);
 
       prgCmds[0].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED);
       if (isEnabled)
@@ -34,13 +38,13 @@ namespace VsChromiumPackage.Commands {
     public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
       var commandId = new CommandID(pguidCmdGroup, (int)nCmdID);
 
-      bool isSupported = this._commandTarget.HandlesCommand(commandId);
+      bool isSupported = _commandTarget.HandlesCommand(commandId);
       if (!isSupported) {
-        return this.NextCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+        return NextCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
       }
 
       try {
-        this._commandTarget.Execute(commandId);
+        _commandTarget.Execute(commandId);
         return VSConstants.S_OK;
       }
       catch (Exception e) {

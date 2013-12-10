@@ -15,7 +15,7 @@ namespace VsChromiumCore.Ipc.TypedMessages {
     private long _nextId = 1;
 
     public long GetNextId() {
-      return Interlocked.Increment(ref this._nextId);
+      return Interlocked.Increment(ref _nextId);
     }
   }
 }

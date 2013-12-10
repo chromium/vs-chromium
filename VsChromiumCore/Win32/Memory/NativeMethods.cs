@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 
 namespace VsChromiumCore.Win32.Memory {
-  internal static class NativeMethods {
+  static class NativeMethods {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32", SetLastError = true)]
     public static extern SafeProcessHeapHandle GetProcessHeap();

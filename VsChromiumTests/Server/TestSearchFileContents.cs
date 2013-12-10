@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,20 +10,15 @@ using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
 using VsChromiumPackage.Server;
 
-namespace VsChromiumTests.Server
-{
+namespace VsChromiumTests.Server {
   [TestClass]
-  public class TestSearchFileContents : TestServerBase
-  {
+  public class TestSearchFileContents : TestServerBase {
     [TestMethod]
-    public void SingleOccurrenceWorks()
-    {
+    public void SingleOccurrenceWorks() {
       const string searchPattern = "Test directory looking like";
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -37,14 +31,11 @@ namespace VsChromiumTests.Server
     }
 
     [TestMethod]
-    public void MultipleOccurrenceWorks()
-    {
+    public void MultipleOccurrenceWorks() {
       const string searchPattern = "Nothing here. Just making sure the directory exists.";
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -61,17 +52,15 @@ namespace VsChromiumTests.Server
       None = 0,
       MatchCase = 1,
     }
+
     private static void VerifySearchFileContentsResponse(
-        ITypedRequestProcessProxy server,
-        string searchPattern,
-        Options options,
-        DirectoryInfo chromiumDirectory,
-        int occurrenceCount)
-    {
-      var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-      {
-        SearchParams = new SearchParams
-        {
+      ITypedRequestProcessProxy server,
+      string searchPattern,
+      Options options,
+      DirectoryInfo chromiumDirectory,
+      int occurrenceCount) {
+      var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,
           MatchCase = ((options & Options.MatchCase) != 0)
@@ -90,9 +79,7 @@ namespace VsChromiumTests.Server
         Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name));
         Assert.IsNotNull(x.Data);
         Assert.IsTrue(x.Data is FilePositionsData);
-        ((FilePositionsData)x.Data).Positions.ForEach(y => {
-          Debug.WriteLine(string.Format("   Text position: offset={0}, length={1}", y.Position, y.Length));
-        });
+        ((FilePositionsData)x.Data).Positions.ForEach(y => { Debug.WriteLine(string.Format("   Text position: offset={0}, length={1}", y.Position, y.Length)); });
       });
       Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
     }

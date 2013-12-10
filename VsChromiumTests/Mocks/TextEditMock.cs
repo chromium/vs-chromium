@@ -1,40 +1,36 @@
-﻿using System;
+﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using Microsoft.VisualStudio.Text;
 
 namespace VsChromiumTests.Mocks {
-  internal class TextEditMock : ITextEdit {
+  class TextEditMock : ITextEdit {
     private readonly TextBufferMock _textBufferMock;
     private readonly ITextSnapshot _snapshot;
     private string _currentText;
 
     public TextEditMock(TextBufferMock textBufferMock) {
-      this._textBufferMock = textBufferMock;
-      this._snapshot = textBufferMock.CurrentSnapshot;
-      this._currentText = this._snapshot.GetText();
+      _textBufferMock = textBufferMock;
+      _snapshot = textBufferMock.CurrentSnapshot;
+      _currentText = _snapshot.GetText();
     }
 
     public void Dispose() {
     }
 
     public ITextSnapshot Apply() {
-      return new TextSnapshotMock(this._textBufferMock, this._currentText);
+      return new TextSnapshotMock(_textBufferMock, _currentText);
     }
 
     public void Cancel() {
       throw new NotImplementedException();
     }
 
-    public ITextSnapshot Snapshot {
-      get {
-        return this._snapshot;
-      }
-    }
+    public ITextSnapshot Snapshot { get { return _snapshot; } }
 
-    public bool Canceled {
-      get {
-        throw new NotImplementedException();
-      }
-    }
+    public bool Canceled { get { throw new NotImplementedException(); } }
 
     public bool Insert(int position, string text) {
       throw new NotImplementedException();
@@ -53,27 +49,19 @@ namespace VsChromiumTests.Mocks {
     }
 
     public bool Replace(Span replaceSpan, string replaceWith) {
-      return this.Replace(replaceSpan.Start, replaceSpan.Length, replaceWith);
+      return Replace(replaceSpan.Start, replaceSpan.Length, replaceWith);
     }
 
     public bool Replace(int startPosition, int charsToReplace, string replaceWith) {
-      var startText = this._currentText.Substring(0, startPosition);
+      var startText = _currentText.Substring(0, startPosition);
       var midText = replaceWith;
-      var endText = this._currentText.Substring(startPosition + charsToReplace);
-      this._currentText = startText + midText + endText;
+      var endText = _currentText.Substring(startPosition + charsToReplace);
+      _currentText = startText + midText + endText;
       return true;
     }
 
-    public bool HasEffectiveChanges {
-      get {
-        throw new NotImplementedException();
-      }
-    }
+    public bool HasEffectiveChanges { get { throw new NotImplementedException(); } }
 
-    public bool HasFailedChanges {
-      get {
-        throw new NotImplementedException();
-      }
-    }
+    public bool HasFailedChanges { get { throw new NotImplementedException(); } }
   }
 }

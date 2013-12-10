@@ -10,7 +10,7 @@ using VsChromiumCore.JobObjects;
 using VsChromiumCore.Processes;
 
 namespace VsChromiumHost {
-  internal class Program {
+  class Program {
     private static void Main(string[] args) {
       try {
         RunServerProcess(args);
@@ -39,8 +39,8 @@ namespace VsChromiumHost {
           // Create the child process and redirect stdin, stdout, stderr.
           var argumentLine = (port.HasValue ? port.Value.ToString() : "");
           using (
-              var process = new ProcessCreator().CreateProcess(filename, argumentLine,
-                  CreateProcessOptions.RedirectStdio)) {
+            var process = new ProcessCreator().CreateProcess(filename, argumentLine,
+                                                             CreateProcessOptions.RedirectStdio)) {
             var waitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
             RedirectStdin(process.Process, waitHandle);
             RedirectStdout(process.Process, waitHandle);
@@ -81,7 +81,7 @@ namespace VsChromiumHost {
         catch (Exception e) {
           Logger.LogException(e, "Exception in RedirectStdin.");
         }
-      }) { IsBackground = true };
+      }) {IsBackground = true};
       thread.Start();
     }
 
@@ -99,7 +99,7 @@ namespace VsChromiumHost {
         catch (Exception e) {
           Logger.LogException(e, "Exception in RedirectStdout.");
         }
-      }) { IsBackground = true };
+      }) {IsBackground = true};
       thread.Start();
     }
 
@@ -117,7 +117,7 @@ namespace VsChromiumHost {
         catch (Exception e) {
           Logger.LogException(e, "Exception in RedirectStderr.");
         }
-      }) { IsBackground = true };
+      }) {IsBackground = true};
       thread.Start();
     }
   }

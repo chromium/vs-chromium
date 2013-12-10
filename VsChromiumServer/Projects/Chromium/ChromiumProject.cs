@@ -1,3 +1,6 @@
+// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 using VsChromiumCore.Configuration;
 
@@ -9,34 +12,18 @@ namespace VsChromiumServer.Projects.Chromium {
     private readonly ISearchableFilesFilter _searchableFilesFilter;
 
     public ChromiumProject(IConfigurationSectionProvider configurationSectionProvider, string rootPath) {
-      this._rootPath = rootPath;
-      this._directoryFilter = new DirectoryFilter(configurationSectionProvider);
-      this._fileFilter = new FileFilter(configurationSectionProvider);
-      this._searchableFilesFilter = new SearchableFilesFilter(configurationSectionProvider);
+      _rootPath = rootPath;
+      _directoryFilter = new DirectoryFilter(configurationSectionProvider);
+      _fileFilter = new FileFilter(configurationSectionProvider);
+      _searchableFilesFilter = new SearchableFilesFilter(configurationSectionProvider);
     }
 
-    public string RootPath {
-      get {
-        return this._rootPath;
-      }
-    }
+    public string RootPath { get { return _rootPath; } }
 
-    public IDirectoryFilter DirectoryFilter {
-      get {
-        return this._directoryFilter;
-      }
-    }
+    public IDirectoryFilter DirectoryFilter { get { return _directoryFilter; } }
 
-    public IFileFilter FileFilter {
-      get {
-        return this._fileFilter;
-      }
-    }
+    public IFileFilter FileFilter { get { return _fileFilter; } }
 
-    public ISearchableFilesFilter SearchableFilesFilter {
-      get {
-        return this._searchableFilesFilter;
-      }
-    }
+    public ISearchableFilesFilter SearchableFilesFilter { get { return _searchableFilesFilter; } }
   }
 }

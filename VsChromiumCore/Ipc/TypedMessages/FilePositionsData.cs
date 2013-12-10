@@ -19,10 +19,6 @@ namespace VsChromiumCore.Ipc.TypedMessages {
     /// Note: This proprty should not really be present. We used it only to 
     /// count the number of items in a search result.
     /// </summary>
-    public override int Count {
-      get {
-        return Positions.Count;
-      }
-    }
+    public override int Count { get { return Positions.Count; } }
   }
 }

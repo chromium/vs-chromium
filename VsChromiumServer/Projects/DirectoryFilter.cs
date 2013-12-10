@@ -10,11 +10,11 @@ namespace VsChromiumServer.Projects {
     private readonly PathPatternsFile _ignorePatternsFile;
 
     public DirectoryFilter(IConfigurationSectionProvider configurationSectionProvider) {
-      this._ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.ExplorerIgnore);
+      _ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.ExplorerIgnore);
     }
 
     public bool Include(string relativePath) {
-      var ignore = this._ignorePatternsFile.GetPathMatcher().MatchDirectoryName(relativePath, SystemPathComparer.Instance);
+      var ignore = _ignorePatternsFile.GetPathMatcher().MatchDirectoryName(relativePath, SystemPathComparer.Instance);
       return !ignore;
     }
   }

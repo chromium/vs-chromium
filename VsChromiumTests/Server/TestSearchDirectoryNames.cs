@@ -10,21 +10,16 @@ using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
 using VsChromiumPackage.Server;
 
-namespace VsChromiumTests.Server
-{
+namespace VsChromiumTests.Server {
   [TestClass]
-  public class TestSearchDirectoryNames : TestServerBase
-  {
+  public class TestSearchDirectoryNames : TestServerBase {
     [TestMethod]
-    public void SingleOccurrenceWorks()
-    {
+    public void SingleOccurrenceWorks() {
       const string searchPattern = "base";
       const string directoryName = searchPattern;
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -34,15 +29,12 @@ namespace VsChromiumTests.Server
     }
 
     [TestMethod]
-    public void MultipleOccurrenceWorks()
-    {
+    public void MultipleOccurrenceWorks() {
       const string searchPattern = "test_directory";
       const string directoryName = searchPattern;
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -52,15 +44,12 @@ namespace VsChromiumTests.Server
     }
 
     [TestMethod]
-    public void WildcardWorks()
-    {
+    public void WildcardWorks() {
       const string searchPattern = "*est_*ectory*";
       const string directoryName = "test_directory";
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemTreeFromServer(server, testFile);
 
@@ -70,16 +59,13 @@ namespace VsChromiumTests.Server
     }
 
     private static void VerifySearchDirectoryNamesResponse(
-        ITypedRequestProcessProxy server,
-        string searchPattern,
-        DirectoryInfo chromiumDirectory,
-        string directoryName,
-        int occurrenceCount)
-    {
-      var response = SendRequest<SearchDirectoryNamesResponse>(server, new SearchDirectoryNamesRequest
-      {
-        SearchParams = new SearchParams
-        {
+      ITypedRequestProcessProxy server,
+      string searchPattern,
+      DirectoryInfo chromiumDirectory,
+      string directoryName,
+      int occurrenceCount) {
+      var response = SendRequest<SearchDirectoryNamesResponse>(server, new SearchDirectoryNamesRequest {
+        SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,
         }

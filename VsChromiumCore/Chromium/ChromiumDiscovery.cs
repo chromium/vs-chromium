@@ -14,7 +14,7 @@ namespace VsChromiumCore.Chromium {
     private readonly IPathPatternsFile _chromiumEnlistmentPatterns;
 
     public ChromiumDiscovery(IConfigurationSectionProvider configurationSectionProvider) {
-      this._chromiumEnlistmentPatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationFilenames.ChromiumEnlistmentDetectionPatterns);
+      _chromiumEnlistmentPatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationFilenames.ChromiumEnlistmentDetectionPatterns);
     }
 
     public void ValidateCache() {
@@ -27,7 +27,7 @@ namespace VsChromiumCore.Chromium {
         return default(FullPathName);
 
       return EnumerateParents(filename)
-        .FirstOrDefault(x => IsChromiumSourceDirectory(x, this._chromiumEnlistmentPatterns));
+        .FirstOrDefault(x => IsChromiumSourceDirectory(x, _chromiumEnlistmentPatterns));
     }
 
     private IEnumerable<FullPathName> EnumerateParents(FullPathName path) {
@@ -43,7 +43,7 @@ namespace VsChromiumCore.Chromium {
       IList<string> files;
       NativeFile.GetDirectoryEntries(path.FullName, out directories, out files);
       return chromiumEnlistmentPatterns.GetPathMatcherLines()
-          .All(item => MatchFileOrDirectory(item, directories, files));
+        .All(item => MatchFileOrDirectory(item, directories, files));
     }
 
     private static bool MatchFileOrDirectory(IPathMatcher item, IEnumerable<string> directories, IEnumerable<string> files) {

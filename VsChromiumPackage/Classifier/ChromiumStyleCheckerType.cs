@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
 namespace VsChromiumPackage.Classifier {
-  internal static class VsChromiumPackageClassificationDefinition {
+  static class VsChromiumPackageClassificationDefinition {
     /// <summary>
     /// Defines the "VsChromiumPackage" classification type.
     /// </summary>

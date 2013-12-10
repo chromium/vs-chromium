@@ -12,64 +12,44 @@ namespace VsChromiumCore.FileNames.PatternMatching {
     private int _remaining;
 
     public PatternWrapper(string patternText) {
-      this._patternText = patternText;
-      this._index = 0;
-      this._remaining = patternText.Length;
+      _patternText = patternText;
+      _index = 0;
+      _remaining = patternText.Length;
     }
 
-    public int Index {
-      get {
-        return this._index;
-      }
-    }
+    public int Index { get { return _index; } }
 
-    public int Remaining {
-      get {
-        return this._remaining;
-      }
-    }
+    public int Remaining { get { return _remaining; } }
 
-    public bool IsEmpty {
-      get {
-        return this._remaining == 0;
-      }
-    }
+    public bool IsEmpty { get { return _remaining == 0; } }
 
-    public char Last {
-      get {
-        return this._patternText[this._index + this._remaining - 1];
-      }
-    }
+    public char Last { get { return _patternText[_index + _remaining - 1]; } }
 
-    public char First {
-      get {
-        return this._patternText[this._index];
-      }
-    }
+    public char First { get { return _patternText[_index]; } }
 
     public void RemoveLast() {
-      this._remaining--;
+      _remaining--;
     }
 
     public void Skip(int i) {
-      this._index += i;
-      this._remaining -= i;
+      _index += i;
+      _remaining -= i;
     }
 
     public string Take(int i) {
-      var result = this._patternText.Substring(this._index, i);
-      this._index += i;
-      this._remaining -= i;
+      var result = _patternText.Substring(_index, i);
+      _index += i;
+      _remaining -= i;
       return result;
     }
 
     public bool StartsWith(string value) {
-      return this._patternText.IndexOf(value, this._index, this._remaining, SystemPathComparer.Instance.Comparison) == this._index;
+      return _patternText.IndexOf(value, _index, _remaining, SystemPathComparer.Instance.Comparison) == _index;
     }
 
     public int IndexOf(string value) {
-      var result = this._patternText.IndexOf(value, this._index, this._remaining, SystemPathComparer.Instance.Comparison);
-      if (result < this._index)
+      var result = _patternText.IndexOf(value, _index, _remaining, SystemPathComparer.Instance.Comparison);
+      if (result < _index)
         return -1;
       return result;
     }

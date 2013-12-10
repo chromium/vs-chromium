@@ -5,7 +5,7 @@
 namespace VsChromiumServer.VsChromiumNative {
   public class AsciiStringSearchStrStr : AsciiStringSearchNative {
     public AsciiStringSearchStrStr(string pattern, NativeMethods.SearchOptions searchOptions)
-        : base(NativeMethods.SearchAlgorithmKind.kStrStr, pattern, searchOptions) {
+      : base(NativeMethods.SearchAlgorithmKind.kStrStr, pattern, searchOptions) {
     }
   }
 }

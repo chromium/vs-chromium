@@ -14,12 +14,12 @@ namespace VsChromiumCore.Configuration {
     private Func<IEnumerable<string>, IEnumerable<string>> _postProcessing;
 
     public FileWithSections(string filename) {
-      this._filename = filename;
-      this._sections = new Lazy<Dictionary<string, List<string>>>(ReadFile);
+      _filename = filename;
+      _sections = new Lazy<Dictionary<string, List<string>>>(ReadFile);
     }
 
     private Dictionary<string, List<string>> ReadFile() {
-      var lines = File.ReadAllLines(this._filename);
+      var lines = File.ReadAllLines(_filename);
       var result = new Dictionary<string, List<string>>();
       var sectionName = "";
       foreach (var line in lines) {
@@ -38,7 +38,7 @@ namespace VsChromiumCore.Configuration {
         result[sectionName].Add(line);
       }
 
-      return result.ToDictionary(x => x.Key, x => this._postProcessing(x.Value).ToList());
+      return result.ToDictionary(x => x.Key, x => _postProcessing(x.Value).ToList());
     }
 
     private string ParseSectionName(string line) {
@@ -51,15 +51,15 @@ namespace VsChromiumCore.Configuration {
 
     public IEnumerable<string> ReadSection(string name, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
       try {
-        this._postProcessing = postProcessing;
+        _postProcessing = postProcessing;
         List<string> section;
-        if (!this._sections.Value.TryGetValue(name, out section))
+        if (!_sections.Value.TryGetValue(name, out section))
           return Enumerable.Empty<string>();
 
         return section;
       }
       finally {
-        this._postProcessing = null;
+        _postProcessing = null;
       }
     }
   }

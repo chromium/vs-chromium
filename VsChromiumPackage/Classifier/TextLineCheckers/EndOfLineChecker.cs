@@ -23,11 +23,11 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (this._chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
         var lineBreak = line.GetLineBreakText();
         if (lineBreak.Length > 0 && lineBreak != "\n") {
           var fragment = line.GetFragment(line.End.Position - 1, line.EndIncludingLineBreak.Position,
-              TextLineFragment.Options.IncludeLineBreak);
+                                          TextLineFragment.Options.IncludeLineBreak);
           yield return new TextLineCheckerError {
             Span = fragment.SnapshotSpan,
             Message = "Line breaks should be \"unix\" (i.e. LF) style only.",

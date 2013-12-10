@@ -34,6 +34,7 @@ namespace VsChromiumCore.Debugger {
       public DEBUG_EVENT_CODE DebugEventCode;
       public int ProcessId;
       public int ThreadId;
+
       [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1024)]
       public byte[] Data;
     }

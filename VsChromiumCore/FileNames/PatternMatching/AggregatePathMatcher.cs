@@ -20,12 +20,12 @@ namespace VsChromiumCore.FileNames.PatternMatching {
       if (path == null)
         throw new ArgumentNullException("path");
 
-      if (this._fileExtensions.Contains(Path.GetExtension(path)))
+      if (_fileExtensions.Contains(Path.GetExtension(path)))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"
-      for (var index = 0; index < this._pathMatchers.Length; index++) {
-        if (this._pathMatchers[index].MatchDirectoryName(path, comparer))
+      for (var index = 0; index < _pathMatchers.Length; index++) {
+        if (_pathMatchers[index].MatchDirectoryName(path, comparer))
           return true;
       }
       return false;
@@ -35,12 +35,12 @@ namespace VsChromiumCore.FileNames.PatternMatching {
       if (path == null)
         throw new ArgumentNullException("path");
 
-      if (this._fileExtensions.Contains(Path.GetExtension(path)))
+      if (_fileExtensions.Contains(Path.GetExtension(path)))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"
-      for (var index = 0; index < this._pathMatchers.Length; index++) {
-        if (this._pathMatchers[index].MatchFileName(path, comparer))
+      for (var index = 0; index < _pathMatchers.Length; index++) {
+        if (_pathMatchers[index].MatchFileName(path, comparer))
           return true;
       }
       return false;
@@ -59,18 +59,18 @@ namespace VsChromiumCore.FileNames.PatternMatching {
         }
       }
 
-      this._pathMatchers = pathMatchers.ToArray();
-      this._fileExtensions = fileExtensions;
+      _pathMatchers = pathMatchers.ToArray();
+      _fileExtensions = fileExtensions;
     }
 
     private bool IsFileExtension(PathMatcher pathMatcher, out string ext) {
       ext = "";
       var result =
-          pathMatcher.Operators.Count == 3 &&
-              pathMatcher.Operators[0] is OpRelativeDirectory &&
-              pathMatcher.Operators[1] is OpAsterisk &&
-              pathMatcher.Operators[2] is OpText &&
-              IsFileExtensionString(((OpText)pathMatcher.Operators[2]).Text);
+        pathMatcher.Operators.Count == 3 &&
+        pathMatcher.Operators[0] is OpRelativeDirectory &&
+        pathMatcher.Operators[1] is OpAsterisk &&
+        pathMatcher.Operators[2] is OpText &&
+        IsFileExtensionString(((OpText)pathMatcher.Operators[2]).Text);
       if (result)
         ext = ((OpText)pathMatcher.Operators[2]).Text;
       return result;

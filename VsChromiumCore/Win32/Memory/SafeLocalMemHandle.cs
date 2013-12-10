@@ -6,13 +6,13 @@ using System;
 using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Memory {
-  internal sealed class SafeLocalMemHandle : SafeHandleZeroOrMinusOneIsInvalid {
+  sealed class SafeLocalMemHandle : SafeHandleZeroOrMinusOneIsInvalid {
     public SafeLocalMemHandle()
-        : base(true) {
+      : base(true) {
     }
 
     public SafeLocalMemHandle(IntPtr existingHandle, bool ownsHandle)
-        : base(ownsHandle) {
+      : base(ownsHandle) {
       base.SetHandle(existingHandle);
     }
 

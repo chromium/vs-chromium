@@ -13,22 +13,10 @@ namespace VsChromiumCore.FileNames {
   public class CaseSensitivePathComparer : IPathComparer {
     private static readonly CaseSensitivePathComparer _theInstance = new CaseSensitivePathComparer();
 
-    public static IPathComparer Instance {
-      get {
-        return _theInstance;
-      }
-    }
+    public static IPathComparer Instance { get { return _theInstance; } }
 
-    public StringComparer Comparer {
-      get {
-        return StringComparer.Ordinal;
-      }
-    }
+    public StringComparer Comparer { get { return StringComparer.Ordinal; } }
 
-    public StringComparison Comparison {
-      get {
-        return StringComparison.Ordinal;
-      }
-    }
+    public StringComparison Comparison { get { return StringComparison.Ordinal; } }
   }
 }

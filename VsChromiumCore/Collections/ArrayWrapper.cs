@@ -14,28 +14,24 @@ namespace VsChromiumCore.Collections {
 
     public ArrayWrapper(IEnumerable<T> source) {
       if (source is List<T>) {
-        this._sourceList = (List<T>)source;
-        this._count = this._sourceList.Count;
+        _sourceList = (List<T>)source;
+        _count = _sourceList.Count;
       } else {
         if (source is T[])
-          this._sourceArray = (T[])source;
+          _sourceArray = (T[])source;
         else
-          this._sourceArray = source.ToArray();
-        this._count = this._sourceArray.Length;
+          _sourceArray = source.ToArray();
+        _count = _sourceArray.Length;
       }
     }
 
-    public int Count {
-      get {
-        return this._count;
-      }
-    }
+    public int Count { get { return _count; } }
 
     public void CopyTo(int index, T[] array, int arrayIndex, int count) {
-      if (this._sourceList != null)
-        this._sourceList.CopyTo(index, array, arrayIndex, count);
+      if (_sourceList != null)
+        _sourceList.CopyTo(index, array, arrayIndex, count);
       else
-        Array.Copy(this._sourceArray, index, array, arrayIndex, count);
+        Array.Copy(_sourceArray, index, array, arrayIndex, count);
     }
   }
 }

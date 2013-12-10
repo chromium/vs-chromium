@@ -10,11 +10,7 @@ namespace VsChromiumCore.Win32.Memory {
     private static readonly SafeHeapHandle _processHeap = NativeMethods.GetProcessHeap();
     private static long _totalMemory;
 
-    public static long TotalMemory {
-      get {
-        return _totalMemory;
-      }
-    }
+    public static long TotalMemory { get { return _totalMemory; } }
 
     public static SafeHeapBlockHandle Alloc(long size) {
       IntPtr block = NativeMethods.HeapAlloc(_processHeap, HeapFlags.Default, new IntPtr(size));

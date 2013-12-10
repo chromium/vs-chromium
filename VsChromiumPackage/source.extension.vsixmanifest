@@ -2,8 +2,8 @@
 <Vsix xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
   <Identifier Id="VsChromiumPackage..3658a9c7-c98d-48eb-8144-53385ed9f11c">
     <Name>Vs Chromium</Name>
-    <Author>rpaquay@chromium.org</Author>
-    <Version>0.1.3</Version>
+    <Author>The Chromium Authors</Author>
+    <Version>0.2.0</Version>
     <Description xml:space="preserve">Collection of tools to help contributing code to the Chromium project.</Description>
     <Locale>1033</Locale>
     <License>LICENSE</License>

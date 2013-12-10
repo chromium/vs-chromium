@@ -26,21 +26,13 @@ namespace VsChromiumServer.Search {
       : base(utcLastWriteTime) {
       if (textOffset > heap.ByteLength)
         throw new ArgumentException("Text offset is too far in buffer", "textOffset");
-      this._heap = heap;
-      this._textOffset = textOffset;
+      _heap = heap;
+      _textOffset = textOffset;
     }
 
-    public override long ByteLength {
-      get {
-        return this._heap.ByteLength - this._textOffset;
-      }
-    }
+    public override long ByteLength { get { return _heap.ByteLength - _textOffset; } }
 
-    public IntPtr Pointer {
-      get {
-        return this._heap.Pointer + this._textOffset;
-      }
-    }
+    public IntPtr Pointer { get { return _heap.Pointer + _textOffset; } }
 
     public static AsciiStringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
       if (pattern.Length <= 64)
@@ -50,11 +42,11 @@ namespace VsChromiumServer.Search {
     }
 
     public override List<int> Search(SearchContentsData searchContentsData) {
-      if (searchContentsData.Text.Length > this.ByteLength)
+      if (searchContentsData.Text.Length > ByteLength)
         return NoPositions;
 
       // TODO(rpaquay): We are limited to 2GB for now.
-      return searchContentsData.AsciiStringSearchAlgo.SearchAll(this.Pointer, (int)this.ByteLength).ToList();
+      return searchContentsData.AsciiStringSearchAlgo.SearchAll(Pointer, (int)ByteLength).ToList();
     }
 
     public override FileExtract SpanToLineExtract(FilePositionSpan filePositionSpan) {
@@ -62,8 +54,8 @@ namespace VsChromiumServer.Search {
     }
 
     public unsafe FileExtract SpanToLineExtractWorker(FilePositionSpan filePositionSpan) {
-      var blockStart = Pointers.Add(this._heap.Pointer, this._textOffset);
-      var blockEnd = Pointers.Add(this._heap.Pointer, this._heap.ByteLength);
+      var blockStart = Pointers.Add(_heap.Pointer, _textOffset);
+      var blockEnd = Pointers.Add(_heap.Pointer, _heap.ByteLength);
       var textPosition = Pointers.Add(blockStart, filePositionSpan.Position);
       if (textPosition < blockStart || textPosition >= blockEnd)
         return null;
@@ -105,7 +97,7 @@ namespace VsChromiumServer.Search {
       return Tuple.Create(lineNumber, columnNumber);
     }
 
-    private unsafe static byte* GetLineStart(byte* start, byte* end, byte* position, int count) {
+    private static unsafe byte* GetLineStart(byte* start, byte* end, byte* position, int count) {
       var result = position;
       while (true) {
         if (count <= 0)
@@ -123,7 +115,7 @@ namespace VsChromiumServer.Search {
       return result;
     }
 
-    private unsafe static byte* GetLineEnd(byte* start, byte* end, byte* position, int count) {
+    private static unsafe byte* GetLineEnd(byte* start, byte* end, byte* position, int count) {
       var result = position;
       while (true) {
         if (count <= 0)

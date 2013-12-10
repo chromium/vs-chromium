@@ -31,7 +31,7 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (this._chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
         var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
         foreach (var point in fragment.GetPoints()) {
           if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
@@ -57,8 +57,8 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
       };
 
       var match = markers
-          .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
-          .FirstOrDefault();
+        .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
+        .FirstOrDefault();
       if (match != null) {
         // If last character of line is not "{", we are good
         var end = line.GetFragment(line.End.Position - 1, line.End.Position, TextLineFragment.Options.Default);

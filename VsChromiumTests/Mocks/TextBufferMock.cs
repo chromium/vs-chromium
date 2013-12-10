@@ -1,13 +1,17 @@
-﻿using System;
+﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 
 namespace VsChromiumTests.Mocks {
-  internal class TextBufferMock : ITextBuffer {
+  class TextBufferMock : ITextBuffer {
     private readonly TextSnapshotMock _currentSnapshot;
 
     public TextBufferMock(string text) {
-      this._currentSnapshot = new TextSnapshotMock(this, text);
+      _currentSnapshot = new TextSnapshotMock(this, text);
     }
 
     public PropertyCollection Properties { get; private set; }
@@ -69,69 +73,20 @@ namespace VsChromiumTests.Mocks {
     }
 
     public IContentType ContentType { get { throw new NotImplementedException(); } }
-    public ITextSnapshot CurrentSnapshot { get { return this._currentSnapshot; } }
-    public bool EditInProgress { get{ throw new NotImplementedException(); } }
-    public event EventHandler<SnapshotSpanEventArgs> ReadOnlyRegionsChanged {
-      add {
-        throw new NotImplementedException();
-      }
-      remove {
-        throw new NotImplementedException();
-      }
-    }
+    public ITextSnapshot CurrentSnapshot { get { return _currentSnapshot; } }
+    public bool EditInProgress { get { throw new NotImplementedException(); } }
+    public event EventHandler<SnapshotSpanEventArgs> ReadOnlyRegionsChanged { add { throw new NotImplementedException(); } remove { throw new NotImplementedException(); } }
 
-    public event EventHandler<TextContentChangedEventArgs> Changed {
-      add {
-        throw new NotImplementedException();
-      }
-      remove {
-        throw new NotImplementedException();
-      }
-    }
+    public event EventHandler<TextContentChangedEventArgs> Changed { add { throw new NotImplementedException(); } remove { throw new NotImplementedException(); } }
 
-    public event EventHandler<TextContentChangedEventArgs> ChangedLowPriority {
-      add {
-        throw new NotImplementedException();
-      }
-      remove {
-        throw new NotImplementedException();
-      }
-    }
+    public event EventHandler<TextContentChangedEventArgs> ChangedLowPriority { add { throw new NotImplementedException(); } remove { throw new NotImplementedException(); } }
 
-    public event EventHandler<TextContentChangedEventArgs> ChangedHighPriority {
-      add {
-        throw new NotImplementedException();
-      }
-      remove {
-        throw new NotImplementedException();
-      }
-    }
+    public event EventHandler<TextContentChangedEventArgs> ChangedHighPriority { add { throw new NotImplementedException(); } remove { throw new NotImplementedException(); } }
 
-    public event EventHandler<TextContentChangingEventArgs> Changing {
-      add {
-        throw new NotImplementedException();
-      }
-      remove {
-        throw new NotImplementedException();
-      }
-    }
+    public event EventHandler<TextContentChangingEventArgs> Changing { add { throw new NotImplementedException(); } remove { throw new NotImplementedException(); } }
 
-    public event EventHandler PostChanged {
-      add {
-        throw new NotImplementedException();
-      }
-      remove {
-        throw new NotImplementedException();
-      }
-    }
+    public event EventHandler PostChanged { add { throw new NotImplementedException(); } remove { throw new NotImplementedException(); } }
 
-    public event EventHandler<ContentTypeChangedEventArgs> ContentTypeChanged {
-      add {
-        throw new NotImplementedException();
-      }
-      remove {
-        throw new NotImplementedException();
-      }
-    }
+    public event EventHandler<ContentTypeChangedEventArgs> ContentTypeChanged { add { throw new NotImplementedException(); } remove { throw new NotImplementedException(); } }
   }
 }

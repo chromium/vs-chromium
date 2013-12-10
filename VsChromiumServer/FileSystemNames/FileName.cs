@@ -8,13 +8,13 @@ using VsChromiumCore.FileNames;
 namespace VsChromiumServer.FileSystemNames {
   public class FileName : FileSystemName, IEquatable<FileName> {
     public FileName(DirectoryName parent, string name)
-        : base(parent, name) {
+      : base(parent, name) {
       if (parent == null)
         throw new ArgumentNullException("parent");
     }
 
     public FileName(DirectoryName parent, RelativePathName relativePathName)
-        : base(parent, relativePathName) {
+      : base(parent, relativePathName) {
       if (parent == null)
         throw new ArgumentNullException("parent");
     }

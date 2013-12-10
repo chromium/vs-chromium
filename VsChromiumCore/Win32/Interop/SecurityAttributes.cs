@@ -8,7 +8,7 @@ using VsChromiumCore.Win32.Memory;
 
 namespace VsChromiumCore.Win32.Interop {
   [StructLayout(LayoutKind.Sequential)]
-  internal class SecurityAttributes {
+  class SecurityAttributes {
     public int nLength = 12;
     public SafeLocalMemHandle lpSecurityDescriptor = new SafeLocalMemHandle(IntPtr.Zero, false);
     public bool bInheritHandle;

@@ -26,25 +26,21 @@ namespace VsChromiumCore.Processes {
     private readonly ProcessResult _processResult;
 
     public ProcessProxy(ProcessResult processResult, DebuggerObject debuggerObject) {
-      this._process = System.Diagnostics.Process.GetProcessById(processResult.ProcessId);
-      this._processResult = processResult;
-      this._debuggerObject = debuggerObject;
+      _process = System.Diagnostics.Process.GetProcessById(processResult.ProcessId);
+      _processResult = processResult;
+      _debuggerObject = debuggerObject;
     }
 
-    public ProcessResult Process {
-      get {
-        return this._processResult;
-      }
-    }
+    public ProcessResult Process { get { return _processResult; } }
 
     public void Dispose() {
-      if (this._debuggerObject != null) {
-        this._debuggerObject.Dispose();
+      if (_debuggerObject != null) {
+        _debuggerObject.Dispose();
       }
 
-      if (!this._process.HasExited) {
-        this._process.Kill();
-        this._process.WaitForExit();
+      if (!_process.HasExited) {
+        _process.Kill();
+        _process.WaitForExit();
       }
     }
   }
@@ -56,10 +52,6 @@ namespace VsChromiumCore.Processes {
     internal SafeProcessHandle ProcessHandle { get; set; }
     public int ProcessId { get; set; }
 
-    public IntPtr Handle {
-      get {
-        return ProcessHandle.DangerousGetHandle();
-      }
-    }
+    public IntPtr Handle { get { return ProcessHandle.DangerousGetHandle(); } }
   }
 }

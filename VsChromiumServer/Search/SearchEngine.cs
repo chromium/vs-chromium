@@ -37,24 +37,24 @@ namespace VsChromiumServer.Search {
 
     [ImportingConstructor]
     public SearchEngine(
-        IFileSystemProcessor fileSystemProcessor,
-        IFileSystemNameFactory fileSystemNameFactory,
-        ICustomThreadPool customThreadPool,
-        IFileContentsFactory fileContentsFactory,
-        IOperationIdFactory operationIdFactory,
-        IProgressTrackerFactory progressTrackerFactory,
-        IProjectDiscovery projectDiscovery) {
-      this._fileSystemNameFactory = fileSystemNameFactory;
-      this._customThreadPool = customThreadPool;
-      this._fileContentsFactory = fileContentsFactory;
-      this._operationIdFactory = operationIdFactory;
-      this._progressTrackerFactory = progressTrackerFactory;
-      this._projectDiscovery = projectDiscovery;
+      IFileSystemProcessor fileSystemProcessor,
+      IFileSystemNameFactory fileSystemNameFactory,
+      ICustomThreadPool customThreadPool,
+      IFileContentsFactory fileContentsFactory,
+      IOperationIdFactory operationIdFactory,
+      IProgressTrackerFactory progressTrackerFactory,
+      IProjectDiscovery projectDiscovery) {
+      _fileSystemNameFactory = fileSystemNameFactory;
+      _customThreadPool = customThreadPool;
+      _fileContentsFactory = fileContentsFactory;
+      _operationIdFactory = operationIdFactory;
+      _progressTrackerFactory = progressTrackerFactory;
+      _projectDiscovery = projectDiscovery;
 
       // Create a "Null" state
-      this._currentState = new FileDatabase(this._projectDiscovery, this._fileSystemNameFactory,
-          this._fileContentsFactory, this._progressTrackerFactory);
-      this._currentState.Freeze();
+      _currentState = new FileDatabase(_projectDiscovery, _fileSystemNameFactory,
+                                       _fileContentsFactory, _progressTrackerFactory);
+      _currentState.Freeze();
 
       // Setup computing a new state everytime a new tree is computed.
       fileSystemProcessor.TreeComputed += FileSystemProcessorOnTreeComputed;
@@ -70,13 +70,13 @@ namespace VsChromiumServer.Search {
       // to avoid using too many CPU resources if the caller keeps asking us to search for
       // things. Note that this assumes the caller is only interested in the result of
       // the *last* query, while the previous queries will throw an OperationCanceled exception.
-      this._taskCancellation.CancelAll();
+      _taskCancellation.CancelAll();
 
-      var matches = this._currentState.FileNames
+      var matches = _currentState.FileNames
         .AsParallel()
         // We need the line below because of "Take" (.net 4.0 PLinq limitation)
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        .WithCancellation(this._taskCancellation.GetNewToken())
+        .WithCancellation(_taskCancellation.GetNewToken())
         .Where(item => matchFunction(item))
         .Take(searchParams.MaxResults)
         .ToList();
@@ -86,7 +86,7 @@ namespace VsChromiumServer.Search {
 
     public IEnumerable<DirectoryName> SearchDirectoryNames(SearchParams searchParams) {
       var matchFunction = SearchPreProcessParams<DirectoryName>(searchParams, MatchDirectoryName,
-          MatchDirectoryRelativePath);
+                                                                MatchDirectoryRelativePath);
       if (matchFunction == null)
         return Enumerable.Empty<DirectoryName>();
 
@@ -94,16 +94,16 @@ namespace VsChromiumServer.Search {
       // to avoid using too many CPU resources if the caller keeps asking us to search for
       // things. Note that this assumes the caller is only interested in the result of
       // the *last* query, while the previous queries will throw an OperationCanceled exception.
-      this._taskCancellation.CancelAll();
+      _taskCancellation.CancelAll();
 
-      var matches = this._currentState.DirectoryNames
-          .AsParallel()
+      var matches = _currentState.DirectoryNames
+        .AsParallel()
         // We need the line below because of "Take" (.net 4.0 PLinq limitation)
-          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-          .WithCancellation(this._taskCancellation.GetNewToken())
-          .Where(item => matchFunction(item))
-          .Take(searchParams.MaxResults)
-          .ToList();
+        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+        .WithCancellation(_taskCancellation.GetNewToken())
+        .Where(item => matchFunction(item))
+        .Take(searchParams.MaxResults)
+        .ToList();
 
       return matches;
     }
@@ -122,7 +122,7 @@ namespace VsChromiumServer.Search {
       // to avoid using too many CPU resources if the caller keeps asking us to search for
       // things. Note that this assumes the caller is only interested in the result of
       // the *last* query, while the previous queries will throw an OperationCanceled exception.
-      this._taskCancellation.CancelAll();
+      _taskCancellation.CancelAll();
 
       using (var searchTextUniPtr = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(searchParams.SearchString)))
       using (var searchAlgo = AsciiFileContents.CreateSearchAlgo(searchParams.SearchString, searchParams.MatchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone)) {
@@ -132,25 +132,25 @@ namespace VsChromiumServer.Search {
           AsciiStringSearchAlgo = searchAlgo,
         };
         var taskResults = new TaskResultCounter(searchParams.MaxResults);
-        var matches = this._currentState.FilesWithContents
-            .AsParallel()
-            .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-            .WithCancellation(this._taskCancellation.GetNewToken())
-            .Where(x => !taskResults.Done)
-            .Select(item => MatchFileContents(taskResults, searchInfo, item))
-            .Where(r => r != null)
-            .ToList();
+        var matches = _currentState.FilesWithContents
+          .AsParallel()
+          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+          .WithCancellation(_taskCancellation.GetNewToken())
+          .Where(x => !taskResults.Done)
+          .Select(item => MatchFileContents(taskResults, searchInfo, item))
+          .Where(r => r != null)
+          .ToList();
         return matches;
       }
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(string path, IEnumerable<FilePositionSpan> spans) {
-      var filename = this._fileSystemNameFactory.PathToFileName(this._projectDiscovery, path);
+      var filename = _fileSystemNameFactory.PathToFileName(_projectDiscovery, path);
       if (filename == null)
         return Enumerable.Empty<FileExtract>();
 
       FileData fileData;
-      if (!this._currentState.Files.TryGetValue(filename, out fileData))
+      if (!_currentState.Files.TryGetValue(filename, out fileData))
         return Enumerable.Empty<FileExtract>();
 
       if (fileData.Contents == null)
@@ -163,36 +163,36 @@ namespace VsChromiumServer.Search {
     public event Action<long> FilesLoaded;
 
     private void FileSystemProcessorOnFilesChanged(IEnumerable<FileName> paths) {
-      this._customThreadPool.RunAsync(() => UpdateFileContents(paths));
+      _customThreadPool.RunAsync(() => UpdateFileContents(paths));
     }
 
     private void UpdateFileContents(IEnumerable<FileName> paths) {
-      var operationId = this._operationIdFactory.GetNextId();
+      var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
       // Concurrency: We capture the current state reference locally.
       // We may update the FileContents value of some entries, but we
       // ensure we do not update collections and so on. So, all in all,
       // it is safe to make this change "lock free".
-      var state = this._currentState;
+      var state = _currentState;
       paths
-          .Where(x => this._projectDiscovery.IsFileSearchable(x))
-          .ForAll(x => {
-            FileData fileData;
-            if (state.Files.TryGetValue(x, out fileData)) {
-              fileData.UpdateContents(this._fileContentsFactory.GetFileContents(x.GetFullName()));
-            }
-          });
+        .Where(x => _projectDiscovery.IsFileSearchable(x))
+        .ForAll(x => {
+          FileData fileData;
+          if (state.Files.TryGetValue(x, out fileData)) {
+            fileData.UpdateContents(_fileContentsFactory.GetFileContents(x.GetFullName()));
+          }
+        });
       OnFilesLoaded(operationId);
     }
 
     private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemTree oldTree, FileSystemTree newTree) {
-      this._customThreadPool.RunAsync(() => ComputeNewState(newTree));
+      _customThreadPool.RunAsync(() => ComputeNewState(newTree));
     }
 
     private Func<T, bool> SearchPreProcessParams<T>(
-        SearchParams searchParams,
-        Func<IPathMatcher, T, IPathComparer, bool> matchName,
-        Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
+      SearchParams searchParams,
+      Func<IPathMatcher, T, IPathComparer, bool> matchName,
+      Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
       var pattern = ConvertUserSearchStringToSearchPattern(searchParams);
       if (pattern == null)
         return null;
@@ -200,8 +200,8 @@ namespace VsChromiumServer.Search {
       var matcher = FileNameMatching.ParsePattern(pattern);
 
       var comparer = searchParams.MatchCase ?
-        CaseSensitivePathComparer.Instance :
-        CaseInsensitivePathComparer.Instance;
+                       CaseSensitivePathComparer.Instance :
+                       CaseInsensitivePathComparer.Instance;
       if (pattern.Contains(Path.DirectorySeparatorChar))
         return (item) => matchRelativeName(matcher, item, comparer);
       else
@@ -230,25 +230,25 @@ namespace VsChromiumServer.Search {
     }
 
     private void ComputeNewState(FileSystemTree newTree) {
-      var operationId = this._operationIdFactory.GetNextId();
+      var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
 
       Logger.Log("++++ Computing new state of file database from file system tree. ++++");
       var sw = Stopwatch.StartNew();
 
-      var oldState = this._currentState;
-      var newState = new FileDatabase(this._projectDiscovery, this._fileSystemNameFactory,
-          this._fileContentsFactory, this._progressTrackerFactory);
+      var oldState = _currentState;
+      var newState = new FileDatabase(_projectDiscovery, _fileSystemNameFactory,
+                                      _fileContentsFactory, _progressTrackerFactory);
       newState.ComputeState(newTree, oldState);
 
       sw.Stop();
       Logger.Log("++++ Done computing new state of file database from file system tree in {0:n0} msec. ++++",
-          sw.ElapsedMilliseconds);
+                 sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
       // Swap states
-      lock (this._lock) {
-        this._currentState = newState;
+      lock (_lock) {
+        _currentState = newState;
       }
 
       OnFilesLoaded(operationId);
@@ -279,9 +279,9 @@ namespace VsChromiumServer.Search {
     }
 
     private static FileSearchResult MatchFileContents(
-        TaskResultCounter taskResultCounter,
-        SearchContentsData searchContentsData,
-        FileData item) {
+      TaskResultCounter taskResultCounter,
+      SearchContentsData searchContentsData,
+      FileData item) {
       var positions = item.Contents.Search(searchContentsData);
       if (positions.Count == 0)
         return null;

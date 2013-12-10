@@ -17,35 +17,31 @@ namespace VsChromiumCore.Win32.Files {
     private int _win32Error = -1;
 
     public SlimFileInfo(string path) {
-      this._path = path;
+      _path = path;
     }
 
     public bool Exists {
       get {
         EnsureFileAttribues(false);
-        return this._win32Error == 0;
+        return _win32Error == 0;
       }
     }
 
     public long Length {
       get {
         EnsureFileAttribues(true);
-        return HighLowToLong(this._data.fileSizeHigh, this._data.fileSizeLow);
+        return HighLowToLong(_data.fileSizeHigh, _data.fileSizeLow);
       }
     }
 
     public DateTime LastWriteTimeUtc {
       get {
         EnsureFileAttribues(true);
-        return DateTime.FromFileTimeUtc(HighLowToLong(this._data.ftLastWriteTimeHigh, this._data.ftLastWriteTimeLow));
+        return DateTime.FromFileTimeUtc(HighLowToLong(_data.ftLastWriteTimeHigh, _data.ftLastWriteTimeLow));
       }
     }
 
-    public string FullName {
-      get {
-        return this._path;
-      }
-    }
+    public string FullName { get { return _path; } }
 
     private long HighLowToLong(int high, int low) {
       return HighLowToLong((uint)high, (uint)low);
@@ -56,17 +52,17 @@ namespace VsChromiumCore.Win32.Files {
     }
 
     private void EnsureFileAttribues(bool throwOnError) {
-      if (this._win32Error == -1)
+      if (_win32Error == -1)
         Refresh();
 
-      if (this._win32Error != 0 && throwOnError)
-        throw new Win32Exception(this._win32Error);
+      if (_win32Error != 0 && throwOnError)
+        throw new Win32Exception(_win32Error);
     }
 
     private void Refresh() {
-      if (!NativeMethods.GetFileAttributesEx(this._path, 0, ref this._data))
-        this._win32Error = Marshal.GetLastWin32Error();
-      this._win32Error = 0;
+      if (!NativeMethods.GetFileAttributesEx(_path, 0, ref _data))
+        _win32Error = Marshal.GetLastWin32Error();
+      _win32Error = 0;
     }
   }
 }

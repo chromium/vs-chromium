@@ -11,27 +11,19 @@ namespace VsChromiumServer.Search {
     private readonly string _text;
 
     public StringFileContents(string text)
-        : base(DateTime.MinValue) {
-      this._text = text;
+      : base(DateTime.MinValue) {
+      _text = text;
     }
 
-    public override long ByteLength {
-      get {
-        return this._text.Length * 2;
-      }
-    }
+    public override long ByteLength { get { return _text.Length * 2; } }
 
-    public static StringFileContents Empty {
-      get {
-        return _empty;
-      }
-    }
+    public static StringFileContents Empty { get { return _empty; } }
 
     public override List<int> Search(SearchContentsData searchContentsData) {
       List<int> result = null;
       var index = 0;
       while (true) {
-        var newIndex = this._text.IndexOf(searchContentsData.Text, index, StringComparison.Ordinal);
+        var newIndex = _text.IndexOf(searchContentsData.Text, index, StringComparison.Ordinal);
         if (newIndex < 0)
           break;
 

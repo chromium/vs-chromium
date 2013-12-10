@@ -9,14 +9,10 @@ namespace VsChromiumServer.ProgressTracking {
     private readonly int _totalStepCount;
 
     public ProgressTracker(ITypedEventSender typedEventSender, int totalStepCount)
-        : base(typedEventSender) {
-      this._totalStepCount = totalStepCount;
+      : base(typedEventSender) {
+      _totalStepCount = totalStepCount;
     }
 
-    public override int TotalStepCount {
-      get {
-        return this._totalStepCount;
-      }
-    }
+    public override int TotalStepCount { get { return _totalStepCount; } }
   }
 }

@@ -17,31 +17,23 @@ namespace VsChromiumPackage.Views {
     private readonly IGlyphService _glyphService;
 
     private readonly ConcurrentDictionary<string, BitmapImage> _images =
-        new ConcurrentDictionary<string, BitmapImage>(SystemPathComparer.Instance.Comparer);
+      new ConcurrentDictionary<string, BitmapImage>(SystemPathComparer.Instance.Comparer);
 
     [ImportingConstructor]
     public StandarImageSourceFactory(IGlyphService glyphService) {
-      this._glyphService = glyphService;
+      _glyphService = glyphService;
     }
 
-    public ImageSource OpenFolder {
-      get {
-        return this._glyphService.GetGlyph(StandardGlyphGroup.GlyphOpenFolder, StandardGlyphItem.GlyphItemPublic);
-      }
-    }
+    public ImageSource OpenFolder { get { return _glyphService.GetGlyph(StandardGlyphGroup.GlyphOpenFolder, StandardGlyphItem.GlyphItemPublic); } }
 
-    public ImageSource ClosedFolder {
-      get {
-        return this._glyphService.GetGlyph(StandardGlyphGroup.GlyphClosedFolder, StandardGlyphItem.GlyphItemPublic);
-      }
-    }
+    public ImageSource ClosedFolder { get { return _glyphService.GetGlyph(StandardGlyphGroup.GlyphClosedFolder, StandardGlyphItem.GlyphItemPublic); } }
 
     public ImageSource GetImageForDocument(string path) {
       return GetImage("TextDocument");
     }
 
     public ImageSource GetImage(string resourceName) {
-      return this._images.GetOrAdd(resourceName, s => {
+      return _images.GetOrAdd(resourceName, s => {
         var bitmapImage = new BitmapImage();
         bitmapImage.BeginInit();
         bitmapImage.UriSource = GetUri(string.Format("Views/Images/{0}.png", resourceName));
@@ -52,7 +44,7 @@ namespace VsChromiumPackage.Views {
 
     private static Uri GetUri(string filePath) {
       var uriString = string.Format("/{0};component/{1}",
-          Assembly.GetExecutingAssembly().GetName().Name, filePath);
+                                    Assembly.GetExecutingAssembly().GetName().Name, filePath);
       return new Uri(uriString, UriKind.Relative);
     }
   }

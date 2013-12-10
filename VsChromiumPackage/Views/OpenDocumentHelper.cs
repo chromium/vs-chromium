@@ -18,7 +18,7 @@ using VsChromiumCore;
 
 namespace VsChromiumPackage.Views {
   [Export(typeof(IOpenDocumentHelper))]
-  internal class OpenDocumentHelper : IOpenDocumentHelper {
+  class OpenDocumentHelper : IOpenDocumentHelper {
     [Import]
     private IVsEditorAdaptersFactoryService _editorAdaptersFactory = null;
 
@@ -57,8 +57,8 @@ namespace VsChromiumPackage.Views {
       IVsUIHierarchy vsUIHierarchy;
       uint num;
       IVsTextView vsTextView;
-      VsShellUtilities.OpenDocument(this._serviceProvider, fileName, Guid.Empty,
-          out vsUIHierarchy, out num, out result, out vsTextView);
+      VsShellUtilities.OpenDocument(_serviceProvider, fileName, Guid.Empty,
+                                    out vsUIHierarchy, out num, out result, out vsTextView);
       return result;
     }
 
@@ -67,7 +67,7 @@ namespace VsChromiumPackage.Views {
       if (vsTextView == null) {
         return false;
       }
-      var wpfTextView = this._editorAdaptersFactory.GetWpfTextView(vsTextView);
+      var wpfTextView = _editorAdaptersFactory.GetWpfTextView(vsTextView);
       var start = new SnapshotPoint(wpfTextView.TextSnapshot, span.Start);
       SelectSpan(wpfTextView, new SnapshotSpan(start, span.Length));
       return true;
@@ -75,18 +75,18 @@ namespace VsChromiumPackage.Views {
 
     private void SelectSpan(ITextView textView, SnapshotSpan snapshotSpan) {
       var source = textView.BufferGraph.MapUpToSnapshot(snapshotSpan, SpanTrackingMode.EdgeExclusive,
-          textView.TextSnapshot);
+                                                        textView.TextSnapshot);
       var span = source.First<SnapshotSpan>();
-      if (this._outliningManagerService != null) {
-        var outliningManager = this._outliningManagerService.GetOutliningManager(textView);
+      if (_outliningManagerService != null) {
+        var outliningManager = _outliningManagerService.GetOutliningManager(textView);
         if (outliningManager != null) {
           outliningManager.ExpandAll(span, (_) => true);
         }
       }
       var virtualSnapshotSpan = new VirtualSnapshotSpan(span);
-      this._editorOperationsFactory.GetEditorOperations(textView).SelectAndMoveCaret(
-          virtualSnapshotSpan.Start, virtualSnapshotSpan.End,
-          TextSelectionMode.Stream, EnsureSpanVisibleOptions.AlwaysCenter);
+      _editorOperationsFactory.GetEditorOperations(textView).SelectAndMoveCaret(
+        virtualSnapshotSpan.Start, virtualSnapshotSpan.End,
+        TextSelectionMode.Stream, EnsureSpanVisibleOptions.AlwaysCenter);
     }
 
     private static IVsTextView GetVsTextView(IVsWindowFrame windowFrame) {
@@ -105,11 +105,10 @@ namespace VsChromiumPackage.Views {
       if (vsCodeWindow == null)
         return null;
 
-      IVsTextView vsTextView2;
-      if (ErrorHandler.Failed(vsCodeWindow.GetPrimaryView(out vsTextView2)))
+      if (ErrorHandler.Failed(vsCodeWindow.GetPrimaryView(out vsTextView)))
         return null;
 
-      return vsTextView2;
+      return vsTextView;
     }
   }
 }

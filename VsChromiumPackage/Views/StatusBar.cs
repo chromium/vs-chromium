@@ -18,7 +18,7 @@ namespace VsChromiumPackage.Views {
 
     [ImportingConstructor]
     public StatusBar([Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider) {
-      this._serviceProvider = serviceProvider;
+      _serviceProvider = serviceProvider;
     }
 
     public void ReportProgress(string displayText, int completed, int total) {
@@ -28,10 +28,10 @@ namespace VsChromiumPackage.Views {
         return;
       }
 
-      if (this._statusBar == null) {
+      if (_statusBar == null) {
         Logger.Log("Starting progress of {0:n0} total operations.", total);
-        this._statusBar = this._serviceProvider.GetService(typeof(SVsStatusbar)) as IVsStatusbar;
-        if (this._statusBar == null)
+        _statusBar = _serviceProvider.GetService(typeof(SVsStatusbar)) as IVsStatusbar;
+        if (_statusBar == null)
           return;
       }
 
@@ -44,36 +44,36 @@ namespace VsChromiumPackage.Views {
 
     private void ShowIndterminateProgress(string displayText) {
       // Display the animated Visual Studio icon in the Animation region.
-      if (this._animationIcon == null) {
-        this._animationIcon = (short)Constants.SBAI_Find;
-        this._statusBar.Animation(1, ref this._animationIcon);
+      if (_animationIcon == null) {
+        _animationIcon = (short)Constants.SBAI_Find;
+        _statusBar.Animation(1, ref _animationIcon);
       }
 
-      this._statusBar.SetText(displayText);
+      _statusBar.SetText(displayText);
     }
 
     private void ShowProgress(string displayText, int completed, int total) {
-      this._statusBar.Progress(ref this._cookie, 1, displayText, (uint)completed, (uint)total);
+      _statusBar.Progress(ref _cookie, 1, displayText, (uint)completed, (uint)total);
     }
 
     private void StopProgress() {
-      if (this._statusBar == null)
+      if (_statusBar == null)
         return;
 
       // Clear the animation
-      if (this._animationIcon != null) {
-        this._statusBar.Animation(0, ref this._animationIcon);
-        this._statusBar.SetText("");
-        this._animationIcon = null;
+      if (_animationIcon != null) {
+        _statusBar.Animation(0, ref _animationIcon);
+        _statusBar.SetText("");
+        _animationIcon = null;
       }
 
       // Clear the progress bar.
-      if (this._cookie != 0) {
-        this._statusBar.Progress(ref this._cookie, 0, "", 0, 0);
-        this._cookie = 0;
+      if (_cookie != 0) {
+        _statusBar.Progress(ref _cookie, 0, "", 0, 0);
+        _cookie = 0;
       }
 
-      this._statusBar = null;
+      _statusBar = null;
     }
   }
 }

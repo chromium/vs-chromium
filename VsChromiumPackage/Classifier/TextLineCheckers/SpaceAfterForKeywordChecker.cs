@@ -26,7 +26,7 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (this._chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
         var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
         foreach (var point in fragment.GetPoints()) {
           if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
@@ -51,8 +51,8 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
       };
 
       return markers
-          .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
-          .FirstOrDefault();
+        .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
+        .FirstOrDefault();
     }
   }
 }

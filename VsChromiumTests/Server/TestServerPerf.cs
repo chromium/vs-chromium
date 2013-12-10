@@ -14,41 +14,32 @@ using VsChromiumCore.Ipc.ProtoBuf;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumPackage.Server;
 
-namespace VsChromiumTests.Server
-{
+namespace VsChromiumTests.Server {
   [TestClass]
-  public class TestServerPerf : TestServerBase
-  {
+  public class TestServerPerf : TestServerBase {
     [TestMethod]
     public void Dummy() {
     }
 
     //[TestMethod]
-    public void TestServer()
-    {
+    public void TestServer() {
       var testFile = GetChromiumEnlistmentFile();
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           // Send "AddFile" request, and wait for response.
-          var response1 = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest
-          {
+          var response1 = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {
             KnownVersion = -1
           }, ServerResponseTimeout)();
 
           // Send "AddFile" request, and wait for response.
           SendAddFileRequest(server, testFile, ServerResponseTimeout);
 
-          while (true)
-          {
-            var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest
-            {
+          while (true) {
+            var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {
               KnownVersion = -1
             }, ServerResponseTimeout)();
-            if (response != null && response.Tree.Version != response1.Tree.Version)
-            {
+            if (response != null && response.Tree.Version != response1.Tree.Version) {
               //DisplayTreeStats(container.GetExport<IProtoBufSerializer>().Value, response, false);
               TestSearch(server);
               break;
@@ -60,14 +51,10 @@ namespace VsChromiumTests.Server
       }
     }
 
-    private static void TestSearch(ITypedRequestProcessProxy server)
-    {
-      while (true)
-      {
-        var response = SendRequest<SearchFileNamesResponse>(server, new SearchFileNamesRequest
-        {
-          SearchParams =
-          {
+    private static void TestSearch(ITypedRequestProcessProxy server) {
+      while (true) {
+        var response = SendRequest<SearchFileNamesResponse>(server, new SearchFileNamesRequest {
+          SearchParams = {
             SearchString = "histogram"
           }
         }, ServerResponseTimeout)();
@@ -77,76 +64,58 @@ namespace VsChromiumTests.Server
         Thread.Sleep(500);
       }
 
-      while (true)
-      {
-        var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-        {
-          SearchParams =
-          {
+      while (true) {
+        var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+          SearchParams = {
             SearchString = "histogram"
           }
         }, ServerResponseTimeout)();
-        if (response != null && response.SearchResults != null && response.SearchResults.Entries.Count > 0)
-        {
+        if (response != null && response.SearchResults != null && response.SearchResults.Entries.Count > 0) {
           Trace.WriteLine(string.Format("Found {0} files matching search text.", response.SearchResults.Entries.Count));
           break;
         }
         Trace.WriteLine("It looks like the file indexer has not yet finished computing the new state.");
         Thread.Sleep(500);
       }
-      var response4 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-      {
-        SearchParams =
-        {
+      var response4 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response5 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-      {
-        SearchParams =
-        {
+      var response5 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response6 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-      {
-        SearchParams =
-        {
+      var response6 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response7 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-      {
-        SearchParams =
-        {
+      var response7 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response8 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-      {
-        SearchParams =
-        {
+      var response8 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response9 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest
-      {
-        SearchParams =
-        {
+      var response9 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(10.0))();
     }
 
-    private void DisplayTreeStats(IProtoBufSerializer serializer, GetFileSystemResponse response, bool verbose)
-    {
+    private void DisplayTreeStats(IProtoBufSerializer serializer, GetFileSystemResponse response, bool verbose) {
       Trace.WriteLine("=====================================================================");
       Trace.WriteLine("FileSystem tree stats:");
       {
         var mem = new MemoryStream();
         var sw = new Stopwatch();
-        var ipcResponse = new IpcResponse
-        {
+        var ipcResponse = new IpcResponse {
           RequestId = 0,
           Protocol = IpcProtocols.TypedMessage,
           Data = response
@@ -155,7 +124,7 @@ namespace VsChromiumTests.Server
         serializer.Serialize(mem, ipcResponse);
         sw.Stop();
         Trace.WriteLine(string.Format("ProtoBuf request of {0:n0} bytes serialized in {1} msec.", mem.Length,
-            sw.ElapsedMilliseconds));
+                                      sw.ElapsedMilliseconds));
       }
 
       var stats = new TreeStats();
@@ -163,52 +132,43 @@ namespace VsChromiumTests.Server
       Trace.WriteLine(string.Format("Directory count: {0:n0}", stats.DirectoryCount));
       Trace.WriteLine(string.Format("File count: {0:n0}", stats.FileCount));
       Trace.WriteLine(string.Format("Total File size: {0:n0} bytes", stats.TotalSize));
-      if (verbose)
-      {
+      if (verbose) {
         Trace.WriteLine("=====================================================================");
         Trace.WriteLine(" Files sorted by count");
-        foreach (var item in stats.Extensions.OrderByDescending(x => x.Value.FileCount))
-        {
+        foreach (var item in stats.Extensions.OrderByDescending(x => x.Value.FileCount)) {
           Trace.WriteLine(string.Format("Extension \"{0}\": {1:n0} files, {2:n0} bytes", item.Key.ToUpperInvariant(),
-              item.Value.FileCount, item.Value.TotalSize));
+                                        item.Value.FileCount, item.Value.TotalSize));
         }
 
         Trace.WriteLine("=====================================================================");
         Trace.WriteLine(" Files sorted by total length");
-        foreach (var item in stats.Extensions.OrderByDescending(x => x.Value.TotalSize))
-        {
+        foreach (var item in stats.Extensions.OrderByDescending(x => x.Value.TotalSize)) {
           Trace.WriteLine(string.Format("Extension \"{0}\": {2:n0} bytes, {1:n0} files", item.Key.ToUpperInvariant(),
-              item.Value.FileCount, item.Value.TotalSize));
+                                        item.Value.FileCount, item.Value.TotalSize));
         }
 
         OutputDirectorytree(0, "", stats.RootDirectory);
       }
     }
 
-    private void OutputDirectorytree(int indent, string parentPath, TreeStats.DirectoryItem entry)
-    {
-      if (entry.Name != null)
-      {
+    private void OutputDirectorytree(int indent, string parentPath, TreeStats.DirectoryItem entry) {
+      if (entry.Name != null) {
         var text = "";
-        for (var i = 0; i < indent; i++)
-        {
+        for (var i = 0; i < indent; i++) {
           text += "| ";
         }
         text += entry.Name;
         Trace.WriteLine(text);
       }
 
-      foreach (var x in entry.Children)
-      {
+      foreach (var x in entry.Children) {
         OutputDirectorytree(indent + 1, parentPath + entry.Name, x);
       }
     }
 
-    private class TreeStats
-    {
-      public TreeStats()
-      {
-        this.Extensions = new Dictionary<string, FileExtensionStats>();
+    private class TreeStats {
+      public TreeStats() {
+        Extensions = new Dictionary<string, FileExtensionStats>();
       }
 
       public int DirectoryCount { get; set; }
@@ -217,43 +177,35 @@ namespace VsChromiumTests.Server
       public Dictionary<string, FileExtensionStats> Extensions { get; set; }
       public DirectoryItem RootDirectory { get; set; }
 
-      public void ProcessTree(DirectoryItem parent, string parentPath, FileSystemEntry entry)
-      {
+      public void ProcessTree(DirectoryItem parent, string parentPath, FileSystemEntry entry) {
         if (entry is FileEntry)
           ProcessFile(parentPath, (FileEntry)entry);
         else
           ProcessDirectory(parent, parentPath, (DirectoryEntry)entry);
       }
 
-      private void ProcessDirectory(DirectoryItem parent, string parentPath, DirectoryEntry entry)
-      {
-        this.DirectoryCount++;
+      private void ProcessDirectory(DirectoryItem parent, string parentPath, DirectoryEntry entry) {
+        DirectoryCount++;
         DirectoryItem newParent;
         string newPath;
-        if (parent == null)
-        {
-          this.RootDirectory = new TreeStats.DirectoryItem();
-          newParent = this.RootDirectory;
+        if (parent == null) {
+          RootDirectory = new TreeStats.DirectoryItem();
+          newParent = RootDirectory;
           newPath = parentPath;
-        }
-        else
-        {
-          var newDir = new DirectoryItem
-          {
+        } else {
+          var newDir = new DirectoryItem {
             Name = entry.Name
           };
           parent.Children.Add(newDir);
           newParent = newDir;
           newPath = Path.Combine(parentPath, entry.Name);
         }
-        foreach (var x in entry.Entries)
-        {
+        foreach (var x in entry.Entries) {
           ProcessTree(newParent, newPath, x);
         }
       }
 
-      private void ProcessFile(string parentPath, FileEntry entry)
-      {
+      private void ProcessFile(string parentPath, FileEntry entry) {
         if (entry.Name == null)
           return;
 
@@ -266,20 +218,18 @@ namespace VsChromiumTests.Server
 
         var fileLength = fileInfo.Length;
         {
-          this.FileCount++;
-          this.TotalSize += fileLength;
+          FileCount++;
+          TotalSize += fileLength;
         }
 
         {
           var ext = Path.GetExtension(entry.Name);
-          if (!this.Extensions.ContainsKey(ext))
-          {
-            this.Extensions.Add(ext, new FileExtensionStats
-            {
+          if (!Extensions.ContainsKey(ext)) {
+            Extensions.Add(ext, new FileExtensionStats {
               Extension = ext
             });
           }
-          var stats = this.Extensions[ext];
+          var stats = Extensions[ext];
           stats.FileCount++;
           stats.TotalSize += fileLength;
           stats.Files.Add(fileInfo.FullName);
@@ -288,22 +238,18 @@ namespace VsChromiumTests.Server
         return;
       }
 
-      public class DirectoryItem
-      {
-        public DirectoryItem()
-        {
-          this.Children = new List<DirectoryItem>();
+      public class DirectoryItem {
+        public DirectoryItem() {
+          Children = new List<DirectoryItem>();
         }
 
         public string Name { get; set; }
         public List<DirectoryItem> Children { get; set; }
       }
 
-      public class FileExtensionStats
-      {
-        public FileExtensionStats()
-        {
-          this.Files = new List<string>();
+      public class FileExtensionStats {
+        public FileExtensionStats() {
+          Files = new List<string>();
         }
 
         public string Extension { get; set; }

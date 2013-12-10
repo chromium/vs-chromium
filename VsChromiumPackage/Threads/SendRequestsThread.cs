@@ -17,16 +17,16 @@ namespace VsChromiumPackage.Threads {
 
     [ImportingConstructor]
     public SendRequestsThread(IRequestQueue requestQueue) {
-      this._requestQeueue = requestQueue;
+      _requestQeueue = requestQueue;
     }
 
     public void Start(IIpcStream ipcStream) {
-      this._ipcStream = ipcStream;
-      new Thread(Run) { IsBackground = true }.Start();
+      _ipcStream = ipcStream;
+      new Thread(Run) {IsBackground = true}.Start();
     }
 
     public void WaitOne() {
-      this._waitHandle.WaitOne();
+      _waitHandle.WaitOne();
     }
 
     public void Run() {
@@ -34,19 +34,19 @@ namespace VsChromiumPackage.Threads {
         Loop();
       }
       finally {
-        this._waitHandle.Set();
+        _waitHandle.Set();
       }
     }
 
     private void Loop() {
       try {
         while (true) {
-          var request = this._requestQeueue.Dequeue();
+          var request = _requestQeueue.Dequeue();
           if (request == null) {
             Logger.Log("No more requests to send. Time to terminate thread.");
             break;
           }
-          this._ipcStream.WriteRequest(request);
+          _ipcStream.WriteRequest(request);
         }
       }
       catch (Exception e) {

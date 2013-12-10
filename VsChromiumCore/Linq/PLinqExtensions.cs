@@ -11,24 +11,24 @@ using VsChromiumCore.Collections;
 namespace VsChromiumCore.Linq {
   public static class PLinqExtensions {
     public static IEnumerable<IList<TSource>> PartitionEvenly<TSource>(
-        this IList<TSource> source,
-        Func<TSource, long> weight) {
+      this IList<TSource> source,
+      Func<TSource, long> weight) {
       return PartitionEvenly(source, weight, Environment.ProcessorCount);
     }
 
     public static IEnumerable<IList<TSource>> PartitionEvenly<TSource>(
-        this IList<TSource> source,
-        Func<TSource, long> weight,
-        int partitionCount) {
+      this IList<TSource> source,
+      Func<TSource, long> weight,
+      int partitionCount) {
       var sw = Stopwatch.StartNew();
 
       var partitions = source
-          .GetPartitionSizes(partitionCount)
-          .Select(x => new Partition<TSource> {
-            MaxCount = x,
-            Items = new List<TSource>(x)
-          })
-          .ToList();
+        .GetPartitionSizes(partitionCount)
+        .Select(x => new Partition<TSource> {
+          MaxCount = x,
+          Items = new List<TSource>(x)
+        })
+        .ToList();
 
       // Create MinHeap of partitions (wrt Weight function).
       var minHeap = new MinHeap<Partition<TSource>>(new PartitionWeightComparer<TSource>());
@@ -36,17 +36,17 @@ namespace VsChromiumCore.Linq {
 
       // Distribute items using MinHeap.
       source
-          // Sort so that elements with highest weight are first, so that we have a better chance
-          // of ending with partitions of same total weight - it is eaiser to adjust with elements of
-          // low weight than with elements of high weight.
-          .OrderByDescending(x => weight(x))
-          .ForAll(item => {
-            var min = minHeap.Remove();
-            min.Items.Add(item);
-            min.TotalWeight += weight(item);
-            if (min.Items.Count < min.MaxCount)
-              minHeap.Add(min);
-          });
+        // Sort so that elements with highest weight are first, so that we have a better chance
+        // of ending with partitions of same total weight - it is eaiser to adjust with elements of
+        // low weight than with elements of high weight.
+        .OrderByDescending(x => weight(x))
+        .ForAll(item => {
+          var min = minHeap.Remove();
+          min.Items.Add(item);
+          min.TotalWeight += weight(item);
+          if (min.Items.Count < min.MaxCount)
+            minHeap.Add(min);
+        });
 
       sw.Stop();
 #if false

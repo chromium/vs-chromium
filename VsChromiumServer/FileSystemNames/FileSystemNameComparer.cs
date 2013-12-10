@@ -10,11 +10,7 @@ namespace VsChromiumServer.FileSystemNames {
   public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
     private static readonly FileSystemNameComparer _instance = new FileSystemNameComparer();
 
-    public static FileSystemNameComparer Instance {
-      get {
-        return _instance;
-      }
-    }
+    public static FileSystemNameComparer Instance { get { return _instance; } }
 
     public int Compare(FileSystemName x, FileSystemName y) {
       if (object.ReferenceEquals(x, y))
@@ -62,8 +58,8 @@ namespace VsChromiumServer.FileSystemNames {
           return SystemPathComparer.Instance.Comparer.GetHashCode(x1.Name);
         else
           return CombineHashCodes(
-              SystemPathComparer.Instance.Comparer.GetHashCode(x1.Name),
-              SystemPathComparer.Instance.Comparer.GetHashCode(x.RelativePathName.RelativeName));
+            SystemPathComparer.Instance.Comparer.GetHashCode(x1.Name),
+            SystemPathComparer.Instance.Comparer.GetHashCode(x.RelativePathName.RelativeName));
       }
     }
 

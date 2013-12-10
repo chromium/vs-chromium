@@ -18,30 +18,30 @@ namespace VsChromiumCore.Debugger {
     private Exception _stopError;
 
     public DebuggerThread(int processId) {
-      this._processId = processId;
+      _processId = processId;
     }
 
     public void Start() {
-      new Thread(DebugStart) { IsBackground = true }.Start();
+      new Thread(DebugStart) {IsBackground = true}.Start();
 
-      this._startWaitHandle.WaitOne();
-      if (this._startError != null) {
-        throw new Exception("Error starting debugger in separate thread", this._startError);
+      _startWaitHandle.WaitOne();
+      if (_startError != null) {
+        throw new Exception("Error starting debugger in separate thread", _startError);
       }
     }
 
     public void Stop() {
-      this._stopWaitHandle.Set();
-      this._stopDoneWaitHandle.WaitOne();
-      if (this._stopError != null) {
-        throw new Exception("Error stopping debugger", this._stopError);
+      _stopWaitHandle.Set();
+      _stopDoneWaitHandle.WaitOne();
+      if (_stopError != null) {
+        throw new Exception("Error stopping debugger", _stopError);
       }
     }
 
     private void DebugStart() {
       try {
-        this._debuggerThread = Thread.CurrentThread;
-        var result = DebuggerApi.DebugActiveProcess(this._processId);
+        _debuggerThread = Thread.CurrentThread;
+        var result = DebuggerApi.DebugActiveProcess(_processId);
         if (!result) {
           var hr = Marshal.GetHRForLastWin32Error();
           if (hr == Win32.HR_ERROR_NOT_SUPPORTED) {
@@ -51,37 +51,37 @@ namespace VsChromiumCore.Debugger {
         }
       }
       catch (Exception e) {
-        this._startError = e;
+        _startError = e;
       }
       finally {
-        this._startWaitHandle.Set();
+        _startWaitHandle.Set();
       }
 
-      if (this._startError == null) {
+      if (_startError == null) {
         Loop();
       }
     }
 
     private void DebugStop() {
       try {
-        if (Thread.CurrentThread != this._debuggerThread) {
+        if (Thread.CurrentThread != _debuggerThread) {
           throw new InvalidOperationException("Wrong thread");
         }
 
-        var result = DebuggerApi.DebugActiveProcessStop(this._processId);
+        var result = DebuggerApi.DebugActiveProcessStop(_processId);
         if (!result)
           Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
       }
       catch (Exception e) {
-        this._stopError = e;
+        _stopError = e;
       }
       finally {
-        this._stopDoneWaitHandle.Set();
+        _stopDoneWaitHandle.Set();
       }
     }
 
     private void Loop() {
-      if (Thread.CurrentThread != this._debuggerThread) {
+      if (Thread.CurrentThread != _debuggerThread) {
         throw new InvalidOperationException("Wrong thread");
       }
 
@@ -93,13 +93,13 @@ namespace VsChromiumCore.Debugger {
 
             var continueStatus = DebuggerApi.CONTINUE_STATUS.DBG_CONTINUE;
             bool result = DebuggerApi.ContinueDebugEvent(debugEvent.Value.ProcessId, debugEvent.Value.ThreadId,
-                continueStatus);
+                                                         continueStatus);
             if (!result)
               Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
           }
 
           // Did we get ask to stop the debugger?
-          if (this._stopWaitHandle.WaitOne(1)) {
+          if (_stopWaitHandle.WaitOne(1)) {
             DebugStop();
             break;
           }

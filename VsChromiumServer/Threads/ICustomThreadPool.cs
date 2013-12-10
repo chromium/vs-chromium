@@ -16,8 +16,8 @@ namespace VsChromiumServer.Threads {
     void RunAsync(Action task);
 
     IEnumerable<TDest> RunInParallel<TSource, TDest>(
-        IList<TSource> source,
-        Func<TSource, TDest> selector,
-        CancellationToken token);
+      IList<TSource> source,
+      Func<TSource, TDest> selector,
+      CancellationToken token);
   }
 }

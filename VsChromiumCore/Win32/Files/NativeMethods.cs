@@ -10,28 +10,28 @@ using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Files {
-  internal static class NativeMethods {
+  static class NativeMethods {
     [SuppressUnmanagedCodeSecurity]
     [DllImport(@"kernel32", CharSet = CharSet.Auto, SetLastError = true)]
     public static extern bool ReadFile(
-        SafeFileHandle hFile,
-        IntPtr pBuffer,
-        int numberOfBytesToRead,
-        int[] pNumberOfBytesRead,
-        NativeOverlapped[] lpOverlapped // should be fixed, if not null
-        );
+      SafeFileHandle hFile,
+      IntPtr pBuffer,
+      int numberOfBytesToRead,
+      int[] pNumberOfBytesRead,
+      NativeOverlapped[] lpOverlapped // should be fixed, if not null
+      );
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     public static extern SafeFileHandle CreateFile(
-        [MarshalAs(UnmanagedType.LPTStr)] string filename,
-        [MarshalAs(UnmanagedType.U4)] FileAccess access,
-        [MarshalAs(UnmanagedType.U4)] FileShare share,
-        IntPtr securityAttributes,
-        // optional SECURITY_ATTRIBUTES struct or IntPtr.Zero
-        [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
-        [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
-        IntPtr templateFile);
+      [MarshalAs(UnmanagedType.LPTStr)] string filename,
+      [MarshalAs(UnmanagedType.U4)] FileAccess access,
+      [MarshalAs(UnmanagedType.U4)] FileShare share,
+      IntPtr securityAttributes,
+      // optional SECURITY_ATTRIBUTES struct or IntPtr.Zero
+      [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
+      [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
+      IntPtr templateFile);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]
@@ -48,8 +48,8 @@ namespace VsChromiumCore.Win32.Files {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern bool GetFileAttributesEx(
-        string name,
-        int fileInfoLevel,
-        ref WIN32_FILE_ATTRIBUTE_DATA lpFileInformation);
+      string name,
+      int fileInfoLevel,
+      ref WIN32_FILE_ATTRIBUTE_DATA lpFileInformation);
   }
 }

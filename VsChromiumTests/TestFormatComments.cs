@@ -5,7 +5,6 @@
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.Text;
-using VsChromiumPackage.Features;
 using VsChromiumPackage.Features.FormatComment;
 using VsChromiumTests.Mocks;
 

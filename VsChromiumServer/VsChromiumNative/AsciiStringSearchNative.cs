@@ -13,24 +13,20 @@ namespace VsChromiumServer.VsChromiumNative {
     private readonly int _patternLength;
 
     public AsciiStringSearchNative(NativeMethods.SearchAlgorithmKind kind, string pattern, NativeMethods.SearchOptions searchOptions) {
-      this._patternHandle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(pattern));
-      this._handle = NativeMethods.AsciiSearchAlgorithm_Create(kind, this._patternHandle.Pointer, pattern.Length, searchOptions);
-      this._patternLength = pattern.Length;
+      _patternHandle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(pattern));
+      _handle = NativeMethods.AsciiSearchAlgorithm_Create(kind, _patternHandle.Pointer, pattern.Length, searchOptions);
+      _patternLength = pattern.Length;
     }
 
-    public override int PatternLength {
-      get {
-        return this._patternLength;
-      }
-    }
+    public override int PatternLength { get { return _patternLength; } }
 
     public override IntPtr Search(IntPtr text, int textLen) {
-      return NativeMethods.AsciiSearchAlgorithm_Search(this._handle, text, textLen);
+      return NativeMethods.AsciiSearchAlgorithm_Search(_handle, text, textLen);
     }
 
     public override void Dispose() {
-      this._handle.Dispose();
-      this._patternHandle.Dispose();
+      _handle.Dispose();
+      _patternHandle.Dispose();
     }
   }
 }

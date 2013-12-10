@@ -8,7 +8,6 @@ using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using VsChromiumCore.Configuration;
-using VsChromiumServer.Projects;
 
 namespace VsChromiumPackage.Classifier {
   /// <summary>
@@ -21,19 +20,19 @@ namespace VsChromiumPackage.Classifier {
     private readonly Lazy<IList<string>> _disabledCheckers;
 
     internal ChromiumClassifier(
-        IClassificationTypeRegistryService classificationRegistry,
-        IEnumerable<ITextLineChecker> checkers,
-        IConfigurationFileProvider configurationFileProvider) {
-      this._classificationType = classificationRegistry.GetClassificationType("VsChromiumPackage");
-      this._checkers = checkers;
-      this._configurationFileProvider = configurationFileProvider;
-      this._disabledCheckers = new Lazy<IList<string>>(ReadDisableCheckers);
+      IClassificationTypeRegistryService classificationRegistry,
+      IEnumerable<ITextLineChecker> checkers,
+      IConfigurationFileProvider configurationFileProvider) {
+      _classificationType = classificationRegistry.GetClassificationType("VsChromiumPackage");
+      _checkers = checkers;
+      _configurationFileProvider = configurationFileProvider;
+      _disabledCheckers = new Lazy<IList<string>>(ReadDisableCheckers);
     }
 
     private IList<string> ReadDisableCheckers() {
       return
-          this._configurationFileProvider.ReadFile(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled,
-              x => x.Where(line => !line.TrimStart().StartsWith("#"))).ToList();
+        _configurationFileProvider.ReadFile(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled,
+                                            x => x.Where(line => !line.TrimStart().StartsWith("#"))).ToList();
     }
 
     /// <summary>
@@ -43,27 +42,27 @@ namespace VsChromiumPackage.Classifier {
     /// <param name="trackingSpan">The span currently being classified</param>
     /// <returns>A list of ClassificationSpans that represent spans identified to be of this classification</returns>
     public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span) {
-      var checkers = this._checkers
-          .Where(checker => !this._disabledCheckers.Value.Contains(checker.GetType().Name))
-          .Where(checker => checker.AppliesToContentType(span.Snapshot.ContentType));
+      var checkers = _checkers
+        .Where(checker => !_disabledCheckers.Value.Contains(checker.GetType().Name))
+        .Where(checker => checker.AppliesToContentType(span.Snapshot.ContentType));
 
       //create a list to hold the results
       var startLine = span.Start.GetContainingLine().LineNumber;
       var endLine = (span.End > span.Start)
-          ? (span.End - 1).GetContainingLine().LineNumber
-          : span.End.GetContainingLine().LineNumber;
+                      ? (span.End - 1).GetContainingLine().LineNumber
+                      : span.End.GetContainingLine().LineNumber;
       var classifications = Enumerable
-          .Range(startLine, endLine - startLine + 1)
-          .Select(lineNum => span.Snapshot.GetLineFromLineNumber(lineNum))
-          .SelectMany(line => checkers.Select(checker => checker.CheckLine(line)))
-          .SelectMany(errors => errors)
-          .Select(error => CreateClassification(error))
-          .ToList();
+        .Range(startLine, endLine - startLine + 1)
+        .Select(lineNum => span.Snapshot.GetLineFromLineNumber(lineNum))
+        .SelectMany(line => checkers.Select(checker => checker.CheckLine(line)))
+        .SelectMany(errors => errors)
+        .Select(error => CreateClassification(error))
+        .ToList();
       return classifications;
     }
 
     private ClassificationSpan CreateClassification(TextLineCheckerError error) {
-      return new ClassificationSpan(error.Span, this._classificationType);
+      return new ClassificationSpan(error.Span, _classificationType);
     }
 
 #pragma warning disable 67

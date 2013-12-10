@@ -9,7 +9,7 @@ namespace VsChromiumServer.Ipc.ProtocolHandlers {
   [Export(typeof(IProtocolHandler))]
   public class HelloProtocolHandler : ProtocolHandler {
     public HelloProtocolHandler()
-        : base(IpcProtocols.Hello) {
+      : base(IpcProtocols.Hello) {
     }
 
     public override IpcResponse Process(IpcRequest request) {

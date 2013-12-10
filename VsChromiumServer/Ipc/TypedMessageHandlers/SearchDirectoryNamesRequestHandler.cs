@@ -17,15 +17,15 @@ namespace VsChromiumServer.Ipc.TypedMessageHandlers {
 
     [ImportingConstructor]
     public SearchDirectoryNamesRequestHandler(ISearchEngine searchEngine, IFileSystemNameFactory fileSystemNameFactory) {
-      this._searchEngine = searchEngine;
-      this._fileSystemNameFactory = fileSystemNameFactory;
+      _searchEngine = searchEngine;
+      _fileSystemNameFactory = fileSystemNameFactory;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var r = (SearchDirectoryNamesRequest)typedRequest;
-      var result = this._searchEngine.SearchDirectoryNames(r.SearchParams);
+      var result = _searchEngine.SearchDirectoryNames(r.SearchParams);
       return new SearchDirectoryNamesResponse {
-        DirectoryNames = this._fileSystemNameFactory.ToFlatSearchResult(result)
+        DirectoryNames = _fileSystemNameFactory.ToFlatSearchResult(result)
       };
     }
   }
@@ -36,12 +36,12 @@ namespace VsChromiumServer.Ipc.TypedMessageHandlers {
 
     [ImportingConstructor]
     public GetFileExtractsRequestHandler(ISearchEngine searchEngine) {
-      this._searchEngine = searchEngine;
+      _searchEngine = searchEngine;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (GetFileExtractsRequest)typedRequest;
-      var result = this._searchEngine.GetFileExtracts(request.FileName, request.Positions);
+      var result = _searchEngine.GetFileExtracts(request.FileName, request.Positions);
       return new GetFileExtractsResponse {
         FileName = request.FileName,
         FileExtracts = result.ToList()

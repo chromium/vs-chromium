@@ -12,38 +12,26 @@ using VsChromiumCore;
 using VsChromiumPackage.Commands;
 using VsChromiumPackage.Package;
 using VsChromiumPackage.Package.CommandHandlers;
-using VsChromiumPackage.ToolWindows.FileExplorer;
+using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage {
   [PackageRegistration(UseManagedResourcesOnly = true)]
-  [InstalledProductRegistration("#110", "#112", "0.1.3", IconResourceID = 400)]
+  [InstalledProductRegistration("#110", "#112", "0.2.0", IconResourceID = 400)]
   // When in development mode, update the version # below every time there is a change to the .VSCT file,
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
   // VS 2012 and later since package updates is more explicit).
   [ProvideMenuResource("Menus.ctmenu", 5)]
-  [ProvideToolWindow(typeof(FileExplorerToolWindow))]
+  [ProvideToolWindow(typeof(ChromiumExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage {
     public VsPackage() {
     }
 
-    public IComponentModel ComponentModel {
-      get {
-        return (IComponentModel)GetService(typeof(SComponentModel));
-      }
-    }
+    public IComponentModel ComponentModel { get { return (IComponentModel)GetService(typeof(SComponentModel)); } }
 
-    public OleMenuCommandService OleMenuCommandService {
-      get {
-        return GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
-      }
-    }
+    public OleMenuCommandService OleMenuCommandService { get { return GetService(typeof(IMenuCommandService)) as OleMenuCommandService; } }
 
-    public IVsUIShell VsUIShell {
-      get {
-        return GetService(typeof(SVsUIShell)) as IVsUIShell;
-      }
-    }
+    public IVsUIShell VsUIShell { get { return GetService(typeof(SVsUIShell)) as IVsUIShell; } }
 
     protected override void Initialize() {
       base.Initialize();
@@ -59,7 +47,7 @@ namespace VsChromiumPackage {
     }
 
     private void PreInitialize() {
-      var packageSingletonProvider = this.ComponentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
+      var packageSingletonProvider = ComponentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
       packageSingletonProvider.Intialize(this);
     }
 

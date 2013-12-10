@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,25 +19,25 @@ namespace VsChromiumServer.FileSystem {
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
     public FileSystemTreeBuilder(
-        IProjectDiscovery projectDiscovery,
-        IProgressTrackerFactory progressTrackerFactory) {
-      this._projectDiscovery = projectDiscovery;
-      this._progressTrackerFactory = progressTrackerFactory;
+      IProjectDiscovery projectDiscovery,
+      IProgressTrackerFactory progressTrackerFactory) {
+      _projectDiscovery = projectDiscovery;
+      _progressTrackerFactory = progressTrackerFactory;
     }
 
     public DirectoryEntry ComputeNewRoot(IEnumerable<string> files) {
-      using (var progress = this._progressTrackerFactory.CreateIndeterminateTracker()) {
+      using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var newRoot = new DirectoryEntry();
 
         newRoot.Entries = files
-            .Select(filename => this._projectDiscovery.GetProject(filename))
-            .Where(project => project != null)
-            .Distinct(new ProjectPathComparer())
-            .Select(project => ProcessProject(project, progress))
-            .Where(entry => entry != null)
-            .OrderBy(entry => entry.Name, SystemPathComparer.Instance.Comparer)
-            .Cast<FileSystemEntry>()
-            .ToList();
+          .Select(filename => _projectDiscovery.GetProject(filename))
+          .Where(project => project != null)
+          .Distinct(new ProjectPathComparer())
+          .Select(project => ProcessProject(project, progress))
+          .Where(entry => entry != null)
+          .OrderBy(entry => entry.Name, SystemPathComparer.Instance.Comparer)
+          .Cast<FileSystemEntry>()
+          .ToList();
 
         return newRoot;
       }
@@ -47,54 +46,54 @@ namespace VsChromiumServer.FileSystem {
     private DirectoryEntry ProcessProject(IProject project, IProgressTracker progress) {
       // List of [string(RelativePath), DirectoryEntry]
       var directories = TraverseFileSystem(project)
-          .AsParallel()
-          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-          .Select(x => {
-            var directoryName = x.DirectoryName;
-            progress.Step(
-                (i, n) =>
-                    string.Format("Traversing directory: {0}",
-                        PathHelpers.PathCombine(project.RootPath, directoryName.RelativeName)));
-            var entryName = (directoryName.RelativeName == _relativePathForRoot ? project.RootPath : directoryName.Name);
-            var directoryEntry = new DirectoryEntry {
-              Name = entryName,
-              RelativePathName = directoryName
-            };
+        .AsParallel()
+        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+        .Select(x => {
+          var directoryName = x.DirectoryName;
+          progress.Step(
+            (i, n) =>
+            string.Format("Traversing directory: {0}",
+                          PathHelpers.PathCombine(project.RootPath, directoryName.RelativeName)));
+          var entryName = (directoryName.RelativeName == _relativePathForRoot ? project.RootPath : directoryName.Name);
+          var directoryEntry = new DirectoryEntry {
+            Name = entryName,
+            RelativePathName = directoryName
+          };
 
-            var childrenNames = x.ChildrenNames;
-            var entries = childrenNames
-                .Where(file => project.FileFilter.Include(file.RelativeName))
-                .Select(file => new FileEntry {
-                  Name = file.Name,
-                  RelativePathName = file
-                })
-                .OrderBy(fileEntry => fileEntry.Name, SystemPathComparer.Instance.Comparer);
-            directoryEntry.Entries.AddRange(entries);
+          var childrenNames = x.ChildrenNames;
+          var entries = childrenNames
+            .Where(file => project.FileFilter.Include(file.RelativeName))
+            .Select(file => new FileEntry {
+              Name = file.Name,
+              RelativePathName = file
+            })
+            .OrderBy(fileEntry => fileEntry.Name, SystemPathComparer.Instance.Comparer);
+          directoryEntry.Entries.AddRange(entries);
 
-            return new KeyValuePair<string, DirectoryEntry>(directoryName.RelativeName, directoryEntry);
-          })
-          // We sort entries by file name descending to make sure we process
-          // directories bottom up, so that we know it is safe to skip 
-          // DirectoryEntry instances where "Entries.Count" == 0.
-          .OrderByDescending(x => x.Key, SystemPathComparer.Instance.Comparer)
-          .ToList();
+          return new KeyValuePair<string, DirectoryEntry>(directoryName.RelativeName, directoryEntry);
+        })
+        // We sort entries by file name descending to make sure we process
+        // directories bottom up, so that we know it is safe to skip 
+        // DirectoryEntry instances where "Entries.Count" == 0.
+        .OrderByDescending(x => x.Key, SystemPathComparer.Instance.Comparer)
+        .ToList();
 
       directories
-          .ForAll(x => {
-            var relativePath = x.Key;
-            if (relativePath == _relativePathForRoot)
-              return;
+        .ForAll(x => {
+          var relativePath = x.Key;
+          if (relativePath == _relativePathForRoot)
+            return;
 
-            // If current entry has no entries, don't add it to the parent entries list.
-            var directoryEntry = x.Value;
-            if (directoryEntry.Entries.Count == 0)
-              return;
+          // If current entry has no entries, don't add it to the parent entries list.
+          var directoryEntry = x.Value;
+          if (directoryEntry.Entries.Count == 0)
+            return;
 
-            // We attach the entry to the parent directory
-            var parentPath = Path.GetDirectoryName(relativePath);
-            var parentEntry = FindEntry(directories, parentPath).Value;
-            parentEntry.Entries.Add(directoryEntry);
-          });
+          // We attach the entry to the parent directory
+          var parentPath = Path.GetDirectoryName(relativePath);
+          var parentEntry = FindEntry(directories, parentPath).Value;
+          parentEntry.Entries.Add(directoryEntry);
+        });
 
       var result = FindEntry(directories, _relativePathForRoot).Value;
       SortEntries(result);
@@ -124,8 +123,8 @@ namespace VsChromiumServer.FileSystem {
     }
 
     private static KeyValuePair<string, DirectoryEntry> FindEntry(
-        List<KeyValuePair<string, DirectoryEntry>> directories,
-        string relativePath) {
+      List<KeyValuePair<string, DirectoryEntry>> directories,
+      string relativePath) {
       var item = new KeyValuePair<string, DirectoryEntry>(relativePath, null);
       var result = directories.BinarySearch(item, _entryReverseComparerInstance);
       return directories[result];
@@ -159,21 +158,13 @@ namespace VsChromiumServer.FileSystem {
       private readonly RelativePathName _directoryName;
 
       public TraversedDirectoryEntry(RelativePathName directoryName, RelativePathName[] childrenNames) {
-        this._directoryName = directoryName;
-        this._childrenNames = childrenNames;
+        _directoryName = directoryName;
+        _childrenNames = childrenNames;
       }
 
-      public RelativePathName DirectoryName {
-        get {
-          return this._directoryName;
-        }
-      }
+      public RelativePathName DirectoryName { get { return _directoryName; } }
 
-      public RelativePathName[] ChildrenNames {
-        get {
-          return this._childrenNames;
-        }
-      }
+      public RelativePathName[] ChildrenNames { get { return _childrenNames; } }
     }
   }
 }

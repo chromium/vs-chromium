@@ -12,15 +12,11 @@ namespace VsChromiumServer.Search {
     private readonly SafeHeapBlockHandle _heap;
 
     public UTF16FileContents(SafeHeapBlockHandle heap, DateTime utcLastWriteTime)
-        : base(utcLastWriteTime) {
-      this._heap = heap;
+      : base(utcLastWriteTime) {
+      _heap = heap;
     }
 
-    public override long ByteLength {
-      get {
-        return this._heap.ByteLength;
-      }
-    }
+    public override long ByteLength { get { return _heap.ByteLength; } }
 
     [DllImport("Shlwapi.dll", CharSet = CharSet.Unicode, SetLastError = false)]
     public static extern IntPtr StrStrIW(IntPtr pszFirst, IntPtr pszSrch);
@@ -30,7 +26,7 @@ namespace VsChromiumServer.Search {
 
     public override List<int> Search(SearchContentsData searchContentsData) {
       List<int> result = null;
-      var contentsPtr = this._heap.Pointer;
+      var contentsPtr = _heap.Pointer;
       while (true) {
         var foundPtr = StrStrW(contentsPtr, searchContentsData.UniTextPtr.Pointer);
         if (foundPtr == IntPtr.Zero)
@@ -40,7 +36,7 @@ namespace VsChromiumServer.Search {
           result = new List<int>();
         }
         // Note: We are limited to 2GB files by design.
-        var position = (int)(foundPtr.ToInt64() - this._heap.Pointer.ToInt64());
+        var position = (int)(foundPtr.ToInt64() - _heap.Pointer.ToInt64());
         result.Add(position);
 
         contentsPtr = foundPtr + searchContentsData.Text.Length;

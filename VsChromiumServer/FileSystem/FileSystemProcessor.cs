@@ -32,33 +32,33 @@ namespace VsChromiumServer.FileSystem {
 
     [ImportingConstructor]
     public FileSystemProcessor(
-        IFileSystemNameFactory fileSystemNameFactory,
-        IProjectDiscovery projectDiscovery,
-        IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
-        IOperationIdFactory operationIdFactory,
-        ITaskQueueFactory taskQueueFactory,
-        IProgressTrackerFactory progressTrackerFactory) {
-      this._fileSystemNameFactory = fileSystemNameFactory;
-      this._directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
-      this._operationIdFactory = operationIdFactory;
-      this._progressTrackerFactory = progressTrackerFactory;
-      this._projectDiscovery = projectDiscovery;
-      this._taskQueue = taskQueueFactory.CreateQueue();
-      this._directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
+      IFileSystemNameFactory fileSystemNameFactory,
+      IProjectDiscovery projectDiscovery,
+      IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
+      IOperationIdFactory operationIdFactory,
+      ITaskQueueFactory taskQueueFactory,
+      IProgressTrackerFactory progressTrackerFactory) {
+      _fileSystemNameFactory = fileSystemNameFactory;
+      _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
+      _operationIdFactory = operationIdFactory;
+      _progressTrackerFactory = progressTrackerFactory;
+      _projectDiscovery = projectDiscovery;
+      _taskQueue = taskQueueFactory.CreateQueue();
+      _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
     }
 
     public FileSystemTree GetTree() {
-      lock (this._lock) {
-        return GetTree(this._version, this._rootEntry);
+      lock (_lock) {
+        return GetTree(_version, _rootEntry);
       }
     }
 
     public void AddFile(string filename) {
-      this._taskQueue.Enqueue(string.Format("AddFile(\"{0}\")", filename), () => AddFileTask(filename));
+      _taskQueue.Enqueue(string.Format("AddFile(\"{0}\")", filename), () => AddFileTask(filename));
     }
 
     public void RemoveFile(string filename) {
-      this._taskQueue.Enqueue(string.Format("RemoveFile(\"{0}\")", filename), () => RemoveFileTask(filename));
+      _taskQueue.Enqueue(string.Format("RemoveFile(\"{0}\")", filename), () => RemoveFileTask(filename));
     }
 
     public event Action<long> TreeComputing;
@@ -66,12 +66,12 @@ namespace VsChromiumServer.FileSystem {
     public event Action<IEnumerable<FileName>> FilesChanged;
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<KeyValuePair<string, ChangeType>> changes) {
-      this._taskQueue.Enqueue("OnPathsChangedTask()", () => OnPathsChangedTask(changes));
+      _taskQueue.Enqueue("OnPathsChangedTask()", () => OnPathsChangedTask(changes));
     }
 
     private void OnPathsChangedTask(IList<KeyValuePair<string, ChangeType>> changes) {
       var result =
-          new FileSystemTreeValidator(this._fileSystemNameFactory, this._projectDiscovery).ProcessPathsChangedEvent(changes);
+        new FileSystemTreeValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
       if (result.RecomputeGraph) {
         RecomputeGraph();
       } else if (result.ChangeFiles.Any()) {
@@ -82,13 +82,13 @@ namespace VsChromiumServer.FileSystem {
     private void AddFileTask(string filename) {
       bool recompute;
 
-      lock (this._lock) {
+      lock (_lock) {
         recompute = ValidateKnownFiles();
 
-        if (this._addedFiles.Add(filename)) {
-          var projectPath = this._projectDiscovery.GetProjectPath(filename);
+        if (_addedFiles.Add(filename)) {
+          var projectPath = _projectDiscovery.GetProjectPath(filename);
           if (projectPath != null) {
-            var known = this._rootEntry.Entries.Any(x => SystemPathComparer.Instance.Comparer.Equals(x.Name, projectPath));
+            var known = _rootEntry.Entries.Any(x => SystemPathComparer.Instance.Comparer.Equals(x.Name, projectPath));
             if (!known) {
               recompute = true;
             }
@@ -103,12 +103,12 @@ namespace VsChromiumServer.FileSystem {
     private void RemoveFileTask(string filename) {
       bool recompute;
 
-      lock (this._lock) {
+      lock (_lock) {
         recompute = ValidateKnownFiles();
 
-        var known = this._addedFiles.Contains(filename);
+        var known = _addedFiles.Contains(filename);
         if (known) {
-          this._addedFiles.Remove(filename);
+          _addedFiles.Remove(filename);
           recompute = true;
         }
       }
@@ -121,11 +121,11 @@ namespace VsChromiumServer.FileSystem {
     /// Sanety check: remove all files that don't exist on the file system anymore.
     /// </summary>
     private bool ValidateKnownFiles() {
-      lock (this._lock) {
-        var removedCount = this._addedFiles.RemoveWhere(x => !File.Exists(x));
+      lock (_lock) {
+        var removedCount = _addedFiles.RemoveWhere(x => !File.Exists(x));
         if (removedCount > 0) {
           Logger.Log("Some known files do not exist on disk anymore. Time to recompute the world.");
-          this._projectDiscovery.ValidateCache();
+          _projectDiscovery.ValidateCache();
           return true;
         }
         return false;
@@ -140,38 +140,38 @@ namespace VsChromiumServer.FileSystem {
     }
 
     private void RecomputeGraph() {
-      var operationId = this._operationIdFactory.GetNextId();
+      var operationId = _operationIdFactory.GetNextId();
       OnTreeComputing(operationId);
       Logger.Log("Collecting list of files from file system.");
       Logger.LogMemoryStats();
       var sw = Stopwatch.StartNew();
 
       var files = new List<string>();
-      lock (this._lock) {
+      lock (_lock) {
         ValidateKnownFiles();
-        files.AddRange(this._addedFiles);
+        files.AddRange(_addedFiles);
       }
 
       var newRoot =
-          new FileSystemTreeBuilder(this._projectDiscovery, this._progressTrackerFactory).ComputeNewRoot(files);
+        new FileSystemTreeBuilder(_projectDiscovery, _progressTrackerFactory).ComputeNewRoot(files);
 
       // Monitor all the Chromium directories for changes.
       var newRoots = newRoot.Entries
-          .Select(root => this._fileSystemNameFactory.CombineDirectoryNames(this._fileSystemNameFactory.Root, root.Name))
-          .ToList();
-      this._directoryChangeWatcher.WatchDirectories(newRoots);
+        .Select(root => _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, root.Name))
+        .ToList();
+      _directoryChangeWatcher.WatchDirectories(newRoots);
 
       // Update current tree atomically
       var oldTree = GetTree();
-      lock (this._lock) {
-        this._version++;
-        this._rootEntry = newRoot;
+      lock (_lock) {
+        _version++;
+        _rootEntry = newRoot;
       }
       var newTree = GetTree();
 
       sw.Stop();
       Logger.Log("Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
-          CountFileEntries(newRoot), CountDirectoryEntries(newRoot), sw.ElapsedMilliseconds);
+                 CountFileEntries(newRoot), CountDirectoryEntries(newRoot), sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
       // A new tree is available, time to notify our consumers.

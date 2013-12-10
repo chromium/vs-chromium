@@ -15,15 +15,15 @@ namespace VsChromiumServer.Threads {
     private Thread _thread;
 
     public ThreadObject(int id, ThreadPool threadPool) {
-      this._id = id;
-      this._threadPool = threadPool;
+      _id = id;
+      _threadPool = threadPool;
     }
 
     private void Loop() {
       while (true) {
-        this._taskAvailable.WaitOne();
+        _taskAvailable.WaitOne();
         try {
-          this._currentTask();
+          _currentTask();
         }
         catch (Exception e) {
           // TODO(rpaquay): Do we want to propage the exception here?
@@ -37,16 +37,16 @@ namespace VsChromiumServer.Threads {
     ///  be used by one thread at a time.
     /// </summary>
     public void RunAsync(Action task) {
-      if (this._thread == null) {
-        this._thread = new Thread(Loop);
-        this._thread.Priority = ThreadPriority.AboveNormal;
-        this._thread.Name = String.Format("CustomThread #{0}", this._id);
-        this._thread.IsBackground = true;
-        this._thread.Start();
+      if (_thread == null) {
+        _thread = new Thread(Loop);
+        _thread.Priority = ThreadPriority.AboveNormal;
+        _thread.Name = String.Format("CustomThread #{0}", _id);
+        _thread.IsBackground = true;
+        _thread.Start();
       }
 
-      this._currentTask = task;
-      this._taskAvailable.Set();
+      _currentTask = task;
+      _taskAvailable.Set();
     }
 
     /// <summary>
@@ -54,8 +54,8 @@ namespace VsChromiumServer.Threads {
     ///  be used by one thread at a time.
     /// </summary>
     public void Release() {
-      this._currentTask = null;
-      this._threadPool.ReleaseThread(this);
+      _currentTask = null;
+      _threadPool.ReleaseThread(this);
     }
   }
 }

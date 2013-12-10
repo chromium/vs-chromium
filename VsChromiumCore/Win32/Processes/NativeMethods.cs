@@ -8,21 +8,21 @@ using System.Text;
 using VsChromiumCore.Win32.Interop;
 
 namespace VsChromiumCore.Win32.Processes {
-  internal static class NativeMethods {
+  static class NativeMethods {
     [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
     public static extern IntPtr GetCurrentProcess();
 
     [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]
     public static extern bool CreateProcess(
-        [MarshalAs(UnmanagedType.LPTStr)] string lpApplicationName,
-        StringBuilder lpCommandLine,
-        SecurityAttributes lpProcessAttributes,
-        SecurityAttributes lpThreadAttributes,
-        bool bInheritHandles,
-        ProcessCreationFlags dwCreationFlags,
-        IntPtr lpEnvironment,
-        [MarshalAs(UnmanagedType.LPTStr)] string lpCurrentDirectory,
-        Startupinfo lpStartupInfo,
-        ProcessInformation lpProcessInformation);
+      [MarshalAs(UnmanagedType.LPTStr)] string lpApplicationName,
+      StringBuilder lpCommandLine,
+      SecurityAttributes lpProcessAttributes,
+      SecurityAttributes lpThreadAttributes,
+      bool bInheritHandles,
+      ProcessCreationFlags dwCreationFlags,
+      IntPtr lpEnvironment,
+      [MarshalAs(UnmanagedType.LPTStr)] string lpCurrentDirectory,
+      Startupinfo lpStartupInfo,
+      ProcessInformation lpProcessInformation);
   }
 }

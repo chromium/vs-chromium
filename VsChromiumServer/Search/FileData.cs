@@ -20,8 +20,8 @@ namespace VsChromiumServer.Search {
       if (fileName == null)
         throw new ArgumentNullException("fileName");
 
-      this._fileName = fileName;
-      this._contents = contents;
+      _fileName = fileName;
+      _contents = contents;
     }
 
     /// <summary>
@@ -29,27 +29,19 @@ namespace VsChromiumServer.Search {
     /// not be indexed. Use FileContent to look for the snapshot of the file contents
     /// at index creation.
     /// </summary>
-    public FileName FileName {
-      get {
-        return this._fileName;
-      }
-    }
+    public FileName FileName { get { return _fileName; } }
 
     /// <summary>
     /// The file contents. May be null if this file is no part of the search engine text index.
     /// </summary>
-    public FileContents Contents {
-      get {
-        return this._contents;
-      }
-    }
+    public FileContents Contents { get { return _contents; } }
 
     public override string ToString() {
-      return string.Format("{0} - {1:n0} bytes", this._fileName, this._contents == null ? -1 : this._contents.ByteLength);
+      return string.Format("{0} - {1:n0} bytes", _fileName, _contents == null ? -1 : _contents.ByteLength);
     }
 
     public void UpdateContents(FileContents fileContents) {
-      Interlocked.Exchange(ref this._contents, fileContents);
+      Interlocked.Exchange(ref _contents, fileContents);
     }
   }
 }

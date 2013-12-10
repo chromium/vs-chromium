@@ -15,10 +15,10 @@ namespace VsChromiumServer.Ipc {
     private readonly EventWaitHandle _waitHandle = new AutoResetEvent(false);
 
     public void Enqueue(IpcResponse response) {
-      lock (this._lock) {
-        this._responses.Enqueue(response);
+      lock (_lock) {
+        _responses.Enqueue(response);
       }
-      this._waitHandle.Set();
+      _waitHandle.Set();
     }
 
     public IpcResponse Dequeue() {
@@ -27,16 +27,16 @@ namespace VsChromiumServer.Ipc {
         if (response != null)
           return response;
 
-        this._waitHandle.WaitOne();
+        _waitHandle.WaitOne();
       }
     }
 
     private IpcResponse TryDequeue() {
-      lock (this._lock) {
-        if (this._responses.Count == 0)
+      lock (_lock) {
+        if (_responses.Count == 0)
           return null;
 
-        return this._responses.Dequeue();
+        return _responses.Dequeue();
       }
     }
   }

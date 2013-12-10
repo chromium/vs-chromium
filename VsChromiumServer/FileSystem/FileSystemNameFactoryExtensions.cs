@@ -15,27 +15,27 @@ using VsChromiumServer.Projects;
 namespace VsChromiumServer.FileSystem {
   public static class FileSystemNameFactoryExtensions {
     public static DirectoryEntry ToFlatSearchResult(
-        this IFileSystemNameFactory fileSystemNameFactory,
-        IEnumerable<FileSystemName> names) {
+      this IFileSystemNameFactory fileSystemNameFactory,
+      IEnumerable<FileSystemName> names) {
       Func<FileSystemName, FileSystemName> fileNameMapper = x => x;
       Func<FileSystemName, FileSystemEntryData> dataMapper = x => null;
       return ToFlatSearchResult(fileSystemNameFactory, names, fileNameMapper, dataMapper);
     }
 
     public static DirectoryEntry ToFlatSearchResult<TSource>(
-        this IFileSystemNameFactory fileSystemNameFactory,
-        IEnumerable<TSource> source,
-        Func<TSource, FileSystemName> fileNameMapper,
-        Func<TSource, FileSystemEntryData> dataMapper) {
+      this IFileSystemNameFactory fileSystemNameFactory,
+      IEnumerable<TSource> source,
+      Func<TSource, FileSystemName> fileNameMapper,
+      Func<TSource, FileSystemEntryData> dataMapper) {
       var sw = Stopwatch.StartNew();
       // Group by root directory (typically one)
       var groups = source
-          .GroupBy(x => GetProjectRoot(fileNameMapper(x)))
-          .OrderBy(g => g.Key)
-          .Select(group => new DirectoryEntry {
-            Name = group.Key.Name,
-            Entries = CreateGroup(group, fileNameMapper, dataMapper).ToList()
-          });
+        .GroupBy(x => GetProjectRoot(fileNameMapper(x)))
+        .OrderBy(g => g.Key)
+        .Select(group => new DirectoryEntry {
+          Name = group.Key.Name,
+          Entries = CreateGroup(group, fileNameMapper, dataMapper).ToList()
+        });
 
       // Return entries by group
       var result = new DirectoryEntry() {
@@ -48,24 +48,24 @@ namespace VsChromiumServer.FileSystem {
     }
 
     private static IEnumerable<FileSystemEntry> CreateGroup<TSource>(
-        IGrouping<DirectoryName, TSource> grouping,
-        Func<TSource, FileSystemName> fileNameMapper,
-        Func<TSource, FileSystemEntryData> dataMapper) {
+      IGrouping<DirectoryName, TSource> grouping,
+      Func<TSource, FileSystemName> fileNameMapper,
+      Func<TSource, FileSystemEntryData> dataMapper) {
       var baseName = grouping.Key;
       var relativeNames = new Dictionary<FileSystemName, string>();
 
       return grouping
-          .Select(x => CreateFileSystemEntry(relativeNames, baseName, x, fileNameMapper, dataMapper))
-          .Where(x => x.Name != string.Empty) // filter out root node itself!
-          .OrderBy(x => x.Name, SystemPathComparer.Instance.Comparer);
+        .Select(x => CreateFileSystemEntry(relativeNames, baseName, x, fileNameMapper, dataMapper))
+        .Where(x => x.Name != string.Empty) // filter out root node itself!
+        .OrderBy(x => x.Name, SystemPathComparer.Instance.Comparer);
     }
 
     private static FileSystemEntry CreateFileSystemEntry<T>(
-        Dictionary<FileSystemName, string> relativeNames,
-        DirectoryName baseName,
-        T item,
-        Func<T, FileSystemName> fileNameMapper,
-        Func<T, FileSystemEntryData> dataMapper) {
+      Dictionary<FileSystemName, string> relativeNames,
+      DirectoryName baseName,
+      T item,
+      Func<T, FileSystemName> fileNameMapper,
+      Func<T, FileSystemEntryData> dataMapper) {
       var name = fileNameMapper(item);
       var data = dataMapper(item);
       if (name is FileName)
@@ -85,9 +85,9 @@ namespace VsChromiumServer.FileSystem {
     /// "relativeNames" is used to memoize results, as there are many more files that directories.
     /// </summary>
     public static string GetRelativePath(
-        Dictionary<FileSystemName, string> relativeNames,
-        FileSystemName name,
-        DirectoryName baseName) {
+      Dictionary<FileSystemName, string> relativeNames,
+      FileSystemName name,
+      DirectoryName baseName) {
       string result;
       if (relativeNames.TryGetValue(name, out result))
         return result;

@@ -71,18 +71,18 @@ namespace VsChromiumTests {
         };
 
         var ipcTypes = typeof(IpcMessage).Assembly.GetTypes()
-            .Where(x => x.IsClass)
-            .Where(x => isSubTypeOf(x, typeof(IpcMessage)));
+          .Where(x => x.IsClass)
+          .Where(x => isSubTypeOf(x, typeof(IpcMessage)));
 
         var ipcDataTypes = typeof(IpcMessageData).Assembly.GetTypes()
-            .Where(x => x.IsClass)
-            .Where(x => isSubTypeOf(x, typeof(IpcMessageData)))
-            .ToList();
+          .Where(x => x.IsClass)
+          .Where(x => isSubTypeOf(x, typeof(IpcMessageData)))
+          .ToList();
 
         foreach (var ipcType in ipcTypes) {
           foreach (var ipcDataType in ipcDataTypes) {
             Trace.WriteLine(string.Format("Serializing IPC type \"{0}\" with IPC Message Data Type \"{1}\".",
-                ipcType.Name, ipcDataType.Name));
+                                          ipcType.Name, ipcDataType.Name));
             var ipcValue = (IpcMessage)Activator.CreateInstance(ipcType);
             var ipcDataValue = (IpcMessageData)Activator.CreateInstance(ipcDataType);
             ipcValue.Data = ipcDataValue;
@@ -118,7 +118,7 @@ namespace VsChromiumTests {
       CreateBigFileSystem(root, 0);
       sw.Stop();
       Trace.WriteLine(string.Format("Create a tree with {0:n0} elements in {1} msec.", CountTreeSize(root),
-          sw.ElapsedMilliseconds));
+                                    sw.ElapsedMilliseconds));
       return new FileSystemTree {
         Version = 1,
         Root = root
@@ -168,14 +168,14 @@ namespace VsChromiumTests {
       serializer.Serialize(stream, req);
       sw.Stop();
       Trace.WriteLine(string.Format("Serialized message of type {0} into {1:n0} bytes in {2} msec.",
-          req.Data.GetType().FullName, stream.Length, sw.ElapsedMilliseconds));
+                                    req.Data.GetType().FullName, stream.Length, sw.ElapsedMilliseconds));
 
       stream.Position = 0;
       sw.Restart();
       var result = serializer.Deserialize(stream);
       sw.Stop();
       Trace.WriteLine(string.Format("Deserialized message of type {0} from {1:n0} bytes in {2} msec.",
-          req.Data.GetType().FullName, stream.Length, sw.ElapsedMilliseconds));
+                                    req.Data.GetType().FullName, stream.Length, sw.ElapsedMilliseconds));
       return (T)result;
     }
   }

@@ -14,15 +14,11 @@ namespace VsChromiumServer.Threads {
     private readonly List<ThreadObject> _threads = new List<ThreadObject>();
 
     public ThreadPool(int capacity) {
-      this._capacity = capacity;
-      this._threads.AddRange(Enumerable.Range(0, capacity).Select(i => new ThreadObject(i, this)));
+      _capacity = capacity;
+      _threads.AddRange(Enumerable.Range(0, capacity).Select(i => new ThreadObject(i, this)));
     }
 
-    public int Capacity {
-      get {
-        return this._capacity;
-      }
-    }
+    public int Capacity { get { return _capacity; } }
 
     public ThreadObject AcquireThread() {
       while (true) {
@@ -30,27 +26,27 @@ namespace VsChromiumServer.Threads {
         if (threadObject != null)
           return threadObject;
 
-        this._threadReleasedEvent.WaitOne();
+        _threadReleasedEvent.WaitOne();
       }
     }
 
     private ThreadObject TryGetThread() {
-      lock (this._lock) {
-        if (this._threads.Count == 0)
+      lock (_lock) {
+        if (_threads.Count == 0)
           return null;
 
-        int index = this._threads.Count - 1;
-        var result = this._threads[index];
-        this._threads.RemoveAt(index);
+        int index = _threads.Count - 1;
+        var result = _threads[index];
+        _threads.RemoveAt(index);
         return result;
       }
     }
 
     public void ReleaseThread(ThreadObject threadObject) {
-      lock (this._lock) {
-        this._threads.Add(threadObject);
+      lock (_lock) {
+        _threads.Add(threadObject);
       }
-      this._threadReleasedEvent.Set();
+      _threadReleasedEvent.Set();
     }
   }
 }

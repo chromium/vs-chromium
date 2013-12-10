@@ -11,14 +11,14 @@ namespace VsChromiumServer.Projects {
     private readonly PathPatternsFile _includePatternsFile;
 
     public SearchableFilesFilter(IConfigurationSectionProvider configurationSectionProvider) {
-      this._ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesIgnore);
-      this._includePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesInclude);
+      _ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesIgnore);
+      _includePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesInclude);
     }
 
     public bool Include(string fileName) {
-      if (this._ignorePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance))
+      if (_ignorePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance))
         return false;
-      return this._includePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance);
+      return _includePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance);
     }
   }
 }

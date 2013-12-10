@@ -20,8 +20,8 @@ namespace VsChromiumCore.Configuration {
       }
 
       throw new FileLoadException(
-          string.Format("Could not load configuration file \"{0}\" from the following locations:{1}", name,
-              PossibleDirectoryNames().Aggregate("", (x, y) => x + "\n" + y)));
+        string.Format("Could not load configuration file \"{0}\" from the following locations:{1}", name,
+                      PossibleDirectoryNames().Aggregate("", (x, y) => x + "\n" + y)));
     }
 
     private IEnumerable<string> PossibleDirectoryNames() {

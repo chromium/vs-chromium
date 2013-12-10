@@ -19,12 +19,12 @@ namespace VsChromiumPackage.Threads {
     }
 
     public void Start(IIpcStream ipcStream) {
-      this._ipcStream = ipcStream;
-      new Thread(Run) { IsBackground = true }.Start();
+      _ipcStream = ipcStream;
+      new Thread(Run) {IsBackground = true}.Start();
     }
 
     public void WaitOne() {
-      this._waitHandle.WaitOne();
+      _waitHandle.WaitOne();
     }
 
     public event Action<IpcResponse> ResponseReceived;
@@ -36,14 +36,14 @@ namespace VsChromiumPackage.Threads {
         Loop();
       }
       finally {
-        this._waitHandle.Set();
+        _waitHandle.Set();
       }
     }
 
     private void Loop() {
       try {
         while (true) {
-          var response = this._ipcStream.ReadResponse();
+          var response = _ipcStream.ReadResponse();
           if (response == null) {
             Logger.Log("EOF reached on stdin. Time to terminate server.");
             break;

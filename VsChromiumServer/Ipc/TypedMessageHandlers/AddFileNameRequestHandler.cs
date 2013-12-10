@@ -13,11 +13,11 @@ namespace VsChromiumServer.Ipc.TypedMessageHandlers {
 
     [ImportingConstructor]
     public AddFileNameRequestHandler(IFileSystemProcessor processor) {
-      this._processor = processor;
+      _processor = processor;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      this._processor.AddFile(((AddFileNameRequest)typedRequest).FileName);
+      _processor.AddFile(((AddFileNameRequest)typedRequest).FileName);
 
       return new DoneResponse {
         Info = "processing..."

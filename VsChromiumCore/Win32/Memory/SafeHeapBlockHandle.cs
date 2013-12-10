@@ -12,27 +12,19 @@ namespace VsChromiumCore.Win32.Memory {
     private readonly SafeHeapHandle _heap;
 
     public SafeHeapBlockHandle(SafeHeapHandle heap, IntPtr handle, long byteLength)
-        : base(true) {
-      this._heap = heap;
-      this._byteLength = byteLength;
+      : base(true) {
+      _heap = heap;
+      _byteLength = byteLength;
       SetHandle(handle);
     }
 
-    public long ByteLength {
-      get {
-        return this._byteLength;
-      }
-    }
+    public long ByteLength { get { return _byteLength; } }
 
-    public IntPtr Pointer {
-      get {
-        return DangerousGetHandle();
-      }
-    }
+    public IntPtr Pointer { get { return DangerousGetHandle(); } }
 
     protected override bool ReleaseHandle() {
       HeapAllocStatic.OnFree(ByteLength);
-      return NativeMethods.HeapFree(this._heap, HeapFlags.Default, handle);
+      return NativeMethods.HeapFree(_heap, HeapFlags.Default, handle);
     }
 
     public byte[] ToArray() {

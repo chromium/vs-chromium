@@ -8,13 +8,13 @@ using Microsoft.Win32.SafeHandles;
 using VsChromiumCore.Win32.Interop;
 
 namespace VsChromiumCore.Win32.NamedPipes {
-  internal static class NativeMethods {
+  static class NativeMethods {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     public static extern bool CreatePipe(
-        out SafeFileHandle hReadPipe,
-        out SafeFileHandle hWritePipe,
-        SecurityAttributes lpPipeAttributes,
-        int nSize);
+      out SafeFileHandle hReadPipe,
+      out SafeFileHandle hWritePipe,
+      SecurityAttributes lpPipeAttributes,
+      int nSize);
   }
 }

@@ -21,46 +21,46 @@ namespace VsChromiumServer.Ipc {
 
     [ImportingConstructor]
     public IpcRequestDispatcher(
-        ICustomThreadPool customThreadPool,
-        IIpcResponseQueue ipcResponseQueue,
-        [ImportMany] IEnumerable<IProtocolHandler> protocolHandlers) {
-      this._customThreadPool = customThreadPool;
-      this._ipcResponseQueue = ipcResponseQueue;
-      this._protocolHandlers = protocolHandlers;
+      ICustomThreadPool customThreadPool,
+      IIpcResponseQueue ipcResponseQueue,
+      [ImportMany] IEnumerable<IProtocolHandler> protocolHandlers) {
+      _customThreadPool = customThreadPool;
+      _ipcResponseQueue = ipcResponseQueue;
+      _protocolHandlers = protocolHandlers;
     }
 
     public void ProcessRequestAsync(IpcRequest request) {
-      this._customThreadPool.RunAsync(() => ProcessRequestTask(request));
+      _customThreadPool.RunAsync(() => ProcessRequestTask(request));
     }
 
     private void ProcessRequestTask(IpcRequest request) {
       var sw = Stopwatch.StartNew();
       var response = ProcessOneRequest(request);
-      this._ipcResponseQueue.Enqueue(response);
+      _ipcResponseQueue.Enqueue(response);
       sw.Stop();
 
       Logger.Log("Request {0} of type \"{1}\" took {2:n0} msec to handle.",
-          request.RequestId, request.Data.GetType().Name, sw.ElapsedMilliseconds);
+                 request.RequestId, request.Data.GetType().Name, sw.ElapsedMilliseconds);
     }
 
     private IpcResponse ProcessOneRequest(IpcRequest request) {
       try {
-        var processor = this._protocolHandlers.FirstOrDefault(x => x.CanProcess(request));
+        var processor = _protocolHandlers.FirstOrDefault(x => x.CanProcess(request));
         if (processor == null) {
           throw new Exception(string.Format("Request protocol {0} is not recognized by any request processor!",
-              request.Protocol));
+                                            request.Protocol));
         }
 
         return processor.Process(request);
       }
       catch (OperationCanceledException e) {
         Logger.Log("Request {0} of type \"{1}\" has been canceled.",
-            request.RequestId, request.Data.GetType().Name);
+                   request.RequestId, request.Data.GetType().Name);
         return CreateExceptionResponse(request, e);
       }
       catch (Exception e) {
         Logger.LogException(e, "Error executing request {0} of type \"{1}\".",
-            request.RequestId, request.Data.GetType().Name);
+                            request.RequestId, request.Data.GetType().Name);
         return CreateExceptionResponse(request, e);
       }
     }

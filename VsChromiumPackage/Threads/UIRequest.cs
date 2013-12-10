@@ -15,18 +15,22 @@ namespace VsChromiumPackage.Threads {
     /// (Required) The request ID, used to cancel previous request with the same ID.
     /// </summary>
     public string Id { get; set; }
+
     /// <summary>
     /// (Optional) Timespan to wait before starting the request (default is 0.1 second)
     /// </summary>
     public TimeSpan Delay { get; set; }
+
     /// <summary>
     /// (Required) The request object to send to the server.
     /// </summary>
     public TypedRequest TypedRequest { get; set; }
+
     /// <summary>
     /// (Optional) Action executed just before the request is sent to the server.
     /// </summary>
     public Action OnRun { get; set; }
+
     /// <summary>
     /// (Optional) Action executed once the server request finished.
     /// </summary>

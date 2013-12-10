@@ -10,17 +10,13 @@ namespace VsChromiumCore.Collections {
     private readonly IComparer<T> _comparer;
 
     public ReverseComparer(IComparer<T> comparer) {
-      this._comparer = comparer;
+      _comparer = comparer;
     }
 
-    public static IComparer<T> Default {
-      get {
-        return _defaultInstance;
-      }
-    }
+    public static IComparer<T> Default { get { return _defaultInstance; } }
 
     public int Compare(T x, T y) {
-      return -this._comparer.Compare(x, y);
+      return -_comparer.Compare(x, y);
     }
   }
 }

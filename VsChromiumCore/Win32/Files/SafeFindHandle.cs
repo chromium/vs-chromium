@@ -5,9 +5,9 @@
 using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Files {
-  internal sealed class SafeFindHandle : SafeHandleZeroOrMinusOneIsInvalid {
+  sealed class SafeFindHandle : SafeHandleZeroOrMinusOneIsInvalid {
     internal SafeFindHandle()
-        : base(true) {
+      : base(true) {
     }
 
     protected override bool ReleaseHandle() {

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace VsChromiumCore.Win32.Processes {
   [StructLayout(LayoutKind.Sequential)]
-  internal class ProcessInformation {
+  class ProcessInformation {
     public IntPtr hProcess = IntPtr.Zero;
     public IntPtr hThread = IntPtr.Zero;
     public int dwProcessId;

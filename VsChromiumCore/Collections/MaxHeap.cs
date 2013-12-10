@@ -14,75 +14,67 @@ namespace VsChromiumCore.Collections {
     private T[] _items;
 
     public MaxHeap()
-        : this(_defaultCapacity, null) {
+      : this(_defaultCapacity, null) {
     }
 
     public MaxHeap(int capacity)
-        : this(capacity, null) {
+      : this(capacity, null) {
     }
 
     public MaxHeap(int capacity, IComparer<T> comparer) {
-      this._items = new T[capacity];
-      this._count = 0;
-      this._comparer = (comparer ?? Comparer<T>.Default);
+      _items = new T[capacity];
+      _count = 0;
+      _comparer = (comparer ?? Comparer<T>.Default);
     }
 
     public MaxHeap(IComparer<T> comparer)
-        : this(_defaultCapacity, comparer) {
+      : this(_defaultCapacity, comparer) {
     }
 
-    public T Max {
-      get {
-        return Root;
-      }
-    }
+    public T Max { get { return Root; } }
 
-    public int Count {
-      get {
-        return this._count;
-      }
-    }
+    public int Count { get { return _count; } }
 
     public T Root {
       get {
-        if (this._count == 0)
+        if (_count == 0)
           throw new InvalidOperationException("Heap is empty.");
 
-        return this._items[0];
+        return _items[0];
       }
     }
 
     public T Remove() {
-      if (this._count == 0)
+      if (_count == 0)
         throw new InvalidOperationException("Heap is empty.");
 
       var result = Root;
-      var last = this._count - 1;
+      var last = _count - 1;
       Swap(0, last);
-      this._items[this._count - 1] = default(T);
-      this._count--;
+      _items[_count - 1] = default(T);
+      _count--;
       SiftDown(0);
       return result;
     }
 
     public void Add(T value) {
       ExpandArray();
-      var leaf = this._count;
-      this._items[leaf] = value;
-      this._count++;
+      var leaf = _count;
+      _items[leaf] = value;
+      _count++;
       SiftUp(leaf);
     }
 
     public void Clear() {
-      Array.Clear(this._items, 0, this._items.Length);
-      this._count = 0;
+      Array.Clear(_items, 0, _items.Length);
+      _count = 0;
     }
 
     private void SiftDown(int root) {
       var child = LeftChild(root);
-      while (child < this._count) {
+      while (child < _count) {
         var rightChild = RightChildFromLeftChild(child);
-        if (rightChild < this._count && Compare(child, rightChild) < 0)
+        if (rightChild < _count && Compare(child, rightChild) < 0)
           child = rightChild;
         if (Compare(root, child) < 0)
           Swap(root, child);
@@ -105,20 +97,20 @@ namespace VsChromiumCore.Collections {
     }
 
     private void Swap(int child, int parent) {
-      var temp = this._items[child];
-      this._items[child] = this._items[parent];
-      this._items[parent] = temp;
+      var temp = _items[child];
+      _items[child] = _items[parent];
+      _items[parent] = temp;
     }
 
     private int Compare(int x, int y) {
-      return this._comparer.Compare(this._items[x], this._items[y]);
+      return _comparer.Compare(_items[x], _items[y]);
     }
 
     private void ExpandArray() {
-      if (this._count == this._items.Length) {
-        var array = new T[this._count * 2];
-        Array.Copy(this._items, array, this._count);
-        this._items = array;
+      if (_count == _items.Length) {
+        var array = new T[_count * 2];
+        Array.Copy(_items, array, _count);
+        _items = array;
       }
     }
 

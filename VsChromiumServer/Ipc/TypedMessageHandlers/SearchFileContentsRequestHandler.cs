@@ -16,20 +16,20 @@ namespace VsChromiumServer.Ipc.TypedMessageHandlers {
 
     [ImportingConstructor]
     public SearchFileContentsRequestHandler(ISearchEngine searchEngine, IFileSystemNameFactory fileSystemNameFactory) {
-      this._searchEngine = searchEngine;
-      this._fileSystemNameFactory = fileSystemNameFactory;
+      _searchEngine = searchEngine;
+      _fileSystemNameFactory = fileSystemNameFactory;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (SearchFileContentsRequest)typedRequest;
-      var result = this._searchEngine.SearchFileContents(request.SearchParams);
+      var result = _searchEngine.SearchFileContents(request.SearchParams);
       return new SearchFileContentsResponse {
-        SearchResults = this._fileSystemNameFactory.ToFlatSearchResult(
-            result,
-            searchResult => searchResult.FileName,
-            searchResult => new FilePositionsData {
-              Positions = searchResult.Spans
-            })
+        SearchResults = _fileSystemNameFactory.ToFlatSearchResult(
+          result,
+          searchResult => searchResult.FileName,
+          searchResult => new FilePositionsData {
+            Positions = searchResult.Spans
+          })
       };
     }
   }

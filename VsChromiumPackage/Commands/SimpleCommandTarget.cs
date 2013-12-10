@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using System.ComponentModel.Design;
 
 namespace VsChromiumPackage.Commands {
@@ -7,12 +11,12 @@ namespace VsChromiumPackage.Commands {
     private readonly Action _action;
 
     public SimpleCommandTarget(CommandID commandId, Action action) {
-      this._commandId = commandId;
-      this._action = action;
+      _commandId = commandId;
+      _action = action;
     }
 
     public bool HandlesCommand(CommandID commandId) {
-      return this._commandId.Equals(commandId);
+      return _commandId.Equals(commandId);
     }
 
     public bool IsEnabled(CommandID commandId) {
@@ -20,7 +24,7 @@ namespace VsChromiumPackage.Commands {
     }
 
     public void Execute(CommandID commandId) {
-      this._action();
+      _action();
     }
   }
 }

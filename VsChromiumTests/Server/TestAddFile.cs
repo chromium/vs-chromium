@@ -7,21 +7,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumPackage.Server;
 
-namespace VsChromiumTests.Server
-{
+namespace VsChromiumTests.Server {
   [TestClass]
-  public class TestAddFile : TestServerBase
-  {
+  public class TestAddFile : TestServerBase {
     [TestMethod]
-    public void AddFileRequestWorks()
-    {
+    public void AddFileRequestWorks() {
       var testFile = GetChromiumEnlistmentFile();
 
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
-
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           // Send "AddFile" request, and wait for response.
           // We don't care if the request is processed properly.
           var response = SendAddFileRequest(server, testFile, ServerResponseTimeout)();
@@ -31,12 +25,9 @@ namespace VsChromiumTests.Server
     }
 
     [TestMethod]
-    public void FileSystemTreeCreationWorks()
-    {
-      using (var container = SetupMefContainer())
-      {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value)
-        {
+    public void FileSystemTreeCreationWorks() {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           var tree = GetFileSystemTreeFromServer(server, testFile);
           var chromiumEntry = tree.Root.Entries[0] as DirectoryEntry;

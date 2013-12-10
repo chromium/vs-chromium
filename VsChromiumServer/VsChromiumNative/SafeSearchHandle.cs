@@ -7,7 +7,7 @@ using Microsoft.Win32.SafeHandles;
 namespace VsChromiumServer.VsChromiumNative {
   public sealed class SafeSearchHandle : SafeHandleZeroOrMinusOneIsInvalid {
     internal SafeSearchHandle()
-        : base(true) {
+      : base(true) {
     }
 
     protected override bool ReleaseHandle() {

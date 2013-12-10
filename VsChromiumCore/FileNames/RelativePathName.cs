@@ -24,28 +24,20 @@ namespace VsChromiumCore.FileNames {
       if (PathHelpers.IsAbsolutePath(relativeName))
         throw new ArgumentException("Path must be relative.", "relativeName");
 
-      this._relativeName = relativeName;
-      this._name = name;
+      _relativeName = relativeName;
+      _name = name;
     }
 
-    public string RelativeName {
-      get {
-        return this._relativeName;
-      }
-    }
+    public string RelativeName { get { return _relativeName; } }
 
-    public string Name {
-      get {
-        return this._name;
-      }
-    }
+    public string Name { get { return _name; } }
 
     public override string ToString() {
-      return this._relativeName;
+      return _relativeName;
     }
 
     public RelativePathName CreateChild(string name) {
-      return new RelativePathName(PathHelpers.PathCombine(this._relativeName, name), name);
+      return new RelativePathName(PathHelpers.PathCombine(_relativeName, name), name);
     }
   }
 }

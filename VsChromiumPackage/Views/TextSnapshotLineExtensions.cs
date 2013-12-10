@@ -11,10 +11,10 @@ namespace VsChromiumPackage.Views {
     /// of the line. |options| can be used to customize the behavior.
     /// </summary>
     public static TextLineFragment GetFragment(
-        this ITextSnapshotLine line,
-        int start,
-        int end,
-        TextLineFragment.Options options) {
+      this ITextSnapshotLine line,
+      int start,
+      int end,
+      TextLineFragment.Options options) {
       return TextLineFragment.Create(line, start, end, options);
     }
   }

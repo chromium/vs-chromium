@@ -17,10 +17,10 @@ namespace VsChromiumServer.Threads {
     public void CancelAll() {
       List<CancellationTokenSource> tempCopy = null;
 
-      lock (this._lock) {
-        if (this._sources.Count > 0) {
-          tempCopy = this._sources;
-          this._sources = new List<CancellationTokenSource>();
+      lock (_lock) {
+        if (_sources.Count > 0) {
+          tempCopy = _sources;
+          _sources = new List<CancellationTokenSource>();
         }
       }
 
@@ -32,8 +32,8 @@ namespace VsChromiumServer.Threads {
 
     public CancellationToken GetNewToken() {
       var source = new CancellationTokenSource();
-      lock (this._lock) {
-        this._sources.Add(source);
+      lock (_lock) {
+        _sources.Add(source);
       }
       return source.Token;
     }

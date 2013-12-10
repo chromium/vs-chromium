@@ -2,36 +2,31 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumPackage.ChromeDebug
-{
-    partial class AttachDialog
-    {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
-        private System.ComponentModel.IContainer components = null;
+namespace VsChromiumPackage.ChromeDebug {
+  partial class AttachDialog {
+    /// <summary>
+    /// Required designer variable.
+    /// </summary>
+    private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+    /// <summary>
+    /// Clean up any resources being used.
+    /// </summary>
+    /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+    protected override void Dispose(bool disposing) {
+      if (disposing && (components != null)) {
+        components.Dispose();
+      }
+      base.Dispose(disposing);
+    }
 
-        #region Windows Form Designer generated code
+    #region Windows Form Designer generated code
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
-        private void InitializeComponent()
-        {
+    /// <summary>
+    /// Required method for Designer support - do not modify
+    /// the contents of this method with the code editor.
+    /// </summary>
+    private void InitializeComponent() {
       this.listViewProcesses = new System.Windows.Forms.ListView();
       this.columnHeaderProcess = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeaderPid = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -50,8 +45,8 @@ namespace VsChromiumPackage.ChromeDebug
       // listViewProcesses
       // 
       this.listViewProcesses.AllowColumnReorder = true;
-      this.listViewProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+      this.listViewProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
       this.listViewProcesses.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeaderProcess,
@@ -123,8 +118,8 @@ namespace VsChromiumPackage.ChromeDebug
       // 
       // groupBox1
       // 
-      this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+      this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
       this.groupBox1.Controls.Add(this.listViewProcesses);
       this.groupBox1.Location = new System.Drawing.Point(12, 27);
@@ -182,21 +177,21 @@ namespace VsChromiumPackage.ChromeDebug
       this.ResumeLayout(false);
       this.PerformLayout();
 
-        }
-
-        #endregion
-
-        private System.Windows.Forms.ListView listViewProcesses;
-        private System.Windows.Forms.Button buttonAttach;
-        private System.Windows.Forms.Button buttonCancel;
-        private System.Windows.Forms.ColumnHeader columnHeaderProcess;
-        private System.Windows.Forms.ColumnHeader columnHeaderPid;
-        private System.Windows.Forms.ColumnHeader columnHeaderTitle;
-        private System.Windows.Forms.ColumnHeader columnHeaderCmdLine;
-        private System.Windows.Forms.ColumnHeader columnHeaderType;
-        private System.Windows.Forms.ColumnHeader columnHeaderSession;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.Button buttonRefresh;
-        private System.Windows.Forms.CheckBox checkBoxOnlyChrome;
     }
+
+    #endregion
+
+    private System.Windows.Forms.ListView listViewProcesses;
+    private System.Windows.Forms.Button buttonAttach;
+    private System.Windows.Forms.Button buttonCancel;
+    private System.Windows.Forms.ColumnHeader columnHeaderProcess;
+    private System.Windows.Forms.ColumnHeader columnHeaderPid;
+    private System.Windows.Forms.ColumnHeader columnHeaderTitle;
+    private System.Windows.Forms.ColumnHeader columnHeaderCmdLine;
+    private System.Windows.Forms.ColumnHeader columnHeaderType;
+    private System.Windows.Forms.ColumnHeader columnHeaderSession;
+    private System.Windows.Forms.GroupBox groupBox1;
+    private System.Windows.Forms.Button buttonRefresh;
+    private System.Windows.Forms.CheckBox checkBoxOnlyChrome;
+  }
 }

@@ -35,29 +35,27 @@ namespace VsChromiumPackage.ChromeDebug {
       public ProcessDetail Detail;
     }
 
-    private Dictionary<ProcessCategory, List<ProcessViewItem>> loadedProcessTable = null;
-    private Dictionary<ProcessCategory, ListViewGroup> processGroups = null;
-    private List<int> selectedProcesses = null;
+    private readonly Dictionary<ProcessCategory, List<ProcessViewItem>> _loadedProcessTable = null;
+    private readonly Dictionary<ProcessCategory, ListViewGroup> _processGroups = null;
 
     public AttachDialog() {
       InitializeComponent();
 
-      loadedProcessTable = new Dictionary<ProcessCategory, List<ProcessViewItem>>();
-      processGroups = new Dictionary<ProcessCategory, ListViewGroup>();
-      selectedProcesses = new List<int>();
+      _loadedProcessTable = new Dictionary<ProcessCategory, List<ProcessViewItem>>();
+      _processGroups = new Dictionary<ProcessCategory, ListViewGroup>();
 
       // Create and initialize the groups and process lists only once. On a reset
       // we don't clear the groups manually, clearing the list view should clear the
       // groups. And we don't clear the entire processes_ dictionary, only the
       // individual buckets inside the dictionary.
       foreach (object value in Enum.GetValues(typeof(ProcessCategory))) {
-        ProcessCategory category = (ProcessCategory)value;
+        var category = (ProcessCategory)value;
 
-        ListViewGroup group = new ListViewGroup(category.ToGroupTitle());
-        processGroups[category] = group;
+        var group = new ListViewGroup(category.ToGroupTitle());
+        _processGroups[category] = group;
         listViewProcesses.Groups.Add(group);
 
-        loadedProcessTable[category] = new List<ProcessViewItem>();
+        _loadedProcessTable[category] = new List<ProcessViewItem>();
       }
     }
 
@@ -77,7 +75,7 @@ namespace VsChromiumPackage.ChromeDebug {
     // Remove command line arguments that we aren't interested in displaying as part of the command
     // line of the process.
     private string[] FilterCommandLine(string[] args) {
-      Func<string, int, bool> AllowArgument = delegate(string arg, int index) {
+      Func<string, int, bool> allowArgument = delegate(string arg, int index) {
         if (index == 0)
           return false;
         return !arg.StartsWith("--force-fieldtrials", StringComparison.CurrentCultureIgnoreCase);
@@ -85,18 +83,18 @@ namespace VsChromiumPackage.ChromeDebug {
 
       // The force-fieldtrials command line option makes the command line view useless, so remove
       // it.  Also remove args[0] since that is the process name.
-      args = args.Where(AllowArgument).ToArray();
+      args = args.Where(allowArgument).ToArray();
       return args;
     }
 
     private void ReloadNativeProcessInfo() {
-      foreach (List<ProcessViewItem> list in loadedProcessTable.Values) {
+      foreach (var list in _loadedProcessTable.Values) {
         list.Clear();
       }
 
       Process[] processes = Process.GetProcesses();
-      foreach (Process p in processes) {
-        ProcessViewItem item = new ProcessViewItem();
+      foreach (var p in processes) {
+        var item = new ProcessViewItem();
         try {
           item.Detail = new ProcessDetail(p.Id);
           if (item.Detail.CanReadPeb && item.Detail.CommandLine != null) {
@@ -105,7 +103,7 @@ namespace VsChromiumPackage.ChromeDebug {
           }
           item.MachineType = item.Detail.MachineType;
         }
-        catch (Exception) {
+        catch {
           // Generally speaking, an exception here means the process is privileged and we cannot
           // get any information about the process.  For those processes, we will just display the
           // information that the Framework gave us in the Process structure.
@@ -124,9 +122,9 @@ namespace VsChromiumPackage.ChromeDebug {
           item.Category = DetermineProcessCategory(item.Detail.Win32ProcessImagePath,
                                                    item.CmdLineArgs);
 
-        Icon icon = item.Detail.SmallIcon;
-        List<ProcessViewItem> items = loadedProcessTable[item.Category];
-        item.Group = processGroups[item.Category];
+        var icon = item.Detail.SmallIcon;
+        var items = _loadedProcessTable[item.Category];
+        item.Group = _processGroups[item.Category];
         items.Add(item);
       }
     }
@@ -168,7 +166,7 @@ namespace VsChromiumPackage.ChromeDebug {
     }
 
     private void InsertCategoryItems(ProcessCategory category) {
-      foreach (ProcessViewItem item in loadedProcessTable[category]) {
+      foreach (ProcessViewItem item in _loadedProcessTable[category]) {
         item.Text = item.Exe;
         item.SubItems.Add(item.ProcessId.ToString());
         item.SubItems.Add(item.Title);
@@ -248,7 +246,7 @@ namespace VsChromiumPackage.ChromeDebug {
       if (!checkBoxOnlyChrome.Checked)
         InsertCategoryItems(ProcessCategory.Other);
       else {
-        foreach (ProcessViewItem item in loadedProcessTable[ProcessCategory.Other]) {
+        foreach (ProcessViewItem item in _loadedProcessTable[ProcessCategory.Other]) {
           listViewProcesses.Items.Remove(item);
         }
       }

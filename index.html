@@ -21,6 +21,7 @@
         <li><a href="#chromium-explorer-search-directorynames">Directory name search</a></li>
         <li><a href="#chromium-explorer-search-filecontents">Text search</a></li>
         <li><a href="#chromium-explorer-keyboard-shortcuts">Keyboard shortcuts</a></li>
+        <li><a href="#custom-enlistments">Custom Enlistments</a></li>
       </ul>
     </li>
     <li><a href="#editor-features">Editor features</a></li>
@@ -52,15 +53,18 @@
       to help contributing code to the Chromium project when using Visual Studio
       as code editor.
     </p>
-    <p>VsChromium currently offers 2 distinct sets of features:</p>
+    <p>Currently, VsChromium offers three distinct sets of features:</p>
     <ul>
       <li>
         Source code navigation and <b>instant</b> search capabilities in a new
-        tool window named <a href="#chromium-explorer">Chromium Explorer</a>.
+        tool window called <a href="#chromium-explorer">Chromium Explorer</a>.
       </li>
       <li>
-        Highlighting in the VS editor of a (currently small) subset of
-        <a href="#chromium-style-checker">Chromium Coding Style violations</a>.
+        Highlighting in the Visual Studio text editor of a (currently small) subset of
+        <a href="#chromium-style-checker">Chromium Coding Style checker</a>.
+      </li>
+      <li>
+        Debugger features, such as <a href="#attach-to-chrome">Attach to Chrome</a>.
       </li>
     </ul>
 
@@ -286,6 +290,39 @@
   <hr />
 
   <!-------------------------------------------------------------------------------->
+  <div id="custom-enlistments">
+    <h1>Chromium Explorer - Custom enlistments</h1>
+    <p>
+      By default, VsChromium automatically recognizes files from a Chromium enlistment. However, it is
+      sometimes useful to enable some of VsChromium features in directories not part of a Chromium enlistment.
+      For example, the search capabilities of VsChromium apply to any directory containing text files.
+    </p>
+    <p>
+      This can easily be achieved by creating a special text file, called "project.vs-chromium-project",
+      in any directory. Once a file contained in that directory is open in the Visual Studio Text Editor,
+      VsChromium starts indexing all text files in that directory and enables the various search capabilities of
+      <a href="#chromium-explorer">Chromium Explorer</a>.
+    </p>
+    <p>
+      Each "project.vs-chromium-project" is a text files containing named sections (i.e. single text lines
+      surrounded by "[" and "]" characters) defining the behavior of  the indexer, i.e. what files to
+      show in Chromium Explorer, and what files to index.
+    </p>
+    <p>For example:</p>
+    <pre style="text-align: left; padding-left: 4px; border: outset">
+[ChromiumExplorer.ignore]
+.git/
+[SearchableFiles.ignore]
+*.pak
+*.zip
+*.exe
+[SearchableFiles.include]
+*
+</pre>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
   <div id="editor-features">
     <h1>Editor features</h1>
   </div>
@@ -376,13 +413,15 @@
       By default, configuration files are installed and stored in the "Configuration"
       sub directory of the VsChromium installtion directory, typically the Visual Studio
       extension directory. Overriding a configuration file is as easy as creating a
-      "VsChromium" directory in the Windows' user folder ("c:\users\username"),
+      ".VsChromium" directory in the Windows' user folder ("c:\users\username"),
       make a copy of the relevant configuration file below, and edit it.
     </p>
     <p>
       After changing one or more configuration files, it is required to restart
       Visual Studio for the changes to take effect.
     </p>
+
+    <h2>Configuration files related to Chromium Explorer and indexing</h2>
     <table>
       <tr>
         <td valign="top"><b>ChromiumEnlistmentDetection.patterns</b></td>
@@ -391,22 +430,6 @@
           It is simply a list of directory and files names to look for when looking at
           the parent directories of a file. There should be no need to customize this
           file unless the Chromium enlistement significanly changes.
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>ChromiumStyleCheckers.disabled</b></td>
-        <td>
-          This file can be used to disable various style checkers. Simply un-comment
-          the corresponding line.
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>ChromiumCodingStyle.ignore</b></td>
-        <td>
-          This file uses a ".gitignore" syntax to determine which files should
-          <b>not</b> be validated by the Chromium Coding Style checker. This is needed
-          because a Chromium enlistment contains third party libraries and generated
-          files that don't always follow the Chromium Coding Style conventions.
         </td>
       </tr>
       <tr>
@@ -438,6 +461,31 @@
           This file uses a (reverse) ".gitignore" syntax to include files into
           the "text seach" feature. This file is used as a 2nd pass after
           "SearchableFile.ignore" to filter out even more using inclusion rules.
+        </td>
+      </tr>
+    </table>
+    <h2>Configuration files related to Coding Style checkers</h2>
+    <table>
+      <tr>
+        <td valign="top"><b>ChromiumEnlistmentDetection.patterns</b></td>
+        <td>
+          Same as above.
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>ChromiumStyleCheckers.disabled</b></td>
+        <td>
+          This file can be used to disable various style checkers. Simply un-comment
+          the corresponding line.
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>ChromiumCodingStyle.ignore</b></td>
+        <td>
+          This file uses a ".gitignore" syntax to determine which files should
+          <b>not</b> be validated by the Chromium Coding Style checker. This is needed
+          because a Chromium enlistment contains third party libraries and generated
+          files that don't always follow the Chromium Coding Style conventions.
         </td>
       </tr>
     </table>
@@ -522,7 +570,7 @@
       Example of memory usage and process relationship after loading ~1.2GB of
       source files:
     </p>
-    <img src="Screenshots/ProcessExplorer.png"></img>
+    <img src="Screenshots/ProcessExplorer.png" />
 
     <p>
       The server process is always automatically terminated when the Visual Studio

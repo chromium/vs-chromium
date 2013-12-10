@@ -26,7 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CopyVsixExtensionFiles>True</CopyVsixExtensionFiles>
-    <CopyVsixExtensionLocation>C:\Users\rpaquay\AppData\Local\Microsoft\VisualStudio\11.0Exp\Extensions\Renaud Paquay %28rpaquay%40chromium.org%29\VsChromiumPackage\0.1</CopyVsixExtensionLocation>
+    <CopyVsixExtensionLocation>C:\Users\rpaquay\AppData\Local\Microsoft\VisualStudio\11.0Exp\Extensions\The Chromium Authors\Vs Chromium\0.2.0</CopyVsixExtensionLocation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -164,6 +164,20 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChromeDebug\AttachDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ChromeDebug\AttachDialog.designer.cs">
+      <DependentUpon>AttachDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ChromeDebug\Guids.cs" />
+    <Compile Include="ChromeDebug\LowLevel\NativeMethods.cs" />
+    <Compile Include="ChromeDebug\LowLevel\Types.cs" />
+    <Compile Include="ChromeDebug\PkgCmdID.cs" />
+    <Compile Include="ChromeDebug\ProcessCategory.cs" />
+    <Compile Include="ChromeDebug\ProcessDetail.cs" />
+    <Compile Include="ChromeDebug\AttachToChromeCommandHandler.cs" />
+    <Compile Include="ChromeDebug\Utility.cs" />
     <Compile Include="ChromiumEnlistment\ChromiumSourceFiles.cs" />
     <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
     <Compile Include="Classifier\ChromiumStyleCheckerFormat.cs" />
@@ -266,6 +280,9 @@
     <Compile Include="VsPackage.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="ChromeDebug\AttachDialog.resx">
+      <DependentUpon>AttachDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

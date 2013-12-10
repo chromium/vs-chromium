@@ -1,12 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!--This is the file that defines the IDs for all the commands exposed by VisualStudio. -->
   <Extern href="stdidcmd.h"/>
+  <!--This header contains the command ids for the menus provided by the shell. -->
   <Extern href="vsshlids.h"/>
   <Extern href="msobtnid.h"/>
+  <!--These headers contain the menu guids for attaching commands to the debug menu. -->
+  <Extern href="VSDbgCmd.h"/>
+  <Extern href="VSDebugGuids.h"/>
   <Commands package="guidVsChromiumPkg">
     <Groups>
       <Group guid="guidVsChromiumCmdSet" id="MyMenuGroup" priority="0x0600">
         <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS"/>
+      </Group>
+      <Group guid="guidChromeDebugCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidVSDebugGroup" id="IDM_DEBUG_MENU"/>
       </Group>
     </Groups>
     <Buttons>
@@ -55,6 +63,13 @@
           <ButtonText>Chromium find in files</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToProcess" priority="0x0100" type="Button">
+        <Parent guid="guidChromeDebugCmdSet" id="MyMenuGroup" />
+        <Icon guid="guidImages" id="bmpPic1" />
+        <Strings>
+          <ButtonText>Attach to Chrome</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
     <Bitmaps>
       <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
@@ -78,6 +93,10 @@
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
       <IDSymbol name="cmdidSearchDirectoryNames" value="0x0103" />
       <IDSymbol name="cmdidSearchFileContents" value="0x0104" />
+    </GuidSymbol>
+    <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="cmdidAttachToProcess" value="0x0100" />
     </GuidSymbol>
     <GuidSymbol name="guidImages" value="{80c1b9c8-d097-4934-aa9c-e5ad6bc2408d}" >
       <IDSymbol name="bmpPic1" value="1" />

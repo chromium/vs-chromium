@@ -12,6 +12,7 @@ namespace VsChromiumPackage.Package {
     IComponentModel ComponentModel { get; }
     OleMenuCommandService OleMenuCommandService { get; }
     IVsUIShell VsUIShell { get; }
+    EnvDTE.DTE DTE { get; }
 
     ToolWindowPane FindToolWindow(Type toolWindowType, int id, bool create);
   }

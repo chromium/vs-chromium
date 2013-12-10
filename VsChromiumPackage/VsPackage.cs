@@ -33,6 +33,8 @@ namespace VsChromiumPackage {
 
     public IVsUIShell VsUIShell { get { return GetService(typeof(SVsUIShell)) as IVsUIShell; } }
 
+    public EnvDTE.DTE DTE { get { return (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE)); } }
+
     protected override void Initialize() {
       base.Initialize();
       try {

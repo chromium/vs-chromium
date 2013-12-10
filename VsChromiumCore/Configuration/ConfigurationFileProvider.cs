@@ -12,6 +12,9 @@ using System.Reflection;
 namespace VsChromiumCore.Configuration {
   [Export(typeof(IConfigurationFileProvider))]
   public class ConfigurationFileProvider : IConfigurationFileProvider {
+    private const string _configurationDirectoryName = "Configuration";
+    private const string _localConfigurationDirectoryName = ".VsChromium";
+
     public IEnumerable<string> ReadFile(string name, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
       foreach (var directoryName in PossibleDirectoryNames()) {
         var path = Path.Combine(directoryName, name);
@@ -25,8 +28,8 @@ namespace VsChromiumCore.Configuration {
     }
 
     private IEnumerable<string> PossibleDirectoryNames() {
-      yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".VsChromium");
-      yield return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Configuration");
+      yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), _localConfigurationDirectoryName);
+      yield return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), _configurationDirectoryName);
     }
   }
 }

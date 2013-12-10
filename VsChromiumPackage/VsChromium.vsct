@@ -20,7 +20,6 @@
     <Buttons>
       <Button guid="guidVsChromiumCmdSet" id="cmdidFormatComment" priority="0x0100" type="Button">
         <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS" />
-        <Icon guid="guidImages" id="bmpPic1" />
         <CommandFlag>DynamicVisibility</CommandFlag>
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
@@ -30,7 +29,6 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidChromiumExplorerToolWindow" priority="0x0100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
-        <Icon guid="guidImages" id="bmpPic2" />
         <Strings>
           <CommandName>cmdidChromiumExplorerToolWindow</CommandName>
           <ButtonText>Chromium Explorer</ButtonText>
@@ -38,7 +36,6 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" priority="0x0101" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup"/>
-        <Icon guid="guidImages" id="bmpPic1" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <CommandName>cmdidSearch</CommandName>
@@ -47,7 +44,6 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup"/>
-        <Icon guid="guidImages" id="bmpPic1" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <CommandName>cmdidSearch</CommandName>
@@ -56,7 +52,6 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchFileContents" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup"/>
-        <Icon guid="guidImages" id="bmpPic1" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <CommandName>cmdidSearch</CommandName>
@@ -65,7 +60,7 @@
       </Button>
       <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToProcess" priority="0x0100" type="Button">
         <Parent guid="guidChromeDebugCmdSet" id="MyMenuGroup" />
-        <Icon guid="guidImages" id="bmpPic1" />
+        <Icon guid="guidPackageImages" id="bmpChromium" />
         <Strings>
           <ButtonText>Attach to Chrome</ButtonText>
         </Strings>
@@ -73,6 +68,7 @@
     </Buttons>
     <Bitmaps>
       <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
+      <Bitmap guid="guidPackageImages" href="Resources\ChromiumIcon.png" usedList="bmpChromium"/>
     </Bitmaps>
   </Commands>
   <KeyBindings>
@@ -104,6 +100,9 @@
       <IDSymbol name="bmpPicSearch" value="3" />
       <IDSymbol name="bmpPicX" value="4" />
       <IDSymbol name="bmpPicArrows" value="5" />
+    </GuidSymbol>
+    <GuidSymbol name="guidPackageImages" value="{29d24a26-23fd-4d67-84f5-bf150c1b47b1}" >
+      <IDSymbol name="bmpChromium" value="1" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>

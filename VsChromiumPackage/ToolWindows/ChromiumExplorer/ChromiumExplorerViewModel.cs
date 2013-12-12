@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -14,6 +15,7 @@ using VsChromiumCore;
 using VsChromiumCore.FileNames;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
+using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 using VsChromiumPackage.Wpf;
@@ -28,6 +30,7 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
     private IEnumerable<TreeViewItemViewModel> _fileNamesResultRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileSystemEntryRootNodes = new List<TreeViewItemViewModel>();
     private ITreeViewItemViewModelHost _host;
+    private UpdateInfo _updateInfo;
 
     /// <summary>
     /// Databound!
@@ -38,6 +41,51 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
     /// Databound!
     /// </summary>
     public bool MatchCase { get; set; }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string UpdateInfoText {
+      get {
+        if (_updateInfo == null)
+          return "";
+        return string.Format("A new version ({0}) of VsChromium is available.", _updateInfo.Version);
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string UpdateInfoUrl {
+      get {
+        if (_updateInfo == null)
+          return "";
+        return _updateInfo.Url.ToString();
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public Visibility UpdateInfoVisibility {
+      get {
+        if (_updateInfo == null)
+          return Visibility.Collapsed;
+        return Visibility.Visible;
+      }
+    }
+
+    public UpdateInfo UpdateInfo {
+      get {
+        return _updateInfo;
+      }
+      set {
+        _updateInfo = value;
+        OnPropertyChanged("UpdateInfoText");
+        OnPropertyChanged("UpdateInfoUrl");
+        OnPropertyChanged("UpdateInfoVisibility");
+      }
+    }
 
     public event PropertyChangedEventHandler PropertyChanged;
 

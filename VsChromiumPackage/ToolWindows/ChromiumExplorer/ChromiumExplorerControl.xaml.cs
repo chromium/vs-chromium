@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Text;
 using VsChromiumCore;
 using VsChromiumCore.Ipc.TypedMessages;
+using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Server;
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
@@ -53,6 +54,11 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
     }
 
     private ChromiumExplorerViewModel ViewModel { get { return (ChromiumExplorerViewModel)DataContext; } }
+
+    public UpdateInfo UpdateInfo {
+      get { return ViewModel.UpdateInfo; } 
+      set { ViewModel.UpdateInfo = value; }
+    }
 
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));

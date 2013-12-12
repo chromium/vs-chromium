@@ -163,6 +163,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoUpdate\IUpdateNotificationListener.cs" />
+    <Compile Include="AutoUpdate\UpdateInfo.cs" />
+    <Compile Include="AutoUpdate\UpdateNotificationListener.cs" />
     <Compile Include="ChromeDebug\AttachDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -184,6 +187,10 @@
     <Compile Include="Classifier\ChromiumClassifier.cs" />
     <Compile Include="Classifier\ChromiumClassifierProvider.cs" />
     <Compile Include="Classifier\ChromiumDiscoveryExtensions.cs" />
+    <Compile Include="AutoUpdate\IPackageVersionProvider.cs" />
+    <Compile Include="AutoUpdate\IUpdateChecker.cs" />
+    <Compile Include="AutoUpdate\IUpdateInfoProvider.cs" />
+    <Compile Include="AutoUpdate\PackageVersionProvider.cs" />
     <Compile Include="Package\CommandHandlers\ChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="Package\CommandHandlers\IChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="Package\CommandHandlers\SearchDirectoryNamesCommandHandler.cs" />
@@ -203,10 +210,15 @@
     <Compile Include="Threads\IReceiveResponsesThread.cs" />
     <Compile Include="Threads\IRequestQueue.cs" />
     <Compile Include="Threads\ISendRequestsThread.cs" />
+    <Compile Include="Threads\IDelayedOperationProcessor.cs" />
+    <Compile Include="Threads\ISynchronizationContextProvider.cs" />
     <Compile Include="Threads\IUIRequestProcessor.cs" />
     <Compile Include="Threads\ReceiveResponsesThread.cs" />
     <Compile Include="Threads\RequestQueue.cs" />
     <Compile Include="Threads\SendRequestsThread.cs" />
+    <Compile Include="Threads\DelayedOperation.cs" />
+    <Compile Include="Threads\DelayedOperationProcessor.cs" />
+    <Compile Include="Threads\SynchronizationContextProvider.cs" />
     <Compile Include="Threads\UIRequestProcess.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerRootNodes.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\FilePositionViewModel.cs" />
@@ -234,6 +246,8 @@
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
     <Compile Include="Commands\ICommandTarget.cs" />
     <Compile Include="Commands\SimpleCommandTarget.cs" />
+    <Compile Include="AutoUpdate\UpdateChecker.cs" />
+    <Compile Include="AutoUpdate\UpdateInfoProvider.cs" />
     <Compile Include="Views\IStatusBar.cs" />
     <Compile Include="Views\IStandarImageSourceFactory.cs" />
     <Compile Include="Views\StandarImageSourceFactory.cs" />

@@ -11,7 +11,7 @@
              Name="FileExplorerToolWindow"
              Background="{DynamicResource VsBrush.ToolWindowBackground}"
              Foreground="{DynamicResource VsBrush.ToolWindowText}"
-             HorizontalAlignment="Stretch">
+             HorizontalAlignment="Stretch" d:DataContext="{d:DesignData ChromiumExplorerViewModel}">
   <UserControl.Resources>
     <Style TargetType="ToggleButton">
       <Setter Property="Background" Value="{DynamicResource VsBrush.CommandBarGradient}"/>
@@ -50,6 +50,21 @@
     <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
       <ToggleButton Content="Aa" Foreground="{DynamicResource VsBrush.ButtonFace}" IsChecked="{Binding MatchCase}" ToolTip="Match case for searches" IsTabStop="False" />
     </ToolBar>
+
+    <StackPanel
+      DockPanel.Dock="Top"
+      HorizontalAlignment="Stretch"
+      Margin="2,2,2,0"
+      Orientation="Vertical"
+      Background="{DynamicResource VsBrush.ToolWindowBackground}"
+      Visibility="{Binding UpdateInfoVisibility}">
+      <TextBlock>
+        <TextBox Text="{Binding UpdateInfoText}"></TextBox>
+        <Hyperlink NavigateUri="{Binding UpdateInfoUrl}">
+          <TextBlock Text="{Binding UpdateInfoUrl}"></TextBlock>
+        </Hyperlink>
+      </TextBlock>
+    </StackPanel>
 
     <!-- SEARCH AREA -->
     <Border DockPanel.Dock="Top" BorderBrush="Gray" BorderThickness="1,1,1,1">

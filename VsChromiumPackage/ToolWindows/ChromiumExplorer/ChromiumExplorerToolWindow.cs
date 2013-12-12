@@ -4,7 +4,9 @@
 
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
+using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Commands;
+using VsChromiumPackage.Wpf;
 
 namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
   /// <summary>
@@ -40,11 +42,20 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
       ExplorerControl = new ChromiumExplorerControl();
     }
 
-    public ChromiumExplorerControl ExplorerControl { get { return Content as ChromiumExplorerControl; } set { Content = value; } }
+    public ChromiumExplorerControl ExplorerControl {
+      get { return Content as ChromiumExplorerControl; } 
+      set { Content = value; }
+    }
 
     public override void OnToolWindowCreated() {
       base.OnToolWindowCreated();
       ExplorerControl.OnToolWindowCreated(this);
+    }
+
+    public void NotifyPackageUpdate(UpdateInfo updateInfo) {
+      WpfUtilities.Post(ExplorerControl, () => {
+        ExplorerControl.UpdateInfo = updateInfo;
+      });
     }
   }
 }

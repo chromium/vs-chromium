@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromiumCore;
+using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Commands;
 using VsChromiumPackage.Package;
 using VsChromiumPackage.Package.CommandHandlers;
@@ -56,6 +57,9 @@ namespace VsChromiumPackage {
     private void InitializeCommandHandlers() {
       var commandHandlerRegistration = ComponentModel.DefaultExportProvider.GetExportedValue<IPackageCommandHandlerRegistration>();
       commandHandlerRegistration.RegisterCommandHandlers();
+
+      var updateChecker = ComponentModel.DefaultExportProvider.GetExportedValue<IUpdateChecker>();
+      updateChecker.Start();
     }
 
     private void PostInitialize() {

@@ -1,0 +1,24 @@
+When making a new release
+
+Master branch
+=============
+1. Update version # in all files:
+  * Find in files: x.y.z (*.cs *.rc)
+  * Find in files: x,y,z (*.rc)
+2. Build
+3. Commit and push to github
+4. Create a release named "vx.y.x" (e.g. v0.2.2) on github
+   * Create the tag "vx.y.z"
+   * Attach the vsix file build in step 3.
+
+gh-pages branch
+===============
+
+1. Update "index.html#installation" to have the installation ref. point to the URL of the release created above
+   (https://github.com/chromium/vs-chromium/releases/tag/vx.y.x)
+2. Update the file "latest_version.txt" with the new version # and new URL
+
+    version: x.y.z
+    url: https://github.com/chromium/vs-chromium/releases/tag/vx.y.z
+
+3. Commit and push.

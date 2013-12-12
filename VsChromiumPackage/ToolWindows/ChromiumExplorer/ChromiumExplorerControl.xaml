@@ -59,7 +59,7 @@
     </Border>
 
     <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
-      <ToggleButton Content="Aa" Foreground="{DynamicResource VsBrush.ButtonFace}" IsChecked="{Binding MatchCase}" ToolTip="Match case for searches" IsTabStop="False" />
+      <ToggleButton Content="Aa" IsChecked="{Binding MatchCase}" ToolTip="Match case for searches" IsTabStop="False" />
     </ToolBar>
 
     <!-- SEARCH AREA -->

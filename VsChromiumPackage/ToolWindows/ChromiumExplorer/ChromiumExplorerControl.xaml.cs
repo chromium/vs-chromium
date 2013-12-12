@@ -9,6 +9,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Text;
 using VsChromiumCore;
@@ -56,7 +57,7 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
     private ChromiumExplorerViewModel ViewModel { get { return (ChromiumExplorerViewModel)DataContext; } }
 
     public UpdateInfo UpdateInfo {
-      get { return ViewModel.UpdateInfo; } 
+      get { return ViewModel.UpdateInfo; }
       set { ViewModel.UpdateInfo = value; }
     }
 
@@ -373,7 +374,16 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
     }
 
     private void TreeViewItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e) {
+      // This prevents the tree view for scrolling horizontally to make the selected item as visibile as possible.
+      // This is useful for "SearchFileContents", as text extracts are usually wide enough to make tree view navigation
+      // annoying when they are selected.
       e.Handled = _swallowsRequestBringIntoView;
+    }
+
+    private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e) {
+      // Open the default web browser to the update URL.
+      Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+      e.Handled = true;
     }
   }
 }

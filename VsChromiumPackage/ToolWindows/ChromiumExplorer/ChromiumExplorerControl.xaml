@@ -47,24 +47,20 @@
   </UserControl.Resources>
 
   <DockPanel>
+    <Border DockPanel.Dock="Top" BorderBrush="Orange" BorderThickness="2,2,2,2" Visibility="{Binding Path=UpdateInfoVisibility, Mode=OneWay}">
+      <StackPanel HorizontalAlignment="Stretch" Margin="2,2,2,2" Orientation="Vertical" Background="{DynamicResource VsBrush.ToolWindowBackground}">
+        <TextBlock TextWrapping="Wrap">
+          <Run Text="{Binding Path=UpdateInfoText, Mode=OneWay}" />
+          <Hyperlink NavigateUri="{Binding Path=UpdateInfoUrl, Mode=OneWay}" RequestNavigate="Hyperlink_RequestNavigate">
+            <Run Text="{Binding Path=UpdateInfoUrl, Mode=OneWay}" />
+          </Hyperlink>
+        </TextBlock>
+      </StackPanel>
+    </Border>
+
     <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
       <ToggleButton Content="Aa" Foreground="{DynamicResource VsBrush.ButtonFace}" IsChecked="{Binding MatchCase}" ToolTip="Match case for searches" IsTabStop="False" />
     </ToolBar>
-
-    <StackPanel
-      DockPanel.Dock="Top"
-      HorizontalAlignment="Stretch"
-      Margin="2,2,2,0"
-      Orientation="Vertical"
-      Background="{DynamicResource VsBrush.ToolWindowBackground}"
-      Visibility="{Binding UpdateInfoVisibility}">
-      <TextBlock>
-        <TextBox Text="{Binding UpdateInfoText}"></TextBox>
-        <Hyperlink NavigateUri="{Binding UpdateInfoUrl}">
-          <TextBlock Text="{Binding UpdateInfoUrl}"></TextBlock>
-        </Hyperlink>
-      </TextBlock>
-    </StackPanel>
 
     <!-- SEARCH AREA -->
     <Border DockPanel.Dock="Top" BorderBrush="Gray" BorderThickness="1,1,1,1">

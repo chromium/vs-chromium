@@ -49,7 +49,7 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
       get {
         if (_updateInfo == null)
           return "";
-        return string.Format("A new version ({0}) of VsChromium is available.", _updateInfo.Version);
+        return string.Format("A new version ({0}) of VsChromium is available: ", _updateInfo.Version);
       }
     }
 

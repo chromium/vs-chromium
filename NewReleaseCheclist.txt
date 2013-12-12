@@ -6,10 +6,11 @@ Master branch
   * Find in files: x.y.z (*.cs *.rc)
   * Find in files: x,y,z (*.rc)
 2. Build
-3. Commit and push to github
-4. Create a release named "vx.y.x" (e.g. v0.2.2) on github
+3. Check all unit test pass
+4. Commit and push to github
+5. Create a release named "vx.y.x" (e.g. v0.2.2) on github
    * Create the tag "vx.y.z"
-   * Attach the vsix file build in step 3.
+   * Attach the vsix file built in step 2.
 
 gh-pages branch
 ===============

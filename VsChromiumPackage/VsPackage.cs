@@ -12,7 +12,7 @@ using VsChromiumCore;
 using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Commands;
 using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandlers;
+using VsChromiumPackage.Package.CommandHandler;
 using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage {

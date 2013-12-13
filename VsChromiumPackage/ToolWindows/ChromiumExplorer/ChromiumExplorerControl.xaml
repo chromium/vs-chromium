@@ -122,7 +122,7 @@
           <Setter Property="ItemsPanel">
             <Setter.Value>
               <ItemsPanelTemplate>
-                <chromiumExplorer:MyVirtualizingStackPanel />
+                <wpf:MyVirtualizingStackPanel />
               </ItemsPanelTemplate>
             </Setter.Value>
           </Setter>
@@ -141,7 +141,7 @@
       <TreeView.ItemsPanel>
         <ItemsPanelTemplate>
           <!-- This custom VSP exposes BringIntoView -->
-          <chromiumExplorer:MyVirtualizingStackPanel />
+          <wpf:MyVirtualizingStackPanel />
         </ItemsPanelTemplate>
       </TreeView.ItemsPanel>
 

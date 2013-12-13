@@ -6,6 +6,10 @@ using VsChromiumCore.Linq;
 using VsChromiumPackage.Threads;
 
 namespace VsChromiumPackage.AutoUpdate {
+  /// <summary>
+  /// Implements new VsChromium package version check by periodically
+  /// (once per day) checking for the latest version info.
+  /// </summary>
   [Export(typeof(IUpdateChecker))]
   public class UpdateChecker : IUpdateChecker {
     private readonly IPackageVersionProvider _packageVersionProvider;

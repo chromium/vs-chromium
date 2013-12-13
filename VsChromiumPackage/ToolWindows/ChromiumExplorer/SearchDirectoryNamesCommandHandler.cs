@@ -6,8 +6,9 @@ using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using VsChromiumPackage.Commands;
+using VsChromiumPackage.Package.CommandHandler;
 
-namespace VsChromiumPackage.Package.CommandHandlers {
+namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
   [Export(typeof(IPackageCommandHandler))]
   public class SearchDirectoryNamesCommandHandler : IPackageCommandHandler {
     private readonly IChromiumExplorerToolWindowAccessor _toolWindowAccessor;

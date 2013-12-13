@@ -7,7 +7,7 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Windows.Forms;
 using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandlers;
+using VsChromiumPackage.Package.CommandHandler;
 
 namespace VsChromiumPackage.ChromeDebug {
   [Export(typeof(IPackageCommandHandler))]

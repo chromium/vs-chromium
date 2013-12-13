@@ -7,7 +7,7 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using VsChromiumCore;
 
-namespace VsChromiumPackage.Package.CommandHandlers {
+namespace VsChromiumPackage.Package.CommandHandler {
   [Export(typeof(IPackageCommandHandlerRegistration))]
   public class PackageCommandHandlerRegistration : IPackageCommandHandlerRegistration {
     private readonly IEnumerable<IPackageCommandHandler> _commandHandlers;

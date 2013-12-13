@@ -8,13 +8,12 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using VsChromiumPackage.Wpf;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Wpf {
   /// <summary>
   /// This class is thread safe, but all operations will be run in the Dispatcher thread of the ProgressBar instance.
   /// </summary>
-  public class ProgressBarTracker {
+  public class ProgressBarTracker : IProgressBarTracker {
     private readonly List<ProgressBarItem> _items = new List<ProgressBarItem>();
     private readonly object _lock = new object();
     private readonly ProgressBar _progressBar;

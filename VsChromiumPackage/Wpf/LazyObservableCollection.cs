@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using VsChromiumCore.Linq;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Wpf {
   public class LazyObservableCollection<T> : ObservableCollection<T>, ILazyObservableCollection<T> where T : class {
     private readonly int _lazyCount;
     private readonly Func<T> _lazyItemFactory;

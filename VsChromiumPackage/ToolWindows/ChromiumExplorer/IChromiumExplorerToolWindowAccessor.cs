@@ -3,9 +3,8 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Design;
-using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
-namespace VsChromiumPackage.Package.CommandHandlers {
+namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
   public interface IChromiumExplorerToolWindowAccessor {
     ChromiumExplorerToolWindow GetToolWindow();
     void FocusSearchTextBox(CommandID commandId);

@@ -8,9 +8,10 @@ using System.ComponentModel.Design;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromiumPackage.Commands;
-using VsChromiumPackage.ToolWindows.ChromiumExplorer;
+using VsChromiumPackage.Package;
+using VsChromiumPackage.Package.CommandHandler;
 
-namespace VsChromiumPackage.Package.CommandHandlers {
+namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
   [Export(typeof(IPackageCommandHandler))]
   public class ShowChromiumExplorerCommandHandler : IPackageCommandHandler {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

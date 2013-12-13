@@ -7,6 +7,10 @@ using System.Net;
 using VsChromiumCore;
 
 namespace VsChromiumPackage.AutoUpdate {
+  /// <summary>
+  /// Implementation of IUpdateInfoProvider checking for the content of
+  /// the "latest_version.txt" file on the public VsChromium GitHub URL.
+  /// </summary>
   [Export(typeof(IUpdateInfoProvider))]
   public class UpdateInfoProvider : IUpdateInfoProvider {
     private const string _requestUriString = "http://chromium.github.io/vs-chromium/latest_version.txt";

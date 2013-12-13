@@ -4,7 +4,7 @@
 
 using System.Windows.Controls;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Wpf {
   public class MyVirtualizingStackPanel : VirtualizingStackPanel {
     public void BringIntoView(int index) {
       BringIndexIntoView(index);

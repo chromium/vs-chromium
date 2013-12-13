@@ -1,5 +1,5 @@
 using System.ComponentModel.Composition;
-using VsChromiumPackage.Package.CommandHandlers;
+using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage.AutoUpdate {
   [Export(typeof(IUpdateNotificationListener))]

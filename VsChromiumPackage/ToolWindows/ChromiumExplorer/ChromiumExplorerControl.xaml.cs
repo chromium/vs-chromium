@@ -29,7 +29,7 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
     private const int _searchFileNamesMaxResults = 2000;
     private const int _searchFileContentsMaxResults = 10000;
 
-    private readonly ProgressBarTracker _progressBarTracker;
+    private readonly IProgressBarTracker _progressBarTracker;
     private IComponentModel _componentModel;
     private IOpenDocumentHelper _openDocumentHelper;
     private IStatusBar _statusBar;

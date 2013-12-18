@@ -5,9 +5,9 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using VsChromiumPackage.ChromeDebug.LowLevel;
+using VsChromiumPackage.Features.ChromeDebug.LowLevel;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromiumPackage.Features.ChromeDebug {
   static class Utility {
     public static string[] SplitArgs(string unsplitArgumentLine) {
       if (unsplitArgumentLine == null)

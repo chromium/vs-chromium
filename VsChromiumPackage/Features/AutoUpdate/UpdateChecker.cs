@@ -5,7 +5,7 @@ using VsChromiumCore;
 using VsChromiumCore.Linq;
 using VsChromiumPackage.Threads;
 
-namespace VsChromiumPackage.AutoUpdate {
+namespace VsChromiumPackage.Features.AutoUpdate {
   /// <summary>
   /// Implements new VsChromium package version check by periodically
   /// (once per day) checking for the latest version info.

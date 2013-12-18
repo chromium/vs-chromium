@@ -15,7 +15,7 @@ using VsChromiumCore;
 using VsChromiumCore.FileNames;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
-using VsChromiumPackage.AutoUpdate;
+using VsChromiumPackage.Features.AutoUpdate;
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 using VsChromiumPackage.Wpf;

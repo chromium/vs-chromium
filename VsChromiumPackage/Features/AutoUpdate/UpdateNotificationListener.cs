@@ -1,7 +1,7 @@
 using System.ComponentModel.Composition;
 using VsChromiumPackage.Features.ChromiumExplorer;
 
-namespace VsChromiumPackage.AutoUpdate {
+namespace VsChromiumPackage.Features.AutoUpdate {
   [Export(typeof(IUpdateNotificationListener))]
   public class UpdateNotificationListener : IUpdateNotificationListener {
     private readonly IChromiumExplorerToolWindowAccessor _chromiumExplorerToolWindowAccessor;

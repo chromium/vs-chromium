@@ -163,23 +163,23 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AutoUpdate\IUpdateNotificationListener.cs" />
-    <Compile Include="AutoUpdate\UpdateInfo.cs" />
-    <Compile Include="AutoUpdate\UpdateNotificationListener.cs" />
-    <Compile Include="ChromeDebug\AttachDialog.cs">
+    <Compile Include="Features\AutoUpdate\IUpdateNotificationListener.cs" />
+    <Compile Include="Features\AutoUpdate\UpdateInfo.cs" />
+    <Compile Include="Features\AutoUpdate\UpdateNotificationListener.cs" />
+    <Compile Include="Features\ChromeDebug\AttachDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ChromeDebug\AttachDialog.designer.cs">
+    <Compile Include="Features\ChromeDebug\AttachDialog.designer.cs">
       <DependentUpon>AttachDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="ChromeDebug\Guids.cs" />
-    <Compile Include="ChromeDebug\LowLevel\NativeMethods.cs" />
-    <Compile Include="ChromeDebug\LowLevel\Types.cs" />
-    <Compile Include="ChromeDebug\PkgCmdID.cs" />
-    <Compile Include="ChromeDebug\ProcessCategory.cs" />
-    <Compile Include="ChromeDebug\ProcessDetail.cs" />
-    <Compile Include="ChromeDebug\AttachToChromeCommandHandler.cs" />
-    <Compile Include="ChromeDebug\Utility.cs" />
+    <Compile Include="Features\ChromeDebug\Guids.cs" />
+    <Compile Include="Features\ChromeDebug\LowLevel\NativeMethods.cs" />
+    <Compile Include="Features\ChromeDebug\LowLevel\Types.cs" />
+    <Compile Include="Features\ChromeDebug\PkgCmdID.cs" />
+    <Compile Include="Features\ChromeDebug\ProcessCategory.cs" />
+    <Compile Include="Features\ChromeDebug\ProcessDetail.cs" />
+    <Compile Include="Features\ChromeDebug\AttachToChromeCommandHandler.cs" />
+    <Compile Include="Features\ChromeDebug\Utility.cs" />
     <Compile Include="ChromiumEnlistment\ChromiumSourceFiles.cs" />
     <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleCheckerFormat.cs" />
@@ -188,10 +188,10 @@
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumClassifier.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumClassifierProvider.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumDiscoveryExtensions.cs" />
-    <Compile Include="AutoUpdate\IPackageVersionProvider.cs" />
-    <Compile Include="AutoUpdate\IUpdateChecker.cs" />
-    <Compile Include="AutoUpdate\IUpdateInfoProvider.cs" />
-    <Compile Include="AutoUpdate\PackageVersionProvider.cs" />
+    <Compile Include="Features\AutoUpdate\IPackageVersionProvider.cs" />
+    <Compile Include="Features\AutoUpdate\IUpdateChecker.cs" />
+    <Compile Include="Features\AutoUpdate\IUpdateInfoProvider.cs" />
+    <Compile Include="Features\AutoUpdate\PackageVersionProvider.cs" />
     <Compile Include="Features\BuildErrors\BuildOutputParser.cs" />
     <Compile Include="Features\BuildErrors\BuildOutputSpan.cs" />
     <Compile Include="Features\BuildErrors\BuildOutputClassifierProvider.cs" />
@@ -256,8 +256,8 @@
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
     <Compile Include="Commands\ICommandTarget.cs" />
     <Compile Include="Commands\SimpleCommandTarget.cs" />
-    <Compile Include="AutoUpdate\UpdateChecker.cs" />
-    <Compile Include="AutoUpdate\UpdateInfoProvider.cs" />
+    <Compile Include="Features\AutoUpdate\UpdateChecker.cs" />
+    <Compile Include="Features\AutoUpdate\UpdateInfoProvider.cs" />
     <Compile Include="Views\IStatusBar.cs" />
     <Compile Include="Views\IStandarImageSourceFactory.cs" />
     <Compile Include="Views\StandarImageSourceFactory.cs" />
@@ -303,7 +303,7 @@
     <Compile Include="VsPackage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="ChromeDebug\AttachDialog.resx">
+    <EmbeddedResource Include="Features\ChromeDebug\AttachDialog.resx">
       <DependentUpon>AttachDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">
@@ -356,9 +356,7 @@
       <Name>VsChromiumServer</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ToolWindows\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>
   </PropertyGroup>

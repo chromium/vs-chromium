@@ -4,8 +4,8 @@
 
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
-using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Commands;
+using VsChromiumPackage.Features.AutoUpdate;
 using VsChromiumPackage.Wpf;
 
 namespace VsChromiumPackage.Features.ChromiumExplorer {

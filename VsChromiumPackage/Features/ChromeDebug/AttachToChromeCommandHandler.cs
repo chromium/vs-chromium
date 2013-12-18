@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using VsChromiumPackage.Package;
 using VsChromiumPackage.Package.CommandHandler;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromiumPackage.Features.ChromeDebug {
   [Export(typeof(IPackageCommandHandler))]
   public class AttachToChromeCommandHandler : IPackageCommandHandler {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

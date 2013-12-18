@@ -2,7 +2,7 @@
 using System.ComponentModel.Composition;
 using System.Reflection;
 
-namespace VsChromiumPackage.AutoUpdate {
+namespace VsChromiumPackage.Features.AutoUpdate {
   /// <summary>
   /// Return the VsChromium package version by looking up the assembly version.
   /// </summary>

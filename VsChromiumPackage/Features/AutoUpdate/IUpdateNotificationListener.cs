@@ -1,4 +1,4 @@
-namespace VsChromiumPackage.AutoUpdate {
+namespace VsChromiumPackage.Features.AutoUpdate {
   /// <summary>
   /// Components listening to "there is a new VsChromium package version
   /// available" event.

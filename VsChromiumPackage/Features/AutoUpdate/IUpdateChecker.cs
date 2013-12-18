@@ -1,4 +1,4 @@
-﻿namespace VsChromiumPackage.AutoUpdate {
+﻿namespace VsChromiumPackage.Features.AutoUpdate {
   /// <summary>
   /// Abstraction over the "new version available" periodic checks.
   /// </summary>

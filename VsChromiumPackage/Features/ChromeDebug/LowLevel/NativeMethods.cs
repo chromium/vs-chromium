@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumPackage.ChromeDebug.LowLevel {
+namespace VsChromiumPackage.Features.ChromeDebug.LowLevel {
   public static class NativeMethods {
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

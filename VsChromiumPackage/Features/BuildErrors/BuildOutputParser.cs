@@ -8,11 +8,12 @@ namespace VsChromiumPackage.Features.BuildErrors {
     private readonly Lazy<Regex> _regex = new Lazy<Regex>(CreateRegex);
 
     private static Regex CreateRegex() {
-      var dosFilename = @"[a-zA-Z]\:{0,1}(?:[\\/][\w.\s]*[\w.]){1,}";
-      var netFilename = @"[\\/](?:[\\/][\w.\s]*[\w.]){1,}";
+      var filenameChars = @"(?:[\\/][\w.\s]*[\w.]){1,}";
+      var dosFilename = @"[a-zA-Z]\:{0,1}" + filenameChars;
+      var netFilename = @"[\\/]" + filenameChars;
       var lineNumberOnly = @"\((?'line'[0-9]+)\)";
       var lineColumn = @"\((?'line'[0-9]+)\s*,\s*(?'col'[0-9]+)\)";
-      var regex = string.Format(@"(?'filename'^({0}|{1}))\s*({2}|{3})?", dosFilename, netFilename, lineNumberOnly, lineColumn);
+      var regex = string.Format(@"(?'filename'^({0}|{1}))(\s*{2}|\s*{3})?", dosFilename, netFilename, lineNumberOnly, lineColumn);
       return new Regex(regex);
     }
 

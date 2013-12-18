@@ -38,6 +38,10 @@ namespace VsChromiumTests {
       AssertIsMatch(@"d:\fo o.txt  (5, 10): error C2061: syntax error : identifier 'ensions'", @"d:\fo o.txt", 4, 9);
       AssertIsMatch(@"d:\fo o.t xt (5): error C2061: syntax error : identifier 'ensions'", @"d:\fo o.t xt", 4, -1);
       AssertIsMatch(@"d:\ba r\fo o.txt (5): error C2061: syntax error : identifier 'ensions'", @"d:\ba r\fo o.txt", 4, -1);
+      
+      // Path after whitespaces
+      AssertIsMatch(@" d:\foo.txt(10) : error C2061: syntax error : identifier 'ensions'", @"d:\foo.txt", 9, -1);
+      AssertIsMatch(@"  d:\foo.txt(10) : error C2061: syntax error : identifier 'ensions'", @"d:\foo.txt", 9, -1);
     }
 
     [TestMethod]

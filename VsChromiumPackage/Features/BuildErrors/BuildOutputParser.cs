@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace VsChromiumPackage.Features.BuildErrors {
@@ -19,12 +20,11 @@ namespace VsChromiumPackage.Features.BuildErrors {
 
     public BuildOutputSpan ParseLine(string text) {
       var match = _regex.Value.Match(text);
-      if (match.Groups["filename"] == Match.Empty)
+      if (!match.Success)
         return null;
 
       var filename = match.Groups["filename"].Value;
-      if (filename == "")
-        return null;
+      Debug.Assert(!string.IsNullOrEmpty(filename));
 
       int line;
       int.TryParse(match.Groups["line"].Value, out line);

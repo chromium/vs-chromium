@@ -9,7 +9,7 @@ namespace VsChromiumTests {
   [TestClass]
   public class TestBuildErrorParsing {
     [TestMethod]
-    public void MatchFileNameNameWorks() {
+    public void BuildOutputParserWorks() {
       // Paths using various directory separators and prefixes
       AssertIsMatch(@"d:\src\tcp_socket_event_dispatcher.h(11) : error C2061: syntax error : identifier 'ensions'", @"d:\src\tcp_socket_event_dispatcher.h", 10, -1);
       AssertIsMatch(@"d:/src/tcp_socket_event_dispatcher.h(11) : error C2061: syntax error : identifier 'ensions'", @"d:/src/tcp_socket_event_dispatcher.h", 10, -1);
@@ -33,9 +33,26 @@ namespace VsChromiumTests {
       // Path with spaces
       AssertIsMatch(@"d:\fo o.txt: error C2061: syntax error : identifier 'ensions'", @"d:\fo o.txt", -1, -1);
       AssertIsMatch(@"d:\fo o.t xt: error C2061: syntax error : identifier 'ensions'", @"d:\fo o.t xt", -1, -1);
+      AssertIsMatch(@"d:\ba r\fo o.txt: error C2061: syntax error : identifier 'ensions'", @"d:\ba r\fo o.txt", -1, -1);
 
       AssertIsMatch(@"d:\fo o.txt  (5, 10): error C2061: syntax error : identifier 'ensions'", @"d:\fo o.txt", 4, 9);
       AssertIsMatch(@"d:\fo o.t xt (5): error C2061: syntax error : identifier 'ensions'", @"d:\fo o.t xt", 4, -1);
+      AssertIsMatch(@"d:\ba r\fo o.txt (5): error C2061: syntax error : identifier 'ensions'", @"d:\ba r\fo o.txt", 4, -1);
+    }
+
+    [TestMethod]
+    public void BuildOutputParserDoesNotMatchInvalidFilenames() {
+      AssertNoMatch(@"");
+      AssertNoMatch(@"c");
+      AssertNoMatch(@"c:");
+      AssertNoMatch(@"c:\");
+      AssertNoMatch(@"c:\ foo.txt");
+    }
+
+    private void AssertNoMatch(string text) {
+      var parser = new BuildOutputParser();
+      var result = parser.ParseLine(text);
+      Assert.IsNull(result);
     }
 
     private static void AssertIsMatch(string text, string filename, int line, int column) {

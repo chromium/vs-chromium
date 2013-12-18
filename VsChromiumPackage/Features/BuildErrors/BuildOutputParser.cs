@@ -8,8 +8,8 @@ namespace VsChromiumPackage.Features.BuildErrors {
     private readonly Lazy<Regex> _regex = new Lazy<Regex>(CreateRegex);
 
     private static Regex CreateRegex() {
-      var filenameChars = @"(?:[\\/][\w.\s]*[\w.]){1,}";
-      var dosFilename = @"[a-zA-Z]\:{0,1}" + filenameChars;
+      var filenameChars = @"(?:[\\/][\w.][\w.\s]*[\w.]){1,}";
+      var dosFilename = @"[a-zA-Z]\:" + filenameChars;
       var netFilename = @"[\\/]" + filenameChars;
       var lineNumberOnly = @"\((?'line'[0-9]+)\)";
       var lineColumn = @"\((?'line'[0-9]+)\s*,\s*(?'col'[0-9]+)\)";

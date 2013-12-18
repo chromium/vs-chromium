@@ -36,7 +36,7 @@ namespace VsChromiumPackage.Features.FormatComment {
       _textView = AdapterService.GetWpfTextView(textViewAdapter);
 
       var target = new SimpleCommandTarget(new CommandID(GuidList.GuidVsChromiumCmdSet, PkgCmdIdList.CmdidFormatComment), Execute);
-      var targetWrapper = new CommandTargetWrapper(target);
+      var targetWrapper = new OleCommandTarget(target);
       _textViewAdapter.AddCommandFilter(targetWrapper, out targetWrapper.NextCommandTarget);
     }
 

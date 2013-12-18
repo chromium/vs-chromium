@@ -10,19 +10,32 @@ using Microsoft.VisualStudio.OLE.Interop;
 using VsChromiumCore;
 
 namespace VsChromiumPackage.Commands {
-  public class CommandTargetWrapper : IOleCommandTarget {
+  /// <summary>
+  /// Implements IOleCommandTarget from an instance of ICommandTarget.
+  /// </summary>
+  public class OleCommandTarget : IOleCommandTarget {
     private readonly ICommandTarget _commandTarget;
 
-    public CommandTargetWrapper(ICommandTarget commandTarget) {
+    public OleCommandTarget(ICommandTarget commandTarget) {
       _commandTarget = commandTarget;
     }
 
+    /// <summary>
+    /// The next command target in the chain. The caller is responsible for initializing.
+    /// This has to be a public field, because it may have to be assigned from an "out" parameter.
+    /// </summary>
     public IOleCommandTarget NextCommandTarget;
 
     public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
       var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[0].cmdID);
 
-      bool isSupported = _commandTarget.HandlesCommand(commandId);
+      bool isSupported = false;
+      try {
+        isSupported = _commandTarget.HandlesCommand(commandId);
+      }
+      catch (Exception e) {
+        Logger.LogException(e, "Error in {0}.HandlesCommand.", _commandTarget.GetType().FullName);
+      }
       if (!isSupported) {
         return NextCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
       }

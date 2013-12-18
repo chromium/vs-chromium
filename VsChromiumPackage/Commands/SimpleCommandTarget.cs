@@ -9,14 +9,24 @@ namespace VsChromiumPackage.Commands {
   public class SimpleCommandTarget : ICommandTarget {
     private readonly CommandID _commandId;
     private readonly Action _action;
+    private readonly Func<bool> _handlesCommand;
 
     public SimpleCommandTarget(CommandID commandId, Action action) {
       _commandId = commandId;
       _action = action;
     }
 
+    public SimpleCommandTarget(CommandID commandId, Action action, Func<bool> handlesCommand) {
+      _commandId = commandId;
+      _action = action;
+      _handlesCommand = handlesCommand;
+    }
+
     public bool HandlesCommand(CommandID commandId) {
-      return _commandId.Equals(commandId);
+      bool result = _commandId.Equals(commandId);
+      if (result && _handlesCommand != null)
+        result = _handlesCommand();
+      return result;
     }
 
     public bool IsEnabled(CommandID commandId) {

@@ -191,6 +191,10 @@
     <Compile Include="AutoUpdate\IUpdateChecker.cs" />
     <Compile Include="AutoUpdate\IUpdateInfoProvider.cs" />
     <Compile Include="AutoUpdate\PackageVersionProvider.cs" />
+    <Compile Include="Features\BuildErrors\BuildOutputParser.cs" />
+    <Compile Include="Features\BuildErrors\BuildOutputSpan.cs" />
+    <Compile Include="Features\BuildErrors\IBuildOutputParser.cs" />
+    <Compile Include="Features\BuildErrors\NugetConsoleViewHandler.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />
@@ -243,7 +247,7 @@
       <DependentUpon>ChromiumExplorerControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="ToolWindows\ChromiumExplorer\TreeViewItemViewModelHost.cs" />
-    <Compile Include="Commands\CommandTargetWrapper.cs" />
+    <Compile Include="Commands\OleCommandTarget.cs" />
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
     <Compile Include="Commands\ICommandTarget.cs" />
     <Compile Include="Commands\SimpleCommandTarget.cs" />

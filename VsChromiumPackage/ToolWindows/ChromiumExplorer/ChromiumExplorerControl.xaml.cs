@@ -102,7 +102,7 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
       var @event = typedEvent as ProgressReportEvent;
       if (@event != null) {
         Wpf.WpfUtilities.Post(this,
-                              () => { _statusBar.ReportProgress(@event.DisplayText, @event.Completed, @event.Total); });
+                              () => _statusBar.ReportProgress(@event.DisplayText, @event.Completed, @event.Total));
       }
     }
 
@@ -306,10 +306,8 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
         if (filePosition != null) {
           // The following is important, as it prevents the message from bubbling up
           // and preventing the newly opened document to receive the focus.
-          SynchronizationContext.Current.Post(_ => {
-            _openDocumentHelper.OpenDocument(filePosition.Path,
-                                             new Span(filePosition.Position, filePosition.Length));
-          }, null);
+          SynchronizationContext.Current.Post(_ => _openDocumentHelper.OpenDocument(filePosition.Path,
+                                                                                    (__) => new Span(filePosition.Position, filePosition.Length)), null);
 
           return true;
         }
@@ -320,7 +318,7 @@ namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
         if (fileEntry != null) {
           // The following is important, as it prevents the message from bubbling up
           // and preventing the newly opened document to receive the focus.
-          SynchronizationContext.Current.Post(_ => { _openDocumentHelper.OpenDocument(fileEntry.Path, null); },
+          SynchronizationContext.Current.Post(_ => _openDocumentHelper.OpenDocument(fileEntry.Path, __ => null),
                                               null);
 
           return true;

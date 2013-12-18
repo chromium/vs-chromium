@@ -32,24 +32,29 @@ namespace VsChromiumPackage.Views {
     private IServiceProvider _serviceProvider = null;
 
     public bool OpenDocument(string fileName, Span? span) {
+      return OpenDocument(fileName, (_) => span);
+    }
+
+    public bool OpenDocument(string fileName, Func<IVsTextView, Span?> spanProvider) {
       try {
         var vsWindowFrame = OpenDocumentInWindowFrame(fileName);
         if (vsWindowFrame == null)
           return false;
 
+        var vsTextView = GetVsTextView(vsWindowFrame);
+        if (vsTextView == null)
+          return false;
+
+        var span = spanProvider(vsTextView);
         if (!span.HasValue)
           return true;
 
-        return NavigateInWindowFrame(vsWindowFrame, span.Value);
+        return NavigateInTextView(vsTextView, span.Value);
       }
       catch (Exception e) {
         Logger.LogException(e, "Error openning document \"{0}\".", fileName);
         return false;
       }
-    }
-
-    public bool OpenDocument(string fileName) {
-      return OpenDocument(fileName, null);
     }
 
     private IVsWindowFrame OpenDocumentInWindowFrame(string fileName) {
@@ -62,11 +67,7 @@ namespace VsChromiumPackage.Views {
       return result;
     }
 
-    private bool NavigateInWindowFrame(IVsWindowFrame windowFrame, Span span) {
-      var vsTextView = GetVsTextView(windowFrame);
-      if (vsTextView == null) {
-        return false;
-      }
+    private bool NavigateInTextView(IVsTextView vsTextView, Span span) {
       var wpfTextView = _editorAdaptersFactory.GetWpfTextView(vsTextView);
       var start = new SnapshotPoint(wpfTextView.TextSnapshot, span.Start);
       SelectSpan(wpfTextView, new SnapshotSpan(start, span.Length));

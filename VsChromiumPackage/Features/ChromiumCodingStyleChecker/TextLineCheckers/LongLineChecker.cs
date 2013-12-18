@@ -4,19 +4,18 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromiumPackage.ChromiumEnlistment;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Classifier.TextLineCheckers {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
-  /// Check that there are no trailing spaces in code files.
+  /// Check that lines are no longer than 80 characters.
   /// </summary>
   [Export(typeof(ITextLineChecker))]
-  public class TrailingSpacesChecker : ITextLineChecker {
-    private const string _whitespaceCharacters = " \t";
-
+  public class LongLineChecker : ITextLineChecker {
     [Import]
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
 
@@ -26,16 +25,28 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
       if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
-        foreach (var point in line.GetFragment(line.Start, line.End, TextLineFragment.Options.Reverse).GetPoints()) {
-          if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
+        if (line.Length > 80) {
+          if (!IsAllowedOverflow(line)) {
             yield return new TextLineCheckerError {
-              Span = new SnapshotSpan(point, point + 1),
-              Message = "Trailing whitespaces are not allowed.",
+              Span = new SnapshotSpan(line.Start + 80, line.End),
+              Message = "Maximum length of line is 80 characters.",
             };
-          } else
-            yield break;
+          }
         }
       }
+    }
+
+    private bool IsAllowedOverflow(ITextSnapshotLine line) {
+      var keywords = new string[] {
+        "#include",
+        "#define",
+        "#if",
+        "#endif",
+      };
+      var text =
+        line.GetFragment(line.Start.Position, line.Start.Position + 30, TextLineFragment.Options.Default)
+          .SnapshotSpan.GetText();
+      return keywords.Any(k => text.Contains(k));
     }
   }
 }

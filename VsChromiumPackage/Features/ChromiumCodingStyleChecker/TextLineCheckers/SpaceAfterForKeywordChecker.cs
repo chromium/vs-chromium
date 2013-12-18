@@ -10,17 +10,12 @@ using Microsoft.VisualStudio.Utilities;
 using VsChromiumPackage.ChromiumEnlistment;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Classifier.TextLineCheckers {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
-  /// Check that a "else" of "else if" is always on the same line as the "}" of the if statetement:
-  /// 
-  ///  if (foo) {
-  ///  } else if {
-  ///  }
-  /// 
+  /// Check that a "for" statement is always follwed by a space before the "("
   /// </summary>
   [Export(typeof(ITextLineChecker))]
-  public class ElseIfOnNewLineChecker : ITextLineChecker {
+  public class SpaceAfterForKeywordChecker : ITextLineChecker {
     private const string _whitespaceCharacters = " \t";
 
     [Import]
@@ -40,7 +35,7 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
             var marker = GetMarker(line, fragment, point);
             yield return new TextLineCheckerError {
               Span = new SnapshotSpan(point, marker.Length),
-              Message = string.Format("\"{0}\" should always be on the same line as the \"}}\" character.", marker)
+              Message = string.Format("Missing space before ( in \"{0}\".", marker)
             };
           } else {
             // Stop at the first non-whitespace character.
@@ -52,20 +47,12 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
 
     private string GetMarker(ITextSnapshotLine line, TextLineFragment fragment, SnapshotPoint point) {
       string[] markers = {
-        "else",
-        "else if",
+        "for(",
       };
 
-      var match = markers
+      return markers
         .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
         .FirstOrDefault();
-      if (match != null) {
-        // If last character of line is not "{", we are good
-        var end = line.GetFragment(line.End.Position - 1, line.End.Position, TextLineFragment.Options.Default);
-        if (end.GetText() != "{")
-          return null;
-      }
-      return match;
     }
   }
 }

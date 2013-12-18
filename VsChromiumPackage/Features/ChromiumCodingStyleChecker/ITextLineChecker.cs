@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 
-namespace VsChromiumPackage.Classifier {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
   public interface ITextLineChecker {
     bool AppliesToContentType(IContentType contentType);
 

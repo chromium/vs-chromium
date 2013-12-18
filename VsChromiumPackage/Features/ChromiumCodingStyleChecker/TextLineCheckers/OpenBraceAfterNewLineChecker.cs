@@ -9,31 +9,36 @@ using Microsoft.VisualStudio.Utilities;
 using VsChromiumPackage.ChromiumEnlistment;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Classifier.TextLineCheckers {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
-  /// Check that there are no TAB characters.
+  /// Check that a "{" is always at the end of a line.
+  /// DISABLED for now because there are too many exceptions.
   /// </summary>
   [Export(typeof(ITextLineChecker))]
-  public class TabCharacterChecker : ITextLineChecker {
+  public class OpenBraceAfterNewLineChecker : ITextLineChecker {
+    private const string _whitespaceCharacters = " \t";
+
     [Import]
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
-      return contentType.IsOfType("code");
+      return contentType.IsOfType("C/C++");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
       if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
-        if (line.Length == 0) {
-          yield break;
-        }
-
         foreach (var point in line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default).GetPoints()) {
-          if (point.GetChar() == '\t') {
+          if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
+            // continue as long as we find whitespaces
+          } else if (point.GetChar() == '{') {
             yield return new TextLineCheckerError {
               Span = new SnapshotSpan(point, point + 1),
-              Message = "TAB characters are not allowed."
+              Message =
+                "Open curly brace ('{') should always be at the end of a line, never on a new line preceeded by spaces.",
             };
+          } else {
+            // Stop at the first non-whitespace character.
+            yield break;
           }
         }
       }

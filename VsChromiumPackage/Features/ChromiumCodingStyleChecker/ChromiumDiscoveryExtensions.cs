@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromiumCore.FileNames;
 using VsChromiumPackage.ChromiumEnlistment;
 
-namespace VsChromiumPackage.Classifier {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
   public static class ChromiumSourceFilesExtensions {
     public static bool ApplyCodingStyle(this IChromiumSourceFiles chromiumSourceFiles, ITextSnapshotLine line) {
       // Check document is part of a Chromium source repository

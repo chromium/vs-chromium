@@ -5,7 +5,7 @@
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
 using VsChromiumCore.Ipc;
-using VsChromiumPackage.Classifier;
+using VsChromiumPackage.Features.ChromiumCodingStyleChecker;
 
 namespace VsChromiumTests {
   public class MefBaseTest {

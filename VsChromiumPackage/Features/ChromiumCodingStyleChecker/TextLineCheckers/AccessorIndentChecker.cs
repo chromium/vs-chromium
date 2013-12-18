@@ -10,12 +10,12 @@ using Microsoft.VisualStudio.Utilities;
 using VsChromiumPackage.ChromiumEnlistment;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Classifier.TextLineCheckers {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
-  /// Check that a "for" statement is always follwed by a space before the "("
+  /// Checks that "public:", etc. accessors are indented by an odd number of spaces.
   /// </summary>
   [Export(typeof(ITextLineChecker))]
-  public class SpaceAfterForKeywordChecker : ITextLineChecker {
+  public class AccessorIndentChecker : ITextLineChecker {
     private const string _whitespaceCharacters = " \t";
 
     [Import]
@@ -27,16 +27,23 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
       if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
+        int indent = 0;
         var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
         foreach (var point in fragment.GetPoints()) {
           if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
             // continue as long as we find whitespaces
+            indent++;
           } else if (GetMarker(line, fragment, point) != null) {
-            var marker = GetMarker(line, fragment, point);
-            yield return new TextLineCheckerError {
-              Span = new SnapshotSpan(point, marker.Length),
-              Message = string.Format("Missing space before ( in \"{0}\".", marker)
-            };
+            if (indent % 2 == 0) // even indentation is not ok
+            {
+              var marker = GetMarker(line, fragment, point);
+              yield return new TextLineCheckerError {
+                Span = new SnapshotSpan(point, marker.Length),
+                Message =
+                  string.Format("Accessor \"{0}\" should always be indented 1 character less than rest of class body.",
+                                marker)
+              };
+            }
           } else {
             // Stop at the first non-whitespace character.
             yield break;
@@ -47,7 +54,9 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
 
     private string GetMarker(ITextSnapshotLine line, TextLineFragment fragment, SnapshotPoint point) {
       string[] markers = {
-        "for(",
+        "private:",
+        "public:",
+        "protected:"
       };
 
       return markers

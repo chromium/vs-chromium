@@ -9,29 +9,32 @@ using Microsoft.VisualStudio.Utilities;
 using VsChromiumPackage.ChromiumEnlistment;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Classifier.TextLineCheckers {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
-  /// Check that end of line characters are LF only (not CRLF or CR).
+  /// Check that there are no TAB characters.
   /// </summary>
   [Export(typeof(ITextLineChecker))]
-  public class EndOfLineChecker : ITextLineChecker {
+  public class TabCharacterChecker : ITextLineChecker {
     [Import]
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
-      return contentType.IsOfType("text");
+      return contentType.IsOfType("code");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
       if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
-        var lineBreak = line.GetLineBreakText();
-        if (lineBreak.Length > 0 && lineBreak != "\n") {
-          var fragment = line.GetFragment(line.End.Position - 1, line.EndIncludingLineBreak.Position,
-                                          TextLineFragment.Options.IncludeLineBreak);
-          yield return new TextLineCheckerError {
-            Span = fragment.SnapshotSpan,
-            Message = "Line breaks should be \"unix\" (i.e. LF) style only.",
-          };
+        if (line.Length == 0) {
+          yield break;
+        }
+
+        foreach (var point in line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default).GetPoints()) {
+          if (point.GetChar() == '\t') {
+            yield return new TextLineCheckerError {
+              Span = new SnapshotSpan(point, point + 1),
+              Message = "TAB characters are not allowed."
+            };
+          }
         }
       }
     }

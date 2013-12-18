@@ -7,7 +7,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
-namespace VsChromiumPackage.Classifier {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
   /// <summary>
   /// Defines the format of the classification type.
   /// </summary>

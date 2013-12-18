@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using VsChromiumCore.Configuration;
 
-namespace VsChromiumPackage.Classifier {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
   /// <summary>
   /// Classifier that classifies all text as an instance of the OrinaryClassifierType
   /// </summary>

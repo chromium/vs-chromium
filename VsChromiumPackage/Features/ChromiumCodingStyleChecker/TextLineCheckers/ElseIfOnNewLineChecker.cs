@@ -10,12 +10,17 @@ using Microsoft.VisualStudio.Utilities;
 using VsChromiumPackage.ChromiumEnlistment;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Classifier.TextLineCheckers {
+namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
-  /// Checks that "public:", etc. accessors are indented by an odd number of spaces.
+  /// Check that a "else" of "else if" is always on the same line as the "}" of the if statetement:
+  /// 
+  ///  if (foo) {
+  ///  } else if {
+  ///  }
+  /// 
   /// </summary>
   [Export(typeof(ITextLineChecker))]
-  public class AccessorIndentChecker : ITextLineChecker {
+  public class ElseIfOnNewLineChecker : ITextLineChecker {
     private const string _whitespaceCharacters = " \t";
 
     [Import]
@@ -27,23 +32,16 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
       if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
-        int indent = 0;
         var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
         foreach (var point in fragment.GetPoints()) {
           if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
             // continue as long as we find whitespaces
-            indent++;
           } else if (GetMarker(line, fragment, point) != null) {
-            if (indent % 2 == 0) // even indentation is not ok
-            {
-              var marker = GetMarker(line, fragment, point);
-              yield return new TextLineCheckerError {
-                Span = new SnapshotSpan(point, marker.Length),
-                Message =
-                  string.Format("Accessor \"{0}\" should always be indented 1 character less than rest of class body.",
-                                marker)
-              };
-            }
+            var marker = GetMarker(line, fragment, point);
+            yield return new TextLineCheckerError {
+              Span = new SnapshotSpan(point, marker.Length),
+              Message = string.Format("\"{0}\" should always be on the same line as the \"}}\" character.", marker)
+            };
           } else {
             // Stop at the first non-whitespace character.
             yield break;
@@ -54,14 +52,20 @@ namespace VsChromiumPackage.Classifier.TextLineCheckers {
 
     private string GetMarker(ITextSnapshotLine line, TextLineFragment fragment, SnapshotPoint point) {
       string[] markers = {
-        "private:",
-        "public:",
-        "protected:"
+        "else",
+        "else if",
       };
 
-      return markers
+      var match = markers
         .Where(marker => fragment.GetText(point - line.Start, marker.Length) == marker)
         .FirstOrDefault();
+      if (match != null) {
+        // If last character of line is not "{", we are good
+        var end = line.GetFragment(line.End.Position - 1, line.End.Position, TextLineFragment.Options.Default);
+        if (end.GetText() != "{")
+          return null;
+      }
+      return match;
     }
   }
 }

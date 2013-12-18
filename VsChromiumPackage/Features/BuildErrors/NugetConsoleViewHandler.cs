@@ -60,7 +60,7 @@ namespace VsChromiumPackage.Features.BuildErrors {
       if (textBuffer == null)
         return false;
 
-      return textBuffer.ContentType.IsOfType("PackageConsole");
+      return textBuffer.ContentType.IsOfType(NugetConsoleViewConstants.ContentType);
     }
 
     private bool HandlesCommand() {

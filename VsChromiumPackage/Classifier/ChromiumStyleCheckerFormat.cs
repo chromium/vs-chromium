@@ -9,20 +9,19 @@ using Microsoft.VisualStudio.Utilities;
 
 namespace VsChromiumPackage.Classifier {
   /// <summary>
-  /// Defines an editor format for the VsChromiumPackage type that has a purple background
-  /// and is underlined.
+  /// Defines the format of the classification type.
   /// </summary>
   [Export(typeof(EditorFormatDefinition))]
-  [ClassificationType(ClassificationTypeNames = "VsChromiumPackage")]
-  [Name("VsChromiumPackage")]
+  [Name("VsChromiumPackageStyleChecker")]
+  [ClassificationType(ClassificationTypeNames = "VsChromiumPackageStyleChecker")]
   [UserVisible(true)] //this should be visible to the end user
   [Order(Before = Priority.Default)] //set the priority to be after the default classifiers
-  sealed class VsChromiumPackageFormat : ClassificationFormatDefinition {
+  public class VsChromiumPackageFormat : ClassificationFormatDefinition {
     /// <summary>
-    /// Defines the visual format for the "VsChromiumPackage" classification type
+    /// Defines the visual format for the classification type
     /// </summary>
     public VsChromiumPackageFormat() {
-      DisplayName = "VsChromiumPackage"; //human readable version of the name
+      DisplayName = "VsChromiumPackageStyleChecker"; //human readable version of the name
       BackgroundColor = Colors.Red;
       TextDecorations = System.Windows.TextDecorations.Underline;
     }

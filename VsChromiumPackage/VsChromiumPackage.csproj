@@ -183,6 +183,7 @@
     <Compile Include="ChromiumEnlistment\ChromiumSourceFiles.cs" />
     <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
     <Compile Include="Classifier\ChromiumStyleCheckerFormat.cs" />
+    <Compile Include="Features\BuildErrors\BuildOutputClassificationType.cs" />
     <Compile Include="Classifier\ChromiumStyleCheckerType.cs" />
     <Compile Include="Classifier\ChromiumClassifier.cs" />
     <Compile Include="Classifier\ChromiumClassifierProvider.cs" />
@@ -193,8 +194,12 @@
     <Compile Include="AutoUpdate\PackageVersionProvider.cs" />
     <Compile Include="Features\BuildErrors\BuildOutputParser.cs" />
     <Compile Include="Features\BuildErrors\BuildOutputSpan.cs" />
+    <Compile Include="Features\BuildErrors\BuildOutputClassifierProvider.cs" />
+    <Compile Include="Features\BuildErrors\BuildOutputClassifier.cs" />
+    <Compile Include="Features\BuildErrors\NugetConsoleConstants.cs" />
     <Compile Include="Features\BuildErrors\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildErrors\NugetConsoleViewHandler.cs" />
+    <Compile Include="Features\BuildErrors\BuildOuputClassificationDefinition.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="ToolWindows\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />

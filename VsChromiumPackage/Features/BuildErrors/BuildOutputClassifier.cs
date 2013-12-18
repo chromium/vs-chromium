@@ -18,7 +18,7 @@ namespace VsChromiumPackage.Features.BuildErrors {
 
     internal BuildOutputClassifier(IClassificationTypeRegistryService classificationRegistry, IBuildOutputParser buildOutputParser) {
       _buildOutputParser = buildOutputParser;
-      _classificationType = classificationRegistry.GetClassificationType("VsChromiumPackageBuildOutput");
+      _classificationType = classificationRegistry.GetClassificationType(BuildOutputConstants.ClassifierName);
     }
 
     /// <summary>

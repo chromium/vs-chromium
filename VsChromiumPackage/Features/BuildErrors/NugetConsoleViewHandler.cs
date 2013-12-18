@@ -29,10 +29,10 @@ namespace VsChromiumPackage.Features.BuildErrors {
     internal IViewTagAggregatorFactoryService TagAggregatorFactory = null; // Set via MEF
 
     [Import]
-    internal IOpenDocumentHelper _openDocumentHelper = null; // Set via MEF
+    internal IOpenDocumentHelper OpenDocumentHelper = null; // Set via MEF
 
     [Import]
-    internal IBuildOutputParser _buildOutputParser = null; // Set via MEF
+    internal IBuildOutputParser BuildOutputParser = null; // Set via MEF
 
     private IWpfTextView _textView;
     private IVsTextView _textViewAdapter;
@@ -71,7 +71,7 @@ namespace VsChromiumPackage.Features.BuildErrors {
     private BuildOutputSpan GetBuildOutputSpanForCaret() {
       var line = _textView.Caret.ContainingTextViewLine;
       var extent = line.Extent;
-      return _buildOutputParser.ParseLine(extent.GetText());
+      return BuildOutputParser.ParseLine(extent.GetText());
     }
 
     private void Execute() {
@@ -79,7 +79,7 @@ namespace VsChromiumPackage.Features.BuildErrors {
       if (buildOutputSpanForCaret == null)
         return;
 
-      _openDocumentHelper.OpenDocument(buildOutputSpanForCaret.FileName, (vsTextView) => {
+      OpenDocumentHelper.OpenDocument(buildOutputSpanForCaret.FileName, (vsTextView) => {
         var textView = AdapterService.GetWpfTextView(vsTextView);
         if (textView == null)
           return null;

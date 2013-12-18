@@ -12,7 +12,7 @@ namespace VsChromiumPackage.Features.BuildErrors {
     /// Defines the "VsChromiumPackage" classification type.
     /// </summary>
     [Export(typeof(ClassificationTypeDefinition))]
-    [Name("VsChromiumPackageBuildOutput")]
+    [Name(BuildOutputConstants.ClassifierName)]
     internal static ClassificationTypeDefinition Instance = null;
   }
 }

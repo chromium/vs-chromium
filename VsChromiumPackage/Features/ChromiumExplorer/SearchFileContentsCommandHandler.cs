@@ -8,17 +8,17 @@ using System.ComponentModel.Design;
 using VsChromiumPackage.Commands;
 using VsChromiumPackage.Package.CommandHandler;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   [Export(typeof(IPackageCommandHandler))]
-  public class SearchFileNamesCommandHandler : IPackageCommandHandler {
+  public class SearchFileContentsCommandHandler : IPackageCommandHandler {
     private readonly IChromiumExplorerToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public SearchFileNamesCommandHandler(IChromiumExplorerToolWindowAccessor toolWindowAccessor) {
+    public SearchFileContentsCommandHandler(IChromiumExplorerToolWindowAccessor toolWindowAccessor) {
       _toolWindowAccessor = toolWindowAccessor;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchFileNames); } }
+    public CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchFileContents); } }
 
     public void Execute(object sender, EventArgs e) {
       _toolWindowAccessor.FocusSearchTextBox(CommandId);

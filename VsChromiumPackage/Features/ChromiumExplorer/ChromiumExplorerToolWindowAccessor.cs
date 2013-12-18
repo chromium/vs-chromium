@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using VsChromiumPackage.Commands;
 using VsChromiumPackage.Package;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   [Export(typeof(IChromiumExplorerToolWindowAccessor))]
   public class ChromiumExplorerToolWindowAccessor : IChromiumExplorerToolWindowAccessor {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

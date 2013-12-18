@@ -20,7 +20,7 @@ using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 using VsChromiumPackage.Wpf;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   /// <summary>
   /// Interaction logic for ChromiumExplorerControl.xaml
   /// </summary>

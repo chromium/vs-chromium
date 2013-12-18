@@ -11,7 +11,7 @@ using VsChromiumPackage.Commands;
 using VsChromiumPackage.Package;
 using VsChromiumPackage.Package.CommandHandler;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   [Export(typeof(IPackageCommandHandler))]
   public class ShowChromiumExplorerCommandHandler : IPackageCommandHandler {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

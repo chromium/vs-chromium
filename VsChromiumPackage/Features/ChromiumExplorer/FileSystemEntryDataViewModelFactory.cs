@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromiumCore.Ipc.TypedMessages;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   public static class FileSystemEntryDataViewModelFactory {
     public static IEnumerable<TreeViewItemViewModel> CreateViewModels(
       ITreeViewItemViewModelHost host,

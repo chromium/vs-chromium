@@ -8,7 +8,7 @@ using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Commands;
 using VsChromiumPackage.Wpf;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   /// <summary>
   /// This class implements the tool window exposed by this package and hosts a user control.
   ///

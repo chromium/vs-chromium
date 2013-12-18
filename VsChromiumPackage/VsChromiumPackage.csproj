@@ -200,14 +200,14 @@
     <Compile Include="Features\BuildErrors\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildErrors\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildErrors\BuildOuputClassificationDefinition.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\SearchFileContentsCommandHandler.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\SearchFileNamesCommandHandler.cs" />
+    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
+    <Compile Include="Features\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
+    <Compile Include="Features\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />
+    <Compile Include="Features\ChromiumExplorer\SearchFileContentsCommandHandler.cs" />
+    <Compile Include="Features\ChromiumExplorer\SearchFileNamesCommandHandler.cs" />
     <Compile Include="Package\IVisualStudioPackageProvider.cs" />
     <Compile Include="Package\VisualStudioPackageProvider.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\ShowChromiumExplorerCommandHandler.cs" />
+    <Compile Include="Features\ChromiumExplorer\ShowChromiumExplorerCommandHandler.cs" />
     <Compile Include="Features\FormatComment\CommentFormatter.cs" />
     <Compile Include="Package\CommandHandler\IPackageCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\IPackageCommandHandlerRegistration.cs" />
@@ -229,29 +229,29 @@
     <Compile Include="Threads\DelayedOperationProcessor.cs" />
     <Compile Include="Threads\SynchronizationContextProvider.cs" />
     <Compile Include="Threads\UIRequestProcess.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerRootNodes.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\FilePositionViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerRootNodes.cs" />
+    <Compile Include="Features\ChromiumExplorer\FilePositionViewModel.cs" />
     <Compile Include="Threads\UIRequest.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\FileSystemEntryDataViewModelFactory.cs" />
+    <Compile Include="Features\ChromiumExplorer\FileSystemEntryDataViewModelFactory.cs" />
     <Compile Include="Wpf\ILazyObservableCollection.cs" />
     <Compile Include="Wpf\IProgressBarTracker.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\ITreeViewItemViewModelHost.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\LazyItemViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\ITreeViewItemViewModelHost.cs" />
+    <Compile Include="Features\ChromiumExplorer\LazyItemViewModel.cs" />
     <Compile Include="Wpf\LazyObservableCollection.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\DirectoryEntryViewModel.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\FileEntryViewModel.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\FileSystemEntryViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\DirectoryEntryViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\FileEntryViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\FileSystemEntryViewModel.cs" />
     <Compile Include="Wpf\MyVirtualizingStackPanel.cs" />
     <Compile Include="Wpf\ProgressBarTracker.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerViewModel.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\TextItemViewModel.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\TreeViewItemViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\TextItemViewModel.cs" />
+    <Compile Include="Features\ChromiumExplorer\TreeViewItemViewModel.cs" />
     <Compile Include="Properties\GlobalSuppressions.cs" />
     <Compile Include="Commands\Guids.cs" />
-    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerControl.xaml.cs">
+    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerControl.xaml.cs">
       <DependentUpon>ChromiumExplorerControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ToolWindows\ChromiumExplorer\TreeViewItemViewModelHost.cs" />
+    <Compile Include="Features\ChromiumExplorer\TreeViewItemViewModelHost.cs" />
     <Compile Include="Commands\OleCommandTarget.cs" />
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
     <Compile Include="Commands\ICommandTarget.cs" />
@@ -266,11 +266,11 @@
     <Compile Include="Wpf\StringListViewModel.cs" />
     <Compile Include="Wpf\IHierarchyObject.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
-    <Page Include="ToolWindows\ChromiumExplorer\ChromiumExplorerControl.xaml">
+    <Page Include="Features\ChromiumExplorer\ChromiumExplorerControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Compile Include="ToolWindows\ChromiumExplorer\ChromiumExplorerToolWindow.cs" />
+    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindow.cs" />
     <Compile Include="Views\IOpenDocumentHelper.cs" />
     <Compile Include="Views\OpenDocumentHelper.cs" />
     <Compile Include="Views\IViewHandler.cs" />
@@ -356,7 +356,9 @@
       <Name>VsChromiumServer</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="ToolWindows\" />
+  </ItemGroup>
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>
   </PropertyGroup>

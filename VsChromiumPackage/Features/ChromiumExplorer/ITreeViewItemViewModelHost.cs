@@ -5,7 +5,7 @@
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   public interface ITreeViewItemViewModelHost {
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IUIRequestProcessor UIRequestProcessor { get; }

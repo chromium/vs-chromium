@@ -20,7 +20,7 @@ using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 using VsChromiumPackage.Wpf;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   public class ChromiumExplorerViewModel : INotifyPropertyChanged {
     private readonly ChromiumExplorerRootNodes _rootNodes = new ChromiumExplorerRootNodes();
     private IComponentModel _componentModel;

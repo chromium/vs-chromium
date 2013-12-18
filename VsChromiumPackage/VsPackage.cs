@@ -11,9 +11,9 @@ using Microsoft.VisualStudio.Shell.Interop;
 using VsChromiumCore;
 using VsChromiumPackage.AutoUpdate;
 using VsChromiumPackage.Commands;
+using VsChromiumPackage.Features.ChromiumExplorer;
 using VsChromiumPackage.Package;
 using VsChromiumPackage.Package.CommandHandler;
-using VsChromiumPackage.ToolWindows.ChromiumExplorer;
 
 namespace VsChromiumPackage {
   [PackageRegistration(UseManagedResourcesOnly = true)]

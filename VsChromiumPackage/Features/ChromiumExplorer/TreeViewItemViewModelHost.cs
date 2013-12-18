@@ -5,7 +5,7 @@
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.ToolWindows.ChromiumExplorer {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   public class TreeViewItemViewModelHost : ITreeViewItemViewModelHost {
     private readonly IStandarImageSourceFactory _standarImageSourceFactory;
     private readonly IUIRequestProcessor _uiRequestProcessor;

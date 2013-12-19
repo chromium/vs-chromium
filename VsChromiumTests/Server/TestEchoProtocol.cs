@@ -6,7 +6,7 @@ using System;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromiumCore.Ipc;
-using VsChromiumPackage.Server;
+using VsChromiumPackage.ServerProxy;
 
 namespace VsChromiumTests.Server {
   [TestClass]

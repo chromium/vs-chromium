@@ -8,7 +8,7 @@ using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
-using VsChromiumPackage.Server;
+using VsChromiumPackage.ServerProxy;
 
 namespace VsChromiumTests.Server {
   [TestClass]

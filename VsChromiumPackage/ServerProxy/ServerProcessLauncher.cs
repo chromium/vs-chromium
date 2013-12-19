@@ -10,17 +10,9 @@ using System.Linq;
 using System.Reflection;
 using VsChromiumCore.Processes;
 
-namespace VsChromiumPackage.Server {
-  public delegate IEnumerable<string> PreCreate();
-
-  public delegate void PostCreate(ProcessProxy processProxy);
-
-  public interface IProxyServerCreator : IDisposable {
-    void CreateProxy(PreCreate preCreate, PostCreate postCreate);
-  }
-
-  [Export(typeof(IProxyServerCreator))]
-  public class ProxyServerCreator : IProxyServerCreator {
+namespace VsChromiumPackage.ServerProxy {
+  [Export(typeof(IServerProcessLauncher))]
+  public class ServerProcessLauncher : IServerProcessLauncher {
     private const string _proxyServerName = "VsChromiumHost.exe";
     private const string _serverName = "VsChromiumServer.exe";
 
@@ -29,11 +21,11 @@ namespace VsChromiumPackage.Server {
     private ProcessProxy _serverProcess;
 
     [ImportingConstructor]
-    public ProxyServerCreator(IProcessCreator processCreator) {
+    public ServerProcessLauncher(IProcessCreator processCreator) {
       _processCreator = processCreator;
     }
 
-    public void CreateProxy(PreCreate preCreate, PostCreate postCreate) {
+    public void CreateProxy(Func<IEnumerable<string>> preCreate, Action<ProcessProxy> postCreate) {
       if (_serverProcess == null) {
         lock (_serverProcessLock) {
           if (_serverProcess == null) {
@@ -49,7 +41,7 @@ namespace VsChromiumPackage.Server {
       }
     }
 
-    private void CreateServerProcessWorker(PreCreate preCreate, PostCreate postCreate) {
+    private void CreateServerProcessWorker(Func<IEnumerable<string>> preCreate, Action<ProcessProxy> postCreate) {
       var path = GetProcessPath();
       var realServerName = Path.Combine(Path.GetDirectoryName(path), _serverName);
 
@@ -87,7 +79,7 @@ namespace VsChromiumPackage.Server {
     }
 
     private IEnumerable<string> GetCandidateProcessPaths() {
-      var folder = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+      var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       yield return Path.Combine(folder, _proxyServerName);
 
       var serverFolder = Path.Combine(folder, "..");

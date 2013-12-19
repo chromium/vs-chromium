@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using VsChromiumCore.Ipc;
 
-namespace VsChromiumPackage.Server {
+namespace VsChromiumPackage.ServerProxy {
   public class CallbackDictionary {
     private readonly Dictionary<long, Action<IpcResponse>> _callbacks = new Dictionary<long, Action<IpcResponse>>();
     private readonly Object _lock = new object();

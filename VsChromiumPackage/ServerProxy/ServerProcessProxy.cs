@@ -15,11 +15,11 @@ using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Processes;
 using VsChromiumPackage.Threads;
 
-namespace VsChromiumPackage.Server {
+namespace VsChromiumPackage.ServerProxy {
   [Export(typeof(IServerProcessProxy))]
   public class ServerProcessProxy : IServerProcessProxy {
     private readonly CallbackDictionary _callbacks = new CallbackDictionary();
-    private readonly IProxyServerCreator _proxyServerCreator;
+    private readonly IServerProcessLauncher _serverProcessLauncher;
     private readonly IReceiveResponsesThread _receiveResponsesThread;
     private readonly IRequestQueue _requestQueue;
     private readonly ISendRequestsThread _sendRequestsThread;
@@ -31,7 +31,7 @@ namespace VsChromiumPackage.Server {
 
     [ImportingConstructor]
     public ServerProcessProxy(
-      IProxyServerCreator proxyServerCreator,
+      IServerProcessLauncher serverProcessLauncher,
       IProtoBufSerializer serializer,
       IReceiveResponsesThread receiveResponsesThread,
       IRequestQueue requestQueue,
@@ -40,7 +40,7 @@ namespace VsChromiumPackage.Server {
       _receiveResponsesThread = receiveResponsesThread;
       _requestQueue = requestQueue;
       _sendRequestsThread = sendRequestsThread;
-      _proxyServerCreator = proxyServerCreator;
+      _serverProcessLauncher = serverProcessLauncher;
     }
 
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
@@ -60,12 +60,12 @@ namespace VsChromiumPackage.Server {
       if (_tcpClient != null) {
         _tcpClient.Close();
       }
-      if (_proxyServerCreator != null) {
-        _proxyServerCreator.Dispose();
+      if (_serverProcessLauncher != null) {
+        _serverProcessLauncher.Dispose();
       }
     }
 
-    protected virtual void OnEventReceived(IpcEvent obj) {
+    private void OnEventReceived(IpcEvent obj) {
       // Special case: progress report events are too noisy...
       if (!(obj.Data is ProgressReportEvent)) {
         Logger.Log("Event {0} of type \"{1}\" received from server.", obj.RequestId, obj.Data.GetType().Name);
@@ -76,7 +76,7 @@ namespace VsChromiumPackage.Server {
     }
 
     private void CreateServerProcess() {
-      _proxyServerCreator.CreateProxy(PreCreateProxy, AfterProxyCreated);
+      _serverProcessLauncher.CreateProxy(PreCreateProxy, AfterProxyCreated);
     }
 
     private IEnumerable<string> PreCreateProxy() {

@@ -10,7 +10,7 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromiumCore;
 using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumPackage.Server;
+using VsChromiumPackage.ServerProxy;
 
 namespace VsChromiumTests.Server {
   public abstract class TestServerBase : MefBaseTest {

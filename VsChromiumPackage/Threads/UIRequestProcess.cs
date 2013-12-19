@@ -5,7 +5,7 @@
 using System;
 using System.ComponentModel.Composition;
 using VsChromiumCore;
-using VsChromiumPackage.Server;
+using VsChromiumPackage.ServerProxy;
 
 namespace VsChromiumPackage.Threads {
   [Export(typeof(IUIRequestProcessor))]

@@ -12,7 +12,7 @@ using VsChromiumCore.Ipc;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
 
-namespace VsChromiumPackage.Server {
+namespace VsChromiumPackage.ServerProxy {
   [Export(typeof(ITypedRequestProcessProxy))]
   public class TypedRequestProcessProxy : ITypedRequestProcessProxy {
     private readonly SortedSet<BufferedResponse> _bufferedResponses = new SortedSet<BufferedResponse>();

@@ -15,7 +15,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromiumCore;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumPackage.Features.AutoUpdate;
-using VsChromiumPackage.Server;
+using VsChromiumPackage.ServerProxy;
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 using VsChromiumPackage.Wpf;

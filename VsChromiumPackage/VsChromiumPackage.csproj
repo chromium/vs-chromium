@@ -215,7 +215,8 @@
     <Compile Include="Package\CommandHandler\IPackageCommandHandlerRegistration.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerRegistration.cs" />
     <Compile Include="Package\IVisualStudioPackage.cs" />
-    <Compile Include="Server\IServerProcessProxy.cs" />
+    <Compile Include="ServerProxy\IServerProcessLauncher.cs" />
+    <Compile Include="ServerProxy\IServerProcessProxy.cs" />
     <Compile Include="Threads\DateTimeProvider.cs" />
     <Compile Include="Threads\IDateTimeProvider.cs" />
     <Compile Include="Threads\IReceiveResponsesThread.cs" />
@@ -282,11 +283,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Server\CallbackDictionary.cs" />
-    <Compile Include="Server\ITypedRequestProcessProxy.cs" />
-    <Compile Include="Server\ProxyServerCreator.cs" />
-    <Compile Include="Server\ServerProcessProxy.cs" />
-    <Compile Include="Server\TypedRequestProcessProxy.cs" />
+    <Compile Include="ServerProxy\CallbackDictionary.cs" />
+    <Compile Include="ServerProxy\ITypedRequestProcessProxy.cs" />
+    <Compile Include="ServerProxy\ServerProcessLauncher.cs" />
+    <Compile Include="ServerProxy\ServerProcessProxy.cs" />
+    <Compile Include="ServerProxy\TypedRequestProcessProxy.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\AccessorIndentChecker.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\SpaceAfterForKeywordChecker.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\ElseIfOnNewLineChecker.cs" />

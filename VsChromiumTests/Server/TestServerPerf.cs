@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromiumCore.Ipc;
 using VsChromiumCore.Ipc.ProtoBuf;
 using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumPackage.Server;
+using VsChromiumPackage.ServerProxy;
 
 namespace VsChromiumTests.Server {
   [TestClass]

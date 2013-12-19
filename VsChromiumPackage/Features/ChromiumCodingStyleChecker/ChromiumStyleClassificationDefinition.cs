@@ -7,12 +7,12 @@ using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
 namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
-  static class VsChromiumPackageClassificationDefinition {
+  public static class ChromiumStyleClassificationDefinition {
     /// <summary>
     /// Defines the "VsChromiumPackage" classification type.
     /// </summary>
     [Export(typeof(ClassificationTypeDefinition))]
-    [Name("VsChromiumPackage")]
-    internal static ClassificationTypeDefinition VsChromiumPackageType = null;
+    [Name(ChromiumStyleClassifierConstants.Name)]
+    internal static ClassificationTypeDefinition Instance = null;
   }
 }

@@ -11,15 +11,15 @@ namespace VsChromiumPackage.Features.BuildErrors {
   /// Defines the visual format for the classification type
   /// </summary>
   [Export(typeof(EditorFormatDefinition))]
-  [Name(BuildOutputConstants.ClassifierName)]
-  [ClassificationType(ClassificationTypeNames = BuildOutputConstants.ClassifierName)]
+  [Name(BuildOutputClassifierConstants.Name)]
+  [ClassificationType(ClassificationTypeNames = BuildOutputClassifierConstants.Name)]
   [UserVisible(true)] // This should be visible to the end user
   [Order(Before = Priority.Default)] // Sets the priority to be after the default classifiers
   public class BuildOutputClassificationType : ClassificationFormatDefinition {
     public BuildOutputClassificationType() {
-      DisplayName = BuildOutputConstants.ClassifierDisplayName;
-      ForegroundColor = BuildOutputConstants.ClassifierForegroundColor;
-      TextDecorations = BuildOutputConstants.ClassifierTextDecorations;
+      DisplayName = BuildOutputClassifierConstants.DisplayName;
+      ForegroundColor = BuildOutputClassifierConstants.ForegroundColor;
+      TextDecorations = BuildOutputClassifierConstants.TextDecorations;
     }
   }
 }

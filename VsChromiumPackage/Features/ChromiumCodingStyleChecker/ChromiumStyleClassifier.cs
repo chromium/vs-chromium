@@ -13,17 +13,17 @@ namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
   /// <summary>
   /// Classifier that classifies all text as an instance of the OrinaryClassifierType
   /// </summary>
-  public class ChromiumClassifier : IClassifier {
+  public class ChromiumStyleClassifier : IClassifier {
     private readonly IEnumerable<ITextLineChecker> _checkers;
     private readonly IConfigurationFileProvider _configurationFileProvider;
     private readonly IClassificationType _classificationType;
     private readonly Lazy<IList<string>> _disabledCheckers;
 
-    internal ChromiumClassifier(
+    internal ChromiumStyleClassifier(
       IClassificationTypeRegistryService classificationRegistry,
       IEnumerable<ITextLineChecker> checkers,
       IConfigurationFileProvider configurationFileProvider) {
-      _classificationType = classificationRegistry.GetClassificationType("VsChromiumPackage");
+      _classificationType = classificationRegistry.GetClassificationType(ChromiumStyleClassifierConstants.Name);
       _checkers = checkers;
       _configurationFileProvider = configurationFileProvider;
       _disabledCheckers = new Lazy<IList<string>>(ReadDisableCheckers);

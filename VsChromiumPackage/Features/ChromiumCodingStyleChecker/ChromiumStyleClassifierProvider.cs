@@ -16,7 +16,7 @@ namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
   /// </summary>
   [Export(typeof(IClassifierProvider))]
   [ContentType("text")]
-  class ChromiumClassifierProvider : IClassifierProvider {
+  class ChromiumStyleClassifierProvider : IClassifierProvider {
     /// <summary>
     /// Import the classification registry to be used for getting a reference
     /// to the custom classification type later.
@@ -32,9 +32,9 @@ namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
 
     public IClassifier GetClassifier(ITextBuffer buffer) {
       return
-        buffer.Properties.GetOrCreateSingletonProperty<ChromiumClassifier>(
+        buffer.Properties.GetOrCreateSingletonProperty<ChromiumStyleClassifier>(
           () =>
-          new ChromiumClassifier(ClassificationRegistry, TextLineCheckers,
+          new ChromiumStyleClassifier(ClassificationRegistry, TextLineCheckers,
                                  ConfigurationFileProvider));
     }
   }

@@ -23,7 +23,8 @@ namespace VsChromiumPackage.Features.BuildErrors {
       if (!match.Success)
         return null;
 
-      var filename = match.Groups["filename"].Value;
+      var filenameMatch = match.Groups["filename"];
+      var filename = filenameMatch.Value;
       Debug.Assert(!string.IsNullOrEmpty(filename));
 
       int line;
@@ -36,8 +37,8 @@ namespace VsChromiumPackage.Features.BuildErrors {
       
       return new BuildOutputSpan {
         Text = text,
-        Index = match.Index,
-        Length = match.Length,
+        Index = filenameMatch.Index,
+        Length = match.Length - filenameMatch.Index,
         FileName = filename,
         LineNumber = line,
         ColumnNumber = column

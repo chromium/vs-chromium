@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
+using System.Windows.Forms.VisualStyles;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text;
@@ -46,7 +47,7 @@ namespace VsChromiumPackage.Features.BuildErrors {
       _textViewAdapter = textViewAdapter;
       _textView = AdapterService.GetWpfTextView(textViewAdapter);
 
-      var target = new SimpleCommandTarget(new CommandID(VSConstants.VSStd2K, (int)VSConstants.VSStd2KCmdID.DOUBLECLICK), Execute, HandlesCommand);
+      var target = new SimpleCommandTarget(new CommandID(VSConstants.VSStd2K, (int)VSConstants.VSStd2KCmdID.ECMD_LEFTCLICK), Execute, HandlesCommand);
       var targetWrapper = new OleCommandTarget(target);
       _textViewAdapter.AddCommandFilter(targetWrapper, out targetWrapper.NextCommandTarget);
     }
@@ -69,9 +70,24 @@ namespace VsChromiumPackage.Features.BuildErrors {
     }
 
     private BuildOutputSpan GetBuildOutputSpanForCaret() {
-      var line = _textView.Caret.ContainingTextViewLine;
+      var caret = _textView.Caret;
+      if (caret.InVirtualSpace)
+        return null;
+
+      var line = caret.ContainingTextViewLine;
       var extent = line.Extent;
-      return BuildOutputParser.ParseLine(extent.GetText());
+      var result = BuildOutputParser.ParseLine(extent.GetText());
+      if (result == null)
+        return null;
+
+      var caretLineOffset = caret.Position.BufferPosition - line.Start;
+      if (caretLineOffset < result.Index)
+        return null;
+
+      if (caretLineOffset >= result.Index + result.Length)
+        return null;
+
+      return result;
     }
 
     private void Execute() {

@@ -5,7 +5,6 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using System.Windows.Forms.VisualStyles;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text;
@@ -16,7 +15,7 @@ using VsChromiumPackage.Commands;
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Features.BuildErrors {
+namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
   [PartCreationPolicy(CreationPolicy.NonShared)]
   [Export(typeof(IViewHandler))]
   public class NugetConsoleViewHandler : IViewHandler {

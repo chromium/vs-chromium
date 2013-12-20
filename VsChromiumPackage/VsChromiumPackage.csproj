@@ -166,7 +166,7 @@
     <Compile Include="Features\AutoUpdate\IUpdateNotificationListener.cs" />
     <Compile Include="Features\AutoUpdate\UpdateInfo.cs" />
     <Compile Include="Features\AutoUpdate\UpdateNotificationListener.cs" />
-    <Compile Include="Features\BuildErrors\BuildOutputClassifierConstants.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifierConstants.cs" />
     <Compile Include="Features\ChromeDebug\AttachDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -185,7 +185,7 @@
     <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierConstants.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassificationType.cs" />
-    <Compile Include="Features\BuildErrors\BuildOutputClassificationType.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationType.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassificationDefinition.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifier.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierProvider.cs" />
@@ -194,14 +194,14 @@
     <Compile Include="Features\AutoUpdate\IUpdateChecker.cs" />
     <Compile Include="Features\AutoUpdate\IUpdateInfoProvider.cs" />
     <Compile Include="Features\AutoUpdate\PackageVersionProvider.cs" />
-    <Compile Include="Features\BuildErrors\BuildOutputParser.cs" />
-    <Compile Include="Features\BuildErrors\BuildOutputSpan.cs" />
-    <Compile Include="Features\BuildErrors\BuildOutputClassifierProvider.cs" />
-    <Compile Include="Features\BuildErrors\BuildOutputClassifier.cs" />
-    <Compile Include="Features\BuildErrors\NugetConsoleConstants.cs" />
-    <Compile Include="Features\BuildErrors\IBuildOutputParser.cs" />
-    <Compile Include="Features\BuildErrors\NugetConsoleViewHandler.cs" />
-    <Compile Include="Features\BuildErrors\BuildOuputClassificationDefinition.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputParser.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputSpan.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifierProvider.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifier.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleConstants.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
+    <Compile Include="Features\BuildOutputAnalyzer\BuildOuputClassificationDefinition.cs" />
     <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="Features\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="Features\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />

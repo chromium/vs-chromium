@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 
-namespace VsChromiumPackage.Features.BuildErrors {
+namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
   public static class NugetConsoleViewConstants {
     public const string ContentType = "PackageConsole";
   }

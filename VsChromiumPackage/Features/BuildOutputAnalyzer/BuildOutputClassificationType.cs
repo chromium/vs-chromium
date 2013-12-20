@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
-namespace VsChromiumPackage.Features.BuildErrors {
+namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
   /// <summary>
   /// Defines the visual format for the classification type
   /// </summary>

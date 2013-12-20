@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumPackage.Features.BuildErrors;
+using VsChromiumPackage.Features.BuildOutputAnalyzer;
 
 namespace VsChromiumTests {
   [TestClass]
-  public class TestBuildErrorParsing {
+  public class TestBuildOutputAnalyzer {
     [TestMethod]
     public void BuildOutputParserWorks() {
       // Paths using various directory separators and prefixes
@@ -31,17 +31,17 @@ namespace VsChromiumTests {
       AssertIsMatch(@"d:\foo.txt (11 , 5): error C2061: syntax error : identifier 'ensions'", @"d:\foo.txt", 10, 4);
 
       // Path with spaces
-      AssertIsMatch(@"d:\fo o.txt: error C2061: syntax error : identifier 'ensions'", @"d:\fo o.txt", -1, -1);
-      AssertIsMatch(@"d:\fo o.t xt: error C2061: syntax error : identifier 'ensions'", @"d:\fo o.t xt", -1, -1);
-      AssertIsMatch(@"d:\ba r\fo o.txt: error C2061: syntax error : identifier 'ensions'", @"d:\ba r\fo o.txt", -1, -1);
+      AssertIsMatch(@"d:\fo o\foo.txt: error C2061: syntax error : identifier 'ensions'", @"d:\fo o\foo.txt", -1, -1);
+      AssertIsMatch(@"d:\fo o\foo.txt: error C2061: syntax error : identifier 'ensions'", @"d:\fo o\foo.txt", -1, -1);
+      AssertIsMatch(@"d:\ba r\foo.txt: error C2061: syntax error : identifier 'ensions'", @"d:\ba r\foo.txt", -1, -1);
 
-      AssertIsMatch(@"d:\fo o.txt  (5, 10): error C2061: syntax error : identifier 'ensions'", @"d:\fo o.txt", 4, 9);
-      AssertIsMatch(@"d:\fo o.t xt (5): error C2061: syntax error : identifier 'ensions'", @"d:\fo o.t xt", 4, -1);
-      AssertIsMatch(@"d:\ba r\fo o.txt (5): error C2061: syntax error : identifier 'ensions'", @"d:\ba r\fo o.txt", 4, -1);
-      
+      AssertIsMatch(@"d:\fo o\foo.txt  (5, 10): error C2061: syntax error : identifier 'ensions'", @"d:\fo o\foo.txt", 4, 9);
+      AssertIsMatch(@"d:\fo o.t xt\foo.txt (5): error C2061: syntax error : identifier 'ensions'", @"d:\fo o.t xt\foo.txt", 4, -1);
+      AssertIsMatch(@"d:\ba r\foo.txt (5): error C2061: syntax error : identifier 'ensions'", @"d:\ba r\foo.txt", 4, -1);
+
       // Path after whitespaces
-      AssertIsMatch(@" d:\foo.txt(10) : error C2061: syntax error : identifier 'ensions'", @"d:\foo.txt", 9, -1);
-      AssertIsMatch(@"  d:\foo.txt(10) : error C2061: syntax error : identifier 'ensions'", @"d:\foo.txt", 9, -1);
+      AssertIsMatch(@" d:\foo.txt(10) : error C2061: syntax error : identifier 'ensions'", @"d:\foo.txt", 9, -1, 1, 14);
+      AssertIsMatch(@"  d:\foo.txt(10) : error C2061: syntax error : identifier 'ensions'", @"d:\foo.txt", 9, -1, 2, 14);
     }
 
     [TestMethod]
@@ -60,12 +60,20 @@ namespace VsChromiumTests {
     }
 
     private static void AssertIsMatch(string text, string filename, int line, int column) {
+      AssertIsMatch(text, filename, line, column, -1, -1);
+    }
+
+    private static void AssertIsMatch(string text, string filename, int line, int column, int index, int length) {
       var parser = new BuildOutputParser();
       var result = parser.ParseLine(text);
       Assert.IsNotNull(result);
       Assert.AreEqual(filename, result.FileName);
       Assert.AreEqual(line, result.LineNumber);
       Assert.AreEqual(column, result.ColumnNumber);
+      if (index >= 0)
+        Assert.AreEqual(index, result.Index);
+      if (length >= 0)
+        Assert.AreEqual(length, result.Length);
     }
   }
 }

@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 using VsChromiumCore.Configuration;
 
-namespace VsChromiumPackage.Features.BuildErrors {
+namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
   /// <summary>
   /// This class causes a classifier to be added to the set of classifiers. Since 
   /// the content type is set to "text", this classifier applies to all text files

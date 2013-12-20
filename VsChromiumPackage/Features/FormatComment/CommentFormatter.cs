@@ -4,19 +4,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Text;
 
 namespace VsChromiumPackage.Features.FormatComment {
-  public class CommentFormatter {
+  [Export(typeof(ICommentFormatter))]
+  public class CommentFormatter : ICommentFormatter {
     private const string _defaultLineEnding = "\n";
     private const int _maxColumn = 80;
-    private const string _commentToken = "//";
-    private const string _commentPrefixText = _commentToken + " ";
+    private const string _shortCommentToken = "//";
+    private const string _longCommentToken = "///";
 
-    public Tuple<ITextSnapshotLine, ITextSnapshotLine> ExtendSpan(SnapshotSpan span) {
+    public ExtendSpanResult ExtendSpan(SnapshotSpan span) {
       // If no selection, extend lines up and down.
       var deltaLine = (span.Length == 0 ? 1 : 0);
 
@@ -29,8 +31,18 @@ namespace VsChromiumPackage.Features.FormatComment {
         return null;
 
       // Check all lines are comments lines
+      CommentType commentType = null;
       for (var i = startLine.LineNumber; i <= endLine.LineNumber; i++) {
-        if (!IsCommentLine(span.Snapshot.GetLineFromLineNumber(i)))
+        var lineCommentType = GetCommentType(span.Snapshot.GetLineFromLineNumber(i));
+        if (lineCommentType == null)
+          return null;
+
+        if (commentType == null) {
+          commentType = lineCommentType;
+          continue;
+        }
+
+        if (commentType.Token != lineCommentType.Token)
           return null;
       }
 
@@ -40,26 +52,25 @@ namespace VsChromiumPackage.Features.FormatComment {
           span.End == endLine.Start) {
         endLine = span.Snapshot.GetLineFromLineNumber(endLine.LineNumber - 1);
       }
-      return Tuple.Create(startLine, endLine);
+      return new ExtendSpanResult {
+        CommentType = commentType,
+        StartLine = startLine,
+        EndLine = endLine,
+      };
     }
 
-    public class FormatLinesResult {
-      public SnapshotSpan SnapshotSpan { get; set; }
-      public int Indent { get; set; }
-      public IList<string> Lines { get; set; }
-    }
-
-    public FormatLinesResult FormatLines(ITextSnapshotLine start, ITextSnapshotLine end) {
-      var indent = GetCommentBlockIndent(start, end);
+    public FormatLinesResult FormatLines(ExtendSpanResult span) {
+      var indent = GetCommentBlockIndent(span);
       if (indent < 0)
         throw new ArgumentException("Line range does not contains a block comment.");
 
-      var commentText = GetCommentBlockText(start, end);
+      var commentText = GetCommentBlockText(span);
 
       return new FormatLinesResult {
-        SnapshotSpan = new SnapshotSpan(start.Snapshot, new Span(start.Start, end.End - start.Start)),
+        CommentType = span.CommentType,
+        SnapshotSpan = new SnapshotSpan(span.StartLine.Snapshot, new Span(span.StartLine.Start, span.EndLine.End - span.StartLine.Start)),
         Indent = indent,
-        Lines = FormatCommentText(commentText, _maxColumn - _commentPrefixText.Length - indent).ToList()
+        Lines = FormatCommentText(commentText, _maxColumn - span.CommentType.TextPrefix.Length - indent).ToList()
       };
     }
 
@@ -72,7 +83,7 @@ namespace VsChromiumPackage.Features.FormatComment {
         if (sb.Length > 0)
           sb.Append(lineEnding);
         sb.Append(indent);
-        sb.Append(_commentPrefixText);
+        sb.Append(result.CommentType.TextPrefix);
         sb.Append(line);
       }
       var commentText = sb.ToString();
@@ -103,9 +114,17 @@ namespace VsChromiumPackage.Features.FormatComment {
       return table.OrderByDescending(x => x.Value).Select(x => x.Key).First();
     }
 
-    private bool IsCommentLine(ITextSnapshotLine getLineFromLineNumber) {
-      var text = getLineFromLineNumber.GetText().Trim();
-      return text.StartsWith(_commentToken);
+    private bool IsCommentLine(ITextSnapshotLine line) {
+      return GetCommentType(line) != null;
+    }
+
+    private CommentType GetCommentType(ITextSnapshotLine line) {
+      var text = line.GetText().Trim();
+      if (text.StartsWith(_longCommentToken))
+        return new CommentType(_longCommentToken);
+      if (text.StartsWith(_shortCommentToken))
+        return new CommentType(_shortCommentToken);
+      return null;
     }
 
     private ITextSnapshotLine FindCommentLine(SnapshotSpan span, int position, int delta) {
@@ -208,10 +227,10 @@ namespace VsChromiumPackage.Features.FormatComment {
       }
     }
 
-    private string GetCommentBlockText(ITextSnapshotLine start, ITextSnapshotLine end) {
+    private string GetCommentBlockText(ExtendSpanResult span) {
       var sb = new StringBuilder();
-      for (var i = start.LineNumber; i <= end.LineNumber; i++) {
-        var commentText = GetCommentText(start.Snapshot.GetLineFromLineNumber(i));
+      for (var i = span.StartLine.LineNumber; i <= span.EndLine.LineNumber; i++) {
+        var commentText = GetCommentText(span.CommentType, span.StartLine.Snapshot.GetLineFromLineNumber(i));
         if (commentText.Length > 0) {
           if (sb.Length > 0)
             sb.Append(' ');
@@ -221,18 +240,18 @@ namespace VsChromiumPackage.Features.FormatComment {
       return sb.ToString();
     }
 
-    private string GetCommentText(ITextSnapshotLine line) {
-      return line.GetText().Substring(GetCommentIndent(line) + 2).Trim();
+    private string GetCommentText(CommentType commentType, ITextSnapshotLine line) {
+      return line.GetText().Substring(GetCommentIndent(commentType, line) + commentType.Token.Length).Trim();
     }
 
-    private int GetCommentBlockIndent(ITextSnapshotLine start, ITextSnapshotLine end) {
+    private int GetCommentBlockIndent(ExtendSpanResult span) {
       return Enumerable
-        .Range(start.LineNumber, end.LineNumber - start.LineNumber + 1)
-        .Min(n => GetCommentIndent(start.Snapshot.GetLineFromLineNumber(n)));
+        .Range(span.StartLine.LineNumber, span.EndLine.LineNumber - span.StartLine.LineNumber + 1)
+        .Min(n => GetCommentIndent(span.CommentType, span.StartLine.Snapshot.GetLineFromLineNumber(n)));
     }
 
-    private int GetCommentIndent(ITextSnapshotLine line) {
-      return line.GetText().IndexOf(_commentToken);
+    private int GetCommentIndent(CommentType commentType, ITextSnapshotLine line) {
+      return line.GetText().IndexOf(commentType.Token, StringComparison.Ordinal);
     }
   }
 }

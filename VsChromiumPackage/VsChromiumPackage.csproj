@@ -207,6 +207,10 @@
     <Compile Include="Features\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />
     <Compile Include="Features\ChromiumExplorer\SearchFileContentsCommandHandler.cs" />
     <Compile Include="Features\ChromiumExplorer\SearchFileNamesCommandHandler.cs" />
+    <Compile Include="Features\FormatComment\CommentType.cs" />
+    <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />
+    <Compile Include="Features\FormatComment\FormatLinesResult.cs" />
+    <Compile Include="Features\FormatComment\ICommentFormatter.cs" />
     <Compile Include="Package\IVisualStudioPackageProvider.cs" />
     <Compile Include="Package\VisualStudioPackageProvider.cs" />
     <Compile Include="Features\ChromiumExplorer\ShowChromiumExplorerCommandHandler.cs" />

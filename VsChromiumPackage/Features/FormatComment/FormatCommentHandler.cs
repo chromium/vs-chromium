@@ -26,6 +26,9 @@ namespace VsChromiumPackage.Features.FormatComment {
     [Import]
     internal IViewTagAggregatorFactoryService TagAggregatorFactory = null; // Set via MEF
 
+    [Import]
+    internal ICommentFormatter CommentFormatter = null; // Set via MEF
+
     private IWpfTextView _textView;
     private IVsTextView _textViewAdapter;
 
@@ -41,17 +44,16 @@ namespace VsChromiumPackage.Features.FormatComment {
     }
 
     private void Execute() {
-      var commentFormatter = new CommentFormatter();
-      var lines = commentFormatter.ExtendSpan(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
-      if (lines == null)
+      var extendSpanResult = CommentFormatter.ExtendSpan(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
+      if (extendSpanResult == null)
         return;
 
-      var result = commentFormatter.FormatLines(lines.Item1, lines.Item2);
+      var result = CommentFormatter.FormatLines(extendSpanResult);
       if (result == null)
         return;
 
       using (var edit = _textView.TextBuffer.CreateEdit()) {
-        if (commentFormatter.ApplyChanges(edit, result))
+        if (CommentFormatter.ApplyChanges(edit, result))
           edit.Apply();
       }
     }

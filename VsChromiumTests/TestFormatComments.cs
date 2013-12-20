@@ -25,8 +25,8 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(3);
       var end = textSnapshot.GetLineFromLineNumber(6);
-      var formatter = new CommentFormatter();
-      var formatLines = formatter.FormatLines(start, end);
+      var formatter = CreateCommentFormatter();
+      var formatLines = formatter.FormatLines(CreateExtendSpanResult(start, end));
 
       Assert.AreEqual(2, formatLines.Indent);
       foreach (var line in formatLines.Lines) {
@@ -50,8 +50,8 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(0);
       var end = textSnapshot.GetLineFromLineNumber(0);
-      var formatter = new CommentFormatter();
-      var formatLines = formatter.FormatLines(start, end);
+      var formatter = CreateCommentFormatter();
+      var formatLines = formatter.FormatLines(CreateExtendSpanResult(start, end));
 
       Assert.AreEqual(0, formatLines.Indent);
       foreach (var line in formatLines.Lines) {
@@ -69,8 +69,8 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(0);
       var end = textSnapshot.GetLineFromLineNumber(0);
-      var formatter = new CommentFormatter();
-      var formatLines = formatter.FormatLines(start, end);
+      var formatter = CreateCommentFormatter();
+      var formatLines = formatter.FormatLines(CreateExtendSpanResult(start, end));
 
       Assert.AreEqual(0, formatLines.Indent);
       foreach (var line in formatLines.Lines) {
@@ -93,8 +93,8 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(3);
       var end = textSnapshot.GetLineFromLineNumber(6);
-      var formatter = new CommentFormatter();
-      var formatLines = formatter.FormatLines(start, end);
+      var formatter = CreateCommentFormatter();
+      var formatLines = formatter.FormatLines(CreateExtendSpanResult(start, end));
 
       Assert.AreEqual(26, formatLines.Indent);
       foreach (var line in formatLines.Lines) {
@@ -123,8 +123,8 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(3);
       var end = textSnapshot.GetLineFromLineNumber(3);
-      var formatter = new CommentFormatter();
-      var formatLines = formatter.FormatLines(start, end);
+      var formatter = CreateCommentFormatter();
+      var formatLines = formatter.FormatLines(CreateExtendSpanResult(start, end));
 
       Assert.AreEqual(2, formatLines.Indent);
       foreach (var line in formatLines.Lines) {
@@ -145,8 +145,8 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(3);
       var end = textSnapshot.GetLineFromLineNumber(3);
-      var formatter = new CommentFormatter();
-      var formatLines = formatter.FormatLines(start, end);
+      var formatter = CreateCommentFormatter();
+      var formatLines = formatter.FormatLines(CreateExtendSpanResult(start, end));
 
       Assert.AreEqual(2, formatLines.Indent);
       foreach (var line in formatLines.Lines) {
@@ -170,12 +170,12 @@ namespace VsChromiumTests {
       var textBuffer = CreateTestBuffer(sourceText);
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(3);
-      var formatter = new CommentFormatter();
+      var formatter = CreateCommentFormatter();
       var result = formatter.ExtendSpan(new SnapshotSpan(start.Start, start.Start));
 
       Assert.IsNotNull(result);
-      Assert.AreEqual(3, result.Item1.LineNumber);
-      Assert.AreEqual(6, result.Item2.LineNumber);
+      Assert.AreEqual(3, result.StartLine.LineNumber);
+      Assert.AreEqual(6, result.EndLine.LineNumber);
     }
 
     [TestMethod]
@@ -192,12 +192,12 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(3);
       var end = textSnapshot.GetLineFromLineNumber(6);
-      var formatter = new CommentFormatter();
+      var formatter = CreateCommentFormatter();
       var result = formatter.ExtendSpan(new SnapshotSpan(start.Start, end.End));
 
       Assert.IsNotNull(result);
-      Assert.AreEqual(3, result.Item1.LineNumber);
-      Assert.AreEqual(6, result.Item2.LineNumber);
+      Assert.AreEqual(3, result.StartLine.LineNumber);
+      Assert.AreEqual(6, result.EndLine.LineNumber);
     }
 
     [TestMethod]
@@ -214,7 +214,7 @@ namespace VsChromiumTests {
       var textSnapshot = textBuffer.CurrentSnapshot;
       var start = textSnapshot.GetLineFromLineNumber(3);
       var end = textSnapshot.GetLineFromLineNumber(6);
-      var formatter = new CommentFormatter();
+      var formatter = CreateCommentFormatter();
       var result = formatter.ExtendSpan(new SnapshotSpan(start.Start, end.End));
 
       Assert.IsNull(result);
@@ -277,14 +277,40 @@ namespace VsChromiumTests {
       CheckCommentFormatting(sourceText, expectedEndText);
     }
 
+    [TestMethod]
+    public void ApplyChangesForTripleSlashCommentsWorks() {
+      var sourceText = @"
+#include <foo>
+
+                         /// Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+                            /// Ut enim ad minim veniam, quis nostrud 
+                           ///        exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, 
+                              ///sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
+      var expectedEndText = @"
+#include <foo>
+
+                         /// Lorem ipsum dolor sit amet, consectetur adipisicing
+                         /// elit, sed do eiusmod tempor incididunt ut labore et
+                         /// dolore magna aliqua. Ut enim ad minim veniam, quis
+                         /// nostrud exercitation ullamco laboris nisi ut
+                         /// aliquip ex ea commodo consequat. Duis aute irure
+                         /// dolor in reprehenderit in voluptate velit esse
+                         /// cillum dolore eu fugiat nulla pariatur. Excepteur
+                         /// sint occaecat cupidatat non proident, sunt in culpa
+                         /// qui officia deserunt mollit anim id est laborum.";
+
+      CheckCommentFormatting(sourceText, expectedEndText);
+    }
+
     private void CheckCommentFormatting(string sourceText, string expectedEndText) {
       var textBuffer = CreateTestBuffer(sourceText);
       var textSnapshot = textBuffer.CurrentSnapshot;
       var textEdit = textBuffer.CreateEdit();
       var start = textSnapshot.GetLineFromLineNumber(3);
-      var formatter = new CommentFormatter();
-      var lineExtent = formatter.ExtendSpan(new SnapshotSpan(start.Start, start.Start));
-      var formatLines = formatter.FormatLines(lineExtent.Item1, lineExtent.Item2);
+      var formatter = CreateCommentFormatter();
+      var extendSpanResult = formatter.ExtendSpan(new SnapshotSpan(start.Start, start.Start));
+      var formatLines = formatter.FormatLines(extendSpanResult);
       formatter.ApplyChanges(textEdit, formatLines);
       var newSnapshot = textEdit.Apply();
 
@@ -302,7 +328,7 @@ namespace VsChromiumTests {
       }
     }
 
-    private static void GenerateAsserts(CommentFormatter.FormatLinesResult formatLines) {
+    private static void GenerateAsserts(FormatLinesResult formatLines) {
       Trace.WriteLine(string.Format("Assert.AreEqual({0}, formatLines.Indent);", formatLines.Indent));
       Trace.WriteLine(string.Format("Assert.AreEqual({0}, formatLines.Lines.Count);", formatLines.Lines.Count));
       int lineNumber = 0;
@@ -314,6 +340,18 @@ namespace VsChromiumTests {
 
     private ITextBuffer CreateTestBuffer(string text) {
       return new TextBufferMock(text);
+    }
+
+    private ExtendSpanResult CreateExtendSpanResult(ITextSnapshotLine start, ITextSnapshotLine end) {
+      return new ExtendSpanResult {
+        CommentType = new CommentType("//"),
+        StartLine = start,
+        EndLine = end,
+      };
+    }
+
+    private static ICommentFormatter CreateCommentFormatter() {
+      return new CommentFormatter();
     }
   }
 }

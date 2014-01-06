@@ -13,16 +13,16 @@ namespace VsChromiumPackage.ServerProxy {
   /// </summary>
   public interface IServerProcessProxy : IDisposable {
     /// <summary>
-    /// Sends a request to the VsChromium server process, and calls "callback" when
-    /// the corresponding response is received. There is no guarantee responses
-    /// are received in the same order as requests are sent.
-    /// RunAsync can be called on any thread. "callback" will be called on an
-    /// undetermined thread.
+    /// Sends a request to the VsChromium server process, and calls "callback"
+    /// when the corresponding response is received. There is no guarantee
+    /// responses are received in the same order as requests are sent. RunAsync
+    /// can be called on any thread. "callback" will be called on an
+    /// unspecified thread.
     /// </summary>
     void RunAsync(IpcRequest request, Action<IpcResponse> callback);
     /// <summary>
-    /// Event raised when the server proxy receives an event from the the VsChromium server.
-    /// The event is fired on an undermined thread.
+    /// Event raised when the server proxy receives an event from the the
+    /// VsChromium server. The event is fired on an unspecified thread.
     /// </summary>
     event Action<IpcEvent> EventReceived;
   }

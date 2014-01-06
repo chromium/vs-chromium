@@ -8,21 +8,22 @@ using VsChromiumCore.Ipc.TypedMessages;
 namespace VsChromiumPackage.ServerProxy {
   /// <summary>
   /// Component responsible for creating the VsChromium server process and
-  /// sending/receiving Typed requests. Calling "Dispose" ensures the VsChromium
-  /// server process is terminated determinstically.
+  /// sending/receiving <see cref="TypedRequest"/> messages. Calling <see
+  /// cref="IDisposable.Dispose()"/> ensures the VsChromium server process is
+  /// terminated deterministically.
   /// </summary>
   public interface ITypedRequestProcessProxy : IDisposable {
     /// <summary>
-    /// Sends a request to the VsChromium server process, and calls "callback" when
-    /// the corresponding response is received. The responses are guaranteed to
-    /// be called in the same order as the requests arrived.
+    /// Posts a request to be sent to the VsChromium server process, and calls
+    /// "callback" when the corresponding response is received. Responses are
+    /// guaranteed to be called in the same order as the requests are posted.
     /// RunAsync can be called on any thread. "callback" will be called on an
-    /// undetermined thread.
+    /// unspecified thread.
     /// </summary>
     void RunAsync(TypedRequest request, Action<TypedResponse> callback);
     /// <summary>
-    /// Event raised when the server proxy receives an event from the the VsChromium server.
-    /// The event is fired on an undermined thread.
+    /// Event raised when the server proxy receives an event from the the
+    /// VsChromium server. The event is fired on an unspecified thread.
     /// </summary>
     event Action<TypedEvent> EventReceived;
   }

@@ -13,8 +13,9 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromiumCore.FileNames;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumPackage.Threads;
+using VsChromiumPackage.Views;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromiumPackage.Features.ChromiumExplorer {
   [PartCreationPolicy(CreationPolicy.NonShared)]
   [Export(typeof(IViewHandler))]
   public class ViewHandler : IViewHandler {

@@ -13,7 +13,9 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
 
 namespace VsChromiumPackage.Views {
-  [TextViewRole("EDITABLE"), ContentType("text"), Export(typeof(IVsTextViewCreationListener))]
+  [TextViewRole(PredefinedTextViewRoles.Editable)]
+  [ContentType("text")]
+  [Export(typeof(IVsTextViewCreationListener))]
   class ViewCreationListener : IVsTextViewCreationListener {
     [Import]
     internal IVsEditorAdaptersFactoryService AdapterService = null; // Set via MEF

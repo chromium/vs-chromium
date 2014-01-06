@@ -296,7 +296,7 @@
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\SpaceAfterForKeywordChecker.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\ElseIfOnNewLineChecker.cs" />
     <Compile Include="Views\ViewCreationListener.cs" />
-    <Compile Include="Views\ViewHandler.cs" />
+    <Compile Include="Features\ChromiumExplorer\ViewHandler.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\OpenBraceAfterNewLineChecker.cs" />
     <Compile Include="Views\TextLineFragment.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckerError.cs" />

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using VsChromiumCore;
 using VsChromiumCore.Linq;
+using VsChromiumPackage.Package;
 using VsChromiumPackage.Threads;
 
 namespace VsChromiumPackage.Features.AutoUpdate {
@@ -10,8 +11,8 @@ namespace VsChromiumPackage.Features.AutoUpdate {
   /// Implements new VsChromium package version check by periodically
   /// (once per day) checking for the latest version info.
   /// </summary>
-  [Export(typeof(IUpdateChecker))]
-  public class UpdateChecker : IUpdateChecker {
+  [Export(typeof(IPackagePostInitializer))]
+  public class UpdateChecker : IPackagePostInitializer {
     private readonly IPackageVersionProvider _packageVersionProvider;
     private readonly IUpdateInfoProvider _updateInfoProvider;
     private readonly IDelayedOperationProcessor _delayedOperationProcessor;
@@ -30,7 +31,9 @@ namespace VsChromiumPackage.Features.AutoUpdate {
       _updateNotificationListeners = updateNotificationListeners;
     }
 
-    public void Start() {
+    public int Priority { get { return -100; } }
+
+    public void Run(IVisualStudioPackage package) {
       EnqueueOperation();
     }
 

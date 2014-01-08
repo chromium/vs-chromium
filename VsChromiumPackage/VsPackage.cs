@@ -4,16 +4,15 @@
 
 using System;
 using System.ComponentModel.Design;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromiumCore;
 using VsChromiumPackage.Commands;
-using VsChromiumPackage.Features.AutoUpdate;
 using VsChromiumPackage.Features.ChromiumExplorer;
 using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandler;
 
 namespace VsChromiumPackage {
   [PackageRegistration(UseManagedResourcesOnly = true)]
@@ -40,7 +39,6 @@ namespace VsChromiumPackage {
       base.Initialize();
       try {
         PreInitialize();
-        InitializeCommandHandlers();
         PostInitialize();
       }
       catch (Exception e) {
@@ -50,19 +48,15 @@ namespace VsChromiumPackage {
     }
 
     private void PreInitialize() {
-      var packageSingletonProvider = ComponentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
-      packageSingletonProvider.Intialize(this);
-    }
-
-    private void InitializeCommandHandlers() {
-      var commandHandlerRegistration = ComponentModel.DefaultExportProvider.GetExportedValue<IPackageCommandHandlerRegistration>();
-      commandHandlerRegistration.RegisterCommandHandlers();
-
-      var updateChecker = ComponentModel.DefaultExportProvider.GetExportedValue<IUpdateChecker>();
-      updateChecker.Start();
+      foreach(var initializer in ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePreInitializer>().OrderByDescending(x=> x.Priority)) {
+        initializer.Run(this);
+      }
     }
 
     private void PostInitialize() {
+      foreach (var initializer in ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostInitializer>().OrderByDescending(x => x.Priority)) {
+        initializer.Run(this);
+      }
     }
   }
 }

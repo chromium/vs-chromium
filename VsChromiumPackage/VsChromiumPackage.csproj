@@ -191,7 +191,6 @@
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierProvider.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumSourceFilesExtensions.cs" />
     <Compile Include="Features\AutoUpdate\IPackageVersionProvider.cs" />
-    <Compile Include="Features\AutoUpdate\IUpdateChecker.cs" />
     <Compile Include="Features\AutoUpdate\IUpdateInfoProvider.cs" />
     <Compile Include="Features\AutoUpdate\PackageVersionProvider.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputParser.cs" />
@@ -211,12 +210,14 @@
     <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />
     <Compile Include="Features\FormatComment\FormatLinesResult.cs" />
     <Compile Include="Features\FormatComment\ICommentFormatter.cs" />
+    <Compile Include="Package\IPackagePostInitializer.cs" />
+    <Compile Include="Package\IPackagePreInitializer.cs" />
     <Compile Include="Package\IVisualStudioPackageProvider.cs" />
+    <Compile Include="Package\VisualStudioPackageInitialize.cs" />
     <Compile Include="Package\VisualStudioPackageProvider.cs" />
     <Compile Include="Features\ChromiumExplorer\ShowChromiumExplorerCommandHandler.cs" />
     <Compile Include="Features\FormatComment\CommentFormatter.cs" />
     <Compile Include="Package\CommandHandler\IPackageCommandHandler.cs" />
-    <Compile Include="Package\CommandHandler\IPackageCommandHandlerRegistration.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerRegistration.cs" />
     <Compile Include="Package\IVisualStudioPackage.cs" />
     <Compile Include="ServerProxy\IServerProcessLauncher.cs" />

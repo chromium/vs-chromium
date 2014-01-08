@@ -8,19 +8,19 @@ using System.ComponentModel.Design;
 using VsChromiumCore;
 
 namespace VsChromiumPackage.Package.CommandHandler {
-  [Export(typeof(IPackageCommandHandlerRegistration))]
-  public class PackageCommandHandlerRegistration : IPackageCommandHandlerRegistration {
+  [Export(typeof(IPackagePostInitializer))]
+  public class PackageCommandHandlerRegistration : IPackagePostInitializer {
     private readonly IEnumerable<IPackageCommandHandler> _commandHandlers;
-    private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
-    public PackageCommandHandlerRegistration([ImportMany] IEnumerable<IPackageCommandHandler> commandHandlers, IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public PackageCommandHandlerRegistration([ImportMany] IEnumerable<IPackageCommandHandler> commandHandlers) {
       _commandHandlers = commandHandlers;
-      _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public void RegisterCommandHandlers() {
-      var mcs = _visualStudioPackageProvider.Package.OleMenuCommandService;
+    public int Priority { get { return 0; } }
+
+    public void Run(IVisualStudioPackage package) {
+      var mcs = package.OleMenuCommandService;
       if (mcs == null) {
         Logger.LogError("Error getting instance of OleMenuCommandService");
         return;

@@ -10,7 +10,7 @@ namespace VsChromiumPackage.Package {
   public class VisualStudioPackageProvider : IVisualStudioPackageProvider {
     private IVisualStudioPackage _package;
 
-    public void Intialize(IVisualStudioPackage package) {
+    public void SetPackage(IVisualStudioPackage package) {
       if (_package != null)
         throw new InvalidOperationException("Package singleton already set.");
       _package = package;

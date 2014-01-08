@@ -4,7 +4,7 @@
 
 namespace VsChromiumPackage.Package {
   public interface IVisualStudioPackageProvider {
-    void Intialize(IVisualStudioPackage package);
+    void SetPackage(IVisualStudioPackage package);
     IVisualStudioPackage Package { get; }
   }
 }

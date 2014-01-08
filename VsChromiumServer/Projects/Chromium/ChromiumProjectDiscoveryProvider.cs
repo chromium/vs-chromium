@@ -23,6 +23,8 @@ namespace VsChromiumServer.Projects.Chromium {
       return _chromiumDiscovery.GetEnlistmentRootFromRootpath(new FullPathName(projectRootPath), CreateProject);
     }
 
+    public int Priority { get { return -100; } }
+
     public IProject GetProject(string filename) {
       return _chromiumDiscovery.GetEnlistmentRootFromFilename(new FullPathName(filename), CreateProject);
     }

@@ -5,6 +5,11 @@
 namespace VsChromiumServer.Projects {
   public interface IProjectDiscoveryProvider {
     /// <summary>
+    /// Priority order (higher priority wins).
+    /// </summary>
+    int Priority { get; }
+
+    /// <summary>
     /// Returns the |IProject| corresponding to the project containing |filename|.
     /// Returns |null| if |filename| is not known to this project provider.
     /// </summary>

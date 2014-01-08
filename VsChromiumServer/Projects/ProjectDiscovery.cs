@@ -13,7 +13,7 @@ namespace VsChromiumServer.Projects {
 
     [ImportingConstructor]
     public ProjectDiscovery([ImportMany] IEnumerable<IProjectDiscoveryProvider> providers) {
-      _providers = providers.ToArray();
+      _providers = providers.OrderByDescending(x => x.Priority).ToArray();
     }
 
     public IProject GetProject(string filename) {

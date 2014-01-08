@@ -23,6 +23,8 @@ namespace VsChromiumServer.Projects.ProjectFile {
       }
     }
 
+    public int Priority { get { return 100; } }
+
     public IProject GetProject(string filename) {
       var name = new FullPathName(filename);
       lock (_lock) {

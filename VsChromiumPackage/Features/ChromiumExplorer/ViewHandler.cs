@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using Microsoft.VisualStudio.Editor;
@@ -12,6 +13,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromiumCore.FileNames;
 using VsChromiumCore.Ipc.TypedMessages;
+using VsChromiumCore.Linq;
 using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 
@@ -37,10 +39,10 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
       _textViewAdapter = textViewAdapter;
       _textView = AdapterService.GetWpfTextView(textViewAdapter);
 
-      ITextDocument document;
-      if (!_textView.TextBuffer.Properties.TryGetProperty<ITextDocument>(typeof(ITextDocument), out document))
-        return;
+      GetTextDocuments(_textView).ForAll(document => ProcessDocument(document));
+    }
 
+    private void ProcessDocument(ITextDocument document) {
       var path = document.FilePath;
 
       // This can happen with "Find in files" for example, as it uses a fake filename.
@@ -58,6 +60,17 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
       };
 
       RequestProcessor.Post(request);
+    }
+
+    /// <summary>
+    /// Return all the ITextDocument instances in the buffer graph associated to "textView".
+    /// </summary>
+    private IEnumerable<ITextDocument> GetTextDocuments(ITextView textView) {
+      foreach (var buffer in textView.BufferGraph.GetTextBuffers(_ => true)) {
+        ITextDocument document;
+        if (buffer.Properties.TryGetProperty(typeof(ITextDocument), out document))
+          yield return document;
+      }
     }
   }
 }

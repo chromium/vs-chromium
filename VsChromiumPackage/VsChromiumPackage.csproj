@@ -202,6 +202,7 @@
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOuputClassificationDefinition.cs" />
     <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
+    <Compile Include="Features\ChromiumExplorer\TextDocumentFactoryObserver.cs" />
     <Compile Include="Features\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="Features\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />
     <Compile Include="Features\ChromiumExplorer\SearchFileContentsCommandHandler.cs" />
@@ -297,7 +298,6 @@
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\SpaceAfterForKeywordChecker.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\ElseIfOnNewLineChecker.cs" />
     <Compile Include="Views\ViewCreationListener.cs" />
-    <Compile Include="Features\ChromiumExplorer\ViewHandler.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\OpenBraceAfterNewLineChecker.cs" />
     <Compile Include="Views\TextLineFragment.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckerError.cs" />

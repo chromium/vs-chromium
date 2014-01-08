@@ -71,6 +71,7 @@
     <Compile Include="Ipc\TypedEvents\TypedEventForwarder.cs" />
     <Compile Include="Ipc\TypedEvents\TypedEventSender.cs" />
     <Compile Include="Ipc\ProtocolHandlers\IProtocolHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\RemoveFileNameRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\SearchDirectoryNamesRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileSystemVersionRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\ITypedMessageRequestHandler.cs" />

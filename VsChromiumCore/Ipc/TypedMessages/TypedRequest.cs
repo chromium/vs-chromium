@@ -13,6 +13,7 @@ namespace VsChromiumCore.Ipc.TypedMessages {
   [ProtoInclude(14, typeof(GetFileSystemVersionRequest))]
   [ProtoInclude(15, typeof(SearchDirectoryNamesRequest))]
   [ProtoInclude(16, typeof(GetFileExtractsRequest))]
+  [ProtoInclude(17, typeof(RemoveFileNameRequest))]
   public class TypedRequest : TypedMessage {
   }
 }

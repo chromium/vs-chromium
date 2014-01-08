@@ -90,6 +90,7 @@
     <Compile Include="Ipc\IIpcRequestIdFactory.cs" />
     <Compile Include="Ipc\IpcEvent.cs" />
     <Compile Include="Ipc\IpcMessage.cs" />
+    <Compile Include="Ipc\TypedMessages\RemoveFileNameRequest.cs" />
     <Compile Include="Ipc\TypedMessages\FileExtract.cs" />
     <Compile Include="Ipc\TypedMessages\FilePositionSpan.cs" />
     <Compile Include="Ipc\TypedMessages\FileSystemTreeComputing.cs" />

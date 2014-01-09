@@ -63,6 +63,7 @@
     <Compile Include="FileSystem\FileSystemProcessor.cs" />
     <Compile Include="FileSystem\IDirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystem\IFileSystemProcessor.cs" />
+    <Compile Include="FileSystem\IFileSystemTreeBuilder.cs" />
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\RelativePathNameExtensions.cs" />

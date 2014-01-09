@@ -10,7 +10,7 @@ namespace VsChromiumCore.FileNames {
   /// <summary>
   /// Wraps a string representing the full path of a file or directory.
   /// </summary>
-  public struct FullPathName : IEquatable<FullPathName> {
+  public struct FullPathName : IEquatable<FullPathName>, IComparable<FullPathName> {
     private readonly string _path;
 
     public FullPathName(string path) {
@@ -48,6 +48,10 @@ namespace VsChromiumCore.FileNames {
 
     public bool Equals(FullPathName other) {
       return SystemPathComparer.Instance.Comparer.Equals(_path, other._path);
+    }
+
+    public int CompareTo(FullPathName other) {
+      return SystemPathComparer.Instance.Comparer.Compare(_path, other._path);
     }
 
     public override string ToString() {

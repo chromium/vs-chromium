@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using VsChromiumCore.FileNames;
@@ -12,12 +13,14 @@ using VsChromiumServer.ProgressTracking;
 using VsChromiumServer.Projects;
 
 namespace VsChromiumServer.FileSystem {
-  public class FileSystemTreeBuilder {
+  [Export(typeof(IFileSystemTreeBuilder))]
+  public class FileSystemTreeBuilder : IFileSystemTreeBuilder {
     private const string _relativePathForRoot = "";
     private static readonly EntryReverseComparer _entryReverseComparerInstance = new EntryReverseComparer();
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
+    [ImportingConstructor]
     public FileSystemTreeBuilder(
       IProjectDiscovery projectDiscovery,
       IProgressTrackerFactory progressTrackerFactory) {
@@ -25,12 +28,12 @@ namespace VsChromiumServer.FileSystem {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public DirectoryEntry ComputeNewRoot(IEnumerable<string> files) {
+    public DirectoryEntry ComputeTree(IEnumerable<FullPathName> filenames) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var newRoot = new DirectoryEntry();
 
-        newRoot.Entries = files
-          .Select(filename => _projectDiscovery.GetProject(filename))
+        newRoot.Entries = filenames
+          .Select(filename => _projectDiscovery.GetProject(filename.FullName))
           .Where(project => project != null)
           .Distinct(new ProjectPathComparer())
           .Select(project => ProcessProject(project, progress))

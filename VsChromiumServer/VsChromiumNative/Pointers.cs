@@ -22,6 +22,9 @@ namespace VsChromiumServer.VsChromiumNative {
       return Add((byte*)ptr, offset);
     }
 
+    /// <summary>
+    /// Returns the # of bytes between "start" end "end" (excluded).
+    /// </summary>
     public static int Offset32(byte* start, byte* end) {
       if (start > end)
         throw new ArgumentException();

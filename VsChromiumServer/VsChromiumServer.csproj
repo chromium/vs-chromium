@@ -103,6 +103,7 @@
     <Compile Include="Projects\ProjectFile\ProjectFileDiscoveryProvider.cs" />
     <Compile Include="Projects\ProjectFile\ProjectFileProject.cs" />
     <Compile Include="Projects\SearchableFilesFilter.cs" />
+    <Compile Include="Search\AsciiTextLineOffsets.cs" />
     <Compile Include="VsChromiumNative\Pointers.cs" />
     <Compile Include="Threads\ITaskQueue.cs" />
     <Compile Include="Threads\ITaskQueueFactory.cs" />

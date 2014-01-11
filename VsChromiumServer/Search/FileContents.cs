@@ -4,11 +4,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VsChromiumCore.Ipc.TypedMessages;
 
 namespace VsChromiumServer.Search {
   public abstract class FileContents {
     protected static List<int> NoPositions = new List<int>();
+    protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
     private readonly DateTime _utcLastWriteTime;
 
     protected FileContents(DateTime utcLastWriteTime) {
@@ -23,8 +25,8 @@ namespace VsChromiumServer.Search {
       return NoPositions;
     }
 
-    public virtual FileExtract SpanToLineExtract(FilePositionSpan filePositionSpan) {
-      return null;
+    public virtual IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
+      return NoFileExtracts;
     }
   }
 }

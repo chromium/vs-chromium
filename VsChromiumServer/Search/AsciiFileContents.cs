@@ -4,11 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Win32.Memory;
-using VsChromiumCore.Win32.Strings;
 using VsChromiumServer.VsChromiumNative;
 
 namespace VsChromiumServer.Search {
@@ -17,7 +15,6 @@ namespace VsChromiumServer.Search {
   /// values are less than 127).
   /// </summary>
   public class AsciiFileContents : FileContents {
-    private const char _lineBreak = '\n';
     private const int _maxTextExtent = 50;
     private readonly SafeHeapBlockHandle _heap;
     private readonly int _textOffset;
@@ -49,86 +46,20 @@ namespace VsChromiumServer.Search {
       return searchContentsData.AsciiStringSearchAlgo.SearchAll(Pointer, (int)ByteLength).ToList();
     }
 
-    public override FileExtract SpanToLineExtract(FilePositionSpan filePositionSpan) {
-      return SpanToLineExtractWorker(filePositionSpan);
+    public override IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
+      return GetFileExtractsWorker(spans);
     }
 
-    public unsafe FileExtract SpanToLineExtractWorker(FilePositionSpan filePositionSpan) {
+    public unsafe IEnumerable<FileExtract> GetFileExtractsWorker(IEnumerable<FilePositionSpan> spans) {
       var blockStart = Pointers.Add(_heap.Pointer, _textOffset);
       var blockEnd = Pointers.Add(_heap.Pointer, _heap.ByteLength);
-      var textPosition = Pointers.Add(blockStart, filePositionSpan.Position);
-      if (textPosition < blockStart || textPosition >= blockEnd)
-        return null;
+      var offsets = new AsciiTextLineOffsets(_heap, blockStart, blockEnd);
+      offsets.CollectLineOffsets();
 
-      var lineStart = GetLineStart(blockStart, blockEnd, textPosition, _maxTextExtent);
-      Debug.Assert(blockStart <= lineStart);
-      Debug.Assert(lineStart <= blockEnd);
-
-      var lineEnd = GetLineEnd(blockStart, blockEnd, textPosition + filePositionSpan.Length, _maxTextExtent);
-      Debug.Assert(blockStart <= lineEnd);
-      Debug.Assert(lineEnd <= blockEnd);
-
-      var text = Conversion.UTF8ToString(lineStart, lineEnd);
-
-      var lineCol = GetLineNumber(blockStart, blockEnd, textPosition);
-
-      return new FileExtract {
-        Text = text,
-        Offset = Pointers.Offset32(blockStart, lineStart),
-        Length = Pointers.Offset32(lineStart, lineEnd),
-        LineNumber = lineCol.Item1,
-        ColumnNumber = lineCol.Item2
-      };
-    }
-
-    private static unsafe Tuple<int, int> GetLineNumber(byte* blockStart, byte* blockEnd, byte* lineStart) {
-      int lineNumber = 0;
-      int columnNumber = 0;
-      for (var p = blockStart; p < blockEnd; p++) {
-        if (p == lineStart)
-          break;
-        if (*p == _lineBreak) {
-          lineNumber++;
-          columnNumber = 0;
-        } else {
-          columnNumber++;
-        }
-      }
-      return Tuple.Create(lineNumber, columnNumber);
-    }
-
-    private static unsafe byte* GetLineStart(byte* start, byte* end, byte* position, int count) {
-      var result = position;
-      while (true) {
-        if (count <= 0)
-          break;
-
-        var previous = result - 1;
-        if (result == start)
-          break;
-        if (*previous == _lineBreak)
-          break;
-
-        count--;
-        result = previous;
-      }
-      return result;
-    }
-
-    private static unsafe byte* GetLineEnd(byte* start, byte* end, byte* position, int count) {
-      var result = position;
-      while (true) {
-        if (count <= 0)
-          break;
-        if (result == end)
-          break;
-        if (*result == _lineBreak)
-          break;
-
-        count--;
-        result++;
-      }
-      return result;
+      return spans
+        .Select(x => offsets.FilePositionSpanToFileExtract(x, _maxTextExtent))
+        .Where(x => x != null)
+        .ToList();
     }
   }
 }

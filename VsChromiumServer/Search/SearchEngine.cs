@@ -156,7 +156,7 @@ namespace VsChromiumServer.Search {
       if (fileData.Contents == null)
         return Enumerable.Empty<FileExtract>();
 
-      return spans.Select(x => fileData.Contents.SpanToLineExtract(x));
+      return fileData.Contents.GetFileExtracts(spans);
     }
 
     public event Action<long> FilesLoading;

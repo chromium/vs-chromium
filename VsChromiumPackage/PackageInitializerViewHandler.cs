@@ -21,19 +21,23 @@ namespace VsChromiumPackage {
   [PartCreationPolicy(CreationPolicy.NonShared)]
   [Export(typeof(IViewHandler))]
   public class PackageInitializerViewHandler : IViewHandler {
-    [Import(typeof(SVsServiceProvider))]
-    internal IServiceProvider ServiceProvider = null; // Set via MEF
-
-    [Import]
-    internal IVsEditorAdaptersFactoryService AdapterService = null; // Set via MEF
-
-    [Import]
-    internal ITextDocumentService TextDocumentService = null; // Set via MEF
-
-    [Import]
-    internal ITextDocumentFactoryService TextDocumentFactoryService = null; // Set via MEF
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
+    private readonly ITextDocumentService _textDocumentService;
+    private readonly ITextDocumentFactoryService _textDocumentFactoryService;
 
     private bool _loaded;
+
+    public PackageInitializerViewHandler(
+      [Import(typeof(SVsServiceProvider))]IServiceProvider serviceProvider,
+      IVsEditorAdaptersFactoryService adaptersFactoryService,
+      ITextDocumentService textDocumentService,
+      ITextDocumentFactoryService textDocumentFactoryService) {
+      _serviceProvider = serviceProvider;
+      _adaptersFactoryService = adaptersFactoryService;
+      _textDocumentService = textDocumentService;
+      _textDocumentFactoryService = textDocumentFactoryService;
+    }
 
     public int Priority { get { return int.MaxValue; } }
 
@@ -43,7 +47,7 @@ namespace VsChromiumPackage {
         return;
       _loaded = true;
 
-      var shell = ServiceProvider.GetService(typeof(SVsShell)) as IVsShell;
+      var shell = _serviceProvider.GetService(typeof(SVsShell)) as IVsShell;
       if (shell == null)
         return;
 
@@ -54,12 +58,12 @@ namespace VsChromiumPackage {
       // Ensure document is seen as loaded - This is necessary for the first
       // opened editor because the document is open before the package has a
       // chance to listen to TextDocumentFactoryService events.
-      var textView = AdapterService.GetWpfTextView(textViewAdapter);
+      var textView = _adaptersFactoryService.GetWpfTextView(textViewAdapter);
       if (textView != null) {
         foreach (var buffer in textView.BufferGraph.GetTextBuffers(x => true)) {
           ITextDocument textDocument;
-          if (TextDocumentFactoryService.TryGetTextDocument(buffer, out textDocument)) {
-            TextDocumentService.OnDocumentOpen(textDocument);
+          if (_textDocumentFactoryService.TryGetTextDocument(buffer, out textDocument)) {
+            _textDocumentService.OnDocumentOpen(textDocument);
           }
         }
       }

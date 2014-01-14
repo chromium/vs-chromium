@@ -7,7 +7,6 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromiumPackage.Commands;
 using VsChromiumPackage.Views;
@@ -16,17 +15,18 @@ namespace VsChromiumPackage.Features.FormatComment {
   [PartCreationPolicy(CreationPolicy.NonShared)]
   [Export(typeof(IViewHandler))]
   public class FormatCommentHandler : IViewHandler {
-    [Import]
-    internal IVsEditorAdaptersFactoryService AdapterService = null; // Set via MEF
-
-    [Import]
-    internal IViewTagAggregatorFactoryService TagAggregatorFactory = null; // Set via MEF
-
-    [Import]
-    internal ICommentFormatter CommentFormatter = null; // Set via MEF
-
+    private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
+    private readonly ICommentFormatter _commentFormatter;
     private IWpfTextView _textView;
     private IVsTextView _textViewAdapter;
+
+    [ImportingConstructor]
+    public FormatCommentHandler(
+      IVsEditorAdaptersFactoryService adaptersFactoryService,
+      ICommentFormatter commentFormatter) {
+      _adaptersFactoryService = adaptersFactoryService;
+      _commentFormatter = commentFormatter;
+    }
 
     public int Priority { get { return 0; } }
 
@@ -34,7 +34,7 @@ namespace VsChromiumPackage.Features.FormatComment {
       if (_textViewAdapter != null)
         throw new InvalidOperationException("ViewHandler instance is already attached to a view. Create a new instance?");
       _textViewAdapter = textViewAdapter;
-      _textView = AdapterService.GetWpfTextView(textViewAdapter);
+      _textView = _adaptersFactoryService.GetWpfTextView(textViewAdapter);
 
       var target = new SimpleCommandTarget(new CommandID(GuidList.GuidVsChromiumCmdSet, PkgCmdIdList.CmdidFormatComment), Execute);
       var targetWrapper = new OleCommandTarget(target);
@@ -42,16 +42,16 @@ namespace VsChromiumPackage.Features.FormatComment {
     }
 
     private void Execute() {
-      var extendSpanResult = CommentFormatter.ExtendSpan(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
+      var extendSpanResult = _commentFormatter.ExtendSpan(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
       if (extendSpanResult == null)
         return;
 
-      var result = CommentFormatter.FormatLines(extendSpanResult);
+      var result = _commentFormatter.FormatLines(extendSpanResult);
       if (result == null)
         return;
 
       using (var edit = _textView.TextBuffer.CreateEdit()) {
-        if (CommentFormatter.ApplyChanges(edit, result))
+        if (_commentFormatter.ApplyChanges(edit, result))
           edit.Apply();
       }
     }

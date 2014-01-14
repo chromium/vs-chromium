@@ -17,17 +17,21 @@ namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
   [PartCreationPolicy(CreationPolicy.NonShared)]
   [Export(typeof(IViewHandler))]
   public class NugetConsoleViewHandler : IViewHandler {
-    [Import]
-    internal IVsEditorAdaptersFactoryService AdapterService = null; // Set via MEF
-
-    [Import]
-    internal IOpenDocumentHelper OpenDocumentHelper = null; // Set via MEF
-
-    [Import]
-    internal IBuildOutputParser BuildOutputParser = null; // Set via MEF
-
+    private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
+    private readonly IOpenDocumentHelper _openDocumentHelper;
+    private readonly IBuildOutputParser _buildOutputParser;
     private IWpfTextView _textView;
     private IVsTextView _textViewAdapter;
+
+    [ImportingConstructor]
+    public NugetConsoleViewHandler(
+      IVsEditorAdaptersFactoryService adaptersFactoryService,
+      IOpenDocumentHelper openDocumentHelper,
+      IBuildOutputParser buildOutputParser) {
+      _adaptersFactoryService = adaptersFactoryService;
+      _openDocumentHelper = openDocumentHelper;
+      _buildOutputParser = buildOutputParser;
+    }
 
     public int Priority { get { return 100; } }
 
@@ -38,7 +42,7 @@ namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
       if (_textViewAdapter != null)
         throw new InvalidOperationException("ViewHandler instance is already attached to a view. Create a new instance?");
       _textViewAdapter = textViewAdapter;
-      _textView = AdapterService.GetWpfTextView(textViewAdapter);
+      _textView = _adaptersFactoryService.GetWpfTextView(textViewAdapter);
 
       var target = new SimpleCommandTarget(new CommandID(VSConstants.VSStd2K, (int)VSConstants.VSStd2KCmdID.ECMD_LEFTCLICK), Execute, HandlesCommand);
       var targetWrapper = new OleCommandTarget(target);
@@ -46,7 +50,7 @@ namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
     }
 
     private bool ApplyToView(IVsTextView textViewAdapter) {
-      var textView = AdapterService.GetWpfTextView(textViewAdapter);
+      var textView = _adaptersFactoryService.GetWpfTextView(textViewAdapter);
       if (textView == null)
         return false;
 
@@ -69,7 +73,7 @@ namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
 
       var line = caret.ContainingTextViewLine;
       var extent = line.Extent;
-      var result = BuildOutputParser.ParseLine(extent.GetText());
+      var result = _buildOutputParser.ParseLine(extent.GetText());
       if (result == null)
         return null;
 
@@ -88,8 +92,8 @@ namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
       if (buildOutputSpanForCaret == null)
         return;
 
-      OpenDocumentHelper.OpenDocument(buildOutputSpanForCaret.FileName, (vsTextView) => {
-        var textView = AdapterService.GetWpfTextView(vsTextView);
+      _openDocumentHelper.OpenDocument(buildOutputSpanForCaret.FileName, (vsTextView) => {
+        var textView = _adaptersFactoryService.GetWpfTextView(vsTextView);
         if (textView == null)
           return null;
 

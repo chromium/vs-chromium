@@ -19,6 +19,14 @@ namespace VsChromiumPackage.Features.FormatComment {
     private const string _longCommentToken = "///";
 
     public ExtendSpanResult ExtendSpan(SnapshotSpan span) {
+      // Adjust end of span if 1) selection and 2) end of span is at start of line
+      if (span.Length > 0) {
+        var endLine1 = span.End.GetContainingLine();
+        if (endLine1.LineNumber > 0 && span.End == endLine1.Start) {
+          span = new SnapshotSpan(span.Start, span.Snapshot.GetLineFromLineNumber(endLine1.LineNumber - 1).End);
+        }
+      }
+
       // If no selection, extend lines up and down.
       var deltaLine = (span.Length == 0 ? 1 : 0);
 
@@ -46,12 +54,6 @@ namespace VsChromiumPackage.Features.FormatComment {
           return null;
       }
 
-      // Adjust end line in if 1) selection and 2) cursor at start of next line
-      if (endLine.LineNumber > startLine.LineNumber &&
-          deltaLine == 0 &&
-          span.End == endLine.Start) {
-        endLine = span.Snapshot.GetLineFromLineNumber(endLine.LineNumber - 1);
-      }
       return new ExtendSpanResult {
         CommentType = commentType,
         StartLine = startLine,

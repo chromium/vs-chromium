@@ -221,6 +221,30 @@ namespace VsChromiumTests {
     }
 
     [TestMethod]
+    public void ExtendSpanWorks4() {
+      var sourceText = @"
+#include <foo>
+
+  // Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+  // Ut enim ad minim veniam, quis nostrud 
+  //        exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, 
+  //sunt in culpa qui officia deserunt mollit anim id est laborum.
+";
+
+      var textBuffer = CreateTestBuffer(sourceText);
+      var textSnapshot = textBuffer.CurrentSnapshot;
+      var start = textSnapshot.GetLineFromLineNumber(3);
+      var end = textSnapshot.GetLineFromLineNumber(7);
+      var formatter = CreateCommentFormatter();
+      var result = formatter.ExtendSpan(new SnapshotSpan(start.Start, end.Start));
+
+      Assert.IsNotNull(result);
+      Assert.AreEqual(3, result.StartLine.LineNumber);
+      Assert.AreEqual(6, result.EndLine.LineNumber);
+    }
+
+
+    [TestMethod]
     public void ApplyChangesWorks() {
       var sourceText = @"
 #include <foo>

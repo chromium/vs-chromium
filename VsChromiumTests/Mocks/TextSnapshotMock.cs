@@ -25,11 +25,14 @@ namespace VsChromiumTests.Mocks {
       var lineNumber = 0;
       var index = 0;
       while (index < text.Length) {
+        // look for end of line
         var lineEnding = text.IndexOf('\n', index);
         if (lineEnding < 0) {
           yield return new TextSnapshotLineMock(this, lineNumber, index, text.Length - index, "");
-          yield break;
+          break;
         }
+
+        // Adjust for possible '\r' character before '\n'
         var lineEndingEnd = lineEnding + 1;
         if (lineEnding > index && text[lineEnding - 1] == '\r')
           lineEnding --;
@@ -38,6 +41,11 @@ namespace VsChromiumTests.Mocks {
 
         index = lineEndingEnd;
         lineNumber++;
+
+        // If last line is empty, emit an empty line
+        if (index == text.Length) {
+          yield return new TextSnapshotLineMock(this, lineNumber, index, 0, "");
+        }
       }
     }
 

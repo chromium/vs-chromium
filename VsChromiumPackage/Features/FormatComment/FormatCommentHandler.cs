@@ -10,16 +10,12 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromiumPackage.Commands;
-using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 
 namespace VsChromiumPackage.Features.FormatComment {
   [PartCreationPolicy(CreationPolicy.NonShared)]
   [Export(typeof(IViewHandler))]
   public class FormatCommentHandler : IViewHandler {
-    [Import]
-    internal IUIRequestProcessor RequestProcessor = null; // Set via MEF.
-
     [Import]
     internal IVsEditorAdaptersFactoryService AdapterService = null; // Set via MEF
 
@@ -31,6 +27,8 @@ namespace VsChromiumPackage.Features.FormatComment {
 
     private IWpfTextView _textView;
     private IVsTextView _textViewAdapter;
+
+    public int Priority { get { return 0; } }
 
     public void Attach(IVsTextView textViewAdapter) {
       if (_textViewAdapter != null)

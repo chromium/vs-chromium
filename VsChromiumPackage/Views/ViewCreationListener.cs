@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Linq;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
@@ -39,7 +40,11 @@ namespace VsChromiumPackage.Views {
       Func<Marker> creator = () => {
         var result = new Marker();
         var componentModel = (IComponentModel)ServiceProvider.GetService(typeof(SComponentModel));
-        foreach (var handler in componentModel.DefaultExportProvider.GetExportedValues<IViewHandler>()) {
+        var handlers = componentModel.DefaultExportProvider
+          .GetExportedValues<IViewHandler>()
+          .OrderByDescending(x => x.Priority)
+          .ToList();
+        foreach (var handler in handlers) {
           handler.Attach(textViewAdapter);
           result.AddHandler(handler);
         }

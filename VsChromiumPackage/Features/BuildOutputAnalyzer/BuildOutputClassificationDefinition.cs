@@ -7,9 +7,9 @@ using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
 namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
-  public static class BuildOuputClassificationDefinition {
+  public static class BuildOutputClassificationDefinition {
     /// <summary>
-    /// Defines the "VsChromiumPackage" classification type.
+    /// Defines the classification type.
     /// </summary>
     [Export(typeof(ClassificationTypeDefinition))]
     [Name(BuildOutputClassifierConstants.Name)]

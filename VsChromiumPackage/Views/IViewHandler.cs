@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace VsChromiumPackage.Views {
   public interface IViewHandler {
+    int Priority { get; }
     void Attach(IVsTextView textViewAdapter);
   }
 }

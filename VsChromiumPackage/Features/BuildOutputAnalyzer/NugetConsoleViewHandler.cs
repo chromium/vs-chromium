@@ -9,10 +9,8 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromiumPackage.Commands;
-using VsChromiumPackage.Threads;
 using VsChromiumPackage.Views;
 
 namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
@@ -20,13 +18,7 @@ namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
   [Export(typeof(IViewHandler))]
   public class NugetConsoleViewHandler : IViewHandler {
     [Import]
-    internal IUIRequestProcessor RequestProcessor = null; // Set via MEF.
-
-    [Import]
     internal IVsEditorAdaptersFactoryService AdapterService = null; // Set via MEF
-
-    [Import]
-    internal IViewTagAggregatorFactoryService TagAggregatorFactory = null; // Set via MEF
 
     [Import]
     internal IOpenDocumentHelper OpenDocumentHelper = null; // Set via MEF
@@ -36,6 +28,8 @@ namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
 
     private IWpfTextView _textView;
     private IVsTextView _textViewAdapter;
+
+    public int Priority { get { return 100; } }
 
     public void Attach(IVsTextView textViewAdapter) {
       if (!ApplyToView(textViewAdapter))

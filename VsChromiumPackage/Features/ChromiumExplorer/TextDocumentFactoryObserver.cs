@@ -3,23 +3,20 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using System.IO;
 using Microsoft.VisualStudio.Text;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumPackage.Package;
-using VsChromiumPackage.Threads;
+using VsChromiumPackage.Views;
 
 namespace VsChromiumPackage.Features.ChromiumExplorer {
   [Export(typeof(IPackagePostInitializer))]
   public class TextDocumentFactoryObserver : IPackagePostInitializer {
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;
-    private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly ITextDocumentService _textDocumentService;
 
     [ImportingConstructor]
-    public TextDocumentFactoryObserver(ITextDocumentFactoryService textDocumentFactoryService, IUIRequestProcessor uiRequestProcessor) {
+    public TextDocumentFactoryObserver(ITextDocumentFactoryService textDocumentFactoryService, ITextDocumentService textDocumentService) {
       _textDocumentFactoryService = textDocumentFactoryService;
-      _uiRequestProcessor = uiRequestProcessor;
+      _textDocumentService = textDocumentService;
     }
 
     public int Priority { get { return 0; } }
@@ -30,43 +27,11 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
     }
 
     private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, TextDocumentEventArgs textDocumentEventArgs) {
-      var path = textDocumentEventArgs.TextDocument.FilePath;
-
-      if (!IsPhysicalFile(path))
-        return;
-
-      var request = new UIRequest {
-        Id = "AddFileNameRequest-" + path,
-        TypedRequest = new AddFileNameRequest {
-          FileName = path
-        }
-      };
-
-      _uiRequestProcessor.Post(request);
+      _textDocumentService.OnDocumentOpen(textDocumentEventArgs.TextDocument);
     }
 
     private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, TextDocumentEventArgs textDocumentEventArgs) {
-      var path = textDocumentEventArgs.TextDocument.FilePath;
-
-      if (!IsPhysicalFile(path))
-        return;
-
-      var request = new UIRequest {
-        Id = "RemoveFileNameRequest-" + path,
-        TypedRequest = new RemoveFileNameRequest {
-          FileName = path
-        }
-      };
-
-      _uiRequestProcessor.Post(request);
-    }
-
-    private static bool IsPhysicalFile(string path) {
-      // This can happen with "Find in files" for example, as it uses a fake filename.
-      if (!PathHelpers.IsAbsolutePath(path))
-        return false;
-
-      return File.Exists(path);
+      _textDocumentService.OnDocumentClose(textDocumentEventArgs.TextDocument);
     }
   }
 }

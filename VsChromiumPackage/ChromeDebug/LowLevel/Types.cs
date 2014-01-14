@@ -194,8 +194,12 @@ namespace VsChromiumPackage.ChromeDebug.LowLevel {
       [FieldOffset(16)]
       private UIntPtr uniqueProcessId;
 
+      [FieldOffset(20)]
+      private IntPtr parentProcessId;
+
       public IntPtr PebBaseAddress { get { return pebBaseAddress; } }
       public UIntPtr UniqueProcessId { get { return uniqueProcessId; } }
+      public IntPtr ParentProcessId { get { return parentProcessId; } }
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

@@ -28,6 +28,7 @@ namespace VsChromiumPackage {
 
     private bool _loaded;
 
+    [ImportingConstructor]
     public PackageInitializerViewHandler(
       [Import(typeof(SVsServiceProvider))]IServiceProvider serviceProvider,
       IVsEditorAdaptersFactoryService adaptersFactoryService,

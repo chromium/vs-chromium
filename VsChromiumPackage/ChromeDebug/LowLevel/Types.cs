@@ -5,7 +5,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumPackage.Features.ChromeDebug.LowLevel {
+namespace VsChromiumPackage.ChromeDebug.LowLevel {
   // Defines structures, enumerations, and types used by Win32 API calls.  In some cases, the API
   // calls support (and even document) many more values than what are listed here.  Should
   // additional values be required, they can be added to the respective types.

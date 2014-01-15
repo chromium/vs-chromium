@@ -9,9 +9,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
-using VsChromiumPackage.Features.ChromeDebug.LowLevel;
+using VsChromiumPackage.ChromeDebug.LowLevel;
 
-namespace VsChromiumPackage.Features.ChromeDebug {
+namespace VsChromiumPackage.ChromeDebug {
   class ProcessDetail : IDisposable {
     public ProcessDetail(int pid) {
       // Initialize everything to null in case something fails.

@@ -167,20 +167,20 @@
     <Compile Include="Features\AutoUpdate\UpdateInfo.cs" />
     <Compile Include="Features\AutoUpdate\UpdateNotificationListener.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifierConstants.cs" />
-    <Compile Include="Features\ChromeDebug\AttachDialog.cs">
+    <Compile Include="ChromeDebug\AttachDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Features\ChromeDebug\AttachDialog.designer.cs">
+    <Compile Include="ChromeDebug\AttachDialog.designer.cs">
       <DependentUpon>AttachDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Features\ChromeDebug\Guids.cs" />
-    <Compile Include="Features\ChromeDebug\LowLevel\NativeMethods.cs" />
-    <Compile Include="Features\ChromeDebug\LowLevel\Types.cs" />
-    <Compile Include="Features\ChromeDebug\PkgCmdID.cs" />
-    <Compile Include="Features\ChromeDebug\ProcessCategory.cs" />
-    <Compile Include="Features\ChromeDebug\ProcessDetail.cs" />
-    <Compile Include="Features\ChromeDebug\AttachToChromeCommandHandler.cs" />
-    <Compile Include="Features\ChromeDebug\Utility.cs" />
+    <Compile Include="ChromeDebug\Guids.cs" />
+    <Compile Include="ChromeDebug\LowLevel\NativeMethods.cs" />
+    <Compile Include="ChromeDebug\LowLevel\Types.cs" />
+    <Compile Include="ChromeDebug\PkgCmdID.cs" />
+    <Compile Include="ChromeDebug\ProcessCategory.cs" />
+    <Compile Include="ChromeDebug\ProcessDetail.cs" />
+    <Compile Include="ChromeDebug\AttachToChromeCommandHandler.cs" />
+    <Compile Include="ChromeDebug\Utility.cs" />
     <Compile Include="ChromiumEnlistment\ChromiumSourceFiles.cs" />
     <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierConstants.cs" />
@@ -314,7 +314,7 @@
     <Compile Include="VsPackage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Features\ChromeDebug\AttachDialog.resx">
+    <EmbeddedResource Include="ChromeDebug\AttachDialog.resx">
       <DependentUpon>AttachDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">

@@ -9,9 +9,9 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using VsChromiumPackage.Features.ChromeDebug.LowLevel;
+using VsChromiumPackage.ChromeDebug.LowLevel;
 
-namespace VsChromiumPackage.Features.ChromeDebug {
+namespace VsChromiumPackage.ChromeDebug {
   // The form that is displayed to allow the user to select processes to attach to.  Note that we
   // cannot interact with the DTE object from here (I assume this is because the dialog is running
   // on a different thread, although I don't fully understand), so any access to the DTE object

@@ -20,7 +20,7 @@ namespace VsChromiumPackage {
   // When in development mode, update the version # below every time there is a change to the .VSCT file,
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
   // VS 2012 and later since package updates is more explicit).
-  [ProvideMenuResource("Menus.ctmenu", 7)]
+  [ProvideMenuResource("Menus.ctmenu", 8)]
   [ProvideToolWindow(typeof(ChromiumExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage {

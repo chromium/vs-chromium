@@ -3,15 +3,11 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using System.Windows.Forms;
 using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandlers;
-using VsChromiumCore.Win32.Processes;
-using System.Diagnostics;
+using VsChromiumPackage.Package.CommandHandler;
 
 
 namespace VsChromiumPackage.ChromeDebug

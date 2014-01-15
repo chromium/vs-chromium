@@ -11,15 +11,15 @@ using VsChromiumPackage.Package.CommandHandler;
 
 namespace VsChromiumPackage.ChromeDebug {
   [Export(typeof(IPackageCommandHandler))]
-  public class AttachToChromeCommandHandler : IPackageCommandHandler {
+  public class AttachToChromeDialogHandler : IPackageCommandHandler {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
-    public AttachToChromeCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public AttachToChromeDialogHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidChromeDebugCmdSet, (int)PkgCmdIDList.CmdidAttachToProcess); } }
+    public CommandID CommandId { get { return new CommandID(GuidList.GuidChromeDebugCmdSet, (int)PkgCmdIDList.CmdidAttachToChromeDialog); } }
 
     public void Execute(object sender, EventArgs e) {
       // Show a Message Box to prove we were here

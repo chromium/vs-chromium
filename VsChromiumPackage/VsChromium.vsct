@@ -13,10 +13,23 @@
       <Group guid="guidVsChromiumCmdSet" id="MyMenuGroup" priority="0x0600">
         <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS"/>
       </Group>
-      <Group guid="guidChromeDebugCmdSet" id="MyMenuGroup" priority="0x0600">
+      <Group guid="guidChromeDebugCmdSet" id="ChromeDebugTopLevelMenuGroup" priority="0x0600">
         <Parent guid="guidVSDebugGroup" id="IDM_DEBUG_MENU"/>
       </Group>
+      <Group guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" priority="0x0600">
+        <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenu"/>
+      </Group>
     </Groups>
+    <Menus>
+      <Menu guid="guidChromeDebugCmdSet" id="ChromeDebugMenu" priority="0x100" type="Menu">
+        <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugTopLevelMenuGroup"/>
+        <CommandFlag>AlwaysCreate</CommandFlag>
+        <Strings>
+          <ButtonText>Attach to Chrome</ButtonText>
+          <CommandName>Attach to Chrome</CommandName>
+        </Strings>
+      </Menu>
+    </Menus>
     <Buttons>
       <Button guid="guidVsChromiumCmdSet" id="cmdidFormatComment" priority="0x0100" type="Button">
         <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS" />
@@ -58,17 +71,34 @@
           <ButtonText>Chromium find in files</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToProcess" priority="0x0100" type="Button">
-        <Parent guid="guidChromeDebugCmdSet" id="MyMenuGroup" />
-        <Icon guid="guidPackageImages" id="bmpChromium" />
+      <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeDialog" priority="0x0002" type="Button">
+        <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" />
+        <Icon guid="guidPackageChromeDebugImages" id="bmpAttachChoose" />
         <Strings>
-          <ButtonText>Attach to Chrome</ButtonText>
+          <CommandName>cmdidAttachToChromeDialog</CommandName>
+          <ButtonText>Choose...</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToAllChromes" priority="0x0000" type="Button">
+        <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" />
+        <Icon guid="guidPackageChromeDebugImages" id="bmpAttachAll" />
+        <Strings>
+          <CommandName>cmdidAttachToAllChromes</CommandName>
+          <ButtonText>All Running Processes</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeTree" priority="0x0001" type="Button">
+        <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" />
+        <Icon guid="guidPackageChromeDebugImages" id="bmpAttachDescendants" />
+        <Strings>
+          <CommandName>cmdidAttachToChromeTree</CommandName>
+          <ButtonText>Descendants of Current Debug Session</ButtonText>
         </Strings>
       </Button>
     </Buttons>
     <Bitmaps>
       <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
-      <Bitmap guid="guidPackageImages" href="Resources\ChromiumIcon.png" usedList="bmpChromium"/>
+      <Bitmap guid="guidPackageChromeDebugImages" href="Resources\ChromeDebugIcons.png"/>
     </Bitmaps>
   </Commands>
   <KeyBindings>
@@ -91,8 +121,13 @@
       <IDSymbol name="cmdidSearchFileContents" value="0x0104" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">
-      <IDSymbol name="MyMenuGroup" value="0x1020" />
-      <IDSymbol name="cmdidAttachToProcess" value="0x0100" />
+      <IDSymbol name="ChromeDebugTopLevelMenu" value="0x0100"/>
+      <IDSymbol name="ChromeDebugTopLevelMenuGroup" value="0x0101" />
+      <IDSymbol name="ChromeDebugMenu" value="0x0102"/>
+      <IDSymbol name="ChromeDebugMenuGroup" value="0x0103" />
+      <IDSymbol name="cmdidAttachToAllChromes" value="0x0200" />
+      <IDSymbol name="cmdidAttachToChromeTree" value="0x0201" />
+      <IDSymbol name="cmdidAttachToChromeDialog" value="0x0202" />
     </GuidSymbol>
     <GuidSymbol name="guidImages" value="{80c1b9c8-d097-4934-aa9c-e5ad6bc2408d}" >
       <IDSymbol name="bmpPic1" value="1" />
@@ -101,8 +136,11 @@
       <IDSymbol name="bmpPicX" value="4" />
       <IDSymbol name="bmpPicArrows" value="5" />
     </GuidSymbol>
-    <GuidSymbol name="guidPackageImages" value="{29d24a26-23fd-4d67-84f5-bf150c1b47b1}" >
-      <IDSymbol name="bmpChromium" value="1" />
+    <GuidSymbol name="guidPackageChromeDebugImages" value="{29d24a26-23fd-4d67-84f5-bf150c1b47b1}" >
+      <IDSymbol name="bmpChromiumDefault" value="1" />
+      <IDSymbol name="bmpAttachAll" value="2"/>
+      <IDSymbol name="bmpAttachDescendants" value="3"/>
+      <IDSymbol name="bmpAttachChoose" value="4"/>
     </GuidSymbol>
   </Symbols>
 </CommandTable>

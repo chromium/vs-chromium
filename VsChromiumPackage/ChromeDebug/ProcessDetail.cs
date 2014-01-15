@@ -52,6 +52,17 @@ namespace VsChromiumPackage.ChromeDebug {
       }
     }
 
+    public int ParentProcessId {
+      get {
+        if (_cachedProcessBasicInfo == null) {
+          CacheProcessInformation();
+
+          return _cachedProcessBasicInfo.Value.ParentProcessId.ToInt32();
+        }
+        return -1;
+      }
+    }
+
     public string Win32ProcessImagePath {
       get {
         if (_win32ProcessImagePath == null) {

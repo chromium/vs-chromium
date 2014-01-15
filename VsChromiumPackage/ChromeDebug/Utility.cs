@@ -6,9 +6,15 @@ using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using VsChromiumPackage.ChromeDebug.LowLevel;
+using System.IO;
 
 namespace VsChromiumPackage.ChromeDebug {
   static class Utility {
+    public static bool IsChromeProcess(string imagePath) {
+      string file = Path.GetFileName(imagePath);
+      return file.Equals("chrome.exe", StringComparison.CurrentCultureIgnoreCase);
+    }
+
     public static string[] SplitArgs(string unsplitArgumentLine) {
       if (unsplitArgumentLine == null)
         return new string[0];

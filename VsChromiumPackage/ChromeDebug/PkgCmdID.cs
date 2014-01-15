@@ -4,6 +4,8 @@
 
 namespace VsChromiumPackage.ChromeDebug {
   static class PkgCmdIDList {
-    public const uint CmdidAttachToProcess = 0x100;
+    public const uint CmdidAttachToAllChromes = 0x200;
+    public const uint CmdidAttachToDescendants = 0x201;
+    public const uint CmdidAttachToChromeDialog = 0x202;
   };
 }

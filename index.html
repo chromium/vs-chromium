@@ -29,6 +29,7 @@
       <ul class="ul-second">
         <li><a href="#chromium-style-checker">Chromium Coding Style checker</a></li>
         <li><a href="#format-comment">Format comment</a></li>
+        <li><a href="#pmconsole">Navigate to Build Errors</a></li>
       </ul>
     </li>
     <li><a href="#debugger-features">Debugger Features</a></li>
@@ -37,6 +38,7 @@
         <li><a href="#attach-to-chrome">Attach to Chrome</a></li>
       </ul>
     </li>
+    <li><a href="#whatsnew">What's new</a></li>
     <li><a href="#configuration">Configuration</a></li>
     <li><a href="#installation">Installation Instructions</a></li>
     <li><a href="#requirements">Requirements</a></li>
@@ -362,7 +364,7 @@
       at the end of a line, usage of the TAB character, incorrect indendation
       of the "public:" accessor keyword.
     </div>
-    <p><img src="Screenshots/InvalidCharactersHighlight.png"></img></p>
+    <p><img src="Screenshots/InvalidCharactersHighlight.png"/></p>
   </div>
   <hr />
 
@@ -383,6 +385,19 @@
   <hr />
 
   <!-------------------------------------------------------------------------------->
+  <div id="pmconsole">
+    <h1>Navigate to Build Error</h1>
+    <p>
+      When using the "Package Manager Console" tool window as an integrated command
+      prompt, for example to build Chromium using "ninja", build errors from various
+      tools are shown as hyperlinks that can be clicked to open the corresponding file
+      in the editor, as illustrated in the picture below.
+    </p>
+    <p><img src="Screenshots/PmConsoleBuildError.png"/></p>
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
   <div id="debugger-features">
     <h1>Debugger features</h1>
   </div>
@@ -398,6 +413,23 @@
     </p>
     <img src="Screenshots/AttachToChromeMenuItem.png" />
     <img src="Screenshots/AttachToChrome.png" />
+  </div>
+  <hr />
+
+  <!-------------------------------------------------------------------------------->
+  <div id="whatsnew">
+    <h1>What's new</h1>
+    <h2>v0.9.1</h2>
+    <h3>Debugger features</h3>
+    <ul>
+      <li>Attach to all running Chrome processes</li>
+      <li>Attach to child Chrome processes</li>
+    </ul>
+    <h3>Editor features</h3>
+    <ul>
+      <li><a href="#pmconsole">Navigate to Build Errors</a</li>
+      <li>Minor stability and performance improvements.</li>
+    </ul>
   </div>
   <hr />
 
@@ -496,7 +528,7 @@
   <div id="installation">
     <h1>Installation Instructions</h1>
     <ul>
-      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/download/v0.9.0/VsChromiumPackage.vsix">VsChromiumPackage.vsix</a></li>
+      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/download/v0.9.1/VsChromiumPackage.vsix">VsChromiumPackage.vsix</a></li>
       <li>Open the file: this will open a Visual Studio Installation dialog.
       <img src="Screenshots/VsixInstall.png" />
       </li>

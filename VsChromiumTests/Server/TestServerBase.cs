@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromiumCore;
+using VsChromiumCore.Ipc;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumPackage.ServerProxy;
 
@@ -88,19 +89,24 @@ namespace VsChromiumTests.Server {
       var sw = new Stopwatch();
       var waitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
       T response = null;
+      ErrorResponse error = null;
 
       sw.Start();
-      server.RunAsync(request, x => {
-        Assert.IsInstanceOfType(x, typeof(T));
+      server.RunAsync(request, typedResponse => {
+        Assert.IsInstanceOfType(typedResponse, typeof(T));
         sw.Stop();
         Logger.Log("Request {0} took {1} msec to complete.", request.ClassName, sw.ElapsedMilliseconds);
-        response = (T)x;
+        response = (T)typedResponse;
         waitHandle.Set();
+      }, errorResponse => {
+        error = errorResponse;
       });
 
       return () => {
         if (!waitHandle.WaitOne(timeout))
           return null;
+        if (error != null)
+          throw ErrorResponseHelper.CreateException(error);
         return response;
       };
     }

@@ -11,26 +11,27 @@ using VsChromiumCore.Ipc;
 namespace VsChromiumPackage.Threads {
   [Export(typeof(ISendRequestsThread))]
   public class SendRequestsThread : ISendRequestsThread {
-    private readonly IRequestQueue _requestQeueue;
     private readonly EventWaitHandle _waitHandle = new ManualResetEvent(false);
+    private IRequestQueue _requestQeueue;
     private IIpcStream _ipcStream;
 
-    [ImportingConstructor]
-    public SendRequestsThread(IRequestQueue requestQueue) {
-      _requestQeueue = requestQueue;
-    }
-
-    public void Start(IIpcStream ipcStream) {
+    public void Start(IIpcStream ipcStream, IRequestQueue requestQueue) {
       _ipcStream = ipcStream;
+      _requestQeueue = requestQueue;
       new Thread(Run) {IsBackground = true}.Start();
     }
 
-    public void WaitOne() {
-      _waitHandle.WaitOne();
+    public event Action<IpcRequest, Exception> RequestError;
+
+    protected virtual void OnRequestError(IpcRequest request, Exception error) {
+      var handler = RequestError;
+      if (handler != null)
+        handler(request, error);
     }
 
-    public void Run() {
+    private void Run() {
       try {
+        Logger.Log("Starting SendRequests thread.");
         Loop();
       }
       finally {
@@ -46,12 +47,26 @@ namespace VsChromiumPackage.Threads {
             Logger.Log("No more requests to send. Time to terminate thread.");
             break;
           }
-          _ipcStream.WriteRequest(request);
+          try {
+            SendRequest(request);
+          }
+          catch (Exception e) {
+            OnRequestError(request, e);
+          }
         }
       }
       catch (Exception e) {
         Logger.LogException(e, "Exception in SendRequestsThread.");
         throw;
+      }
+    }
+
+    private void SendRequest(IpcRequest request) {
+      try {
+        _ipcStream.WriteRequest(request);
+      }
+      catch (Exception e) {
+        throw new IpcRequestException(request, e);
       }
     }
   }

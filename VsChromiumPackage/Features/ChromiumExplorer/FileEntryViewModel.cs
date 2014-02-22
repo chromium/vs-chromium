@@ -55,17 +55,19 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
 
       var request = new GetFileExtractsRequest {
         FileName = Path,
-        Positions = positions.Select(x => new FilePositionSpan {Position = x.Position, Length = x.Length}).ToList()
+        Positions = positions
+          .Select(x => new FilePositionSpan { Position = x.Position, Length = x.Length })
+          .ToList()
       };
 
       var uiRequest = new UIRequest() {
         TypedRequest = request,
         Id = "FileEntryViewModel-" + Path,
         Delay = TimeSpan.FromSeconds(0.0),
-        Callback = (typedResponse) => {
+        SuccessCallback = (typedResponse) => {
           var response = (GetFileExtractsResponse)typedResponse;
           positions
-            .Zip(response.FileExtracts, (x, y) => new {FilePositionViewModel = x, FileExtract = y})
+            .Zip(response.FileExtracts, (x, y) => new { FilePositionViewModel = x, FileExtract = y })
             .Where(x => x.FileExtract != null)
             .ForAll(x => x.FilePositionViewModel.SetTextExtract(x.FileExtract));
         }

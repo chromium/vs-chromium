@@ -13,6 +13,7 @@ using System.Windows.Threading;
 using Microsoft.VisualStudio.ComponentModelHost;
 using VsChromiumCore;
 using VsChromiumCore.FileNames;
+using VsChromiumCore.Ipc;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Linq;
 using VsChromiumPackage.Features.AutoUpdate;
@@ -255,6 +256,17 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
       if (!_fileSystemEntryRootNodes.Any()) {
         SetRootNodes(_fileSystemEntryRootNodes, "(Loading files from Chromium enlistment...)");
       }
+    }
+
+    public void SetErrorResponse(ErrorResponse errorResponse) {
+      var messages = new List<TreeViewItemViewModel>();
+      var rootError = new RootErrorItemViewModel(_host, null, "Error processing request. You may need to restart Visual Studio.");
+      messages.Add(rootError);
+      while (errorResponse != null) {
+        rootError.Children.Add(new TextItemViewModel(_host, rootError, errorResponse.Message));
+        errorResponse = errorResponse.InnerError;
+      }
+      SetRootNodes(messages);
     }
   }
 }

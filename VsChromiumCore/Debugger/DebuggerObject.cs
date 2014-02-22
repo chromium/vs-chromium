@@ -5,15 +5,12 @@
 using System;
 
 namespace VsChromiumCore.Debugger {
+  /// <summary>
+  /// Proxy object used to control a debugger thread. The debugger thread is
+  /// started only when a process is attached.
+  /// </summary>
   public class DebuggerObject : IDisposable {
     private DebuggerThread _debuggerThread;
-
-    public void Dispose() {
-      if (_debuggerThread != null) {
-        _debuggerThread.Stop();
-        _debuggerThread = null;
-      }
-    }
 
     public void AttachToProcess(int processId) {
       if (_debuggerThread != null) {
@@ -21,6 +18,13 @@ namespace VsChromiumCore.Debugger {
       }
       _debuggerThread = new DebuggerThread(processId);
       _debuggerThread.Start();
+    }
+
+    public void Dispose() {
+      if (_debuggerThread != null) {
+        _debuggerThread.Stop();
+        _debuggerThread = null;
+      }
     }
   }
 }

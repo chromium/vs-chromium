@@ -11,13 +11,14 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 using VsChromiumCore.Debugger;
+using VsChromiumCore.Win32;
 using VsChromiumCore.Win32.Interop;
 using VsChromiumCore.Win32.Processes;
 
 namespace VsChromiumCore.Processes {
   [Export(typeof(IProcessCreator))]
   public class ProcessCreator : IProcessCreator {
-    public ProcessProxy CreateProcess(string filename, string arguments, CreateProcessOptions options) {
+    public CreateProcessResult CreateProcess(string filename, string arguments, CreateProcessOptions options) {
       // Start process
       var info = new ProcessStartInfo();
       info.Arguments = arguments;
@@ -32,16 +33,16 @@ namespace VsChromiumCore.Processes {
         info.RedirectStandardInput = true;
         info.RedirectStandardOutput = true;
       }
-      var processResult = StartWithCreateProcess(info, options);
+      var processResult = CreateProcessWithStartInfo(info, options);
 
       // Attaching the debugger ensures the child process will die with the current process.
-      DebuggerObject debuggerObject = null;
+      var debuggerObject = new DebuggerObject();
       if ((options & CreateProcessOptions.AttachDebugger) != 0) {
-        debuggerObject = new DebuggerObject();
         debuggerObject.AttachToProcess(processResult.ProcessId);
       }
 
-      return new ProcessProxy(processResult, debuggerObject);
+      return new CreateProcessResult(processResult.ProcessHandle, processResult.ProcessId, debuggerObject,
+        processResult.StandardInput, processResult.StandardOutput, processResult.StandardError);
     }
 
     private static StringBuilder BuildCommandLine(string executableFileName, string arguments) {
@@ -97,7 +98,7 @@ namespace VsChromiumCore.Processes {
       }
     }
 
-    private ProcessResult StartWithCreateProcess(ProcessStartInfo startInfo, CreateProcessOptions options) {
+    private ProcessResult CreateProcessWithStartInfo(ProcessStartInfo startInfo, CreateProcessOptions options) {
       var stringBuilder = BuildCommandLine(startInfo.FileName, startInfo.Arguments);
       var startupInfo = new Startupinfo();
       var processInformation = new ProcessInformation();
@@ -153,7 +154,7 @@ namespace VsChromiumCore.Processes {
           safeThreadHandle.InitialSetHandle(processInformation.hThread);
         }
         if (!result) {
-          throw new Win32Exception(lastError);
+          throw new LastWin32ErrorException(lastError, string.Format("Error creating process from file \"{0}\"", startInfo.FileName));
         }
       }
       finally {

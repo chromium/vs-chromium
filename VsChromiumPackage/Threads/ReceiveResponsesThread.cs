@@ -33,6 +33,7 @@ namespace VsChromiumPackage.Threads {
 
     private void Run() {
       try {
+        Logger.Log("Starting ReceiveResponses thread.");
         Loop();
       }
       finally {

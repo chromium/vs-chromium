@@ -29,7 +29,7 @@ namespace VsChromiumPackage.ServerProxy {
       _serverProcessProxy.EventReceived += ServerProcessProxyOnEventReceived;
     }
 
-    public void RunAsync(TypedRequest request, Action<TypedResponse> callback) {
+    public void RunAsync(TypedRequest request, Action<TypedResponse> callback, Action<ErrorResponse> errorCallback) {
       var sw = Stopwatch.StartNew();
 
       var ipcRequest = new IpcRequest {
@@ -47,7 +47,8 @@ namespace VsChromiumPackage.ServerProxy {
             SequenceNumber = localSequenceNumber,
             IpcRequest = ipcRequest,
             IpcResponse = ipcResponse,
-            Callback = callback,
+            SuccessCallback = callback,
+            ErrorCallback = errorCallback,
             Elapsed = sw.Elapsed
           });
         }
@@ -98,10 +99,15 @@ namespace VsChromiumPackage.ServerProxy {
                    bufferedResponse.IpcRequest.RequestId, bufferedResponse.IpcRequest.Data.GetType().Name,
                    bufferedResponse.Elapsed.TotalMilliseconds);
 
-        // TODO(rpaquay): The reponse protocol might be |IpcProtocols.Exception|.
-        // Should we handle this case it here?
         if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.TypedMessage) {
-          bufferedResponse.Callback((TypedResponse)bufferedResponse.IpcResponse.Data);
+          bufferedResponse.SuccessCallback((TypedResponse)bufferedResponse.IpcResponse.Data);
+        }
+        else if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.Exception) {
+          bufferedResponse.ErrorCallback((ErrorResponse)bufferedResponse.IpcResponse.Data);
+        } else {
+          var error = new InvalidOperationException(string.Format("Unknown response protocol: {0}", bufferedResponse.IpcResponse.Protocol));
+          var errorResponse = ErrorResponseHelper.CreateErrorResponse(error);
+          bufferedResponse.ErrorCallback(errorResponse);
         }
       });
     }
@@ -110,7 +116,8 @@ namespace VsChromiumPackage.ServerProxy {
       public long SequenceNumber { get; set; }
       public IpcRequest IpcRequest { get; set; }
       public IpcResponse IpcResponse { get; set; }
-      public Action<TypedResponse> Callback { get; set; }
+      public Action<TypedResponse> SuccessCallback { get; set; }
+      public Action<ErrorResponse> ErrorCallback { get; set; }
       public TimeSpan Elapsed { get; set; }
 
       public int CompareTo(BufferedResponse other) {

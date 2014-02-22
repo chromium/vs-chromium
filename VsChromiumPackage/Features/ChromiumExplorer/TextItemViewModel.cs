@@ -8,10 +8,7 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
   public class TextItemViewModel : TreeViewItemViewModel {
     private readonly string _text;
 
-    public TextItemViewModel(
-      ITreeViewItemViewModelHost host,
-      TreeViewItemViewModel parent,
-      string text)
+    public TextItemViewModel(ITreeViewItemViewModelHost host, TreeViewItemViewModel parent, string text)
       : base(host, parent, false) {
       _text = text;
     }

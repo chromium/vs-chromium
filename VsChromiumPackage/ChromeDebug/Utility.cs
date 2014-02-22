@@ -49,15 +49,19 @@ namespace VsChromiumPackage.ChromeDebug {
 
     public static T ReadUnmanagedStructFromProcess<T>(IntPtr processHandle,
                                                       IntPtr addressInProcess) {
-      int bytesRead;
       int bytesToRead = Marshal.SizeOf(typeof(T));
       IntPtr buffer = Marshal.AllocHGlobal(bytesToRead);
-      if (!NativeMethods.ReadProcessMemory(processHandle, addressInProcess, buffer, bytesToRead,
-                                           out bytesRead))
-        throw new Win32Exception();
-      T result = (T)Marshal.PtrToStructure(buffer, typeof(T));
-      Marshal.FreeHGlobal(buffer);
-      return result;
+      try {
+        int bytesRead;
+        if (!NativeMethods.ReadProcessMemory(processHandle, addressInProcess, buffer, bytesToRead,
+                                             out bytesRead))
+          throw new Win32Exception();
+        T result = (T)Marshal.PtrToStructure(buffer, typeof(T));
+        return result;
+      }
+      finally {
+        Marshal.FreeHGlobal(buffer);
+      }
     }
 
     public static string ReadStringUniFromProcess(IntPtr processHandle,

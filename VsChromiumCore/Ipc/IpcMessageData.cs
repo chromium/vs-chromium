@@ -9,7 +9,7 @@ namespace VsChromiumCore.Ipc {
   [ProtoContract]
   [ProtoInclude(10, typeof(IpcStringData))]
   [ProtoInclude(11, typeof(TypedMessage))]
-  [ProtoInclude(12, typeof(ExceptionData))]
+  [ProtoInclude(12, typeof(ErrorResponse))]
   public class IpcMessageData {
   }
 }

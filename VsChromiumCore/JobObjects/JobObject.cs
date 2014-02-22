@@ -6,63 +6,37 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using VsChromiumCore.Win32;
+using VsChromiumCore.Win32.Jobs;
 
 namespace VsChromiumCore.JobObjects {
-  public enum JobObjectInfoType {
-    AssociateCompletionPortInformation = 7,
-    BasicLimitInformation = 2,
-    BasicUIRestrictions = 4,
-    EndOfJobTimeInformation = 6,
-    ExtendedLimitInformation = 9,
-    SecurityLimitInformation = 5,
-    GroupInformation = 11
-  }
-
-  [StructLayout(LayoutKind.Sequential)]
-  public struct SECURITY_ATTRIBUTES {
-    public int nLength;
-    public IntPtr lpSecurityDescriptor;
-    public int bInheritHandle;
-  }
-
-  [StructLayout(LayoutKind.Sequential)]
-  struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
-    public Int64 PerProcessUserTimeLimit;
-    public Int64 PerJobUserTimeLimit;
-    public Int16 LimitFlags;
-    public UInt32 MinimumWorkingSetSize;
-    public UInt32 MaximumWorkingSetSize;
-    public Int16 ActiveProcessLimit;
-    public Int64 Affinity;
-    public Int16 PriorityClass;
-    public Int16 SchedulingClass;
-  }
-
-  [StructLayout(LayoutKind.Sequential)]
-  struct IO_COUNTERS {
-    public UInt64 ReadOperationCount;
-    public UInt64 WriteOperationCount;
-    public UInt64 OtherOperationCount;
-    public UInt64 ReadTransferCount;
-    public UInt64 WriteTransferCount;
-    public UInt64 OtherTransferCount;
-  }
-
-  [StructLayout(LayoutKind.Sequential)]
-  struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
-    public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
-    public IO_COUNTERS IoInfo;
-    public UInt32 ProcessMemoryLimit;
-    public UInt32 JobMemoryLimit;
-    public UInt32 PeakProcessMemoryUsed;
-    public UInt32 PeakJobMemoryUsed;
-  }
-
   public class JobObject : IDisposable {
-    private readonly SafeFileHandle _handle;
+    private SafeFileHandle _handle;
 
-    public JobObject() {
-      _handle = CreateJobObject(IntPtr.Zero, null);
+    public void AddCurrentProcess() {
+      CreateJob();
+      var result = NativeMethods.AssignProcessToJobObject(_handle, Process.GetCurrentProcess().Handle);
+      if (!result)
+        throw new LastWin32ErrorException("Error adding process to job");
+    }
+
+    public void Dispose() {
+      if (_handle != null) {
+        _handle.Dispose();
+        _handle = null;
+      }
+    }
+
+    private void CreateJob() {
+      if (_handle == null)
+        _handle = CreateJobHandle();
+    }
+
+    private static SafeFileHandle CreateJobHandle() {
+      var handle = NativeMethods.CreateJobObject(IntPtr.Zero, null);
+      if (handle == null) {
+        throw new LastWin32ErrorException("Error creating job handle");
+      }
 
       var info = new JOBOBJECT_BASIC_LIMIT_INFORMATION();
       info.LimitFlags = 0x2000;
@@ -72,51 +46,18 @@ namespace VsChromiumCore.JobObjects {
 
       int length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
       var extendedInfoPtr = Marshal.AllocHGlobal(length);
-      Marshal.StructureToPtr(extendedInfo, extendedInfoPtr, false);
+      try {
+        Marshal.StructureToPtr(extendedInfo, extendedInfoPtr, false);
 
-      if (
-        !SetInformationJobObject(_handle, JobObjectInfoType.ExtendedLimitInformation, extendedInfoPtr,
-                                 (uint)length))
-        throw new Exception(string.Format("Unable to set information.  Error: {0}", Marshal.GetLastWin32Error()));
-    }
+        if (!NativeMethods.SetInformationJobObject(handle, JobObjectInfoType.ExtendedLimitInformation, extendedInfoPtr, (uint)length)) {
+          throw new LastWin32ErrorException("Unable to set job information");
+        }
 
-    public void Dispose() {
-      _handle.Dispose();
-    }
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern SafeFileHandle CreateJobObject(IntPtr lpJobAttributes, string lpName);
-
-    [DllImport("kernel32.dll")]
-    private static extern bool SetInformationJobObject(
-      SafeFileHandle hJob,
-      JobObjectInfoType infoType,
-      IntPtr lpJobObjectInfo,
-      uint cbJobObjectInfoLength);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool AssignProcessToJobObject(SafeFileHandle job, IntPtr process);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool IsProcessInJob(IntPtr processHandle, IntPtr jobHandle, out bool result);
-
-    public bool AddProcessHandle(IntPtr processHandle) {
-      return AssignProcessToJobObject(_handle, processHandle);
-    }
-
-    public static bool IsProcessInJob(Process process) {
-      var handle = process.Handle;
-      bool result;
-      if (!IsProcessInJob(handle, IntPtr.Zero, out result))
-        Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
-
-      return result;
-    }
-
-    public void AddProcess(IntPtr processHandle) {
-      var result = AddProcessHandle(processHandle);
-      if (!result)
-        Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+        return handle;
+      }
+      finally {
+        Marshal.FreeHGlobal(extendedInfoPtr);
+      }
     }
   }
 }

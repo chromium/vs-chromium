@@ -56,33 +56,15 @@ namespace VsChromiumServer.Ipc {
       catch (OperationCanceledException e) {
         Logger.Log("Request {0} of type \"{1}\" has been canceled.",
                    request.RequestId, request.Data.GetType().Name);
-        return CreateExceptionResponse(request, e);
+        return ErrorResponseHelper.CreateIpcErrorResponse(request, e);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error executing request {0} of type \"{1}\".",
+        var message = string.Format("Error executing request {0} of type \"{1}\".",
                             request.RequestId, request.Data.GetType().Name);
-        return CreateExceptionResponse(request, e);
+        Logger.LogException(e, "{0}", message);
+        var outer = new Exception(message, e);
+        return ErrorResponseHelper.CreateIpcErrorResponse(request, outer);
       }
-    }
-
-    private static IpcResponse CreateExceptionResponse(IpcRequest request, Exception e) {
-      return new IpcResponse {
-        RequestId = request.RequestId,
-        Protocol = IpcProtocols.Exception,
-        Data = CreateExceptionData(e)
-      };
-    }
-
-    private static ExceptionData CreateExceptionData(Exception e) {
-      if (e == null)
-        return null;
-
-      return new ExceptionData {
-        Message = e.Message,
-        StackTrace = e.StackTrace,
-        FullTypeName = e.GetType().FullName,
-        InnerException = CreateExceptionData(e.InnerException)
-      };
     }
   }
 }

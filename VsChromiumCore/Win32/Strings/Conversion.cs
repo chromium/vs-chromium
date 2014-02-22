@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 using VsChromiumCore.Win32.Memory;
 
@@ -37,6 +38,18 @@ namespace VsChromiumCore.Win32.Strings {
     public static unsafe string UTF8ToString(byte* start, byte* end) {
       var block = UTF8ToUnicode(start, end);
       return new string((char*)block.Pointer, 0, (int)block.ByteLength / 2);
+    }
+
+    public static unsafe string UnicodeToUnicode(byte[] bytes) {
+      fixed (void* pointer = bytes) {
+        return new string((char*)pointer);
+      }
+    }
+
+    public static unsafe string AnsiToUnicode(byte[] bytes) {
+      fixed (byte* pointer = bytes) {
+        return new string((sbyte*)pointer);
+      }
     }
   }
 }

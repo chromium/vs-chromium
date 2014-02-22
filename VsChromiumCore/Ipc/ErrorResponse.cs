@@ -6,7 +6,7 @@ using ProtoBuf;
 
 namespace VsChromiumCore.Ipc {
   [ProtoContract]
-  public class ExceptionData : IpcMessageData {
+  public class ErrorResponse : IpcMessageData {
     [ProtoMember(1)]
     public string Message { get; set; }
 
@@ -17,6 +17,6 @@ namespace VsChromiumCore.Ipc {
     public string StackTrace { get; set; }
 
     [ProtoMember(4)]
-    public ExceptionData InnerException { get; set; }
+    public ErrorResponse InnerError { get; set; }
   }
 }

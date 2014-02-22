@@ -16,6 +16,6 @@ namespace VsChromiumPackage.ServerProxy {
     /// <param name="preCreate">Called just before the VsChromium server process is launched.
     /// Returns a list of additional command line argument to pass to the process.</param>
     /// <param name="postCreate">Called just after the process is launched.</param>
-    void CreateProxy(Func<IEnumerable<string>> preCreate, Action<ProcessProxy> postCreate);
+    void CreateProxy(Func<IEnumerable<string>> preCreate, Action<CreateProcessResult> postCreate);
   }
 }

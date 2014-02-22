@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromiumCore.Ipc;
 using VsChromiumCore.Ipc.TypedMessages;
 
 namespace VsChromiumPackage.Threads {
@@ -29,11 +30,22 @@ namespace VsChromiumPackage.Threads {
     /// <summary>
     /// (Optional) Action executed just before the request is sent to the server.
     /// </summary>
-    public Action OnRun { get; set; }
+    public Action OnBeforeRun { get; set; }
+
+    /// <summary>
+    /// (Optional) Action executed just before calling |SuccessCallback| or
+    /// |ErrorCallback|.
+    /// </summary>
+    public Action OnAfterRun { get; set; }
 
     /// <summary>
     /// (Optional) Action executed once the server request finished.
     /// </summary>
-    public Action<TypedResponse> Callback { get; set; }
+    public Action<TypedResponse> SuccessCallback { get; set; }
+
+    /// <summary>
+    /// (Optional) Action executed if request processing resulted in an error.
+    /// </summary>
+    public Action<ErrorResponse> ErrorCallback { get; set; }
   }
 }

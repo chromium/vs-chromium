@@ -154,9 +154,12 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
         Id = "GetFileSystemRequest",
         TypedRequest = new GetFileSystemRequest {
         },
-        Callback = (typedResponse) => {
+        SuccessCallback = (typedResponse) => {
           var response = (GetFileSystemResponse)typedResponse;
           ViewModel.SetFileSystemTree(response.Tree);
+        },
+        ErrorCallback = (errorResponse) => {
+          ViewModel.SetErrorResponse(errorResponse);
         }
       };
 
@@ -168,15 +171,20 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
       var request = new UIRequest() {
         Id = "MetaSearch",
         TypedRequest = metadata.TypedRequest,
-        OnRun = () => {
+        Delay = metadata.Delay,
+        OnBeforeRun = () => {
           sw.Start();
           _progressBarTracker.Start(metadata.OperationId, metadata.HintText);
         },
-        Delay = metadata.Delay,
-        Callback = (typedResponse) => {
+        OnAfterRun = () => {
           sw.Stop();
           _progressBarTracker.Stop(metadata.OperationId);
+        },
+        SuccessCallback = typedResponse => {
           metadata.ProcessResponse(typedResponse, sw);
+        },
+        ErrorCallback = errorResponse => {
+          ViewModel.SetErrorResponse(errorResponse);
         }
       };
 
@@ -328,8 +336,9 @@ namespace VsChromiumPackage.Features.ChromiumExplorer {
       {
         var directoryEntry = tvi as DirectoryEntryViewModel;
         if (directoryEntry != null) {
-          // The following is important, as it prevents the message from bubbling up
-          // and preventing the newly opened document to receive the focus.
+          // The use of "Post" is significant, as it prevents the message from
+          // bubbling up thus preventing the newly opened document to receive
+          // the focus.
           SynchronizationContext.Current.Post(_ => {
             ViewModel.SelectDirectory(directoryEntry,
                                       FileTreeView,

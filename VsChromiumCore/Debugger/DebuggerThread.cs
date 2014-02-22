@@ -3,10 +3,18 @@
 // found in the LICENSE file.
 
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using VsChromiumCore.Win32;
+using VsChromiumCore.Win32.Debugging;
+using VsChromiumCore.Win32.Strings;
 
 namespace VsChromiumCore.Debugger {
+  /// <summary>
+  /// Runs a debugger thread for a given process id.
+  /// </summary>
   public class DebuggerThread {
     private readonly int _processId;
 
@@ -22,7 +30,7 @@ namespace VsChromiumCore.Debugger {
     }
 
     public void Start() {
-      new Thread(DebugStart) {IsBackground = true}.Start();
+      new Thread(DebugStart) { IsBackground = true }.Start();
 
       _startWaitHandle.WaitOne();
       if (_startError != null) {
@@ -41,13 +49,13 @@ namespace VsChromiumCore.Debugger {
     private void DebugStart() {
       try {
         _debuggerThread = Thread.CurrentThread;
-        var result = DebuggerApi.DebugActiveProcess(_processId);
+        var result = NativeMethods.DebugActiveProcess(_processId);
         if (!result) {
           var hr = Marshal.GetHRForLastWin32Error();
-          if (hr == Win32.HR_ERROR_NOT_SUPPORTED) {
+          if (hr == HResults.HR_ERROR_NOT_SUPPORTED) {
             throw new InvalidOperationException("Trying to attach to a x64 process from a x86 process.");
           }
-          Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+          throw new LastWin32ErrorException("Error in DebugActiveProcess");
         }
       }
       catch (Exception e) {
@@ -68,9 +76,9 @@ namespace VsChromiumCore.Debugger {
           throw new InvalidOperationException("Wrong thread");
         }
 
-        var result = DebuggerApi.DebugActiveProcessStop(_processId);
-        if (!result)
-          Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+        var success = NativeMethods.DebugActiveProcessStop(_processId);
+        if (!success)
+          throw new LastWin32ErrorException("Error in DebugActiveProcessStop");
       }
       catch (Exception e) {
         _stopError = e;
@@ -86,16 +94,16 @@ namespace VsChromiumCore.Debugger {
       }
 
       try {
-        for (;;) {
+        for (; ; ) {
           var debugEvent = WaitForDebugEvent(10);
           if (debugEvent != null) {
-            //Logger.Log("DBGEVENT: {0}", debugEvent.Value.DebugEventCode);
+            LogDebugEvent(debugEvent.Value);
 
-            var continueStatus = DebuggerApi.CONTINUE_STATUS.DBG_CONTINUE;
-            bool result = DebuggerApi.ContinueDebugEvent(debugEvent.Value.ProcessId, debugEvent.Value.ThreadId,
+            const CONTINUE_STATUS continueStatus = CONTINUE_STATUS.DBG_CONTINUE;
+            var success = NativeMethods.ContinueDebugEvent(debugEvent.Value.dwProcessId, debugEvent.Value.dwThreadId,
                                                          continueStatus);
-            if (!result)
-              Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+            if (!success)
+              throw new LastWin32ErrorException("Error in ContinueDebugEvent");
           }
 
           // Did we get ask to stop the debugger?
@@ -106,16 +114,68 @@ namespace VsChromiumCore.Debugger {
         }
       }
       catch (Exception e) {
-        Logger.Log("Exception in debugger loop: {0}", e.Message);
+        Logger.LogException(e, "Exception in debugger loop");
       }
     }
 
-    private static DebuggerApi.DEBUG_EVENT? WaitForDebugEvent(uint timeout) {
-      DebuggerApi.DEBUG_EVENT debugEvent;
-      bool result = DebuggerApi.WaitForDebugEvent(out debugEvent, timeout);
-      if (!result) {
+    private void LogDebugEvent(DEBUG_EVENT debugEvent) {
+      switch (debugEvent.dwDebugEventCode) {
+        case DEBUG_EVENT_CODE.OUTPUT_DEBUG_STRING_EVENT:
+          Logger.Log("{0}", GetOutputDebugString(debugEvent.DebugString));
+          break;
+        case DEBUG_EVENT_CODE.CREATE_THREAD_DEBUG_EVENT:
+        case DEBUG_EVENT_CODE.EXIT_THREAD_DEBUG_EVENT:
+        case DEBUG_EVENT_CODE.LOAD_DLL_DEBUG_EVENT:
+        case DEBUG_EVENT_CODE.UNLOAD_DLL_DEBUG_EVENT:
+          // Too noisy...
+          break;
+        default:
+          Logger.Log("DBGEVENT: {0}: {1}", debugEvent.dwDebugEventCode, GetDebugEventText(debugEvent));
+          break;
+      }
+    }
+
+    private string GetDebugEventText(DEBUG_EVENT debugEvent) {
+      switch (debugEvent.dwDebugEventCode) {
+        case DEBUG_EVENT_CODE.EXIT_THREAD_DEBUG_EVENT:
+          return string.Format("Thread Exit Code: 0x{0:x8}", debugEvent.ExitThread.dwExitCode);
+
+        case DEBUG_EVENT_CODE.EXIT_PROCESS_DEBUG_EVENT:
+          return string.Format("Process Exit Code: 0x{0:x8}", debugEvent.ExitProcess.dwExitCode);
+
+        case DEBUG_EVENT_CODE.OUTPUT_DEBUG_STRING_EVENT:
+          return GetOutputDebugString(debugEvent.DebugString);
+
+        case DEBUG_EVENT_CODE.EXCEPTION_DEBUG_EVENT:
+          var exceptionEvent = debugEvent.Exception;
+          return string.Format("Code: 0x{0:x8}, Flags: 0x{1:x8}, FirstChance: {2}", exceptionEvent.ExceptionRecord.ExceptionCode, exceptionEvent.ExceptionRecord.ExceptionFlags, exceptionEvent.dwFirstChance);
+
+        default:
+          return "";
+      }
+    }
+
+    private string GetOutputDebugString(OUTPUT_DEBUG_STRING_INFO debugString) {
+      var isUnicode = (debugString.fUnicode != 0);
+      var byteCount = (uint)(debugString.nDebugStringLength * (isUnicode ? sizeof(char) : sizeof(byte)));
+      var bytes = new byte[byteCount];
+      uint bytesRead;
+      var hProcess = Process.GetProcessById(this._processId).Handle;
+      if (!Win32.Processes.NativeMethods.ReadProcessMemory(hProcess, debugString.lpDebugStringData, bytes, byteCount, out bytesRead)) {
+        return string.Format("<error getting debug string from process: {0}>", new LastWin32ErrorException().Message);
+      }
+
+      var message = (isUnicode ? Conversion.UnicodeToUnicode(bytes) : Conversion.AnsiToUnicode(bytes));
+      message = message.TrimEnd('\r', '\n');
+      return message;
+    }
+
+    private static DEBUG_EVENT? WaitForDebugEvent(uint timeout) {
+      DEBUG_EVENT debugEvent;
+      var success = NativeMethods.WaitForDebugEvent(out debugEvent, timeout);
+      if (!success) {
         int hr = Marshal.GetHRForLastWin32Error();
-        if (hr == Win32.HR_ERROR_SEM_TIMEOUT)
+        if (hr == HResults.HR_ERROR_SEM_TIMEOUT)
           return null;
 
         Marshal.ThrowExceptionForHR(hr);

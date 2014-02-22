@@ -54,8 +54,7 @@ namespace VsChromiumCore.Win32.Files {
         if (handle.IsInvalid) {
           var lastWin32Error = Marshal.GetLastWin32Error();
           if (lastWin32Error != 2 && lastWin32Error != 18) {
-            throw new Win32Exception(lastWin32Error,
-                                     string.Format("Error getting first entry of file entries for path \"{0}\".", path));
+            throw new LastWin32ErrorException(lastWin32Error, string.Format("Error getting first entry of file entries for path \"{0}\".", path));
           }
           return;
         }
@@ -66,8 +65,7 @@ namespace VsChromiumCore.Win32.Files {
         }
         var lastWin32Error2 = Marshal.GetLastWin32Error();
         if (lastWin32Error2 != 0 && lastWin32Error2 != 18 && lastWin32Error2 != 2) {
-          throw new Win32Exception(lastWin32Error2,
-                                   string.Format("Error getting next entry of file entries for path \"{0}\".", path));
+          throw new LastWin32ErrorException(lastWin32Error2, string.Format("Error getting next entry of file entries for path \"{0}\".", path));
         }
       }
     }

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromiumCore.Ipc;
 using VsChromiumCore.Ipc.TypedMessages;
 
 namespace VsChromiumPackage.ServerProxy {
@@ -15,12 +16,12 @@ namespace VsChromiumPackage.ServerProxy {
   public interface ITypedRequestProcessProxy : IDisposable {
     /// <summary>
     /// Posts a request to be sent to the VsChromium server process, and calls
-    /// "callback" when the corresponding response is received. Responses are
-    /// guaranteed to be called in the same order as the requests are posted.
-    /// RunAsync can be called on any thread. "callback" will be called on an
-    /// unspecified thread.
+    /// "successCallback" when the corresponding response is received. Responses
+    /// are guaranteed to be called in the same order as the requests are
+    /// posted. RunAsync can be called on any thread. "successCallback" will be
+    /// called on an unspecified thread.
     /// </summary>
-    void RunAsync(TypedRequest request, Action<TypedResponse> callback);
+    void RunAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback);
     /// <summary>
     /// Event raised when the server proxy receives an event from the the
     /// VsChromium server. The event is fired on an unspecified thread.

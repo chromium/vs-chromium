@@ -204,6 +204,8 @@
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
     <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
+    <Compile Include="Features\ChromiumExplorer\RootErrorItemViewModel.cs" />
+    <Compile Include="Threads\IpcRequestException.cs" />
     <Compile Include="Views\ITextDocumentService.cs" />
     <Compile Include="Features\ChromiumExplorer\TextDocumentFactoryObserver.cs" />
     <Compile Include="Features\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
@@ -242,7 +244,7 @@
     <Compile Include="Threads\DelayedOperation.cs" />
     <Compile Include="Threads\DelayedOperationProcessor.cs" />
     <Compile Include="Threads\SynchronizationContextProvider.cs" />
-    <Compile Include="Threads\UIRequestProcess.cs" />
+    <Compile Include="Threads\UIRequestProcessor.cs" />
     <Compile Include="Features\ChromiumExplorer\ChromiumExplorerRootNodes.cs" />
     <Compile Include="Features\ChromiumExplorer\FilePositionViewModel.cs" />
     <Compile Include="Threads\UIRequest.cs" />

@@ -80,6 +80,7 @@ namespace VsChromiumPackage.ServerProxy {
     }
 
     private IEnumerable<string> PreCreateProxy() {
+      Logger.Log("PreCreateProxy");
       _tcpListener = CreateServerSocket();
 
       return new string[] {
@@ -87,12 +88,14 @@ namespace VsChromiumPackage.ServerProxy {
       };
     }
 
-    private void AfterProxyCreated(ProcessProxy serverProcess) {
+    private void AfterProxyCreated(CreateProcessResult serverProcess) {
+      Logger.Log("AfterProxyCreated (pid={0}", serverProcess.Process.Id);
       var timeout = TimeSpan.FromSeconds(5.0);
 #if PROFILE_SERVER
       timeout = TimeSpan.FromSeconds(120.0);
       Trace.WriteLine(string.Format("You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds, ((IPEndPoint)_tcpListener.LocalEndpoint).Port));
 #endif
+      Logger.Log("AfterProxyCreated: Wait for TCP client connection from server process.");
       if (!_waitForConnection.WaitOne(timeout)) {
         throw new InvalidOperationException(
           string.Format("Child process did not connect to server within {0:n0} seconds.", timeout.TotalSeconds));
@@ -101,22 +104,34 @@ namespace VsChromiumPackage.ServerProxy {
       _ipcStream = new IpcStreamOverNetworkStream(_serializer, _tcpClient.GetStream());
 
       // Ensure process is alive and ready to process requests
+      Logger.Log("AfterProxyCreated: Wait for \"Hello\" message from server process.");
       WaitForProcessHelloMessage();
 
       // Start reading process output
+      Logger.Log("AfterProxyCreated: Start receive response thread.");
       _receiveResponsesThread.ResponseReceived += response => {
         var callback = _callbacks.Remove(response.RequestId);
         callback(response);
       };
       _receiveResponsesThread.EventReceived += @event => { OnEventReceived(@event); };
       _receiveResponsesThread.Start(_ipcStream);
-      _sendRequestsThread.Start(_ipcStream);
+
+      Logger.Log("AfterProxyCreated: Start send request thread..");
+      _sendRequestsThread.RequestError += OnRequestError;
+      _sendRequestsThread.Start(_ipcStream, _requestQueue);
+    }
+
+    private void OnRequestError(IpcRequest request, Exception error) {
+      var callback = _callbacks.Remove(request.RequestId);
+      var response = ErrorResponseHelper.CreateIpcErrorResponse(request, error);
+      callback(response);
     }
 
     private TcpListener CreateServerSocket() {
+      Logger.Log("Opening TCP server socket for server process client connection.");
       var server = new TcpListener(IPAddress.Loopback, 0);
       server.Start();
-      Logger.Log("TCP server started on port {0}", ((IPEndPoint)server.LocalEndpoint).Port);
+      Logger.Log("TCP server started on port {0}.", ((IPEndPoint)server.LocalEndpoint).Port);
       server.BeginAcceptTcpClient(ClientConnected, server);
       return server;
     }

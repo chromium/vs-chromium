@@ -22,20 +22,20 @@ namespace VsChromiumServer.Ipc.ProtocolHandlers {
     }
 
     public override IpcResponse Process(IpcRequest request) {
-      var jsonRequest = (TypedRequest)request.Data;
+      var typedRequest = (TypedRequest)request.Data;
 
-      var handler = _handlers.FirstOrDefault(x => x.CanProcess(jsonRequest));
+      var handler = _handlers.FirstOrDefault(x => x.CanProcess(typedRequest));
       if (handler == null) {
         throw new InvalidOperationException(string.Format("No TypedMessage handler for request of type {0}",
                                                           request.GetType().Name));
       }
 
-      var jsonResponse = handler.Process(jsonRequest);
+      var typedResponse = handler.Process(typedRequest);
 
       return new IpcResponse {
         RequestId = request.RequestId,
         Protocol = request.Protocol,
-        Data = jsonResponse
+        Data = typedResponse
       };
     }
   }

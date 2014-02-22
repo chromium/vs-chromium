@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using VsChromiumCore;
 using VsChromiumCore.Processes;
 
 namespace VsChromiumPackage.ServerProxy {
@@ -18,14 +19,14 @@ namespace VsChromiumPackage.ServerProxy {
 
     private readonly IProcessCreator _processCreator;
     private readonly object _serverProcessLock = new object();
-    private ProcessProxy _serverProcess;
+    private CreateProcessResult _serverProcess;
 
     [ImportingConstructor]
     public ServerProcessLauncher(IProcessCreator processCreator) {
       _processCreator = processCreator;
     }
 
-    public void CreateProxy(Func<IEnumerable<string>> preCreate, Action<ProcessProxy> postCreate) {
+    public void CreateProxy(Func<IEnumerable<string>> preCreate, Action<CreateProcessResult> postCreate) {
       if (_serverProcess == null) {
         lock (_serverProcessLock) {
           if (_serverProcess == null) {
@@ -41,22 +42,26 @@ namespace VsChromiumPackage.ServerProxy {
       }
     }
 
-    private void CreateServerProcessWorker(Func<IEnumerable<string>> preCreate, Action<ProcessProxy> postCreate) {
+    private void CreateServerProcessWorker(Func<IEnumerable<string>> preCreate, Action<CreateProcessResult> postCreate) {
+      Logger.Log("Creating VsChromiumHost process.");
       var path = GetProcessPath();
-      var realServerName = Path.Combine(Path.GetDirectoryName(path), _serverName);
+      Logger.Log("  Path={0}", path);
+      var serverPath = Path.Combine(Path.GetDirectoryName(path), _serverName);
+      Logger.Log("  Server path={0}", serverPath);
 
       var arguments = new List<string>();
-      arguments.Add(realServerName);
+      arguments.Add(serverPath);
       arguments.AddRange(preCreate());
 #if PROFILE_SERVER
       arguments.Add("/profile-server");
 #endif
 
       var argumentLine = arguments.Aggregate("", (x, v) => x + QuoteArgument(v) + " ");
+      Logger.Log("  Arguments={0}", argumentLine);
       _serverProcess = _processCreator.CreateProcess(path, argumentLine,
                                                      CreateProcessOptions.RedirectStdio | CreateProcessOptions.AttachDebugger |
                                                      CreateProcessOptions.BreakAwayFromJob);
-
+      Logger.Log("VsChromiumHost process created (pid={0}).", _serverProcess.Process.Id);
       postCreate(_serverProcess);
     }
 

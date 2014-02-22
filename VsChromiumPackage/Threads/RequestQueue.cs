@@ -25,9 +25,9 @@ namespace VsChromiumPackage.Threads {
 
     public IpcRequest Dequeue() {
       while (true) {
-        var response = TryDequeue();
-        if (response != null)
-          return response;
+        var request = TryDequeue();
+        if (request != null)
+          return request;
 
         _waitHandle.WaitOne();
         if (_disposed)

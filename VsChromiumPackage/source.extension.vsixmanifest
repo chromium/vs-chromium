@@ -3,7 +3,7 @@
   <Identifier Id="VsChromiumPackage..3658a9c7-c98d-48eb-8144-53385ed9f11c">
     <Name>Vs Chromium</Name>
     <Author>The Chromium Authors</Author>
-    <Version>0.9.1</Version>
+    <Version>0.9.2</Version>
     <Description xml:space="preserve">Collection of tools to help contributing code to the Chromium project.</Description>
     <Locale>1033</Locale>
     <License>LICENSE</License>

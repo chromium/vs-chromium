@@ -99,7 +99,7 @@ namespace VsChromiumCore.Debugger {
           if (debugEvent != null) {
             LogDebugEvent(debugEvent.Value);
 
-            const CONTINUE_STATUS continueStatus = CONTINUE_STATUS.DBG_CONTINUE;
+            var continueStatus = HandleDebugEvent(debugEvent.Value);
             var success = NativeMethods.ContinueDebugEvent(debugEvent.Value.dwProcessId, debugEvent.Value.dwThreadId,
                                                          continueStatus);
             if (!success)
@@ -116,6 +116,13 @@ namespace VsChromiumCore.Debugger {
       catch (Exception e) {
         Logger.LogException(e, "Exception in debugger loop");
       }
+    }
+
+    private static CONTINUE_STATUS HandleDebugEvent(DEBUG_EVENT value) {
+      if (value.dwDebugEventCode == DEBUG_EVENT_CODE.EXCEPTION_DEBUG_EVENT)
+        return CONTINUE_STATUS.DBG_EXCEPTION_NOT_HANDLED;
+      else
+        return CONTINUE_STATUS.DBG_CONTINUE;
     }
 
     private void LogDebugEvent(DEBUG_EVENT debugEvent) {

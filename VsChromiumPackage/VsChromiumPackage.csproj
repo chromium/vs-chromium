@@ -37,6 +37,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.ComponentModelHost">
@@ -158,6 +159,10 @@
     <Resource Include="Views\Images\FileGo.png" />
     <Resource Include="Views\Images\TextEntry.png" />
     <Content Include="VsChromiumNative.dll">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="VsChromiumNative.pdb">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -361,14 +366,20 @@
     <ProjectReference Include="..\VsChromiumCore\VsChromiumCore.csproj">
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
       <Name>VsChromiumCore</Name>
+      <IncludeOutputGroupsInVSIX>DebugSymbolsProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
     <ProjectReference Include="..\VsChromiumHost\VsChromiumHost.csproj">
       <Project>{B6FF4670-B5B0-4724-9895-AF3C5E8C68C0}</Project>
       <Name>VsChromiumHost</Name>
+      <IncludeOutputGroupsInVSIX>DebugSymbolsProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
     <ProjectReference Include="..\VsChromiumServer\VsChromiumServer.csproj">
       <Project>{F33514B3-E491-4599-AF71-EABCDD70234F}</Project>
       <Name>VsChromiumServer</Name>
+      <IncludeOutputGroupsInVSIX>DebugSymbolsProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

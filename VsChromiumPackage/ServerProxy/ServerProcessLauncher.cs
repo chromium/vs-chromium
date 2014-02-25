@@ -59,7 +59,7 @@ namespace VsChromiumPackage.ServerProxy {
       var argumentLine = arguments.Aggregate("", (x, v) => x + QuoteArgument(v) + " ");
       Logger.Log("  Arguments={0}", argumentLine);
       _serverProcess = _processCreator.CreateProcess(path, argumentLine,
-                                                     CreateProcessOptions.RedirectStdio | CreateProcessOptions.AttachDebugger |
+                                                     CreateProcessOptions.AttachDebugger |
                                                      CreateProcessOptions.BreakAwayFromJob);
       Logger.Log("VsChromiumHost process created (pid={0}).", _serverProcess.Process.Id);
       postCreate(_serverProcess);

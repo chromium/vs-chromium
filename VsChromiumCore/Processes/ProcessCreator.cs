@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
@@ -19,6 +18,7 @@ namespace VsChromiumCore.Processes {
   [Export(typeof(IProcessCreator))]
   public class ProcessCreator : IProcessCreator {
     public CreateProcessResult CreateProcess(string filename, string arguments, CreateProcessOptions options) {
+      Logger.Log("CreateProcess: Creating ProcessStartInfo instance.");
       // Start process
       var info = new ProcessStartInfo();
       info.Arguments = arguments;
@@ -36,11 +36,13 @@ namespace VsChromiumCore.Processes {
       var processResult = CreateProcessWithStartInfo(info, options);
 
       // Attaching the debugger ensures the child process will die with the current process.
+      Logger.Log("CreateProcess: Creating DebuggerObject instance.");
       var debuggerObject = new DebuggerObject();
       if ((options & CreateProcessOptions.AttachDebugger) != 0) {
         debuggerObject.AttachToProcess(processResult.ProcessId);
       }
 
+      Logger.Log("CreateProcess: Creating CreateProcessResult instance.");
       return new CreateProcessResult(processResult.ProcessHandle, processResult.ProcessId, debuggerObject,
         processResult.StandardInput, processResult.StandardOutput, processResult.StandardError);
     }
@@ -71,7 +73,7 @@ namespace VsChromiumCore.Processes {
       int nSize) {
       bool flag = Win32.NamedPipes.NativeMethods.CreatePipe(out hReadPipe, out hWritePipe, lpPipeAttributes, nSize);
       if (!flag || hReadPipe.IsInvalid || hWritePipe.IsInvalid) {
-        throw new Win32Exception();
+        throw new LastWin32ErrorException("Error calling CreatePipe");
       }
     }
 
@@ -85,10 +87,9 @@ namespace VsChromiumCore.Processes {
         } else {
           CreatePipeWithSecurityAttributes(out safeFileHandle, out childHandle, securityAttributes, 0);
         }
-        if (
-          !Win32.Handles.NativeMethods.DuplicateHandle(new HandleRef(this, NativeMethods.GetCurrentProcess()),
+        if (!Win32.Handles.NativeMethods.DuplicateHandle(new HandleRef(this, NativeMethods.GetCurrentProcess()),
                                                        safeFileHandle, new HandleRef(this, NativeMethods.GetCurrentProcess()), out parentHandle, 0, false, 2)) {
-          throw new Win32Exception();
+          throw new LastWin32ErrorException("Error calling DuplicateHandle.");
         }
       }
       finally {
@@ -99,7 +100,10 @@ namespace VsChromiumCore.Processes {
     }
 
     private ProcessResult CreateProcessWithStartInfo(ProcessStartInfo startInfo, CreateProcessOptions options) {
+      Logger.Log("CreateProcessWithStartInfo: Entry point.");
       var stringBuilder = BuildCommandLine(startInfo.FileName, startInfo.Arguments);
+      Logger.Log("CreateProcessWithStartInfo: command line is {0}.", stringBuilder);
+
       var startupInfo = new Startupinfo();
       var processInformation = new ProcessInformation();
       var safeProcessHandle = new SafeProcessHandle();
@@ -108,6 +112,7 @@ namespace VsChromiumCore.Processes {
       SafeFileHandle stdout = null;
       SafeFileHandle stderr = null;
       try {
+        Logger.Log("CreateProcessWithStartInfo: Creating named pipe handles.");
         if (startInfo.RedirectStandardInput || startInfo.RedirectStandardOutput || startInfo.RedirectStandardError) {
           if (startInfo.RedirectStandardInput) {
             CreatePipe(out stdin, out startupInfo.hStdInput, true);
@@ -126,22 +131,27 @@ namespace VsChromiumCore.Processes {
           }
           startupInfo.dwFlags = 256;
         }
+        Logger.Log("CreateProcessWithStartInfo: Creation flags.");
         ProcessCreationFlags processCreationFlags = 0;
         if (startInfo.CreateNoWindow) {
           processCreationFlags |= ProcessCreationFlags.CREATE_NO_WINDOW;
         }
-        var text = startInfo.WorkingDirectory;
-        if (text == string.Empty) {
-          text = Environment.CurrentDirectory;
-        }
-
         if ((options & CreateProcessOptions.BreakAwayFromJob) != 0) {
           processCreationFlags |= ProcessCreationFlags.CREATE_BREAKAWAY_FROM_JOB;
         }
+
+        var workingDirectory = startInfo.WorkingDirectory;
+        if (workingDirectory == string.Empty) {
+          workingDirectory = Environment.CurrentDirectory;
+        }
+        Logger.Log("CreateProcessWithStartInfo: Working directory: {0}.", workingDirectory);
+
+        Logger.Log("CreateProcessWithStartInfo: Calling Win32 CreateProcess.");
         var environmentPtr = IntPtr.Zero;
         var lastError = 0;
         var result = NativeMethods.CreateProcess(null, stringBuilder, null, null, true, processCreationFlags,
-                                                 environmentPtr, text, startupInfo, processInformation);
+                                                 environmentPtr, workingDirectory, startupInfo, processInformation);
+        Logger.Log("CreateProcessWithStartInfo: CreateProcess result: Success={0}-LastError={1}.", result, Marshal.GetLastWin32Error());
         if (!result) {
           lastError = Marshal.GetLastWin32Error();
         }
@@ -158,10 +168,14 @@ namespace VsChromiumCore.Processes {
         }
       }
       finally {
+        Logger.Log("CreateProcessWithStartInfo: Disposing of startupInfo.");
         startupInfo.Dispose();
       }
 
+      Logger.Log("CreateProcessWithStartInfo: Creating ProcessResult instance.");
       var processResult = new ProcessResult();
+
+      Logger.Log("CreateProcessWithStartInfo: Creating streams for std handles.");
 
       if (startInfo.RedirectStandardInput) {
         processResult.StandardInput = new StreamWriter(new FileStream(stdin, FileAccess.Write, 4096, false),
@@ -185,16 +199,17 @@ namespace VsChromiumCore.Processes {
                                                        true, 4096);
       }
 
-      bool success = false;
-      if (!safeProcessHandle.IsInvalid) {
-        processResult.ProcessHandle = safeProcessHandle;
-        processResult.ProcessId = processInformation.dwProcessId;
-        safeThreadHandle.Close();
-        success = true;
+      if (safeProcessHandle.IsInvalid) {
+        Logger.Log("CreateProcessWithStartInfo: Invalid process handle.");
+        return null;
       }
 
-      if (!success)
-        return null;
+      Logger.Log("CreateProcessWithStartInfo: Saving process handle.");
+      processResult.ProcessHandle = safeProcessHandle;
+      processResult.ProcessId = processInformation.dwProcessId;
+      safeThreadHandle.Close();
+
+      Logger.Log("CreateProcessWithStartInfo: Success!");
       return processResult;
     }
   }

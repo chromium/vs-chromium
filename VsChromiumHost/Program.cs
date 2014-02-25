@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using VsChromiumCore;
 using VsChromiumCore.JobObjects;
 using VsChromiumCore.Processes;
@@ -12,7 +13,7 @@ namespace VsChromiumHost {
   class Program {
     private static void Main(string[] args) {
       try {
-        Logger.Log("Starting server host process.");
+        Logger.Log("Starting server host process (version={0}).", Assembly.GetExecutingAssembly().GetName().Version);
         Logger.Log("Host process id={0}.", Process.GetCurrentProcess().Id);
         RunServerProcess(args);
       }
@@ -45,7 +46,7 @@ namespace VsChromiumHost {
           // Create the child process and redirect stdin, stdout, stderr.
           var argumentLine = (port.HasValue ? port.Value.ToString() : "");
           Logger.Log("Creating server process.");
-          using (var createProcessResult = new ProcessCreator().CreateProcess(filename, argumentLine, CreateProcessOptions.RedirectStdio)) {
+          using (var createProcessResult = new ProcessCreator().CreateProcess(filename, argumentLine, CreateProcessOptions.Default)) {
             Logger.Log("Server process created successfully (pid={0}).", createProcessResult.Process.Id);
             Logger.Log("Waiting for server process to exit.");
             createProcessResult.Process.WaitForExit();

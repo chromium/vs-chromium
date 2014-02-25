@@ -32,7 +32,7 @@ namespace VsChromiumCore.Processes {
       _debuggerObject.Dispose();
       if (!_managedProcess.HasExited) {
         _managedProcess.Kill();
-        _managedProcess.WaitForExit();
+        _managedProcess.WaitForExit(1000); // Don't wait infinitely.
       }
       _processHandle.Dispose();
     }

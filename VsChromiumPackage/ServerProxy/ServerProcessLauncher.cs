@@ -10,10 +10,12 @@ using System.Linq;
 using System.Reflection;
 using VsChromiumCore;
 using VsChromiumCore.Processes;
+using VsChromiumPackage.Package;
 
 namespace VsChromiumPackage.ServerProxy {
   [Export(typeof(IServerProcessLauncher))]
-  public class ServerProcessLauncher : IServerProcessLauncher {
+  [Export(typeof(IPackagePostDispose))]
+  public class ServerProcessLauncher : IServerProcessLauncher, IPackagePostDispose {
     private const string _proxyServerName = "VsChromiumHost.exe";
     private const string _serverName = "VsChromiumServer.exe";
 
@@ -93,6 +95,12 @@ namespace VsChromiumPackage.ServerProxy {
 
       yield return Path.Combine(serverFolder, "bin\\Debug");
       yield return Path.Combine(serverFolder, "bin\\Release");
+    }
+
+    public int Priority { get { return 0; } }
+
+    public void Run(IVisualStudioPackage package) {
+      this.Dispose();
     }
   }
 }

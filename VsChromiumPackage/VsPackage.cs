@@ -35,6 +35,21 @@ namespace VsChromiumPackage {
 
     public EnvDTE.DTE DTE { get { return (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE)); } }
 
+    protected override void Dispose(bool disposing) {
+      if (disposing) {
+        try {
+          foreach (var disposer in ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostDispose>().OrderByDescending(x => x.Priority)) {
+            disposer.Run(this);
+          }
+        }
+        catch (Exception e) {
+          Logger.LogException(e, "Error disposing VsChromium package.");
+          //throw;
+        }
+      }
+      base.Dispose(disposing);
+    }
+
     protected override void Initialize() {
       base.Initialize();
       try {

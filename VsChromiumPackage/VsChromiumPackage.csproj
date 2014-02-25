@@ -210,6 +210,7 @@
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
     <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
     <Compile Include="Features\ChromiumExplorer\RootErrorItemViewModel.cs" />
+    <Compile Include="Package\IPackagePostDispose.cs" />
     <Compile Include="Threads\IpcRequestException.cs" />
     <Compile Include="Views\ITextDocumentService.cs" />
     <Compile Include="Features\ChromiumExplorer\TextDocumentFactoryObserver.cs" />

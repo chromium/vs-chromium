@@ -18,8 +18,20 @@ namespace VsChromiumCore.Processes {
   [Export(typeof(IProcessCreator))]
   public class ProcessCreator : IProcessCreator {
     public CreateProcessResult CreateProcess(string filename, string arguments, CreateProcessOptions options) {
-      Logger.Log("CreateProcess: Creating ProcessStartInfo instance.");
-      // Start process
+      Logger.Log("CreateProcess: {0} {1}", filename, arguments);
+
+      // Attaching the debugger ensures the child process will die with the current process.
+      var debuggerObject = new DebuggerObject();
+      var processResult = (options & CreateProcessOptions.AttachDebugger) != 0 ?
+        debuggerObject.CreateProcess(() => CreateProcessImpl(filename, arguments, options)) :
+        CreateProcessImpl(filename, arguments, options);
+
+      Logger.Log("CreateProcess: Creating CreateProcessResult instance.");
+      return new CreateProcessResult(processResult.ProcessHandle, processResult.ProcessId, debuggerObject,
+        processResult.StandardInput, processResult.StandardOutput, processResult.StandardError);
+    }
+
+    private ProcessResult CreateProcessImpl(string filename, string arguments, CreateProcessOptions options) {
       var info = new ProcessStartInfo();
       info.Arguments = arguments;
       info.CreateNoWindow = true;
@@ -33,18 +45,8 @@ namespace VsChromiumCore.Processes {
         info.RedirectStandardInput = true;
         info.RedirectStandardOutput = true;
       }
-      var processResult = CreateProcessWithStartInfo(info, options);
 
-      // Attaching the debugger ensures the child process will die with the current process.
-      Logger.Log("CreateProcess: Creating DebuggerObject instance.");
-      var debuggerObject = new DebuggerObject();
-      if ((options & CreateProcessOptions.AttachDebugger) != 0) {
-        debuggerObject.AttachToProcess(processResult.ProcessId);
-      }
-
-      Logger.Log("CreateProcess: Creating CreateProcessResult instance.");
-      return new CreateProcessResult(processResult.ProcessHandle, processResult.ProcessId, debuggerObject,
-        processResult.StandardInput, processResult.StandardOutput, processResult.StandardError);
+      return CreateProcessWithStartInfo(info, options);
     }
 
     private static StringBuilder BuildCommandLine(string executableFileName, string arguments) {
@@ -145,6 +147,12 @@ namespace VsChromiumCore.Processes {
           workingDirectory = Environment.CurrentDirectory;
         }
         Logger.Log("CreateProcessWithStartInfo: Working directory: {0}.", workingDirectory);
+
+        if ((options & CreateProcessOptions.AttachDebugger) != 0) {
+          Logger.Log("CreateProcessWithStartInfo: Setting DEBUG_PROCESS flag.");
+          processCreationFlags |= ProcessCreationFlags.DEBUG_PROCESS;
+          processCreationFlags |= ProcessCreationFlags.DEBUG_ONLY_THIS_PROCESS;
+        }
 
         Logger.Log("CreateProcessWithStartInfo: Calling Win32 CreateProcess.");
         var environmentPtr = IntPtr.Zero;

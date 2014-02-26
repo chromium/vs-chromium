@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromiumCore.Processes;
 
 namespace VsChromiumCore.Debugger {
   /// <summary>
@@ -12,17 +13,17 @@ namespace VsChromiumCore.Debugger {
   public class DebuggerObject : IDisposable {
     private DebuggerThread _debuggerThread;
 
-    public void AttachToProcess(int processId) {
+    public ProcessResult CreateProcess(Func<ProcessResult> processCreator) {
       if (_debuggerThread != null) {
         throw new InvalidOperationException("Debugger already attached to a process.");
       }
-      _debuggerThread = new DebuggerThread(processId);
-      _debuggerThread.Start();
+      _debuggerThread = new DebuggerThread();
+      return _debuggerThread.Start(processCreator);
     }
 
     public void Dispose() {
       if (_debuggerThread != null) {
-        _debuggerThread.Stop();
+        _debuggerThread.Dispose();
         _debuggerThread = null;
       }
     }

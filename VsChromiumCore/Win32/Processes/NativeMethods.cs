@@ -26,6 +26,6 @@ namespace VsChromiumCore.Win32.Processes {
       ProcessInformation lpProcessInformation);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] buffer, UInt32 size, out UInt32 lpNumberOfBytesRead);
+    public static extern bool ReadProcessMemory(SafeProcessHandle hProcess, IntPtr lpBaseAddress, [Out] byte[] buffer, UInt32 size, out UInt32 lpNumberOfBytesRead);
   }
 }

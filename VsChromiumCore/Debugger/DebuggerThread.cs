@@ -4,9 +4,9 @@
 
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using VsChromiumCore.Processes;
 using VsChromiumCore.Win32;
 using VsChromiumCore.Win32.Debugging;
 using VsChromiumCore.Win32.Strings;
@@ -16,57 +16,61 @@ namespace VsChromiumCore.Debugger {
   /// Runs a debugger thread for a given process id.
   /// </summary>
   public class DebuggerThread {
-    private readonly int _processId;
-
     private readonly EventWaitHandle _startWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
     private readonly EventWaitHandle _stopDoneWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
     private readonly EventWaitHandle _stopWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
     private Thread _debuggerThread;
+    private ProcessResult _processResult;
     private Exception _startError;
     private Exception _stopError;
+    private bool _running;
 
-    public DebuggerThread(int processId) {
-      _processId = processId;
-    }
-
-    public void Start() {
-      new Thread(DebugStart) { IsBackground = true }.Start();
+    public ProcessResult Start(Func<ProcessResult> processCreator) {
+      new Thread(_ => DebugStart(processCreator)) { IsBackground = true }.Start();
 
       _startWaitHandle.WaitOne();
       if (_startError != null) {
         throw new Exception("Error starting debugger in separate thread", _startError);
       }
+      return _processResult;
+    }
+
+    public void Dispose() {
+      Stop();
     }
 
     public void Stop() {
+      if (!_running)
+        return;
+
       _stopWaitHandle.Set();
       _stopDoneWaitHandle.WaitOne();
+      Debug.Assert(_running == false);
       if (_stopError != null) {
         throw new Exception("Error stopping debugger", _stopError);
       }
     }
 
-    private void DebugStart() {
+    private void DebugStart(Func<ProcessResult> processCreator) {
       try {
         _debuggerThread = Thread.CurrentThread;
-        var result = NativeMethods.DebugActiveProcess(_processId);
-        if (!result) {
-          var hr = Marshal.GetHRForLastWin32Error();
-          if (hr == HResults.HR_ERROR_NOT_SUPPORTED) {
-            throw new InvalidOperationException("Trying to attach to a x64 process from a x86 process.");
-          }
-          throw new LastWin32ErrorException("Error in DebugActiveProcess");
-        }
+        // Note: processCreator is responsible for creating the process in DEBUG mode.
+        _processResult = processCreator();
       }
       catch (Exception e) {
         _startError = e;
+        return;
       }
       finally {
         _startWaitHandle.Set();
       }
 
-      if (_startError == null) {
+      _running = true;
+      try {
         Loop();
+      }
+      finally {
+        _running = false;
       }
     }
 
@@ -76,7 +80,7 @@ namespace VsChromiumCore.Debugger {
           throw new InvalidOperationException("Wrong thread");
         }
 
-        var success = NativeMethods.DebugActiveProcessStop(_processId);
+        var success = NativeMethods.DebugActiveProcessStop(_processResult.ProcessId);
         if (!success)
           throw new LastWin32ErrorException("Error in DebugActiveProcessStop");
       }
@@ -94,7 +98,7 @@ namespace VsChromiumCore.Debugger {
       }
 
       try {
-        for (; ; ) {
+        while(true) {
           var debugEvent = WaitForDebugEvent(10);
           if (debugEvent != null) {
             LogDebugEvent(debugEvent.Value);
@@ -106,7 +110,7 @@ namespace VsChromiumCore.Debugger {
               throw new LastWin32ErrorException("Error in ContinueDebugEvent");
           }
 
-          // Did we get ask to stop the debugger?
+          // Did we get asked to stop the debugger?
           if (_stopWaitHandle.WaitOne(1)) {
             DebugStop();
             break;
@@ -167,8 +171,7 @@ namespace VsChromiumCore.Debugger {
       var byteCount = (uint)(debugString.nDebugStringLength * (isUnicode ? sizeof(char) : sizeof(byte)));
       var bytes = new byte[byteCount];
       uint bytesRead;
-      var hProcess = Process.GetProcessById(this._processId).Handle;
-      if (!Win32.Processes.NativeMethods.ReadProcessMemory(hProcess, debugString.lpDebugStringData, bytes, byteCount, out bytesRead)) {
+      if (!Win32.Processes.NativeMethods.ReadProcessMemory(_processResult.ProcessHandle, debugString.lpDebugStringData, bytes, byteCount, out bytesRead)) {
         return string.Format("<error getting debug string from process: {0}>", new LastWin32ErrorException().Message);
       }
 

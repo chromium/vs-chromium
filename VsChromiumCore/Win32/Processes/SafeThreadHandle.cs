@@ -6,12 +6,17 @@ using System;
 using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Processes {
-  sealed class SafeThreadHandle : SafeHandleZeroOrMinusOneIsInvalid {
-    internal SafeThreadHandle()
+  public sealed class SafeThreadHandle : SafeHandleZeroOrMinusOneIsInvalid {
+    public SafeThreadHandle()
       : base(true) {
     }
 
-    internal void InitialSetHandle(IntPtr h) {
+    public SafeThreadHandle(IntPtr handle)
+      : base(true) {
+      base.SetHandle(handle);
+    }
+
+    public void InitialSetHandle(IntPtr h) {
       base.SetHandle(h);
     }
 

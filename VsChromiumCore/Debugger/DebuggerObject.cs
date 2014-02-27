@@ -13,7 +13,7 @@ namespace VsChromiumCore.Debugger {
   public class DebuggerObject : IDisposable {
     private DebuggerThread _debuggerThread;
 
-    public ProcessResult CreateProcess(Func<ProcessResult> processCreator) {
+    public ProcessInformation CreateProcess(Func<ProcessInformation> processCreator) {
       if (_debuggerThread != null) {
         throw new InvalidOperationException("Debugger already attached to a process.");
       }

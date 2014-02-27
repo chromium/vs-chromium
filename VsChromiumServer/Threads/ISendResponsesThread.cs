@@ -10,6 +10,5 @@ namespace VsChromiumServer.Threads {
   /// </summary>
   public interface ISendResponsesThread {
     void Start(IIpcStream ipcStream);
-    void WaitOne();
   }
 }

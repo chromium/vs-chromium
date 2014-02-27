@@ -7,9 +7,15 @@ using System.Runtime.InteropServices;
 
 namespace VsChromiumCore.Win32.Processes {
   [StructLayout(LayoutKind.Sequential)]
-  class ProcessInformation {
-    public IntPtr hProcess = IntPtr.Zero;
-    public IntPtr hThread = IntPtr.Zero;
+  public class PROCESS_INFORMATION {
+    /// <summary>
+    /// Handle to the created process. The caller *must* call CloseHandle to avoid leaks.
+    /// </summary>
+    public IntPtr hProcess;
+    /// <summary>
+    /// Handle to the created process main thread. The caller *must* call CloseHandle to avoid leaks.
+    /// </summary>
+    public IntPtr hThread;
     public int dwProcessId;
     public int dwThreadId;
   }

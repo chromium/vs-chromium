@@ -22,8 +22,9 @@ namespace VsChromiumCore.Win32.Processes {
       ProcessCreationFlags dwCreationFlags,
       IntPtr lpEnvironment,
       [MarshalAs(UnmanagedType.LPTStr)] string lpCurrentDirectory,
-      Startupinfo lpStartupInfo,
-      ProcessInformation lpProcessInformation);
+      STARTUPINFO lpStartupInfo,
+      [In, Out]
+      PROCESS_INFORMATION lpProcessInformation);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern bool ReadProcessMemory(SafeProcessHandle hProcess, IntPtr lpBaseAddress, [Out] byte[] buffer, UInt32 size, out UInt32 lpNumberOfBytesRead);

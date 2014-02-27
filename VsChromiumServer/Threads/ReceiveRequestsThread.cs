@@ -44,7 +44,7 @@ namespace VsChromiumServer.Threads {
         while (true) {
           var request = _ipcStream.ReadRequest();
           if (request == null) {
-            Logger.Log("EOF reached on stdin. Time to terminate server.");
+            Logger.Log("IPC stream has closed. Time to terminate server.");
             break;
           }
           _ipcRequestDispatcher.ProcessRequestAsync(request);

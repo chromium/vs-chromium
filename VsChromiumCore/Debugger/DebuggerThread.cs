@@ -10,29 +10,32 @@ using VsChromiumCore.Processes;
 using VsChromiumCore.Win32;
 using VsChromiumCore.Win32.Debugging;
 using VsChromiumCore.Win32.Strings;
+using NativeMethods = VsChromiumCore.Win32.Debugging.NativeMethods;
 
 namespace VsChromiumCore.Debugger {
   /// <summary>
   /// Runs a debugger thread for a given process id.
   /// </summary>
   public class DebuggerThread {
-    private readonly EventWaitHandle _startWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
     private readonly EventWaitHandle _stopDoneWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
     private readonly EventWaitHandle _stopWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
     private Thread _debuggerThread;
-    private ProcessResult _processResult;
-    private Exception _startError;
+    private ProcessInformation _processInformation;
+    private int _processId;
     private Exception _stopError;
     private bool _running;
 
-    public ProcessResult Start(Func<ProcessResult> processCreator) {
-      new Thread(_ => DebugStart(processCreator)) { IsBackground = true }.Start();
-
-      _startWaitHandle.WaitOne();
-      if (_startError != null) {
-        throw new Exception("Error starting debugger in separate thread", _startError);
+    public ProcessInformation Start(Func<ProcessInformation> processCreator) {
+      var startWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
+      ProcessInformation result = null;
+      Exception startError = null;
+      ParameterizedThreadStart parameterizedThreadStart = _ => DebuggerStart(startWaitHandle, processCreator, pi => result = pi, e => startError = e);
+      new Thread(parameterizedThreadStart) { IsBackground = true }.Start();
+      startWaitHandle.WaitOne();
+      if (startError != null) {
+        throw new Exception("Error starting debugger thread", startError);
       }
-      return _processResult;
+      return result;
     }
 
     public void Dispose() {
@@ -51,38 +54,45 @@ namespace VsChromiumCore.Debugger {
       }
     }
 
-    private void DebugStart(Func<ProcessResult> processCreator) {
+    private void DebuggerStart(EventWaitHandle startWaitHandle, Func<ProcessInformation> processCreator, Action<ProcessInformation> callback, Action<Exception> errorCallback) {
       try {
         _debuggerThread = Thread.CurrentThread;
         // Note: processCreator is responsible for creating the process in DEBUG mode.
-        _processResult = processCreator();
+        // Note: If processCreator throws an exception after creating the
+        // process, we may end up in a state where we received debugging events
+        // without having "_processInformation" set. We need to be able to deal
+        // with that.
+        _processInformation = processCreator();
+        callback(_processInformation);
       }
       catch (Exception e) {
-        _startError = e;
+        errorCallback(e);
         return;
       }
       finally {
-        _startWaitHandle.Set();
+        startWaitHandle.Set();
       }
 
       _running = true;
       try {
-        Loop();
+        DebuggerLoop();
       }
       finally {
         _running = false;
       }
     }
 
-    private void DebugStop() {
+    private void DebuggerStop() {
       try {
         if (Thread.CurrentThread != _debuggerThread) {
           throw new InvalidOperationException("Wrong thread");
         }
 
-        var success = NativeMethods.DebugActiveProcessStop(_processResult.ProcessId);
-        if (!success)
-          throw new LastWin32ErrorException("Error in DebugActiveProcessStop");
+        if (_processId != 0) {
+          var success = NativeMethods.DebugActiveProcessStop(_processId);
+          if (!success)
+            throw new LastWin32ErrorException("Error in DebugActiveProcessStop");
+        }
       }
       catch (Exception e) {
         _stopError = e;
@@ -92,7 +102,7 @@ namespace VsChromiumCore.Debugger {
       }
     }
 
-    private void Loop() {
+    private void DebuggerLoop() {
       if (Thread.CurrentThread != _debuggerThread) {
         throw new InvalidOperationException("Wrong thread");
       }
@@ -101,6 +111,8 @@ namespace VsChromiumCore.Debugger {
         while(true) {
           var debugEvent = WaitForDebugEvent(10);
           if (debugEvent != null) {
+            Debug.Assert(_processId == 0 || _processId == debugEvent.Value.dwProcessId);
+            _processId = debugEvent.Value.dwProcessId;
             LogDebugEvent(debugEvent.Value);
 
             var continueStatus = HandleDebugEvent(debugEvent.Value);
@@ -112,7 +124,7 @@ namespace VsChromiumCore.Debugger {
 
           // Did we get asked to stop the debugger?
           if (_stopWaitHandle.WaitOne(1)) {
-            DebugStop();
+            DebuggerStop();
             break;
           }
         }
@@ -167,11 +179,14 @@ namespace VsChromiumCore.Debugger {
     }
 
     private string GetOutputDebugString(OUTPUT_DEBUG_STRING_INFO debugString) {
+      if (_processInformation == null)
+        return "<no process handle>";
+
       var isUnicode = (debugString.fUnicode != 0);
       var byteCount = (uint)(debugString.nDebugStringLength * (isUnicode ? sizeof(char) : sizeof(byte)));
       var bytes = new byte[byteCount];
       uint bytesRead;
-      if (!Win32.Processes.NativeMethods.ReadProcessMemory(_processResult.ProcessHandle, debugString.lpDebugStringData, bytes, byteCount, out bytesRead)) {
+      if (!Win32.Processes.NativeMethods.ReadProcessMemory(_processInformation.ProcessHandle, debugString.lpDebugStringData, bytes, byteCount, out bytesRead)) {
         return string.Format("<error getting debug string from process: {0}>", new LastWin32ErrorException().Message);
       }
 

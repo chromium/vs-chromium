@@ -45,7 +45,8 @@ namespace VsChromiumServer {
       _receiveThread.Start(_stream);
       _typedEventForwarder.RegisterEventHandlers();
 
-      _sendThread.WaitOne();
+      // Receive thread will terminate soon after the TCP connection to the VS package is
+      // closed. There is nothing left for the server to do other than exiting at this point.
       _receiveThread.WaitOne();
       Logger.Log("Server terminating properly.");
     }

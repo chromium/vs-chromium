@@ -4,6 +4,7 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.Threading;
 using VsChromiumCore;
 using VsChromiumCore.Ipc;
@@ -26,10 +27,6 @@ namespace VsChromiumServer.Threads {
       new Thread(Run) {IsBackground = true}.Start();
     }
 
-    public void WaitOne() {
-      _waitHandle.WaitOne();
-    }
-
     public void Run() {
       try {
         Loop();
@@ -43,10 +40,7 @@ namespace VsChromiumServer.Threads {
       try {
         while (true) {
           var response = _ipcResponseQeueue.Dequeue();
-          if (response == null) {
-            Logger.Log("No more response to send. Time to terminate thread.");
-            break;
-          }
+          Debug.Assert(response != null);
           _ipcStream.WriteResponse(response);
         }
       }

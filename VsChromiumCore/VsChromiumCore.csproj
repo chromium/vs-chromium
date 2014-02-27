@@ -167,7 +167,7 @@
     <Compile Include="Ipc\TypedMessages\TypedResponse.cs" />
     <Compile Include="Processes\CreateProcessOptions.cs" />
     <Compile Include="Processes\CreateProcessResult.cs" />
-    <Compile Include="Processes\ProcessResult.cs" />
+    <Compile Include="Processes\ProcessInformation.cs" />
     <Compile Include="Win32\Debugging\OUTPUT_DEBUG_STRING_INFO.cs" />
     <Compile Include="Win32\Debugging\RIP_INFO.cs" />
     <Compile Include="Win32\Debugging\UNLOAD_DLL_DEBUG_INFO.cs" />
@@ -184,9 +184,9 @@
     <Compile Include="Win32\Memory\HeapFlags.cs" />
     <Compile Include="Win32\NamedPipes\NativeMethods.cs" />
     <Compile Include="Win32\Processes\ProcessCreationFlags.cs" />
-    <Compile Include="Win32\Processes\ProcessInformation.cs" />
+    <Compile Include="Win32\Processes\PROCESS_INFORMATION.cs" />
     <Compile Include="Win32\Interop\SecurityAttributes.cs" />
-    <Compile Include="Win32\Processes\Startupinfo.cs" />
+    <Compile Include="Win32\Processes\STARTUPINFO.cs" />
     <Compile Include="Win32\Memory\HeapAlloc.cs" />
     <Compile Include="Win32\Memory\HeapAllocStatic.cs" />
     <Compile Include="Win32\Memory\IHeapAlloc.cs" />

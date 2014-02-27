@@ -10,7 +10,6 @@ namespace VsChromiumServer {
     private static void Main(string[] args) {
       Logger.Log("Server process started");
       try {
-        //Thread.Sleep(10000);
         var port = GetTcpPort(args);
         Logger.Log("Server starting with host on port {0}.", port);
         new ServerStub().Run(port);

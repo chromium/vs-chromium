@@ -16,7 +16,7 @@ namespace VsChromiumCore.Win32.Processes {
       base.SetHandle(handle);
     }
 
-    internal void InitialSetHandle(IntPtr handlePtr) {
+    public void InitialSetHandle(IntPtr handlePtr) {
       handle = handlePtr;
     }
 

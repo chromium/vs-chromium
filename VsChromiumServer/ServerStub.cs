@@ -15,7 +15,7 @@ namespace VsChromiumServer {
 
     public void Run(int port) {
       using (var mefContainer = SetupMefContainer()) {
-        var server = mefContainer.GetExport<IServer>().Value;
+        var server = mefContainer.GetExportedValue<IServer>();
         Instance = server; // For debugging only.
         server.Run(port);
       }

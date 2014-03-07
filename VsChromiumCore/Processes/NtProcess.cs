@@ -230,10 +230,10 @@ namespace VsChromiumCore.Processes {
       // Try to open a handle to the process with the highest level of privilege, but if we can't
       // do that then fallback to requesting access with a lower privilege level.
       _processHandleFlags = ProcessAccessFlags.QueryInformation | ProcessAccessFlags.VmRead;
-      _processHandle.InitialSetHandle(Win32.Processes.NativeMethods.OpenProcess(_processHandleFlags, false, _processId));
+      _processHandle = Win32.Processes.NativeMethods.OpenProcess(_processHandleFlags, false, _processId);
       if (_processHandle.IsInvalid) {
         _processHandleFlags = ProcessAccessFlags.QueryLimitedInformation;
-        _processHandle.InitialSetHandle(Win32.Processes.NativeMethods.OpenProcess(_processHandleFlags, false, _processId));
+        _processHandle = Win32.Processes.NativeMethods.OpenProcess(_processHandleFlags, false, _processId);
         if (_processHandle.IsInvalid) {
           _processHandleFlags = ProcessAccessFlags.None;
           throw new Win32Exception();

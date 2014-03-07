@@ -31,7 +31,7 @@ namespace VsChromiumCore.Win32.Processes {
       ProcessInformation lpProcessInformation);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr OpenProcess(
+    public static extern SafeProcessHandle OpenProcess(
       [MarshalAs(UnmanagedType.U4)] ProcessAccessFlags dwDesiredAccess,
       [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
       int dwProcessId);

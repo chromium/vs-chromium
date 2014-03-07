@@ -43,13 +43,12 @@ namespace VsChromiumPackage.ChromeDebug
         if (p.IsBeingDebugged || !ChromeUtility.IsChromeProcess(p.Name))
           continue;
 
-        using (NtProcess process = new NtProcess(p.ProcessID)) {
-          if (!roots.Contains(process.ParentProcessId))
-            continue;
+        NtProcess process = new NtProcess(p.ProcessID);
+        if (!roots.Contains(process.ParentProcessId))
+          continue;
 
-          p.Attach();
-          System.Diagnostics.Debug.WriteLine("Attaching to process successful.");
-        }
+        p.Attach();
+        System.Diagnostics.Debug.WriteLine("Attaching to process successful.");
       }
     }
   }

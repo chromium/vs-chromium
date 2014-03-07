@@ -96,12 +96,17 @@ namespace VsChromiumPackage.ChromeDebug {
         list.Clear();
       }
 
-      Process[] processes = Process.GetProcesses();
-      foreach (var p in processes) {
+      Process[] chromes = Process.GetProcessesByName("chrome");
+      Process[] delegate_executes = Process.GetProcessesByName("delegate_execute");
+      Process[] processes = new Process[chromes.Length + delegate_executes.Length];
+      chromes.CopyTo(processes, 0);
+      delegate_executes.CopyTo(processes, chromes.Length);
+
+      foreach (Process p in processes) {
         var item = new ProcessViewItem();
         try {
           item.Process = new NtProcess(p.Id);
-          if (item.Process.CanReadPeb && item.Process.CommandLine != null) {
+          if (item.Process.CommandLine != null) {
             item.CmdLineArgs = ChromeUtility.SplitArgs(item.Process.CommandLine);
             item.DisplayCmdLine = GetFilteredCommandLineString(item.CmdLineArgs);
           }
@@ -113,18 +118,14 @@ namespace VsChromiumPackage.ChromeDebug {
           // information that the Framework gave us in the Process structure.
         }
 
-        // If we don't have the machine type, its privilege level is high enough that we won't be
-        // able to attach a debugger to it anyway, so skip it.
-        if (item.MachineType == MachineType.Unknown)
-          continue;
-
         item.ProcessId = p.Id;
         item.SessionId = p.SessionId;
         item.Title = p.MainWindowTitle;
         item.Exe = p.ProcessName;
-        if (item.CmdLineArgs != null)
-          item.Category = DetermineProcessCategory(item.Process.Win32ProcessImagePath,
-                                                   item.CmdLineArgs);
+        if (item.CmdLineArgs != null) {
+            item.Category = DetermineProcessCategory(item.Process.Win32ProcessImagePath,
+                                                     item.CmdLineArgs);
+        }
 
         var icon = LoadIconForProcess(item.Process);
         var items = _loadedProcessTable[item.Category];
@@ -240,8 +241,6 @@ namespace VsChromiumPackage.ChromeDebug {
       InsertCategoryItems(ProcessCategory.MetroViewer);
       InsertCategoryItems(ProcessCategory.Service);
       InsertCategoryItems(ProcessCategory.DelegateExecute);
-      if (!checkBoxOnlyChrome.Checked)
-        InsertCategoryItems(ProcessCategory.Other);
 
       AutoResizeColumns();
     }
@@ -253,16 +252,6 @@ namespace VsChromiumPackage.ChromeDebug {
     private void buttonAttach_Click(object sender, EventArgs e) {
       System.Diagnostics.Debug.WriteLine("Closing dialog.");
       Close();
-    }
-
-    private void checkBoxOnlyChrome_CheckedChanged(object sender, EventArgs e) {
-      if (!checkBoxOnlyChrome.Checked)
-        InsertCategoryItems(ProcessCategory.Other);
-      else {
-        foreach (ProcessViewItem item in _loadedProcessTable[ProcessCategory.Other]) {
-          listViewProcesses.Items.Remove(item);
-        }
-      }
     }
   }
 }

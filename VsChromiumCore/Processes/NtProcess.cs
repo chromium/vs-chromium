@@ -21,7 +21,6 @@ using System.Diagnostics;
 namespace VsChromiumCore.Processes {
   public class NtProcess {
     public NtProcess(int pid) {
-      // Initialize everything to null in case something fails.
       _processId = pid;
       _machineType = MachineType.Unknown;
       _commandLine = null;
@@ -97,8 +96,6 @@ namespace VsChromiumCore.Processes {
       return handle;
     }
 
-    // Returns the machine type (x86, x64, etc) of this process.  Uses lazy evaluation and caches
-    // the result.
     public MachineType MachineType {
       get { return _machineType; }
     }
@@ -163,8 +160,6 @@ namespace VsChromiumCore.Processes {
       }
     }
 
-    // An open handle to the process, along with the set of access flags that the handle was
-    // open with.
     private readonly int _processId;
     private int _parentProcessId;
     private string _nativeProcessImagePath;

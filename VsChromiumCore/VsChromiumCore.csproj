@@ -190,7 +190,6 @@
     <Compile Include="Win32\NtStatus.cs" />
     <Compile Include="Win32\Processes\NativeStructs.cs" />
     <Compile Include="Win32\Processes\ProcessCreationFlags.cs" />
-    <Compile Include="Win32\Processes\ProcessInfoClass.cs" />
     <Compile Include="Win32\Processes\ProcessInformation.cs" />
     <Compile Include="Win32\Interop\SecurityAttributes.cs" />
     <Compile Include="Win32\Processes\Startupinfo.cs" />

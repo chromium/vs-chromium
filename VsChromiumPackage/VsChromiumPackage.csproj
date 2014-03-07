@@ -181,13 +181,9 @@
     <Compile Include="ChromeDebug\AttachToAllChromesHandler.cs" />
     <Compile Include="ChromeDebug\AttachToChromeDescendantsHandler.cs" />
     <Compile Include="ChromeDebug\Guids.cs" />
-    <Compile Include="ChromeDebug\LowLevel\NativeMethods.cs" />
-    <Compile Include="ChromeDebug\LowLevel\Types.cs" />
     <Compile Include="ChromeDebug\PkgCmdID.cs" />
     <Compile Include="ChromeDebug\ProcessCategory.cs" />
-    <Compile Include="ChromeDebug\ProcessDetail.cs" />
     <Compile Include="ChromeDebug\AttachToChromeDialogHandler.cs" />
-    <Compile Include="ChromeDebug\Utility.cs" />
     <Compile Include="ChromiumEnlistment\ChromiumSourceFiles.cs" />
     <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierConstants.cs" />

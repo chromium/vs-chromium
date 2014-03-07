@@ -1,41 +1,43 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+﻿using Microsoft.Win32.SafeHandles;
 
 using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.IO;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using Microsoft.Win32.SafeHandles;
-using VsChromiumPackage.ChromeDebug.LowLevel;
+using System.Runtime.InteropServices;
+using System.ComponentModel;
 
-namespace VsChromiumPackage.ChromeDebug {
-  class ProcessDetail : IDisposable {
-    public ProcessDetail(int pid) {
+using VsChromiumCore.Utility;
+using VsChromiumCore.Win32;
+using VsChromiumCore.Win32.Files;
+using VsChromiumCore.Win32.Processes;
+using System.IO;
+
+namespace VsChromiumCore.Processes {
+  public class NtProcess : IDisposable {
+    public NtProcess(int pid) {
       // Initialize everything to null in case something fails.
       _processId = pid;
-      _processHandleFlags = LowLevelTypes.ProcessAccessFlags.NONE;
+      _processHandleFlags = ProcessAccessFlags.None;
       _cachedProcessBasicInfo = null;
       _machineTypeIsLoaded = false;
-      _machineType = LowLevelTypes.MachineType.UNKNOWN;
+      _machineType = MachineType.Unknown;
       _cachedPeb = null;
       _cachedProcessParams = null;
       _cachedCommandLine = null;
-      _processHandle = IntPtr.Zero;
+      _processHandle = new SafeProcessHandle();
 
       OpenAndCacheProcessHandle();
     }
 
     // Returns the machine type (x86, x64, etc) of this process.  Uses lazy evaluation and caches
     // the result.
-    public LowLevelTypes.MachineType MachineType {
+    public MachineType MachineType {
       get {
         if (_machineTypeIsLoaded)
           return _machineType;
         if (!CanQueryProcessInformation)
-          return LowLevelTypes.MachineType.UNKNOWN;
+          return MachineType.Unknown;
 
         CacheMachineType();
         return _machineType;
@@ -46,7 +48,7 @@ namespace VsChromiumPackage.ChromeDebug {
       get {
         if (_nativeProcessImagePath == null) {
           _nativeProcessImagePath = QueryProcessImageName(
-            LowLevelTypes.ProcessQueryImageNameMode.NATIVE_SYSTEM_FORMAT);
+            ProcessQueryImageNameMode.NativeSystemFormat);
         }
         return _nativeProcessImagePath;
       }
@@ -67,26 +69,9 @@ namespace VsChromiumPackage.ChromeDebug {
       get {
         if (_win32ProcessImagePath == null) {
           _win32ProcessImagePath = QueryProcessImageName(
-            LowLevelTypes.ProcessQueryImageNameMode.WIN32_FORMAT);
+            ProcessQueryImageNameMode.Win32);
         }
         return _win32ProcessImagePath;
-      }
-    }
-
-    public Icon SmallIcon {
-      get {
-        LowLevel.LowLevelTypes.SHFILEINFO info = new LowLevelTypes.SHFILEINFO(true);
-        LowLevel.LowLevelTypes.SHGFI flags = LowLevel.LowLevelTypes.SHGFI.Icon
-                                             | LowLevelTypes.SHGFI.SmallIcon
-                                             | LowLevelTypes.SHGFI.OpenIcon
-                                             | LowLevelTypes.SHGFI.UseFileAttributes;
-        int cbFileInfo = Marshal.SizeOf(info);
-        LowLevel.NativeMethods.SHGetFileInfo(Win32ProcessImagePath,
-                                             256,
-                                             ref info,
-                                             (uint)cbFileInfo,
-                                             (uint)flags);
-        return Icon.FromHandle(info.hIcon);
       }
     }
 
@@ -107,9 +92,7 @@ namespace VsChromiumPackage.ChromeDebug {
     // Determines if we have permission to read the process's PEB.
     public bool CanReadPeb {
       get {
-        LowLevelTypes.ProcessAccessFlags required_flags =
-          LowLevelTypes.ProcessAccessFlags.VM_READ
-          | LowLevelTypes.ProcessAccessFlags.QUERY_INFORMATION;
+        ProcessAccessFlags required_flags = ProcessAccessFlags.VmRead | ProcessAccessFlags.QueryInformation;
 
         // In order to read the PEB, we must have *both* of these flags.
         if ((_processHandleFlags & required_flags) != required_flags)
@@ -118,7 +101,7 @@ namespace VsChromiumPackage.ChromeDebug {
         // If we're on a 64-bit OS, in a 32-bit process, and the target process is not 32-bit,
         // we can't read its PEB.
         if (Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess
-            && (MachineType != LowLevelTypes.MachineType.X86))
+            && (MachineType != MachineType.X86))
           return false;
 
         return true;
@@ -129,24 +112,19 @@ namespace VsChromiumPackage.ChromeDebug {
     // from the process.  This flag determines if we can get lesser information.
     private bool CanQueryProcessInformation {
       get {
-        LowLevelTypes.ProcessAccessFlags required_flags =
-          LowLevelTypes.ProcessAccessFlags.QUERY_LIMITED_INFORMATION
-          | LowLevelTypes.ProcessAccessFlags.QUERY_INFORMATION;
+        ProcessAccessFlags required_flags = ProcessAccessFlags.QueryLimitedInformation | ProcessAccessFlags.QueryInformation;
 
         // In order to query the process, we need *either* of these flags.
-        return (_processHandleFlags & required_flags) != LowLevelTypes.ProcessAccessFlags.NONE;
+        return (_processHandleFlags & required_flags) != ProcessAccessFlags.None;
       }
     }
 
-    private string QueryProcessImageName(LowLevelTypes.ProcessQueryImageNameMode mode) {
+    private string QueryProcessImageName(ProcessQueryImageNameMode mode) {
       StringBuilder moduleBuffer = new StringBuilder(1024);
       int size = moduleBuffer.Capacity;
-      NativeMethods.QueryFullProcessImageName(
-        _processHandle,
-        mode,
-        moduleBuffer,
-        ref size);
-      if (mode == LowLevelTypes.ProcessQueryImageNameMode.NATIVE_SYSTEM_FORMAT)
+      VsChromiumCore.Win32.Processes.NativeMethods.QueryFullProcessImageName(
+        _processHandle, mode, moduleBuffer, ref size);
+      if (mode == ProcessQueryImageNameMode.NativeSystemFormat)
         moduleBuffer.Insert(0, "\\\\?\\GLOBALROOT");
       return moduleBuffer.ToString();
     }
@@ -156,16 +134,16 @@ namespace VsChromiumPackage.ChromeDebug {
       System.Diagnostics.Debug.Assert(CanReadPeb);
 
       // Fetch the process info and set the fields.
-      LowLevelTypes.PROCESS_BASIC_INFORMATION temp = new LowLevelTypes.PROCESS_BASIC_INFORMATION();
+      ProcessBasicInformation temp = new ProcessBasicInformation();
       int size;
-      LowLevelTypes.NTSTATUS status = NativeMethods.NtQueryInformationProcess(
+      int status = VsChromiumCore.Win32.Processes.NativeMethods.NtQueryInformationProcess(
         _processHandle,
-        LowLevelTypes.PROCESSINFOCLASS.PROCESS_BASIC_INFORMATION,
+        ProcessInfoClass.BasicInformation,
         ref temp,
-        Utility.UnmanagedStructSize<LowLevelTypes.PROCESS_BASIC_INFORMATION>(),
+        MarshalUtility.UnmanagedStructSize<ProcessBasicInformation>(),
         out size);
 
-      if (status != LowLevelTypes.NTSTATUS.SUCCESS) {
+      if (status != NtStatus.Success) {
         throw new Win32Exception();
       }
 
@@ -178,7 +156,7 @@ namespace VsChromiumPackage.ChromeDebug {
       System.Diagnostics.Debug.Assert(CanReadPeb);
 
       if (_cachedPeb == null) {
-        _cachedPeb = Utility.ReadUnmanagedStructFromProcess<LowLevelTypes.PEB>(
+        _cachedPeb = MarshalUtility.ReadUnmanagedStructFromProcess<Peb>(
           _processHandle,
           _cachedProcessBasicInfo.Value.PebBaseAddress);
       }
@@ -191,7 +169,7 @@ namespace VsChromiumPackage.ChromeDebug {
 
       if (_cachedProcessParams == null) {
         _cachedProcessParams =
-          Utility.ReadUnmanagedStructFromProcess<LowLevelTypes.RTL_USER_PROCESS_PARAMETERS>(
+          MarshalUtility.ReadUnmanagedStructFromProcess<RtlUserProcessParameters>(
             _processHandle, _cachedPeb.Value.ProcessParameters);
       }
     }
@@ -200,7 +178,7 @@ namespace VsChromiumPackage.ChromeDebug {
       System.Diagnostics.Debug.Assert(CanReadPeb);
 
       if (_cachedCommandLine == null) {
-        _cachedCommandLine = Utility.ReadStringUniFromProcess(
+        _cachedCommandLine = MarshalUtility.ReadStringUniFromProcess(
           _processHandle,
           _cachedProcessParams.Value.CommandLine.Buffer,
           _cachedProcessParams.Value.CommandLine.Length / 2);
@@ -221,14 +199,15 @@ namespace VsChromiumPackage.ChromeDebug {
       // Open the PE File as a binary file, and parse just enough information to determine the
       // machine type.
       //http://www.microsoft.com/whdc/system/platform/firmware/PECOFF.mspx
-      using (SafeFileHandle safeHandle = NativeMethods.CreateFile(
-        path,
-        LowLevelTypes.FileAccessFlags.GENERIC_READ,
-        LowLevelTypes.FileShareFlags.SHARE_READ,
-        IntPtr.Zero,
-        LowLevelTypes.FileCreationDisposition.OPEN_EXISTING,
-        LowLevelTypes.FileFlagsAndAttributes.NORMAL,
-        IntPtr.Zero)) {
+      using (SafeFileHandle safeHandle =
+                Win32.Files.NativeMethods.CreateFile(
+                    path,
+                    NativeAccessFlags.GenericRead,
+                    FileShare.Read,
+                    IntPtr.Zero,
+                    FileMode.Open,
+                    FileAttributes.Normal,
+                    IntPtr.Zero)) {
         FileStream fs = new FileStream(safeHandle, FileAccess.Read);
         using (BinaryReader br = new BinaryReader(fs)) {
           fs.Seek(0x3c, SeekOrigin.Begin);
@@ -237,7 +216,7 @@ namespace VsChromiumPackage.ChromeDebug {
           UInt32 peHead = br.ReadUInt32();
           if (peHead != 0x00004550) // "PE\0\0", little-endian
             throw new Exception("Can't find PE header");
-          _machineType = (LowLevelTypes.MachineType)br.ReadUInt16();
+          _machineType = (MachineType)br.ReadUInt16();
           _machineTypeIsLoaded = true;
         }
       }
@@ -246,14 +225,13 @@ namespace VsChromiumPackage.ChromeDebug {
     private void OpenAndCacheProcessHandle() {
       // Try to open a handle to the process with the highest level of privilege, but if we can't
       // do that then fallback to requesting access with a lower privilege level.
-      _processHandleFlags = LowLevelTypes.ProcessAccessFlags.QUERY_INFORMATION
-                           | LowLevelTypes.ProcessAccessFlags.VM_READ;
-      _processHandle = NativeMethods.OpenProcess(_processHandleFlags, false, _processId);
-      if (_processHandle == IntPtr.Zero) {
-        _processHandleFlags = LowLevelTypes.ProcessAccessFlags.QUERY_LIMITED_INFORMATION;
-        _processHandle = NativeMethods.OpenProcess(_processHandleFlags, false, _processId);
-        if (_processHandle == IntPtr.Zero) {
-          _processHandleFlags = LowLevelTypes.ProcessAccessFlags.NONE;
+      _processHandleFlags = ProcessAccessFlags.QueryInformation | ProcessAccessFlags.VmRead;
+      _processHandle.InitialSetHandle(Win32.Processes.NativeMethods.OpenProcess(_processHandleFlags, false, _processId));
+      if (_processHandle.IsInvalid) {
+        _processHandleFlags = ProcessAccessFlags.QueryLimitedInformation;
+        _processHandle.InitialSetHandle(Win32.Processes.NativeMethods.OpenProcess(_processHandleFlags, false, _processId));
+        if (_processHandle.IsInvalid) {
+          _processHandleFlags = ProcessAccessFlags.None;
           throw new Win32Exception();
         }
       }
@@ -262,32 +240,26 @@ namespace VsChromiumPackage.ChromeDebug {
     // An open handle to the process, along with the set of access flags that the handle was
     // open with.
     private readonly int _processId;
-    private IntPtr _processHandle;
-    private LowLevelTypes.ProcessAccessFlags _processHandleFlags;
+    private SafeProcessHandle _processHandle;
+    private ProcessAccessFlags _processHandleFlags;
     private string _nativeProcessImagePath;
     private string _win32ProcessImagePath;
 
     // The machine type is read by parsing the PE image file of the running process, so we cache
     // its value since the operation expensive.
     private bool _machineTypeIsLoaded;
-    private LowLevelTypes.MachineType _machineType;
+    private MachineType _machineType;
 
     // The following fields exist ultimately so that we can access the command line.  However,
     // each field must be read separately through a pointer into another process's address
     // space so the access is expensive, hence we cache the values.
-    private Nullable<LowLevelTypes.PROCESS_BASIC_INFORMATION> _cachedProcessBasicInfo;
-    private Nullable<LowLevelTypes.PEB> _cachedPeb;
-    private Nullable<LowLevelTypes.RTL_USER_PROCESS_PARAMETERS> _cachedProcessParams;
+    private Nullable<ProcessBasicInformation> _cachedProcessBasicInfo;
+    private Nullable<Peb> _cachedPeb;
+    private Nullable<RtlUserProcessParameters> _cachedProcessParams;
     private string _cachedCommandLine;
 
-    ~ProcessDetail() {
-      Dispose();
-    }
-
     public void Dispose() {
-      if (_processHandle != IntPtr.Zero)
-        NativeMethods.CloseHandle(_processHandle);
-      _processHandle = IntPtr.Zero;
+      _processHandle.Dispose();
     }
   }
 }

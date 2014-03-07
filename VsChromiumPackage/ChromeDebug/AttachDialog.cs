@@ -9,7 +9,11 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using VsChromiumPackage.ChromeDebug.LowLevel;
+using VsChromiumCore.Win32.Processes;
+using VsChromiumCore.Processes;
+using VsChromiumCore.Utility;
+using VsChromiumCore.Win32.Shell;
+using System.Runtime.InteropServices;
 
 namespace VsChromiumPackage.ChromeDebug {
   // The form that is displayed to allow the user to select processes to attach to.  Note that we
@@ -20,7 +24,7 @@ namespace VsChromiumPackage.ChromeDebug {
     private class ProcessViewItem : ListViewItem {
       public ProcessViewItem() {
         Category = ProcessCategory.Other;
-        MachineType = LowLevelTypes.MachineType.UNKNOWN;
+        MachineType = MachineType.Unknown;
       }
 
       public string Exe;
@@ -30,9 +34,9 @@ namespace VsChromiumPackage.ChromeDebug {
       public string DisplayCmdLine;
       public string[] CmdLineArgs;
       public ProcessCategory Category;
-      public LowLevelTypes.MachineType MachineType;
+      public MachineType MachineType;
 
-      public ProcessDetail Detail;
+      public NtProcess Process;
     }
 
     private readonly Dictionary<ProcessCategory, List<ProcessViewItem>> _loadedProcessTable = null;
@@ -96,12 +100,12 @@ namespace VsChromiumPackage.ChromeDebug {
       foreach (var p in processes) {
         var item = new ProcessViewItem();
         try {
-          item.Detail = new ProcessDetail(p.Id);
-          if (item.Detail.CanReadPeb && item.Detail.CommandLine != null) {
-            item.CmdLineArgs = Utility.SplitArgs(item.Detail.CommandLine);
+          item.Process = new NtProcess(p.Id);
+          if (item.Process.CanReadPeb && item.Process.CommandLine != null) {
+            item.CmdLineArgs = ChromeUtility.SplitArgs(item.Process.CommandLine);
             item.DisplayCmdLine = GetFilteredCommandLineString(item.CmdLineArgs);
           }
-          item.MachineType = item.Detail.MachineType;
+          item.MachineType = item.Process.MachineType;
         }
         catch {
           // Generally speaking, an exception here means the process is privileged and we cannot
@@ -111,7 +115,7 @@ namespace VsChromiumPackage.ChromeDebug {
 
         // If we don't have the machine type, its privilege level is high enough that we won't be
         // able to attach a debugger to it anyway, so skip it.
-        if (item.MachineType == LowLevelTypes.MachineType.UNKNOWN)
+        if (item.MachineType == MachineType.Unknown)
           continue;
 
         item.ProcessId = p.Id;
@@ -119,14 +123,23 @@ namespace VsChromiumPackage.ChromeDebug {
         item.Title = p.MainWindowTitle;
         item.Exe = p.ProcessName;
         if (item.CmdLineArgs != null)
-          item.Category = DetermineProcessCategory(item.Detail.Win32ProcessImagePath,
+          item.Category = DetermineProcessCategory(item.Process.Win32ProcessImagePath,
                                                    item.CmdLineArgs);
 
-        var icon = item.Detail.SmallIcon;
+        var icon = LoadIconForProcess(item.Process);
         var items = _loadedProcessTable[item.Category];
         item.Group = _processGroups[item.Category];
         items.Add(item);
       }
+    }
+
+    private Icon LoadIconForProcess(NtProcess process) {
+      SHFileInfo info = new SHFileInfo(true);
+      SHGFI flags = SHGFI.Icon | SHGFI.SmallIcon | SHGFI.OpenIcon | SHGFI.UseFileAttributes;
+      int cbFileInfo = Marshal.SizeOf(info);
+      VsChromiumCore.Win32.Shell.NativeMethods.SHGetFileInfo(
+        process.Win32ProcessImagePath, 256, ref info, (uint)cbFileInfo, (uint)flags);
+      return Icon.FromHandle(info.hIcon);
     }
 
     // Filter the command line arguments to remove extraneous arguments that we don't wish to
@@ -175,7 +188,7 @@ namespace VsChromiumPackage.ChromeDebug {
         item.SubItems.Add(item.DisplayCmdLine);
         listViewProcesses.Items.Add(item);
 
-        Icon icon = item.Detail.SmallIcon;
+        Icon icon = LoadIconForProcess(item.Process);
         if (icon != null) {
           item.ImageList.Images.Add(icon);
           item.ImageIndex = item.ImageList.Images.Count - 1;

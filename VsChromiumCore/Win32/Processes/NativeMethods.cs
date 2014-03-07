@@ -9,6 +9,11 @@ using VsChromiumCore.Win32.Interop;
 
 namespace VsChromiumCore.Win32.Processes {
   static class NativeMethods {
+    [DllImport("shell32.dll", SetLastError = true)]
+    public static extern IntPtr CommandLineToArgvW(
+      [MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine,
+      out int pNumArgs);
+
     [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
     public static extern IntPtr GetCurrentProcess();
 
@@ -26,6 +31,24 @@ namespace VsChromiumCore.Win32.Processes {
       ProcessInformation lpProcessInformation);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool ReadProcessMemory(SafeProcessHandle hProcess, IntPtr lpBaseAddress, [Out] byte[] buffer, UInt32 size, out UInt32 lpNumberOfBytesRead);
+    public static extern IntPtr OpenProcess(
+      [MarshalAs(UnmanagedType.U4)] ProcessAccessFlags dwDesiredAccess,
+      [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
+      int dwProcessId);
+
+    [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Unicode)]
+    public static extern uint QueryFullProcessImageName(
+      SafeProcessHandle hProcess,
+      [MarshalAs(UnmanagedType.U4)] ProcessQueryImageNameMode flags,
+      [Out] StringBuilder lpImageName, ref int size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ReadProcessMemory(SafeProcessHandle hProcess, IntPtr lpBaseAddress,
+      [Out] byte[] buffer, uint size, out UInt32 lpNumberOfBytesRead);
+
+    [DllImport("ntdll.dll", SetLastError = true)]
+    public static extern int NtQueryInformationProcess(SafeProcessHandle hProcess, ProcessInfoClass pic, ref ProcessBasicInformation pbi, int cb, out int pSize);
   }
 }

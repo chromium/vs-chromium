@@ -8,6 +8,8 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using VsChromiumPackage.Package;
 using VsChromiumPackage.Package.CommandHandler;
+using VsChromiumCore.Utility;
+using VsChromiumCore.Processes;
 
 
 namespace VsChromiumPackage.ChromeDebug
@@ -31,18 +33,18 @@ namespace VsChromiumPackage.ChromeDebug
 
       HashSet<int> roots = new HashSet<int>();
       foreach (EnvDTE90.Process3 p in dte.Debugger.DebuggedProcesses) {
-        if (p.IsBeingDebugged && Utility.IsChromeProcess(p.Name))
+        if (p.IsBeingDebugged && ChromeUtility.IsChromeProcess(p.Name))
           roots.Add(p.ProcessID);
       }
 
       foreach (EnvDTE90.Process3 p in dte.Debugger.LocalProcesses)
       {
         System.Diagnostics.Debug.WriteLine("Found process {0}", p.ProcessID);
-        if (p.IsBeingDebugged || !Utility.IsChromeProcess(p.Name))
+        if (p.IsBeingDebugged || !ChromeUtility.IsChromeProcess(p.Name))
           continue;
 
-        using (ProcessDetail detail = new ProcessDetail(p.ProcessID)) {
-          if (!roots.Contains(detail.ParentProcessId))
+        using (NtProcess process = new NtProcess(p.ProcessID)) {
+          if (!roots.Contains(process.ParentProcessId))
             continue;
 
           p.Attach();

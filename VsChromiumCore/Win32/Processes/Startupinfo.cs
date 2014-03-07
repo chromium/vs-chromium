@@ -8,7 +8,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Processes {
   [StructLayout(LayoutKind.Sequential)]
-  class Startupinfo {
+  public class Startupinfo {
     public int cb;
     public IntPtr lpReserved = IntPtr.Zero;
     public IntPtr lpDesktop = IntPtr.Zero;

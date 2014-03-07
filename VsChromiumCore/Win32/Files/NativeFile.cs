@@ -8,7 +8,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using VsChromiumCore.Win32.Memory;
-using Microsoft.Win32.SafeHandles;
 
 namespace VsChromiumCore.Win32.Files {
   public static class NativeFile {

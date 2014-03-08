@@ -168,6 +168,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChromeDebug\ColumnSorter.cs" />
+    <Compile Include="ChromeDebug\NumericStringComparer.cs" />
+    <Compile Include="ChromeDebug\ProcessViewItem.cs" />
     <Compile Include="Features\AutoUpdate\IUpdateNotificationListener.cs" />
     <Compile Include="Features\AutoUpdate\UpdateInfo.cs" />
     <Compile Include="Features\AutoUpdate\UpdateNotificationListener.cs" />

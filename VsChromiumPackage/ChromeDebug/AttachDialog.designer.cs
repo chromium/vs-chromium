@@ -32,7 +32,7 @@ namespace VsChromiumPackage.ChromeDebug {
       this.columnHeaderPid = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeaderTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeaderType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.columnHeaderSession = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+      this.columnHeaderArch = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeaderCmdLine = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.buttonAttach = new System.Windows.Forms.Button();
       this.buttonCancel = new System.Windows.Forms.Button();
@@ -52,7 +52,7 @@ namespace VsChromiumPackage.ChromeDebug {
             this.columnHeaderPid,
             this.columnHeaderTitle,
             this.columnHeaderType,
-            this.columnHeaderSession,
+            this.columnHeaderArch,
             this.columnHeaderCmdLine});
       this.listViewProcesses.FullRowSelect = true;
       this.listViewProcesses.Location = new System.Drawing.Point(14, 27);
@@ -61,6 +61,7 @@ namespace VsChromiumPackage.ChromeDebug {
       this.listViewProcesses.TabIndex = 0;
       this.listViewProcesses.UseCompatibleStateImageBehavior = false;
       this.listViewProcesses.View = System.Windows.Forms.View.Details;
+      this.listViewProcesses.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listViewProcesses_ColumnClick);
       // 
       // columnHeaderProcess
       // 
@@ -80,12 +81,11 @@ namespace VsChromiumPackage.ChromeDebug {
       // columnHeaderType
       // 
       this.columnHeaderType.Text = "Type";
-      this.columnHeaderType.Width = 36;
       // 
-      // columnHeaderSession
+      // columnHeaderArch
       // 
-      this.columnHeaderSession.Text = "Session";
-      this.columnHeaderSession.Width = 49;
+      this.columnHeaderArch.Text = "Architecture";
+      this.columnHeaderArch.Width = 77;
       // 
       // columnHeaderCmdLine
       // 
@@ -171,9 +171,9 @@ namespace VsChromiumPackage.ChromeDebug {
     private System.Windows.Forms.ColumnHeader columnHeaderPid;
     private System.Windows.Forms.ColumnHeader columnHeaderTitle;
     private System.Windows.Forms.ColumnHeader columnHeaderCmdLine;
-    private System.Windows.Forms.ColumnHeader columnHeaderType;
-    private System.Windows.Forms.ColumnHeader columnHeaderSession;
+    private System.Windows.Forms.ColumnHeader columnHeaderArch;
     private System.Windows.Forms.GroupBox groupBox1;
     private System.Windows.Forms.Button buttonRefresh;
+    private System.Windows.Forms.ColumnHeader columnHeaderType;
   }
 }

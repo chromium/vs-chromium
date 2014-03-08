@@ -21,46 +21,13 @@ namespace VsChromiumPackage.ChromeDebug {
   // on a different thread, although I don't fully understand), so any access to the DTE object
   // will have to be done through events that get posted back to the main package thread.
   public partial class AttachDialog : Form {
-    private class ProcessViewItem : ListViewItem {
-      public ProcessViewItem() {
-        Category = ProcessCategory.Other;
-        MachineType = MachineType.Unknown;
-      }
-
-      public string Exe;
-      public int ProcessId;
-      public int SessionId;
-      public string Title;
-      public string DisplayCmdLine;
-      public string[] CmdLineArgs;
-      public ProcessCategory Category;
-      public MachineType MachineType;
-
-      public NtProcess Process;
-    }
-
-    private readonly Dictionary<ProcessCategory, List<ProcessViewItem>> _loadedProcessTable = null;
-    private readonly Dictionary<ProcessCategory, ListViewGroup> _processGroups = null;
+    private ColumnSorter _columnSorter;
 
     public AttachDialog() {
       InitializeComponent();
 
-      _loadedProcessTable = new Dictionary<ProcessCategory, List<ProcessViewItem>>();
-      _processGroups = new Dictionary<ProcessCategory, ListViewGroup>();
-
-      // Create and initialize the groups and process lists only once. On a reset
-      // we don't clear the groups manually, clearing the list view should clear the
-      // groups. And we don't clear the entire processes_ dictionary, only the
-      // individual buckets inside the dictionary.
-      foreach (object value in Enum.GetValues(typeof(ProcessCategory))) {
-        var category = (ProcessCategory)value;
-
-        var group = new ListViewGroup(category.ToGroupTitle());
-        _processGroups[category] = group;
-        listViewProcesses.Groups.Add(group);
-
-        _loadedProcessTable[category] = new List<ProcessViewItem>();
-      }
+      _columnSorter = new ColumnSorter();
+      listViewProcesses.ListViewItemSorter = _columnSorter;
     }
 
     // Provides an iterator that evaluates to the process ids of the entries that are selected
@@ -74,6 +41,11 @@ namespace VsChromiumPackage.ChromeDebug {
 
     private void AttachDialog_Load(object sender, EventArgs e) {
       RepopulateListView();
+
+      // Initially sort by process category.
+      _columnSorter.Direction = SortOrder.Ascending;
+      _columnSorter.SortColumn = 3;
+      listViewProcesses.Sort();
     }
 
     // Remove command line arguments that we aren't interested in displaying as part of the command
@@ -92,10 +64,6 @@ namespace VsChromiumPackage.ChromeDebug {
     }
 
     private void ReloadNativeProcessInfo() {
-      foreach (var list in _loadedProcessTable.Values) {
-        list.Clear();
-      }
-
       Process[] chromes = Process.GetProcessesByName("chrome");
       Process[] delegate_executes = Process.GetProcessesByName("delegate_execute");
       Process[] processes = new Process[chromes.Length + delegate_executes.Length];
@@ -127,10 +95,20 @@ namespace VsChromiumPackage.ChromeDebug {
                                                      item.CmdLineArgs);
         }
 
-        var icon = LoadIconForProcess(item.Process);
-        var items = _loadedProcessTable[item.Category];
-        item.Group = _processGroups[item.Category];
-        items.Add(item);
+        item.Text = item.Exe;
+        item.SubItems.Add(item.ProcessId.ToString());
+        item.SubItems.Add(item.Title);
+        item.SubItems.Add(item.Category.ToString());
+        item.SubItems.Add(item.MachineType.ToString());
+        item.SubItems.Add(item.DisplayCmdLine);
+
+        listViewProcesses.Items.Add(item);
+
+        // Add the item to the list view before setting its image,
+        // otherwise the ImageList field will be null.
+        Icon icon = LoadIconForProcess(item.Process);
+        item.ImageList.Images.Add(icon);
+        item.ImageIndex = item.ImageList.Images.Count - 1;
       }
     }
 
@@ -179,24 +157,6 @@ namespace VsChromiumPackage.ChromeDebug {
         return ProcessCategory.Other;
     }
 
-    private void InsertCategoryItems(ProcessCategory category) {
-      foreach (ProcessViewItem item in _loadedProcessTable[category]) {
-        item.Text = item.Exe;
-        item.SubItems.Add(item.ProcessId.ToString());
-        item.SubItems.Add(item.Title);
-        item.SubItems.Add(item.MachineType.ToString());
-        item.SubItems.Add(item.SessionId.ToString());
-        item.SubItems.Add(item.DisplayCmdLine);
-        listViewProcesses.Items.Add(item);
-
-        Icon icon = LoadIconForProcess(item.Process);
-        if (icon != null) {
-          item.ImageList.Images.Add(icon);
-          item.ImageIndex = item.ImageList.Images.Count - 1;
-        }
-      }
-    }
-
     private void AutoResizeColumns() {
       // First adjust to the width of the headers, since it's fast.
       listViewProcesses.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
@@ -234,14 +194,6 @@ namespace VsChromiumPackage.ChromeDebug {
 
       ReloadNativeProcessInfo();
 
-      InsertCategoryItems(ProcessCategory.Browser);
-      InsertCategoryItems(ProcessCategory.Renderer);
-      InsertCategoryItems(ProcessCategory.Gpu);
-      InsertCategoryItems(ProcessCategory.Plugin);
-      InsertCategoryItems(ProcessCategory.MetroViewer);
-      InsertCategoryItems(ProcessCategory.Service);
-      InsertCategoryItems(ProcessCategory.DelegateExecute);
-
       AutoResizeColumns();
     }
 
@@ -252,6 +204,20 @@ namespace VsChromiumPackage.ChromeDebug {
     private void buttonAttach_Click(object sender, EventArgs e) {
       System.Diagnostics.Debug.WriteLine("Closing dialog.");
       Close();
+    }
+
+    private void listViewProcesses_ColumnClick(object sender, ColumnClickEventArgs e) {
+      if (e.Column == _columnSorter.SortColumn) {
+        if (_columnSorter.Direction == SortOrder.Ascending)
+          _columnSorter.Direction = SortOrder.Descending;
+        else
+          _columnSorter.Direction = SortOrder.Ascending;
+      } else {
+        _columnSorter.SortColumn = e.Column;
+        _columnSorter.Direction = SortOrder.Ascending;
+      }
+
+      listViewProcesses.Sort();
     }
   }
 }

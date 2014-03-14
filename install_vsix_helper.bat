@@ -2,7 +2,7 @@ REM Copyright 2013 The Chromium Authors. All rights reserved.
 REM Use of this source code is governed by a BSD-style license that can be
 REM found in the LICENSE file.
 
-set VSIX_ID=VsChromiumPackage..3658a9c7-c98d-48eb-8144-53385ed9f11c
+set VSIX_ID=8735269e-661f-4a39-95d3-02ef6572e956
 
 REM ---------------------------------------------------
 REM Detect location of VSIXInstaller.exe
@@ -46,7 +46,7 @@ REM Install
 REM ---------------------------------------------------
 REM Detect location of VSIX file
 set PROJECT_LOCATION=%~dp0
-if exist "%PROJECT_LOCATION%VsChromiumPackage\bin\%CONFIG_NAME%\VsChromiumPackage.vsix" set VSIX_FILE="%PROJECT_LOCATION%VsChromiumPackage\bin\%CONFIG_NAME%\VsChromiumPackage.vsix"
+if exist "%PROJECT_LOCATION%Binaries\%CONFIG_NAME%\VsChromiumPackage.vsix" set VSIX_FILE="%PROJECT_LOCATION%Binaries\%CONFIG_NAME%\VsChromiumPackage.vsix"
 if "%VSIX_FILE%"=="" goto vsix_file_not_found
 
 "%VSIX_INSTALLER%" /skuName:Pro /skuVersion:%SKU_VERSION% /u:%VSIX_ID% 

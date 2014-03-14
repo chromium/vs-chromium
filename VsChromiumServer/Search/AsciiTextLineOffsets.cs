@@ -5,7 +5,7 @@ using System.Linq;
 using VsChromiumCore.Ipc.TypedMessages;
 using VsChromiumCore.Win32.Memory;
 using VsChromiumCore.Win32.Strings;
-using VsChromiumServer.VsChromiumNative;
+using VsChromiumServer.NativeInterop;
 
 namespace VsChromiumServer.Search {
   public unsafe class AsciiTextLineOffsets {

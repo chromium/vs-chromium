@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using VsChromiumCore.Win32.Memory;
-using VsChromiumServer.VsChromiumNative;
+using VsChromiumServer.NativeInterop;
 
 namespace VsChromiumServer.Search {
   public class SearchContentsData {

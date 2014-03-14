@@ -89,12 +89,10 @@ namespace VsChromiumPackage.ServerProxy {
       var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       yield return Path.Combine(folder, _proxyServerName);
 
-      var serverFolder = Path.Combine(folder, "..");
-      serverFolder = Path.Combine(serverFolder, "..");
-      serverFolder = Path.Combine(serverFolder, _serverName);
+      var serverFolder = Path.Combine(folder, "..", "..");
 
-      yield return Path.Combine(serverFolder, "bin\\Debug");
-      yield return Path.Combine(serverFolder, "bin\\Release");
+      yield return Path.Combine(serverFolder, "bin\\Debug", _serverName);
+      yield return Path.Combine(serverFolder, "bin\\Release", _serverName);
     }
 
     public int Priority { get { return 0; } }

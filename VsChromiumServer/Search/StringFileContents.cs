@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromiumCore;
 
 namespace VsChromiumServer.Search {
   public class StringFileContents : FileContents {
@@ -20,6 +21,7 @@ namespace VsChromiumServer.Search {
     public static StringFileContents Empty { get { return _empty; } }
 
     public override List<int> Search(SearchContentsData searchContentsData) {
+      Logger.Log("Searching file contents");
       List<int> result = null;
       var index = 0;
       while (true) {

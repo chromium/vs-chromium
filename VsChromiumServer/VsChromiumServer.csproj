@@ -17,21 +17,29 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\VsChromiumPackage\bin\Debug\</OutputPath>
+    <OutputPath>..\Binaries\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\VsChromiumPackage\bin\Release\</OutputPath>
+    <OutputPath>..\Binaries\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="protobuf-net, Version=2.0.0.640, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
@@ -102,24 +110,16 @@
     <Compile Include="Projects\ProjectFile\ProjectFileProject.cs" />
     <Compile Include="Projects\SearchableFilesFilter.cs" />
     <Compile Include="Search\AsciiTextLineOffsets.cs" />
-    <Compile Include="VsChromiumNative\Pointers.cs" />
     <Compile Include="Threads\ITaskQueue.cs" />
     <Compile Include="Threads\ITaskQueueFactory.cs" />
     <Compile Include="Threads\TaskQueue.cs" />
     <Compile Include="Threads\TaskQueueFactory.cs" />
-    <Compile Include="VsChromiumNative\AsciiStringSearchNative.cs" />
-    <Compile Include="VsChromiumNative\SafeSearchHandle.cs" />
-    <Compile Include="VsChromiumNative\AsciiStringSearchBndm64.cs" />
     <Compile Include="Search\FileContentsFactory.cs" />
     <Compile Include="Search\FileSearchResult.cs" />
     <Compile Include="Search\FileSystemTreeVisitor.cs" />
     <Compile Include="Search\IFileContentsFactory.cs" />
     <Compile Include="Search\ISearchEngine.cs" />
     <Compile Include="Search\SearchContentsData.cs" />
-    <Compile Include="VsChromiumNative\AsciiStringSearchAlgorithm.cs" />
-    <Compile Include="VsChromiumNative\AsciiStringSearchBndm32.cs" />
-    <Compile Include="VsChromiumNative\AsciiStringSearchBoyerMoore.cs" />
-    <Compile Include="VsChromiumNative\AsciiStringSearchStrStr.cs" />
     <Compile Include="Search\TaskResultCounter.cs" />
     <Compile Include="Search\UTF16FileContents.cs" />
     <Compile Include="Search\AsciiFileContents.cs" />
@@ -150,7 +150,6 @@
     <Compile Include="Server.cs" />
     <Compile Include="Threads\ThreadObject.cs" />
     <Compile Include="Threads\ThreadPool.cs" />
-    <Compile Include="VsChromiumNative\NativeMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Configuration\ChromiumEnlistmentDetection.patterns">
@@ -171,12 +170,17 @@
     <None Include="Configuration\SearchableFiles.include">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Key.snk" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VsChromiumCore\VsChromiumCore.csproj">
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
       <Name>VsChromiumCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VsChromiumServerNativeInterop\VsChromiumServerNativeInterop.csproj">
+      <Project>{a38dc74b-820c-49a5-a732-23170d953632}</Project>
+      <Name>VsChromiumServerNativeInterop</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

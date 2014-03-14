@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\Binaries\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -27,16 +27,22 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\Binaries\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.Text.Data, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
@@ -72,20 +78,17 @@
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
       <Name>VsChromiumCore</Name>
     </ProjectReference>
-    <ProjectReference Include="..\VsChromiumHost\VsChromiumHost.csproj">
-      <Project>{B6FF4670-B5B0-4724-9895-AF3C5E8C68C0}</Project>
-      <Name>VsChromiumHost</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\VsChromiumServer\VsChromiumServer.csproj">
-      <Project>{F33514B3-E491-4599-AF71-EABCDD70234F}</Project>
-      <Name>VsChromiumServer</Name>
-    </ProjectReference>
     <ProjectReference Include="..\VsChromiumPackage\VsChromiumPackage.csproj">
-      <Project>{8ED06AA3-93DF-48FE-97C0-F516E99FDB32}</Project>
+      <Project>{8ed06aa3-93df-48fe-97c0-f516e99fdb32}</Project>
       <Name>VsChromiumPackage</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VsChromiumServerNativeInterop\VsChromiumServerNativeInterop.csproj">
+      <Project>{a38dc74b-820c-49a5-a732-23170d953632}</Project>
+      <Name>VsChromiumServerNativeInterop</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Key.snk" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

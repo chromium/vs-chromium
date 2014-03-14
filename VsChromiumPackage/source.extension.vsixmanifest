@@ -9,12 +9,14 @@
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[12.0]" />
   </Installation>
   <Dependencies>
-    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
-    <Dependency Id="Microsoft.VisualStudio.MPF.12.0" DisplayName="Visual Studio MPF 12.0" d:Source="Installed" Version="[12.0]" />
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" Version="4.5" />
+    <Dependency Id="TestWindow.Microsoft.0771d463-d74d-4e95-aac2-39d3c7ec1f97" IsRequired="false" DisplayName="Test Explorer" Version="11.0" />
   </Dependencies>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-    <Asset Type="MefComponent" Path="|%CurrentProject%|" />
-    <Asset Type="MefComponent" Path="|VsChromiumCore|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|%CurrentProject%|"/>
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromiumCore|" AssemblyName="|VsChromiumCore;AssemblyName|"/>
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|%CurrentProject%|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromiumCore|" />
   </Assets>
 </PackageManifest>

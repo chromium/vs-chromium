@@ -25,7 +25,9 @@ namespace VsChromiumCore.Win32.Files {
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     public static extern SafeFileHandle CreateFile(
       [MarshalAs(UnmanagedType.LPTStr)] string filename,
-      [MarshalAs(UnmanagedType.U4)] FileAccess access,
+      // Strangely, System.IO.FileAccess doesn't map directly to the values expected by
+      // CreateFile, so we must use our own enum.
+      [MarshalAs(UnmanagedType.U4)] NativeAccessFlags access,
       [MarshalAs(UnmanagedType.U4)] FileShare share,
       IntPtr securityAttributes,
       // optional SECURITY_ATTRIBUTES struct or IntPtr.Zero

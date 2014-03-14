@@ -23,7 +23,7 @@ namespace VsChromiumCore.Win32.Files {
 
     private static SafeHeapBlockHandle ReadFileWorker(SlimFileInfo fileInfo, int trailingBytes) {
       using (
-        var fileHandle = NativeMethods.CreateFile(fileInfo.FullName, FileAccess.Read, FileShare.Read, IntPtr.Zero,
+        var fileHandle = NativeMethods.CreateFile(fileInfo.FullName, NativeAccessFlags.GenericRead, FileShare.Read, IntPtr.Zero,
                                                   FileMode.Open, 0, IntPtr.Zero)) {
         if (fileHandle.IsInvalid)
           throw new Win32Exception();

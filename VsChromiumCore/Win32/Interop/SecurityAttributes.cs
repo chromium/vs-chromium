@@ -11,6 +11,7 @@ namespace VsChromiumCore.Win32.Interop {
   class SecurityAttributes {
     public int nLength = 12;
     public SafeLocalMemHandle lpSecurityDescriptor = new SafeLocalMemHandle(IntPtr.Zero, false);
+    [MarshalAs(UnmanagedType.Bool)]
     public bool bInheritHandle;
   }
 }

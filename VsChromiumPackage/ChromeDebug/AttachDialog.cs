@@ -9,7 +9,11 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using VsChromiumPackage.ChromeDebug.LowLevel;
+using VsChromiumCore.Win32.Processes;
+using VsChromiumCore.Processes;
+using VsChromiumCore.Utility;
+using VsChromiumCore.Win32.Shell;
+using System.Runtime.InteropServices;
 
 namespace VsChromiumPackage.ChromeDebug {
   // The form that is displayed to allow the user to select processes to attach to.  Note that we
@@ -17,46 +21,13 @@ namespace VsChromiumPackage.ChromeDebug {
   // on a different thread, although I don't fully understand), so any access to the DTE object
   // will have to be done through events that get posted back to the main package thread.
   public partial class AttachDialog : Form {
-    private class ProcessViewItem : ListViewItem {
-      public ProcessViewItem() {
-        Category = ProcessCategory.Other;
-        MachineType = LowLevelTypes.MachineType.UNKNOWN;
-      }
-
-      public string Exe;
-      public int ProcessId;
-      public int SessionId;
-      public string Title;
-      public string DisplayCmdLine;
-      public string[] CmdLineArgs;
-      public ProcessCategory Category;
-      public LowLevelTypes.MachineType MachineType;
-
-      public ProcessDetail Detail;
-    }
-
-    private readonly Dictionary<ProcessCategory, List<ProcessViewItem>> _loadedProcessTable = null;
-    private readonly Dictionary<ProcessCategory, ListViewGroup> _processGroups = null;
+    private ColumnSorter _columnSorter;
 
     public AttachDialog() {
       InitializeComponent();
 
-      _loadedProcessTable = new Dictionary<ProcessCategory, List<ProcessViewItem>>();
-      _processGroups = new Dictionary<ProcessCategory, ListViewGroup>();
-
-      // Create and initialize the groups and process lists only once. On a reset
-      // we don't clear the groups manually, clearing the list view should clear the
-      // groups. And we don't clear the entire processes_ dictionary, only the
-      // individual buckets inside the dictionary.
-      foreach (object value in Enum.GetValues(typeof(ProcessCategory))) {
-        var category = (ProcessCategory)value;
-
-        var group = new ListViewGroup(category.ToGroupTitle());
-        _processGroups[category] = group;
-        listViewProcesses.Groups.Add(group);
-
-        _loadedProcessTable[category] = new List<ProcessViewItem>();
-      }
+      _columnSorter = new ColumnSorter();
+      listViewProcesses.ListViewItemSorter = _columnSorter;
     }
 
     // Provides an iterator that evaluates to the process ids of the entries that are selected
@@ -70,6 +41,11 @@ namespace VsChromiumPackage.ChromeDebug {
 
     private void AttachDialog_Load(object sender, EventArgs e) {
       RepopulateListView();
+
+      // Initially sort by process category.
+      _columnSorter.Direction = SortOrder.Ascending;
+      _columnSorter.SortColumn = 3;
+      listViewProcesses.Sort();
     }
 
     // Remove command line arguments that we aren't interested in displaying as part of the command
@@ -88,20 +64,21 @@ namespace VsChromiumPackage.ChromeDebug {
     }
 
     private void ReloadNativeProcessInfo() {
-      foreach (var list in _loadedProcessTable.Values) {
-        list.Clear();
-      }
+      Process[] chromes = Process.GetProcessesByName("chrome");
+      Process[] delegate_executes = Process.GetProcessesByName("delegate_execute");
+      Process[] processes = new Process[chromes.Length + delegate_executes.Length];
+      chromes.CopyTo(processes, 0);
+      delegate_executes.CopyTo(processes, chromes.Length);
 
-      Process[] processes = Process.GetProcesses();
-      foreach (var p in processes) {
+      foreach (Process p in processes) {
         var item = new ProcessViewItem();
         try {
-          item.Detail = new ProcessDetail(p.Id);
-          if (item.Detail.CanReadPeb && item.Detail.CommandLine != null) {
-            item.CmdLineArgs = Utility.SplitArgs(item.Detail.CommandLine);
+          item.Process = new NtProcess(p.Id);
+          if (item.Process.CommandLine != null) {
+            item.CmdLineArgs = ChromeUtility.SplitArgs(item.Process.CommandLine);
             item.DisplayCmdLine = GetFilteredCommandLineString(item.CmdLineArgs);
           }
-          item.MachineType = item.Detail.MachineType;
+          item.MachineType = item.Process.MachineType;
         }
         catch {
           // Generally speaking, an exception here means the process is privileged and we cannot
@@ -109,24 +86,39 @@ namespace VsChromiumPackage.ChromeDebug {
           // information that the Framework gave us in the Process structure.
         }
 
-        // If we don't have the machine type, its privilege level is high enough that we won't be
-        // able to attach a debugger to it anyway, so skip it.
-        if (item.MachineType == LowLevelTypes.MachineType.UNKNOWN)
-          continue;
-
         item.ProcessId = p.Id;
         item.SessionId = p.SessionId;
         item.Title = p.MainWindowTitle;
         item.Exe = p.ProcessName;
-        if (item.CmdLineArgs != null)
-          item.Category = DetermineProcessCategory(item.Detail.Win32ProcessImagePath,
-                                                   item.CmdLineArgs);
+        if (item.CmdLineArgs != null) {
+            item.Category = DetermineProcessCategory(item.Process.Win32ProcessImagePath,
+                                                     item.CmdLineArgs);
+        }
 
-        var icon = item.Detail.SmallIcon;
-        var items = _loadedProcessTable[item.Category];
-        item.Group = _processGroups[item.Category];
-        items.Add(item);
+        item.Text = item.Exe;
+        item.SubItems.Add(item.ProcessId.ToString());
+        item.SubItems.Add(item.Title);
+        item.SubItems.Add(item.Category.ToString());
+        item.SubItems.Add(item.MachineType.ToString());
+        item.SubItems.Add(item.DisplayCmdLine);
+
+        listViewProcesses.Items.Add(item);
+
+        // Add the item to the list view before setting its image,
+        // otherwise the ImageList field will be null.
+        Icon icon = LoadIconForProcess(item.Process);
+        item.ImageList.Images.Add(icon);
+        item.ImageIndex = item.ImageList.Images.Count - 1;
       }
+    }
+
+    private Icon LoadIconForProcess(NtProcess process) {
+      SHFileInfo info = new SHFileInfo(true);
+      SHGFI flags = SHGFI.Icon | SHGFI.SmallIcon | SHGFI.OpenIcon | SHGFI.UseFileAttributes;
+      int cbFileInfo = Marshal.SizeOf(info);
+      VsChromiumCore.Win32.Shell.NativeMethods.SHGetFileInfo(
+        process.Win32ProcessImagePath, 256, ref info, (uint)cbFileInfo, (uint)flags);
+      return Icon.FromHandle(info.hIcon);
     }
 
     // Filter the command line arguments to remove extraneous arguments that we don't wish to
@@ -163,24 +155,6 @@ namespace VsChromiumPackage.ChromeDebug {
           return ProcessCategory.Browser;
       } else
         return ProcessCategory.Other;
-    }
-
-    private void InsertCategoryItems(ProcessCategory category) {
-      foreach (ProcessViewItem item in _loadedProcessTable[category]) {
-        item.Text = item.Exe;
-        item.SubItems.Add(item.ProcessId.ToString());
-        item.SubItems.Add(item.Title);
-        item.SubItems.Add(item.MachineType.ToString());
-        item.SubItems.Add(item.SessionId.ToString());
-        item.SubItems.Add(item.DisplayCmdLine);
-        listViewProcesses.Items.Add(item);
-
-        Icon icon = item.Detail.SmallIcon;
-        if (icon != null) {
-          item.ImageList.Images.Add(icon);
-          item.ImageIndex = item.ImageList.Images.Count - 1;
-        }
-      }
     }
 
     private void AutoResizeColumns() {
@@ -220,16 +194,6 @@ namespace VsChromiumPackage.ChromeDebug {
 
       ReloadNativeProcessInfo();
 
-      InsertCategoryItems(ProcessCategory.Browser);
-      InsertCategoryItems(ProcessCategory.Renderer);
-      InsertCategoryItems(ProcessCategory.Gpu);
-      InsertCategoryItems(ProcessCategory.Plugin);
-      InsertCategoryItems(ProcessCategory.MetroViewer);
-      InsertCategoryItems(ProcessCategory.Service);
-      InsertCategoryItems(ProcessCategory.DelegateExecute);
-      if (!checkBoxOnlyChrome.Checked)
-        InsertCategoryItems(ProcessCategory.Other);
-
       AutoResizeColumns();
     }
 
@@ -242,14 +206,18 @@ namespace VsChromiumPackage.ChromeDebug {
       Close();
     }
 
-    private void checkBoxOnlyChrome_CheckedChanged(object sender, EventArgs e) {
-      if (!checkBoxOnlyChrome.Checked)
-        InsertCategoryItems(ProcessCategory.Other);
-      else {
-        foreach (ProcessViewItem item in _loadedProcessTable[ProcessCategory.Other]) {
-          listViewProcesses.Items.Remove(item);
-        }
+    private void listViewProcesses_ColumnClick(object sender, ColumnClickEventArgs e) {
+      if (e.Column == _columnSorter.SortColumn) {
+        if (_columnSorter.Direction == SortOrder.Ascending)
+          _columnSorter.Direction = SortOrder.Descending;
+        else
+          _columnSorter.Direction = SortOrder.Ascending;
+      } else {
+        _columnSorter.SortColumn = e.Column;
+        _columnSorter.Direction = SortOrder.Ascending;
       }
+
+      listViewProcesses.Sort();
     }
   }
 }

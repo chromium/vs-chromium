@@ -32,28 +32,27 @@ namespace VsChromiumPackage.ChromeDebug {
       this.columnHeaderPid = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeaderTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeaderType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.columnHeaderSession = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+      this.columnHeaderArch = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeaderCmdLine = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.buttonAttach = new System.Windows.Forms.Button();
       this.buttonCancel = new System.Windows.Forms.Button();
       this.groupBox1 = new System.Windows.Forms.GroupBox();
       this.buttonRefresh = new System.Windows.Forms.Button();
-      this.checkBoxOnlyChrome = new System.Windows.Forms.CheckBox();
       this.groupBox1.SuspendLayout();
       this.SuspendLayout();
       // 
       // listViewProcesses
       // 
       this.listViewProcesses.AllowColumnReorder = true;
-      this.listViewProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+      this.listViewProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this.listViewProcesses.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeaderProcess,
             this.columnHeaderPid,
             this.columnHeaderTitle,
             this.columnHeaderType,
-            this.columnHeaderSession,
+            this.columnHeaderArch,
             this.columnHeaderCmdLine});
       this.listViewProcesses.FullRowSelect = true;
       this.listViewProcesses.Location = new System.Drawing.Point(14, 27);
@@ -62,6 +61,7 @@ namespace VsChromiumPackage.ChromeDebug {
       this.listViewProcesses.TabIndex = 0;
       this.listViewProcesses.UseCompatibleStateImageBehavior = false;
       this.listViewProcesses.View = System.Windows.Forms.View.Details;
+      this.listViewProcesses.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listViewProcesses_ColumnClick);
       // 
       // columnHeaderProcess
       // 
@@ -81,12 +81,11 @@ namespace VsChromiumPackage.ChromeDebug {
       // columnHeaderType
       // 
       this.columnHeaderType.Text = "Type";
-      this.columnHeaderType.Width = 36;
       // 
-      // columnHeaderSession
+      // columnHeaderArch
       // 
-      this.columnHeaderSession.Text = "Session";
-      this.columnHeaderSession.Width = 49;
+      this.columnHeaderArch.Text = "Architecture";
+      this.columnHeaderArch.Width = 77;
       // 
       // columnHeaderCmdLine
       // 
@@ -118,8 +117,8 @@ namespace VsChromiumPackage.ChromeDebug {
       // 
       // groupBox1
       // 
-      this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+      this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this.groupBox1.Controls.Add(this.listViewProcesses);
       this.groupBox1.Location = new System.Drawing.Point(12, 27);
@@ -140,20 +139,6 @@ namespace VsChromiumPackage.ChromeDebug {
       this.buttonRefresh.UseVisualStyleBackColor = true;
       this.buttonRefresh.Click += new System.EventHandler(this.buttonRefresh_Click);
       // 
-      // checkBoxOnlyChrome
-      // 
-      this.checkBoxOnlyChrome.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.checkBoxOnlyChrome.AutoSize = true;
-      this.checkBoxOnlyChrome.Checked = true;
-      this.checkBoxOnlyChrome.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.checkBoxOnlyChrome.Location = new System.Drawing.Point(12, 561);
-      this.checkBoxOnlyChrome.Name = "checkBoxOnlyChrome";
-      this.checkBoxOnlyChrome.Size = new System.Drawing.Size(165, 17);
-      this.checkBoxOnlyChrome.TabIndex = 7;
-      this.checkBoxOnlyChrome.Text = "Only show Chrome processes";
-      this.checkBoxOnlyChrome.UseVisualStyleBackColor = true;
-      this.checkBoxOnlyChrome.CheckedChanged += new System.EventHandler(this.checkBoxOnlyChrome_CheckedChanged);
-      // 
       // AttachDialog
       // 
       this.AcceptButton = this.buttonAttach;
@@ -162,7 +147,6 @@ namespace VsChromiumPackage.ChromeDebug {
       this.CancelButton = this.buttonCancel;
       this.ClientSize = new System.Drawing.Size(940, 656);
       this.ControlBox = false;
-      this.Controls.Add(this.checkBoxOnlyChrome);
       this.Controls.Add(this.buttonRefresh);
       this.Controls.Add(this.groupBox1);
       this.Controls.Add(this.buttonCancel);
@@ -175,7 +159,6 @@ namespace VsChromiumPackage.ChromeDebug {
       this.Load += new System.EventHandler(this.AttachDialog_Load);
       this.groupBox1.ResumeLayout(false);
       this.ResumeLayout(false);
-      this.PerformLayout();
 
     }
 
@@ -188,10 +171,9 @@ namespace VsChromiumPackage.ChromeDebug {
     private System.Windows.Forms.ColumnHeader columnHeaderPid;
     private System.Windows.Forms.ColumnHeader columnHeaderTitle;
     private System.Windows.Forms.ColumnHeader columnHeaderCmdLine;
-    private System.Windows.Forms.ColumnHeader columnHeaderType;
-    private System.Windows.Forms.ColumnHeader columnHeaderSession;
+    private System.Windows.Forms.ColumnHeader columnHeaderArch;
     private System.Windows.Forms.GroupBox groupBox1;
     private System.Windows.Forms.Button buttonRefresh;
-    private System.Windows.Forms.CheckBox checkBoxOnlyChrome;
+    private System.Windows.Forms.ColumnHeader columnHeaderType;
   }
 }

@@ -8,6 +8,8 @@ namespace VsChromiumPackage.ChromeDebug {
     Renderer,
     Gpu,
     Plugin,
+    Ppapi,
+    PpapiBroker,
     DelegateExecute,
     MetroViewer,
     Service,
@@ -23,6 +25,8 @@ namespace VsChromiumPackage.ChromeDebug {
           return "Delegate Execute";
         case ProcessCategory.MetroViewer:
           return "Metro Viewer";
+        case ProcessCategory.PpapiBroker:
+          return "Ppapi Broker";
         default:
           return category.ToString();
       }

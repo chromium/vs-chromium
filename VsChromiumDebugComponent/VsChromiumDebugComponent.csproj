@@ -30,13 +30,13 @@
     <Compile Include="Engine\CppExpressionEvaluator.cs" />
     <Compile Include="Engine\EvaluationException.cs" />
     <Compile Include="Engine\IChildExpressionEnumerator.cs" />
-    <Compile Include="Engine\IExpressionEvaluator.cs" />
     <Compile Include="Engine\EvaluationDataItem.cs" />
     <Compile Include="Engine\DebugComponent.cs" />
     <Compile Include="Engine\Guids.cs" />
     <Compile Include="Engine\BasicVisualizer.cs" />
     <Compile Include="Engine\ChildEvaluator.cs" />
     <Compile Include="Engine\IVisualizerFactory.cs" />
+    <Compile Include="Visualizers\DateTimeVisualizer.cs" />
     <Compile Include="Visualizers\MyCustomTypeVisualizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Engine\Utility.cs" />

@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Debugger.Evaluation;
 using System.Diagnostics;
 
 
-namespace ChromeVis
+namespace VsChromium
 {
   public class EvaluationDataItem : DkmDataItem
   {

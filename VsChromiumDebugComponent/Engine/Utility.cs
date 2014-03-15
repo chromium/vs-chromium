@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.Debugger.Evaluation;
 
-namespace ChromeVis
+namespace VsChromium
 {
   public static class Utility
   {

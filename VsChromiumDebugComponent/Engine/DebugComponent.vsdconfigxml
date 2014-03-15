@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Configuration xmlns="http://schemas.microsoft.com/vstudio/vsdconfig/2008">
 
-  <DefineGuid Name="guidChromeDebugComponentId" Value="91D82E35-9390-4DA2-957A-E620D68256AC"/>
+  <DefineGuid Name="guidChromeDebugComponentId" Value="5D83386D-8A02-475F-8582-E93296A88DF6"/>
   <DefineGuid Name="guidChromeNativeVisualizerId" Value="5CBA1AEC-0096-4ACE-884E-DC9A0DC57D41"/>
+  <DefineGuid Name="guidDateTimeVisualizerId" Value="6A9197EE-22BD-433A-BF1B-9D8863D87058"/>
   <DefineGuid Name="guidForceDefaultVisualizationId" Value="8E832A91-B810-4229-BC71-D17B5D5283C6"/>
 
   <ManagedComponent
@@ -12,10 +13,10 @@
     
     <Class Name="VsChromium.DebugComponent">
       <Implements>
-        
         <InterfaceGroup>
           <Filter>
             <VisualizerId RequiredValue="guidChromeNativeVisualizerId"/>
+            <VisualizerId RequiredValue="guidDateTimeVisualizerId"/>
             <VisualizerId RequiredValue="guidForceDefaultVisualizationId"/>
           </Filter>
           <Interface Name="IDkmCustomVisualizer"/>

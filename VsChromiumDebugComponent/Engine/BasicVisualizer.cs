@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.Evaluation;
 
-namespace ChromeVis
+namespace VsChromium
 {
   // Summary:
   //     Base class for all custom visualizers.  Instances of all

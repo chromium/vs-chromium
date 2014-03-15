@@ -4,4 +4,7 @@
   <Type Name="MyCustomType">
     <CustomVisualizer VisualizerId="5CBA1AEC-0096-4ACE-884E-DC9A0DC57D41"/>
   </Type>
+  <Type Name="base::DateTime">
+    <CustomVisualizer VisualizerId="6A9197EE-22BD-433A-BF1B-9D8863D87058"/>
+  </Type>
 </AutoVisualizer>

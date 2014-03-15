@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Debugger.Evaluation;
 using Microsoft.VisualStudio.Debugger;
 
-namespace ChromeVis
+namespace VsChromium
 {
   public static class CppExpressionEvaluator
   {

@@ -8,15 +8,16 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.ComponentInterfaces;
 using Microsoft.VisualStudio.Debugger.Evaluation;
+using VsChromium.Visualizers;
 
-
-namespace ChromeVis
+namespace VsChromium
 {
     public class DebugComponent : IDkmCustomVisualizer
     {
       static DebugComponent()
       {
         VisualizerRegistrar.Register<MyCustomTypeVisualizer.Factory>(Guids.ChromeNativeVisualizerId);
+        VisualizerRegistrar.Register<DateTimeVisualizer.Factory>(Guids.DateTimeVisualizerId);
       }
 
       private bool TryGetRegisteredVisualizer(DkmVisualizedExpression expression, out BasicVisualizer visualizer, out DkmFailedEvaluationResult failureResult)

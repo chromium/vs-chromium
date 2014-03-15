@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Debugger.Evaluation;
 using Microsoft.VisualStudio.Debugger;
 
-namespace ChromeVis
+namespace VsChromium
 {
   // Summary:
   //     Interface for all child evaluators.  Implement this interface to provide custom

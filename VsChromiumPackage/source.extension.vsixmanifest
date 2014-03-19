@@ -4,6 +4,7 @@
     <Identity Id="a10cf7af-5f0a-4502-b44b-51ff1b7c8a87" Version="0.9.4" Language="en-US" Publisher="The Chromium Authors" />
     <DisplayName>VsChromium</DisplayName>
     <Description xml:space="preserve">Collection of tools to help contributing code to the Chromium project.</Description>
+    <License>LICENSE</License>
   </Metadata>
   <Installation InstalledByMsi="false">
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[12.0]" />

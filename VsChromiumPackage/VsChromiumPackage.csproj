@@ -10,10 +10,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>VsChromiumPackage</RootNamespace>
     <AssemblyName>VsChromiumPackage</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
     <FileAlignment>512</FileAlignment>
     <CopyVsixExtensionFiles>True</CopyVsixExtensionFiles>
+    <AssemblyOriginatorKeyFile>$(BuildSettingsPath)VsChromiumKey.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartArguments>/rootSuffix Exp</StartArguments>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
   </PropertyGroup>
@@ -324,7 +327,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Key.snk" />
     <None Include="packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
@@ -343,6 +345,18 @@
       <ResourceName>Menus.ctmenu</ResourceName>
       <SubType>Designer</SubType>
     </VSCTCompile>
+    <Content Include="$(OutputPath)\DebugComponent.vsdconfig">
+      <Link>DebugComponent.vsdconfig</Link>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>.</VSIXSubPath>
+    </Content>
+    <Content Include="$(BuildRoot)VsChromiumDebugComponent\Visualizers\Visualizers.natvis">
+      <Link>Visualizers.natvis</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>.</VSIXSubPath>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VsChromiumCore\VsChromiumCore.csproj">
@@ -350,6 +364,10 @@
       <Name>VsChromiumCore</Name>
       <IncludeOutputGroupsInVSIX>DebugSymbolsProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\VsChromiumDebugComponent\VsChromiumDebugComponent.csproj">
+      <Project>{58572470-7222-49be-850b-c6ce224a813a}</Project>
+      <Name>VsChromiumDebugComponent</Name>
     </ProjectReference>
     <ProjectReference Include="..\VsChromiumHost\VsChromiumHost.csproj">
       <Project>{B6FF4670-B5B0-4724-9895-AF3C5E8C68C0}</Project>

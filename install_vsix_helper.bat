@@ -2,7 +2,7 @@ REM Copyright 2013 The Chromium Authors. All rights reserved.
 REM Use of this source code is governed by a BSD-style license that can be
 REM found in the LICENSE file.
 
-set VSIX_ID=8735269e-661f-4a39-95d3-02ef6572e956
+set VSIX_ID=a10cf7af-5f0a-4502-b44b-51ff1b7c8a87
 
 REM ---------------------------------------------------
 REM Detect location of VSIXInstaller.exe

@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  
+  <Type Name="base::Time">
+    <CustomVisualizer VisualizerId="6A9197EE-22BD-433A-BF1B-9D8863D87058"/>
+  </Type>
+  <Type Name="base::TimeDelta">
+    <CustomVisualizer VisualizerId="D606FA28-9D68-4E2F-B423-F69E73C31C16"/>
+  </Type>
+</AutoVisualizer>

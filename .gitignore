@@ -12,6 +12,7 @@ TestResults
 *.suo
 *.user
 *.sln.docstates
+UpgradeLog.htm
 
 # Build results
 [Dd]ebug/

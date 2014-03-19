@@ -30,6 +30,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VsChromiumNative", "VsChrom
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsChromiumServerNativeInterop", "VsChromiumServerNativeInterop\VsChromiumServerNativeInterop.csproj", "{A38DC74B-820C-49A5-A732-23170D953632}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsChromiumDebugComponent", "VsChromiumDebugComponent\VsChromiumDebugComponent.csproj", "{58572470-7222-49BE-850B-C6CE224A813A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,10 @@ Global
 		{A38DC74B-820C-49A5-A732-23170D953632}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A38DC74B-820C-49A5-A732-23170D953632}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A38DC74B-820C-49A5-A732-23170D953632}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58572470-7222-49BE-850B-C6CE224A813A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58572470-7222-49BE-850B-C6CE224A813A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58572470-7222-49BE-850B-C6CE224A813A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58572470-7222-49BE-850B-C6CE224A813A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

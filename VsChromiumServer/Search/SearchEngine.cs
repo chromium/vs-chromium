@@ -20,7 +20,7 @@ using VsChromiumServer.FileSystemNames;
 using VsChromiumServer.ProgressTracking;
 using VsChromiumServer.Projects;
 using VsChromiumServer.Threads;
-using VsChromiumServer.VsChromiumNative;
+using VsChromiumServer.NativeInterop;
 
 namespace VsChromiumServer.Search {
   [Export(typeof(ISearchEngine))]

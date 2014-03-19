@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromiumCore.Win32.Memory;
-using VsChromiumServer.VsChromiumNative;
+using VsChromiumServer.NativeInterop;
 
 namespace VsChromiumTests {
   /// <summary>

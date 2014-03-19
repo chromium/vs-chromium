@@ -1,34 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Vsix xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
-  <Identifier Id="VsChromiumPackage..3658a9c7-c98d-48eb-8144-53385ed9f11c">
-    <Name>Vs Chromium</Name>
-    <Author>The Chromium Authors</Author>
-    <Version>0.9.6</Version>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="a10cf7af-5f0a-4502-b44b-51ff1b7c8a87" Version="0.9.6" Language="en-US" Publisher="The Chromium Authors" />
+    <DisplayName>VsChromium</DisplayName>
     <Description xml:space="preserve">Collection of tools to help contributing code to the Chromium project.</Description>
-    <Locale>1033</Locale>
     <License>LICENSE</License>
-    <InstalledByMsi>false</InstalledByMsi>
-    <SupportedProducts>
-      <VisualStudio Version="10.0">
-        <Edition>Pro</Edition>
-      </VisualStudio>
-      <VisualStudio Version="11.0">
-        <Edition>Pro</Edition>
-      </VisualStudio>
-      <VisualStudio Version="12.0">
-        <Edition>Pro</Edition>
-      </VisualStudio>
-    </SupportedProducts>
-    <SupportedFrameworkRuntimeEdition MinVersion="4.0" MaxVersion="4.0" />
-  </Identifier>
-  <References>
-    <Reference Id="Microsoft.VisualStudio.MPF" MinVersion="10.0">
-      <Name>Visual Studio MPF</Name>
-    </Reference>
-  </References>
-  <Content>
-    <VsPackage>|%CurrentProject%;PkgdefProjectOutputGroup|</VsPackage>
-    <MefComponent>|%CurrentProject%|</MefComponent>
-    <MefComponent>|VsChromiumCore|</MefComponent>
-  </Content>
-</Vsix>
+  </Metadata>
+  <Installation InstalledByMsi="false">
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[12.0]" />
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" Version="4.5" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|%CurrentProject%|"/>
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromiumCore|" AssemblyName="|VsChromiumCore;AssemblyName|"/>
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|%CurrentProject%|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromiumCore|" />
+  </Assets>
+</PackageManifest>

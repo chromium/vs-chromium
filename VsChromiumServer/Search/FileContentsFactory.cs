@@ -8,7 +8,7 @@ using System.IO;
 using VsChromiumCore;
 using VsChromiumCore.Win32.Files;
 using VsChromiumCore.Win32.Strings;
-using VsChromiumServer.VsChromiumNative;
+using VsChromiumServer.NativeInterop;
 
 namespace VsChromiumServer.Search {
   [Export(typeof(IFileContentsFactory))]
@@ -22,7 +22,7 @@ namespace VsChromiumServer.Search {
         var fileInfo = new SlimFileInfo(fullName);
         var heap = NativeFile.ReadFileNulTerminated(fileInfo);
         var textLen = (int)heap.ByteLength - 1;
-        var kind = VsChromiumNative.NativeMethods.Text_GetKind(heap.Pointer, textLen);
+        var kind = NativeInterop.NativeMethods.Text_GetKind(heap.Pointer, textLen);
 
         switch (kind) {
           case NativeMethods.TextKind.Ascii:

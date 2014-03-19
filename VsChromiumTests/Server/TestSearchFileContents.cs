@@ -54,11 +54,11 @@ namespace VsChromiumTests.Server {
     }
 
     private static void VerifySearchFileContentsResponse(
-      ITypedRequestProcessProxy server,
-      string searchPattern,
-      Options options,
-      DirectoryInfo chromiumDirectory,
-      int occurrenceCount) {
+        ITypedRequestProcessProxy server,
+        string searchPattern,
+        Options options,
+        DirectoryInfo chromiumDirectory,
+        int occurrenceCount) {
       var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
         SearchParams = new SearchParams {
           SearchString = searchPattern,

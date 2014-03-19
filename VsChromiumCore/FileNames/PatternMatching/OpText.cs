@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public class OpText : BaseOperator, IPrePassWontMatch {
     private readonly string _text;
 

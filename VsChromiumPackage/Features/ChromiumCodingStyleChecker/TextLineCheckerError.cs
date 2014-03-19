@@ -4,7 +4,7 @@
 
 using Microsoft.VisualStudio.Text;
 
-namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
+namespace VsChromium.Features.ChromiumCodingStyleChecker {
   public class TextLineCheckerError {
     public SnapshotSpan Span { get; set; }
     public string Message { get; set; }

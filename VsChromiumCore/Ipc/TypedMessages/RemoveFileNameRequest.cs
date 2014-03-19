@@ -1,6 +1,6 @@
 ﻿using ProtoBuf;
 
-namespace VsChromiumCore.Ipc.TypedMessages {
+namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class RemoveFileNameRequest : TypedRequest {
     [ProtoMember(1)]

@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumPackage.ServerProxy {
+namespace VsChromium.ServerProxy {
   /// <summary>
   /// Component responsible for creating the VsChromium server process and
   /// sending/receiving <see cref="TypedRequest"/> messages. Calling <see

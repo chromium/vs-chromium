@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   public class UIRequest {
     public UIRequest() {
       Delay = TimeSpan.FromSeconds(0.1);

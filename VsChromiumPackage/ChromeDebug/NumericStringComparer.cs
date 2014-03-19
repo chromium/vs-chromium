@@ -7,7 +7,7 @@ using System.Collections;
 using System.Linq;
 using System.Text;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromium.ChromeDebug {
   class NumericStringComparer : IComparer {
     public int Compare(object x, object y) {
       string sx = (string)x;

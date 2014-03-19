@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Win32.Files;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Win32.Files;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public static class RelativePathNameExtensions {
     public static void GetFileSystemEntries(
       this RelativePathName path,

@@ -5,9 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using VsChromiumCore.Win32.Memory;
+using VsChromium.Core.Win32.Memory;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   public class UTF16FileContents : FileContents {
     private readonly SafeHeapBlockHandle _heap;
 

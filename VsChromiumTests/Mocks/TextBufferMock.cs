@@ -6,7 +6,7 @@ using System;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 
-namespace VsChromiumTests.Mocks {
+namespace VsChromium.Tests.Mocks {
   class TextBufferMock : ITextBuffer {
     private readonly TextSnapshotMock _currentSnapshot;
 

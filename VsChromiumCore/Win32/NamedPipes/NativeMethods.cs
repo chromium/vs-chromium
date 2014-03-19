@@ -5,9 +5,9 @@
 using System.Runtime.InteropServices;
 using System.Security;
 using Microsoft.Win32.SafeHandles;
-using VsChromiumCore.Win32.Interop;
+using VsChromium.Core.Win32.Interop;
 
-namespace VsChromiumCore.Win32.NamedPipes {
+namespace VsChromium.Core.Win32.NamedPipes {
   static class NativeMethods {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]

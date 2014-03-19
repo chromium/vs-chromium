@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Security;
 
-namespace VsChromiumServer.NativeInterop {
+namespace VsChromium.Server.NativeInterop {
   public static class NativeMethods {
     public enum SearchAlgorithmKind {
       kStrStr = 1,

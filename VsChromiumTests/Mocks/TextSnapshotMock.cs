@@ -9,7 +9,7 @@ using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 
-namespace VsChromiumTests.Mocks {
+namespace VsChromium.Tests.Mocks {
   class TextSnapshotMock : ITextSnapshot {
     private readonly ITextBuffer _textBuffer;
     private readonly string _text;

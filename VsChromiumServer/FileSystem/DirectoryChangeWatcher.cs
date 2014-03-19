@@ -7,12 +7,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Linq;
-using VsChromiumServer.FileSystemNames;
+using VsChromium.Core;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Linq;
+using VsChromium.Server.FileSystemNames;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
     private readonly object _changedPathsLock = new object();
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);

@@ -4,9 +4,9 @@
 
 using System;
 using System.Threading;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   public class ThreadObject {
     private readonly int _id;
     private readonly AutoResetEvent _taskAvailable = new AutoResetEvent(false);

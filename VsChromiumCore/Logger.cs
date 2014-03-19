@@ -5,9 +5,9 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using VsChromiumCore.Win32.Memory;
+using VsChromium.Core.Win32.Memory;
 
-namespace VsChromiumCore {
+namespace VsChromium.Core {
   public class Logger {
     private static readonly Lazy<string> _processName = new Lazy<string>(() => Process.GetCurrentProcess().ProcessName, LazyThreadSafetyMode.PublicationOnly);
     private static string GetLoggerId() {

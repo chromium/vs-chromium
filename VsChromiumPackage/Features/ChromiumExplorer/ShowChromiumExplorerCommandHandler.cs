@@ -7,11 +7,11 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
-using VsChromiumPackage.Commands;
-using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandler;
+using VsChromium.Commands;
+using VsChromium.Package;
+using VsChromium.Package.CommandHandler;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   [Export(typeof(IPackageCommandHandler))]
   public class ShowChromiumExplorerCommandHandler : IPackageCommandHandler {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

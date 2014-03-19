@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace VsChromiumCore.Configuration {
+namespace VsChromium.Core.Configuration {
   public class ConfigurationFileSectionProvider : IConfigurationSectionProvider {
     private readonly IConfigurationFileProvider _configurationFileProvider;
 

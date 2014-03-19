@@ -14,9 +14,9 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Text.Outlining;
 using Microsoft.VisualStudio.TextManager.Interop;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   [Export(typeof(IOpenDocumentHelper))]
   class OpenDocumentHelper : IOpenDocumentHelper {
     [Import]

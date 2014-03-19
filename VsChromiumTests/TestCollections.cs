@@ -5,10 +5,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumCore.Collections;
-using VsChromiumCore.Linq;
+using VsChromium.Core.Collections;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumTests {
+namespace VsChromium.Tests {
   [TestClass]
   public class TestCollections {
     [TestMethod]

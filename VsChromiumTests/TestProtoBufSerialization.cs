@@ -7,12 +7,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.ProtoBuf;
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumTests {
+namespace VsChromium.Tests {
   [TestClass]
   public class TestProtoBufSerialization : MefBaseTest {
     [TestMethod]

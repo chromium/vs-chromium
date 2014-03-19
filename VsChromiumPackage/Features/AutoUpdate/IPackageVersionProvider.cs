@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VsChromiumPackage.Features.AutoUpdate {
+namespace VsChromium.Features.AutoUpdate {
   /// <summary>
   /// Provides the version of the VsChromium package instance.
   /// </summary>

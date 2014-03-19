@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumPackage.Features.BuildOutputAnalyzer;
+using VsChromium.Features.BuildOutputAnalyzer;
 
-namespace VsChromiumTests {
+namespace VsChromium.Tests {
   [TestClass]
   public class TestBuildOutputAnalyzer {
     [TestMethod]

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumServer.NativeInterop {
+namespace VsChromium.Server.NativeInterop {
   public class AsciiStringSearchBoyerMoore : AsciiStringSearchNative {
     public AsciiStringSearchBoyerMoore(string pattern, NativeMethods.SearchOptions searchOptions)
       : base(NativeMethods.SearchAlgorithmKind.kBoyerMoore, pattern, searchOptions) {

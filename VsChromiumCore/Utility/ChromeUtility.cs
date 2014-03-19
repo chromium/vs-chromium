@@ -10,7 +10,7 @@ using System.IO;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Utility {
+namespace VsChromium.Core.Utility {
   public static class ChromeUtility {
     public static bool IsChromeProcess(string imagePath) {
       string file = Path.GetFileName(imagePath);
@@ -44,7 +44,7 @@ namespace VsChromiumCore.Utility {
         return splitArgs;
       } finally {
         // Free memory obtained by CommandLineToArgW.
-        VsChromiumCore.Win32.Memory.NativeMethods.LocalFree(ptrToSplitArgs);
+        VsChromium.Core.Win32.Memory.NativeMethods.LocalFree(ptrToSplitArgs);
       }
     }
   }

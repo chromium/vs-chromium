@@ -5,9 +5,9 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumPackage.Package.CommandHandler {
+namespace VsChromium.Package.CommandHandler {
   [Export(typeof(IPackagePostInitializer))]
   public class PackageCommandHandlerRegistration : IPackagePostInitializer {
     private readonly IEnumerable<IPackageCommandHandler> _commandHandlers;

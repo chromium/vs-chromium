@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromiumServer.FileSystemNames;
+using VsChromium.Server.FileSystemNames;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public class FileSystemValidationResult {
     public FileSystemValidationResult() {
       ChangeFiles = new List<FileName>();

@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Win32.Processes;
+using VsChromium.Core.Win32.Processes;
 
-namespace VsChromiumCore.Processes {
+namespace VsChromium.Core.Processes {
   public class ProcessInformation : IDisposable {
     public SafeProcessHandle ProcessHandle { get; set; }
     public int ProcessId { get; set; }

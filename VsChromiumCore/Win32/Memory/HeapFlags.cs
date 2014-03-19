@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumCore.Win32.Memory {
+namespace VsChromium.Core.Win32.Memory {
   public enum HeapFlags : uint {
     Default,
     HeapZeroMemory = 0x00000008,

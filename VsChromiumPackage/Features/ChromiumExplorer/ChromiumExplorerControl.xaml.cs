@@ -12,15 +12,15 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Text;
-using VsChromiumCore;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumPackage.Features.AutoUpdate;
-using VsChromiumPackage.ServerProxy;
-using VsChromiumPackage.Threads;
-using VsChromiumPackage.Views;
-using VsChromiumPackage.Wpf;
+using VsChromium.Core;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Features.AutoUpdate;
+using VsChromium.ServerProxy;
+using VsChromium.Threads;
+using VsChromium.Views;
+using VsChromium.Wpf;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   /// <summary>
   /// Interaction logic for ChromiumExplorerControl.xaml
   /// </summary>

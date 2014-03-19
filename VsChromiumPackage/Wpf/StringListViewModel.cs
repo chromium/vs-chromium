@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
-namespace VsChromiumPackage.Wpf {
+namespace VsChromium.Wpf {
   public class StringListViewModel : INotifyPropertyChanged {
     private readonly ObservableCollection<string> _items = new ObservableCollection<string>();
     private string _selectedItem;

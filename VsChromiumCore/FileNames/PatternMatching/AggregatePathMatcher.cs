@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public class AggregatePathMatcher : IPathMatcher {
     private HashSet<string> _fileExtensions;
     private IPathMatcher[] _pathMatchers;

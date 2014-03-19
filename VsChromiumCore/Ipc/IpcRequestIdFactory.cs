@@ -5,7 +5,7 @@
 using System.ComponentModel.Composition;
 using System.Threading;
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   [Export(typeof(IIpcRequestIdFactory))]
   public class IpcRequestIdFactory : IIpcRequestIdFactory {
     private long _nextId = 1;

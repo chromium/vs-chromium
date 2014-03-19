@@ -16,11 +16,11 @@
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
     <Asset Type="Microsoft.VisualStudio.Assembly" Path="|%CurrentProject%|"/>
-    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromiumCore|" AssemblyName="|VsChromiumCore;AssemblyName|"/>
-    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromiumDebugComponent|" AssemblyName="|VsChromiumDebugComponent;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromium.Core|" AssemblyName="|VsChromium.Core;AssemblyName|"/>
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromium.DebuggerIntegration|" AssemblyName="|VsChromium.DebuggerIntegration;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|%CurrentProject%|" />
-    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromiumCore|" />
-    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromiumDebugComponent|"/>
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromium.Core|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromium.DebuggerIntegration|"/>
     <Asset Type="DebuggerEngineExtension" Path="DebugComponent.vsdconfig" />
     <Asset Type="NativeVisualizer" Path="Visualizers.natvis" />
   </Assets>

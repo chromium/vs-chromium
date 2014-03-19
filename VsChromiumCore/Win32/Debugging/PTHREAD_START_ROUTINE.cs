@@ -4,6 +4,6 @@
 
 using System;
 
-namespace VsChromiumCore.Win32.Debugging {
+namespace VsChromium.Core.Win32.Debugging {
   public delegate uint PTHREAD_START_ROUTINE(IntPtr lpThreadParameter);
 }

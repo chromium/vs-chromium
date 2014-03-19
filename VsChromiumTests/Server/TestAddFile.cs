@@ -4,10 +4,10 @@
 
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumPackage.ServerProxy;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.ServerProxy;
 
-namespace VsChromiumTests.Server {
+namespace VsChromium.Tests.Server {
   [TestClass]
   public class TestAddFile : TestServerBase {
     [TestMethod]

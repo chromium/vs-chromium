@@ -5,11 +5,11 @@
 using System;
 using System.Diagnostics;
 using System.Reflection;
-using VsChromiumCore;
-using VsChromiumCore.JobObjects;
-using VsChromiumCore.Processes;
+using VsChromium.Core;
+using VsChromium.Core.JobObjects;
+using VsChromium.Core.Processes;
 
-namespace VsChromiumHost {
+namespace VsChromium.Host {
   class Program {
     private static void Main(string[] args) {
       try {

@@ -3,7 +3,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
+namespace VsChromium.Features.BuildOutputAnalyzer {
   [Export(typeof(IBuildOutputParser))]
   public class BuildOutputParser : IBuildOutputParser {
     private readonly Lazy<Regex> _regex = new Lazy<Regex>(CreateRegex);

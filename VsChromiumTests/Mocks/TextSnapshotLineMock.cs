@@ -4,7 +4,7 @@
 
 using Microsoft.VisualStudio.Text;
 
-namespace VsChromiumTests.Mocks {
+namespace VsChromium.Tests.Mocks {
   class TextSnapshotLineMock : ITextSnapshotLine {
     private readonly ITextSnapshot _snapshot;
     private readonly int _lineNumber;

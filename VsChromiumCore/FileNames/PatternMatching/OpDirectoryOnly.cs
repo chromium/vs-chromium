@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public class OpDirectoryOnly : BaseOperator {
     public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
       var result = Match(kind, comparer, operators, operatorIndex + 1, path, pathIndex);

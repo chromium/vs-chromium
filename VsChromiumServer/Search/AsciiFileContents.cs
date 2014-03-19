@@ -5,11 +5,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Win32.Memory;
-using VsChromiumServer.NativeInterop;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Win32.Memory;
+using VsChromium.Server.NativeInterop;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   /// <summary>
   /// FileContents implementation for files containing only Ascii characters (e.g. all character
   /// values are less than 127).

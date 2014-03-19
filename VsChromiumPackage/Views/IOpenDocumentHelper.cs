@@ -6,7 +6,7 @@ using System;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   public interface IOpenDocumentHelper {
     bool OpenDocument(string path, Func<IVsTextView, Span?> spanProvider);
   }

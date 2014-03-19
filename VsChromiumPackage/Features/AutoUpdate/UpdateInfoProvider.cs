@@ -4,9 +4,9 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Net;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumPackage.Features.AutoUpdate {
+namespace VsChromium.Features.AutoUpdate {
   /// <summary>
   /// Implementation of IUpdateInfoProvider checking for the content of
   /// the "latest_version.txt" file on the public VsChromium GitHub URL.

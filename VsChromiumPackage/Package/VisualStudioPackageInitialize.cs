@@ -1,6 +1,6 @@
 using System.ComponentModel.Composition;
 
-namespace VsChromiumPackage.Package {
+namespace VsChromium.Package {
   [Export(typeof(IPackagePreInitializer))]
   public class VisualStudioPackageInitializer : IPackagePreInitializer {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

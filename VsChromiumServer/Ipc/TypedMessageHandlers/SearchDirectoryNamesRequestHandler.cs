@@ -4,12 +4,12 @@
 
 using System.ComponentModel.Composition;
 using System.Linq;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystem;
-using VsChromiumServer.FileSystemNames;
-using VsChromiumServer.Search;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.Search;
 
-namespace VsChromiumServer.Ipc.TypedMessageHandlers {
+namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class SearchDirectoryNamesRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;

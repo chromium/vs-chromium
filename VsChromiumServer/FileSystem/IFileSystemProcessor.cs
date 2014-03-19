@@ -4,10 +4,10 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystemNames;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemNames;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public interface IFileSystemProcessor {
     void AddFile(string filename);
     void RemoveFile(string filename);

@@ -1,4 +1,4 @@
-﻿namespace VsChromiumPackage.Wpf {
+﻿namespace VsChromium.Wpf {
   public interface IProgressBarTracker {
     /// <summary>
     /// Enqueue a progress bar request for the given operation id.

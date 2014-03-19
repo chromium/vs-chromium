@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumPackage.Threads;
-using VsChromiumPackage.Views;
+using VsChromium.Threads;
+using VsChromium.Views;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public class TreeViewItemViewModelHost : ITreeViewItemViewModelHost {
     private readonly IStandarImageSourceFactory _standarImageSourceFactory;
     private readonly IUIRequestProcessor _uiRequestProcessor;

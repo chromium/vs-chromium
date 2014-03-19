@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.FileNames;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumServer.FileSystemNames {
+namespace VsChromium.Server.FileSystemNames {
   public interface IFileSystemNameFactory {
     /// <summary>
     /// Returns the root node of the file system name table. The Root node has no parent and an empty name.

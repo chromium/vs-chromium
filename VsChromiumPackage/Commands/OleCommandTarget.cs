@@ -7,9 +7,9 @@ using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumPackage.Commands {
+namespace VsChromium.Commands {
   /// <summary>
   /// Implements IOleCommandTarget from an instance of ICommandTarget.
   /// </summary>

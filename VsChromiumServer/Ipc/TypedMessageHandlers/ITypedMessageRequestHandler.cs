@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumServer.Ipc.TypedMessageHandlers {
+namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   public interface ITypedMessageRequestHandler {
     bool CanProcess(TypedRequest request);
     TypedResponse Process(TypedRequest typedRequest);

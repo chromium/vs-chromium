@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
-using VsChromiumCore.Win32.Memory;
+using VsChromium.Core.Win32.Memory;
 
-namespace VsChromiumCore.Win32.Files {
+namespace VsChromium.Core.Win32.Files {
   public static class NativeFile {
     public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo) {
       var result = ReadFileWorker(fileInfo, 1);

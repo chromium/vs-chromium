@@ -11,7 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace VsChromiumPackage.Wpf {
+namespace VsChromium.Wpf {
   public class EditableComboBox : ComboBox {
     public EditableComboBox() {
       IsEditable = true;

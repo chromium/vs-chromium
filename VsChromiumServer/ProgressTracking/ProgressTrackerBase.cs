@@ -4,10 +4,10 @@
 
 using System;
 using System.Threading;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.Ipc.TypedEvents;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Ipc.TypedEvents;
 
-namespace VsChromiumServer.ProgressTracking {
+namespace VsChromium.Server.ProgressTracking {
   public abstract class ProgressTrackerBase : IProgressTracker {
     private readonly object _lock = new object();
     private readonly TimeSpan _refreshDelay = TimeSpan.FromMilliseconds(20);

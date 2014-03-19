@@ -4,7 +4,7 @@
 
 using ProtoBuf;
 
-namespace VsChromiumCore.Ipc.TypedMessages {
+namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   [ProtoInclude(10, typeof(AddFileNameRequest))]
   [ProtoInclude(11, typeof(GetFileSystemRequest))]

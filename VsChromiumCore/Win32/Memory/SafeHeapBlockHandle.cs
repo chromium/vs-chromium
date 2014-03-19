@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumCore.Win32.Memory {
+namespace VsChromium.Core.Win32.Memory {
   public class SafeHeapBlockHandle : SafeHandleZeroOrMinusOneIsInvalid {
     private readonly long _byteLength;
     private readonly SafeHeapHandle _heap;

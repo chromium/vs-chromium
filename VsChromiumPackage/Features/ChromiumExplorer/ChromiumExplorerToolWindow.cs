@@ -4,11 +4,11 @@
 
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
-using VsChromiumPackage.Commands;
-using VsChromiumPackage.Features.AutoUpdate;
-using VsChromiumPackage.Wpf;
+using VsChromium.Commands;
+using VsChromium.Features.AutoUpdate;
+using VsChromium.Wpf;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   /// <summary>
   /// This class implements the tool window exposed by this package and hosts a user control.
   ///

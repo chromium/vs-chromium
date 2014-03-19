@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public class PathMatcher : IPathMatcher {
     private readonly IList<BaseOperator> _operators;
     private readonly IPrePassWontMatch[] _prePassOperators;

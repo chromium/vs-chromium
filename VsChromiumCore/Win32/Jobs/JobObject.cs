@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumCore.Win32.Jobs {
+namespace VsChromium.Core.Win32.Jobs {
   public enum JobObjectInfoType {
     AssociateCompletionPortInformation = 7,
     BasicLimitInformation = 2,

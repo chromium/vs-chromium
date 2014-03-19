@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumServer.Ipc.ProtocolHandlers {
+namespace VsChromium.Server.Ipc.ProtocolHandlers {
   public abstract class ProtocolHandler : IProtocolHandler {
     private readonly string _protocol;
 

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using VsChromiumCore.Processes;
+using VsChromium.Core.Processes;
 
-namespace VsChromiumPackage.ServerProxy {
+namespace VsChromium.ServerProxy {
   /// <summary>
   /// Component responsible for locating the VsChromium server process
   /// executable and launching an instance of it.

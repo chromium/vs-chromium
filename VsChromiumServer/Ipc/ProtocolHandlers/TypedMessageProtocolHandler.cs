@@ -6,11 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.Ipc.TypedMessageHandlers;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Ipc.TypedMessageHandlers;
 
-namespace VsChromiumServer.Ipc.ProtocolHandlers {
+namespace VsChromium.Server.Ipc.ProtocolHandlers {
   [Export(typeof(IProtocolHandler))]
   public class TypedMessageProtocolHandler : ProtocolHandler {
     private readonly IEnumerable<ITypedMessageRequestHandler> _handlers;

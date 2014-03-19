@@ -8,15 +8,15 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using VsChromiumCore;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystemNames;
-using VsChromiumServer.ProgressTracking;
-using VsChromiumServer.Projects;
-using VsChromiumServer.Threads;
+using VsChromium.Core;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.ProgressTracking;
+using VsChromium.Server.Projects;
+using VsChromium.Server.Threads;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   [Export(typeof(IFileSystemProcessor))]
   public class FileSystemProcessor : IFileSystemProcessor {
     private readonly HashSet<FullPathName> _addedFiles = new HashSet<FullPathName>();

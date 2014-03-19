@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   /// <summary>
   /// Note: Instances of this class are technically not thread safe, but it is
   /// nonetheless ok to call them from multiple thread concurrently, as the worst

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   public static class ErrorResponseHelper {
     public static IpcResponse CreateIpcErrorResponse(IpcRequest request, Exception error) {
       return new IpcResponse {

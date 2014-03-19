@@ -6,13 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandler;
-using VsChromiumCore.Utility;
-using VsChromiumCore.Processes;
+using VsChromium.Package;
+using VsChromium.Package.CommandHandler;
+using VsChromium.Core.Utility;
+using VsChromium.Core.Processes;
 
 
-namespace VsChromiumPackage.ChromeDebug
+namespace VsChromium.ChromeDebug
 {
   [Export(typeof(IPackageCommandHandler))]
   public class AttachToChromeDescendantsHandler : IPackageCommandHandler

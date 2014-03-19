@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumPackage.ServerProxy {
+namespace VsChromium.ServerProxy {
   /// <summary>
   /// Component responsible for creating the VsChromium server process and
   /// sending/receiving IPC requests. Calling "Dispose" ensures the VsChromium

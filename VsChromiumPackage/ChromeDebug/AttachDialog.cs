@@ -9,13 +9,13 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using VsChromiumCore.Win32.Processes;
-using VsChromiumCore.Processes;
-using VsChromiumCore.Utility;
-using VsChromiumCore.Win32.Shell;
+using VsChromium.Core.Win32.Processes;
+using VsChromium.Core.Processes;
+using VsChromium.Core.Utility;
+using VsChromium.Core.Win32.Shell;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromium.ChromeDebug {
   // The form that is displayed to allow the user to select processes to attach to.  Note that we
   // cannot interact with the DTE object from here (I assume this is because the dialog is running
   // on a different thread, although I don't fully understand), so any access to the DTE object
@@ -116,7 +116,7 @@ namespace VsChromiumPackage.ChromeDebug {
       SHFileInfo info = new SHFileInfo(true);
       SHGFI flags = SHGFI.Icon | SHGFI.SmallIcon | SHGFI.OpenIcon | SHGFI.UseFileAttributes;
       int cbFileInfo = Marshal.SizeOf(info);
-      VsChromiumCore.Win32.Shell.NativeMethods.SHGetFileInfo(
+      VsChromium.Core.Win32.Shell.NativeMethods.SHGetFileInfo(
         process.Win32ProcessImagePath, 256, ref info, (uint)cbFileInfo, (uint)flags);
       return Icon.FromHandle(info.hIcon);
     }

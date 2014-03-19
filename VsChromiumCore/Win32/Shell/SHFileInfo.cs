@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Shell {
+namespace VsChromium.Core.Win32.Shell {
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   public struct SHFileInfo {
     // C# doesn't support overriding the default constructor of value types, so we need to use

@@ -5,7 +5,7 @@
 using System;
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumCore.Win32.Memory {
+namespace VsChromium.Core.Win32.Memory {
   sealed class SafeLocalMemHandle : SafeHandleZeroOrMinusOneIsInvalid {
     public SafeLocalMemHandle()
       : base(true) {

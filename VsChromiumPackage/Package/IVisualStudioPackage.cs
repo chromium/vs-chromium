@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace VsChromiumPackage.Package {
+namespace VsChromium.Package {
   public interface IVisualStudioPackage {
     IComponentModel ComponentModel { get; }
     OleMenuCommandService OleMenuCommandService { get; }

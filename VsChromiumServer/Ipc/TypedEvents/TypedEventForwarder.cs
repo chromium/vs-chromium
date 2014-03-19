@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystem;
-using VsChromiumServer.Search;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystem;
+using VsChromium.Server.Search;
 
-namespace VsChromiumServer.Ipc.TypedEvents {
+namespace VsChromium.Server.Ipc.TypedEvents {
   [Export(typeof(ITypedEventForwarder))]
   public class TypedEventForwarder : ITypedEventForwarder {
     private readonly IFileSystemProcessor _fileSystemProcessor;

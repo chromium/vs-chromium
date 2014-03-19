@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public class OpRelativeDirectory : BaseOperator {
     public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
       while (pathIndex < path.Length) {

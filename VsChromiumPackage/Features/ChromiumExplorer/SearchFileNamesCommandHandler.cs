@@ -5,10 +5,10 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using VsChromiumPackage.Commands;
-using VsChromiumPackage.Package.CommandHandler;
+using VsChromium.Commands;
+using VsChromium.Package.CommandHandler;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   [Export(typeof(IPackageCommandHandler))]
   public class SearchFileNamesCommandHandler : IPackageCommandHandler {
     private readonly IChromiumExplorerToolWindowAccessor _toolWindowAccessor;

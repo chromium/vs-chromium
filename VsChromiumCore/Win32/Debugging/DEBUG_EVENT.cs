@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Debugging {
+namespace VsChromium.Core.Win32.Debugging {
   [StructLayout(LayoutKind.Sequential)]
   public struct DEBUG_EVENT {
     public DEBUG_EVENT_CODE dwDebugEventCode;

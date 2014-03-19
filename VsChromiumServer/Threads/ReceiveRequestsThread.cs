@@ -5,11 +5,11 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumServer.Ipc;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Server.Ipc;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   [Export(typeof(IReceiveRequestsThread))]
   public class ReceiveRequestsThread : IReceiveRequestsThread {
     private readonly IIpcRequestDispatcher _ipcRequestDispatcher;

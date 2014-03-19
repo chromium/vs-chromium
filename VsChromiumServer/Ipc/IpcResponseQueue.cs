@@ -5,9 +5,9 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Threading;
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumServer.Ipc {
+namespace VsChromium.Server.Ipc {
   [Export(typeof(IIpcResponseQueue))]
   public class IpcResponseQueue : IIpcResponseQueue {
     private readonly object _lock = new object();

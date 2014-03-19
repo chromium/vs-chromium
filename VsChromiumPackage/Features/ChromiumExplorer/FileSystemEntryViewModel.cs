@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System.IO;
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public abstract class FileSystemEntryViewModel : TreeViewItemViewModel {
     protected FileSystemEntryViewModel(
       ITreeViewItemViewModelHost host,

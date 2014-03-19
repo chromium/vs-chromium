@@ -4,10 +4,10 @@
 
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
-using VsChromiumPackage.Package;
-using VsChromiumPackage.Views;
+using VsChromium.Package;
+using VsChromium.Views;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   [Export(typeof(IPackagePostInitializer))]
   public class TextDocumentFactoryObserver : IPackagePostInitializer {
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;

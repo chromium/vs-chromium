@@ -5,13 +5,13 @@
 using System.ComponentModel.Composition;
 using System.Net;
 using System.Net.Sockets;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.ProtoBuf;
-using VsChromiumServer.Ipc.TypedEvents;
-using VsChromiumServer.Threads;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Server.Ipc.TypedEvents;
+using VsChromium.Server.Threads;
 
-namespace VsChromiumServer {
+namespace VsChromium.Server {
   [Export(typeof(IServer))]
   public class ServerOverNetworkStream : IServer {
     private readonly IReceiveRequestsThread _receiveThread;

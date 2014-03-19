@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Security;
 
-namespace VsChromiumCore.Win32.Memory {
+namespace VsChromium.Core.Win32.Memory {
   static class NativeMethods {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32", SetLastError = true)]

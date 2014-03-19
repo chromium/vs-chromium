@@ -5,7 +5,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Files {
+namespace VsChromium.Core.Win32.Files {
   [Serializable]
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
   struct WIN32_FILE_ATTRIBUTE_DATA {

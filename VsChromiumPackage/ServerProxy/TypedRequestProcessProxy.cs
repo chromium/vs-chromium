@@ -7,12 +7,12 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Linq;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumPackage.ServerProxy {
+namespace VsChromium.ServerProxy {
   [Export(typeof(ITypedRequestProcessProxy))]
   public class TypedRequestProcessProxy : ITypedRequestProcessProxy {
     private readonly SortedSet<BufferedResponse> _bufferedResponses = new SortedSet<BufferedResponse>();

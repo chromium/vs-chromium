@@ -9,9 +9,9 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 
-using VsChromiumCore.Win32.Processes;
+using VsChromium.Core.Win32.Processes;
 
-namespace VsChromiumCore.Utility {
+namespace VsChromium.Core.Utility {
   public static class MarshalUtility {
     public static T ReadUnmanagedStructFromProcess<T>(SafeProcessHandle processHandle,
                                                       IntPtr addressInProcess) {
@@ -20,7 +20,7 @@ namespace VsChromiumCore.Utility {
       byte[] dest = new byte[bytesToRead];
       try {
         uint bytesRead;
-        if (!VsChromiumCore.Win32.Processes.NativeMethods.ReadProcessMemory(
+        if (!VsChromium.Core.Win32.Processes.NativeMethods.ReadProcessMemory(
                 processHandle, addressInProcess, dest, (uint)bytesToRead, out bytesRead))
           throw new Win32Exception();
         Marshal.Copy(dest, 0, buffer, (int)bytesRead);
@@ -39,7 +39,7 @@ namespace VsChromiumCore.Utility {
       byte[] buffer = new byte[numChars * 2];
 
       try {
-        bool bresult = VsChromiumCore.Win32.Processes.NativeMethods.ReadProcessMemory(processHandle,
+        bool bresult = VsChromium.Core.Win32.Processes.NativeMethods.ReadProcessMemory(processHandle,
                                                        addressInProcess,
                                                        buffer,
                                                        (uint)(numChars * 2),

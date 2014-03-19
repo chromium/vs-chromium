@@ -2,6 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumServer.ProgressTracking {
+namespace VsChromium.Server.ProgressTracking {
   public delegate string ProgressTrackerDisplayTextProvider(int completed, int total);
 }

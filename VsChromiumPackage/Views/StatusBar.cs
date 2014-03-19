@@ -6,9 +6,9 @@ using System;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   [Export(typeof(IStatusBar))]
   public class StatusBar : IStatusBar {
     private readonly IServiceProvider _serviceProvider;

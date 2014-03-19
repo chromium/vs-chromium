@@ -7,10 +7,10 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Linq;
+using VsChromium.Core;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   [Export(typeof(ICustomThreadPool))]
   public class CustomThreadPool : ICustomThreadPool {
     private readonly object _lock = new object();

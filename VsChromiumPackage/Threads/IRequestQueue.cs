@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   public interface IRequestQueue : IDisposable {
     /// <summary>
     /// Enqueue a request. Non blocking.

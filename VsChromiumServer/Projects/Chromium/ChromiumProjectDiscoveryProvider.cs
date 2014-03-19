@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromiumCore.Chromium;
-using VsChromiumCore.Configuration;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.Chromium;
+using VsChromium.Core.Configuration;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumServer.Projects.Chromium {
+namespace VsChromium.Server.Projects.Chromium {
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ChromiumProjectDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly IConfigurationSectionProvider _configurationSectionProvider;

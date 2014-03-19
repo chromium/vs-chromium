@@ -5,10 +5,10 @@
 using System.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.VisualStudio.Text;
-using VsChromiumPackage.Features.FormatComment;
-using VsChromiumTests.Mocks;
+using VsChromium.Features.FormatComment;
+using VsChromium.Tests.Mocks;
 
-namespace VsChromiumTests {
+namespace VsChromium.Tests {
   [TestClass]
   public class TestFormatComments {
     [TestMethod]

@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace VsChromiumCore.Collections {
+namespace VsChromium.Core.Collections {
   public class ArrayWrapper<T> {
     private readonly int _count;
     private readonly T[] _sourceArray;

@@ -1,4 +1,4 @@
-﻿namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
+﻿namespace VsChromium.Features.BuildOutputAnalyzer {
   public interface IBuildOutputParser {
     BuildOutputSpan ParseLine(string text);
   }

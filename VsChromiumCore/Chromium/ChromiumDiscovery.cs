@@ -4,12 +4,12 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using VsChromiumCore.Configuration;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.FileNames.PatternMatching;
-using VsChromiumCore.Win32.Files;
+using VsChromium.Core.Configuration;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.FileNames.PatternMatching;
+using VsChromium.Core.Win32.Files;
 
-namespace VsChromiumCore.Chromium {
+namespace VsChromium.Core.Chromium {
   public class ChromiumDiscovery : IChromiumDiscovery {
     private readonly IPathPatternsFile _chromiumEnlistmentPatterns;
 

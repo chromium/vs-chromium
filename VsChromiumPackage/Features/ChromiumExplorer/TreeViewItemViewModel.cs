@@ -7,11 +7,11 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using VsChromiumCore.Linq;
-using VsChromiumPackage.Views;
-using VsChromiumPackage.Wpf;
+using VsChromium.Core.Linq;
+using VsChromium.Views;
+using VsChromium.Wpf;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   /// <summary>
   /// Base class for all ViewModel classes displayed by TreeViewItems.
   /// This acts as an adapter between a raw data object and a TreeViewItem.

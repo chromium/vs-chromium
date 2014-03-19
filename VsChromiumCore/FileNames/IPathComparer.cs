@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumCore.FileNames {
+namespace VsChromium.Core.FileNames {
   public interface IPathComparer {
     StringComparer Comparer { get; }
     StringComparison Comparison { get; }

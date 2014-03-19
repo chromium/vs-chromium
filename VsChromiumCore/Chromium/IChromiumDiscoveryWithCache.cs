@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumCore.Chromium {
+namespace VsChromium.Core.Chromium {
   public interface IChromiumDiscoveryWithCache<T> {
     T GetEnlistmentRootFromRootpath(FullPathName root, Func<FullPathName, T> factory);
     T GetEnlistmentRootFromFilename(FullPathName filename, Func<FullPathName, T> factory);

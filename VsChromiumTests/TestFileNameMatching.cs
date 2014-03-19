@@ -6,10 +6,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.FileNames.PatternMatching;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.FileNames.PatternMatching;
 
-namespace VsChromiumTests {
+namespace VsChromium.Tests {
   [TestClass]
   public class TestFileNameMatching {
     [TestMethod]

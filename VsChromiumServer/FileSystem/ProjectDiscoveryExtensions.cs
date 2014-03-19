@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumServer.FileSystemNames;
-using VsChromiumServer.Projects;
+using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.Projects;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public static class ProjectDiscoveryExtensions {
     /// <summary>
     /// Returns the absolute path of the project containing |filename|.

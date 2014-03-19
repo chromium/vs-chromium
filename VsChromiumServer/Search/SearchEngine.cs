@@ -9,20 +9,20 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using VsChromiumCore;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.FileNames.PatternMatching;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Linq;
-using VsChromiumCore.Win32.Memory;
-using VsChromiumServer.FileSystem;
-using VsChromiumServer.FileSystemNames;
-using VsChromiumServer.ProgressTracking;
-using VsChromiumServer.Projects;
-using VsChromiumServer.Threads;
-using VsChromiumServer.NativeInterop;
+using VsChromium.Core;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.FileNames.PatternMatching;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
+using VsChromium.Core.Win32.Memory;
+using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.ProgressTracking;
+using VsChromium.Server.Projects;
+using VsChromium.Server.Threads;
+using VsChromium.Server.NativeInterop;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   [Export(typeof(ISearchEngine))]
   public class SearchEngine : ISearchEngine {
     private readonly ICustomThreadPool _customThreadPool;

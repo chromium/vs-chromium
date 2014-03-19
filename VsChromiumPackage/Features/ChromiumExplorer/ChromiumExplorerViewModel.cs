@@ -11,17 +11,17 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.ComponentModelHost;
-using VsChromiumCore;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Linq;
-using VsChromiumPackage.Features.AutoUpdate;
-using VsChromiumPackage.Threads;
-using VsChromiumPackage.Views;
-using VsChromiumPackage.Wpf;
+using VsChromium.Core;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
+using VsChromium.Features.AutoUpdate;
+using VsChromium.Threads;
+using VsChromium.Views;
+using VsChromium.Wpf;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public class ChromiumExplorerViewModel : INotifyPropertyChanged {
     private readonly ChromiumExplorerRootNodes _rootNodes = new ChromiumExplorerRootNodes();
     private IComponentModel _componentModel;

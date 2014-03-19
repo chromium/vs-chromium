@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   /// <summary>
   /// We use a custom thread pool because 1) we want a reasonable amount of thread available for some 
   /// tasks and 2) we use System.Threading.Task extensively, which tends to make the .NET thread pool

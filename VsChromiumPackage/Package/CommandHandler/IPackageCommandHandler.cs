@@ -5,7 +5,7 @@
 using System;
 using System.ComponentModel.Design;
 
-namespace VsChromiumPackage.Package.CommandHandler {
+namespace VsChromium.Package.CommandHandler {
   /// <summary>
   /// A global command handler.
   /// </summary>

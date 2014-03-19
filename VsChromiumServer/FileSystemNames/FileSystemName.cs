@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumServer.FileSystemNames {
+namespace VsChromium.Server.FileSystemNames {
   public abstract class FileSystemName : IComparable<FileSystemName>, IEquatable<FileSystemName> {
     private readonly string _name;
     private readonly DirectoryName _parent;

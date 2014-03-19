@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace VsChromiumCore.Configuration {
+namespace VsChromium.Core.Configuration {
   /// <summary>
   /// Abstraction over either file or project file implementation of configuration
   /// "sections", i.e. set of text lines grouped into a section with a given name.

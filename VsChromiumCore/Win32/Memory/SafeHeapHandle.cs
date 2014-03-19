@@ -4,7 +4,7 @@
 
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumCore.Win32.Memory {
+namespace VsChromium.Core.Win32.Memory {
   public class SafeHeapHandle : SafeHandleZeroOrMinusOneIsInvalid {
     public SafeHeapHandle()
       : base(true) {

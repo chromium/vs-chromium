@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 
-namespace VsChromiumPackage.Wpf {
+namespace VsChromium.Wpf {
   public interface IHierarchyObject {
     IHierarchyObject Parent { get; }
     IEnumerable<IHierarchyObject> Children { get; }

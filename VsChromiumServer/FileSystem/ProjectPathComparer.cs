@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromiumCore.FileNames;
-using VsChromiumServer.Projects;
+using VsChromium.Core.FileNames;
+using VsChromium.Server.Projects;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public class ProjectPathComparer : IEqualityComparer<IProject> {
     public bool Equals(IProject x, IProject y) {
       return SystemPathComparer.Instance.Comparer.Equals(x.RootPath, y.RootPath);

@@ -4,7 +4,7 @@
 
 using System.ComponentModel.Composition;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   [Export(typeof(IDirectoryChangeWatcherFactory))]
   public class DirectoryChangeWatcherFactory : IDirectoryChangeWatcherFactory {
     public IDirectoryChangeWatcher CreateWatcher() {

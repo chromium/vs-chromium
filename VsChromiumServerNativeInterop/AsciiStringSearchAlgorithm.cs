@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace VsChromiumServer.NativeInterop {
+namespace VsChromium.Server.NativeInterop {
   public abstract class AsciiStringSearchAlgorithm : IDisposable {
     public abstract int PatternLength { get; }
 

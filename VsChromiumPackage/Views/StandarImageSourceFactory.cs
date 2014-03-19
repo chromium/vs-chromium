@@ -9,9 +9,9 @@ using System.Reflection;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   [Export(typeof(IStandarImageSourceFactory))]
   public class StandarImageSourceFactory : IStandarImageSourceFactory {
     private readonly IGlyphService _glyphService;

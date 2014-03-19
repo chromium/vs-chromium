@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32 {
+namespace VsChromium.Core.Win32 {
   // Win32 UNICODE_STRING structure.
   [StructLayout(LayoutKind.Sequential)]
   public struct UnicodeString {

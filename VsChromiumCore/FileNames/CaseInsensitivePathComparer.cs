@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumCore.FileNames {
+namespace VsChromium.Core.FileNames {
   public class CaseInsensitivePathComparer : IPathComparer {
     private static readonly CaseInsensitivePathComparer _theInstance = new CaseInsensitivePathComparer();
 

@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Processes {
+namespace VsChromium.Core.Win32.Processes {
   // The target architecture of a given executable image.  The various values correspond
   // to the magic numbers defined by the PE Executable Image File Format.
   // http://www.microsoft.com/whdc/system/platform/firmware/PECOFF.mspx

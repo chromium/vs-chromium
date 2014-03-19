@@ -4,7 +4,7 @@
 
 using Microsoft.VisualStudio.Text;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   public static class TextSnapshotLineExtensions {
     /// <summary>
     /// Return a fragment of a text line, safely ensuring that "start" and "end" position are within the boundaries

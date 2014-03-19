@@ -5,7 +5,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Processes {
+namespace VsChromium.Core.Win32.Processes {
   [StructLayout(LayoutKind.Sequential)]
   public class PROCESS_INFORMATION {
     /// <summary>

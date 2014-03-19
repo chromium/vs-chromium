@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumServer.Ipc.TypedEvents;
+using VsChromium.Server.Ipc.TypedEvents;
 
-namespace VsChromiumServer.ProgressTracking {
+namespace VsChromium.Server.ProgressTracking {
   public class IndeterminateProgressTracker : ProgressTrackerBase {
     public IndeterminateProgressTracker(ITypedEventSender typedEventSender)
       : base(typedEventSender) {

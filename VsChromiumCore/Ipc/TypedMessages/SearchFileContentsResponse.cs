@@ -4,7 +4,7 @@
 
 using ProtoBuf;
 
-namespace VsChromiumCore.Ipc.TypedMessages {
+namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class SearchFileContentsResponse : TypedResponse {
     public SearchFileContentsResponse() {

@@ -7,12 +7,12 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumServer.Ipc.ProtocolHandlers;
-using VsChromiumServer.Threads;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Server.Ipc.ProtocolHandlers;
+using VsChromium.Server.Threads;
 
-namespace VsChromiumServer.Ipc {
+namespace VsChromium.Server.Ipc {
   [Export(typeof(IIpcRequestDispatcher))]
   public class IpcRequestDispatcher : IIpcRequestDispatcher {
     private readonly ICustomThreadPool _customThreadPool;

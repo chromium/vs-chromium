@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumCore.Win32.Handles {
+namespace VsChromium.Core.Win32.Handles {
   static class NativeMethods {
     public static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 

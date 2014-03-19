@@ -5,11 +5,11 @@
 using System.Collections.Concurrent;
 using System.ComponentModel.Composition;
 using System.IO;
-using VsChromiumCore.Chromium;
-using VsChromiumCore.Configuration;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.Chromium;
+using VsChromium.Core.Configuration;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumPackage.ChromiumEnlistment {
+namespace VsChromium.ChromiumEnlistment {
   [Export(typeof(IChromiumSourceFiles))]
   public class ChromiumSourceFiles : IChromiumSourceFiles {
     private readonly ConcurrentDictionary<string, bool> _applyCodingStyleResults =

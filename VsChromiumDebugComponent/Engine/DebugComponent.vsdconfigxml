@@ -10,7 +10,7 @@
   <ManagedComponent
     ComponentId="guidChromeDebugComponentId"
     ComponentLevel="1999000"
-    AssemblyName="VsChromium.DebugComponent">
+    AssemblyName="VsChromium.DebuggerIntegration">
     
     <Class Name="VsChromium.DebugComponent">
       <Implements>

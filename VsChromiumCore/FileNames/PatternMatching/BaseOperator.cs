@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public abstract class BaseOperator {
     public abstract int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex);
 

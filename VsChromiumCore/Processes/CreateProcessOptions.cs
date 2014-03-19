@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VsChromiumCore.Processes {
+namespace VsChromium.Core.Processes {
   [Flags]
   public enum CreateProcessOptions {
     Default = 0,

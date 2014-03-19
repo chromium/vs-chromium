@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace VsChromiumCore.FileNames {
+namespace VsChromium.Core.FileNames {
   public class FullPathNameSet<T> : IEnumerable<KeyValuePair<FullPathName, T>> {
     private readonly Dictionary<FullPathName, T> _entries = new Dictionary<FullPathName, T>();
 

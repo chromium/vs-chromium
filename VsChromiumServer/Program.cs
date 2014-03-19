@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumServer {
+namespace VsChromium.Server {
   class Program {
     private static void Main(string[] args) {
       Logger.Log("Server process started");

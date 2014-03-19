@@ -6,9 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using VsChromiumCore.Collections;
+using VsChromium.Core.Collections;
 
-namespace VsChromiumCore.Linq {
+namespace VsChromium.Core.Linq {
   public static class PLinqExtensions {
     public static IEnumerable<IList<TSource>> PartitionEvenly<TSource>(
       this IList<TSource> source,

@@ -4,7 +4,7 @@
 
 using System.Windows.Media;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   public interface IStandarImageSourceFactory {
     ImageSource OpenFolder { get; }
     ImageSource ClosedFolder { get; }

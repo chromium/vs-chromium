@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumServer.Ipc.TypedEvents {
+namespace VsChromium.Server.Ipc.TypedEvents {
   [Export(typeof(ITypedEventSender))]
   public class TypedEventSender : ITypedEventSender {
     private readonly IIpcRequestIdFactory _requestIdFactory;

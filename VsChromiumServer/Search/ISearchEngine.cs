@@ -4,10 +4,10 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystemNames;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemNames;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   public interface ISearchEngine {
     IEnumerable<FileName> SearchFileNames(SearchParams searchParams);
     IEnumerable<DirectoryName> SearchDirectoryNames(SearchParams searchParams);

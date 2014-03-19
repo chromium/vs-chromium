@@ -5,7 +5,7 @@
 using System;
 using System.ComponentModel.Design;
 
-namespace VsChromiumPackage.Commands {
+namespace VsChromium.Commands {
   public class SimpleCommandTarget : ICommandTarget {
     private readonly CommandID _commandId;
     private readonly Action _action;

@@ -7,8 +7,8 @@
     <ProjectGuid>{A38DC74B-820C-49A5-A732-23170D953632}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VsChromiumServer.NativeInterop</RootNamespace>
-    <AssemblyName>VsChromiumServerNativeInterop</AssemblyName>
+    <RootNamespace>VsChromium.Server.NativeInterop</RootNamespace>
+    <AssemblyName>VsChromium.Server.NativeInterop</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
@@ -34,9 +34,9 @@
     <Compile Include="SafeSearchHandle.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\VsChromiumCore\VsChromiumCore.csproj">
+    <ProjectReference Include="$(BuildRoot)VsChromiumCore\Core.csproj">
       <Project>{6f70c76f-5a3a-4657-a073-075a08555bad}</Project>
-      <Name>VsChromiumCore</Name>
+      <Name>VsChromium.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

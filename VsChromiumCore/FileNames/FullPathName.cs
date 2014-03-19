@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace VsChromiumCore.FileNames {
+namespace VsChromium.Core.FileNames {
   /// <summary>
   /// Wraps a string representing the full path of a file or directory.
   /// </summary>

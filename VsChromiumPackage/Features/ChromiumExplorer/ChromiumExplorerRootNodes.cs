@@ -4,7 +4,7 @@
 
 using System.Collections.ObjectModel;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public class ChromiumExplorerRootNodes : ObservableCollection<TreeViewItemViewModel> {
   }
 }

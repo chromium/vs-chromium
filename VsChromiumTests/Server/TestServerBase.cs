@@ -8,12 +8,12 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumPackage.ServerProxy;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.ServerProxy;
 
-namespace VsChromiumTests.Server {
+namespace VsChromium.Tests.Server {
   public abstract class TestServerBase : MefBaseTest {
     protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5.0);
 

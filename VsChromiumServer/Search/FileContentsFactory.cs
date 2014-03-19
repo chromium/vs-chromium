@@ -5,12 +5,12 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using VsChromiumCore;
-using VsChromiumCore.Win32.Files;
-using VsChromiumCore.Win32.Strings;
-using VsChromiumServer.NativeInterop;
+using VsChromium.Core;
+using VsChromium.Core.Win32.Files;
+using VsChromium.Core.Win32.Strings;
+using VsChromium.Server.NativeInterop;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
     public FileContents GetFileContents(string path) {

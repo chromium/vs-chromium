@@ -5,10 +5,10 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   [Export(typeof(IReceiveResponsesThread))]
   public class ReceiveResponsesThread : IReceiveResponsesThread {
     private readonly EventWaitHandle _waitHandle = new ManualResetEvent(false);

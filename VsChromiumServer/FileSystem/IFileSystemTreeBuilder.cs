@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public interface IFileSystemTreeBuilder {
     DirectoryEntry ComputeTree(IEnumerable<FullPathName> filenames);
   }

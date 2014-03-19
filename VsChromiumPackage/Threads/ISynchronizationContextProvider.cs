@@ -1,6 +1,6 @@
 using System.Threading;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   public interface ISynchronizationContextProvider {
     SynchronizationContext UIContext { get; }
   }

@@ -4,7 +4,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Debugging {
+namespace VsChromium.Core.Win32.Debugging {
   public static class NativeMethods {
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern bool DebugActiveProcess(int processId);

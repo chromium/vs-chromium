@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
-namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
+namespace VsChromium.Features.ChromiumCodingStyleChecker {
   public static class ChromiumStyleClassificationDefinition {
     /// <summary>
     /// Defines the "VsChromiumPackage" classification type.

@@ -1,4 +1,4 @@
-﻿namespace VsChromiumPackage.Features.FormatComment {
+﻿namespace VsChromium.Features.FormatComment {
   public class CommentType {
     private readonly string _token;
 

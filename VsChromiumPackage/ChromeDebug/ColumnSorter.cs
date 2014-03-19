@@ -9,7 +9,7 @@ using System.Text;
 using System.Collections;
 using System.Windows.Forms;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromium.ChromeDebug {
   class ColumnSorter : IComparer {
     private int _sortColumn;
     private SortOrder _direction;

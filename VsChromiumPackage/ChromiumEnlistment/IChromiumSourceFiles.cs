@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumPackage.ChromiumEnlistment {
+namespace VsChromium.ChromiumEnlistment {
   public interface IChromiumSourceFiles {
     /// <summary>
     /// Returns true if |filename| is a file that should abide to the Chromium Coding Style.

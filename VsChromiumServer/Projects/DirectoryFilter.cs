@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Configuration;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.Configuration;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumServer.Projects {
+namespace VsChromium.Server.Projects {
   public class DirectoryFilter : IDirectoryFilter {
     private readonly PathPatternsFile _ignorePatternsFile;
 

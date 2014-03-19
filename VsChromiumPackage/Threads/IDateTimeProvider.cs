@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   public interface IDateTimeProvider {
     DateTime UtcNow { get; }
   }

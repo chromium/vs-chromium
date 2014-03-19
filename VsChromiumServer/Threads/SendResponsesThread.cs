@@ -6,11 +6,11 @@ using System;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumServer.Ipc;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Server.Ipc;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   [Export(typeof(ISendResponsesThread))]
   public class SendResponsesThread : ISendResponsesThread {
     private readonly IIpcResponseQueue _ipcResponseQeueue;

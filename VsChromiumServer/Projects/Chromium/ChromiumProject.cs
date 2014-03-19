@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Configuration;
+using VsChromium.Core.Configuration;
 
-namespace VsChromiumServer.Projects.Chromium {
+namespace VsChromium.Server.Projects.Chromium {
   public class ChromiumProject : IProject {
     private readonly string _rootPath;
     private readonly IDirectoryFilter _directoryFilter;

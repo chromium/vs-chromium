@@ -1,7 +1,7 @@
 ﻿using System;
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   class IpcRequestException : Exception {
     private readonly IpcRequest _request;
 

@@ -5,9 +5,9 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using VsChromiumCore.Win32.Interop;
+using VsChromium.Core.Win32.Interop;
 
-namespace VsChromiumCore.Win32.Processes {
+namespace VsChromium.Core.Win32.Processes {
   static class NativeMethods {
     [DllImport("shell32.dll", SetLastError = true)]
     public static extern IntPtr CommandLineToArgvW(

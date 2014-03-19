@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromium.ChromeDebug {
   static class PkgCmdIDList {
     public const uint CmdidAttachToAllChromes = 0x200;
     public const uint CmdidAttachToDescendants = 0x201;

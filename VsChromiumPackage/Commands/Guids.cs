@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumPackage.Commands {
+namespace VsChromium.Commands {
   static class GuidList {
     public const string GuidVsChromiumPkgString = "a10cf7af-5f0a-4502-b44b-51ff1b7c8a87";
     public const string GuidVsChromiumCmdSetString = "1d4bc583-de49-4113-af8d-81c62fd4b61b";

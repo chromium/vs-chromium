@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumServer.FileSystemNames {
+namespace VsChromium.Server.FileSystemNames {
   [Export(typeof(IFileSystemNameFactory))]
   public class FileSystemNameFactory : IFileSystemNameFactory {
     private readonly DirectoryName _root = new DirectoryName(null, "");

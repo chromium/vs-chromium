@@ -5,16 +5,16 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using VsChromiumCore;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Linq;
-using VsChromiumCore.Win32.Files;
-using VsChromiumServer.FileSystem;
-using VsChromiumServer.FileSystemNames;
-using VsChromiumServer.ProgressTracking;
-using VsChromiumServer.Projects;
+using VsChromium.Core;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
+using VsChromium.Core.Win32.Files;
+using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.ProgressTracking;
+using VsChromium.Server.Projects;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   public class FileDatabase {
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;

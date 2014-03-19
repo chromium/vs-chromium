@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using VsChromiumCore.Debugger;
+using VsChromium.Core.Debugger;
 
-namespace VsChromiumCore.Processes {
+namespace VsChromium.Core.Processes {
   public class CreateProcessResult : IDisposable {
     private readonly ProcessInformation _processInformation;
     private readonly DebuggerObject _debuggerObject;

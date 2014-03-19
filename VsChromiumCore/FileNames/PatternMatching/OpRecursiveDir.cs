@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public class OpRecursiveDir : BaseOperator {
     public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
       // If we are the last operation, don't match

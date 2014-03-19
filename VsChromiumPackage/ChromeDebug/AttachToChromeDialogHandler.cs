@@ -6,10 +6,10 @@ using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Windows.Forms;
-using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandler;
+using VsChromium.Package;
+using VsChromium.Package.CommandHandler;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromium.ChromeDebug {
   [Export(typeof(IPackageCommandHandler))]
   public class AttachToChromeDialogHandler : IPackageCommandHandler {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

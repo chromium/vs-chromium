@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
-using VsChromiumCore.Configuration;
+using VsChromium.Core.Configuration;
 
-namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
+namespace VsChromium.Features.ChromiumCodingStyleChecker {
   /// <summary>
   /// Classifier that classifies all text as an instance of the OrinaryClassifierType
   /// </summary>

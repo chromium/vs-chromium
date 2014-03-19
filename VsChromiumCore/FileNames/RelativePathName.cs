@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumCore.FileNames {
+namespace VsChromium.Core.FileNames {
   /// <summary>
   /// Wrapper around a relative path name (file or directory).
   /// For performance reasons, we also keep the "name" part of the path

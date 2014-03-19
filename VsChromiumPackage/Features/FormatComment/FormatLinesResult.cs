@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 
-namespace VsChromiumPackage.Features.FormatComment {
+namespace VsChromium.Features.FormatComment {
   public class FormatLinesResult {
     public CommentType CommentType { get; set; }
     public SnapshotSpan SnapshotSpan { get; set; }

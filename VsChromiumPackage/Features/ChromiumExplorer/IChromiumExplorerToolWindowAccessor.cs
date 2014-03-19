@@ -4,7 +4,7 @@
 
 using System.ComponentModel.Design;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public interface IChromiumExplorerToolWindowAccessor {
     ChromiumExplorerToolWindow GetToolWindow();
     void FocusSearchTextBox(CommandID commandId);

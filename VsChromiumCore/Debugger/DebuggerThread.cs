@@ -6,13 +6,13 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
-using VsChromiumCore.Processes;
-using VsChromiumCore.Win32;
-using VsChromiumCore.Win32.Debugging;
-using VsChromiumCore.Win32.Strings;
-using NativeMethods = VsChromiumCore.Win32.Debugging.NativeMethods;
+using VsChromium.Core.Processes;
+using VsChromium.Core.Win32;
+using VsChromium.Core.Win32.Debugging;
+using VsChromium.Core.Win32.Strings;
+using NativeMethods = VsChromium.Core.Win32.Debugging.NativeMethods;
 
-namespace VsChromiumCore.Debugger {
+namespace VsChromium.Core.Debugger {
   /// <summary>
   /// Runs a debugger thread for a given process id.
   /// </summary>

@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Files {
+namespace VsChromium.Core.Win32.Files {
   /// <summary>
   /// SlimFileInfo is, as the name suggests, a slimmer version of System.IO.FileInfo. The intent
   /// is to be more efficient because of fewer checks performed.

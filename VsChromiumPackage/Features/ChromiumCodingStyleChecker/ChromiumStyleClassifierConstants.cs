@@ -5,7 +5,7 @@
 using System.Windows;
 using System.Windows.Media;
 
-namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
+namespace VsChromium.Features.ChromiumCodingStyleChecker {
   public static class ChromiumStyleClassifierConstants {
     public const string Name = "VsChromium-CodingStyleChecker";
     public const string DisplayName = "VsChromium: Coding Style Checker";

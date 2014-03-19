@@ -7,10 +7,10 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
-using VsChromiumPackage.ChromiumEnlistment;
-using VsChromiumPackage.Views;
+using VsChromium.ChromiumEnlistment;
+using VsChromium.Views;
 
-namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
+namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
   /// Check that a "else" of "else if" is always on the same line as the "}" of the if statetement:
   /// 

@@ -4,7 +4,7 @@
 
 using System.ComponentModel.Composition;
 
-namespace VsChromiumCore.Win32.Memory {
+namespace VsChromium.Core.Win32.Memory {
   [Export(typeof(IHeapAlloc))]
   public class HeapAlloc : IHeapAlloc {
     public SafeHeapBlockHandle Alloc(int size) {

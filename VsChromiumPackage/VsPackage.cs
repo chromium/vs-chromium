@@ -9,12 +9,12 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using VsChromiumCore;
-using VsChromiumPackage.Commands;
-using VsChromiumPackage.Features.ChromiumExplorer;
-using VsChromiumPackage.Package;
+using VsChromium.Core;
+using VsChromium.Commands;
+using VsChromium.Features.ChromiumExplorer;
+using VsChromium.Package;
 
-namespace VsChromiumPackage {
+namespace VsChromium {
   [PackageRegistration(UseManagedResourcesOnly = true)]
   [InstalledProductRegistration("#110", "#112", "0.9.6", IconResourceID = 400)]
   // When in development mode, update the version # below every time there is a change to the .VSCT file,

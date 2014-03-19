@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumServer.Projects {
+namespace VsChromium.Server.Projects {
   public interface IProjectDiscovery {
     /// <summary>
     /// Returns the absolute path of the project containing |filename|.

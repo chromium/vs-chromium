@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumServer.NativeInterop {
+namespace VsChromium.Server.NativeInterop {
   public class AsciiStringSearchBndm32 : AsciiStringSearchNative
   {
     public AsciiStringSearchBndm32(string pattern, NativeMethods.SearchOptions searchOptions)

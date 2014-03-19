@@ -8,7 +8,7 @@ using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 
-namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
+namespace VsChromium.Features.BuildOutputAnalyzer {
   /// <summary>
   /// Classifier that classifies all text as an instance of the OrinaryClassifierType
   /// </summary>

@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Text;
 
-namespace VsChromiumPackage.Features.FormatComment {
+namespace VsChromium.Features.FormatComment {
   [Export(typeof(ICommentFormatter))]
   public class CommentFormatter : ICommentFormatter {
     private const string _defaultLineEnding = "\n";

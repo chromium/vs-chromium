@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   /// <summary>
   /// Abstraction of a thread receiving requests from an instance of IIpcStream.
   /// </summary>

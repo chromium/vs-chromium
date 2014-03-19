@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Win32.Memory;
-using VsChromiumServer.NativeInterop;
+using VsChromium.Core.Win32.Memory;
+using VsChromium.Server.NativeInterop;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   public class SearchContentsData {
     public string Text { get; set; }
     public SafeHGlobalHandle AsciiTextPtr { get; set; }

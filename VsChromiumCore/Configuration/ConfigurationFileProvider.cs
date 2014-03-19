@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace VsChromiumCore.Configuration {
+namespace VsChromium.Core.Configuration {
   [Export(typeof(IConfigurationFileProvider))]
   public class ConfigurationFileProvider : IConfigurationFileProvider {
     private const string _configurationDirectoryName = "Configuration";

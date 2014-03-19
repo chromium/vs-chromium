@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumServer.ProgressTracking {
+namespace VsChromium.Server.ProgressTracking {
   public interface IProgressTracker : IDisposable {
     void Step(ProgressTrackerDisplayTextProvider progressTrackerDisplayTextProvider);
   }

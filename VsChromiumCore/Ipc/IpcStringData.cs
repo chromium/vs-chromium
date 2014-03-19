@@ -4,7 +4,7 @@
 
 using ProtoBuf;
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   [ProtoContract]
   public class IpcStringData : IpcMessageData {
     [ProtoMember(1)]

@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Configuration;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Linq;
+using VsChromium.Core.Configuration;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumCore.Chromium {
+namespace VsChromium.Core.Chromium {
   public class ChromiumDiscoveryWithCache<T> : IChromiumDiscoveryWithCache<T> {
     private readonly IChromiumDiscovery _chromiumDiscovery;
     private readonly FullPathNameSet<T> _chromiumRootDirectories = new FullPathNameSet<T>();

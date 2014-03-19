@@ -8,14 +8,14 @@ using System.ComponentModel.Composition;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.ProtoBuf;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Processes;
-using VsChromiumPackage.Threads;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Processes;
+using VsChromium.Threads;
 
-namespace VsChromiumPackage.ServerProxy {
+namespace VsChromium.ServerProxy {
   [Export(typeof(IServerProcessProxy))]
   public class ServerProcessProxy : IServerProcessProxy {
     private readonly CallbackDictionary _callbacks = new CallbackDictionary();

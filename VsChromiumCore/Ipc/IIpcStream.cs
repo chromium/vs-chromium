@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   /// <summary>
   /// An abstraction over reading/writing Ipc messages to an underlying transport
   /// mechanism.  Implementations are assumed to be safe to use from multiple threads,

@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumServer.Ipc {
+namespace VsChromium.Server.Ipc {
   public interface IIpcResponseQueue {
     void Enqueue(IpcResponse response);
     IpcResponse Dequeue();

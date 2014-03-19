@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System.Windows.Media;
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public class FilePositionViewModel : TreeViewItemViewModel {
     private readonly FilePositionSpan _position;
     private FileExtract _fileExtract;

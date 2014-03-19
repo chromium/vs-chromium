@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   /// <summary>
   /// Abstraction of a thread sending responses to an instance of IIpcStream.
   /// </summary>

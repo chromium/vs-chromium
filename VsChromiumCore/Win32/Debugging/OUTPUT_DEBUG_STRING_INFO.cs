@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Debugging {
+namespace VsChromium.Core.Win32.Debugging {
   [StructLayout(LayoutKind.Sequential)]
   public struct OUTPUT_DEBUG_STRING_INFO {
     /// <summary>

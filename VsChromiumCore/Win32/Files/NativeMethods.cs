@@ -9,7 +9,7 @@ using System.Security;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumCore.Win32.Files {
+namespace VsChromium.Core.Win32.Files {
   static class NativeMethods {
     [SuppressUnmanagedCodeSecurity]
     [DllImport(@"kernel32", CharSet = CharSet.Auto, SetLastError = true)]

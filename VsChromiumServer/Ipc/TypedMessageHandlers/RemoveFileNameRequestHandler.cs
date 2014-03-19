@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.Composition;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystem;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystem;
 
-namespace VsChromiumServer.Ipc.TypedMessageHandlers {
+namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class RemoveFileNameRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemProcessor _processor;

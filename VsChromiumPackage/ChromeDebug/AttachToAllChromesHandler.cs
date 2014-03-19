@@ -5,11 +5,11 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using VsChromiumPackage.Package;
-using VsChromiumPackage.Package.CommandHandler;
-using VsChromiumCore.Utility;
+using VsChromium.Package;
+using VsChromium.Package.CommandHandler;
+using VsChromium.Core.Utility;
 
-namespace VsChromiumPackage.ChromeDebug
+namespace VsChromium.ChromeDebug
 {
   [Export(typeof(IPackageCommandHandler))]
   public class AttachToAllChromesHandler : IPackageCommandHandler

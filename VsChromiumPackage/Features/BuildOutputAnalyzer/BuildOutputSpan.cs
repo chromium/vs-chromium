@@ -1,4 +1,4 @@
-﻿namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
+﻿namespace VsChromium.Features.BuildOutputAnalyzer {
   public class BuildOutputSpan {
     public string Text { get; set; }
     public int Index { get; set; }

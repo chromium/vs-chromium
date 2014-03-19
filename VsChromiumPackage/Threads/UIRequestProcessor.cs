@@ -4,12 +4,12 @@
 
 using System;
 using System.ComponentModel.Composition;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumPackage.ServerProxy;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.ServerProxy;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   [Export(typeof(IUIRequestProcessor))]
   public class UIRequestProcessor : IUIRequestProcessor {
     private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;

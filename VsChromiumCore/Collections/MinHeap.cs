@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 
-namespace VsChromiumCore.Collections {
+namespace VsChromium.Core.Collections {
   public class MinHeap<T> : IHeap<T> {
     private readonly MaxHeap<T> _maxpHeap;
 

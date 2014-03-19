@@ -4,10 +4,10 @@
 
 using System.IO;
 using Microsoft.VisualStudio.Text;
-using VsChromiumCore.FileNames;
-using VsChromiumPackage.ChromiumEnlistment;
+using VsChromium.Core.FileNames;
+using VsChromium.ChromiumEnlistment;
 
-namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker {
+namespace VsChromium.Features.ChromiumCodingStyleChecker {
   public static class ChromiumSourceFilesExtensions {
     public static bool ApplyCodingStyle(this IChromiumSourceFiles chromiumSourceFiles, ITextSnapshotLine line) {
       // Check document is part of a Chromium source repository

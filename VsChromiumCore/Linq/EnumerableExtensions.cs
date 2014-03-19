@@ -5,9 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VsChromiumCore.Collections;
+using VsChromium.Core.Collections;
 
-namespace VsChromiumCore.Linq {
+namespace VsChromium.Core.Linq {
   public static class EnumerableExtensions {
     public static IEnumerable<int> GetPartitionSizes<TSource>(this IList<TSource> source, int partitionCount) {
       if (partitionCount <= 0)

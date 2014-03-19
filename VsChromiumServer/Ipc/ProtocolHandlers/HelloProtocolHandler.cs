@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumServer.Ipc.ProtocolHandlers {
+namespace VsChromium.Server.Ipc.ProtocolHandlers {
   [Export(typeof(IProtocolHandler))]
   public class HelloProtocolHandler : ProtocolHandler {
     public HelloProtocolHandler()

@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Utilities;
 
-namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
+namespace VsChromium.Features.BuildOutputAnalyzer {
   public static class BuildOutputClassificationDefinition {
     /// <summary>
     /// Defines the classification type.

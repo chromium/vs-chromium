@@ -5,7 +5,7 @@
 using System.IO;
 using System.Linq;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public class FileNameMatching {
     public static IPathMatcher ParsePattern(string pattern) {
       return new AggregatePathMatcher(Enumerable.Repeat(PatternParser.ParsePattern(pattern), 1));

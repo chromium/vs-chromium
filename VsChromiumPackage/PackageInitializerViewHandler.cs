@@ -9,10 +9,10 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
-using VsChromiumPackage.Commands;
-using VsChromiumPackage.Views;
+using VsChromium.Commands;
+using VsChromium.Views;
 
-namespace VsChromiumPackage {
+namespace VsChromium {
   /// <summary>
   /// Ensure the VsPackage is initialized as soon as a view is created. We need
   /// this because we rely on ITextDocumentFactory observers to track document

@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
-using VsChromiumPackage.ChromiumEnlistment;
-using VsChromiumPackage.Views;
+using VsChromium.ChromiumEnlistment;
+using VsChromium.Views;
 
-namespace VsChromiumPackage.Features.ChromiumCodingStyleChecker.TextLineCheckers {
+namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// <summary>
   /// Check that there are no trailing spaces in code files.
   /// </summary>

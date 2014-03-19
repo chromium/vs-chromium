@@ -4,9 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   public class StringFileContents : FileContents {
     private static readonly StringFileContents _empty = new StringFileContents("");
     private readonly string _text;

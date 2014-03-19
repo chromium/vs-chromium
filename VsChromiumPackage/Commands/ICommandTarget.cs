@@ -4,7 +4,7 @@
 
 using System.ComponentModel.Design;
 
-namespace VsChromiumPackage.Commands {
+namespace VsChromium.Commands {
   /// <summary>
   /// A cleaner interface for IOleCommandTarget.
   /// </summary>

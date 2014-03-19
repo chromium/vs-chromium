@@ -5,10 +5,10 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Ipc;
+using VsChromium.Core;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   [Export(typeof(IRequestQueue))]
   public class RequestQueue : IRequestQueue {
     private readonly object _lock = new object();

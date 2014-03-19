@@ -6,7 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace VsChromiumCore.Collections {
+namespace VsChromium.Core.Collections {
   public struct ListSegment<T> : IList<T> {
     private readonly int _count;
     private readonly IList<T> _list;

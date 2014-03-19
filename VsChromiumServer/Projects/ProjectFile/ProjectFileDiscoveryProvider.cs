@@ -5,11 +5,11 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
-using VsChromiumCore.Configuration;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Linq;
+using VsChromium.Core.Configuration;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumServer.Projects.ProjectFile {
+namespace VsChromium.Server.Projects.ProjectFile {
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ProjectFileDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly FullPathNameSet<IProject> _knownProjectRootDirectories = new FullPathNameSet<IProject>();

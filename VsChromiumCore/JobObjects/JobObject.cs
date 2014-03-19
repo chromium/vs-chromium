@@ -6,10 +6,10 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
-using VsChromiumCore.Win32;
-using VsChromiumCore.Win32.Jobs;
+using VsChromium.Core.Win32;
+using VsChromium.Core.Win32.Jobs;
 
-namespace VsChromiumCore.JobObjects {
+namespace VsChromium.Core.JobObjects {
   public class JobObject : IDisposable {
     private SafeFileHandle _handle;
 

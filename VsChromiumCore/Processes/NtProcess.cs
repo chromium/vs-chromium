@@ -11,14 +11,14 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 
-using VsChromiumCore.Utility;
-using VsChromiumCore.Win32;
-using VsChromiumCore.Win32.Files;
-using VsChromiumCore.Win32.Processes;
+using VsChromium.Core.Utility;
+using VsChromium.Core.Win32;
+using VsChromium.Core.Win32.Files;
+using VsChromium.Core.Win32.Processes;
 using System.IO;
 using System.Diagnostics;
 
-namespace VsChromiumCore.Processes {
+namespace VsChromium.Core.Processes {
   public class NtProcess {
     public NtProcess(int pid) {
       _processId = pid;
@@ -45,7 +45,7 @@ namespace VsChromiumCore.Processes {
 
         ProcessBasicInformation basicInfo = new ProcessBasicInformation();
         int size;
-        int status = VsChromiumCore.Win32.Processes.NativeMethods.NtQueryInformationProcess(
+        int status = VsChromium.Core.Win32.Processes.NativeMethods.NtQueryInformationProcess(
             handle,
             ProcessInfoClass.BasicInformation,
             ref basicInfo,
@@ -119,7 +119,7 @@ namespace VsChromiumCore.Processes {
     private string QueryProcessImageName(SafeProcessHandle handle, ProcessQueryImageNameMode mode) {
       StringBuilder moduleBuffer = new StringBuilder(1024);
       int size = moduleBuffer.Capacity;
-      VsChromiumCore.Win32.Processes.NativeMethods.QueryFullProcessImageName(
+      VsChromium.Core.Win32.Processes.NativeMethods.QueryFullProcessImageName(
         handle, mode, moduleBuffer, ref size);
       if (mode == ProcessQueryImageNameMode.NativeSystemFormat)
         moduleBuffer.Insert(0, "\\\\?\\GLOBALROOT");

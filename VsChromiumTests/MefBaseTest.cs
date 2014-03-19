@@ -4,10 +4,10 @@
 
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
-using VsChromiumCore.Ipc;
-using VsChromiumPackage.Features.ChromiumCodingStyleChecker;
+using VsChromium.Core.Ipc;
+using VsChromium.Features.ChromiumCodingStyleChecker;
 
-namespace VsChromiumTests {
+namespace VsChromium.Tests {
   public class MefBaseTest {
     protected CompositionContainer SetupMefContainer() {
       var catalog = new AggregateCatalog();

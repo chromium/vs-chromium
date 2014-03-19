@@ -8,11 +8,11 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using VsChromiumCore;
-using VsChromiumCore.Processes;
-using VsChromiumPackage.Package;
+using VsChromium.Core;
+using VsChromium.Core.Processes;
+using VsChromium.Package;
 
-namespace VsChromiumPackage.ServerProxy {
+namespace VsChromium.ServerProxy {
   [Export(typeof(IServerProcessLauncher))]
   [Export(typeof(IPackagePostDispose))]
   public class ServerProcessLauncher : IServerProcessLauncher, IPackagePostDispose {

@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromium.ChromeDebug {
   static class GuidList {
     public const string GuidChromeDebugCmdSetString = "6608d840-ce6c-45ab-b856-eb0a0b471ff1";
 

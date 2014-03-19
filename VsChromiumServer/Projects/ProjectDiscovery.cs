@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 
-namespace VsChromiumServer.Projects {
+namespace VsChromium.Server.Projects {
   [Export(typeof(IProjectDiscovery))]
   public class ProjectDiscovery : IProjectDiscovery {
     private readonly IProjectDiscoveryProvider[] _providers;

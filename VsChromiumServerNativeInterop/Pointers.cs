@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumServer.NativeInterop {
+namespace VsChromium.Server.NativeInterop {
   public static unsafe class Pointers {
     public static byte* Add(byte* ptr, int offset) {
       return checked(ptr + offset);

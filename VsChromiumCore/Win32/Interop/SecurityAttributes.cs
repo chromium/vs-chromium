@@ -4,9 +4,9 @@
 
 using System;
 using System.Runtime.InteropServices;
-using VsChromiumCore.Win32.Memory;
+using VsChromium.Core.Win32.Memory;
 
-namespace VsChromiumCore.Win32.Interop {
+namespace VsChromium.Core.Win32.Interop {
   [StructLayout(LayoutKind.Sequential)]
   class SecurityAttributes {
     public int nLength = 12;

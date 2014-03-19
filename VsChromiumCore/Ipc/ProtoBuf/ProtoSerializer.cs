@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using ProtoBuf;
 
-namespace VsChromiumCore.Ipc.ProtoBuf {
+namespace VsChromium.Core.Ipc.ProtoBuf {
   [Export(typeof(IProtoBufSerializer))]
   public class ProtoBufSerializer : IProtoBufSerializer {
     public void Serialize(Stream stream, IpcMessage message) {

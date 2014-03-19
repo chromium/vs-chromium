@@ -7,11 +7,11 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using VsChromiumCore.Debugger;
-using VsChromiumCore.Win32;
-using VsChromiumCore.Win32.Processes;
+using VsChromium.Core.Debugger;
+using VsChromium.Core.Win32;
+using VsChromium.Core.Win32.Processes;
 
-namespace VsChromiumCore.Processes {
+namespace VsChromium.Core.Processes {
   [Export(typeof(IProcessCreator))]
   public class ProcessCreator : IProcessCreator {
     public CreateProcessResult CreateProcess(string filename, string arguments, CreateProcessOptions options) {

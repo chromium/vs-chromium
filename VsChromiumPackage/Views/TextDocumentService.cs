@@ -1,11 +1,11 @@
 ﻿using System.ComponentModel.Composition;
 using System.IO;
 using Microsoft.VisualStudio.Text;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumPackage.Threads;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Threads;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   [Export(typeof(ITextDocumentService))]
   public class TextDocumentService : ITextDocumentService {
     private readonly IUIRequestProcessor _uiRequestProcessor;

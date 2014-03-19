@@ -5,7 +5,7 @@
 using System.ComponentModel.Composition;
 using System.Threading;
 
-namespace VsChromiumCore.Ipc.TypedMessages {
+namespace VsChromium.Core.Ipc.TypedMessages {
   public interface IOperationIdFactory {
     long GetNextId();
   }

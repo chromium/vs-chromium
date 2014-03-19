@@ -5,11 +5,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using VsChromiumCore;
-using VsChromiumServer.FileSystemNames;
-using VsChromiumServer.Projects;
+using VsChromium.Core;
+using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.Projects;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public class FileSystemTreeValidator {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly IProjectDiscovery _projectDiscovery;

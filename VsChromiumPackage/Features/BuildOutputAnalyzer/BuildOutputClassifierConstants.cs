@@ -5,7 +5,7 @@
 using System.Windows;
 using System.Windows.Media;
 
-namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
+namespace VsChromium.Features.BuildOutputAnalyzer {
   public static class BuildOutputClassifierConstants {
     public const string Name = "VsChromium-BuildOutput";
     public const string DisplayName = "VsChromium: Build Output";

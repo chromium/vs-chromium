@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace VsChromiumCore.Win32.Processes {
+namespace VsChromium.Core.Win32.Processes {
   // In general, for all structures below which contains a pointer (represented here by IntPtr),
   // the pointers refer to memory in the address space of the process from which the original
   // structure was read.  While this seems obvious, it means we cannot provide an elegant

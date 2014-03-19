@@ -4,7 +4,7 @@
 
 using ProtoBuf;
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   [ProtoContract]
   [ProtoInclude(10, typeof(IpcRequest))]
   [ProtoInclude(11, typeof(IpcResponse))]

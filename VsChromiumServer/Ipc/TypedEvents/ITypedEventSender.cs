@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromiumCore.Ipc.TypedMessages;
+using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromiumServer.Ipc.TypedEvents {
+namespace VsChromium.Server.Ipc.TypedEvents {
   /// <summary>
   /// Allows sending events from any thread asynchronously.
   /// </summary>

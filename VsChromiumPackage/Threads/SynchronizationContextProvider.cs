@@ -1,7 +1,7 @@
 using System.ComponentModel.Composition;
 using System.Threading;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   [Export(typeof(ISynchronizationContextProvider))]
   public class SynchronizationContextProvider : ISynchronizationContextProvider {
     private readonly SynchronizationContext _context;

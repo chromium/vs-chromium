@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace VsChromiumCore.Configuration {
+namespace VsChromium.Core.Configuration {
   public class FileWithSections : IFileWithSections {
     private readonly string _filename;
     private readonly Lazy<Dictionary<string, List<string>>> _sections;

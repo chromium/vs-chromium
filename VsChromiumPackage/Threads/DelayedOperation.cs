@@ -1,6 +1,6 @@
 using System;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   public class DelayedOperation {
     public DelayedOperation() {
       Delay = TimeSpan.FromSeconds(0.1);

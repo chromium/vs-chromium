@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   /// <summary>
   /// Ability to run tasks sequentially on a thread from the custom thread pool.
   /// </summary>

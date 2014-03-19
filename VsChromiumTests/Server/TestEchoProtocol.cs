@@ -5,10 +5,10 @@
 using System;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumCore.Ipc;
-using VsChromiumPackage.ServerProxy;
+using VsChromium.Core.Ipc;
+using VsChromium.ServerProxy;
 
-namespace VsChromiumTests.Server {
+namespace VsChromium.Tests.Server {
   [TestClass]
   public class TestEchoProtocol : MefBaseTest {
     [TestMethod]

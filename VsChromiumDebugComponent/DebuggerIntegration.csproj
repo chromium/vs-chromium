@@ -8,8 +8,8 @@
     <ProjectGuid>{58572470-7222-49BE-850B-C6CE224A813A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VsChromium</RootNamespace>
-    <AssemblyName>VsChromium.DebugComponent</AssemblyName>
+    <RootNamespace>VsChromium.DebuggerIntegration</RootNamespace>
+    <AssemblyName>VsChromium.DebuggerIntegration</AssemblyName>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <ItemGroup>

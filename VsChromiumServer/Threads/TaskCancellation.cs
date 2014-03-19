@@ -4,9 +4,9 @@
 
 using System.Collections.Generic;
 using System.Threading;
-using VsChromiumCore.Linq;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   /// <summary>
   /// Keeps track of cancellation tokensof multiple independent tasks. Tread safe.
   /// </summary>

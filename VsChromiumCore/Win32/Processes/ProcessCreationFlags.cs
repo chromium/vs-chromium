@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumCore.Win32.Processes {
+namespace VsChromium.Core.Win32.Processes {
   [Flags]
   public enum ProcessCreationFlags : int {
     /// <summary>

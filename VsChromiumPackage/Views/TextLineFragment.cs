@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 
-namespace VsChromiumPackage.Views {
+namespace VsChromium.Views {
   /// <summary>
   /// Represents a fragment of an ITextSnapshotLine. Use the "Create" static method
   /// to create an instance.

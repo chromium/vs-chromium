@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   public class ThreadPool {
     private readonly int _capacity;
     private readonly object _lock = new object();

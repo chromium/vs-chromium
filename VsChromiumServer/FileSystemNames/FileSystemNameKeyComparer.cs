@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 
-namespace VsChromiumServer.FileSystemNames {
+namespace VsChromium.Server.FileSystemNames {
   public class FileSystemNameKeyComparer : IEqualityComparer<FileSystemNameKey> {
     public bool Equals(FileSystemNameKey x, FileSystemNameKey y) {
       return x.Equals(y);

@@ -4,9 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   public class TaskQueue : ITaskQueue {
     private readonly ICustomThreadPool _customThreadPool;
     private readonly object _lock = new object();

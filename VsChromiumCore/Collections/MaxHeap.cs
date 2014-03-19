@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace VsChromiumCore.Collections {
+namespace VsChromium.Core.Collections {
   public class MaxHeap<T> : IHeap<T> {
     private const int _defaultCapacity = 6;
 

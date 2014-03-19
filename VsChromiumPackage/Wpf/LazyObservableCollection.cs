@@ -5,9 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using VsChromiumCore.Linq;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumPackage.Wpf {
+namespace VsChromium.Wpf {
   public class LazyObservableCollection<T> : ObservableCollection<T>, ILazyObservableCollection<T> where T : class {
     private readonly int _lazyCount;
     private readonly Func<T> _lazyItemFactory;

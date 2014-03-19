@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   public class ErrorResponseException : Exception {
     private readonly ErrorResponse _errorResponse;
 

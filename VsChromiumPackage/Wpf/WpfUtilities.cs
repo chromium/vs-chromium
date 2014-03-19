@@ -9,9 +9,9 @@ using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
-using VsChromiumCore;
+using VsChromium.Core;
 
-namespace VsChromiumPackage.Wpf {
+namespace VsChromium.Wpf {
   public class DispatchOptions {
     public DispatchOptions() {
       Priority = DispatcherPriority.Normal;

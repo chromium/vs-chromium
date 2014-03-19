@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromiumCore.FileNames {
+namespace VsChromium.Core.FileNames {
   /// <summary>
   /// String comparer used for comparing path strings in the pattern matching namespace.
   /// Note that we use a case *sensitive* comparision because we try to follow the syntax

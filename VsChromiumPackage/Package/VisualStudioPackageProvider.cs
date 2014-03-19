@@ -5,7 +5,7 @@
 using System;
 using System.ComponentModel.Composition;
 
-namespace VsChromiumPackage.Package {
+namespace VsChromium.Package {
   [Export(typeof(IVisualStudioPackageProvider))]
   public class VisualStudioPackageProvider : IVisualStudioPackageProvider {
     private IVisualStudioPackage _package;

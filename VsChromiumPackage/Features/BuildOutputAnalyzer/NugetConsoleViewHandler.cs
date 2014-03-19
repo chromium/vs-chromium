@@ -10,10 +10,10 @@ using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
-using VsChromiumPackage.Commands;
-using VsChromiumPackage.Views;
+using VsChromium.Commands;
+using VsChromium.Views;
 
-namespace VsChromiumPackage.Features.BuildOutputAnalyzer {
+namespace VsChromium.Features.BuildOutputAnalyzer {
   [PartCreationPolicy(CreationPolicy.NonShared)]
   [Export(typeof(IViewHandler))]
   public class NugetConsoleViewHandler : IViewHandler {

@@ -4,7 +4,7 @@
 
 using System.IO;
 
-namespace VsChromiumCore.FileNames {
+namespace VsChromium.Core.FileNames {
   public static class PathHelpers {
     private static readonly string _directorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
 

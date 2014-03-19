@@ -4,7 +4,7 @@
 
 using System.Collections.Concurrent;
 
-namespace VsChromiumCore {
+namespace VsChromium.Core {
   /// <summary>
   /// Similar to "string.intern" except it is slightly more efficient (at the cost
   /// of slightly more memory).

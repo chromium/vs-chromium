@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public interface IPrePassWontMatch {
     /// <summary>
     /// Returns "true" if this operator can globally say that "path" can't match the operator.

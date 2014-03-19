@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystemNames;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemNames;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   public class FileSearchResult {
     public FileSearchResult() {
       Spans = new List<FilePositionSpan>();

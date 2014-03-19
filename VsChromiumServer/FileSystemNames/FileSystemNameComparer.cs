@@ -4,9 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumServer.FileSystemNames {
+namespace VsChromium.Server.FileSystemNames {
   public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
     private static readonly FileSystemNameComparer _instance = new FileSystemNameComparer();
 

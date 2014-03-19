@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.Text;
 
-namespace VsChromiumPackage.Features.FormatComment {
+namespace VsChromium.Features.FormatComment {
   public class ExtendSpanResult {
     public CommentType CommentType { get; set; }
     public ITextSnapshotLine StartLine { get; set; }

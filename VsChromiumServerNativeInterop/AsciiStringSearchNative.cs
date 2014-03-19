@@ -4,9 +4,9 @@
 
 using System;
 using System.Runtime.InteropServices;
-using VsChromiumCore.Win32.Memory;
+using VsChromium.Core.Win32.Memory;
 
-namespace VsChromiumServer.NativeInterop {
+namespace VsChromium.Server.NativeInterop {
   public class AsciiStringSearchNative : AsciiStringSearchAlgorithm {
     private readonly SafeSearchHandle _handle;
     private readonly SafeHGlobalHandle _patternHandle;

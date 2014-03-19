@@ -6,11 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Linq;
-using VsChromiumPackage.Threads;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
+using VsChromium.Threads;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public class FileEntryViewModel : FileSystemEntryViewModel {
     private readonly FileEntry _fileEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;

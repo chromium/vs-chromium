@@ -8,10 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-using VsChromiumCore.Win32.Processes;
-using VsChromiumCore.Processes;
+using VsChromium.Core.Win32.Processes;
+using VsChromium.Core.Processes;
 
-namespace VsChromiumPackage.ChromeDebug {
+namespace VsChromium.ChromeDebug {
   class ProcessViewItem : ListViewItem {
     public ProcessViewItem() {
       Category = ProcessCategory.Other;

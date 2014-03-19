@@ -6,13 +6,13 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Linq;
-using VsChromiumServer.ProgressTracking;
-using VsChromiumServer.Projects;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
+using VsChromium.Server.ProgressTracking;
+using VsChromium.Server.Projects;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   [Export(typeof(IFileSystemTreeBuilder))]
   public class FileSystemTreeBuilder : IFileSystemTreeBuilder {
     private const string _relativePathForRoot = "";

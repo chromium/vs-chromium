@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\ProjectBefore.settings" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E538193B-39EC-4D76-BD09-DBD1F1FF3426}</ProjectGuid>
+    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>VsChromium.Tests</RootNamespace>
+    <AssemblyName>VsChromium.Tests</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="protobuf-net">
+      <HintPath>$(BuildRoot)packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="TestBuildOutputAnalyzer.cs" />
+    <Compile Include="Mocks\TextEditMock.cs" />
+    <Compile Include="TestFormatComments.cs" />
+    <Compile Include="Server\TestSearchFileContents.cs" />
+    <Compile Include="Server\TestSearchDirectoryNames.cs" />
+    <Compile Include="Server\TestServerPerf.cs" />
+    <Compile Include="Server\TestServerBase.cs" />
+    <Compile Include="Server\TestSearchFileNames.cs" />
+    <Compile Include="TestFileNameMatching.cs" />
+    <Compile Include="TestCollections.cs" />
+    <Compile Include="TestNativeMethods.cs" />
+    <Compile Include="TestTcpSerialization.cs" />
+    <Compile Include="TestProtoBufSerialization.cs" />
+    <Compile Include="MefBaseTest.cs" />
+    <Compile Include="Server\TestEchoProtocol.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server\TestAddFile.cs" />
+    <Compile Include="Mocks\TextBufferMock.cs" />
+    <Compile Include="Mocks\TextSnapshotLineMock.cs" />
+    <Compile Include="Mocks\TextSnapshotMock.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(BuildRoot)VsChromiumCore\Core.csproj">
+      <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
+      <Name>VsChromium.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VsChromiumPackage\VsChromium.csproj">
+      <Project>{8ed06aa3-93df-48fe-97c0-f516e99fdb32}</Project>
+      <Name>VsChromium</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VsChromiumServerNativeInterop\NativeInterop.csproj">
+      <Project>{a38dc74b-820c-49a5-a732-23170d953632}</Project>
+      <Name>VsChromium.Server.NativeInterop</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

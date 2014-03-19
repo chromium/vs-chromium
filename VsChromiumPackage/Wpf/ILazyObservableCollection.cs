@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumPackage.Wpf {
+namespace VsChromium.Wpf {
   public interface ILazyObservableCollection<out T> where T : class {
     T ExpandLazyNode();
   }

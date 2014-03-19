@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumCore.Win32.Memory;
-using VsChromiumCore.Win32.Strings;
-using VsChromiumServer.NativeInterop;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Win32.Strings;
+using VsChromium.Server.NativeInterop;
 
-namespace VsChromiumServer.Search {
+namespace VsChromium.Server.Search {
   public unsafe class AsciiTextLineOffsets {
     private const char _lineBreak = '\n';
     private readonly SafeHeapBlockHandle _heap;  // Keep this ensure native memory lifetime

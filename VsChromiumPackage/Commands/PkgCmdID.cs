@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumPackage.Commands {
+namespace VsChromium.Commands {
   static class PkgCmdIdList {
     public const int CmdidFormatComment = 0x100;
     public const int CmdidChromiumExplorerToolWindow = 0x101;

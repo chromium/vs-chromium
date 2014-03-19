@@ -6,7 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
-namespace VsChromiumCore.Win32.Processes {
+namespace VsChromium.Core.Win32.Processes {
   [StructLayout(LayoutKind.Sequential)]
   public class STARTUPINFO : IDisposable {
     public int cb;

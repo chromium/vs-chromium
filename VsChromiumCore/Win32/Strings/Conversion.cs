@@ -5,9 +5,9 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Text;
-using VsChromiumCore.Win32.Memory;
+using VsChromium.Core.Win32.Memory;
 
-namespace VsChromiumCore.Win32.Strings {
+namespace VsChromium.Core.Win32.Strings {
   public static class Conversion {
     public static unsafe SafeHeapBlockHandle UTF8ToUnicode(SafeHeapBlockHandle block) {
       var start = (byte*)block.Pointer;

@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   public static class PatternParser {
     public static PathMatcher ParsePattern(string pattern) {
       if (pattern.IndexOf(Path.AltDirectorySeparatorChar) >= 0)

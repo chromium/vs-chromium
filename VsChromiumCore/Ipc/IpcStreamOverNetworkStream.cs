@@ -4,9 +4,9 @@
 
 using System;
 using System.Net.Sockets;
-using VsChromiumCore.Ipc.ProtoBuf;
+using VsChromium.Core.Ipc.ProtoBuf;
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   public class IpcStreamOverNetworkStream : IIpcStream {
     private readonly object _readerLock = new object();
     private readonly IProtoBufSerializer _serializer;

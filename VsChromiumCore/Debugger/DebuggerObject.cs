@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromiumCore.Processes;
+using VsChromium.Core.Processes;
 
-namespace VsChromiumCore.Debugger {
+namespace VsChromium.Core.Debugger {
   /// <summary>
   /// Proxy object used to control a debugger thread. The debugger thread is
   /// started only when a process is attached.

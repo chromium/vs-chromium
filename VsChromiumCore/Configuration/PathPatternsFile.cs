@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using VsChromiumCore.FileNames.PatternMatching;
+using VsChromium.Core.FileNames.PatternMatching;
 
-namespace VsChromiumCore.Configuration {
+namespace VsChromium.Core.Configuration {
   public class PathPatternsFile : IPathPatternsFile {
     private readonly string _configurationFileName;
     private readonly IConfigurationSectionProvider _configurationSectionProvider;

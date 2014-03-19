@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace VsChromiumPackage.Features.ChromiumExplorer {
+namespace VsChromium.Features.ChromiumExplorer {
   public class RootErrorItemViewModel : TreeViewItemViewModel {
     private readonly string _text;
 

@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 
-namespace VsChromiumCore.Collections {
+namespace VsChromium.Core.Collections {
   public class ReverseComparer<T> : IComparer<T> {
     private static readonly IComparer<T> _defaultInstance = new ReverseComparer<T>(Comparer<T>.Default);
     private readonly IComparer<T> _comparer;

@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Threading;
-using VsChromiumCore;
-using VsChromiumCore.Linq;
+using VsChromium.Core;
+using VsChromium.Core.Linq;
 
-namespace VsChromiumPackage.Threads {
+namespace VsChromium.Threads {
   [Export(typeof(IDelayedOperationProcessor))]
   public class DelayedOperationProcessor : IDelayedOperationProcessor {
     private readonly IDateTimeProvider _dateTimeProvider;

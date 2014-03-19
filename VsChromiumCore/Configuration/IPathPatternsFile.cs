@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromiumCore.FileNames.PatternMatching;
+using VsChromium.Core.FileNames.PatternMatching;
 
-namespace VsChromiumCore.Configuration {
+namespace VsChromium.Core.Configuration {
   public interface IPathPatternsFile {
     IPathMatcher GetPathMatcher();
     IEnumerable<IPathMatcher> GetPathMatcherLines();

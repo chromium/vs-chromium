@@ -4,9 +4,9 @@
 
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
-using VsChromiumCore.Ipc;
+using VsChromium.Core.Ipc;
 
-namespace VsChromiumServer {
+namespace VsChromium.Server {
   public class ServerStub {
     /// <summary>
     /// Having a static instance makes debugging easier. It is not needed for anything else.

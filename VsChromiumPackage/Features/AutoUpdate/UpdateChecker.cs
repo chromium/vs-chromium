@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using VsChromiumCore;
-using VsChromiumCore.Linq;
-using VsChromiumPackage.Package;
-using VsChromiumPackage.Threads;
+using VsChromium.Core;
+using VsChromium.Core.Linq;
+using VsChromium.Package;
+using VsChromium.Threads;
 
-namespace VsChromiumPackage.Features.AutoUpdate {
+namespace VsChromium.Features.AutoUpdate {
   /// <summary>
   /// Implements new VsChromium package version check by periodically
   /// (once per day) checking for the latest version info.

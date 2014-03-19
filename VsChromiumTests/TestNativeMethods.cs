@@ -5,10 +5,10 @@
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromiumCore.Win32.Memory;
-using VsChromiumServer.NativeInterop;
+using VsChromium.Core.Win32.Memory;
+using VsChromium.Server.NativeInterop;
 
-namespace VsChromiumTests {
+namespace VsChromium.Tests {
   /// <summary>
   /// Summary description for UnitTest1
   /// </summary>

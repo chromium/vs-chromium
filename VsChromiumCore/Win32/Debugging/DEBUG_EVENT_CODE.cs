@@ -1,4 +1,4 @@
-namespace VsChromiumCore.Win32.Debugging {
+namespace VsChromium.Core.Win32.Debugging {
   public enum DEBUG_EVENT_CODE : uint {
     EXCEPTION_DEBUG_EVENT = 1,
     CREATE_THREAD_DEBUG_EVENT = 2,

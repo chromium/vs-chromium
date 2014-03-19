@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace VsChromiumPackage {
+namespace VsChromium {
     using System;
     
     

@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using ProtoBuf;
-using VsChromiumCore.FileNames;
+using VsChromium.Core.FileNames;
 
-namespace VsChromiumCore.Ipc.TypedMessages {
+namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   [ProtoInclude(10, typeof(FileEntry))]
   [ProtoInclude(11, typeof(DirectoryEntry))]

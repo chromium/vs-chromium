@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromiumCore.Processes {
+namespace VsChromium.Core.Processes {
   public interface IProcessCreator {
     CreateProcessResult CreateProcess(string filename, string arguments, CreateProcessOptions options);
   }

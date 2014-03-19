@@ -4,7 +4,7 @@
 
 using ProtoBuf;
 
-namespace VsChromiumCore.Ipc {
+namespace VsChromium.Core.Ipc {
   [ProtoContract]
   public class ErrorResponse : IpcMessageData {
     [ProtoMember(1)]

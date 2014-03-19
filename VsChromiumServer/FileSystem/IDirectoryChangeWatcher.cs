@@ -4,9 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromiumServer.FileSystemNames;
+using VsChromium.Server.FileSystemNames;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public interface IDirectoryChangeWatcher {
     void WatchDirectories(IEnumerable<DirectoryName> directories);
 

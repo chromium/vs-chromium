@@ -7,12 +7,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using VsChromiumCore.FileNames;
-using VsChromiumCore.Ipc.TypedMessages;
-using VsChromiumServer.FileSystemNames;
-using VsChromiumServer.Projects;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.Projects;
 
-namespace VsChromiumServer.FileSystem {
+namespace VsChromium.Server.FileSystem {
   public static class FileSystemNameFactoryExtensions {
     public static DirectoryEntry ToFlatSearchResult(
       this IFileSystemNameFactory fileSystemNameFactory,

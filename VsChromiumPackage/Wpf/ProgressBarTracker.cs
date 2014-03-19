@@ -9,7 +9,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace VsChromiumPackage.Wpf {
+namespace VsChromium.Wpf {
   /// <summary>
   /// This class is thread safe, but all operations will be run in the Dispatcher thread of the ProgressBar instance.
   /// </summary>

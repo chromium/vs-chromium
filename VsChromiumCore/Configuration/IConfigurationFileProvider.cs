@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace VsChromiumCore.Configuration {
+namespace VsChromium.Core.Configuration {
   public interface IConfigurationFileProvider {
     IEnumerable<string> ReadFile(string name, Func<IEnumerable<string>, IEnumerable<string>> postProcessing);
   }

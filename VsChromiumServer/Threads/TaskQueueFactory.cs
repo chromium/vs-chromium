@@ -4,7 +4,7 @@
 
 using System.ComponentModel.Composition;
 
-namespace VsChromiumServer.Threads {
+namespace VsChromium.Server.Threads {
   [Export(typeof(ITaskQueueFactory))]
   public class TaskQueueFactory : ITaskQueueFactory {
     private readonly ICustomThreadPool _customThreadPool;

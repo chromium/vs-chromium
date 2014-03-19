@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace VsChromiumCore.FileNames.PatternMatching {
+namespace VsChromium.Core.FileNames.PatternMatching {
   /// <summary>
   /// Matches "*" inside a sub-path component (e.g. foo/*/bar).
   /// </summary>

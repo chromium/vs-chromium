@@ -4,7 +4,7 @@
 
 using System.IO;
 
-namespace VsChromiumCore.Ipc.ProtoBuf {
+namespace VsChromium.Core.Ipc.ProtoBuf {
   public interface IProtoBufSerializer {
     void Serialize(Stream stream, IpcMessage message);
     IpcMessage Deserialize(Stream stream);

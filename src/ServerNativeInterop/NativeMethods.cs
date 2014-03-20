@@ -29,7 +29,7 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromiumNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern SafeSearchHandle AsciiSearchAlgorithm_Create(
       SearchAlgorithmKind kind,
@@ -38,17 +38,17 @@ namespace VsChromium.Server.NativeInterop {
       SearchOptions options);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromiumNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern IntPtr AsciiSearchAlgorithm_Search(SafeSearchHandle handle, IntPtr text, int textLen);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromiumNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern void AsciiSearchAlgorithm_Delete(IntPtr handle);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromiumNative.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern TextKind Text_GetKind(IntPtr text, int textLen);
   }

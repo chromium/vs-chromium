@@ -385,10 +385,6 @@
       <IncludeOutputGroupsInVSIX>DebugSymbolsProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
-    <ProjectReference Include="$(BuildRoot)src\Native\Native.vcxproj">
-      <Project>{c0710b1a-5dfb-4be2-b6c6-f02382bc15f0}</Project>
-      <Name>VsChromium.Native</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>

@@ -70,10 +70,10 @@ BEGIN
             VALUE "CompanyName", "The Chromium Authors"
             VALUE "FileDescription", "Dynamic library containing performance sensitive functions - used by VsChromiumServer."
             VALUE "FileVersion", "0.9.6.0"
-            VALUE "InternalName", "VsChromiumNative.dll"
+            VALUE "InternalName", "VsChromium.Native.dll"
             VALUE "LegalCopyright", "Copyright 2013 The Chromium Authors. All rights reserved."
-            VALUE "OriginalFilename", "VsChromiumNative.dll"
-            VALUE "ProductName", "VsChromiumNative"
+            VALUE "OriginalFilename", "VsChromium.Native.dll"
+            VALUE "ProductName", "VsChromium"
             VALUE "ProductVersion", "0.9.6.0"
         END
     END

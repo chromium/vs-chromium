@@ -12,7 +12,7 @@
     ComponentLevel="1999000"
     AssemblyName="VsChromium.DkmIntegration">
     
-    <Class Name="VsChromium.DkmIntegration.DebugComponent">
+    <Class Name="VsChromium.DkmIntegration.Engine.DebugComponent">
       <Implements>
         <InterfaceGroup>
           <Filter>

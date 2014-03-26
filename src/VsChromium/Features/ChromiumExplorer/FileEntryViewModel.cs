@@ -35,6 +35,18 @@ namespace VsChromium.Features.ChromiumExplorer {
 
     public string Path { get { return GetPath(); } }
 
+    public override string DisplayText
+    {
+      get
+      {
+        if (ChildrenCount > 0) {
+          return string.Format("{0} ({1})", base.DisplayText, ChildrenCount);
+        } else {
+          return base.DisplayText;
+        }
+      }
+    }
+
     public override ImageSource ImageSourcePath { get { return StandarImageSourceFactory.GetImageForDocument(_fileEntry.Name); } }
 
     protected override void OnPropertyChanged(string propertyName) {

@@ -18,15 +18,9 @@ namespace VsChromium.Features.ChromiumExplorer {
 
     public string Name { get { return FileSystemEntry.Name; } }
 
-    public string AdditionalText { get; set; }
-
-    public string DisplayText {
+    public virtual string DisplayText {
       get {
-        var result = Name;
-        if (!string.IsNullOrEmpty(AdditionalText)) {
-          result += AdditionalText;
-        }
-        return result;
+        return this.Name;
       }
     }
 

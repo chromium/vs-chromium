@@ -38,6 +38,8 @@ namespace VsChromium.ChromeDebug {
       this.buttonCancel = new System.Windows.Forms.Button();
       this.groupBox1 = new System.Windows.Forms.GroupBox();
       this.buttonRefresh = new System.Windows.Forms.Button();
+      this.checkBoxAttachToNewChildren = new System.Windows.Forms.CheckBox();
+      this.checkBoxAttachToRunningChildren = new System.Windows.Forms.CheckBox();
       this.groupBox1.SuspendLayout();
       this.SuspendLayout();
       // 
@@ -55,9 +57,10 @@ namespace VsChromium.ChromeDebug {
             this.columnHeaderArch,
             this.columnHeaderCmdLine});
       this.listViewProcesses.FullRowSelect = true;
+      this.listViewProcesses.HideSelection = false;
       this.listViewProcesses.Location = new System.Drawing.Point(14, 27);
       this.listViewProcesses.Name = "listViewProcesses";
-      this.listViewProcesses.Size = new System.Drawing.Size(884, 462);
+      this.listViewProcesses.Size = new System.Drawing.Size(726, 251);
       this.listViewProcesses.TabIndex = 0;
       this.listViewProcesses.UseCompatibleStateImageBehavior = false;
       this.listViewProcesses.View = System.Windows.Forms.View.Details;
@@ -96,9 +99,9 @@ namespace VsChromium.ChromeDebug {
       // 
       this.buttonAttach.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
       this.buttonAttach.DialogResult = System.Windows.Forms.DialogResult.OK;
-      this.buttonAttach.Location = new System.Drawing.Point(684, 603);
+      this.buttonAttach.Location = new System.Drawing.Point(564, 365);
       this.buttonAttach.Name = "buttonAttach";
-      this.buttonAttach.Size = new System.Drawing.Size(118, 41);
+      this.buttonAttach.Size = new System.Drawing.Size(100, 25);
       this.buttonAttach.TabIndex = 2;
       this.buttonAttach.Text = "Attach";
       this.buttonAttach.UseVisualStyleBackColor = true;
@@ -108,9 +111,9 @@ namespace VsChromium.ChromeDebug {
       // 
       this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
       this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-      this.buttonCancel.Location = new System.Drawing.Point(808, 603);
+      this.buttonCancel.Location = new System.Drawing.Point(670, 365);
       this.buttonCancel.Name = "buttonCancel";
-      this.buttonCancel.Size = new System.Drawing.Size(118, 41);
+      this.buttonCancel.Size = new System.Drawing.Size(100, 25);
       this.buttonCancel.TabIndex = 3;
       this.buttonCancel.Text = "Cancel";
       this.buttonCancel.UseVisualStyleBackColor = true;
@@ -120,10 +123,13 @@ namespace VsChromium.ChromeDebug {
       this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+      this.groupBox1.Controls.Add(this.buttonRefresh);
+      this.groupBox1.Controls.Add(this.checkBoxAttachToNewChildren);
       this.groupBox1.Controls.Add(this.listViewProcesses);
+      this.groupBox1.Controls.Add(this.checkBoxAttachToRunningChildren);
       this.groupBox1.Location = new System.Drawing.Point(12, 27);
       this.groupBox1.Name = "groupBox1";
-      this.groupBox1.Size = new System.Drawing.Size(914, 511);
+      this.groupBox1.Size = new System.Drawing.Size(756, 332);
       this.groupBox1.TabIndex = 5;
       this.groupBox1.TabStop = false;
       this.groupBox1.Text = "Available Processes";
@@ -131,13 +137,39 @@ namespace VsChromium.ChromeDebug {
       // buttonRefresh
       // 
       this.buttonRefresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.buttonRefresh.Location = new System.Drawing.Point(808, 552);
+      this.buttonRefresh.Location = new System.Drawing.Point(658, 284);
       this.buttonRefresh.Name = "buttonRefresh";
-      this.buttonRefresh.Size = new System.Drawing.Size(117, 33);
+      this.buttonRefresh.Size = new System.Drawing.Size(82, 25);
       this.buttonRefresh.TabIndex = 6;
       this.buttonRefresh.Text = "Refresh";
       this.buttonRefresh.UseVisualStyleBackColor = true;
       this.buttonRefresh.Click += new System.EventHandler(this.buttonRefresh_Click);
+      // 
+      // checkBoxAttachToNewChildren
+      // 
+      this.checkBoxAttachToNewChildren.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+      this.checkBoxAttachToNewChildren.AutoSize = true;
+      this.checkBoxAttachToNewChildren.Checked = true;
+      this.checkBoxAttachToNewChildren.CheckState = System.Windows.Forms.CheckState.Checked;
+      this.checkBoxAttachToNewChildren.Location = new System.Drawing.Point(14, 307);
+      this.checkBoxAttachToNewChildren.Name = "checkBoxAttachToNewChildren";
+      this.checkBoxAttachToNewChildren.Size = new System.Drawing.Size(279, 17);
+      this.checkBoxAttachToNewChildren.TabIndex = 8;
+      this.checkBoxAttachToNewChildren.Text = "Also attach to new child processes when they spawn.";
+      this.checkBoxAttachToNewChildren.UseVisualStyleBackColor = true;
+      // 
+      // checkBoxAttachToRunningChildren
+      // 
+      this.checkBoxAttachToRunningChildren.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+      this.checkBoxAttachToRunningChildren.AutoSize = true;
+      this.checkBoxAttachToRunningChildren.Checked = true;
+      this.checkBoxAttachToRunningChildren.CheckState = System.Windows.Forms.CheckState.Checked;
+      this.checkBoxAttachToRunningChildren.Location = new System.Drawing.Point(14, 284);
+      this.checkBoxAttachToRunningChildren.Name = "checkBoxAttachToRunningChildren";
+      this.checkBoxAttachToRunningChildren.Size = new System.Drawing.Size(250, 17);
+      this.checkBoxAttachToRunningChildren.TabIndex = 7;
+      this.checkBoxAttachToRunningChildren.Text = "Automatically attach to running child processes.";
+      this.checkBoxAttachToRunningChildren.UseVisualStyleBackColor = true;
       // 
       // AttachDialog
       // 
@@ -145,9 +177,8 @@ namespace VsChromium.ChromeDebug {
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.CancelButton = this.buttonCancel;
-      this.ClientSize = new System.Drawing.Size(940, 656);
+      this.ClientSize = new System.Drawing.Size(782, 402);
       this.ControlBox = false;
-      this.Controls.Add(this.buttonRefresh);
       this.Controls.Add(this.groupBox1);
       this.Controls.Add(this.buttonCancel);
       this.Controls.Add(this.buttonAttach);
@@ -158,6 +189,7 @@ namespace VsChromium.ChromeDebug {
       this.Text = "Attach to Chrome";
       this.Load += new System.EventHandler(this.AttachDialog_Load);
       this.groupBox1.ResumeLayout(false);
+      this.groupBox1.PerformLayout();
       this.ResumeLayout(false);
 
     }
@@ -175,5 +207,7 @@ namespace VsChromium.ChromeDebug {
     private System.Windows.Forms.GroupBox groupBox1;
     private System.Windows.Forms.Button buttonRefresh;
     private System.Windows.Forms.ColumnHeader columnHeaderType;
+    private System.Windows.Forms.CheckBox checkBoxAttachToRunningChildren;
+    private System.Windows.Forms.CheckBox checkBoxAttachToNewChildren;
   }
 }

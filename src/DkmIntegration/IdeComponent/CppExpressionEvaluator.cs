@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright 2014 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,11 +11,11 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Debugger.Evaluation;
 using Microsoft.VisualStudio.Debugger;
 
-namespace VsChromium.DkmIntegration.Engine
+namespace VsChromium.DkmIntegration.IdeComponent
 {
   public static class CppExpressionEvaluator
   {
-    public static DkmLanguage CppLanguage = DkmLanguage.Create("C++", new DkmCompilerId(Guids.MicrosoftVendorGuid, Guids.CppLanguageGuid));
+    public static DkmLanguage CppLanguage = DkmLanguage.Create("C++", new DkmCompilerId(Guids.Vendor.Microsoft, Guids.Language.Cpp));
 
     // Evaluates the given expression in the specified context, and returns a successful result, throwing an exception
     // if evaluation failed.

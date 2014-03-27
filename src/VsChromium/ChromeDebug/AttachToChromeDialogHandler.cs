@@ -2,10 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Debugger;
+using Microsoft.VisualStudio.Debugger.DefaultPort;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using VsChromium.Core.Processes;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
@@ -34,16 +42,21 @@ namespace VsChromium.ChromeDebug {
       var dialog = new AttachDialog();
       var result = dialog.ShowDialog(parentShim);
       if (result == DialogResult.OK) {
-        foreach (var selectedID in dialog.SelectedItems) {
-          foreach (EnvDTE90.Process3 p in dte.Debugger.LocalProcesses) {
-            System.Diagnostics.Debug.WriteLine("Found process {0}", p.ProcessID);
-            if (p.ProcessID != selectedID)
-              continue;
-            p.Attach();
-            System.Diagnostics.Debug.WriteLine("Attaching to process successful.");
-            break;
+        HashSet<Process> processes = new HashSet<Process>();
+        foreach (int pid in dialog.SelectedItems) {
+          Process p = Process.GetProcessById(pid);
+          if (!p.IsBeingDebugged())
+            processes.Add(p);
+
+          if (dialog.AutoAttachToCurrentChildren) {
+            foreach (Process child in p.GetChildren()) {
+              if (!child.IsBeingDebugged())
+                processes.Add(child);
+            }
           }
         }
+        List<Process> processList = new List<Process>(processes);
+        DebugAttach.AttachToProcess(processList.ToArray(), dialog.AutoAttachToFutureChildren);
       }
     }
   }

@@ -9,10 +9,10 @@
 
   <ManagedComponent
     ComponentId="guidChromeDebugComponentId"
-    ComponentLevel="1999000"
+    ComponentLevel="9000000"
     AssemblyName="VsChromium.DkmIntegration">
     
-    <Class Name="VsChromium.DkmIntegration.Engine.DebugComponent">
+    <Class Name="VsChromium.DkmIntegration.IdeComponent.IdeComponent">
       <Implements>
         <InterfaceGroup>
           <Filter>
@@ -22,7 +22,6 @@
           </Filter>
           <Interface Name="IDkmCustomVisualizer"/>
         </InterfaceGroup>
-
       </Implements>
     </Class>
   </ManagedComponent>

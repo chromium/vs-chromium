@@ -125,9 +125,12 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Ipc\IpcRequest.cs" />
     <Compile Include="Debugger\DebuggerThread.cs" />
+    <Compile Include="PackageServices.cs" />
+    <Compile Include="Processes\ExtensionMethods.cs" />
     <Compile Include="Processes\NtProcess.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />
+    <Compile Include="Win32\ComPtr.cs" />
     <Compile Include="Win32\Contants.cs" />
     <Compile Include="Win32\Debugging\CONTINUE_STATUS.cs" />
     <Compile Include="Win32\Debugging\CREATE_PROCESS_DEBUG_INFO.cs" />

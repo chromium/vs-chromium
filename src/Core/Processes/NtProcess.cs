@@ -22,61 +22,74 @@ namespace VsChromium.Core.Processes {
   public class NtProcess {
     public NtProcess(int pid) {
       _processId = pid;
+      _isBeingDebugged = false;
       _machineType = MachineType.Unknown;
       _commandLine = null;
       _nativeProcessImagePath = null;
       _win32ProcessImagePath = null;
+      _isValid = false;
 
       LoadProcessInfo();
     }
 
     private void LoadProcessInfo() {
       ProcessAccessFlags flags;
-      using (SafeProcessHandle handle = OpenProcessHandle(out flags)) {
-        _nativeProcessImagePath = QueryProcessImageName(handle, ProcessQueryImageNameMode.NativeSystemFormat);
-        _win32ProcessImagePath = QueryProcessImageName(handle, ProcessQueryImageNameMode.Win32);
+      try {
+        using (SafeProcessHandle handle = OpenProcessHandle(out flags)) {
+          if (handle.IsInvalid)
+            return;
 
-        _machineType = LoadMachineType(handle);
+          _nativeProcessImagePath = QueryProcessImageName(handle, ProcessQueryImageNameMode.NativeSystemFormat);
+          _win32ProcessImagePath = QueryProcessImageName(handle, ProcessQueryImageNameMode.Win32);
 
-        // If we're not on a 32-bit machine, we can't use ReadProcessMemory, so this is as much as
-        // we can do.
-        if (_machineType != MachineType.X86)
-          return;
+          _machineType = LoadMachineType(handle);
 
-        ProcessBasicInformation basicInfo = new ProcessBasicInformation();
-        int size;
-        int status = VsChromium.Core.Win32.Processes.NativeMethods.NtQueryInformationProcess(
-            handle,
-            ProcessInfoClass.BasicInformation,
-            ref basicInfo,
-            MarshalUtility.UnmanagedStructSize<ProcessBasicInformation>(),
-            out size);
-        _parentProcessId = basicInfo.ParentProcessId.ToInt32();
+          // If we're not on a 32-bit machine, we can't use ReadProcessMemory, so this is as much as
+          // we can do.
+          if (_machineType != MachineType.X86)
+            return;
 
-        // If we can't load the ProcessBasicInfo, then we can't really do anything
-        if (status != NtStatus.Success)
-          throw new Win32Exception();
+          ProcessBasicInformation basicInfo = new ProcessBasicInformation();
+          int size;
+          int status = VsChromium.Core.Win32.Processes.NativeMethods.NtQueryInformationProcess(
+              handle,
+              ProcessInfoClass.BasicInformation,
+              ref basicInfo,
+              MarshalUtility.UnmanagedStructSize<ProcessBasicInformation>(),
+              out size);
+          _parentProcessId = basicInfo.ParentProcessId.ToInt32();
 
-        Debug.Assert(basicInfo.PebBaseAddress != IntPtr.Zero);
+          // If we can't load the ProcessBasicInfo, then we can't really do anything.
+          if (status != NtStatus.Success || basicInfo.PebBaseAddress == IntPtr.Zero)
+            return;
 
-        // Follows a pointer from the PROCESS_BASIC_INFORMATION structure in the target process's
-        // address space to read the PEB.
-        Peb peb = MarshalUtility.ReadUnmanagedStructFromProcess<Peb>(
-            handle,
-            basicInfo.PebBaseAddress);
-        Debug.Assert(peb.ProcessParameters != IntPtr.Zero);
+          if (flags.HasFlag(ProcessAccessFlags.VmRead)) {
+            // Follows a pointer from the PROCESS_BASIC_INFORMATION structure in the target process's
+            // address space to read the PEB.
+            Peb peb = MarshalUtility.ReadUnmanagedStructFromProcess<Peb>(
+                handle,
+                basicInfo.PebBaseAddress);
 
-        // Follows a pointer from the PEB structure in the target process's address space to read
-        // the RTL_USER_PROCESS_PARAMS.
-        RtlUserProcessParameters processParameters = new RtlUserProcessParameters();
-        processParameters = MarshalUtility.ReadUnmanagedStructFromProcess<RtlUserProcessParameters>(
-            handle,
-            peb.ProcessParameters);
+            _isBeingDebugged = peb.IsBeingDebugged;
 
-        _commandLine = MarshalUtility.ReadStringUniFromProcess(
-            handle,
-            processParameters.CommandLine.Buffer,
-            processParameters.CommandLine.Length / 2);
+            if (peb.ProcessParameters != IntPtr.Zero) {
+              // Follows a pointer from the PEB structure in the target process's address space to read
+              // the RTL_USER_PROCESS_PARAMS.
+              RtlUserProcessParameters processParameters = new RtlUserProcessParameters();
+              processParameters = MarshalUtility.ReadUnmanagedStructFromProcess<RtlUserProcessParameters>(
+                  handle,
+                  peb.ProcessParameters);
+
+              _commandLine = MarshalUtility.ReadStringUniFromProcess(
+                  handle,
+                  processParameters.CommandLine.Buffer,
+                  processParameters.CommandLine.Length / 2);
+            }
+          }
+        }
+        _isValid = true;
+      } catch (Exception) {
+        _isValid = false;
       }
     }
 
@@ -114,6 +127,14 @@ namespace VsChromium.Core.Processes {
 
     public string CommandLine {
       get { return _commandLine; }
+    }
+
+    public bool IsBeingDebugged {
+      get { return _isBeingDebugged; }
+    }
+
+    public bool IsValid {
+      get { return _isValid; }
     }
 
     private string QueryProcessImageName(SafeProcessHandle handle, ProcessQueryImageNameMode mode) {
@@ -161,6 +182,8 @@ namespace VsChromium.Core.Processes {
     }
 
     private readonly int _processId;
+    private bool _isValid;
+    private bool _isBeingDebugged;
     private int _parentProcessId;
     private string _nativeProcessImagePath;
     private string _win32ProcessImagePath;

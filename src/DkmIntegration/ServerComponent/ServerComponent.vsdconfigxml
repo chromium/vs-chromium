@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuration xmlns="http://schemas.microsoft.com/vstudio/vsdconfig/2008">
+
+  <DefineGuid Name="guidServerComponentId" Value="F1FD56F0-F6CB-4A9E-9773-BF6F47F64248"/>
+  <DefineGuid Name="guidFunctionTraceEnterSource" Value="2A48C8D1-6D61-4360-A105-6244F3C7B303"/>
+  <DefineGuid Name="guidFunctionTraceExitSource" Value="0B6A3423-7861-46F7-B96F-14AFD344820F"/>
+
+  <ManagedComponent
+    ComponentId="guidServerComponentId"
+    ComponentLevel="90000"
+    AssemblyName="VsChromium.DkmIntegration">
+    
+    <Class Name="VsChromium.DkmIntegration.ServerComponent.ServerComponent">
+      <Implements>
+        <InterfaceGroup>
+          <Filter>
+            <RuntimeId RequiredValue="DkmRuntimeId.Native"/>
+            <BaseDebugMonitorId RequiredValue="DkmBaseDebugMonitorId.WindowsProcess"/>
+          </Filter>
+          <Interface Name="IDkmRuntimeInstanceLoadNotification"/>
+          <Interface Name="IDkmModuleInstanceLoadNotification"/>
+        </InterfaceGroup>
+
+        <InterfaceGroup>
+          <Filter>
+            <SourceId RequiredValue="guidFunctionTraceEnterSource"/>
+            <SourceId RequiredValue="guidFunctionTraceExitSource"/>
+          </Filter>
+          <Interface Name="IDkmRuntimeBreakpointReceived"/>
+        </InterfaceGroup>
+      </Implements>
+    </Class>
+  </ManagedComponent>
+</Configuration>

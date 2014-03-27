@@ -39,6 +39,18 @@ namespace VsChromium.ChromeDebug {
       }
     }
 
+    public bool AutoAttachToCurrentChildren {
+      get {
+        return checkBoxAttachToRunningChildren.Checked;
+      }
+    }
+
+    public bool AutoAttachToFutureChildren {
+      get {
+        return checkBoxAttachToNewChildren.Checked;
+      }
+    }
+
     private void AttachDialog_Load(object sender, EventArgs e) {
       RepopulateListView();
 
@@ -72,19 +84,15 @@ namespace VsChromium.ChromeDebug {
 
       foreach (Process p in processes) {
         var item = new ProcessViewItem();
-        try {
-          item.Process = new NtProcess(p.Id);
-          if (item.Process.CommandLine != null) {
-            item.CmdLineArgs = ChromeUtility.SplitArgs(item.Process.CommandLine);
-            item.DisplayCmdLine = GetFilteredCommandLineString(item.CmdLineArgs);
-          }
-          item.MachineType = item.Process.MachineType;
+        item.Process = new NtProcess(p.Id);
+        if (!item.Process.IsValid)
+          continue;
+
+        if (item.Process.CommandLine != null) {
+          item.CmdLineArgs = ChromeUtility.SplitArgs(item.Process.CommandLine);
+          item.DisplayCmdLine = GetFilteredCommandLineString(item.CmdLineArgs);
         }
-        catch {
-          // Generally speaking, an exception here means the process is privileged and we cannot
-          // get any information about the process.  For those processes, we will just display the
-          // information that the Framework gave us in the Process structure.
-        }
+        item.MachineType = item.Process.MachineType;
 
         item.ProcessId = p.Id;
         item.SessionId = p.SessionId;

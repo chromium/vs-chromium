@@ -36,5 +36,9 @@ namespace VsChromium.Core.Win32.Processes {
     /// if it is used with either CREATE_NEW_CONSOLE or DETACHED_PROCESS.
     /// </summary>
     CREATE_NO_WINDOW = 0x08000000,
+    /// <summary>
+    /// The primary thread of the new process is created in a suspended state,
+    /// and does not run until the ResumeThread function is called.
+    CREATE_SUSPENDED = 0x00000004,
   }
 }

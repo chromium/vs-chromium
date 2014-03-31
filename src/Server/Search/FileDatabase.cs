@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -16,6 +17,7 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.Search {
   public class FileDatabase {
+    private bool OutputDiagnostics = false;
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly IFileContentsFactory _fileContentsFactory;
@@ -60,26 +62,27 @@ namespace VsChromium.Server.Search {
       // Load file contents into newState
       ReadMissingFileContents();
 
-#if false
-  // Note: For diagnostic only as this can be quite slow.
-      newState.FilesWithContents
-        .GroupBy(x =>
-        {
-          var ext = Path.GetExtension(x.FileName.Name);
-          if (string.IsNullOrEmpty(ext))
-            return new { Type = "Filename", Value = x.FileName.Name };
-          else
-            return new { Type = "Extension", Value = ext };
-        })
-        .OrderByDescending(x => x.Aggregate(0, (s, f) => s + f.Contents.ByteLength))
-        .ForAll(g =>
-      {
-        Logger.Log("{0} \"{1}\": {2:n0} files totalling {3:n0} bytes.", g.Key.Type, g.Key.Value, g.Count(), g.Aggregate(0, (s, f) => s + f.Contents.ByteLength));
-      });
-#endif
-
       // Done with new state!
       Freeze();
+
+      if (OutputDiagnostics)
+      {
+        // Note: For diagnostic only as this can be quite slow.
+        FilesWithContents
+          .GroupBy(x =>
+          {
+            var ext = Path.GetExtension(x.FileName.Name);
+            if (string.IsNullOrEmpty(ext))
+              return new { Type = "Filename", Value = x.FileName.Name };
+            else
+              return new { Type = "Extension", Value = ext };
+          })
+          .OrderByDescending(x => x.Aggregate(0L, (s, f) => s + f.Contents.ByteLength))
+          .ForAll(g => {
+            var byteLength = g.Aggregate(0L, (s, f) => s + f.Contents.ByteLength);
+            Logger.Log("{0} \"{1}\": {2:n0} files totalling {3:n0} bytes.", g.Key.Type, g.Key.Value, g.Count(), byteLength);
+          });
+      }
     }
 
     public void Freeze() {

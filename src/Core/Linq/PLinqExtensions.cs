@@ -37,7 +37,7 @@ namespace VsChromium.Core.Linq {
       // Distribute items using MinHeap.
       source
         // Sort so that elements with highest weight are first, so that we have a better chance
-        // of ending with partitions of same total weight - it is eaiser to adjust with elements of
+        // of ending with partitions of same total weight - it is easier to adjust with elements of
         // low weight than with elements of high weight.
         .OrderByDescending(x => weight(x))
         .ForAll(item => {

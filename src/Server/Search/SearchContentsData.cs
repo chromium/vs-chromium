@@ -6,7 +6,12 @@ using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
+  /// <summary>
+  /// Container for various pieces of data needed by the text search components.
+  /// TODO(rpaquay): It would be nicer to make this a little bit more OO and decouple.
+  /// </summary>
   public class SearchContentsData {
+    public ParsedSearchString parsedSearchString { get; set; }
     public string Text { get; set; }
     public SafeHGlobalHandle AsciiTextPtr { get; set; }
     public SafeHGlobalHandle UniTextPtr { get; set; }

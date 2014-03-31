@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using VsChromium.Core;
+using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Search {
   public class StringFileContents : FileContents {
@@ -20,9 +21,14 @@ namespace VsChromium.Server.Search {
 
     public static StringFileContents Empty { get { return _empty; } }
 
-    public override List<int> Search(SearchContentsData searchContentsData) {
+    public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
+      if (object.ReferenceEquals(this, _empty))
+        return NoSpans;
+      // TODO(rpaquay): Maybe we will need this someday. For now, we use this class only for empty file content placeholder.
+      throw new NotImplementedException();
+#if false
       Logger.Log("Searching file contents");
-      List<int> result = null;
+      List<FilePositionSpan> result = null;
       var index = 0;
       while (true) {
         var newIndex = _text.IndexOf(searchContentsData.Text, index, StringComparison.Ordinal);
@@ -30,12 +36,13 @@ namespace VsChromium.Server.Search {
           break;
 
         if (result == null) {
-          result = new List<int>();
+          result = new List<FilePositionSpan>();
         }
         result.Add(newIndex);
         index = newIndex + searchContentsData.Text.Length;
       }
       return result ?? NoPositions;
+#endif
     }
   }
 }

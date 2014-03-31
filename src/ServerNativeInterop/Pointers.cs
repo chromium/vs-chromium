@@ -34,5 +34,12 @@ namespace VsChromium.Server.NativeInterop {
         throw new ArgumentException();
       return (int)diff;
     }
+
+    /// <summary>
+    /// Returns the # of bytes between "start" end "end" (excluded).
+    /// </summary>
+    public static int Offset32(IntPtr start, IntPtr end) {
+      return Offset32((byte*)start.ToPointer(), (byte*)end.ToPointer());
+    }
   }
 }

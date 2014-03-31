@@ -9,7 +9,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Search {
   public abstract class FileContents {
-    protected static List<int> NoPositions = new List<int>();
+    protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
     private readonly DateTime _utcLastWriteTime;
 
@@ -21,8 +21,8 @@ namespace VsChromium.Server.Search {
 
     public abstract long ByteLength { get; }
 
-    public virtual List<int> Search(SearchContentsData searchContentsData) {
-      return NoPositions;
+    public virtual List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
+      return NoSpans;
     }
 
     public virtual IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {

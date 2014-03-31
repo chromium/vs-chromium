@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.NativeInterop {
   public abstract class AsciiStringSearchAlgorithm : IDisposable {
@@ -12,7 +13,7 @@ namespace VsChromium.Server.NativeInterop {
     public virtual void Dispose() {
     }
 
-    public IEnumerable<int> SearchAll(IntPtr text, int textLen) {
+    public IEnumerable<FilePositionSpan> SearchAll(IntPtr text, int textLen) {
       var currentPtr = text;
       var remainingLength = textLen;
       while (true) {
@@ -21,8 +22,8 @@ namespace VsChromium.Server.NativeInterop {
           break;
 
         // TODO(rpaquay): We are limited to 2GB for now.
-        var offset = (int)(currentPtr.ToInt64() - text.ToInt64());
-        yield return offset;
+        var offset = Pointers.Offset32(text, currentPtr);
+        yield return new FilePositionSpan {Position = offset, Length = PatternLength};
         currentPtr += PatternLength;
         remainingLength = textLen - offset - PatternLength;
       }

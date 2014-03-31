@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using VsChromium.Core;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.FileNames.PatternMatching;
@@ -25,6 +26,7 @@ using VsChromium.Server.NativeInterop;
 namespace VsChromium.Server.Search {
   [Export(typeof(ISearchEngine))]
   public class SearchEngine : ISearchEngine {
+    private const int MinimumSearchPatternLength = 2;
     private readonly ICustomThreadPool _customThreadPool;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
@@ -109,39 +111,48 @@ namespace VsChromium.Server.Search {
     }
 
     public IEnumerable<FileSearchResult> SearchFileContents(SearchParams searchParams) {
-      searchParams.SearchString = searchParams.SearchString;
-      if (string.IsNullOrWhiteSpace(searchParams.SearchString))
-        return Enumerable.Empty<FileSearchResult>();
+      ParsedSearchString parsedSearchString = ParsedSearchString(searchParams.SearchString);
 
-      // Don't search very small strings, as this would create a huge output.
-      // TODO(rpaquay): Maybe we need to revise this at some point.
-      if (searchParams.SearchString.Length <= 1)
+      // Don't search empty or very small strings -- no significant results.
+      if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
+          (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
         return Enumerable.Empty<FileSearchResult>();
+      }
 
       // taskCancellation is used to make sure we cancel previous tasks as fast as possible
       // to avoid using too many CPU resources if the caller keeps asking us to search for
       // things. Note that this assumes the caller is only interested in the result of
       // the *last* query, while the previous queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
+      var cancellationToken = _taskCancellation.GetNewToken();
+      return DoSearchFileContents(parsedSearchString, searchParams.MatchCase, searchParams.MaxResults, cancellationToken);
+    }
 
-      using (var searchTextUniPtr = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(searchParams.SearchString)))
-      using (var searchAlgo = AsciiFileContents.CreateSearchAlgo(searchParams.SearchString, searchParams.MatchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone)) {
+    private IEnumerable<FileSearchResult> DoSearchFileContents(ParsedSearchString parsedSearchString, bool matchCase, int maxResults, CancellationToken cancellationToken) {
+      var searchString = parsedSearchString.MainEntry.Text;
+      using (var searchTextUniPtr = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(searchString)))
+      using (var searchAlgo = AsciiFileContents.CreateSearchAlgo(searchString, matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone)) {
         var searchInfo = new SearchContentsData {
-          Text = searchParams.SearchString,
+          parsedSearchString = parsedSearchString,
+          Text = searchString,
           UniTextPtr = searchTextUniPtr,
           AsciiStringSearchAlgo = searchAlgo,
         };
-        var taskResults = new TaskResultCounter(searchParams.MaxResults);
+        var taskResults = new TaskResultCounter(maxResults);
         var matches = _currentState.FilesWithContents
           .AsParallel()
           .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-          .WithCancellation(_taskCancellation.GetNewToken())
+          .WithCancellation(cancellationToken)
           .Where(x => !taskResults.Done)
-          .Select(item => MatchFileContents(taskResults, searchInfo, item))
+          .Select(item => MatchFileContents(item, searchInfo, taskResults))
           .Where(r => r != null)
           .ToList();
         return matches;
       }
+    }
+
+    private ParsedSearchString ParsedSearchString(string searchString) {
+      return new ParsedSearchString(new ParsedSearchString.Entry { Text = searchString, Index = 0}, Enumerable.Empty<ParsedSearchString.Entry>());
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(string path, IEnumerable<FilePositionSpan> spans) {
@@ -278,22 +289,16 @@ namespace VsChromium.Server.Search {
       return matcher.MatchDirectoryName(directoryName.RelativePathName.RelativeName, comparer);
     }
 
-    private static FileSearchResult MatchFileContents(
-      TaskResultCounter taskResultCounter,
-      SearchContentsData searchContentsData,
-      FileData item) {
-      var positions = item.Contents.Search(searchContentsData);
-      if (positions.Count == 0)
+    private static FileSearchResult MatchFileContents(FileData fileData, SearchContentsData searchContentsData, TaskResultCounter taskResultCounter) {
+      var spans = fileData.Contents.Search(searchContentsData);
+      if (spans.Count == 0)
         return null;
 
-      taskResultCounter.Add(positions.Count);
+      taskResultCounter.Add(spans.Count);
 
       return new FileSearchResult {
-        FileName = item.FileName,
-        Spans = positions.Select(p => new FilePositionSpan {
-          Position = p,
-          Length = searchContentsData.Text.Length
-        }).ToList()
+        FileName = fileData.FileName,
+        Spans = spans
       };
     }
 
@@ -307,6 +312,29 @@ namespace VsChromium.Server.Search {
       var handler = FilesLoaded;
       if (handler != null)
         handler(operationId);
+    }
+  }
+
+  public class ParsedSearchString {
+    private readonly Entry _mainEntry;
+    private readonly IList<Entry> _otherEntries;
+
+    public class Entry {
+      public string Text { get; set; }
+      public int Index { get; set; }
+    }
+
+    public ParsedSearchString(Entry mainEntry, IEnumerable<Entry> otherEntries) {
+      this._mainEntry = mainEntry;
+      this._otherEntries = otherEntries.ToList();
+    }
+
+    public Entry MainEntry {
+      get { return _mainEntry; }
+    }
+
+    public IList<Entry> OtherEntries {
+      get { return _otherEntries; }
     }
   }
 }

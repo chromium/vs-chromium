@@ -38,9 +38,9 @@ namespace VsChromium.Server.Search {
         return new AsciiStringSearchBoyerMoore(pattern, searchOptions);
     }
 
-    public override List<int> Search(SearchContentsData searchContentsData) {
+    public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
       if (searchContentsData.Text.Length > ByteLength)
-        return NoPositions;
+        return NoSpans;
 
       // TODO(rpaquay): We are limited to 2GB for now.
       return searchContentsData.AsciiStringSearchAlgo.SearchAll(Pointer, (int)ByteLength).ToList();

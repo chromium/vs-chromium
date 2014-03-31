@@ -5,7 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
+using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   public class UTF16FileContents : FileContents {
@@ -24,8 +26,8 @@ namespace VsChromium.Server.Search {
     [DllImport("Shlwapi.dll", CharSet = CharSet.Unicode, SetLastError = false)]
     public static extern IntPtr StrStrW(IntPtr pszFirst, IntPtr pszSrch);
 
-    public override List<int> Search(SearchContentsData searchContentsData) {
-      List<int> result = null;
+    public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
+      List<FilePositionSpan> result = null;
       var contentsPtr = _heap.Pointer;
       while (true) {
         var foundPtr = StrStrW(contentsPtr, searchContentsData.UniTextPtr.Pointer);
@@ -33,15 +35,15 @@ namespace VsChromium.Server.Search {
           break;
 
         if (result == null) {
-          result = new List<int>();
+          result = new List<FilePositionSpan>();
         }
         // Note: We are limited to 2GB files by design.
-        var position = (int)(foundPtr.ToInt64() - _heap.Pointer.ToInt64());
-        result.Add(position);
+        var position = Pointers.Offset32(_heap.Pointer, foundPtr);
+        result.Add(new FilePositionSpan { Position = position , Length = searchContentsData.Text.Length });
 
         contentsPtr = foundPtr + searchContentsData.Text.Length;
       }
-      return result ?? NoPositions;
+      return result ?? NoSpans;
     }
   }
 }

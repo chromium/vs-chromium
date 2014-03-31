@@ -1,0 +1,11 @@
+[ChromiumExplorer.ignore]
+/.git/
+
+[SearchableFiles.ignore]
+/Binaries/
+obj/
+*.png
+*.ico
+
+[SearchableFiles.include]
+*

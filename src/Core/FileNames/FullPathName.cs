@@ -15,8 +15,12 @@ namespace VsChromium.Core.FileNames {
 
     public FullPathName(string path) {
       if (!PathHelpers.IsAbsolutePath(path))
-        throw new ArgumentException("Path must be absolute.", "path");
+        ThrowInvalidPath(path);
       _path = path;
+    }
+
+    private static void ThrowInvalidPath(string path) {
+      throw new ArgumentException(string.Format("Path must be absolute: \"{0}\".", path), "path");
     }
 
     public FullPathName Parent {

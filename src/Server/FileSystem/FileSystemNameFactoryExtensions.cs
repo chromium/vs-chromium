@@ -133,7 +133,7 @@ namespace VsChromium.Server.FileSystem {
     /// is invalid or not part of a project.
     /// </summary>
     public static FileName PathToFileName(this IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, string path) {
-      var rootPath = projectDiscovery.GetProjectPath(path);
+      var rootPath = projectDiscovery.GetProjectPath(new FullPathName(path));
       if (rootPath == null)
         return null;
 

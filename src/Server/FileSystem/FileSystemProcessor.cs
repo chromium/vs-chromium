@@ -124,7 +124,7 @@ namespace VsChromium.Server.FileSystem {
 
     private IEnumerable<FullPathName> GetKnownProjectPaths(IEnumerable<FullPathName> knownFileNames) {
       return knownFileNames
-        .Select(x => _projectDiscovery.GetProjectPath(x.FullName))
+        .Select(x => _projectDiscovery.GetProjectPath(x))
         .Where(x => x != null)
         .Select(x => new FullPathName(x))
         .Distinct()

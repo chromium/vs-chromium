@@ -33,7 +33,7 @@ namespace VsChromium.Server.FileSystem {
         var newRoot = new DirectoryEntry();
 
         newRoot.Entries = filenames
-          .Select(filename => _projectDiscovery.GetProject(filename.FullName))
+          .Select(filename => _projectDiscovery.GetProject(filename))
           .Where(project => project != null)
           .Distinct(new ProjectPathComparer())
           .Select(project => ProcessProject(project, progress))

@@ -7,15 +7,15 @@ namespace VsChromium.Server.Projects {
   public class ProjectDiscoveryWithCache : IProjectDiscovery {
     private readonly IRawProjectDiscovery _projectDiscovery;
     private readonly object _lock = new object();
-    private readonly Dictionary<string, IProject> _filenameToProject = new Dictionary<string, IProject>(SystemPathComparer.Instance.Comparer);
-    private readonly Dictionary<string, IProject> _projectPathToProject = new Dictionary<string, IProject>(SystemPathComparer.Instance.Comparer);
+    private readonly Dictionary<FullPathName, IProject> _filenameToProject = new Dictionary<FullPathName, IProject>();
+    private readonly Dictionary<FullPathName, IProject> _projectPathToProject = new Dictionary<FullPathName, IProject>();
 
     [ImportingConstructor]
     public ProjectDiscoveryWithCache(IRawProjectDiscovery projectDiscovery) {
       _projectDiscovery = projectDiscovery;
     }
 
-    public IProject GetProject(string filename) {
+    public IProject GetProject(FullPathName filename) {
       IProject result;
       lock (_lock) {
         if (_filenameToProject.TryGetValue(filename, out result)) {
@@ -32,7 +32,7 @@ namespace VsChromium.Server.Projects {
       return result;
     }
 
-    public IProject GetProjectFromRootPath(string projectRootPath) {
+    public IProject GetProjectFromRootPath(FullPathName projectRootPath) {
       IProject result;
       lock (_lock) {
         if (_projectPathToProject.TryGetValue(projectRootPath, out result)) {

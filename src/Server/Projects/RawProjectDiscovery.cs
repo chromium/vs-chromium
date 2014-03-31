@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
+using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.Projects {
   [Export(typeof(IRawProjectDiscovery))]
@@ -16,7 +17,7 @@ namespace VsChromium.Server.Projects {
       _providers = providers.OrderByDescending(x => x.Priority).ToArray();
     }
 
-    public IProject GetProject(string filename) {
+    public IProject GetProject(FullPathName filename) {
       return _providers
         .Select(t => t.GetProject(filename))
         .Where(project => project != null)
@@ -24,7 +25,7 @@ namespace VsChromium.Server.Projects {
         .FirstOrDefault();
     }
 
-    public IProject GetProjectFromRootPath(string projectRootPath) {
+    public IProject GetProjectFromRootPath(FullPathName projectRootPath) {
       return _providers
         .Select(t => t.GetProjectFromRootPath(projectRootPath))
         .FirstOrDefault(project => project != null);

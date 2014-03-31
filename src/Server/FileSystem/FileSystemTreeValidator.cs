@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using VsChromium.Core;
+using VsChromium.Core.FileNames;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
 
@@ -56,7 +57,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private bool PathIsExcluded(string path) {
-      var project = _projectDiscovery.GetProject(path);
+      var project = _projectDiscovery.GetProject(new FullPathName(path));
       if (project == null)
         return true;
 
@@ -94,7 +95,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private FileName PathToFileName(string path) {
-      var rootPath = _projectDiscovery.GetProjectPath(path);
+      var rootPath = _projectDiscovery.GetProjectPath(new FullPathName(path));
       if (rootPath == null)
         return null;
 

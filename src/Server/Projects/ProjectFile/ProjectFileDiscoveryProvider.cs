@@ -16,17 +16,10 @@ namespace VsChromium.Server.Projects.ProjectFile {
     private readonly FullPathNameSet<object> _knownNonProjectDirectories = new FullPathNameSet<object>();
     private readonly object _lock = new object();
 
-    public IProject GetProjectFromRootPath(string projectRootPath) {
-      var name = new FullPathName(projectRootPath);
-      lock (_lock) {
-        return _knownProjectRootDirectories.Get(name);
-      }
-    }
-
     public int Priority { get { return 100; } }
 
-    public IProject GetProject(string filename) {
-      var name = new FullPathName(filename);
+    public IProject GetProject(FullPathName filename) {
+      var name = filename;
       lock (_lock) {
         // Cache hit?
         var root = _knownProjectRootDirectories
@@ -44,6 +37,13 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
         // Nope: compute all the way...
         return GetProjectWorker(name);
+      }
+    }
+
+    public IProject GetProjectFromRootPath(FullPathName projectRootPath) {
+      var name = projectRootPath;
+      lock (_lock) {
+        return _knownProjectRootDirectories.Get(name);
       }
     }
 

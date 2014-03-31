@@ -16,7 +16,7 @@ using VsChromium.Package;
 
 namespace VsChromium {
   [PackageRegistration(UseManagedResourcesOnly = true)]
-  [InstalledProductRegistration("#110", "#112", "0.9.6", IconResourceID = 400)]
+  [InstalledProductRegistration("#110", "#112", VsChromium.Core.VsChromiumVersion.Product, IconResourceID = 400)]
   // When in development mode, update the version # below every time there is a change to the .VSCT file,
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
   // VS 2012 and later since package updates is more explicit).

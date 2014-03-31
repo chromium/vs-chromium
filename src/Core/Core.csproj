@@ -130,6 +130,7 @@
     <Compile Include="Processes\NtProcess.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />
+    <Compile Include="VsChromiumVersion.cs" />
     <Compile Include="Win32\ComPtr.cs" />
     <Compile Include="Win32\Contants.cs" />
     <Compile Include="Win32\Debugging\CONTINUE_STATUS.cs" />

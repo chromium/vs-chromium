@@ -36,6 +36,7 @@
     <li>
       <ul class="ul-second">
         <li><a href="#attach-to-chrome">Attach to Chrome</a></li>
+        <li><a href="#advanced-visualizers">Advanced Debug Visualizers</a></li>
       </ul>
     </li>
     <li><a href="#whatsnew">What's new</a></li>
@@ -404,21 +405,6 @@
   <hr />
 
   <!-------------------------------------------------------------------------------->
-  <div id="debug-visualizers">
-    <h1>Debug Visualizers</h1>
-    <p>
-      Custom visualizers for visualizing complex Chromium specific data-types.
-      Visualizers are included for the following types:
-    </p>
-    <ul>
-      <li>base::Time (displays base::Time formatted as MM/DD/YYYY HH:MM:SS.XXXX)</li>
-      <li>base::TimeDelta (displays base::TimeDelta formatted as HH:MM:SS.XXXX)</li>
-    </ul>
-    <p>
-      Other, simpler visualizers are available in src\tools\win\DebugVisualizers.
-    </p>
-  </div>
-  <!-------------------------------------------------------------------------------->
   <div id="attach-to-chrome">
     <h1>Attach to Chrome</h1>
     <p>
@@ -451,6 +437,20 @@
       Due to a <a href="https://connect.microsoft.com/VisualStudio/feedback/details/841994/visual-studios-heap-gets-corrupted-when-attaching-to-more-than-20-processes-from-an-experimental-instance">bug</a>
       in the Visual Studio IDE, it is not advisable to leave the processes debug window opened
       by default when using auto attach to children.
+    </p>
+  </div>
+  <div id="advanced-visualizers">
+    <h1>Advanced Debug Visualizers</h1>
+    <p>
+      Custom visualizers for visualizing complex Chromium specific data-types.
+      Visualizers are included for the following types:
+    </p>
+    <ul>
+      <li>base::Time (displays base::Time formatted as MM/DD/YYYY HH:MM:SS.XXXX)</li>
+      <li>base::TimeDelta (displays base::TimeDelta formatted as HH:MM:SS.XXXX)</li>
+    </ul>
+    <p>
+      Other, simpler visualizers are available in src\tools\win\DebugVisualizers.
     </p>
   </div>
   <hr />

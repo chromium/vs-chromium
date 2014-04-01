@@ -10,11 +10,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VsChromium.Commands;
+using VsChromium.Features.ToolWindows.BuildExplorer;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
 
 namespace VsChromium.Features.ToolWindows {
-
   [Export(typeof(ToolWindowAccessor))]
   public class ToolWindowAccessor {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
@@ -42,6 +42,12 @@ namespace VsChromium.Features.ToolWindows {
     public SourceExplorerToolWindow SourceExplorer {
       get {
         return GetToolWindow<SourceExplorerToolWindow>(GuidList.GuidSourceExplorerToolWindow);
+      }
+    }
+
+    public BuildExplorerToolWindow BuildExplorer {
+      get {
+        return GetToolWindow<BuildExplorerToolWindow>(GuidList.GuidBuildExplorerToolWindow);
       }
     }
   }

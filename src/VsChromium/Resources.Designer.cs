@@ -61,6 +61,15 @@ namespace VsChromium {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Chromium Build Explorer.
+        /// </summary>
+        internal static string BuildExplorerToolWindowTitle {
+            get {
+                return ResourceManager.GetString("BuildExplorerToolWindowTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Chromium Source Explorer.
         /// </summary>
         internal static string SourceExplorerToolWindowTitle {

@@ -47,6 +47,14 @@
           <ButtonText>Chromium Source Explorer</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidBuildExplorerToolWindow" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <CommandName>cmdidBuildExplorerToolWindow</CommandName>
+          <ButtonText>Chromium Build Explorer</ButtonText>
+        </Strings>
+      </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" priority="0x0101" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -119,6 +127,7 @@
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
       <IDSymbol name="cmdidSearchDirectoryNames" value="0x0103" />
       <IDSymbol name="cmdidSearchFileContents" value="0x0104" />
+      <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0105" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">
       <IDSymbol name="ChromeDebugTopLevelMenu" value="0x0100" />

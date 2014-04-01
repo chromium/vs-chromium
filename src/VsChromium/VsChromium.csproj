@@ -201,6 +201,12 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
+    <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml.cs">
+      <DependentUpon>BuildExplorerControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerToolWindow.cs" />
+    <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerViewModel.cs" />
+    <Compile Include="Features\ToolWindows\BuildExplorer\ShowBuildExplorerCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
@@ -282,6 +288,10 @@
     <Compile Include="Wpf\StringListViewModel.cs" />
     <Compile Include="Wpf\IHierarchyObject.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
+    <Page Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Features\ToolWindows\SourceExplorer\SourceExplorerControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

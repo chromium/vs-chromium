@@ -13,6 +13,7 @@ using VsChromium.Core;
 using VsChromium.Commands;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
+using VsChromium.Features.ToolWindows.BuildExplorer;
 
 namespace VsChromium {
   [PackageRegistration(UseManagedResourcesOnly = true)]
@@ -22,6 +23,7 @@ namespace VsChromium {
   // VS 2012 and later since package updates is more explicit).
   [ProvideMenuResource("Menus.ctmenu", 8)]
   [ProvideToolWindow(typeof(SourceExplorerToolWindow))]
+  [ProvideToolWindow(typeof(BuildExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage {
     public VsPackage() {

@@ -203,6 +203,7 @@
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
+    <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />

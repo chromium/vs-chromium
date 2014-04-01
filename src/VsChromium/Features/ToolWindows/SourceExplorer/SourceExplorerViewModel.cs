@@ -22,21 +22,12 @@ using VsChromium.Views;
 using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
-  public class SourceExplorerViewModel : INotifyPropertyChanged {
-    private readonly TreeViewRootNodes _rootNodes = new TreeViewRootNodes();
-    private IComponentModel _componentModel;
-    private IList<TreeViewItemViewModel> _currentRootNodesViewModel;
+  public class SourceExplorerViewModel : ChromiumExplorerViewModelBase {
     private IEnumerable<TreeViewItemViewModel> _directoryPathRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileContentsResultRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileNamesResultRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileSystemEntryRootNodes = new List<TreeViewItemViewModel>();
-    private ITreeViewItemViewModelHost _host;
     private UpdateInfo _updateInfo;
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public TreeViewRootNodes RootNodes { get { return _rootNodes; } }
 
     /// <summary>
     /// Databound!
@@ -88,10 +79,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public override void OnToolWindowCreated(IServiceProvider serviceProvider) {
+      base.OnToolWindowCreated(serviceProvider);
 
-    public void OnToolWindowCreated(IServiceProvider serviceProvider) {
-      _componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
       var standarImageSourceFactory = _componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
       var uiRequestProcessor = _componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
       _host = new TreeViewItemViewModelHost(standarImageSourceFactory, uiRequestProcessor);
@@ -159,35 +149,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           .ToList();
       ExpandNodes(_fileContentsResultRootNodes, expandAll);
       SwitchToFileContentsSearchResult();
-    }
-
-    private void SetRootNodes(IEnumerable<TreeViewItemViewModel> source, string defaultText = "") {
-      _currentRootNodesViewModel = source.ToList();
-      if (_currentRootNodesViewModel.Count == 0 && !string.IsNullOrEmpty(defaultText)) {
-        _currentRootNodesViewModel.Add(new TextItemViewModel(_host, null, defaultText));
-      }
-      _rootNodes.Clear();
-      _currentRootNodesViewModel.ForAll(x => _rootNodes.Add(x));
-    }
-
-    private void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {
-      source.ForAll(x => {
-        if (expandAll)
-          ExpandAll(x);
-        else
-          x.IsExpanded = true;
-      });
-    }
-
-    private void ExpandAll(TreeViewItemViewModel item) {
-      item.IsExpanded = true;
-      item.Children.ForAll(x => ExpandAll(x));
-    }
-
-    protected virtual void OnPropertyChanged(string propertyName) {
-      PropertyChangedEventHandler handler = PropertyChanged;
-      if (handler != null)
-        handler(this, new PropertyChangedEventArgs(propertyName));
     }
 
     public void SelectDirectory(DirectoryEntryViewModel directoryEntry, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {

@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VsChromium.DkmIntegration;
 
-namespace VsChromium.ChromeDebug {
+namespace VsChromium.Features.AttachToChrome {
   static class DebugAttach {
     public static void AttachToProcess(Process[] processes, bool autoAttachToChildren) {
       List<VsDebugTargetInfo2> targetList = new List<VsDebugTargetInfo2>();

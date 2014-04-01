@@ -17,7 +17,7 @@ using VsChromium.Core.Processes;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.ChromeDebug {
+namespace VsChromium.Features.AttachToChrome {
   [Export(typeof(IPackageCommandHandler))]
   public class AttachToChromeDialogHandler : IPackageCommandHandler {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
@@ -27,10 +27,9 @@ namespace VsChromium.ChromeDebug {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidChromeDebugCmdSet, (int)PkgCmdIDList.CmdidAttachToChromeDialog); } }
+    public CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToChromeDialog); } }
 
     public void Execute(object sender, EventArgs e) {
-      // Show a Message Box to prove we were here
       var dte = (EnvDTE.DTE)_visualStudioPackageProvider.Package.DTE; //GetService(typeof(EnvDTE.DTE));
 
       var uiShell = _visualStudioPackageProvider.Package.VsUIShell;

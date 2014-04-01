@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VsChromium.Package;
 
-namespace VsChromium.ChromeDebug {
+namespace VsChromium.Features.AttachToChrome {
   [Export(typeof(IPackagePostInitializer))]
   class DkmComponentMessageInitializer : IPackagePostInitializer {
     public int Priority {

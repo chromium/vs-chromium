@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using VsChromium.Core.Win32.Processes;
 using VsChromium.Core.Processes;
 
-namespace VsChromium.ChromeDebug {
+namespace VsChromium.Features.AttachToChrome {
   class ProcessViewItem : ListViewItem {
     public ProcessViewItem() {
       Category = ProcessCategory.Other;

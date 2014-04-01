@@ -159,28 +159,28 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChromeDebug\ColumnSorter.cs" />
-    <Compile Include="ChromeDebug\DebugAttach.cs" />
-    <Compile Include="ChromeDebug\DkmComponentMessageInitializer.cs" />
-    <Compile Include="ChromeDebug\DkmComponentEventHandler.cs" />
-    <Compile Include="ChromeDebug\NumericStringComparer.cs" />
-    <Compile Include="ChromeDebug\ProcessViewItem.cs" />
+    <Compile Include="Features\AttachToChrome\ColumnSorter.cs" />
+    <Compile Include="Features\AttachToChrome\DebugAttach.cs" />
+    <Compile Include="Features\AttachToChrome\DkmComponentMessageInitializer.cs" />
+    <Compile Include="Features\AttachToChrome\DkmComponentEventHandler.cs" />
+    <Compile Include="Features\AttachToChrome\NumericStringComparer.cs" />
+    <Compile Include="Features\AttachToChrome\ProcessViewItem.cs" />
     <Compile Include="Features\AutoUpdate\IUpdateNotificationListener.cs" />
     <Compile Include="Features\AutoUpdate\UpdateInfo.cs" />
     <Compile Include="Features\AutoUpdate\UpdateNotificationListener.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifierConstants.cs" />
-    <Compile Include="ChromeDebug\AttachDialog.cs">
+    <Compile Include="Features\AttachToChrome\AttachDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ChromeDebug\AttachDialog.designer.cs">
+    <Compile Include="Features\AttachToChrome\AttachDialog.designer.cs">
       <DependentUpon>AttachDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="ChromeDebug\AttachToAllChromesHandler.cs" />
-    <Compile Include="ChromeDebug\AttachToChromeDescendantsHandler.cs" />
-    <Compile Include="ChromeDebug\Guids.cs" />
-    <Compile Include="ChromeDebug\PkgCmdID.cs" />
-    <Compile Include="ChromeDebug\ProcessCategory.cs" />
-    <Compile Include="ChromeDebug\AttachToChromeDialogHandler.cs" />
+    <Compile Include="Features\AttachToChrome\AttachToAllChromesHandler.cs" />
+    <Compile Include="Features\AttachToChrome\AttachToChromeDescendantsHandler.cs" />
+    <Compile Include="Features\AttachToChrome\Guids.cs" />
+    <Compile Include="Features\AttachToChrome\PkgCmdID.cs" />
+    <Compile Include="Features\AttachToChrome\ProcessCategory.cs" />
+    <Compile Include="Features\AttachToChrome\AttachToChromeDialogHandler.cs" />
     <Compile Include="ChromiumEnlistment\ChromiumSourceFiles.cs" />
     <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
     <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierConstants.cs" />
@@ -317,7 +317,7 @@
     <Compile Include="VsPackage.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="ChromeDebug\AttachDialog.resx">
+    <EmbeddedResource Include="Features\AttachToChrome\AttachDialog.resx">
       <DependentUpon>AttachDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">

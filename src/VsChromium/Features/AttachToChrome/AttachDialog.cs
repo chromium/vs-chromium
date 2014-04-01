@@ -15,7 +15,7 @@ using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Shell;
 using System.Runtime.InteropServices;
 
-namespace VsChromium.ChromeDebug {
+namespace VsChromium.Features.AttachToChrome {
   // The form that is displayed to allow the user to select processes to attach to.  Note that we
   // cannot interact with the DTE object from here (I assume this is because the dialog is running
   // on a different thread, although I don't fully understand), so any access to the DTE object

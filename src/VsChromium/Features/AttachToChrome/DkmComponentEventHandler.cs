@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using VsChromium.Core;
 using VsChromium.DkmIntegration.Messages.Component;
 
-namespace VsChromium.ChromeDebug {
+namespace VsChromium.Features.AttachToChrome {
   [Guid(PackageServices.DkmComponentEventHandlerId)]
   class DkmComponentEventHandler : IVsCustomDebuggerEventHandler110 {
     public int OnCustomDebugEvent(ref Guid ProcessId, VsComponentMessage message) {

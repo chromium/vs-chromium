@@ -38,8 +38,11 @@ namespace VsChromium {
     protected override void Dispose(bool disposing) {
       if (disposing) {
         try {
-          foreach (var disposer in ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostDispose>().OrderByDescending(x => x.Priority)) {
-            disposer.Run(this);
+          if (ComponentModel != null) {
+            var exports = ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostDispose>();
+            foreach (var disposer in exports.OrderByDescending(x => x.Priority)) {
+              disposer.Run(this);
+            }
           }
         }
         catch (Exception e) {

@@ -9,7 +9,7 @@ using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 using VsChromium.Core.Utility;
 
-namespace VsChromium.ChromeDebug
+namespace VsChromium.Features.AttachToChrome
 {
   [Export(typeof(IPackageCommandHandler))]
   public class AttachToAllChromesHandler : IPackageCommandHandler
@@ -22,7 +22,7 @@ namespace VsChromium.ChromeDebug
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidChromeDebugCmdSet, (int)PkgCmdIDList.CmdidAttachToAllChromes); } }
+    public CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToAllChromes); } }
 
     public void Execute(object sender, EventArgs e)
     {

@@ -23,7 +23,7 @@ using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class SourceExplorerViewModel : INotifyPropertyChanged {
-    private readonly SourceExplorerRootNodes _rootNodes = new SourceExplorerRootNodes();
+    private readonly TreeViewRootNodes _rootNodes = new TreeViewRootNodes();
     private IComponentModel _componentModel;
     private IList<TreeViewItemViewModel> _currentRootNodesViewModel;
     private IEnumerable<TreeViewItemViewModel> _directoryPathRootNodes = new List<TreeViewItemViewModel>();
@@ -36,7 +36,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public SourceExplorerRootNodes RootNodes { get { return _rootNodes; } }
+    public TreeViewRootNodes RootNodes { get { return _rootNodes; } }
 
     /// <summary>
     /// Databound!

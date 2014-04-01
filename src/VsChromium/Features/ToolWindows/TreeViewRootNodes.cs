@@ -4,7 +4,7 @@
 
 using System.Collections.ObjectModel;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
-  public class SourceExplorerRootNodes : ObservableCollection<TreeViewItemViewModel> {
+namespace VsChromium.Features.ToolWindows {
+  public class TreeViewRootNodes : ObservableCollection<TreeViewItemViewModel> {
   }
 }

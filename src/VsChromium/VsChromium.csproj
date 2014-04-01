@@ -204,6 +204,7 @@
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
+    <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />
     <Compile Include="Threads\IpcRequestException.cs" />
     <Compile Include="Views\ITextDocumentService.cs" />
@@ -244,7 +245,6 @@
     <Compile Include="Threads\DelayedOperationProcessor.cs" />
     <Compile Include="Threads\SynchronizationContextProvider.cs" />
     <Compile Include="Threads\UIRequestProcessor.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerRootNodes.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\FilePositionViewModel.cs" />
     <Compile Include="Threads\UIRequest.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\FileSystemEntryDataViewModelFactory.cs" />

@@ -201,16 +201,16 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
-    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindowAccessor.cs" />
-    <Compile Include="Features\ChromiumExplorer\RootErrorItemViewModel.cs" />
+    <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
+    <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />
     <Compile Include="Threads\IpcRequestException.cs" />
     <Compile Include="Views\ITextDocumentService.cs" />
-    <Compile Include="Features\ChromiumExplorer\TextDocumentFactoryObserver.cs" />
-    <Compile Include="Features\ChromiumExplorer\IChromiumExplorerToolWindowAccessor.cs" />
-    <Compile Include="Features\ChromiumExplorer\SearchDirectoryNamesCommandHandler.cs" />
-    <Compile Include="Features\ChromiumExplorer\SearchFileContentsCommandHandler.cs" />
-    <Compile Include="Features\ChromiumExplorer\SearchFileNamesCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\TextDocumentFactoryObserver.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SearchDirectoryNamesCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SearchFileContentsCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SearchFileNamesCommandHandler.cs" />
     <Compile Include="Views\TextDocumentService.cs" />
     <Compile Include="Features\FormatComment\CommentType.cs" />
     <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />
@@ -222,7 +222,7 @@
     <Compile Include="Package\IVisualStudioPackageProvider.cs" />
     <Compile Include="Package\VisualStudioPackageInitialize.cs" />
     <Compile Include="Package\VisualStudioPackageProvider.cs" />
-    <Compile Include="Features\ChromiumExplorer\ShowChromiumExplorerCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\ShowSourceExplorerCommandHandler.cs" />
     <Compile Include="Features\FormatComment\CommentFormatter.cs" />
     <Compile Include="Package\CommandHandler\IPackageCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerRegistration.cs" />
@@ -244,29 +244,29 @@
     <Compile Include="Threads\DelayedOperationProcessor.cs" />
     <Compile Include="Threads\SynchronizationContextProvider.cs" />
     <Compile Include="Threads\UIRequestProcessor.cs" />
-    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerRootNodes.cs" />
-    <Compile Include="Features\ChromiumExplorer\FilePositionViewModel.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerRootNodes.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\FilePositionViewModel.cs" />
     <Compile Include="Threads\UIRequest.cs" />
-    <Compile Include="Features\ChromiumExplorer\FileSystemEntryDataViewModelFactory.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\FileSystemEntryDataViewModelFactory.cs" />
     <Compile Include="Wpf\ILazyObservableCollection.cs" />
     <Compile Include="Wpf\IProgressBarTracker.cs" />
-    <Compile Include="Features\ChromiumExplorer\ITreeViewItemViewModelHost.cs" />
-    <Compile Include="Features\ChromiumExplorer\LazyItemViewModel.cs" />
+    <Compile Include="Features\ToolWindows\ITreeViewItemViewModelHost.cs" />
+    <Compile Include="Features\ToolWindows\LazyItemViewModel.cs" />
     <Compile Include="Wpf\LazyObservableCollection.cs" />
-    <Compile Include="Features\ChromiumExplorer\DirectoryEntryViewModel.cs" />
-    <Compile Include="Features\ChromiumExplorer\FileEntryViewModel.cs" />
-    <Compile Include="Features\ChromiumExplorer\FileSystemEntryViewModel.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\DirectoryEntryViewModel.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\FileEntryViewModel.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\FileSystemEntryViewModel.cs" />
     <Compile Include="Wpf\MyVirtualizingStackPanel.cs" />
     <Compile Include="Wpf\ProgressBarTracker.cs" />
-    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerViewModel.cs" />
-    <Compile Include="Features\ChromiumExplorer\TextItemViewModel.cs" />
-    <Compile Include="Features\ChromiumExplorer\TreeViewItemViewModel.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerViewModel.cs" />
+    <Compile Include="Features\ToolWindows\TextItemViewModel.cs" />
+    <Compile Include="Features\ToolWindows\TreeViewItemViewModel.cs" />
     <Compile Include="Properties\GlobalSuppressions.cs" />
     <Compile Include="Commands\Guids.cs" />
-    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerControl.xaml.cs">
-      <DependentUpon>ChromiumExplorerControl.xaml</DependentUpon>
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerControl.xaml.cs">
+      <DependentUpon>SourceExplorerControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\ChromiumExplorer\TreeViewItemViewModelHost.cs" />
+    <Compile Include="Features\ToolWindows\TreeViewItemViewModelHost.cs" />
     <Compile Include="Commands\OleCommandTarget.cs" />
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
     <Compile Include="Commands\ICommandTarget.cs" />
@@ -281,11 +281,11 @@
     <Compile Include="Wpf\StringListViewModel.cs" />
     <Compile Include="Wpf\IHierarchyObject.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
-    <Page Include="Features\ChromiumExplorer\ChromiumExplorerControl.xaml">
+    <Page Include="Features\ToolWindows\SourceExplorer\SourceExplorerControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Compile Include="Features\ChromiumExplorer\ChromiumExplorerToolWindow.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerToolWindow.cs" />
     <Compile Include="Views\IOpenDocumentHelper.cs" />
     <Compile Include="Views\OpenDocumentHelper.cs" />
     <Compile Include="Views\IViewHandler.cs" />

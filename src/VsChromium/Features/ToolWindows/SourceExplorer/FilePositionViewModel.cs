@@ -5,7 +5,7 @@
 using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FilePositionViewModel : TreeViewItemViewModel {
     private readonly FilePositionSpan _position;
     private FileExtract _fileExtract;

@@ -10,7 +10,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Threads;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FileEntryViewModel : FileSystemEntryViewModel {
     private readonly FileEntry _fileEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;

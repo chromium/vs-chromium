@@ -4,7 +4,7 @@
 
 using System.Windows.Media;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows {
   public class TextItemViewModel : TreeViewItemViewModel {
     private readonly string _text;
 

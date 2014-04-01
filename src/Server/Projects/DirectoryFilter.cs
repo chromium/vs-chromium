@@ -10,7 +10,7 @@ namespace VsChromium.Server.Projects {
     private readonly PathPatternsFile _ignorePatternsFile;
 
     public DirectoryFilter(IConfigurationSectionProvider configurationSectionProvider) {
-      _ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.ExplorerIgnore);
+      _ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnore);
     }
 
     public bool Include(string relativePath) {

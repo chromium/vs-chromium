@@ -11,7 +11,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows {
   /// <summary>
   /// Base class for all ViewModel classes displayed by TreeViewItems.
   /// This acts as an adapter between a raw data object and a TreeViewItem.

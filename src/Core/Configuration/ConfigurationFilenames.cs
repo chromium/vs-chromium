@@ -18,7 +18,7 @@ namespace VsChromium.Core.Configuration {
   /// project file.
   /// </summary>
   public static class ConfigurationSectionNames {
-    public static readonly string ExplorerIgnore = "ChromiumExplorer.ignore";
+    public static readonly string SourceExplorerIgnore = "ChromiumExplorer.ignore";
     public static readonly string SearchableFilesIgnore = "SearchableFiles.ignore";
     public static readonly string SearchableFilesInclude = "SearchableFiles.include";
   }

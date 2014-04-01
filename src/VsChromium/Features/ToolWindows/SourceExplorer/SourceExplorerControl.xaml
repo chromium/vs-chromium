@@ -1,17 +1,18 @@
-﻿<UserControl x:Class="VsChromium.Features.ChromiumExplorer.ChromiumExplorerControl"
+﻿<UserControl x:Class="VsChromium.Features.ToolWindows.SourceExplorer.SourceExplorerControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.12.0"
              xmlns:wpf="clr-namespace:VsChromium.Wpf"
-             xmlns:chromiumExplorer="clr-namespace:VsChromium.Features.ChromiumExplorer"
+             xmlns:toolWindows="clr-namespace:VsChromium.Features.ToolWindows"
+             xmlns:sourceExplorer="clr-namespace:VsChromium.Features.ToolWindows.SourceExplorer"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300"
              Name="FileExplorerToolWindow"
              Background="{DynamicResource VsBrush.ToolWindowBackground}"
              Foreground="{DynamicResource VsBrush.ToolWindowText}"
-             HorizontalAlignment="Stretch" d:DataContext="{d:DesignData ChromiumExplorerViewModel}">
+             HorizontalAlignment="Stretch" d:DataContext="{d:DesignData SourceExplorerViewModel}">
   <UserControl.Resources>
     <Style TargetType="ToggleButton">
       <Setter Property="Background" Value="{DynamicResource VsBrush.CommandBarGradient}"/>
@@ -152,42 +153,42 @@
         <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" 
                          Color="{DynamicResource VsBrush.Highlight}" />-->
 
-        <HierarchicalDataTemplate DataType="{x:Type chromiumExplorer:DirectoryEntryViewModel}" ItemsSource="{Binding Children}">
+        <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:DirectoryEntryViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <HierarchicalDataTemplate DataType="{x:Type chromiumExplorer:FileEntryViewModel}" ItemsSource="{Binding Children}">
+        <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:FileEntryViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <HierarchicalDataTemplate DataType="{x:Type chromiumExplorer:RootErrorItemViewModel}" ItemsSource="{Binding Children}">
+        <HierarchicalDataTemplate DataType="{x:Type toolWindows:RootErrorItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <DataTemplate DataType="{x:Type chromiumExplorer:LazyItemViewModel}">
+        <DataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type chromiumExplorer:TextItemViewModel}">
+        <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type chromiumExplorer:FilePositionViewModel}">
+        <DataTemplate DataType="{x:Type sourceExplorer:FilePositionViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
             <TextBlock Text="{Binding DisplayText}" FontFamily="Consolas" FontSize="12" />

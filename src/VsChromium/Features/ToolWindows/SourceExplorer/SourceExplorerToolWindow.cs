@@ -7,8 +7,9 @@ using Microsoft.VisualStudio.Shell;
 using VsChromium.Commands;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Wpf;
+using System.ComponentModel.Design;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
   /// This class implements the tool window exposed by this package and hosts a user control.
   ///
@@ -18,16 +19,15 @@ namespace VsChromium.Features.ChromiumExplorer {
   /// This class derives from the ToolWindowPane class provided from the MPF in order to use its 
   /// implementation of the IVsUIElementPane interface.
   /// </summary>
-  [Guid(GuidList.GuidToolWindowPersistanceString)]
-  public class ChromiumExplorerToolWindow : ToolWindowPane {
+  [Guid(GuidList.GuidSourceExplorerToolWindowString)]
+  public class SourceExplorerToolWindow : ToolWindowPane {
     /// <summary>
     /// Standard constructor for the tool window.
     /// </summary>
-    public ChromiumExplorerToolWindow()
-      :
-        base(null) {
+    public SourceExplorerToolWindow()
+      : base(null) {
       // Set the window title reading it from the resources.
-      Caption = Resources.ToolWindowTitle;
+      Caption = Resources.SourceExplorerToolWindowTitle;
       // Set the image that will appear on the tab of the window frame
       // when docked with an other window
       // The resource ID correspond to the one defined in the resx file
@@ -39,11 +39,25 @@ namespace VsChromium.Features.ChromiumExplorer {
       // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
       // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on 
       // the object returned by the Content property.
-      ExplorerControl = new ChromiumExplorerControl();
+      ExplorerControl = new SourceExplorerControl();
     }
 
-    public ChromiumExplorerControl ExplorerControl {
-      get { return Content as ChromiumExplorerControl; } 
+    public void FocusSearchTextBox(CommandID commandId) {
+      switch (commandId.ID) {
+        case PkgCmdIdList.CmdidSearchFileNames:
+          ExplorerControl.FileNamesSearch.Focus();
+          break;
+        case PkgCmdIdList.CmdidSearchDirectoryNames:
+          ExplorerControl.DirectoryNamesSearch.Focus();
+          break;
+        case PkgCmdIdList.CmdidSearchFileContents:
+          ExplorerControl.FileContentsSearch.Focus();
+          break;
+      }
+    }
+
+    public SourceExplorerControl ExplorerControl {
+      get { return Content as SourceExplorerControl; } 
       set { Content = value; }
     }
 

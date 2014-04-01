@@ -20,11 +20,11 @@ using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
-  /// Interaction logic for ChromiumExplorerControl.xaml
+  /// Interaction logic for SourceExplorerControl.xaml
   /// </summary>
-  public partial class ChromiumExplorerControl : UserControl {
+  public partial class SourceExplorerControl : UserControl {
     private const int _searchDirectoryNamesMaxResults = 2000;
     private const int _searchFileNamesMaxResults = 2000;
     private const int _searchFileContentsMaxResults = 10000;
@@ -36,10 +36,10 @@ namespace VsChromium.Features.ChromiumExplorer {
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
 
-    public ChromiumExplorerControl() {
+    public SourceExplorerControl() {
       InitializeComponent();
 
-      base.DataContext = new ChromiumExplorerViewModel();
+      base.DataContext = new SourceExplorerViewModel();
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
@@ -54,7 +54,7 @@ namespace VsChromium.Features.ChromiumExplorer {
       });
     }
 
-    private ChromiumExplorerViewModel ViewModel { get { return (ChromiumExplorerViewModel)DataContext; } }
+    private SourceExplorerViewModel ViewModel { get { return (SourceExplorerViewModel)DataContext; } }
 
     public UpdateInfo UpdateInfo {
       get { return ViewModel.UpdateInfo; }

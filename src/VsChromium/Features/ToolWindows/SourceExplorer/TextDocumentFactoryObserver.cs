@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromium.Package;
 using VsChromium.Views;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   [Export(typeof(IPackagePostInitializer))]
   public class TextDocumentFactoryObserver : IPackagePostInitializer {
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;

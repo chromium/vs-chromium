@@ -8,7 +8,7 @@ using System.Linq;
 using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class DirectoryEntryViewModel : FileSystemEntryViewModel {
     private readonly DirectoryEntry _directoryEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;

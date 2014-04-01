@@ -21,9 +21,9 @@ using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ChromiumExplorer {
-  public class ChromiumExplorerViewModel : INotifyPropertyChanged {
-    private readonly ChromiumExplorerRootNodes _rootNodes = new ChromiumExplorerRootNodes();
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
+  public class SourceExplorerViewModel : INotifyPropertyChanged {
+    private readonly SourceExplorerRootNodes _rootNodes = new SourceExplorerRootNodes();
     private IComponentModel _componentModel;
     private IList<TreeViewItemViewModel> _currentRootNodesViewModel;
     private IEnumerable<TreeViewItemViewModel> _directoryPathRootNodes = new List<TreeViewItemViewModel>();
@@ -36,7 +36,7 @@ namespace VsChromium.Features.ChromiumExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public ChromiumExplorerRootNodes RootNodes { get { return _rootNodes; } }
+    public SourceExplorerRootNodes RootNodes { get { return _rootNodes; } }
 
     /// <summary>
     /// Databound!

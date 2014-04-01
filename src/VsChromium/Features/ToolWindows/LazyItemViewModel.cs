@@ -4,7 +4,7 @@
 
 using System;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows {
   public class LazyItemViewModel : TreeViewItemViewModel {
     public LazyItemViewModel(ITreeViewItemViewModelHost host, TreeViewItemViewModel parent)
       : base(host, parent, false) {

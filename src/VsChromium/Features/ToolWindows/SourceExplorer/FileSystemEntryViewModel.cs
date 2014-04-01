@@ -5,7 +5,7 @@
 using System.IO;
 using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public abstract class FileSystemEntryViewModel : TreeViewItemViewModel {
     protected FileSystemEntryViewModel(
       ITreeViewItemViewModelHost host,

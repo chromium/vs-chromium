@@ -210,6 +210,7 @@
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelBase.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />
@@ -257,7 +258,6 @@
     <Compile Include="Features\ToolWindows\SourceExplorer\FileSystemEntryDataViewModelFactory.cs" />
     <Compile Include="Wpf\ILazyObservableCollection.cs" />
     <Compile Include="Wpf\IProgressBarTracker.cs" />
-    <Compile Include="Features\ToolWindows\ITreeViewItemViewModelHost.cs" />
     <Compile Include="Features\ToolWindows\LazyItemViewModel.cs" />
     <Compile Include="Wpf\LazyObservableCollection.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\DirectoryEntryViewModel.cs" />
@@ -273,7 +273,6 @@
     <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerControl.xaml.cs">
       <DependentUpon>SourceExplorerControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\ToolWindows\TreeViewItemViewModelHost.cs" />
     <Compile Include="Commands\OleCommandTarget.cs" />
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
     <Compile Include="Commands\ICommandTarget.cs" />

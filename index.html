@@ -404,6 +404,21 @@
   <hr />
 
   <!-------------------------------------------------------------------------------->
+  <div id="debug-visualizers">
+    <h1>Debug Visualizers</h1>
+    <p>
+      Custom visualizers for visualizing complex Chromium specific data-types.
+      Visualizers are included for the following types:
+    </p>
+    <ul>
+      <li>base::Time (displays base::Time formatted as MM/DD/YYYY HH:MM:SS.XXXX)</li>
+      <li>base::TimeDelta (displays base::TimeDelta formatted as HH:MM:SS.XXXX)</li>
+    </ul>
+    <p>
+      Other, simpler visualizers are available in src\tools\win\DebugVisualizers.
+    </p>
+  </div>
+  <!-------------------------------------------------------------------------------->
   <div id="attach-to-chrome">
     <h1>Attach to Chrome</h1>
     <p>
@@ -413,23 +428,62 @@
     </p>
     <img src="Screenshots/AttachToChromeMenuItem.png" />
     <img src="Screenshots/AttachToChrome.png" />
+    <p>
+      The Attach to Chrome dialog also allows users to attach to all current *and*
+      future child processes that spawn, making simple otherwise difficult debugging
+      scenarios involving child-process startup.
+    </p>
+    <h4>Current limitations of Auto attach to Child Processes:</h4>
+    <ul>
+      <li>
+        Only works for processes attached through the Attach to Chrome dialog.
+        In other words, launching via F5 is not supported for this feature.
+      </li>
+      <li>
+        Does not support automatically attaching to future child processes of x64 parents.
+      </li>
+    </ul>
+    <p>
+      Both of these limitations will be removed in a subsequent release.
+    </p>
+    <h2>Known Issue: </h2>
+    <p>
+      Due to a <a href="https://connect.microsoft.com/VisualStudio/feedback/details/841994/visual-studios-heap-gets-corrupted-when-attaching-to-more-than-20-processes-from-an-experimental-instance">bug</a>
+      in the Visual Studio IDE, it is not advisable to leave the processes debug window opened
+      by default when using auto attach to children.
+    </p>
   </div>
   <hr />
 
   <!-------------------------------------------------------------------------------->
   <div id="whatsnew">
     <h1>What's new</h1>
-    <h2 id="whatsnew-0-9-1">v0.9.1</h2>
+    <h2 id="whatsnew-0-9-7">v0.9.7</h2>
     <h3>Debugger features</h3>
     <ul>
-      <li>Attach to all running Chrome processes</li>
-      <li>Attach to child Chrome processes</li>
+      <li>Automatically attach to child processes</li>
+      <li>Custom visualizers for base::Time and base::TimeDelta</li>
     </ul>
-    <h3>Editor features</h3>
+    <h4>Current limitations of Auto attach to Child Processes:</h4>
+    </p>
     <ul>
-      <li><a href="#pmconsole">Navigate to Build Errors</a></li>
-      <li>Minor stability and performance improvements.</li>
+      <li>
+        Only works for processes attached through the Attach to Chrome dialog.
+        In other words, launching via F5 is not supported for this feature.
+      </li>
+      <li>
+        Does not support automatically attaching to future child processes of x64 parents.
+      </li>
     </ul>
+    <p>
+      Both of these limitations will be removed in a subsequent release.
+    </p>
+    <h2>Known Issue: </h2>
+    <p>
+      Due to a <a href="https://connect.microsoft.com/VisualStudio/feedback/details/841994/visual-studios-heap-gets-corrupted-when-attaching-to-more-than-20-processes-from-an-experimental-instance">bug</a>
+      in the Visual Studio IDE, it is not advisable to leave the processes debug window opened
+      by default when using auto attach to children.
+    </p>
   </div>
   <hr />
 
@@ -528,7 +582,7 @@
   <div id="installation">
     <h1>Installation Instructions</h1>
     <ul>
-      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/download/v0.9.1/VsChromiumPackage.vsix">VsChromiumPackage.vsix</a></li>
+      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.7">VsChromium.vsix</a></li>
       <li>Open the file: this will open a Visual Studio Installation dialog.
       <img src="Screenshots/VsixInstall.png" />
       </li>

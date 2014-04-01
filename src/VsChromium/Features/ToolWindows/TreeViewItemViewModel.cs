@@ -21,7 +21,7 @@ namespace VsChromium.Features.ToolWindows {
     private static readonly TreeViewItemViewModel _dummyChild = new TreeViewItemViewModel();
 
     private readonly LazyObservableCollection<TreeViewItemViewModel> _children;
-    private readonly ITreeViewItemViewModelHost _host;
+    private readonly IStandarImageSourceFactory _imageSourceFactory;
     private readonly TreeViewItemViewModel _parentViewModel;
     private bool _isExpanded;
     private bool _isSelected;
@@ -31,10 +31,10 @@ namespace VsChromium.Features.ToolWindows {
     }
 
     protected TreeViewItemViewModel(
-      ITreeViewItemViewModelHost host,
-      TreeViewItemViewModel parentViewModel,
-      bool lazyLoadChildren) {
-      _host = host;
+        IStandarImageSourceFactory imageSourceFactory,
+        TreeViewItemViewModel parentViewModel,
+        bool lazyLoadChildren) {
+      _imageSourceFactory = imageSourceFactory;
       _parentViewModel = parentViewModel;
       _children = new LazyObservableCollection<TreeViewItemViewModel>(_initialItemCountLimit,
                                                                       CreateLazyItemViewModel);
@@ -42,9 +42,7 @@ namespace VsChromium.Features.ToolWindows {
         _children.Add(_dummyChild);
     }
 
-    public IStandarImageSourceFactory StandarImageSourceFactory { get { return _host.StandarImageSourceFactory; } }
-
-    public ITreeViewItemViewModelHost Host { get { return _host; } }
+    public IStandarImageSourceFactory StandarImageSourceFactory { get { return _imageSourceFactory; } }
 
     public virtual int ChildrenCount { get { return 0; } }
 
@@ -112,7 +110,7 @@ namespace VsChromium.Features.ToolWindows {
     public event PropertyChangedEventHandler PropertyChanged;
 
     private LazyItemViewModel CreateLazyItemViewModel() {
-      var result = new LazyItemViewModel(_host, this);
+      var result = new LazyItemViewModel(_imageSourceFactory, this);
       if (ChildrenCount != 0)
         result.Text = string.Format("(Click to expand {0:n0} additional items...)",
                                     ChildrenCount - _initialItemCountLimit);

@@ -3,11 +3,12 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows {
   public class LazyItemViewModel : TreeViewItemViewModel {
-    public LazyItemViewModel(ITreeViewItemViewModelHost host, TreeViewItemViewModel parent)
-      : base(host, parent, false) {
+    public LazyItemViewModel(IStandarImageSourceFactory imageSourceFactory, TreeViewItemViewModel parent)
+      : base(imageSourceFactory, parent, false) {
       Text = "(Click to expand...)";
     }
 

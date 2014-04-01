@@ -3,13 +3,14 @@
 // found in the LICENSE file.
 
 using System.Windows.Media;
+using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows {
   public class TextItemViewModel : TreeViewItemViewModel {
     private readonly string _text;
 
-    public TextItemViewModel(ITreeViewItemViewModelHost host, TreeViewItemViewModel parent, string text)
-      : base(host, parent, false) {
+    public TextItemViewModel(IStandarImageSourceFactory imageSourceFactory, TreeViewItemViewModel parent, string text)
+      : base(imageSourceFactory, parent, false) {
       _text = text;
     }
 

@@ -55,14 +55,9 @@ namespace VsChromium.Server.Search {
     }
 
     private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
-      var blockStart = Pointers.Add(_heap.Pointer, _textOffset);
-      var blockEnd = Pointers.Add(_heap.Pointer, _heap.ByteLength);
-      var offsets = new AsciiTextLineOffsets(_heap, blockStart, blockEnd);
-      offsets.CollectLineOffsets();
-
       return matches
         .Select(match => {
-          var lineExtent = offsets.GetLineExtent(match.Position);
+          var lineExtent = GetLineExtent(match.Position);
           // We got the line extent, the offset at which we found the MainEntry.
           // Now we need to check that "OtherEntries" are present (in order) and
           // in appropriate intervals.
@@ -101,6 +96,36 @@ namespace VsChromium.Server.Search {
         })
         .Where(x => x.Length != default(FilePositionSpan).Length)
         .ToList();
+    }
+
+    private unsafe FilePositionSpan GetLineExtent(int position) {
+      const byte nl = (byte)'\n';
+      byte* min = Pointers.Add(this.Pointer, 0);
+      byte* current = Pointers.Add(this.Pointer, position);
+      byte* max = Pointers.Add(this.Pointer, this.ByteLength);
+      Debug.Assert(min <= current);
+      Debug.Assert(current <= max);
+      byte* start = current;
+      for (; start > min; start--) {
+        if (*start == nl) {
+          break;
+        }
+      }
+      byte* end = current;
+      for (; end < max; end++) {
+        if (*end == nl) {
+          break;
+        }
+      }
+
+      Debug.Assert(min <= start);
+      Debug.Assert(start <= max);
+      Debug.Assert(min <= end);
+      Debug.Assert(end <= max);
+      return new FilePositionSpan {
+        Position = Pointers.Offset32(min, start),
+        Length = Pointers.Offset32(start, end)
+      };
     }
 
     private bool CheckEntriesInInterval(int position, int length, IEnumerable<ParsedSearchString.Entry> entries, bool matchCase, out int foundPosition, out int foundLength) {
@@ -154,8 +179,8 @@ namespace VsChromium.Server.Search {
 
     private unsafe char GetCharacterAt(int position) {
       Debug.Assert(position >= 0);
-      Debug.Assert(position < this.ByteLength - _textOffset);
-      var c = *Pointers.Add(_heap.Pointer, _textOffset + position);
+      Debug.Assert(position < this.ByteLength);
+      var c = *Pointers.Add(this.Pointer, position);
       return (char)c;
     }
 
@@ -164,8 +189,8 @@ namespace VsChromium.Server.Search {
     }
 
     public unsafe IEnumerable<FileExtract> GetFileExtractsWorker(IEnumerable<FilePositionSpan> spans) {
-      var blockStart = Pointers.Add(_heap.Pointer, _textOffset);
-      var blockEnd = Pointers.Add(_heap.Pointer, _heap.ByteLength);
+      var blockStart = Pointers.Add(this.Pointer, 0);
+      var blockEnd = Pointers.Add(this.Pointer, this.ByteLength);
       var offsets = new AsciiTextLineOffsets(_heap, blockStart, blockEnd);
       offsets.CollectLineOffsets();
 

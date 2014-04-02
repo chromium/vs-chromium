@@ -40,13 +40,14 @@ namespace VsChromium.Server.Search {
     }
 
     public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
-      if (searchContentsData.Text.Length > ByteLength)
+      if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
         return NoSpans;
 
       // TODO(rpaquay): We are limited to 2GB for now.
       var algo = searchContentsData.AsciiStringSearchAlgo;
       var result = algo.SearchAll(Pointer, (int)ByteLength);
-      if (searchContentsData.ParsedSearchString.OtherEntries.Count == 0) {
+      if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
+          searchContentsData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return result.ToList();
       }
 
@@ -67,10 +68,10 @@ namespace VsChromium.Server.Search {
           // in appropriate intervals.
           var positionInterval1 = lineExtent.Position;
           var lengthInterval1 = match.Position - lineExtent.Position;
-          var entriesInterval1 = parsedSearchString.OtherEntries.Where(e => e.Index < parsedSearchString.MainEntry.Index);
+          var entriesInterval1 = parsedSearchString.EntriesBeforeMainEntry;
           var positionInterval2 = match.Position + match.Length;
           var lengthInterval2 = (lineExtent.Position + lineExtent.Length) - (match.Position + match.Length);
-          var entriesInterval2 = parsedSearchString.OtherEntries.Where(e => e.Index > parsedSearchString.MainEntry.Index);
+          var entriesInterval2 = parsedSearchString.EntriesAfterMainEntry;
 
           int foundPositionInterval1;
           int foundLengthInterval1;
@@ -98,7 +99,7 @@ namespace VsChromium.Server.Search {
           }
           return new FilePositionSpan();
         })
-        .Where(x => x.Length > 0)
+        .Where(x => x.Length != default(FilePositionSpan).Length)
         .ToList();
     }
 

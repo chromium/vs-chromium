@@ -35,6 +35,7 @@ namespace VsChromium.Server.Search {
     private readonly IOperationIdFactory _operationIdFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private readonly IProjectDiscovery _projectDiscovery;
+    private readonly ISearchStringParser _searchStringParser;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
     private volatile FileDatabase _currentState;
 
@@ -46,13 +47,15 @@ namespace VsChromium.Server.Search {
       IFileContentsFactory fileContentsFactory,
       IOperationIdFactory operationIdFactory,
       IProgressTrackerFactory progressTrackerFactory,
-      IProjectDiscovery projectDiscovery) {
+      IProjectDiscovery projectDiscovery,
+      ISearchStringParser searchStringParser) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _customThreadPool = customThreadPool;
       _fileContentsFactory = fileContentsFactory;
       _operationIdFactory = operationIdFactory;
       _progressTrackerFactory = progressTrackerFactory;
       _projectDiscovery = projectDiscovery;
+      _searchStringParser = searchStringParser;
 
       // Create a "Null" state
       _currentState = new FileDatabase(_projectDiscovery, _fileSystemNameFactory,
@@ -112,7 +115,7 @@ namespace VsChromium.Server.Search {
     }
 
     public IEnumerable<FileSearchResult> SearchFileContents(SearchParams searchParams) {
-      ParsedSearchString parsedSearchString = ParsedSearchString(searchParams.SearchString);
+      var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString);
 
       // Don't search empty or very small strings -- no significant results.
       if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
@@ -152,62 +155,6 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    class SubStrings {
-      private readonly StringBuilder _current = new StringBuilder();
-      private readonly List<string> _list = new List<string>();
-
-      public List<string> List { get { return _list; } }
-
-      public void AddCharacter(char c) {
-        _current.Append(c);
-      }
-
-      public void FinishCurrent() {
-        if (_current.Length > 0) {
-          List.Add(_current.ToString());
-        }
-        _current.Clear();
-      }
-    }
-
-    private ParsedSearchString ParsedSearchString(string searchString) {
-      var subStrings = new SubStrings();
-      bool inEscapeSequence = false;
-      foreach (var c in searchString) {
-        switch (c) {
-          case '\\':
-            if (inEscapeSequence) {
-              subStrings.AddCharacter('\\');
-              inEscapeSequence = false;
-            } else {
-              inEscapeSequence = true;
-            }
-            break;
-          case '*':
-            if (inEscapeSequence) {
-              subStrings.AddCharacter('*');
-              inEscapeSequence = false;
-            } else {
-              subStrings.FinishCurrent();
-            }
-            break;
-          default:
-            inEscapeSequence = false;
-            subStrings.AddCharacter(c);
-            break;
-        }
-      }
-      subStrings.FinishCurrent();
-
-      // Look for the longest sub string as the main search string.
-      int mainIndex = subStrings.List.IndexOf(subStrings.List.OrderByDescending(x => x.Length).First());
-      var mainEntry = new ParsedSearchString.Entry { Text = subStrings.List[mainIndex], Index = mainIndex };
-      var otherEntries = Enumerable
-        .Range(0, subStrings.List.Count)
-        .Where(i => i != mainIndex)
-        .Select(i => new ParsedSearchString.Entry {Text = subStrings.List[i], Index = i});
-      return new ParsedSearchString(mainEntry, otherEntries);
-    }
 
     public IEnumerable<FileExtract> GetFileExtracts(string path, IEnumerable<FilePositionSpan> spans) {
       var filename = _fileSystemNameFactory.PathToFileName(_projectDiscovery, path);
@@ -366,29 +313,6 @@ namespace VsChromium.Server.Search {
       var handler = FilesLoaded;
       if (handler != null)
         handler(operationId);
-    }
-  }
-
-  public class ParsedSearchString {
-    private readonly Entry _mainEntry;
-    private readonly IList<Entry> _otherEntries;
-
-    public class Entry {
-      public string Text { get; set; }
-      public int Index { get; set; }
-    }
-
-    public ParsedSearchString(Entry mainEntry, IEnumerable<Entry> otherEntries) {
-      this._mainEntry = mainEntry;
-      this._otherEntries = otherEntries.ToList();
-    }
-
-    public Entry MainEntry {
-      get { return _mainEntry; }
-    }
-
-    public IList<Entry> OtherEntries {
-      get { return _otherEntries; }
     }
   }
 }

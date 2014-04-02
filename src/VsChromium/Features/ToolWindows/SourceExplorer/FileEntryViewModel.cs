@@ -9,24 +9,30 @@ using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Threads;
+using VsChromium.Views;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FileEntryViewModel : FileSystemEntryViewModel {
     private readonly FileEntry _fileEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
     private bool _hasExpanded;
 
     public FileEntryViewModel(
-      ITreeViewItemViewModelHost host,
-      TreeViewItemViewModel parentViewModel,
-      FileEntry fileEntry)
-      : base(host, parentViewModel, fileEntry.Data != null) {
+        IUIRequestProcessor uiRequestProcessor,
+        IStandarImageSourceFactory imageSourceFactory,
+        TreeViewItemViewModel parentViewModel,
+        FileEntry fileEntry)
+      : base(uiRequestProcessor, imageSourceFactory, parentViewModel, fileEntry.Data != null) {
       _fileEntry = fileEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
 
     private IList<TreeViewItemViewModel> CreateChildren() {
-      return FileSystemEntryDataViewModelFactory.CreateViewModels(Host, this, _fileEntry.Data).ToList();
+      return FileSystemEntryDataViewModelFactory.CreateViewModels(
+          UIRequestProcessor, 
+          StandarImageSourceFactory, 
+          this, 
+          _fileEntry.Data).ToList();
     }
 
     public override FileSystemEntry FileSystemEntry { get { return _fileEntry; } }
@@ -73,7 +79,7 @@ namespace VsChromium.Features.ChromiumExplorer {
         }
       };
 
-      Host.UIRequestProcessor.Post(uiRequest);
+      UIRequestProcessor.Post(uiRequest);
     }
 
     protected override IEnumerable<TreeViewItemViewModel> GetChildren() {

@@ -4,17 +4,20 @@
 
 using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Threads;
+using VsChromium.Views;
 
-namespace VsChromium.Features.ChromiumExplorer {
-  public class FilePositionViewModel : TreeViewItemViewModel {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
+  public class FilePositionViewModel : SourceExplorerItemViewModelBase {
     private readonly FilePositionSpan _position;
     private FileExtract _fileExtract;
 
     public FilePositionViewModel(
-      ITreeViewItemViewModelHost host,
-      TreeViewItemViewModel parent,
-      FilePositionSpan position)
-      : base(host, parent, false) {
+        IUIRequestProcessor uiRequestProcessor,
+        IStandarImageSourceFactory imageSourceFactory,
+        TreeViewItemViewModel parent,
+        FilePositionSpan position)
+      : base(uiRequestProcessor, imageSourceFactory, parent, false) {
       _position = position;
     }
 

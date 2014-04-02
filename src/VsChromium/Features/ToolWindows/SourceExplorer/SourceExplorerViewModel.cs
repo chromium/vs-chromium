@@ -21,22 +21,14 @@ using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ChromiumExplorer {
-  public class ChromiumExplorerViewModel : INotifyPropertyChanged {
-    private readonly ChromiumExplorerRootNodes _rootNodes = new ChromiumExplorerRootNodes();
-    private IComponentModel _componentModel;
-    private IList<TreeViewItemViewModel> _currentRootNodesViewModel;
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
+  public class SourceExplorerViewModel : ChromiumExplorerViewModelBase {
     private IEnumerable<TreeViewItemViewModel> _directoryPathRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileContentsResultRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileNamesResultRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileSystemEntryRootNodes = new List<TreeViewItemViewModel>();
-    private ITreeViewItemViewModelHost _host;
+    private IUIRequestProcessor _uiRequestProcessor = null;
     private UpdateInfo _updateInfo;
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public ChromiumExplorerRootNodes RootNodes { get { return _rootNodes; } }
 
     /// <summary>
     /// Databound!
@@ -88,13 +80,10 @@ namespace VsChromium.Features.ChromiumExplorer {
       }
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public override void OnToolWindowCreated(IServiceProvider serviceProvider) {
+      base.OnToolWindowCreated(serviceProvider);
 
-    public void OnToolWindowCreated(IServiceProvider serviceProvider) {
-      _componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
-      var standarImageSourceFactory = _componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
-      var uiRequestProcessor = _componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
-      _host = new TreeViewItemViewModelHost(standarImageSourceFactory, uiRequestProcessor);
+      _uiRequestProcessor = ComponentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
     }
 
     public void SwitchToFileSystemTree() {
@@ -116,7 +105,7 @@ namespace VsChromium.Features.ChromiumExplorer {
     public void SetFileSystemTree(FileSystemTree tree) {
       _fileSystemEntryRootNodes = tree.Root
         .Entries
-        .Select(x => FileSystemEntryViewModel.Create(_host, null, x))
+        .Select(x => FileSystemEntryViewModel.Create(_uiRequestProcessor, ImageSourceFactory, null, x))
         .ToList();
       ExpandNodes(_fileSystemEntryRootNodes, false);
       SwitchToFileSystemTree();
@@ -125,11 +114,11 @@ namespace VsChromium.Features.ChromiumExplorer {
     public void SetFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
       _fileNamesResultRootNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(_host, null, description)
+          new TextItemViewModel(ImageSourceFactory, null, description)
         }.Concat(
           fileResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_host, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_uiRequestProcessor, ImageSourceFactory, null, x)))
           .ToList();
       ExpandNodes(_fileNamesResultRootNodes, expandAll);
       SwitchToFileNamesSearchResult();
@@ -138,11 +127,11 @@ namespace VsChromium.Features.ChromiumExplorer {
     public void SetDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
       _directoryPathRootNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(_host, null, description)
+          new TextItemViewModel(ImageSourceFactory, null, description)
         }.Concat(
           directoryResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_host, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_uiRequestProcessor, ImageSourceFactory, null, x)))
           .ToList();
       ExpandNodes(_directoryPathRootNodes, expandAll);
       SwitchToDirectoryNamesSearchResult();
@@ -151,47 +140,18 @@ namespace VsChromium.Features.ChromiumExplorer {
     public void SetFileContentsSearchResult(DirectoryEntry searchResults, string description, bool expandAll) {
       _fileContentsResultRootNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(_host, null, description)
+          new TextItemViewModel(ImageSourceFactory, null, description)
         }.Concat(
           searchResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_host, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_uiRequestProcessor, ImageSourceFactory, null, x)))
           .ToList();
       ExpandNodes(_fileContentsResultRootNodes, expandAll);
       SwitchToFileContentsSearchResult();
     }
 
-    private void SetRootNodes(IEnumerable<TreeViewItemViewModel> source, string defaultText = "") {
-      _currentRootNodesViewModel = source.ToList();
-      if (_currentRootNodesViewModel.Count == 0 && !string.IsNullOrEmpty(defaultText)) {
-        _currentRootNodesViewModel.Add(new TextItemViewModel(_host, null, defaultText));
-      }
-      _rootNodes.Clear();
-      _currentRootNodesViewModel.ForAll(x => _rootNodes.Add(x));
-    }
-
-    private void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {
-      source.ForAll(x => {
-        if (expandAll)
-          ExpandAll(x);
-        else
-          x.IsExpanded = true;
-      });
-    }
-
-    private void ExpandAll(TreeViewItemViewModel item) {
-      item.IsExpanded = true;
-      item.Children.ForAll(x => ExpandAll(x));
-    }
-
-    protected virtual void OnPropertyChanged(string propertyName) {
-      PropertyChangedEventHandler handler = PropertyChanged;
-      if (handler != null)
-        handler(this, new PropertyChangedEventArgs(propertyName));
-    }
-
     public void SelectDirectory(DirectoryEntryViewModel directoryEntry, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
-      if (ReferenceEquals(_currentRootNodesViewModel, _fileSystemEntryRootNodes))
+      if (ReferenceEquals(CurrentRootNodesViewModel, _fileSystemEntryRootNodes))
         return;
 
       var chromiumRoot = GetChromiumRoot(directoryEntry);
@@ -260,10 +220,10 @@ namespace VsChromium.Features.ChromiumExplorer {
 
     public void SetErrorResponse(ErrorResponse errorResponse) {
       var messages = new List<TreeViewItemViewModel>();
-      var rootError = new RootErrorItemViewModel(_host, null, "Error processing request. You may need to restart Visual Studio.");
+      var rootError = new RootErrorItemViewModel(ImageSourceFactory, null, "Error processing request. You may need to restart Visual Studio.");
       messages.Add(rootError);
       while (errorResponse != null) {
-        rootError.Children.Add(new TextItemViewModel(_host, rootError, errorResponse.Message));
+        rootError.Children.Add(new TextItemViewModel(ImageSourceFactory, rootError, errorResponse.Message));
         errorResponse = errorResponse.InnerError;
       }
       SetRootNodes(messages);

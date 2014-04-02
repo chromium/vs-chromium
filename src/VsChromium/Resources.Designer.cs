@@ -61,11 +61,11 @@ namespace VsChromium {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Chromium Explorer.
+        ///   Looks up a localized string similar to Chromium Source Explorer.
         /// </summary>
-        internal static string ToolWindowTitle {
+        internal static string SourceExplorerToolWindowTitle {
             get {
-                return ResourceManager.GetString("ToolWindowTitle", resourceCulture);
+                return ResourceManager.GetString("SourceExplorerToolWindowTitle", resourceCulture);
             }
         }
     }

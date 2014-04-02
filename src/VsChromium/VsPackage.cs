@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core;
 using VsChromium.Commands;
-using VsChromium.Features.ChromiumExplorer;
+using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
 
 namespace VsChromium {
@@ -21,7 +21,7 @@ namespace VsChromium {
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
   // VS 2012 and later since package updates is more explicit).
   [ProvideMenuResource("Menus.ctmenu", 8)]
-  [ProvideToolWindow(typeof(ChromiumExplorerToolWindow))]
+  [ProvideToolWindow(typeof(SourceExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage {
     public VsPackage() {

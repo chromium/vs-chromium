@@ -1,11 +1,12 @@
 ﻿using System.Windows.Media;
+using VsChromium.Views;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows {
   public class RootErrorItemViewModel : TreeViewItemViewModel {
     private readonly string _text;
 
-    public RootErrorItemViewModel(ITreeViewItemViewModelHost host, TreeViewItemViewModel parent, string text)
-      : base(host, parent, false) {
+    public RootErrorItemViewModel(IStandarImageSourceFactory imageSourceFactory, TreeViewItemViewModel parent, string text)
+      : base(imageSourceFactory, parent, false) {
       _text = text;
     }
 

@@ -1,21 +1,18 @@
 using System.ComponentModel.Composition;
-using VsChromium.Features.ChromiumExplorer;
+using VsChromium.Features.ToolWindows;
 
 namespace VsChromium.Features.AutoUpdate {
   [Export(typeof(IUpdateNotificationListener))]
   public class UpdateNotificationListener : IUpdateNotificationListener {
-    private readonly IChromiumExplorerToolWindowAccessor _chromiumExplorerToolWindowAccessor;
+    private readonly ToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public UpdateNotificationListener(IChromiumExplorerToolWindowAccessor chromiumExplorerToolWindowAccessor) {
-      _chromiumExplorerToolWindowAccessor = chromiumExplorerToolWindowAccessor;
+    public UpdateNotificationListener(ToolWindowAccessor toolWindowAccessor) {
+      _toolWindowAccessor = toolWindowAccessor;
     }
 
     public void NotifyUpdate(UpdateInfo updateInfo) {
-      var window = _chromiumExplorerToolWindowAccessor.GetToolWindow();
-      if (window != null) {
-        window.NotifyPackageUpdate(updateInfo);
-      }
+      _toolWindowAccessor.SourceExplorer.NotifyPackageUpdate(updateInfo);
     }
   }
 }

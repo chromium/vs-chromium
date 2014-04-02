@@ -7,24 +7,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Threads;
+using VsChromium.Views;
 
-namespace VsChromium.Features.ChromiumExplorer {
+namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class DirectoryEntryViewModel : FileSystemEntryViewModel {
     private readonly DirectoryEntry _directoryEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
 
     public DirectoryEntryViewModel(
-      ITreeViewItemViewModelHost host,
-      TreeViewItemViewModel parentViewModel,
-      DirectoryEntry directoryEntry)
-      : base(host, parentViewModel, directoryEntry.Entries.Count > 0) {
+        IUIRequestProcessor uiRequestProcessor,
+        IStandarImageSourceFactory imageSourceFactory,
+        TreeViewItemViewModel parentViewModel,
+        DirectoryEntry directoryEntry)
+      : base(uiRequestProcessor, imageSourceFactory, parentViewModel, directoryEntry.Entries.Count > 0) {
       _directoryEntry = directoryEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
 
     private IList<TreeViewItemViewModel> CreateChildren() {
       return _directoryEntry.Entries
-        .Select(x => (TreeViewItemViewModel)FileSystemEntryViewModel.Create(Host, this, x))
+        .Select(x => (TreeViewItemViewModel)FileSystemEntryViewModel.Create(
+            UIRequestProcessor, 
+            StandarImageSourceFactory, 
+            this, 
+            x))
         .ToList();
     }
 

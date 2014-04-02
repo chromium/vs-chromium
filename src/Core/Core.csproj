@@ -28,8 +28,12 @@
   <ItemGroup>
     <Compile Include="Chromium\ChromiumDiscovery.cs" />
     <Compile Include="Chromium\ChromiumDiscoveryWithCache.cs" />
+    <Compile Include="Chromium\InstallationData.cs" />
+    <Compile Include="Chromium\DistributionType.cs" />
     <Compile Include="Chromium\IChromiumDiscovery.cs" />
     <Compile Include="Chromium\IChromiumDiscoveryWithCache.cs" />
+    <Compile Include="Chromium\InstallationEnumerator.cs" />
+    <Compile Include="Chromium\InstallationLevel.cs" />
     <Compile Include="Configuration\ConfigurationFilenames.cs" />
     <Compile Include="Configuration\ConfigurationFileSectionProvider.cs" />
     <Compile Include="Configuration\FileWithSectionConfigurationProvider.cs" />
@@ -128,6 +132,7 @@
     <Compile Include="PackageServices.cs" />
     <Compile Include="Processes\ExtensionMethods.cs" />
     <Compile Include="Processes\NtProcess.cs" />
+    <Compile Include="Processes\ProcessUtility.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />
     <Compile Include="VsChromiumVersion.cs" />

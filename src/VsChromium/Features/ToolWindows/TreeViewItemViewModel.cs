@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VsChromium.Core.Linq;
@@ -46,7 +47,13 @@ namespace VsChromium.Features.ToolWindows {
 
     public virtual int ChildrenCount { get { return 0; } }
 
-    public virtual ImageSource ImageSourcePath { get { return new BitmapImage(); } }
+    public virtual ImageSource ImageSourcePath { get { return null; } }
+
+    public virtual Visibility ImageVisibility {
+      get {
+        return (ImageSourcePath == null) ? Visibility.Collapsed : Visibility.Visible;
+      } 
+    }
 
     /// <summary>
     /// Returns the logical child items of this object.

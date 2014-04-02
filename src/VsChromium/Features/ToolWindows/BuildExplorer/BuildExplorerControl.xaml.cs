@@ -34,7 +34,8 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
       _componentModel = componentModel;
 
       ViewModel.OnToolWindowCreated(serviceProvider);
-      //FetchFilesystemTree();
+      
+
     }
   }
 }

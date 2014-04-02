@@ -49,7 +49,7 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidBuildExplorerToolWindow" priority="0x0100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
-        <CommandFlag>DefaultInvisible</CommandFlag>
+        <!--<CommandFlag>DefaultInvisible</CommandFlag>-->
         <Strings>
           <CommandName>cmdidBuildExplorerToolWindow</CommandName>
           <ButtonText>Chromium Build Explorer</ButtonText>

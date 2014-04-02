@@ -15,6 +15,8 @@ using VsChromium.ServerProxy;
 
 namespace VsChromium.Tests.Server {
   public abstract class TestServerBase : MefBaseTest {
+    // When using interactive debugger:
+    //protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5000.0);
     protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5.0);
 
     protected DirectoryInfo GetChromiumEnlistmentDirectory() {

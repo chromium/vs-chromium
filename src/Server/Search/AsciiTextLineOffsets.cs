@@ -74,17 +74,23 @@ namespace VsChromium.Server.Search {
       _listStartOffsets.Add(offset);
     }
 
-    private int GetLineStart(int offset, int count) {
+    public FilePositionSpan GetLineExtent(int offset) {
       var lineNumber = GetLineStartIndex(offset);
       var lineStartOffset = _listStartOffsets[lineNumber];
+      var lineEndOffset = (lineNumber == _listStartOffsets.Count - 1) ?
+                            Pointers.Offset32(_blockStart, _blockEnd) :
+                            _listStartOffsets[lineNumber + 1];
+      return new FilePositionSpan { Position = lineStartOffset, Length = lineEndOffset - lineStartOffset };
+    }
+
+    private int GetLineStart(int offset, int count) {
+      var lineStartOffset = GetLineExtent(offset).Position;
       return Math.Max(lineStartOffset, offset - count);
     }
 
     private int GetLineEnd(int offset, int count) {
-      var lineNumber = GetLineStartIndex(offset);
-      var lineEndOffset = (lineNumber == _listStartOffsets.Count - 1) ?
-                            Pointers.Offset32(_blockStart, _blockEnd) :
-                            _listStartOffsets[lineNumber + 1];
+      var extent = GetLineExtent(offset);
+      var lineEndOffset = extent.Position + extent.Length;
       return Math.Min(lineEndOffset, offset + count);
     }
 

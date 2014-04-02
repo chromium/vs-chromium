@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using VsChromium.Core;
 using VsChromium.Core.FileNames;
@@ -133,7 +134,7 @@ namespace VsChromium.Server.Search {
       using (var searchTextUniPtr = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(searchString)))
       using (var searchAlgo = AsciiFileContents.CreateSearchAlgo(searchString, matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone)) {
         var searchInfo = new SearchContentsData {
-          parsedSearchString = parsedSearchString,
+          ParsedSearchString = parsedSearchString,
           Text = searchString,
           UniTextPtr = searchTextUniPtr,
           AsciiStringSearchAlgo = searchAlgo,
@@ -151,8 +152,61 @@ namespace VsChromium.Server.Search {
       }
     }
 
+    class SubStrings {
+      private readonly StringBuilder _current = new StringBuilder();
+      private readonly List<string> _list = new List<string>();
+
+      public List<string> List { get { return _list; } }
+
+      public void AddCharacter(char c) {
+        _current.Append(c);
+      }
+
+      public void FinishCurrent() {
+        if (_current.Length > 0) {
+          List.Add(_current.ToString());
+        }
+        _current.Clear();
+      }
+    }
+
     private ParsedSearchString ParsedSearchString(string searchString) {
-      return new ParsedSearchString(new ParsedSearchString.Entry { Text = searchString, Index = 0}, Enumerable.Empty<ParsedSearchString.Entry>());
+      var subStrings = new SubStrings();
+      bool inEscapeSequence = false;
+      foreach (var c in searchString) {
+        switch (c) {
+          case '\\':
+            if (inEscapeSequence) {
+              subStrings.AddCharacter('\\');
+              inEscapeSequence = false;
+            } else {
+              inEscapeSequence = true;
+            }
+            break;
+          case '*':
+            if (inEscapeSequence) {
+              subStrings.AddCharacter('*');
+              inEscapeSequence = false;
+            } else {
+              subStrings.FinishCurrent();
+            }
+            break;
+          default:
+            inEscapeSequence = false;
+            subStrings.AddCharacter(c);
+            break;
+        }
+      }
+      subStrings.FinishCurrent();
+
+      // Look for the longest sub string as the main search string.
+      int mainIndex = subStrings.List.IndexOf(subStrings.List.OrderByDescending(x => x.Length).First());
+      var mainEntry = new ParsedSearchString.Entry { Text = subStrings.List[mainIndex], Index = mainIndex };
+      var otherEntries = Enumerable
+        .Range(0, subStrings.List.Count)
+        .Where(i => i != mainIndex)
+        .Select(i => new ParsedSearchString.Entry {Text = subStrings.List[i], Index = i});
+      return new ParsedSearchString(mainEntry, otherEntries);
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(string path, IEnumerable<FilePositionSpan> spans) {

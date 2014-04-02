@@ -11,9 +11,8 @@ namespace VsChromium.Server.Search {
   /// TODO(rpaquay): It would be nicer to make this a little bit more OO and decouple.
   /// </summary>
   public class SearchContentsData {
-    public ParsedSearchString parsedSearchString { get; set; }
+    public ParsedSearchString ParsedSearchString { get; set; }
     public string Text { get; set; }
-    public SafeHGlobalHandle AsciiTextPtr { get; set; }
     public SafeHGlobalHandle UniTextPtr { get; set; }
     public AsciiStringSearchAlgorithm AsciiStringSearchAlgo { get; set; }
   }

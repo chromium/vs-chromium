@@ -47,6 +47,91 @@ namespace VsChromium.Tests.Server {
       }
     }
 
+    [TestMethod]
+    public void SingleWildcardWorks() {
+      const string searchPattern = "Test*looking";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemTreeFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 22);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 22);
+        }
+      }
+    }
+
+    [TestMethod]
+    public void SingleWildcardWorks2() {
+      const string searchPattern = "looking*like";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemTreeFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 15, 12);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 15, 12);
+        }
+      }
+    }
+
+    [TestMethod]
+    public void MultipleWildcardsWorks() {
+      const string searchPattern = "Test*looking*like";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemTreeFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
+        }
+      }
+    }
+
+    [TestMethod]
+    public void MultipleWildcardsWorks2() {
+      const string searchPattern = "Test*directory*looking*like";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemTreeFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
+        }
+      }
+    }
+
+    [TestMethod]
+    public void MultipleWildcardsWorks3() {
+      const string searchPattern = "directory*looking*like";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemTreeFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 5, 22);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 5, 22);
+        }
+      }
+    }
+
     [Flags]
     private enum Options {
       None = 0,
@@ -58,7 +143,8 @@ namespace VsChromium.Tests.Server {
         string searchPattern,
         Options options,
         DirectoryInfo chromiumDirectory,
-        int occurrenceCount) {
+        int occurrenceCount,
+        params int[] positionsAndLengths) {
       var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
         SearchParams = new SearchParams {
           SearchString = searchPattern,
@@ -75,11 +161,17 @@ namespace VsChromium.Tests.Server {
       Assert.IsNotNull(chromiumEntry);
       Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.Name);
 
-      chromiumEntry.Entries.ForAll(x => {
+      chromiumEntry.Entries.ForAll((index, x) => {
         Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name));
         Assert.IsNotNull(x.Data);
         Assert.IsTrue(x.Data is FilePositionsData);
-        ((FilePositionsData)x.Data).Positions.ForEach(y => { Debug.WriteLine(string.Format("   Text position: offset={0}, length={1}", y.Position, y.Length)); });
+        ((FilePositionsData)x.Data).Positions.ForEach(y => {
+          Debug.WriteLine(string.Format("   Text position: offset={0}, length={1}", y.Position, y.Length));
+          if (positionsAndLengths != null && positionsAndLengths.Length > 0) {
+            Assert.AreEqual(positionsAndLengths[index * 2], y.Position);
+            Assert.AreEqual(positionsAndLengths[(index * 2) + 1], y.Length);
+          }
+        });
       });
       Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
     }

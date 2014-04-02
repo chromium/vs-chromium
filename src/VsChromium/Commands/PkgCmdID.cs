@@ -9,5 +9,6 @@ namespace VsChromium.Commands {
     public const int CmdidSearchFileNames = 0x102;
     public const int CmdidSearchDirectoryNames = 0x103;
     public const int CmdidSearchFileContents = 0x104;
+    public const int CmdidBuildExplorerToolWindow = 0x105;
   };
 }

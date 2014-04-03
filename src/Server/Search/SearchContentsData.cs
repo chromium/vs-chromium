@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
@@ -12,8 +11,7 @@ namespace VsChromium.Server.Search {
   /// </summary>
   public class SearchContentsData {
     public ParsedSearchString ParsedSearchString { get; set; }
-    public string Text { get; set; }
-    public SafeHGlobalHandle UniTextPtr { get; set; }
     public AsciiStringSearchAlgorithm AsciiStringSearchAlgo { get; set; }
+    public UTF16StringSearchAlgorithm UTF16StringSearchAlgo { get; set; }
   }
 }

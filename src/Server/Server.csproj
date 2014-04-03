@@ -84,6 +84,7 @@
     <Compile Include="Projects\SearchableFilesFilter.cs" />
     <Compile Include="Search\AsciiTextLineOffsets.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
+    <Compile Include="Search\TextSourceTextSearch.cs" />
     <Compile Include="Search\ParsedSearchString.cs" />
     <Compile Include="Search\SearchStringParser.cs" />
     <Compile Include="Threads\ITaskQueue.cs" />

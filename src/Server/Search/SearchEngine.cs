@@ -134,13 +134,13 @@ namespace VsChromium.Server.Search {
 
     private IEnumerable<FileSearchResult> DoSearchFileContents(ParsedSearchString parsedSearchString, bool matchCase, int maxResults, CancellationToken cancellationToken) {
       var searchString = parsedSearchString.MainEntry.Text;
-      using (var searchTextUniPtr = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(searchString)))
-      using (var searchAlgo = AsciiFileContents.CreateSearchAlgo(searchString, matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone)) {
+      var searchOptions = matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone;
+      using (var utf16SearchAlgo = UTF16FileContents.CreateSearchAlgo(searchString, searchOptions))
+      using (var asciiSearchAlgo = AsciiFileContents.CreateSearchAlgo(searchString, searchOptions)) {
         var searchInfo = new SearchContentsData {
           ParsedSearchString = parsedSearchString,
-          Text = searchString,
-          UniTextPtr = searchTextUniPtr,
-          AsciiStringSearchAlgo = searchAlgo,
+          UTF16StringSearchAlgo = utf16SearchAlgo,
+          AsciiStringSearchAlgo = asciiSearchAlgo,
         };
         var taskResults = new TaskResultCounter(maxResults);
         var matches = _currentState.FilesWithContents

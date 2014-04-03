@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel.Composition;
-using System.IO;
 using VsChromium.Core;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Core.Win32.Strings;
@@ -21,8 +20,8 @@ namespace VsChromium.Server.Search {
       try {
         var fileInfo = new SlimFileInfo(fullName);
         var block = NativeFile.ReadFileNulTerminated(fileInfo);
-        var textLen = (int)block.ByteLength - 1;
-        var kind = NativeInterop.NativeMethods.Text_GetKind(block.Pointer, textLen);
+        var textLen = (int)block.ByteLength - 2; // Padding added by ReadFileNulTerminated
+        var kind = NativeMethods.Text_GetKind(block.Pointer, textLen);
 
         switch (kind) {
           case NativeMethods.TextKind.Ascii:

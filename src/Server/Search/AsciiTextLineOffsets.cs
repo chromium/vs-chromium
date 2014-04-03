@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Core.Win32.Strings;

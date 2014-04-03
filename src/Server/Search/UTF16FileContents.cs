@@ -4,7 +4,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
@@ -20,30 +20,32 @@ namespace VsChromium.Server.Search {
 
     public override long ByteLength { get { return _heap.ByteLength; } }
 
-    [DllImport("Shlwapi.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-    public static extern IntPtr StrStrIW(IntPtr pszFirst, IntPtr pszSrch);
+    private IntPtr Pointer { get { return _heap.Pointer; } }
+    private int CharacterCount { get { return (int)this.ByteLength / 2; } }
 
-    [DllImport("Shlwapi.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-    public static extern IntPtr StrStrW(IntPtr pszFirst, IntPtr pszSrch);
+    public static UTF16StringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
+      return new StrStrWStringSearchAlgorithm(pattern, searchOptions);
+    }
 
     public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
-      List<FilePositionSpan> result = null;
-      var contentsPtr = _heap.Pointer;
-      while (true) {
-        var foundPtr = StrStrW(contentsPtr, searchContentsData.UniTextPtr.Pointer);
-        if (foundPtr == IntPtr.Zero)
-          break;
+      if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
+        return NoSpans;
 
-        if (result == null) {
-          result = new List<FilePositionSpan>();
-        }
-        // Note: We are limited to 2GB files by design.
-        var position = Pointers.Offset32(_heap.Pointer, foundPtr);
-        result.Add(new FilePositionSpan { Position = position , Length = searchContentsData.Text.Length });
-
-        contentsPtr = foundPtr + searchContentsData.Text.Length;
+      var algo = searchContentsData.UTF16StringSearchAlgo;
+      // TODO(rpaquay): We are limited to 2GB for now.
+      var result = algo.SearchAll(_heap.Pointer, (int)_heap.ByteLength);
+      if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
+          searchContentsData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
+        return result.ToList();
       }
-      return result ?? NoSpans;
+
+      return FilterOnOtherEntries(searchContentsData.ParsedSearchString, algo.MatchCase, result).ToList();
+    }
+
+    private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
+      var start = (char *)Pointers.Add(this.Pointer, 0);
+      Func<int, char> getCharacter = position => *(start + position);
+      return new TextSourceTextSearch(this.CharacterCount, getCharacter).FilterOnOtherEntries(parsedSearchString, matchCase, matches);
     }
   }
 }

@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
@@ -12,16 +13,16 @@ using VsChromium.Core.Win32.Memory;
 namespace VsChromium.Core.Win32.Files {
   public static class NativeFile {
     public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo) {
-      var result = ReadFileWorker(fileInfo, 1);
-      Marshal.WriteByte(new IntPtr(result.Pointer.ToInt64() + result.ByteLength - 1), 0);
+      const int trailingByteCount = 2;
+      var result = ReadFileWorker(fileInfo, trailingByteCount);
+
+      // Use of WriteInt16 is tied to "2" bytes.
+      Debug.Assert(trailingByteCount == 2);
+      Marshal.WriteInt16(new IntPtr(result.Pointer.ToInt64() + result.ByteLength - trailingByteCount), 0);
       return result;
     }
 
-    public static SafeHeapBlockHandle ReadFile(SlimFileInfo fileInfo) {
-      return ReadFileWorker(fileInfo, 0);
-    }
-
-    private static SafeHeapBlockHandle ReadFileWorker(SlimFileInfo fileInfo, int trailingBytes) {
+    private static SafeHeapBlockHandle ReadFileWorker(SlimFileInfo fileInfo, int trailingByteCount) {
       using (
         var fileHandle = NativeMethods.CreateFile(fileInfo.FullName, NativeAccessFlags.GenericRead, FileShare.Read, IntPtr.Zero,
                                                   FileMode.Open, 0, IntPtr.Zero)) {
@@ -30,7 +31,7 @@ namespace VsChromium.Core.Win32.Files {
 
         // Note: We are limited to 2GB files by design.
         var len = (int)fileInfo.Length;
-        var heap = HeapAllocStatic.Alloc(len + trailingBytes);
+        var heap = HeapAllocStatic.Alloc(len + trailingByteCount);
         var bytesRead = new int[1];
 
         if (!NativeMethods.ReadFile(fileHandle, heap.Pointer, len, bytesRead, null))

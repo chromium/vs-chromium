@@ -10,7 +10,8 @@ using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows {
   public class ChromiumExplorerViewModelBase : INotifyPropertyChanged {
-    private readonly TreeViewRootNodes _rootNodes = new TreeViewRootNodes();
+    private readonly TreeViewRootNodes<TreeViewItemViewModel> _rootNodes
+        = new TreeViewRootNodes<TreeViewItemViewModel>();
     private IComponentModel _componentModel;
     private IList<TreeViewItemViewModel> _currentRootNodesViewModel;
     private IStandarImageSourceFactory _imageSourceFactory;
@@ -18,7 +19,7 @@ namespace VsChromium.Features.ToolWindows {
     /// <summary>
     /// Databound!
     /// </summary>
-    public TreeViewRootNodes RootNodes { get { return _rootNodes; } }
+    public TreeViewRootNodes<TreeViewItemViewModel> RootNodes { get { return _rootNodes; } }
 
     public IList<TreeViewItemViewModel> CurrentRootNodesViewModel { get { return _currentRootNodesViewModel; } }
     public IComponentModel ComponentModel { get { return _componentModel; } }

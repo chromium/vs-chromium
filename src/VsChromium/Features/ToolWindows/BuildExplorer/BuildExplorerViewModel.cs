@@ -9,29 +9,32 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VsChromium.Core.Chromium;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.BuildExplorer {
-  class BuildExplorerViewModel : ChromiumExplorerViewModelBase {
-    private List<TreeViewItemViewModel> _categoryRootNodes = new List<TreeViewItemViewModel>();
-    private InstalledBuildsCategoryItemViewModel _installedBuildsNode = null;
-    private DeveloperBuildsCategoryItemViewModel _developerBuildsNode = null;
+  class BuildExplorerViewModel {
+    private TreeViewRootNodes<ITreeViewItem> _rootNodes = new TreeViewRootNodes<ITreeViewItem>();
+    private ITreeViewItem _installedBuildsNode = null;
+    private ITreeViewItem _developerBuildsNode = null;
+
+    public TreeViewRootNodes<ITreeViewItem> RootNodes { get { return _rootNodes; } }
 
     /// <summary>
     /// Databound!
     /// </summary>
     public bool AutoAttach { get; set; }
 
-    public override void OnToolWindowCreated(IServiceProvider serviceProvider) {
-      base.OnToolWindowCreated(serviceProvider);
+    public void OnToolWindowCreated(IServiceProvider serviceProvider) {
+      _installedBuildsNode = new SimpleTreeViewItem("Installed Builds", null);
+      _developerBuildsNode = new SimpleTreeViewItem("Developer Builds", null);
 
-      _installedBuildsNode = new InstalledBuildsCategoryItemViewModel(ImageSourceFactory);
-      _developerBuildsNode = new DeveloperBuildsCategoryItemViewModel(ImageSourceFactory);
+      _rootNodes.Add(_installedBuildsNode);
+      _rootNodes.Add(_developerBuildsNode);
 
-      _categoryRootNodes.Add(_installedBuildsNode);
-      _categoryRootNodes.Add(_developerBuildsNode);
-
-      SetRootNodes(_categoryRootNodes);
+      InstallationEnumerator enumerator = new InstallationEnumerator();
+      foreach (InstallationData data in enumerator)
+        _installedBuildsNode.Children.Add(new InstallationTreeViewItem(data));
     }
   }
 }

@@ -77,37 +77,16 @@
       </TreeView.ItemsPanel>
 
       <TreeView.Resources>
-        <DataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
+        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:InstallationTreeViewItem}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding Text}" />
-          </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
-          <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding Text}" />
-          </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate DataType="{x:Type buildExplorer:DeveloperBuildsCategoryItemViewModel}">
-          <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" Visibility="{Binding ImageVisibility}"/>
-            <TextBlock Text="{Binding Text}" />
-          </StackPanel>
-        </DataTemplate>
-
-        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:InstalledBuildsCategoryItemViewModel}" ItemsSource="{Binding Children}">
-          <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" Visibility="{Binding ImageVisibility}"/>
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding Image}" Visibility="{Binding ImageVisibility}"/>
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:InstalledBuildItemViewModel}" ItemsSource="{Binding Children}">
+        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:SimpleTreeViewItem}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" Visibility="{Binding ImageVisibility}"/>
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding Image}" Visibility="{Binding ImageVisibility}"/>
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </HierarchicalDataTemplate>

@@ -5,6 +5,6 @@
 using System.Collections.ObjectModel;
 
 namespace VsChromium.Features.ToolWindows {
-  public class TreeViewRootNodes : ObservableCollection<TreeViewItemViewModel> {
+  public class TreeViewRootNodes<T> : ObservableCollection<T> {
   }
 }

@@ -6,10 +6,10 @@ using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Search {
   public class TextSourceTextSearch {
-    private readonly int _characterCount;
-    private readonly Func<int, char> _getCharacter;
+    private readonly long _characterCount;
+    private readonly Func<long, char> _getCharacter;
 
-    public TextSourceTextSearch(int characterCount, Func<int, char> getCharacter) {
+    public TextSourceTextSearch(long characterCount, Func<long, char> getCharacter) {
       _characterCount = characterCount;
       _getCharacter = getCharacter;
     }
@@ -61,18 +61,18 @@ namespace VsChromium.Server.Search {
     private FilePositionSpan GetLineExtent(int position) {
       const char nl = '\n';
 
-      int min = 0;
-      int current = position;
-      int max = _characterCount;
+      long min = 0;
+      long current = position;
+      long max = _characterCount;
       Debug.Assert(min <= current);
       Debug.Assert(current <= max);
-      int start = current;
+      long start = current;
       for (; start > min; start--) {
         if (GetCharacterAt(start) == nl) {
           break;
         }
       }
-      int end = current;
+      long end = current;
       for (; end < max; end++) {
         if (GetCharacterAt(end) == nl) {
           break;
@@ -84,8 +84,8 @@ namespace VsChromium.Server.Search {
       Debug.Assert(min <= end);
       Debug.Assert(end <= max);
       return new FilePositionSpan {
-        Position = start - min,
-        Length = end - start
+        Position = checked((int)(start - min)),
+        Length = checked((int)(end - start))
       };
     }
 
@@ -138,7 +138,7 @@ namespace VsChromium.Server.Search {
       return true;
     }
 
-    private char GetCharacterAt(int position) {
+    private char GetCharacterAt(long position) {
       return _getCharacter(position);
     }
   }

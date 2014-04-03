@@ -5,20 +5,20 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Win32.Files {
   public static class NativeFile {
-    public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo) {
-      const int trailingByteCount = 2;
+    public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo, int trailingByteCount) {
       var result = ReadFileWorker(fileInfo, trailingByteCount);
 
       // Use of WriteInt16 is tied to "2" bytes.
-      Debug.Assert(trailingByteCount == 2);
-      Marshal.WriteInt16(new IntPtr(result.Pointer.ToInt64() + result.ByteLength - trailingByteCount), 0);
+      var trailingPtr = result.Pointer.ToInt64() + result.ByteLength - trailingByteCount;
+      for (var i = 0; i < trailingByteCount; i++) {
+        Marshal.WriteByte(new IntPtr(trailingPtr + i), 0);
+      }
       return result;
     }
 

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
@@ -17,20 +16,16 @@ namespace VsChromium.Server.Search {
   /// </summary>
   public class AsciiFileContents : FileContents {
     private const int _maxTextExtent = 50;
-    private readonly SafeHeapBlockHandle _heap;
-    private readonly int _textOffset;
+    private readonly FileContentsMemory _heap;
 
-    public AsciiFileContents(SafeHeapBlockHandle heap, int textOffset, DateTime utcLastWriteTime)
+    public AsciiFileContents(FileContentsMemory heap, DateTime utcLastWriteTime)
       : base(utcLastWriteTime) {
-      if (textOffset > heap.ByteLength)
-        throw new ArgumentException("Text offset is too far in buffer", "textOffset");
       _heap = heap;
-      _textOffset = textOffset;
     }
 
-    public override long ByteLength { get { return _heap.ByteLength - _textOffset; } }
-    private IntPtr Pointer { get { return _heap.Pointer + _textOffset; } }
-    private int CharacterCount { get { return (int)this.ByteLength; } }
+    public override long ByteLength { get { return _heap.ContentsByteLength; } }
+    private IntPtr Pointer { get { return _heap.ContentsPointer; } }
+    private long CharacterCount { get { return _heap.ContentsByteLength; } }
 
     public static AsciiStringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
       if (pattern.Length <= 64)
@@ -56,7 +51,7 @@ namespace VsChromium.Server.Search {
 
     private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
       byte* start = Pointers.Add(this.Pointer, 0);
-      Func<int, char> getCharacter = position => (char)*(start + position);
+      Func<long, char> getCharacter = position => (char)*(start + position);
       return new TextSourceTextSearch(this.CharacterCount, getCharacter).FilterOnOtherEntries(parsedSearchString, matchCase, matches);
     }
 
@@ -72,9 +67,7 @@ namespace VsChromium.Server.Search {
     }
 
     public unsafe IEnumerable<FileExtract> GetFileExtractsWorker(IEnumerable<FilePositionSpan> spans) {
-      var blockStart = Pointers.Add(this.Pointer, 0);
-      var blockEnd = Pointers.Add(this.Pointer, this.ByteLength);
-      var offsets = new AsciiTextLineOffsets(_heap, blockStart, blockEnd);
+      var offsets = new AsciiTextLineOffsets(_heap);
       offsets.CollectLineOffsets();
 
       return spans

@@ -11,17 +11,17 @@ using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   public class UTF16FileContents : FileContents {
-    private readonly SafeHeapBlockHandle _heap;
+    private readonly FileContentsMemory _heap;
 
-    public UTF16FileContents(SafeHeapBlockHandle heap, DateTime utcLastWriteTime)
+    public UTF16FileContents(FileContentsMemory heap, DateTime utcLastWriteTime)
       : base(utcLastWriteTime) {
       _heap = heap;
     }
 
-    public override long ByteLength { get { return _heap.ByteLength; } }
+    public override long ByteLength { get { return _heap.ContentsByteLength; } }
 
-    private IntPtr Pointer { get { return _heap.Pointer; } }
-    private int CharacterCount { get { return (int)this.ByteLength / 2; } }
+    private IntPtr Pointer { get { return _heap.ContentsPointer; } }
+    private long CharacterCount { get { return _heap.ContentsByteLength / 2; } }
 
     public static UTF16StringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
       return new StrStrWStringSearchAlgorithm(pattern, searchOptions);
@@ -33,7 +33,7 @@ namespace VsChromium.Server.Search {
 
       var algo = searchContentsData.UTF16StringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
-      var result = algo.SearchAll(_heap.Pointer, (int)_heap.ByteLength);
+      var result = algo.SearchAll(_heap.ContentsPointer, checked((int)_heap.ContentsByteLength));
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
           searchContentsData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return result.ToList();
@@ -44,7 +44,7 @@ namespace VsChromium.Server.Search {
 
     private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
       var start = (char *)Pointers.Add(this.Pointer, 0);
-      Func<int, char> getCharacter = position => *(start + position);
+      Func<long, char> getCharacter = position => *(start + position);
       return new TextSourceTextSearch(this.CharacterCount, getCharacter).FilterOnOtherEntries(parsedSearchString, matchCase, matches);
     }
   }

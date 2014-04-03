@@ -2,24 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Win32.Memory;
 using VsChromium.Core.Win32.Strings;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   public unsafe class AsciiTextLineOffsets {
     private const char _lineBreak = '\n';
-    private readonly SafeHeapBlockHandle _heap;  // Keep this ensure native memory lifetime
+    private readonly FileContentsMemory _heap;  // Keep this ensure native memory lifetime
     private readonly byte* _blockStart;
     private readonly byte* _blockEnd;
     private readonly List<int> _listStartOffsets = new List<int>();
 
-    public AsciiTextLineOffsets(SafeHeapBlockHandle heap, byte* blockStart, byte* blockEnd) {
+    public AsciiTextLineOffsets(FileContentsMemory heap) {
       _heap = heap;
-      _blockStart = blockStart;
-      _blockEnd = blockEnd;
+      _blockStart = (byte *)heap.ContentsPointer.ToPointer();
+      _blockEnd = _blockStart + heap.ContentsByteLength;
     }
 
     public void CollectLineOffsets() {

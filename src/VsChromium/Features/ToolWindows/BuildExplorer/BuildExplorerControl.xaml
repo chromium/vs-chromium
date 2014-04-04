@@ -94,8 +94,31 @@
                                        Converter={StaticResource booleanToVisibilityConverter}}"/>
                 <MenuItem Header="Stop debugging" 
                           Click="StopDebuggingMenuItem_Click" 
-                          Visibility="{Binding IsRunning,
+                          Visibility="{Binding IsDebugging,
                                        Converter={StaticResource booleanToVisibilityConverter}}"/>
+              </ContextMenu>
+            </StackPanel.ContextMenu>
+            <Image Style="{StaticResource IconImageStyle}"/>
+            <TextBlock Text="{Binding DisplayText}" />
+          </StackPanel>
+        </HierarchicalDataTemplate>
+
+        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:ChromeProcessViewModel}" ItemsSource="{Binding ChildProcesses}">
+          <StackPanel Orientation="Horizontal">
+            <StackPanel.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Attach debugger" 
+                          Click="AttachDebuggerMenuItem_Click" 
+                          Visibility="{Binding IsNotDebugging, 
+                                       Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Detach debugger" 
+                          Click="DetachDebuggerMenuItem_Click" 
+                          Visibility="{Binding IsDebugging, 
+                                        Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Stop debugging" 
+                          Click="StopDebuggingMenuItem_Click" 
+                          Visibility="{Binding IsDebugging,
+                                        Converter={StaticResource booleanToVisibilityConverter}}"/>
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Style="{StaticResource IconImageStyle}"/>

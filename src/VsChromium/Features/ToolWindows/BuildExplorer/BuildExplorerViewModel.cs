@@ -13,7 +13,7 @@ using VsChromium.Core.Chromium;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.BuildExplorer {
-  class BuildExplorerViewModel {
+  public class BuildExplorerViewModel {
     private List<InstalledBuildViewModel> _installedBuilds = new List<InstalledBuildViewModel>();
     private List<DeveloperBuildViewModel> _developerBuilds = new List<DeveloperBuildViewModel>();
 
@@ -28,9 +28,16 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
       InstallationEnumerator enumerator = new InstallationEnumerator();
       foreach (InstallationData data in enumerator) {
-        InstalledBuildViewModel build = new InstalledBuildViewModel(data);
+        InstalledBuildViewModel build = new InstalledBuildViewModel(this, data);
         _installedBuilds.Add(build);
       }
+
+      ReloadProcesses();
+    }
+
+    private void ReloadProcesses() {
+      foreach (InstalledBuildViewModel installedBuild in _installedBuilds)
+        installedBuild.LoadProcesses();
     }
   }
 }

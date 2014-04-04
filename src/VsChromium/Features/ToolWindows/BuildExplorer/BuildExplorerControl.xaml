@@ -1,0 +1,105 @@
+﻿<UserControl x:Class="VsChromium.Features.ToolWindows.BuildExplorer.BuildExplorerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.12.0"
+             xmlns:wpf="clr-namespace:VsChromium.Wpf"
+             xmlns:toolWindows="clr-namespace:VsChromium.Features.ToolWindows"
+             xmlns:buildExplorer="clr-namespace:VsChromium.Features.ToolWindows.BuildExplorer"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300"
+             Name="BuildExplorerToolWindow"
+             Background="{DynamicResource VsBrush.ToolWindowBackground}"
+             Foreground="{DynamicResource VsBrush.ToolWindowText}"
+             HorizontalAlignment="Stretch" d:DataContext="{d:DesignData BuildExplorerViewModel}">
+  <UserControl.Resources>
+    <Style TargetType="ToggleButton">
+      <Setter Property="Background" Value="{DynamicResource VsBrush.CommandBarGradient}"/>
+      <Setter Property="Foreground" Value="{DynamicResource VsBrush.ButtonFace}"/>
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource VsBrush.CommandBarTextActiveKey}" />
+      <Style.Triggers>
+        <Trigger Property="IsPressed" Value="true">
+          <Setter Property="BorderBrush" Value="{DynamicResource VsBrush.CommandBarBorderKey}" />
+          <Setter Property="Background" Value="{DynamicResource VsBrush.CommandBarMouseDownBackgroundGradientKey}" />
+          <Setter x:Uid="Setter_223" Property="TextElement.Foreground" Value="{DynamicResource VsBrush.CommandBarTextSelectedKey}"/>
+        </Trigger>
+        <Trigger Property="IsPressed" Value="false">
+          <Setter Property="BorderBrush" Value="{DynamicResource VsBrush.CommandBarBorderKey}" />
+          <Setter Property="Background" Value="{DynamicResource VsBrush.CommandBarGradient}" />
+          <Setter x:Uid="Setter_223" Property="TextElement.Foreground" Value="{DynamicResource VsBrush.CommandBarTextActiveKey}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+  </UserControl.Resources>
+
+  <DockPanel>
+    <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
+      <ToggleButton Content="Auto Attach" IsChecked="{Binding AutoAttach}" ToolTip="Automatically attach to child processes" IsTabStop="False" />
+    </ToolBar>
+
+    <!-- 'RootNode' is the property name of the control's DataContext instance. -->
+    <TreeView
+        ItemsSource="{Binding RootNodes}"
+        Name="BuildExplorerTreeView" Height="Auto"
+        Background="{DynamicResource VsBrush.ToolWindowBackground}"
+        Foreground="{DynamicResource VsBrush.WindowText}"
+        VirtualizingStackPanel.IsVirtualizing="True"
+        VirtualizingStackPanel.VirtualizationMode="Recycling">
+      <TreeView.ItemContainerStyle>
+        <!-- This Style binds a TreeViewItem to a TreeViewItemViewModel. -->
+        <Style TargetType="{x:Type TreeViewItem}">
+          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+          <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+          <Setter Property="FontWeight" Value="Normal" />
+          <Setter Property="Foreground" Value="{DynamicResource VsBrush.WindowText}" />
+          <Setter Property="ItemsPanel">
+            <Setter.Value>
+              <ItemsPanelTemplate>
+                <wpf:MyVirtualizingStackPanel />
+              </ItemsPanelTemplate>
+            </Setter.Value>
+          </Setter>
+          <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+              <!--<Setter Property="FontWeight" Value="Bold" />-->
+              <Setter Property="Background" Value="{DynamicResource VsBrush.Highlight}" />
+            </Trigger>
+          </Style.Triggers>
+        </Style>
+      </TreeView.ItemContainerStyle>
+
+      <TreeView.ItemsPanel>
+        <ItemsPanelTemplate>
+          <!-- This custom VSP exposes BringIntoView -->
+          <wpf:MyVirtualizingStackPanel />
+        </ItemsPanelTemplate>
+      </TreeView.ItemsPanel>
+
+      <TreeView.Resources>
+        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:InstallationTreeViewItem}" ItemsSource="{Binding Children}">
+          <StackPanel Orientation="Horizontal">
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding Image}" Visibility="{Binding ImageVisibility}"/>
+            <TextBlock Text="{Binding Text}" />
+          </StackPanel>
+        </HierarchicalDataTemplate>
+
+        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:SimpleTreeViewItem}" ItemsSource="{Binding Children}">
+          <StackPanel Orientation="Horizontal">
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding Image}" Visibility="{Binding ImageVisibility}"/>
+            <TextBlock Text="{Binding Text}" />
+          </StackPanel>
+        </HierarchicalDataTemplate>
+      </TreeView.Resources>
+
+      <!--<TreeViewItem Header="Installed Builds">
+        <TreeViewItem Header="Google Chrome Canary (36.0.1917.0)"/>
+        <TreeViewItem Header="Google Chrome (36.0.1921.0 m)"/>
+      </TreeViewItem>
+      <TreeViewItem Header="Developer Builds">
+        <TreeViewItem Header="D:\src\chromium\src"/>
+        <TreeViewItem Header="D:\src\chromium2\src"/>
+      </TreeViewItem>-->
+    </TreeView>
+  </DockPanel>
+</UserControl>

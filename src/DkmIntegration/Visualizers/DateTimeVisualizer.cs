@@ -1,11 +1,14 @@
-﻿using System;
+﻿// Copyright 2014 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using Microsoft.VisualStudio.Debugger.Evaluation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.Debugger.Evaluation;
-
-using VsChromium.DkmIntegration.Engine;
+using VsChromium.DkmIntegration.IdeComponent;
 
 namespace VsChromium.DkmIntegration.Visualizers {
   class DateTimeVisualizer : BasicVisualizer {
@@ -27,10 +30,17 @@ namespace VsChromium.DkmIntegration.Visualizers {
           DkmSuccessEvaluationResult usResult = CppExpressionEvaluator.EvaluateSuccess(rootExpr, rootExpr.FullName + ".us_,!");
           DkmSuccessEvaluationResult rootExprResult = CppExpressionEvaluator.EvaluateSuccess(rootExpr, rootExpr.FullName + ",!");
 
-          long microseconds = long.Parse(usResult.Value);
-          long fileTime = microseconds * 10;
-          DateTime dt = DateTime.FromFileTime(fileTime);
-          string formattedResult = dt.ToString();
+          long microseconds;
+          string formattedResult = "{ us_ = " + usResult.Value + " }";
+          if (long.TryParse(usResult.Value, out microseconds)) {
+            long fileTime = microseconds * 10;
+            try {
+              DateTime dt = DateTime.FromFileTime(fileTime);
+              formattedResult = dt.ToString();
+            } catch { 
+              // Empty.
+            }
+          }
 
           DkmEvaluationResult result = DkmSuccessEvaluationResult.Create(
               rootExpr.InspectionContext,

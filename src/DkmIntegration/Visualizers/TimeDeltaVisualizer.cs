@@ -1,7 +1,10 @@
-﻿using System;
-using Microsoft.VisualStudio.Debugger.Evaluation;
+﻿// Copyright 2014 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-using VsChromium.DkmIntegration.Engine;
+using Microsoft.VisualStudio.Debugger.Evaluation;
+using System;
+using VsChromium.DkmIntegration.IdeComponent;
 
 namespace VsChromium.DkmIntegration.Visualizers {
   class TimeDeltaVisualizer : BasicVisualizer {
@@ -23,9 +26,16 @@ namespace VsChromium.DkmIntegration.Visualizers {
           DkmSuccessEvaluationResult deltaResult = CppExpressionEvaluator.EvaluateSuccess(rootExpr, rootExpr.FullName + ".delta_,!");
           DkmSuccessEvaluationResult rootExprResult = CppExpressionEvaluator.EvaluateSuccess(rootExpr, rootExpr.FullName + ",!");
 
-          long microseconds = long.Parse(deltaResult.Value);
-          TimeSpan span = TimeSpan.FromMilliseconds((double)microseconds / 1000.0);
-          string formattedResult = span.ToString();
+          long microseconds;
+          string formattedResult = "{ delta_ = " + deltaResult.Value + " }";
+          if (long.TryParse(deltaResult.Value, out microseconds)) {
+            try {
+              TimeSpan span = TimeSpan.FromMilliseconds((double)microseconds / 1000.0);
+              formattedResult = span.ToString();
+            } catch {
+              // Empty.
+            }
+          }
 
           DkmEvaluationResult result = DkmSuccessEvaluationResult.Create(
               rootExpr.InspectionContext,

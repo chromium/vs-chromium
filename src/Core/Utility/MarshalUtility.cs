@@ -56,5 +56,14 @@ namespace VsChromium.Core.Utility {
     public static int UnmanagedStructSize<T>() {
       return Marshal.SizeOf(typeof(T));
     }
+
+    public static T ByteArrayToStructure<T>(byte[] bytes) {
+      GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+      try {
+        return (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+      } finally {
+        handle.Free();
+      }
+    }
   }
 }

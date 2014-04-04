@@ -40,11 +40,19 @@
           <ButtonText>Format Comment</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidVsChromiumCmdSet" id="cmdidChromiumExplorerToolWindow" priority="0x0100" type="Button">
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSourceExplorerToolWindow" priority="0x0100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
         <Strings>
-          <CommandName>cmdidChromiumExplorerToolWindow</CommandName>
-          <ButtonText>Chromium Explorer</ButtonText>
+          <CommandName>cmdidSourceExplorerToolWindow</CommandName>
+          <ButtonText>Chromium Source Explorer</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidBuildExplorerToolWindow" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <CommandName>cmdidBuildExplorerToolWindow</CommandName>
+          <ButtonText>Chromium Build Explorer</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" priority="0x0101" type="Button">
@@ -115,10 +123,11 @@
     <GuidSymbol name="guidVsChromiumCmdSet" value="{1d4bc583-de49-4113-af8d-81c62fd4b61b}">
       <IDSymbol name="MyMenuGroup" value="0x1020" />
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
-      <IDSymbol name="cmdidChromiumExplorerToolWindow" value="0x0101" />
+      <IDSymbol name="cmdidSourceExplorerToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
       <IDSymbol name="cmdidSearchDirectoryNames" value="0x0103" />
       <IDSymbol name="cmdidSearchFileContents" value="0x0104" />
+      <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0105" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">
       <IDSymbol name="ChromeDebugTopLevelMenu" value="0x0100" />

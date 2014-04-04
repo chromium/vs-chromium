@@ -76,6 +76,14 @@ namespace VsChromium.Core.FileNames {
       return _path.StartsWith(x._path, SystemPathComparer.Instance.Comparison);
     }
 
+    public bool HasComponent(string component) {
+      foreach (string currentComponent in _path.Split(Path.DirectorySeparatorChar)) {
+        if (currentComponent.Equals(component, StringComparison.CurrentCultureIgnoreCase))
+          return true;
+      }
+      return false;
+    }
+
     public IEnumerable<FullPathName> EnumerateParents() {
       for (var parent = Parent; parent != default(FullPathName); parent = parent.Parent) {
         yield return parent;

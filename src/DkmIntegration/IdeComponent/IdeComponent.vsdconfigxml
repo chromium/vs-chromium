@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Configuration xmlns="http://schemas.microsoft.com/vstudio/vsdconfig/2008">
+
+  <DefineGuid Name="guidChromeDebugComponentId" Value="5D83386D-8A02-475F-8582-E93296A88DF6"/>
+
+  <DefineGuid Name="guidBaseTimeVisualizerId" Value="6A9197EE-22BD-433A-BF1B-9D8863D87058"/>
+  <DefineGuid Name="guidBaseTimeDeltaVisualizerId" Value="D606FA28-9D68-4E2F-B423-F69E73C31C16"/>
+  <DefineGuid Name="guidForceDefaultVisualizationId" Value="8E832A91-B810-4229-BC71-D17B5D5283C6"/>
+
+  <ManagedComponent
+    ComponentId="guidChromeDebugComponentId"
+    ComponentLevel="9000000"
+    AssemblyName="VsChromium.DkmIntegration">
+    
+    <Class Name="VsChromium.DkmIntegration.IdeComponent.IdeComponent">
+      <Implements>
+        <InterfaceGroup>
+          <Filter>
+            <VisualizerId RequiredValue="guidBaseTimeVisualizerId"/>
+            <VisualizerId RequiredValue="guidBaseTimeDeltaVisualizerId"/>
+            <VisualizerId RequiredValue="guidForceDefaultVisualizationId"/>
+          </Filter>
+          <Interface Name="IDkmCustomVisualizer"/>
+        </InterfaceGroup>
+      </Implements>
+    </Class>
+  </ManagedComponent>
+</Configuration>

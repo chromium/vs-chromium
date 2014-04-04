@@ -1,0 +1,35 @@
+When making a new release
+
+Master branch
+=============
+1. Update version # in all files:
+  * src\Core\VsChromiumVersion.cs
+  * Find in files (case-insensitive): FILEVERSION (*.rc)
+  * Find in files (case-insensitive): PRODUCTVERSION (*.rc)
+  * src\VsChromium\source.extension.vsixmanifest (PackageManifest\Metadata\Identity\@Version)
+
+2. Build
+
+3. Check all unit test pass
+
+4. Commit and push to github
+
+5. Create a release named "vx.y.x" (e.g. v0.2.2) on github
+   * Create the tag "vx.y.z"
+   * Attach the vsix file built in step 2.
+
+
+gh-pages branch
+===============
+
+1. Update the "What's new" section in "index.html"
+
+2 Update "index.html#installation" to have the installation ref. point to the URL of the release created above
+   (https://github.com/chromium/vs-chromium/releases/tag/vx.y.x)
+
+3. Update the file "latest_version.txt" with the new version # and new URL
+
+    version: x.y.z
+    url: https://github.com/chromium/vs-chromium/releases/tag/vx.y.z
+
+4. Commit and push.

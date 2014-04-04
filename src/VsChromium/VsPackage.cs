@@ -11,17 +11,19 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core;
 using VsChromium.Commands;
-using VsChromium.Features.ChromiumExplorer;
+using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
+using VsChromium.Features.ToolWindows.BuildExplorer;
 
 namespace VsChromium {
   [PackageRegistration(UseManagedResourcesOnly = true)]
-  [InstalledProductRegistration("#110", "#112", "0.9.6", IconResourceID = 400)]
+  [InstalledProductRegistration("#110", "#112", VsChromium.Core.VsChromiumVersion.Product, IconResourceID = 400)]
   // When in development mode, update the version # below every time there is a change to the .VSCT file,
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
   // VS 2012 and later since package updates is more explicit).
   [ProvideMenuResource("Menus.ctmenu", 8)]
-  [ProvideToolWindow(typeof(ChromiumExplorerToolWindow))]
+  [ProvideToolWindow(typeof(SourceExplorerToolWindow))]
+  [ProvideToolWindow(typeof(BuildExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage {
     public VsPackage() {
@@ -38,8 +40,11 @@ namespace VsChromium {
     protected override void Dispose(bool disposing) {
       if (disposing) {
         try {
-          foreach (var disposer in ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostDispose>().OrderByDescending(x => x.Priority)) {
-            disposer.Run(this);
+          if (ComponentModel != null) {
+            var exports = ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostDispose>();
+            foreach (var disposer in exports.OrderByDescending(x => x.Priority)) {
+              disposer.Run(this);
+            }
           }
         }
         catch (Exception e) {

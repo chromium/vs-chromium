@@ -14,10 +14,32 @@ namespace VsChromium.Server.Search {
       _getCharacter = getCharacter;
     }
 
+    public class LineExtentFactory {
+      private readonly Func<int, FilePositionSpan> _func;
+      private FilePositionSpan? _previousSpan;
+
+      public LineExtentFactory(Func<int, FilePositionSpan> func) {
+        _func = func;
+      }
+
+      public FilePositionSpan GetLineExtent(int position) {
+        if (_previousSpan.HasValue) {
+          if (position >= _previousSpan.Value.Position &&
+              position < _previousSpan.Value.Position + _previousSpan.Value.Length) {
+            return _previousSpan.Value;
+          }
+        }
+
+        _previousSpan = _func(position);
+        return _previousSpan.Value;
+      }
+    }
+
     public IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
+      var factory = new LineExtentFactory(GetLineExtent);
       return matches
         .Select(match => {
-          var lineExtent = GetLineExtent(match.Position);
+          var lineExtent = factory.GetLineExtent(match.Position);
           // We got the line extent, the offset at which we found the MainEntry.
           // Now we need to check that "OtherEntries" are present (in order) and
           // in appropriate intervals.

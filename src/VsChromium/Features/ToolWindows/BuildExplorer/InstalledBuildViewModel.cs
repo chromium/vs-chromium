@@ -6,20 +6,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using VsChromium.Commands;
 using VsChromium.Core.Chromium;
 
 namespace VsChromium.Features.ToolWindows.BuildExplorer {
-  public class InstallationTreeViewItem : BuildExplorerTreeViewItem {
+  public class InstalledBuildViewModel {
     private InstallationData _installationData;
+    private List<ChromeProcessViewModel> _processes;
     private ImageSource _icon;
 
-    public InstallationTreeViewItem(InstallationData installationData) {
+    public InstalledBuildViewModel(InstallationData installationData) {
       _installationData = installationData;
-
+      _processes = new List<ChromeProcessViewModel>();
       IntPtr hicon = IntPtr.Zero;
 
       try {
@@ -40,7 +41,33 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
       }
     }
 
-    public override string Text {
+    public IList<ChromeProcessViewModel> Processes {
+      get { return _processes; }
+    }
+
+    public bool IsRunning {
+      get { return _processes.Count > 0; }
+    }
+
+    public bool IsNotRunning {
+      get { return !IsRunning; }
+    }
+
+    public bool IsDebugging {
+      get { return false; }
+    }
+
+    public bool IsNotDebugging {
+      get { return !IsDebugging; }
+    }
+
+    public ImageSource IconImage {
+      get {
+        return _icon;
+      }
+    }
+
+    public string DisplayText {
       get {
         return String.Format(
             "{0} {1} (v{2}, {3})",
@@ -49,18 +76,6 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
             _installationData.Version,
             _installationData.Level.LevelString());
       }
-    }
-
-    public override ImageSource Image {
-      get { return _icon; }
-    }
-
-    public override IList<ITreeViewItem> Children {
-      get { return null; }
-    }
-
-    public override ContextMenu ContextMenu {
-      get { return null; }
     }
   }
 }

@@ -124,15 +124,6 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </COMReference>
-    <COMReference Include="Microsoft.VisualStudio.CommandBars">
-      <Guid>{1CBA492E-7263-47BB-87FE-639000619B15}</Guid>
-      <VersionMajor>8</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>primary</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-    </COMReference>
     <COMReference Include="stdole">
       <Guid>{00020430-0000-0000-C000-000000000046}</Guid>
       <VersionMajor>2</VersionMajor>
@@ -201,16 +192,15 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerTreeViewItem.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml.cs">
       <DependentUpon>BuildExplorerControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerToolWindow.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerViewModel.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\InstallationTreeViewItem.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\ITreeViewItem.cs" />
+    <Compile Include="Features\ToolWindows\BuildExplorer\DeveloperBuildViewModel.cs" />
+    <Compile Include="Features\ToolWindows\BuildExplorer\InstalledBuildViewModel.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\ShowBuildExplorerCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\SimpleTreeViewItem.cs" />
+    <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />

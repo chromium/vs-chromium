@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.ComponentModelHost;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,6 +35,58 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
       _componentModel = componentModel;
 
       ViewModel.OnToolWindowCreated(serviceProvider);
+    }
+
+    T GetMenuEventDataContext<T>(RoutedEventArgs e) where T : class {
+      return ((MenuItem)e.Source).DataContext as T;
+    }
+
+    private void SetDefaultBrowserMenuItem_Click(object sender, RoutedEventArgs e) {
+      InstalledBuildViewModel build = GetMenuEventDataContext<InstalledBuildViewModel>(e);
+      if (build == null)
+        return;
+
+      Debug.WriteLine("SetDefaultBrowserMenuItem_Click");
+    }
+
+    private void StartDebuggingMenuItem_Click(object sender, RoutedEventArgs e) {
+      InstalledBuildViewModel build = GetMenuEventDataContext<InstalledBuildViewModel>(e);
+      if (build == null)
+        return;
+
+      Debug.WriteLine("StartDebuggingMenuItem_Click");
+    }
+
+    private void StartWithoutDebuggingMenuItem_Click(object sender, RoutedEventArgs e) {
+      InstalledBuildViewModel build = GetMenuEventDataContext<InstalledBuildViewModel>(e);
+      if (build == null)
+        return;
+
+      Debug.WriteLine("StartWithoutDebuggingMenuItem_Click");
+    }
+
+    private void AttachDebuggerMenuItem_Click(object sender, RoutedEventArgs e) {
+      InstalledBuildViewModel build = GetMenuEventDataContext<InstalledBuildViewModel>(e);
+      if (build == null)
+        return;
+
+      Debug.WriteLine("AttachDebuggerMenuItem_Click");
+    }
+
+    private void DetachDebuggerMenuItem_Click(object sender, RoutedEventArgs e) {
+      InstalledBuildViewModel build = GetMenuEventDataContext<InstalledBuildViewModel>(e);
+      if (build == null)
+        return;
+
+      Debug.WriteLine("DetachDebuggerMenuItem_Click");
+    }
+
+    private void StopDebuggingMenuItem_Click(object sender, RoutedEventArgs e) {
+      InstalledBuildViewModel build = GetMenuEventDataContext<InstalledBuildViewModel>(e);
+      if (build == null)
+        return;
+
+      Debug.WriteLine("StopDebuggingMenuItem_Click");
     }
   }
 }

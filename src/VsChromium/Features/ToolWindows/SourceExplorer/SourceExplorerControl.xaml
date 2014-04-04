@@ -88,15 +88,15 @@
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="Files:" />
-          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="FileNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}"/>
+          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="FileNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}" ToolTip="Type file names to search for, including wildcards and directory names, e.g. &quot;bar&quot;, &quot;bar.*&quot;, &quot;foo/bar*&quot;, &quot;foo/**/bar.*&quot;"/>
           <Button Grid.Row="0" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False">x</Button>
           <!-- Row 1 -->
           <TextBlock Grid.Row="1" Grid.Column="0" Text="Directories:"/>
-          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectoryNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}"/>
+          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectoryNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}" ToolTip="Type directory name to search for, including wildcards, e.g. &quot;foo&quot;, &quot;foo/bar*&quot;, &quot;foo/**/bar&quot;, &quot;/bar&quot;"/>
           <Button Grid.Row="1" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False">x</Button>
           <!-- Row 2 -->
           <TextBlock Grid.Row="2" Grid.Column="0" Text="Contents:" Height="22" VerticalAlignment="Bottom" />
-          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="FileContentsSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}"/>
+          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="FileContentsSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}" ToolTip="Type text to search for, including the &quot;*&quot; wildcard and the &quot;\&quot; escape character, e.g. &quot;sometext&quot;, &quot;some*text&quot;, &quot;some\*text&quot;, &quot;some*other*text&quot;"/>
           <Button Grid.Row="2" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False" Height="22" Margin="1,0" VerticalAlignment="Bottom">x</Button>
           <!-- Row 4 -->
           <ProgressBar Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" IsIndeterminate="False" Height="8" Name="ProgressBar" BorderThickness="0" Visibility="Hidden" IsTabStop="False" />

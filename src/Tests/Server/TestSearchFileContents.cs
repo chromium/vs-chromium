@@ -132,6 +132,40 @@ namespace VsChromium.Tests.Server {
       }
     }
 
+    [TestMethod]
+    public void EscapeWildcardWorks() {
+      const string searchPattern = @"foo\* bar";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemTreeFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 7 ,8);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 7, 8);
+        }
+      }
+    }
+
+    [TestMethod]
+    public void EscapeWildcardWorks2() {
+      const string searchPattern = @"foo\*\\bar";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemTreeFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 39, 8);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 39, 8);
+        }
+      }
+    }
+
     [Flags]
     private enum Options {
       None = 0,

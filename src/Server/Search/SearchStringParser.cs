@@ -36,8 +36,10 @@ namespace VsChromium.Server.Search {
       subStrings.FinishCurrent();
 
       // Look for the longest sub string as the main search string.
-      int mainIndex = subStrings.List.IndexOf(subStrings.List.OrderByDescending(x => x.Length).First());
-      var mainEntry = new ParsedSearchString.Entry { Text = subStrings.List[mainIndex], Index = mainIndex };
+      int mainIndex = subStrings.List.IndexOf(subStrings.List.OrderByDescending(x => x.Length).FirstOrDefault());
+      var mainEntry = subStrings.List.Any() ?
+                        new ParsedSearchString.Entry {Text = subStrings.List[mainIndex], Index = mainIndex} :
+                        new ParsedSearchString.Entry {Text = "", Index = -1};
       var otherEntries = Enumerable
         .Range(0, subStrings.List.Count)
         .Where(i => i != mainIndex)

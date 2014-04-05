@@ -14,11 +14,5 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(1)]
     public List<FilePositionSpan> Positions { get; set; }
-
-    /// <summary>
-    /// Note: This proprty should not really be present. We used it only to 
-    /// count the number of items in a search result.
-    /// </summary>
-    public override int Count { get { return Positions.Count; } }
   }
 }

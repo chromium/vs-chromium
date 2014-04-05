@@ -14,5 +14,17 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(1)]
     public DirectoryEntry DirectoryNames { get; set; }
+
+    /// <summary>
+    /// Total number of entries returned in |DirectoryNames|.
+    /// </summary>
+    [ProtoMember(2)]
+    public long HitCount { get; set; }
+
+    /// <summary>
+    /// Total number of entries stored in the search index.
+    /// </summary>
+    [ProtoMember(3)]
+    public long TotalCount { get; set; }
   }
 }

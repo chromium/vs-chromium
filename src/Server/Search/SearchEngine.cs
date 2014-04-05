@@ -67,10 +67,10 @@ namespace VsChromium.Server.Search {
       fileSystemProcessor.FilesChanged += FileSystemProcessorOnFilesChanged;
     }
 
-    public IEnumerable<FileName> SearchFileNames(SearchParams searchParams) {
+    public SearchFileNamesResult SearchFileNames(SearchParams searchParams) {
       var matchFunction = SearchPreProcessParams<FileName>(searchParams, MatchFileName, MatchFileRelativePath);
       if (matchFunction == null)
-        return Enumerable.Empty<FileName>();
+        return SearchFileNamesResult.Empty;
 
       // taskCancellation is used to make sure we cancel previous tasks as fast as possible
       // to avoid using too many CPU resources if the caller keeps asking us to search for
@@ -87,14 +87,17 @@ namespace VsChromium.Server.Search {
         .Take(searchParams.MaxResults)
         .ToList();
 
-      return matches;
+      return new SearchFileNamesResult {
+        FileNames = matches,
+        TotalCount = _currentState.FileNames.Count
+      };
     }
 
-    public IEnumerable<DirectoryName> SearchDirectoryNames(SearchParams searchParams) {
+    public SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams) {
       var matchFunction = SearchPreProcessParams<DirectoryName>(searchParams, MatchDirectoryName,
                                                                 MatchDirectoryRelativePath);
       if (matchFunction == null)
-        return Enumerable.Empty<DirectoryName>();
+        return SearchDirectoryNamesResult.Empty;
 
       // taskCancellation is used to make sure we cancel previous tasks as fast as possible
       // to avoid using too many CPU resources if the caller keeps asking us to search for
@@ -111,16 +114,19 @@ namespace VsChromium.Server.Search {
         .Take(searchParams.MaxResults)
         .ToList();
 
-      return matches;
+      return new SearchDirectoryNamesResult {
+        DirectoryNames = matches,
+        TotalCount = _currentState.DirectoryNames.Count
+      };
     }
 
-    public IEnumerable<FileSearchResult> SearchFileContents(SearchParams searchParams) {
+    public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
       var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString);
 
       // Don't search empty or very small strings -- no significant results.
       if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
           (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
-        return Enumerable.Empty<FileSearchResult>();
+        return SearchFileContentsResult.Empty;
       }
 
       // taskCancellation is used to make sure we cancel previous tasks as fast as possible
@@ -132,7 +138,7 @@ namespace VsChromium.Server.Search {
       return DoSearchFileContents(parsedSearchString, searchParams.MatchCase, searchParams.MaxResults, cancellationToken);
     }
 
-    private IEnumerable<FileSearchResult> DoSearchFileContents(ParsedSearchString parsedSearchString, bool matchCase, int maxResults, CancellationToken cancellationToken) {
+    private SearchFileContentsResult DoSearchFileContents(ParsedSearchString parsedSearchString, bool matchCase, int maxResults, CancellationToken cancellationToken) {
       var searchString = parsedSearchString.MainEntry.Text;
       var searchOptions = matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone;
       using (var utf16SearchAlgo = UTF16FileContents.CreateSearchAlgo(searchString, searchOptions))
@@ -143,15 +149,25 @@ namespace VsChromium.Server.Search {
           AsciiStringSearchAlgo = asciiSearchAlgo,
         };
         var taskResults = new TaskResultCounter(maxResults);
+        var searchedFileCount = 0;
         var matches = _currentState.FilesWithContents
           .AsParallel()
           .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
           .WithCancellation(cancellationToken)
           .Where(x => !taskResults.Done)
-          .Select(item => MatchFileContents(item, searchInfo, taskResults))
+          .Select(item => {
+            Interlocked.Increment(ref searchedFileCount);
+            return MatchFileContents(item, searchInfo, taskResults);
+          })
           .Where(r => r != null)
           .ToList();
-        return matches;
+
+        return new SearchFileContentsResult {
+          Entries = matches,
+          SearchedFileCount = searchedFileCount,
+          TotalFileCount = _currentState.FilesWithContents.Count,
+          HitCount = taskResults.Count,
+        };
       }
     }
 

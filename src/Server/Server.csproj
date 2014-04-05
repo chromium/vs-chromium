@@ -50,6 +50,7 @@
     <Compile Include="Ipc\TypedEvents\TypedEventForwarder.cs" />
     <Compile Include="Ipc\TypedEvents\TypedEventSender.cs" />
     <Compile Include="Ipc\ProtocolHandlers\IProtocolHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\GetFileExtractsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\RemoveFileNameRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\SearchDirectoryNamesRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileSystemVersionRequestHandler.cs" />
@@ -85,6 +86,9 @@
     <Compile Include="Search\AsciiTextLineOffsets.cs" />
     <Compile Include="Search\FileContentsMemory.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
+    <Compile Include="Search\SearchDirectoryNamesResult.cs" />
+    <Compile Include="Search\SearchFileContentsResult.cs" />
+    <Compile Include="Search\SearchFileNamesResult.cs" />
     <Compile Include="Search\TextSourceTextSearch.cs" />
     <Compile Include="Search\ParsedSearchString.cs" />
     <Compile Include="Search\SearchStringParser.cs" />

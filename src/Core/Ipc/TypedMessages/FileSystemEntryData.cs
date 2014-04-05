@@ -8,6 +8,5 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   [ProtoInclude(10, typeof(FilePositionsData))]
   public class FileSystemEntryData {
-    public virtual int Count { get { return 0; } }
   }
 }

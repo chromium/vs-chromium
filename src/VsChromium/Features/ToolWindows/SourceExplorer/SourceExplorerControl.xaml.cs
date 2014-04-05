@@ -205,9 +205,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFileNamesResponse)typedResponse);
-          var entryCount = CountSearchHitCount(response.FileNames);
-          var msg = string.Format("Found {0:n0} results ({1:0.00} seconds) matching file name \"{2}\"", entryCount,
-                                  stopwatch.Elapsed.TotalSeconds, FileNamesSearch.Text);
+          var msg = string.Format("Found {0:n0} files out of {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
+            response.HitCount,
+            response.TotalCount,
+            stopwatch.Elapsed.TotalSeconds,
+            FileNamesSearch.Text);
           ViewModel.SetFileNamesSearchResult(response.FileNames, msg, true);
         }
       });
@@ -227,9 +229,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchDirectoryNamesResponse)typedResponse);
-          var entryCount = CountSearchHitCount(response.DirectoryNames);
-          var msg = string.Format("Found {0:n0} results ({1:0.00} seconds) matching directory name \"{2}\"", entryCount,
-                                  stopwatch.Elapsed.TotalSeconds, DirectoryNamesSearch.Text);
+          var msg = string.Format("Found {0:n0} directories ouf of {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
+            response.HitCount,
+            response.TotalCount,
+            stopwatch.Elapsed.TotalSeconds,
+            DirectoryNamesSearch.Text);
           ViewModel.SetDirectoryNamesSearchResult(response.DirectoryNames, msg, true);
         }
       });
@@ -249,35 +253,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFileContentsResponse)typedResponse);
-          var entryCount = CountSearchHitCount(response.SearchResults);
-          var msg = string.Format("Found {0:n0} results ({1:0.00} seconds) matching text \"{2}\"", entryCount,
-                                  stopwatch.Elapsed.TotalSeconds, FileContentsSearch.Text);
-          bool expandAll = entryCount < 25;
+          var msg = string.Format("Found {0:n0} results in {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
+            response.HitCount,
+            response.SearchedFileCount,
+            stopwatch.Elapsed.TotalSeconds,
+            FileContentsSearch.Text);
+          bool expandAll = response.HitCount < 25;
           ViewModel.SetFileContentsSearchResult(response.SearchResults, msg, expandAll);
         }
       });
-    }
-
-    private static int CountSearchHitCount(DirectoryEntry entry) {
-      return entry.Entries.Aggregate(0, (c, x) => c + CountSearchHitCountWorker(x));
-    }
-
-    private static int CountSearchHitCountWorker(FileSystemEntry entry) {
-      var directoryEntry = entry as DirectoryEntry;
-      if (directoryEntry != null) {
-        if (directoryEntry.Entries.Count == 0)
-          return 1;
-        return CountSearchHitCount(directoryEntry);
-      }
-
-      var fileEntry = entry as FileEntry;
-      if (fileEntry != null) {
-        if (fileEntry.Data == null || fileEntry.Data.Count == 0)
-          return 1;
-        return fileEntry.Data.Count;
-      }
-
-      return 0;
     }
 
     private void CancelSearchButton_Click(object sender, RoutedEventArgs e) {

@@ -24,7 +24,9 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var request = (SearchFileNamesRequest)typedRequest;
       var result = _searchEngine.SearchFileNames(request.SearchParams);
       return new SearchFileNamesResponse {
-        FileNames = _fileSystemNameFactory.ToFlatSearchResult(result)
+        FileNames = _fileSystemNameFactory.ToFlatSearchResult(result.FileNames),
+        HitCount = result.FileNames.Count,
+        TotalCount = result.TotalCount
       };
     }
   }

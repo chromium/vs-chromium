@@ -25,11 +25,14 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var result = _searchEngine.SearchFileContents(request.SearchParams);
       return new SearchFileContentsResponse {
         SearchResults = _fileSystemNameFactory.ToFlatSearchResult(
-          result,
+          result.Entries,
           searchResult => searchResult.FileName,
           searchResult => new FilePositionsData {
             Positions = searchResult.Spans
-          })
+          }),
+          HitCount = result.HitCount,
+          TotalFileCount = result.TotalFileCount,
+          SearchedFileCount = result.SearchedFileCount
       };
     }
   }

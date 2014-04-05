@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
@@ -25,26 +24,9 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var r = (SearchDirectoryNamesRequest)typedRequest;
       var result = _searchEngine.SearchDirectoryNames(r.SearchParams);
       return new SearchDirectoryNamesResponse {
-        DirectoryNames = _fileSystemNameFactory.ToFlatSearchResult(result)
-      };
-    }
-  }
-
-  [Export(typeof(ITypedMessageRequestHandler))]
-  public class GetFileExtractsRequestHandler : TypedMessageRequestHandler {
-    private readonly ISearchEngine _searchEngine;
-
-    [ImportingConstructor]
-    public GetFileExtractsRequestHandler(ISearchEngine searchEngine) {
-      _searchEngine = searchEngine;
-    }
-
-    public override TypedResponse Process(TypedRequest typedRequest) {
-      var request = (GetFileExtractsRequest)typedRequest;
-      var result = _searchEngine.GetFileExtracts(request.FileName, request.Positions);
-      return new GetFileExtractsResponse {
-        FileName = request.FileName,
-        FileExtracts = result.ToList()
+        DirectoryNames = _fileSystemNameFactory.ToFlatSearchResult(result.DirectoryNames),
+        HitCount = result.DirectoryNames.Count,
+        TotalCount = result.TotalCount
       };
     }
   }

@@ -205,7 +205,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFileNamesResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} files out of {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
+          var msg = string.Format("Found {0:n0} files among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
             response.HitCount,
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
@@ -229,7 +229,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchDirectoryNamesResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} directories ouf of {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
+          var msg = string.Format("Found {0:n0} directories among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
             response.HitCount,
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
@@ -253,7 +253,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFileContentsResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} results in {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
+          var msg = string.Format("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
             response.HitCount,
             response.SearchedFileCount,
             stopwatch.Elapsed.TotalSeconds,

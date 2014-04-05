@@ -21,6 +21,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Xml" />
@@ -28,12 +29,14 @@
   <ItemGroup>
     <Compile Include="Chromium\ChromiumDiscovery.cs" />
     <Compile Include="Chromium\ChromiumDiscoveryWithCache.cs" />
+    <Compile Include="Chromium\ChromiumProcess.cs" />
     <Compile Include="Chromium\InstallationData.cs" />
     <Compile Include="Chromium\DistributionType.cs" />
     <Compile Include="Chromium\IChromiumDiscovery.cs" />
     <Compile Include="Chromium\IChromiumDiscoveryWithCache.cs" />
     <Compile Include="Chromium\InstallationEnumerator.cs" />
     <Compile Include="Chromium\InstallationLevel.cs" />
+    <Compile Include="Chromium\ProcessCategory.cs" />
     <Compile Include="Configuration\ConfigurationFilenames.cs" />
     <Compile Include="Configuration\ConfigurationFileSectionProvider.cs" />
     <Compile Include="Configuration\FileWithSectionConfigurationProvider.cs" />

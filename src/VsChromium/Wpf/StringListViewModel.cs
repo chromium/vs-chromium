@@ -38,6 +38,11 @@ namespace VsChromium.Wpf {
 
         SelectedItem = value;
       }
+      get {
+        if (_items.Count == 0)
+          return string.Empty;
+        return _items[0];
+      }
     }
 
     public event PropertyChangedEventHandler PropertyChanged;

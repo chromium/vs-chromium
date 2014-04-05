@@ -117,6 +117,10 @@ namespace VsChromium.Core.Processes {
       get { return _machineType; }
     }
 
+    public int ProcessId {
+      get { return _processId; }
+    }
+
     public int ParentProcessId {
       get { return _parentProcessId; }
     }

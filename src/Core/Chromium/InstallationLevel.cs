@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 namespace VsChromium.Core.Chromium {
   public enum InstallationLevel {
     System,
-    User
+    User,
+    Developer
   }
 
   public static class InstallationLevelExtensions {

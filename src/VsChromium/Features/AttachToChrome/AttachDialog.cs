@@ -14,6 +14,7 @@ using VsChromium.Core.Processes;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Shell;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Chromium;
 
 namespace VsChromium.Features.AttachToChrome {
   // The form that is displayed to allow the user to select processes to attach to.  Note that we
@@ -35,7 +36,7 @@ namespace VsChromium.Features.AttachToChrome {
     public IEnumerable<int> SelectedItems {
       get {
         foreach (ProcessViewItem item in listViewProcesses.SelectedItems)
-          yield return item.ProcessId;
+          yield return item.Process.Pid;
       }
     }
 
@@ -62,7 +63,7 @@ namespace VsChromium.Features.AttachToChrome {
 
     // Remove command line arguments that we aren't interested in displaying as part of the command
     // line of the process.
-    private string[] FilterCommandLine(string[] args) {
+    private string[] FilterCommandLine(IEnumerable<string> args) {
       Func<string, int, bool> allowArgument = delegate(string arg, int index) {
         if (index == 0)
           return false;
@@ -72,7 +73,7 @@ namespace VsChromium.Features.AttachToChrome {
       // The force-fieldtrials command line option makes the command line view useless, so remove
       // it.  Also remove args[0] since that is the process name.
       args = args.Where(allowArgument).ToArray();
-      return args;
+      return args.ToArray();
     }
 
     private void ReloadNativeProcessInfo() {
@@ -84,85 +85,47 @@ namespace VsChromium.Features.AttachToChrome {
 
       foreach (Process p in processes) {
         var item = new ProcessViewItem();
-        item.Process = new NtProcess(p.Id);
-        if (!item.Process.IsValid)
+        NtProcess ntproc = new NtProcess(p.Id);
+        if (!ntproc.IsValid)
           continue;
 
-        if (item.Process.CommandLine != null) {
-          item.CmdLineArgs = ChromeUtility.SplitArgs(item.Process.CommandLine);
-          item.DisplayCmdLine = GetFilteredCommandLineString(item.CmdLineArgs);
-        }
-        item.MachineType = item.Process.MachineType;
+        item.Process = ChromiumProcess.Create(p.Id);
+        if (item.Process == null)
+          continue;
 
-        item.ProcessId = p.Id;
+        if (ntproc.CommandLine != null) {
+          item.DisplayCmdLine = GetFilteredCommandLineString(item.Process.CommandLineArgs);
+        }
+        
         item.SessionId = p.SessionId;
         item.Title = p.MainWindowTitle;
         item.Exe = p.ProcessName;
-        if (item.CmdLineArgs != null) {
-            item.Category = DetermineProcessCategory(item.Process.Win32ProcessImagePath,
-                                                     item.CmdLineArgs);
-        }
 
         item.Text = item.Exe;
-        item.SubItems.Add(item.ProcessId.ToString());
+        item.SubItems.Add(item.Process.Pid.ToString());
         item.SubItems.Add(item.Title);
-        item.SubItems.Add(item.Category.ToString());
-        item.SubItems.Add(item.MachineType.ToString());
+        item.SubItems.Add(item.Process.Category.ToString());
+        item.SubItems.Add(item.Process.InstallationData.Architecture.ToString());
         item.SubItems.Add(item.DisplayCmdLine);
 
         listViewProcesses.Items.Add(item);
 
         // Add the item to the list view before setting its image,
         // otherwise the ImageList field will be null.
-        Icon icon = LoadIconForProcess(item.Process);
-        item.ImageList.Images.Add(icon);
+        Icon icon = item.Process.Icon;
+        item.ImageList.Images.Add(item.Process.Icon);
         item.ImageIndex = item.ImageList.Images.Count - 1;
       }
     }
 
-    private Icon LoadIconForProcess(NtProcess process) {
-      SHFileInfo info = new SHFileInfo(true);
-      SHGFI flags = SHGFI.Icon | SHGFI.SmallIcon | SHGFI.OpenIcon | SHGFI.UseFileAttributes;
-      int cbFileInfo = Marshal.SizeOf(info);
-      VsChromium.Core.Win32.Shell.NativeMethods.SHGetFileInfo(
-        process.Win32ProcessImagePath, 256, ref info, (uint)cbFileInfo, (uint)flags);
-      return Icon.FromHandle(info.hIcon);
-    }
-
     // Filter the command line arguments to remove extraneous arguments that we don't wish to
     // display.
-    private string GetFilteredCommandLineString(string[] args) {
-      if (args == null || args.Length == 0)
+    private string GetFilteredCommandLineString(IList<string> args) {
+      if (args == null || args.Count == 0)
         return string.Empty;
 
       args = FilterCommandLine(args);
-      return string.Join(" ", args, 0, args.Length);
-    }
-
-    // Using a heuristic based on the command line, tries to determine what type of process this
-    // is.
-    private ProcessCategory DetermineProcessCategory(string imagePath, string[] cmdline) {
-      if (cmdline == null || cmdline.Length == 0)
-        return ProcessCategory.Other;
-
-      string file = Path.GetFileName(imagePath);
-      if (file.Equals("delegate_execute.exe", StringComparison.CurrentCultureIgnoreCase))
-        return ProcessCategory.DelegateExecute;
-      else if (file.Equals("chrome.exe", StringComparison.CurrentCultureIgnoreCase)) {
-        if (cmdline.Contains("--type=renderer"))
-          return ProcessCategory.Renderer;
-        else if (cmdline.Contains("--type=plugin") || cmdline.Contains("--type=ppapi"))
-          return ProcessCategory.Plugin;
-        else if (cmdline.Contains("--type=gpu-process"))
-          return ProcessCategory.Gpu;
-        else if (cmdline.Contains("--type=service"))
-          return ProcessCategory.Service;
-        else if (cmdline.Any(arg => arg.StartsWith("-ServerName")))
-          return ProcessCategory.MetroViewer;
-        else
-          return ProcessCategory.Browser;
-      } else
-        return ProcessCategory.Other;
+      return string.Join(" ", args, 0, args.Count);
     }
 
     private void AutoResizeColumns() {

@@ -14,6 +14,8 @@
              Foreground="{DynamicResource VsBrush.ToolWindowText}"
              HorizontalAlignment="Stretch" d:DataContext="{d:DesignData BuildExplorerViewModel}">
   <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="booleanToVisibilityConverter"/>
+
     <Style TargetType="ToggleButton">
       <Setter Property="Background" Value="{DynamicResource VsBrush.CommandBarGradient}"/>
       <Setter Property="Foreground" Value="{DynamicResource VsBrush.ButtonFace}"/>
@@ -38,68 +40,95 @@
       <ToggleButton Content="Auto Attach" IsChecked="{Binding AutoAttach}" ToolTip="Automatically attach to child processes" IsTabStop="False" />
     </ToolBar>
 
-    <!-- 'RootNode' is the property name of the control's DataContext instance. -->
     <TreeView
-        ItemsSource="{Binding RootNodes}"
         Name="BuildExplorerTreeView" Height="Auto"
         Background="{DynamicResource VsBrush.ToolWindowBackground}"
-        Foreground="{DynamicResource VsBrush.WindowText}"
-        VirtualizingStackPanel.IsVirtualizing="True"
-        VirtualizingStackPanel.VirtualizationMode="Recycling">
+        Foreground="{DynamicResource VsBrush.WindowText}">
       <TreeView.ItemContainerStyle>
         <!-- This Style binds a TreeViewItem to a TreeViewItemViewModel. -->
         <Style TargetType="{x:Type TreeViewItem}">
-          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-          <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
           <Setter Property="FontWeight" Value="Normal" />
           <Setter Property="Foreground" Value="{DynamicResource VsBrush.WindowText}" />
-          <Setter Property="ItemsPanel">
-            <Setter.Value>
-              <ItemsPanelTemplate>
-                <wpf:MyVirtualizingStackPanel />
-              </ItemsPanelTemplate>
-            </Setter.Value>
-          </Setter>
           <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
-              <!--<Setter Property="FontWeight" Value="Bold" />-->
               <Setter Property="Background" Value="{DynamicResource VsBrush.Highlight}" />
             </Trigger>
           </Style.Triggers>
         </Style>
       </TreeView.ItemContainerStyle>
 
-      <TreeView.ItemsPanel>
-        <ItemsPanelTemplate>
-          <!-- This custom VSP exposes BringIntoView -->
-          <wpf:MyVirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </TreeView.ItemsPanel>
-
       <TreeView.Resources>
-        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:InstallationTreeViewItem}" ItemsSource="{Binding Children}">
+        <Style TargetType="Image" x:Key="IconImageStyle">
+          <Setter Property="Width" Value="16"/>
+          <Setter Property="Height" Value="16"/>
+          <Setter Property="Margin" Value="3,0"/>
+          <Setter Property="Source" Value="{Binding IconImage}"/>
+          <Style.Triggers>
+            <Trigger Property="Source" Value="{x:Null}">
+              <Setter Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+          </Style.Triggers>
+        </Style>
+
+        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:InstalledBuildViewModel}" ItemsSource="{Binding Processes}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding Image}" Visibility="{Binding ImageVisibility}"/>
-            <TextBlock Text="{Binding Text}" />
+            <StackPanel.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Set default browser" Click="SetDefaultBrowserMenuItem_Click"/>
+                <Separator/>
+                <MenuItem Header="Start debugging"
+                          Click="StartDebuggingMenuItem_Click"
+                          Visibility="{Binding IsNotRunning,
+                                       Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Start without debugging"
+                          Click="StartWithoutDebuggingMenuItem_Click" 
+                          Visibility="{Binding IsNotRunning,
+                                       Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Attach debugger" 
+                          Click="AttachDebuggerMenuItem_Click" 
+                          Visibility="{Binding IsNotDebugging, 
+                                       Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Detach debugger" 
+                          Click="DetachDebuggerMenuItem_Click" 
+                          Visibility="{Binding IsDebugging, 
+                                       Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Stop debugging" 
+                          Click="StopDebuggingMenuItem_Click" 
+                          Visibility="{Binding IsDebugging,
+                                       Converter={StaticResource booleanToVisibilityConverter}}"/>
+              </ContextMenu>
+            </StackPanel.ContextMenu>
+            <Image Style="{StaticResource IconImageStyle}"/>
+            <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:SimpleTreeViewItem}" ItemsSource="{Binding Children}">
+        <HierarchicalDataTemplate DataType="{x:Type buildExplorer:ChromeProcessViewModel}" ItemsSource="{Binding ChildProcesses}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding Image}" Visibility="{Binding ImageVisibility}"/>
-            <TextBlock Text="{Binding Text}" />
+            <StackPanel.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Attach debugger" 
+                          Click="AttachDebuggerMenuItem_Click" 
+                          Visibility="{Binding IsNotDebugging, 
+                                       Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Detach debugger" 
+                          Click="DetachDebuggerMenuItem_Click" 
+                          Visibility="{Binding IsDebugging, 
+                                        Converter={StaticResource booleanToVisibilityConverter}}"/>
+                <MenuItem Header="Stop debugging" 
+                          Click="StopDebuggingMenuItem_Click" 
+                          Visibility="{Binding IsDebugging,
+                                        Converter={StaticResource booleanToVisibilityConverter}}"/>
+              </ContextMenu>
+            </StackPanel.ContextMenu>
+            <Image Style="{StaticResource IconImageStyle}"/>
+            <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
       </TreeView.Resources>
 
-      <!--<TreeViewItem Header="Installed Builds">
-        <TreeViewItem Header="Google Chrome Canary (36.0.1917.0)"/>
-        <TreeViewItem Header="Google Chrome (36.0.1921.0 m)"/>
-      </TreeViewItem>
-      <TreeViewItem Header="Developer Builds">
-        <TreeViewItem Header="D:\src\chromium\src"/>
-        <TreeViewItem Header="D:\src\chromium2\src"/>
-      </TreeViewItem>-->
+      <TreeViewItem Header="Installed Builds" ItemsSource="{Binding InstalledBuilds}"/>
+      <TreeViewItem Header="Developer Builds" ItemsSource="{Binding DeveloperBuilds}"/>
     </TreeView>
   </DockPanel>
 </UserControl>

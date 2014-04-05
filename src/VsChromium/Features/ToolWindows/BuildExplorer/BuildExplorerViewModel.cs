@@ -13,12 +13,12 @@ using VsChromium.Core.Chromium;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.BuildExplorer {
-  class BuildExplorerViewModel {
-    private TreeViewRootNodes<ITreeViewItem> _rootNodes = new TreeViewRootNodes<ITreeViewItem>();
-    private ITreeViewItem _installedBuildsNode = null;
-    private ITreeViewItem _developerBuildsNode = null;
+  public class BuildExplorerViewModel {
+    private List<InstalledBuildViewModel> _installedBuilds = new List<InstalledBuildViewModel>();
+    private List<DeveloperBuildViewModel> _developerBuilds = new List<DeveloperBuildViewModel>();
 
-    public TreeViewRootNodes<ITreeViewItem> RootNodes { get { return _rootNodes; } }
+    public IList<InstalledBuildViewModel> InstalledBuilds { get { return _installedBuilds; } }
+    public IList<DeveloperBuildViewModel> DeveloperBuilds { get { return _developerBuilds; } }
 
     /// <summary>
     /// Databound!
@@ -26,15 +26,18 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
     public bool AutoAttach { get; set; }
 
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
-      _installedBuildsNode = new SimpleTreeViewItem("Installed Builds", null);
-      _developerBuildsNode = new SimpleTreeViewItem("Developer Builds", null);
-
-      _rootNodes.Add(_installedBuildsNode);
-      _rootNodes.Add(_developerBuildsNode);
-
       InstallationEnumerator enumerator = new InstallationEnumerator();
-      foreach (InstallationData data in enumerator)
-        _installedBuildsNode.Children.Add(new InstallationTreeViewItem(data));
+      foreach (InstallationData data in enumerator) {
+        InstalledBuildViewModel build = new InstalledBuildViewModel(this, data);
+        _installedBuilds.Add(build);
+      }
+
+      ReloadProcesses();
+    }
+
+    private void ReloadProcesses() {
+      foreach (InstalledBuildViewModel installedBuild in _installedBuilds)
+        installedBuild.LoadProcesses();
     }
   }
 }

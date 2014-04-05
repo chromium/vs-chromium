@@ -10,23 +10,14 @@ using System.Windows.Forms;
 
 using VsChromium.Core.Win32.Processes;
 using VsChromium.Core.Processes;
+using VsChromium.Core.Chromium;
 
 namespace VsChromium.Features.AttachToChrome {
   class ProcessViewItem : ListViewItem {
-    public ProcessViewItem() {
-      Category = ProcessCategory.Other;
-      MachineType = MachineType.Unknown;
-    }
-
     public string Exe;
-    public int ProcessId;
     public int SessionId;
     public string Title;
     public string DisplayCmdLine;
-    public string[] CmdLineArgs;
-    public ProcessCategory Category;
-    public MachineType MachineType;
-
-    public NtProcess Process;
+    public ChromiumProcess Process;
   }
 }

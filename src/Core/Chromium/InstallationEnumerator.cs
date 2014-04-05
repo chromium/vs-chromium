@@ -40,30 +40,18 @@ namespace VsChromium.Core.Chromium {
             if (!File.Exists(exePath))
               continue;
 
-            InstallationData data = new InstallationData();
-            data.Distribution = DistributionType.Canary;
-            data.Architecture = ProcessUtility.GetMachineType(exePath);
-            data.Level = level;
-            data.InstallationPath = new FileNames.FullPathName(location);
-            if (data.InstallationPath.HasComponent("Chrome SxS"))
-              data.Distribution = DistributionType.Canary;
-            else if (data.InstallationPath.HasComponent("Chrome"))
-              data.Distribution = DistributionType.Chrome;
-            else
-              data.Distribution = DistributionType.Chromium;
-
+            int iconIndex = 0;
             string iconString = (string)subkey.GetValue("DisplayIcon");
-            if (iconString == null)
-              data.IconIndex = 0;
-            else {
+            if (iconString != null) {
               int index = iconString.LastIndexOf(',');
               string indexString = iconString.Substring(index + 1);
-              data.IconIndex = int.TryParse(indexString, out index) ? index : 0;
+              iconIndex = int.TryParse(indexString, out index) ? index : 0;
             }
-            data.Name = (string)subkey.GetValue("DisplayName");
-            data.Version = (string)subkey.GetValue("DisplayVersion");
 
-            results.Add(data);
+            string name = (string)subkey.GetValue("DisplayName");
+            string version = (string)subkey.GetValue("DisplayVersion");
+
+            results.Add(new InstallationData(exePath, level, iconIndex, name, version));
           }
         }
       }

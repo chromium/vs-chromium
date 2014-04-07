@@ -14,17 +14,18 @@ using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystem {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
-    private readonly object _changedPathsLock = new object();
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
     private readonly TimeSpan _eventReceivedTimeout = TimeSpan.FromSeconds(10.0);
+    private readonly TimeSpan _pathsChangedDelay = TimeSpan.FromSeconds(10.0);
+    private readonly TimeSpan _simplePathsChangedDelay = TimeSpan.FromSeconds(1.0);
 
     private readonly Dictionary<DirectoryName, FileSystemWatcher> _watchers =
       new Dictionary<DirectoryName, FileSystemWatcher>();
-
     private readonly object _watchersLock = new object();
+
     private Dictionary<string, PathChangeKind> _changedPaths = new Dictionary<string, PathChangeKind>(SystemPathComparer.Instance.Comparer);
+    private readonly object _changedPathsLock = new object();
     private Thread _thread;
-    private readonly TimeSpan _pathChangedDelay = TimeSpan.FromSeconds(10.0);
 
     public void WatchDirectories(IEnumerable<DirectoryName> directories) {
       lock (_watchersLock) {
@@ -88,10 +89,7 @@ namespace VsChromium.Server.FileSystem {
         _eventReceived.WaitOne(_eventReceivedTimeout);
 
         CheckDeletedRoots();
-
-        var pathsChanged = BatchPathChangedEvents();
-        if (pathsChanged.Count > 0)
-          OnPathsChanged(pathsChanged);
+        PostPathsChangedEvents();
       }
     }
 
@@ -114,30 +112,50 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private IList<PathChangeEntry> BatchPathChangedEvents() {
+    private void PostPathsChangedEvents() {
       var paths = DequeueEvents();
       if (paths.Count == 0)
-        return new List<PathChangeEntry>();
+        return;
 
       // Dequeue events as long as there are new ones within a 10 seconds delay.
       // The goal is to delay generating events as long as there is disk
       // activity within a 10 seconds window. It also allows "merging"
       // consecutive events into more meaningful ones.
       while (true) {
-        Thread.Sleep(_pathChangedDelay);
+        Thread.Sleep(_simplePathsChangedDelay);
         var morePathsChanged = DequeueEvents();
+        // Merge changes
+        morePathsChanged.ForAll(change => MergePathChange(paths, change.Key, change.Value));
+        PostSimplePathsChangedEvents(paths);
+
+        Thread.Sleep(_pathsChangedDelay);
+        morePathsChanged = DequeueEvents();
         if (morePathsChanged.Count == 0)
           break;
 
         // Merge changes
-        morePathsChanged.ForAll(change => AddFileChange(paths, change.Key, change.Value));
+        morePathsChanged.ForAll(change => MergePathChange(paths, change.Key, change.Value));
       }
 
       //
-      return paths
+      var entries = paths
         .Select(x => new PathChangeEntry(x.Key, x.Value))
         .Where(item => IncludeChange(item))
         .ToList();
+      OnPathsChanged(entries);
+    }
+
+    private void PostSimplePathsChangedEvents(Dictionary<string, PathChangeKind> paths) {
+      var simpleChanges = paths
+        .Where(x => x.Value == PathChangeKind.Changed)
+        .Select(x => new PathChangeEntry(x.Key, x.Value))
+        .Where(item => IncludeChange(item))
+        .ToList();
+      if (simpleChanges.Count == 0)
+        return;
+
+      simpleChanges.ForAll(x => paths.Remove(x.Path));
+      OnPathsChanged(simpleChanges);
     }
 
     private bool IncludeChange(PathChangeEntry change) {
@@ -174,43 +192,43 @@ namespace VsChromium.Server.FileSystem {
 
     private void EnqueueChangeEvent(string path, PathChangeKind changeKind) {
       lock (_changedPathsLock) {
-        AddFileChange(_changedPaths, path, changeKind);
+        MergePathChange(_changedPaths, path, changeKind);
       }
     }
 
-    private static void AddFileChange(Dictionary<string, PathChangeKind> dic, string path, PathChangeKind newChangeKind) {
+    private static void MergePathChange(Dictionary<string, PathChangeKind> changes, string path, PathChangeKind kind) {
       PathChangeKind currentChangeKind;
-      if (!dic.TryGetValue(path, out currentChangeKind)) {
+      if (!changes.TryGetValue(path, out currentChangeKind)) {
         currentChangeKind = PathChangeKind.None;
       }
-      dic[path] = CombineChangeTypes(currentChangeKind, newChangeKind);
+      changes[path] = CombineChangeKinds(currentChangeKind, kind);
     }
 
-    private static PathChangeKind CombineChangeTypes(PathChangeKind initial, PathChangeKind next) {
-      switch (initial) {
+    private static PathChangeKind CombineChangeKinds(PathChangeKind current, PathChangeKind next) {
+      switch (current) {
         case PathChangeKind.None:
           return next;
         case PathChangeKind.Created:
           switch (next) {
             case PathChangeKind.None:
-              return initial;
+              return current;
             case PathChangeKind.Created:
-              return initial;
+              return current;
             case PathChangeKind.Deleted:
               return PathChangeKind.None;
             case PathChangeKind.Changed:
-              return initial;
+              return current;
             default:
               throw new ArgumentOutOfRangeException("next");
           }
         case PathChangeKind.Deleted:
           switch (next) {
             case PathChangeKind.None:
-              return initial;
+              return current;
             case PathChangeKind.Created:
               return PathChangeKind.Changed;
             case PathChangeKind.Deleted:
-              return initial;
+              return current;
             case PathChangeKind.Changed:
               return PathChangeKind.Deleted; // Weird case...
             default:
@@ -219,18 +237,18 @@ namespace VsChromium.Server.FileSystem {
         case PathChangeKind.Changed:
           switch (next) {
             case PathChangeKind.None:
-              return initial;
+              return current;
             case PathChangeKind.Created:
               return PathChangeKind.Changed; // Weird case...
             case PathChangeKind.Deleted:
               return next;
             case PathChangeKind.Changed:
-              return initial;
+              return current;
             default:
               throw new ArgumentOutOfRangeException("next");
           }
         default:
-          throw new ArgumentOutOfRangeException("initial");
+          throw new ArgumentOutOfRangeException("current");
       }
     }
 
@@ -256,6 +274,9 @@ namespace VsChromium.Server.FileSystem {
     }
 
     protected virtual void OnPathsChanged(IList<PathChangeEntry> changes) {
+      if (changes.Count == 0)
+        return;
+
       Logger.Log("OnPathsChanged: {0} items.", changes.Count);
       // Too verbose
       //changes.ForAll(change => Logger.Log("OnPathsChanged({0}).", change));

@@ -10,13 +10,6 @@ namespace VsChromium.Server.FileSystem {
   public interface IDirectoryChangeWatcher {
     void WatchDirectories(IEnumerable<DirectoryName> directories);
 
-    event Action<IList<KeyValuePair<string, ChangeType>>> PathsChanged;
-  }
-
-  public enum ChangeType : byte {
-    None,
-    Created,
-    Deleted,
-    Changed
+    event Action<IList<PathChangeEntry>> PathsChanged;
   }
 }

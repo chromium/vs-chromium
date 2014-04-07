@@ -22,10 +22,10 @@ namespace VsChromium.Server.FileSystem {
       _projectDiscovery = projectDiscovery;
     }
 
-    public FileSystemValidationResult ProcessPathsChangedEvent(IList<KeyValuePair<string, ChangeType>> changes) {
+    public FileSystemValidationResult ProcessPathsChangedEvent(IList<PathChangeEntry> changes) {
       // Skip files from filtered out directories
       var unfilteredChanges = changes
-        .Where(x => !PathIsExcluded(x.Key))
+        .Where(x => !PathIsExcluded(x.Path))
         .ToList();
 
       Logger.Log("DirectoryChangeWatcherOnPathsChanged: {0:n0} items left out of {1:n0} after filtering.",
@@ -36,10 +36,10 @@ namespace VsChromium.Server.FileSystem {
       if (unfilteredChanges.Any()) {
         // If the only changes we see are file modification, don't recompute the graph, just 
         // raise a "files changes event".
-        if (unfilteredChanges.All(change => change.Value == ChangeType.Changed)) {
+        if (unfilteredChanges.All(change => change.Kind == PathChangeKind.Changed)) {
           Logger.Log(
             "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
-          var fileNames = unfilteredChanges.Select(change => PathToFileName(change.Key)).Where(name => name != null);
+          var fileNames = unfilteredChanges.Select(change => PathToFileName(change.Path)).Where(name => name != null);
           return new FileSystemValidationResult {
             ChangeFiles = fileNames.ToList()
           };

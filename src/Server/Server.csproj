@@ -33,6 +33,8 @@
     <Compile Include="FileSystemNames\FileSystemNameKey.cs" />
     <Compile Include="FileSystemNames\FileSystemNameKeyComparer.cs" />
     <Compile Include="FileSystemNames\IFileSystemNameFactory.cs" />
+    <Compile Include="FileSystem\PathChangeEntry.cs" />
+    <Compile Include="FileSystem\PathChangeKind.cs" />
     <Compile Include="FileSystem\FileSystemTreeBuilder.cs" />
     <Compile Include="FileSystem\FileSystemTreeValidator.cs" />
     <Compile Include="FileSystem\FileSystemValidationResult.cs" />

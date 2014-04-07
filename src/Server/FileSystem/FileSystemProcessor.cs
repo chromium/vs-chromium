@@ -68,11 +68,11 @@ namespace VsChromium.Server.FileSystem {
     public event Action<long, FileSystemTree, FileSystemTree> TreeComputed;
     public event Action<IEnumerable<FileName>> FilesChanged;
 
-    private void DirectoryChangeWatcherOnPathsChanged(IList<KeyValuePair<string, ChangeType>> changes) {
+    private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       _taskQueue.Enqueue("OnPathsChangedTask()", () => OnPathsChangedTask(changes));
     }
 
-    private void OnPathsChangedTask(IList<KeyValuePair<string, ChangeType>> changes) {
+    private void OnPathsChangedTask(IList<PathChangeEntry> changes) {
       var result =
         new FileSystemTreeValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
       if (result.RecomputeGraph) {

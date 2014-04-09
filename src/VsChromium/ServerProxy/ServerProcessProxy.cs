@@ -93,7 +93,7 @@ namespace VsChromium.ServerProxy {
       var timeout = TimeSpan.FromSeconds(5.0);
 #if PROFILE_SERVER
       timeout = TimeSpan.FromSeconds(120.0);
-      Trace.WriteLine(string.Format("You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds, ((IPEndPoint)_tcpListener.LocalEndpoint).Port));
+      System.Diagnostics.Trace.WriteLine(string.Format("You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds, ((IPEndPoint)_tcpListener.LocalEndpoint).Port));
 #endif
       Logger.Log("AfterProxyCreated: Wait for TCP client connection from server process.");
       if (!_waitForConnection.WaitOne(timeout)) {

@@ -7,12 +7,46 @@
 
 #include "stdafx.h"
 
+#include <assert.h>
+
 #include "search_bndm32.h"
 #include "search_bndm64.h"
 #include "search_boyer_moore.h"
 #include "search_strstr.h"
 
 #define EXPORT __declspec(dllexport)
+
+template<class CharType>
+bool GetLineExtentFromPosition(const CharType* text, int textLen, int position, int* lineStartPosition, int* lineLen) {
+  const CharType nl = '\n';
+  const CharType* min = text;
+  const CharType* max = text + textLen;
+  const CharType* current = text + position;
+
+  const CharType* start = current;
+  for (; start > min; start--) {
+    if (*start == nl) {
+      break;
+    }
+  }
+
+  const CharType* end = current;
+  for (; end < max; end++) {
+    if (*end == nl) {
+      break;
+    }
+  }
+
+  assert(min <= start);
+  assert(start <= max);
+  assert(min <= end);
+  assert(end <= max);
+
+  // TODO(rpaquay): We are limited to 2GB for now.
+  *lineStartPosition = static_cast<int>(start - min);
+  *lineLen = static_cast<int>(end - start);
+  return true;
+}
 
 extern "C" {
 
@@ -91,9 +125,9 @@ bool Text_IsAscii(const char* text, int textLen) {
   const uint8_t asciiLimit = 0x7f;
   for(; textPtr < textEndPtr; textPtr++) {
     if (*textPtr > asciiLimit)
-      return FALSE;
+      return false;
   }
-  return TRUE;
+  return true;
 }
 
 }
@@ -113,6 +147,14 @@ EXPORT TextKind __stdcall Text_GetKind(const char* text, int textLen) {
     else
       return Unknown;
   }
+}
+
+EXPORT bool __stdcall Ascii_GetLineExtentFromPosition(const char* text, int textLen, int position, int* lineStartPosition, int* lineLen) {
+  return GetLineExtentFromPosition(text, textLen, position, lineStartPosition, lineLen);
+}
+
+EXPORT bool __stdcall UTF16_GetLineExtentFromPosition(const wchar_t* text, int textLen, int position, int* lineStartPosition, int* lineLen) {
+  return GetLineExtentFromPosition(text, textLen, position, lineStartPosition, lineLen);
 }
 
 }  // extern "C"

@@ -1,42 +1,24 @@
+// Copyright 2014 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Search {
   public class TextSourceTextSearch {
-    private readonly long _characterCount;
-    private readonly Func<long, char> _getCharacter;
+    private readonly Func<int, FilePositionSpan> _getLineExtent;
+    private readonly Func<int, char> _getCharacterAt;
 
-    public TextSourceTextSearch(long characterCount, Func<long, char> getCharacter) {
-      _characterCount = characterCount;
-      _getCharacter = getCharacter;
-    }
-
-    public class LineExtentFactory {
-      private readonly Func<int, FilePositionSpan> _func;
-      private FilePositionSpan? _previousSpan;
-
-      public LineExtentFactory(Func<int, FilePositionSpan> func) {
-        _func = func;
-      }
-
-      public FilePositionSpan GetLineExtent(int position) {
-        if (_previousSpan.HasValue) {
-          if (position >= _previousSpan.Value.Position &&
-              position < _previousSpan.Value.Position + _previousSpan.Value.Length) {
-            return _previousSpan.Value;
-          }
-        }
-
-        _previousSpan = _func(position);
-        return _previousSpan.Value;
-      }
+    public TextSourceTextSearch(Func<int, FilePositionSpan> getLineExtent, Func<int, char> getCharacterAt) {
+      _getLineExtent = getLineExtent;
+      _getCharacterAt = getCharacterAt;
     }
 
     public IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
-      var factory = new LineExtentFactory(GetLineExtent);
+      var factory = new GetLineExtentFactory(_getLineExtent);
       return matches
         .Select(match => {
           var lineExtent = factory.GetLineExtent(match.Position);
@@ -80,37 +62,6 @@ namespace VsChromium.Server.Search {
         .ToList();
     }
 
-    private FilePositionSpan GetLineExtent(int position) {
-      const char nl = '\n';
-
-      long min = 0;
-      long current = position;
-      long max = _characterCount;
-      Debug.Assert(min <= current);
-      Debug.Assert(current <= max);
-      long start = current;
-      for (; start > min; start--) {
-        if (GetCharacterAt(start) == nl) {
-          break;
-        }
-      }
-      long end = current;
-      for (; end < max; end++) {
-        if (GetCharacterAt(end) == nl) {
-          break;
-        }
-      }
-
-      Debug.Assert(min <= start);
-      Debug.Assert(start <= max);
-      Debug.Assert(min <= end);
-      Debug.Assert(end <= max);
-      return new FilePositionSpan {
-        Position = checked((int)(start - min)),
-        Length = checked((int)(end - start))
-      };
-    }
-
     private bool CheckEntriesInInterval(int position, int length, IEnumerable<ParsedSearchString.Entry> entries, bool matchCase, out int foundPosition, out int foundLength) {
       foundPosition = -1;
       foundLength = 0;
@@ -147,7 +98,7 @@ namespace VsChromium.Server.Search {
 
     private bool MatchEntryText(int position, string text, bool matchCase) {
       for (var i = 0; i < text.Length; i++) {
-        var ch1 = GetCharacterAt(position + i);
+        var ch1 = _getCharacterAt(position + i);
         var ch2 = text[i];
         if (!matchCase) {
           ch1 = char.ToLowerInvariant(ch1);
@@ -158,10 +109,6 @@ namespace VsChromium.Server.Search {
           return false;
       }
       return true;
-    }
-
-    private char GetCharacterAt(long position) {
-      return _getCharacter(position);
     }
   }
 }

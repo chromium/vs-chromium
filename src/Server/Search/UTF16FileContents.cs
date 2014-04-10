@@ -44,8 +44,15 @@ namespace VsChromium.Server.Search {
 
     private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
       var start = (char *)Pointers.Add(this.Pointer, 0);
-      Func<long, char> getCharacter = position => *(start + position);
-      return new TextSourceTextSearch(this.CharacterCount, getCharacter).FilterOnOtherEntries(parsedSearchString, matchCase, matches);
+      Func<int, char> getCharacterAt = position => *(start + position);
+      Func<int, FilePositionSpan> getLineExtent = position => {
+        int lineStart;
+        int lineLength;
+        NativeMethods.UTF16_GetLineExtentFromPosition(this.Pointer, (int)this.CharacterCount, position, out lineStart, out lineLength);
+        return new FilePositionSpan { Position = lineStart, Length = lineLength };
+      };
+
+      return new TextSourceTextSearch(getLineExtent, getCharacterAt).FilterOnOtherEntries(parsedSearchString, matchCase, matches);
     }
   }
 }

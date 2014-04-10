@@ -30,8 +30,10 @@ namespace VsChromium.Wpf {
     /// </summary>
     public string NewItem {
       set {
-        if (string.IsNullOrEmpty(value))
+        if (string.IsNullOrEmpty(value)) {
+          SelectedItem = null;
           return;
+        }
 
         if (!_items.Contains(value))
           _items.Insert(0, value);
@@ -39,9 +41,7 @@ namespace VsChromium.Wpf {
         SelectedItem = value;
       }
       get {
-        if (_items.Count == 0)
-          return string.Empty;
-        return _items[0];
+        return _selectedItem;
       }
     }
 

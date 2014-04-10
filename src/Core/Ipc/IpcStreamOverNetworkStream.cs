@@ -46,9 +46,28 @@ namespace VsChromium.Core.Ipc {
           return (T)_serializer.Deserialize(_stream);
         }
         catch (Exception e) {
-          Logger.LogException(e, "Error reading string from NetworkStream");
+          if (IsSocketClosedException(e)) {
+            Logger.Log("Socket connection was closed -- assuming normal termination.");
+          } else {
+            Logger.LogException(e, "Error reading string from NetworkStream");
+          }
           return null;
         }
+      }
+    }
+
+    private static bool IsSocketClosedException(Exception e) {
+      var socketException = e.GetBaseException() as SocketException;
+      if (socketException == null)
+        return false;
+
+      switch (socketException.SocketErrorCode) {
+        case SocketError.ConnectionReset:
+        case SocketError.Interrupted:
+          return true;
+        default:
+          Logger.LogError("Socket error code: {0}", socketException.SocketErrorCode);
+          return false;
       }
     }
   }

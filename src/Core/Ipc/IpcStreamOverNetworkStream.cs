@@ -62,7 +62,10 @@ namespace VsChromium.Core.Ipc {
         return false;
 
       switch (socketException.SocketErrorCode) {
+        // This happens when our peer closes his side of the connection.
         case SocketError.ConnectionReset:
+        // "A blocking operation was interrupted by a call to WSACancelBlockingCall"
+        // This happens when we (another thread) close our side of the connection.
         case SocketError.Interrupted:
           return true;
         default:

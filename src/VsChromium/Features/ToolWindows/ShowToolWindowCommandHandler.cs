@@ -5,11 +5,7 @@
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Design;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VsChromium.Commands;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;

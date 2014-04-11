@@ -1,12 +1,14 @@
-﻿using System;
+﻿// Copyright 2014 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using System.Collections.Generic;
-using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.NativeInterop {
   public abstract class UTF16StringSearchAlgorithm : IDisposable {
     public abstract int PatternLength { get; }
-    public abstract bool MatchCase { get; }
 
     public virtual void Dispose() {
     }

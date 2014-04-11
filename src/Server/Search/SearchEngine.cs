@@ -118,54 +118,62 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
-      var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString);
+      using (var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString)) {
+        CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase);
 
-      // Don't search empty or very small strings -- no significant results.
-      if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
-          (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
-        return SearchFileContentsResult.Empty;
+        // Don't search empty or very small strings -- no significant results.
+        if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
+            (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
+          return SearchFileContentsResult.Empty;
+        }
+
+        // taskCancellation is used to make sure we cancel previous tasks as fast as possible
+        // to avoid using too many CPU resources if the caller keeps asking us to search for
+        // things. Note that this assumes the caller is only interested in the result of
+        // the *last* query, while the previous queries will throw an OperationCanceled exception.
+        _taskCancellation.CancelAll();
+        var cancellationToken = _taskCancellation.GetNewToken();
+        return DoSearchFileContents(parsedSearchString, searchParams.MatchCase, searchParams.MaxResults, cancellationToken);
       }
+    }
 
-      // taskCancellation is used to make sure we cancel previous tasks as fast as possible
-      // to avoid using too many CPU resources if the caller keeps asking us to search for
-      // things. Note that this assumes the caller is only interested in the result of
-      // the *last* query, while the previous queries will throw an OperationCanceled exception.
-      _taskCancellation.CancelAll();
-      var cancellationToken = _taskCancellation.GetNewToken();
-      return DoSearchFileContents(parsedSearchString, searchParams.MatchCase, searchParams.MaxResults, cancellationToken);
+    private void CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase) {
+      var searchOptions = matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone;
+      CreateSearchAlgorithms(parsedSearchString.MainEntry, searchOptions);
+      parsedSearchString.EntriesBeforeMainEntry.ForAll(e => CreateSearchAlgorithms(e, searchOptions));
+      parsedSearchString.EntriesAfterMainEntry.ForAll(e => CreateSearchAlgorithms(e, searchOptions));
+    }
+
+    private static void CreateSearchAlgorithms(ParsedSearchString.Entry entry, NativeMethods.SearchOptions searchOptions) {
+      entry.AsciiStringSearchAlgo = AsciiFileContents.CreateSearchAlgo(entry.Text, searchOptions);
+      entry.UTF16StringSearchAlgo = UTF16FileContents.CreateSearchAlgo(entry.Text, searchOptions);
     }
 
     private SearchFileContentsResult DoSearchFileContents(ParsedSearchString parsedSearchString, bool matchCase, int maxResults, CancellationToken cancellationToken) {
       var searchString = parsedSearchString.MainEntry.Text;
-      var searchOptions = matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone;
-      using (var utf16SearchAlgo = UTF16FileContents.CreateSearchAlgo(searchString, searchOptions))
-      using (var asciiSearchAlgo = AsciiFileContents.CreateSearchAlgo(searchString, searchOptions)) {
-        var searchInfo = new SearchContentsData {
-          ParsedSearchString = parsedSearchString,
-          UTF16StringSearchAlgo = utf16SearchAlgo,
-          AsciiStringSearchAlgo = asciiSearchAlgo,
-        };
-        var taskResults = new TaskResultCounter(maxResults);
-        var searchedFileCount = 0;
-        var matches = _currentState.FilesWithContents
-          .AsParallel()
-          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-          .WithCancellation(cancellationToken)
-          .Where(x => !taskResults.Done)
-          .Select(item => {
-            Interlocked.Increment(ref searchedFileCount);
-            return MatchFileContents(item, searchInfo, taskResults);
-          })
-          .Where(r => r != null)
-          .ToList();
+      var searchInfo = new SearchContentsData {
+        ParsedSearchString = parsedSearchString,
+      };
+      var taskResults = new TaskResultCounter(maxResults);
+      var searchedFileCount = 0;
+      var matches = _currentState.FilesWithContents
+        .AsParallel()
+        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+        .WithCancellation(cancellationToken)
+        .Where(x => !taskResults.Done)
+        .Select(item => {
+          Interlocked.Increment(ref searchedFileCount);
+          return MatchFileContents(item, searchInfo, taskResults);
+        })
+        .Where(r => r != null)
+        .ToList();
 
-        return new SearchFileContentsResult {
-          Entries = matches,
-          SearchedFileCount = searchedFileCount,
-          TotalFileCount = _currentState.FilesWithContents.Count,
-          HitCount = taskResults.Count,
-        };
-      }
+      return new SearchFileContentsResult {
+        Entries = matches,
+        SearchedFileCount = searchedFileCount,
+        TotalFileCount = _currentState.FilesWithContents.Count,
+        HitCount = taskResults.Count,
+      };
     }
 
 

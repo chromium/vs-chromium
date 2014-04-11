@@ -9,7 +9,6 @@ using VsChromium.Core.Ipc.TypedMessages;
 namespace VsChromium.Server.NativeInterop {
   public abstract class AsciiStringSearchAlgorithm : IDisposable {
     public abstract int PatternLength { get; }
-    public abstract bool MatchCase { get; }
 
     public virtual void Dispose() {
     }

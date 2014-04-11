@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.NativeInterop;
@@ -38,7 +37,7 @@ namespace VsChromium.Server.Search {
       if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
         return NoSpans;
 
-      var algo = searchContentsData.AsciiStringSearchAlgo;
+      var algo = searchContentsData.ParsedSearchString.MainEntry.AsciiStringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(Pointer, (int)ByteLength);
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
@@ -46,12 +45,17 @@ namespace VsChromium.Server.Search {
         return result.ToList();
       }
 
-      return FilterOnOtherEntries(searchContentsData.ParsedSearchString, algo.MatchCase, result).ToList();
+      return FilterOnOtherEntries(searchContentsData.ParsedSearchString, result).ToList();
     }
 
-    private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
-      byte* start = Pointers.Add(this.Pointer, 0);
-      Func<int, char> getCharacterAt = position => (char)*(start + position);
+    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
+      FindEntry findEntry = (position, length, entry) => {
+        var start = Pointers.AddPtr(this.Pointer, position);
+        var result = entry.AsciiStringSearchAlgo.Search(start, length);
+        if (result == IntPtr.Zero)
+          return -1;
+        return position + Pointers.Offset32(start, result);
+      };
       Func<int, FilePositionSpan> getLineExtent = position => {
         int lineStart;
         int lineLength;
@@ -59,21 +63,10 @@ namespace VsChromium.Server.Search {
         return new FilePositionSpan() {Position = lineStart, Length = lineLength};
       };
 
-      return new TextSourceTextSearch(getLineExtent, getCharacterAt).FilterOnOtherEntries(parsedSearchString, matchCase, matches);
-    }
-
-    public unsafe char GetCharacterAt(int position) {
-      Debug.Assert(position >= 0);
-      Debug.Assert(position < this.ByteLength);
-      var c = *Pointers.Add(this.Pointer, position);
-      return (char)c;
+      return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(parsedSearchString, matches);
     }
 
     public override IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
-      return GetFileExtractsWorker(spans);
-    }
-
-    public unsafe IEnumerable<FileExtract> GetFileExtractsWorker(IEnumerable<FilePositionSpan> spans) {
       var offsets = new AsciiTextLineOffsets(_heap);
       offsets.CollectLineOffsets();
 

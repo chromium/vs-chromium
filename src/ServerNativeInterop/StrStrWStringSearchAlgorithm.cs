@@ -19,7 +19,7 @@ namespace VsChromium.Server.NativeInterop {
       base.Dispose();
     }
 
-    public override bool MatchCase {
+    private bool MatchCase {
       get {
         return (_searchOptions & NativeMethods.SearchOptions.kMatchCase) != 0;
       }

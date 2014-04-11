@@ -26,12 +26,6 @@ namespace VsChromium.Server.NativeInterop {
       return NativeMethods.AsciiSearchAlgorithm_Search(_handle, text, textLen);
     }
 
-    public override bool MatchCase {
-      get {
-        return (_searchOptions & NativeMethods.SearchOptions.kMatchCase) != 0;
-      }
-    }
-
     public override void Dispose() {
       _handle.Dispose();
       _patternHandle.Dispose();

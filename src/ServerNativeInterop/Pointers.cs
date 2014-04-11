@@ -22,6 +22,10 @@ namespace VsChromium.Server.NativeInterop {
       return Add((byte*)ptr, offset);
     }
 
+    public static IntPtr AddPtr(IntPtr pointer, int offset) {
+      return pointer + offset;
+    }
+
     /// <summary>
     /// Returns the # of bytes between "start" end "end" (excluded).
     /// </summary>

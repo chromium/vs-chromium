@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
@@ -31,7 +30,7 @@ namespace VsChromium.Server.Search {
       if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
         return NoSpans;
 
-      var algo = searchContentsData.UTF16StringSearchAlgo;
+      var algo = searchContentsData.ParsedSearchString.MainEntry.UTF16StringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(_heap.ContentsPointer, checked((int)_heap.ContentsByteLength));
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
@@ -39,20 +38,26 @@ namespace VsChromium.Server.Search {
         return result.ToList();
       }
 
-      return FilterOnOtherEntries(searchContentsData.ParsedSearchString, algo.MatchCase, result).ToList();
+      return FilterOnOtherEntries(searchContentsData.ParsedSearchString, result).ToList();
     }
 
-    private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, bool matchCase, IEnumerable<FilePositionSpan> matches) {
-      var start = (char *)Pointers.Add(this.Pointer, 0);
-      Func<int, char> getCharacterAt = position => *(start + position);
+    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
+      FindEntry findEntry = (position, length, entry) => {
+        // TODO(rpaquay): Do we need to take into account sizeof(char) == 2?
+        var start = Pointers.AddPtr(this.Pointer, position);
+        var result = entry.UTF16StringSearchAlgo.Search(start, length);
+        if (result == IntPtr.Zero)
+          return -1;
+        return position + Pointers.Offset32(start, result);
+      };
       Func<int, FilePositionSpan> getLineExtent = position => {
         int lineStart;
         int lineLength;
-        NativeMethods.UTF16_GetLineExtentFromPosition(this.Pointer, (int)this.CharacterCount, position, out lineStart, out lineLength);
+        NativeMethods.UTF16_GetLineExtentFromPosition(Pointer, (int)CharacterCount, position, out lineStart, out lineLength);
         return new FilePositionSpan { Position = lineStart, Length = lineLength };
       };
 
-      return new TextSourceTextSearch(getLineExtent, getCharacterAt).FilterOnOtherEntries(parsedSearchString, matchCase, matches);
+      return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(parsedSearchString, matches);
     }
   }
 }

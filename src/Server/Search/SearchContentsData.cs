@@ -11,7 +11,5 @@ namespace VsChromium.Server.Search {
   /// </summary>
   public class SearchContentsData {
     public ParsedSearchString ParsedSearchString { get; set; }
-    public AsciiStringSearchAlgorithm AsciiStringSearchAlgo { get; set; }
-    public UTF16StringSearchAlgorithm UTF16StringSearchAlgo { get; set; }
   }
 }

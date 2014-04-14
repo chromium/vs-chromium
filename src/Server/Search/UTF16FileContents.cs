@@ -30,7 +30,7 @@ namespace VsChromium.Server.Search {
       if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
         return NoSpans;
 
-      var algo = searchContentsData.ParsedSearchString.MainEntry.UTF16StringSearchAlgo;
+      var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).UTF16StringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(_heap.ContentsPointer, checked((int)_heap.ContentsByteLength));
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
@@ -38,14 +38,15 @@ namespace VsChromium.Server.Search {
         return result.ToList();
       }
 
-      return FilterOnOtherEntries(searchContentsData.ParsedSearchString, result).ToList();
+      return FilterOnOtherEntries(searchContentsData, result).ToList();
     }
 
-    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
+    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(SearchContentsData searchContentsData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (position, length, entry) => {
+        var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).UTF16StringSearchAlgo;
         // TODO(rpaquay): Do we need to take into account sizeof(char) == 2?
         var start = Pointers.AddPtr(this.Pointer, position);
-        var result = entry.UTF16StringSearchAlgo.Search(start, length);
+        var result = algo.Search(start, length);
         if (result == IntPtr.Zero)
           return -1;
         return position + Pointers.Offset32(start, result);
@@ -57,7 +58,7 @@ namespace VsChromium.Server.Search {
         return new FilePositionSpan { Position = lineStart, Length = lineLength };
       };
 
-      return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(parsedSearchString, matches);
+      return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(searchContentsData.ParsedSearchString, matches);
     }
   }
 }

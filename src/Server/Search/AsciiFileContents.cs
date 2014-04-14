@@ -37,7 +37,7 @@ namespace VsChromium.Server.Search {
       if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
         return NoSpans;
 
-      var algo = searchContentsData.ParsedSearchString.MainEntry.AsciiStringSearchAlgo;
+      var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).AsciiStringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(Pointer, (int)ByteLength);
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
@@ -45,13 +45,14 @@ namespace VsChromium.Server.Search {
         return result.ToList();
       }
 
-      return FilterOnOtherEntries(searchContentsData.ParsedSearchString, result).ToList();
+      return FilterOnOtherEntries(searchContentsData, result).ToList();
     }
 
-    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
+    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(SearchContentsData searchContentsData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (position, length, entry) => {
+        var algo = searchContentsData.GetSearchAlgorithms(entry).AsciiStringSearchAlgo;
         var start = Pointers.AddPtr(this.Pointer, position);
-        var result = entry.AsciiStringSearchAlgo.Search(start, length);
+        var result = algo.Search(start, length);
         if (result == IntPtr.Zero)
           return -1;
         return position + Pointers.Offset32(start, result);
@@ -63,7 +64,7 @@ namespace VsChromium.Server.Search {
         return new FilePositionSpan {Position = lineStart, Length = lineLength};
       };
 
-      return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(parsedSearchString, matches);
+      return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(searchContentsData.ParsedSearchString, matches);
     }
 
     public override IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {

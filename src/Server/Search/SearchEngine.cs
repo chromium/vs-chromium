@@ -118,41 +118,39 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
-      using (var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString)) {
-        CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase);
+      var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString);
+      // Don't search empty or very small strings -- no significant results.
+      if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
+          (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
+        return SearchFileContentsResult.Empty;
+      }
 
-        // Don't search empty or very small strings -- no significant results.
-        if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
-            (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
-          return SearchFileContentsResult.Empty;
-        }
-
+      using (var searchContentsData = new SearchContentsData(parsedSearchString, CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase))) {
         // taskCancellation is used to make sure we cancel previous tasks as fast as possible
         // to avoid using too many CPU resources if the caller keeps asking us to search for
         // things. Note that this assumes the caller is only interested in the result of
         // the *last* query, while the previous queries will throw an OperationCanceled exception.
         _taskCancellation.CancelAll();
         var cancellationToken = _taskCancellation.GetNewToken();
-        return DoSearchFileContents(parsedSearchString, searchParams.MaxResults, cancellationToken);
+        return DoSearchFileContents(searchContentsData, searchParams.MaxResults, cancellationToken);
       }
     }
 
-    private void CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase) {
+    private static List<SearchContentsAlgorithms> CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase) {
       var searchOptions = matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone;
-      CreateSearchAlgorithms(parsedSearchString.MainEntry, searchOptions);
-      parsedSearchString.EntriesBeforeMainEntry.ForAll(e => CreateSearchAlgorithms(e, searchOptions));
-      parsedSearchString.EntriesAfterMainEntry.ForAll(e => CreateSearchAlgorithms(e, searchOptions));
+      return parsedSearchString.EntriesBeforeMainEntry
+        .Concat(new[] { parsedSearchString.MainEntry })
+        .Concat(parsedSearchString.EntriesAfterMainEntry)
+        .OrderBy(x => x.Index)
+        .Select(entry => {
+          var a1 = AsciiFileContents.CreateSearchAlgo(entry.Text, searchOptions);
+          var a2 = UTF16FileContents.CreateSearchAlgo(entry.Text, searchOptions);
+          return new SearchContentsAlgorithms(a1, a2);
+        })
+        .ToList();
     }
 
-    private static void CreateSearchAlgorithms(ParsedSearchString.Entry entry, NativeMethods.SearchOptions searchOptions) {
-      entry.AsciiStringSearchAlgo = AsciiFileContents.CreateSearchAlgo(entry.Text, searchOptions);
-      entry.UTF16StringSearchAlgo = UTF16FileContents.CreateSearchAlgo(entry.Text, searchOptions);
-    }
-
-    private SearchFileContentsResult DoSearchFileContents(ParsedSearchString parsedSearchString, int maxResults, CancellationToken cancellationToken) {
-      var searchInfo = new SearchContentsData {
-        ParsedSearchString = parsedSearchString,
-      };
+    private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, CancellationToken cancellationToken) {
       var taskResults = new TaskResultCounter(maxResults);
       var searchedFileCount = 0;
       var matches = _currentState.FilesWithContents
@@ -162,7 +160,7 @@ namespace VsChromium.Server.Search {
         .Where(x => !taskResults.Done)
         .Select(item => {
           Interlocked.Increment(ref searchedFileCount);
-          return MatchFileContents(item, searchInfo, taskResults);
+          return MatchFileContents(item, searchContentsData, taskResults);
         })
         .Where(r => r != null)
         .ToList();

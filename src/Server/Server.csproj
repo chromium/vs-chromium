@@ -89,6 +89,7 @@
     <Compile Include="Search\FileContentsMemory.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
     <Compile Include="Search\GetLineExtentCache.cs" />
+    <Compile Include="Search\SearchContentsAlgorithms.cs" />
     <Compile Include="Search\SearchDirectoryNamesResult.cs" />
     <Compile Include="Search\SearchFileContentsResult.cs" />
     <Compile Include="Search\SearchFileNamesResult.cs" />

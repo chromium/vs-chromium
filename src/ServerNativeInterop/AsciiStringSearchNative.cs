@@ -8,13 +8,11 @@ using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Server.NativeInterop {
   public class AsciiStringSearchNative : AsciiStringSearchAlgorithm {
-    private readonly NativeMethods.SearchOptions _searchOptions;
     private readonly SafeSearchHandle _handle;
     private readonly SafeHGlobalHandle _patternHandle;
     private readonly int _patternLength;
 
     public AsciiStringSearchNative(NativeMethods.SearchAlgorithmKind kind, string pattern, NativeMethods.SearchOptions searchOptions) {
-      _searchOptions = searchOptions;
       _patternHandle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(pattern));
       _handle = NativeMethods.AsciiSearchAlgorithm_Create(kind, _patternHandle.Pointer, pattern.Length, searchOptions);
       _patternLength = pattern.Length;
@@ -22,8 +20,8 @@ namespace VsChromium.Server.NativeInterop {
 
     public override int PatternLength { get { return _patternLength; } }
 
-    public override IntPtr Search(IntPtr text, int textLen) {
-      return NativeMethods.AsciiSearchAlgorithm_Search(_handle, text, textLen);
+    public override IntPtr Search(IntPtr textPtr, int textLen) {
+      return NativeMethods.AsciiSearchAlgorithm_Search(_handle, textPtr, textLen);
     }
 
     public override void Dispose() {

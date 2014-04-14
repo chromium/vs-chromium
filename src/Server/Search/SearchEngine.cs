@@ -133,7 +133,7 @@ namespace VsChromium.Server.Search {
         // the *last* query, while the previous queries will throw an OperationCanceled exception.
         _taskCancellation.CancelAll();
         var cancellationToken = _taskCancellation.GetNewToken();
-        return DoSearchFileContents(parsedSearchString, searchParams.MatchCase, searchParams.MaxResults, cancellationToken);
+        return DoSearchFileContents(parsedSearchString, searchParams.MaxResults, cancellationToken);
       }
     }
 
@@ -149,8 +149,7 @@ namespace VsChromium.Server.Search {
       entry.UTF16StringSearchAlgo = UTF16FileContents.CreateSearchAlgo(entry.Text, searchOptions);
     }
 
-    private SearchFileContentsResult DoSearchFileContents(ParsedSearchString parsedSearchString, bool matchCase, int maxResults, CancellationToken cancellationToken) {
-      var searchString = parsedSearchString.MainEntry.Text;
+    private SearchFileContentsResult DoSearchFileContents(ParsedSearchString parsedSearchString, int maxResults, CancellationToken cancellationToken) {
       var searchInfo = new SearchContentsData {
         ParsedSearchString = parsedSearchString,
       };

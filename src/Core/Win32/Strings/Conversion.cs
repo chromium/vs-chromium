@@ -26,7 +26,7 @@ namespace VsChromium.Core.Win32.Strings {
       var byteLength = (int)length;
       var decoder = Encoding.UTF8.GetDecoder();
       var charCount = decoder.GetCharCount(start, byteLength, true);
-      var newBlock = HeapAllocStatic.Alloc(charCount * 2);
+      var newBlock = HeapAllocStatic.Alloc(charCount * sizeof(char));
       var result = decoder.GetChars(start, byteLength, (char*)newBlock.Pointer.ToPointer(),
                                     charCount, true);
       if (result != charCount) {

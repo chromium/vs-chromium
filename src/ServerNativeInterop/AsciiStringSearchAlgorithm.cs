@@ -13,8 +13,13 @@ namespace VsChromium.Server.NativeInterop {
     public virtual void Dispose() {
     }
 
-    public IEnumerable<FilePositionSpan> SearchAll(IntPtr text, int textLen) {
-      var currentPtr = text;
+    /// <summary>
+    /// Find all occurrences of the pattern in the text block starting at
+    /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
+    /// characters.
+    /// </summary>
+    public IEnumerable<FilePositionSpan> SearchAll(IntPtr textPtr, int textLen) {
+      var currentPtr = textPtr;
       var remainingLength = textLen;
       while (true) {
         currentPtr = Search(currentPtr, remainingLength);
@@ -22,13 +27,18 @@ namespace VsChromium.Server.NativeInterop {
           break;
 
         // TODO(rpaquay): We are limited to 2GB for now.
-        var offset = Pointers.Offset32(text, currentPtr);
+        var offset = Pointers.Offset32(textPtr, currentPtr);
         yield return new FilePositionSpan {Position = offset, Length = PatternLength};
         currentPtr += PatternLength;
         remainingLength = textLen - offset - PatternLength;
       }
     }
 
-    public abstract IntPtr Search(IntPtr text, int textLen);
+    /// <summary>
+    /// Find the first occurrence of the pattern in the text block starting at
+    /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
+    /// characters. Returns |IntPtr.Zero| if the pattern is not present.
+    /// </summary>
+    public abstract IntPtr Search(IntPtr textPtr, int textLen);
   }
 }

@@ -2,28 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Search {
-  public delegate int FindEntry(int position, int length, ParsedSearchString.Entry entry);
+  public delegate int FindEntryFunction(int position, int length, ParsedSearchString.Entry entry);
+  public delegate FilePositionSpan GetLineExtentFunction(int position);
 
   public class TextSourceTextSearch {
-    private readonly Func<int, FilePositionSpan> _getLineExtent;
-    private readonly FindEntry _findEntry;
+    private readonly GetLineExtentFunction _getLineExtent;
+    private readonly FindEntryFunction _findEntry;
 
-    public TextSourceTextSearch(Func<int, FilePositionSpan> getLineExtent, FindEntry findEntry) {
+    public TextSourceTextSearch(GetLineExtentFunction getLineExtent, FindEntryFunction findEntry) {
       _getLineExtent = getLineExtent;
       _findEntry = findEntry;
     }
 
     public IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
-      var factory = new GetLineExtentFactory(_getLineExtent);
+      var getLineExtentCache = new GetLineExtentCache(_getLineExtent);
       return matches
         .Select(match => {
-          var lineExtent = factory.GetLineExtent(match.Position);
+          var lineExtent = getLineExtentCache.GetLineExtent(match.Position);
           // We got the line extent, the offset at which we found the MainEntry.
           // Now we need to check that "OtherEntries" are present (in order) and
           // in appropriate intervals.

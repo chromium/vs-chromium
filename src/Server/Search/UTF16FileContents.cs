@@ -42,7 +42,7 @@ namespace VsChromium.Server.Search {
     }
 
     private IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
-      FindEntry findEntry = (position, length, entry) => {
+      FindEntryFunction findEntry = (position, length, entry) => {
         // TODO(rpaquay): Do we need to take into account sizeof(char) == 2?
         var start = Pointers.AddPtr(this.Pointer, position);
         var result = entry.UTF16StringSearchAlgo.Search(start, length);
@@ -50,7 +50,7 @@ namespace VsChromium.Server.Search {
           return -1;
         return position + Pointers.Offset32(start, result);
       };
-      Func<int, FilePositionSpan> getLineExtent = position => {
+      GetLineExtentFunction getLineExtent = position => {
         int lineStart;
         int lineLength;
         NativeMethods.UTF16_GetLineExtentFromPosition(Pointer, (int)CharacterCount, position, out lineStart, out lineLength);

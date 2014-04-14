@@ -49,18 +49,18 @@ namespace VsChromium.Server.Search {
     }
 
     private IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
-      FindEntry findEntry = (position, length, entry) => {
+      FindEntryFunction findEntry = (position, length, entry) => {
         var start = Pointers.AddPtr(this.Pointer, position);
         var result = entry.AsciiStringSearchAlgo.Search(start, length);
         if (result == IntPtr.Zero)
           return -1;
         return position + Pointers.Offset32(start, result);
       };
-      Func<int, FilePositionSpan> getLineExtent = position => {
+      GetLineExtentFunction getLineExtent = position => {
         int lineStart;
         int lineLength;
         NativeMethods.Ascii_GetLineExtentFromPosition(this.Pointer, (int)this.CharacterCount, position, out lineStart, out lineLength);
-        return new FilePositionSpan() {Position = lineStart, Length = lineLength};
+        return new FilePositionSpan {Position = lineStart, Length = lineLength};
       };
 
       return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(parsedSearchString, matches);

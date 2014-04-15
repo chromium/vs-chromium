@@ -30,17 +30,20 @@ namespace VsChromium.Server.FileSystem {
 
     public DirectoryEntry ComputeTree(IEnumerable<FullPathName> filenames) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
-        var newRoot = new DirectoryEntry();
-
-        newRoot.Entries = filenames
-          .Select(filename => _projectDiscovery.GetProject(filename))
-          .Where(project => project != null)
-          .Distinct(new ProjectPathComparer())
-          .Select(project => ProcessProject(project, progress))
-          .Where(entry => entry != null)
-          .OrderBy(entry => entry.Name, SystemPathComparer.Instance.Comparer)
-          .Cast<FileSystemEntry>()
-          .ToList();
+        var newRoot = new DirectoryEntry {
+          Name = null,
+          RelativePathName = default(RelativePathName),
+          Data = null,
+          Entries = filenames
+            .Select(filename => _projectDiscovery.GetProject(filename))
+            .Where(project => project != null)
+            .Distinct(new ProjectPathComparer())
+            .Select(project => ProcessProject(project, progress))
+            .Where(entry => entry != null)
+            .OrderBy(entry => entry.Name, SystemPathComparer.Instance.Comparer)
+            .Cast<FileSystemEntry>()
+            .ToList()
+        };
 
         return newRoot;
       }
@@ -51,27 +54,29 @@ namespace VsChromium.Server.FileSystem {
       var directories = TraverseFileSystem(project)
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        .Select(x => {
-          var directoryName = x.DirectoryName;
+        .Select(traversedDirectoryEntry => {
+          var directoryName = traversedDirectoryEntry.DirectoryName;
           progress.Step(
             (i, n) =>
             string.Format("Traversing directory: {0}",
                           PathHelpers.PathCombine(project.RootPath, directoryName.RelativeName)));
           var entryName = (directoryName.RelativeName == _relativePathForRoot ? project.RootPath : directoryName.Name);
+          var entries = traversedDirectoryEntry.ChildrenNames
+            .Where(relativePathName => project.FileFilter.Include(relativePathName.RelativeName))
+            .Select(relativePathName => new FileEntry {
+              Name = relativePathName.Name,
+              RelativePathName = relativePathName
+            })
+            .OrderBy(fileEntry => fileEntry.Name, SystemPathComparer.Instance.Comparer)
+            .OfType<FileSystemEntry>()
+            .ToList();
+
           var directoryEntry = new DirectoryEntry {
             Name = entryName,
-            RelativePathName = directoryName
+            RelativePathName = directoryName,
+            Data = null,
+            Entries = entries
           };
-
-          var childrenNames = x.ChildrenNames;
-          var entries = childrenNames
-            .Where(file => project.FileFilter.Include(file.RelativeName))
-            .Select(file => new FileEntry {
-              Name = file.Name,
-              RelativePathName = file
-            })
-            .OrderBy(fileEntry => fileEntry.Name, SystemPathComparer.Instance.Comparer);
-          directoryEntry.Entries.AddRange(entries);
 
           return new KeyValuePair<string, DirectoryEntry>(directoryName.RelativeName, directoryEntry);
         })
@@ -146,6 +151,7 @@ namespace VsChromium.Server.FileSystem {
 
         return 1;
       });
+      entry.Entries.TrimExcess();
       entry.Entries.OfType<DirectoryEntry>().ForAll(x => SortEntries(x));
     }
 

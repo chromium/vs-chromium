@@ -63,8 +63,8 @@ namespace VsChromium.Server.FileSystemTree {
             string.Format("Traversing directory: {0}",
                           PathHelpers.PathCombine(project.RootPath, directoryName.RelativePathName.RelativeName)));
           var entries = traversedDirectoryEntry.ChildrenNames
-            .Where(childDirectory => project.FileFilter.Include(childDirectory.RelativeName))
-            .Select(childDirectory => new FileEntryInternal(_fileSystemNameFactory.CreateFileName(directoryName, childDirectory)))
+            .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName.RelativeName))
+            .Select(childFilename => new FileEntryInternal(childFilename))
             .OfType<FileSystemEntryInternal>()
             .ToReadOnlyCollection();
 
@@ -122,7 +122,12 @@ namespace VsChromium.Server.FileSystemTree {
           for (var i = 0; i < childDirectories.Length; i++) {
             stack.Push(_fileSystemNameFactory.CreateDirectoryName(head, childDirectories[i]));
           }
-          yield return new TraversedDirectoryEntry(head, childFiles);
+          // Note: Use "for" loop to avoid memory allocations.
+          var childFilenames = new FileName[childFiles.Length];
+          for (var i = 0; i < childFiles.Length; i++) {
+            childFilenames[i] = _fileSystemNameFactory.CreateFileName(head, childFiles[i]);
+          }
+          yield return new TraversedDirectoryEntry(head, childFilenames);
         }
       }
     }
@@ -159,15 +164,15 @@ namespace VsChromium.Server.FileSystemTree {
 
     private struct TraversedDirectoryEntry {
       private readonly DirectoryName _directoryName;
-      private readonly RelativePathName[] _childrenNames;
+      private readonly FileName[] _childrenNames;
 
-      public TraversedDirectoryEntry(DirectoryName directoryName, RelativePathName[] childrenNames) {
+      public TraversedDirectoryEntry(DirectoryName directoryName, FileName[] childrenNames) {
         _directoryName = directoryName;
         _childrenNames = childrenNames;
       }
 
       public DirectoryName DirectoryName { get { return _directoryName; } }
-      public RelativePathName[] ChildrenNames { get { return _childrenNames; } }
+      public FileName[] ChildrenNames { get { return _childrenNames; } }
     }
   }
 }

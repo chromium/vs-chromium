@@ -54,8 +54,8 @@ namespace VsChromium.Server.FileSystemTree {
       // List of [DirectoryName, DirectoryEntryInternal]
       var projectPath = _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, project.RootPath);
       var directories = TraverseFileSystem(project, projectPath)
-        //.AsParallel()
-        //.WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+        .AsParallel()
+        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .Select(traversedDirectoryEntry => {
           var directoryName = traversedDirectoryEntry.DirectoryName;
           progress.Step(

@@ -4,86 +4,40 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemTree;
 
 namespace VsChromium.Server.Search {
   public class FileSystemTreeVisitor {
-    private readonly IFileSystemNameFactory _fileSystemNameFactory;
-    private readonly FileSystemTree _tree;
+    private readonly FileSystemTreeInternal _tree;
 
-    public FileSystemTreeVisitor(IFileSystemNameFactory fileSystemNameFactory, FileSystemTree tree) {
-      _fileSystemNameFactory = fileSystemNameFactory;
+    public FileSystemTreeVisitor(FileSystemTreeInternal tree) {
       _tree = tree;
     }
 
-    public Action<DirectoryName, DirectoryEntry> VisitDirectory { get; set; }
-    public Action<FileName, FileEntry> VisitFile { get; set; }
+    public Action<DirectoryEntryInternal> VisitDirectory { get; set; }
+    public Action<FileEntryInternal> VisitFile { get; set; }
 
     public void Visit() {
-      VisitWorker(_fileSystemNameFactory.Root, _tree.Root);
+      VisitWorker(_tree.Root);
     }
 
-    public IEnumerable<KeyValuePair<FileName, FileEntry>> Traverse() {
-      return VisitWorker2(_fileSystemNameFactory.Root, _tree.Root);
-    }
-
-    private void VisitWorker(DirectoryName directory, DirectoryEntry entry) {
-      var stack = new Stack<Entry>();
-      stack.Push(new Entry(directory, entry));
+    private void VisitWorker(DirectoryEntryInternal entry) {
+      var stack = new Stack<DirectoryEntryInternal>();
+      stack.Push(entry);
       while (stack.Count > 0) {
         var head = stack.Pop();
-        VisitDirectory(head.DirectoryName, head.DirectoryEntry);
+        VisitDirectory(head);
 
-        foreach (var child in head.DirectoryEntry.Entries) {
-          var fileEntry = child as FileEntry;
+        foreach (var child in head.Entries) {
+          var fileEntry = child as FileEntryInternal;
           if (fileEntry != null) {
-            var fileName = _fileSystemNameFactory.CreateFileName(head.DirectoryName, fileEntry.RelativePathName);
-            VisitFile(fileName, fileEntry);
+            VisitFile(fileEntry);
           } else {
-            var directoryName = child.RelativePathName.RelativeName == ""
-                                  ? _fileSystemNameFactory.CombineDirectoryNames(head.DirectoryName, child.Name)
-                                  : _fileSystemNameFactory.CreateDirectoryName(head.DirectoryName, child.RelativePathName);
-            stack.Push(new Entry(directoryName, (DirectoryEntry)child));
+            stack.Push((DirectoryEntryInternal)child);
           }
         }
       }
-    }
-
-    private IEnumerable<KeyValuePair<FileName, FileEntry>> VisitWorker2(DirectoryName directory, DirectoryEntry entry) {
-      var stack = new Stack<Entry>();
-      stack.Push(new Entry(directory, entry));
-      while (stack.Count > 0) {
-        var head = stack.Pop();
-
-        foreach (var child in head.DirectoryEntry.Entries) {
-          var fileEntry = child as FileEntry;
-          if (fileEntry != null) {
-            FileName fileName = _fileSystemNameFactory.CreateFileName(head.DirectoryName,
-                                                                      fileEntry.RelativePathName);
-            yield return new KeyValuePair<FileName, FileEntry>(fileName, fileEntry);
-          } else {
-            DirectoryName directoryName = child.RelativePathName.RelativeName == ""
-                                            ? _fileSystemNameFactory.CombineDirectoryNames(head.DirectoryName, child.Name)
-                                            : _fileSystemNameFactory.CreateDirectoryName(head.DirectoryName, child.RelativePathName);
-            stack.Push(new Entry(directoryName, (DirectoryEntry)child));
-          }
-        }
-      }
-    }
-
-    private struct Entry {
-      private readonly DirectoryEntry _directoryEntry;
-      private readonly DirectoryName _directoryName;
-
-      public Entry(DirectoryName directoryName, DirectoryEntry directoryEntry) {
-        _directoryName = directoryName;
-        _directoryEntry = directoryEntry;
-      }
-
-      public DirectoryName DirectoryName { get { return _directoryName; } }
-
-      public DirectoryEntry DirectoryEntry { get { return _directoryEntry; } }
     }
   }
 }

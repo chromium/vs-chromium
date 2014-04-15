@@ -16,11 +16,6 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     [ProtoMember(2)]
     public FileSystemEntryData Data { get; set; }
 
-    /// <summary>
-    /// Note: Only set in VsChromiumServer.
-    /// </summary>
-    public RelativePathName RelativePathName { get; set; }
-
     public abstract override string ToString();
   }
 }

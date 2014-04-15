@@ -182,6 +182,10 @@ namespace VsChromium.Core.Debugger {
       if (_processInformation == null)
         return "<no process handle>";
 
+      // Note: Sometimes when debugging unit tests, we get AccessViolationException reading bytes from the debuggee.
+#if false
+      return "<no processed>";
+#else
       var isUnicode = (debugString.fUnicode != 0);
       var byteCount = (uint)(debugString.nDebugStringLength * (isUnicode ? sizeof(char) : sizeof(byte)));
       var bytes = new byte[byteCount];
@@ -193,6 +197,7 @@ namespace VsChromium.Core.Debugger {
       var message = (isUnicode ? Conversion.UnicodeToUnicode(bytes) : Conversion.AnsiToUnicode(bytes));
       message = message.TrimEnd('\r', '\n');
       return message;
+#endif
     }
 
     private static DEBUG_EVENT? WaitForDebugEvent(uint timeout) {

@@ -7,6 +7,25 @@ using System.Collections.Generic;
 using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
+#if true
+  public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
+    private static readonly FileSystemNameComparer _instance = new FileSystemNameComparer();
+
+    public static FileSystemNameComparer Instance { get { return _instance; } }
+
+    public int Compare(FileSystemName x, FileSystemName y) {
+      return SystemPathComparer.Instance.Comparer.Compare(x.GetFullName(), y.GetFullName());
+    }
+
+    public bool Equals(FileSystemName x, FileSystemName y) {
+      return Compare(x, y) == 0;
+    }
+
+    public int GetHashCode(FileSystemName x) {
+      return SystemPathComparer.Instance.Comparer.GetHashCode(x.GetFullName());
+    }
+  }
+#else
   public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
     private static readonly FileSystemNameComparer _instance = new FileSystemNameComparer();
 
@@ -78,4 +97,5 @@ namespace VsChromium.Server.FileSystemNames {
       }
     }
   }
+#endif
 }

@@ -48,7 +48,7 @@ namespace VsChromium.Server.FileSystemNames {
     private static RelativePathName CreateRelativePathName(DirectoryName parent, string name) {
       // parent can be null for root entry
       if (parent == null)
-        return default(RelativePathName);
+        return new RelativePathName("", "");
 
       if (parent.IsRoot) {
         if (!PathHelpers.IsAbsolutePath(name))

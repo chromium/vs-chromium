@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using VsChromium.Core.Collections;
 
@@ -50,6 +51,10 @@ namespace VsChromium.Core.Linq {
         action(index, x);
         index++;
       }
+    }
+
+    public static ReadOnlyCollection<TSource> ToReadOnlyCollection<TSource>(this IEnumerable<TSource> source) {
+      return new ReadOnlyCollection<TSource>(source.ToArray());
     }
   }
 }

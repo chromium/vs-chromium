@@ -13,6 +13,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemTree;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
@@ -53,7 +54,7 @@ namespace VsChromium.Server.Search {
 
     public IList<FileData> FilesWithContents { get { return _filesWithContents; } }
 
-    public void ComputeState(FileDatabase previousFileDatabase, FileSystemTree newTree) {
+    public void ComputeState(FileDatabase previousFileDatabase, FileSystemTreeInternal newTree) {
       if (previousFileDatabase == null)
         throw new ArgumentNullException("previousFileDatabase");
 
@@ -130,18 +131,18 @@ namespace VsChromium.Server.Search {
       Logger.LogMemoryStats();
     }
 
-    private void ComputeFileCollection(FileSystemTree tree) {
+    private void ComputeFileCollection(FileSystemTreeInternal tree) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
       var sw = Stopwatch.StartNew();
 
       _files = new Dictionary<FileName, FileData>();
       _directoryNames = new List<DirectoryName>();
 
-      var visitor = new FileSystemTreeVisitor(_fileSystemNameFactory, tree);
-      visitor.VisitFile = (f, e) => _files.Add(f, new FileData(f, null));
-      visitor.VisitDirectory = (d, e) => {
-        if (!d.IsRoot)
-          _directoryNames.Add(d);
+      var visitor = new FileSystemTreeVisitor(tree);
+      visitor.VisitFile = fileEntry => _files.Add(fileEntry.Name, new FileData(fileEntry.Name, null));
+      visitor.VisitDirectory = directoryEntry => {
+        if (!directoryEntry.IsRoot)
+          _directoryNames.Add(directoryEntry.Name);
       };
       visitor.Visit();
 

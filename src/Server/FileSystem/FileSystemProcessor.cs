@@ -12,6 +12,7 @@ using VsChromium.Core;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemTree;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
@@ -25,10 +26,9 @@ namespace VsChromium.Server.FileSystem {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly object _lock = new object();
     private readonly IOperationIdFactory _operationIdFactory;
-    private readonly IProgressTrackerFactory _progressTrackerFactory;
     private readonly IFileSystemTreeBuilder _fileSystemTreeBuilder;
     private readonly ITaskQueue _taskQueue;
-    private DirectoryEntry _rootEntry = new DirectoryEntry();
+    private FileSystemTreeInternal _fileSystemTree;
     private int _version;
 
     [ImportingConstructor]
@@ -38,21 +38,20 @@ namespace VsChromium.Server.FileSystem {
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
       IOperationIdFactory operationIdFactory,
       ITaskQueueFactory taskQueueFactory,
-      IProgressTrackerFactory progressTrackerFactory,
       IFileSystemTreeBuilder fileSystemTreeBuilder) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _operationIdFactory = operationIdFactory;
-      _progressTrackerFactory = progressTrackerFactory;
       _fileSystemTreeBuilder = fileSystemTreeBuilder;
       _projectDiscovery = projectDiscovery;
       _taskQueue = taskQueueFactory.CreateQueue();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
+      _fileSystemTree = FileSystemTreeInternal.Empty(fileSystemNameFactory);
     }
 
-    public FileSystemTree GetTree() {
+    public VersionedFileSystemTreeInternal GetTree() {
       lock (_lock) {
-        return GetTree(_version, _rootEntry);
+        return GetTree(_version, _fileSystemTree);
       }
     }
 
@@ -65,7 +64,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public event Action<long> TreeComputing;
-    public event Action<long, FileSystemTree, FileSystemTree> TreeComputed;
+    public event Action<long, VersionedFileSystemTreeInternal, VersionedFileSystemTreeInternal> TreeComputed;
     public event Action<IEnumerable<FileName>> FilesChanged;
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
@@ -157,11 +156,8 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private FileSystemTree GetTree(int version, DirectoryEntry root) {
-      return new FileSystemTree {
-        Version = version,
-        Root = root
-      };
+    private VersionedFileSystemTreeInternal GetTree(int version, FileSystemTreeInternal fileSystemTree) {
+      return new VersionedFileSystemTreeInternal(fileSystemTree, version);
     }
 
     private void RecomputeGraph() {
@@ -177,11 +173,12 @@ namespace VsChromium.Server.FileSystem {
         files.AddRange(_addedFiles);
       }
 
-      var newRoot = _fileSystemTreeBuilder.ComputeTree(files);
+      var newFileSystemTree = _fileSystemTreeBuilder.ComputeTree(files);
 
       // Monitor all the Chromium directories for changes.
-      var newRoots = newRoot.Entries
-        .Select(root => _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, root.Name))
+      var newRoots = newFileSystemTree.Root.Entries
+        .OfType<DirectoryEntryInternal>()
+        .Select(entry => entry.Name)
         .ToList();
       _directoryChangeWatcher.WatchDirectories(newRoots);
 
@@ -189,24 +186,24 @@ namespace VsChromium.Server.FileSystem {
       var oldTree = GetTree();
       lock (_lock) {
         _version++;
-        _rootEntry = newRoot;
+        _fileSystemTree = newFileSystemTree;
       }
       var newTree = GetTree();
 
       sw.Stop();
       Logger.Log("Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
-                 CountFileEntries(newRoot), CountDirectoryEntries(newRoot), sw.ElapsedMilliseconds);
+                 CountFileEntries(newFileSystemTree.Root), CountDirectoryEntries(newFileSystemTree.Root), sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
       // A new tree is available, time to notify our consumers.
       OnTreeComputed(operationId, oldTree, newTree);
     }
 
-    private int CountFileEntries(FileSystemEntry entry) {
+    private int CountFileEntries(FileSystemEntryInternal entry) {
       if (entry == null)
         return 0;
 
-      var dir = entry as DirectoryEntry;
+      var dir = entry as DirectoryEntryInternal;
       if (dir != null) {
         return dir.Entries.Aggregate(0, (s, x) => s + CountFileEntries(x));
       }
@@ -214,11 +211,11 @@ namespace VsChromium.Server.FileSystem {
       return 1;
     }
 
-    private int CountDirectoryEntries(FileSystemEntry entry) {
+    private int CountDirectoryEntries(FileSystemEntryInternal entry) {
       if (entry == null)
         return 0;
 
-      var dir = entry as DirectoryEntry;
+      var dir = entry as DirectoryEntryInternal;
       if (dir != null) {
         return dir.Entries.Aggregate(1, (s, x) => s + CountDirectoryEntries(x));
       }
@@ -232,7 +229,7 @@ namespace VsChromium.Server.FileSystem {
         handler(operationId);
     }
 
-    private void OnTreeComputed(long operationId, FileSystemTree oldTree, FileSystemTree newTree) {
+    private void OnTreeComputed(long operationId, VersionedFileSystemTreeInternal oldTree, VersionedFileSystemTreeInternal newTree) {
       var handler = TreeComputed;
       if (handler != null)
         handler(operationId, oldTree, newTree);

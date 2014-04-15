@@ -16,6 +16,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemTree;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
@@ -215,8 +216,8 @@ namespace VsChromium.Server.Search {
       OnFilesLoaded(operationId);
     }
 
-    private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemTree oldTree, FileSystemTree newTree) {
-      _customThreadPool.RunAsync(() => ComputeNewState(newTree));
+    private void FileSystemProcessorOnTreeComputed(long operationId, VersionedFileSystemTreeInternal oldTree, VersionedFileSystemTreeInternal newTree) {
+      _customThreadPool.RunAsync(() => ComputeNewState(newTree.FileSystemTree));
     }
 
     private Func<T, bool> SearchPreProcessParams<T>(
@@ -259,7 +260,7 @@ namespace VsChromium.Server.Search {
       return pattern;
     }
 
-    private void ComputeNewState(FileSystemTree newTree) {
+    private void ComputeNewState(FileSystemTreeInternal newTree) {
       var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
 

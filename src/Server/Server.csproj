@@ -23,6 +23,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileSystemTree\VersionedFileSystemTreeInternal.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcher.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystemNames\DirectoryName.cs" />
@@ -33,9 +34,13 @@
     <Compile Include="FileSystemNames\FileSystemNameKey.cs" />
     <Compile Include="FileSystemNames\FileSystemNameKeyComparer.cs" />
     <Compile Include="FileSystemNames\IFileSystemNameFactory.cs" />
+    <Compile Include="FileSystemTree\DirectoryEntryInternal.cs" />
+    <Compile Include="FileSystemTree\FileEntryInternal.cs" />
+    <Compile Include="FileSystemTree\FileSystemEntryInternal.cs" />
+    <Compile Include="FileSystemTree\FileSystemTreeInternal.cs" />
     <Compile Include="FileSystem\PathChangeEntry.cs" />
     <Compile Include="FileSystem\PathChangeKind.cs" />
-    <Compile Include="FileSystem\FileSystemTreeBuilder.cs" />
+    <Compile Include="FileSystemTree\FileSystemTreeBuilder.cs" />
     <Compile Include="FileSystem\FileSystemTreeValidator.cs" />
     <Compile Include="FileSystem\FileSystemValidationResult.cs" />
     <Compile Include="FileSystem\IDirectoryChangeWatcher.cs" />
@@ -43,7 +48,7 @@
     <Compile Include="FileSystem\FileSystemProcessor.cs" />
     <Compile Include="FileSystem\IDirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystem\IFileSystemProcessor.cs" />
-    <Compile Include="FileSystem\IFileSystemTreeBuilder.cs" />
+    <Compile Include="FileSystemTree\IFileSystemTreeBuilder.cs" />
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\RelativePathNameExtensions.cs" />

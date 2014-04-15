@@ -15,8 +15,7 @@ namespace VsChromium.Server.FileSystem {
       out RelativePathName[] files) {
       IList<string> shortDirectoryNames;
       IList<string> shortFileNames;
-      NativeFile.GetDirectoryEntries(PathHelpers.PathCombine(rootPath, path.RelativeName), out shortDirectoryNames,
-                                     out shortFileNames);
+      NativeFile.GetDirectoryEntries(PathHelpers.PathCombine(rootPath, path.RelativeName), out shortDirectoryNames, out shortFileNames);
       directories = CreateChildren(path, shortDirectoryNames);
       files = CreateChildren(path, shortFileNames);
     }

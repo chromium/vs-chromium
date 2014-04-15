@@ -269,7 +269,7 @@ namespace VsChromium.Server.Search {
       var oldState = _currentState;
       var newState = new FileDatabase(_projectDiscovery, _fileSystemNameFactory,
                                       _fileContentsFactory, _progressTrackerFactory);
-      newState.ComputeState(newTree, oldState);
+      newState.ComputeState(oldState, newTree);
 
       sw.Stop();
       Logger.Log("++++ Done computing new state of file database from file system tree in {0:n0} msec. ++++",

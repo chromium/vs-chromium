@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -17,6 +18,9 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.Search {
   public class FileDatabase {
+    /// <summary>
+    /// Note: For debugging purposes only.
+    /// </summary>
     private bool OutputDiagnostics = false;
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
@@ -24,7 +28,6 @@ namespace VsChromium.Server.Search {
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private IList<DirectoryName> _directoryNames;
     private IList<FileName> _fileNames;
-    private FileSystemTree _fileSystemTree;
     private Dictionary<FileName, FileData> _files;
     private IList<FileData> _filesWithContents;
     private bool _frozen;
@@ -42,22 +45,26 @@ namespace VsChromium.Server.Search {
 
     public bool Frozen { get { return _frozen; } }
 
-    public FileSystemTree FileSystemTree { get { return _fileSystemTree; } }
-
     public Dictionary<FileName, FileData> Files { get { return _files; } }
-
-    public IList<FileData> FilesWithContents { get { return _filesWithContents; } }
 
     public IList<FileName> FileNames { get { return _fileNames; } }
 
     public IList<DirectoryName> DirectoryNames { get { return _directoryNames; } }
 
-    public void ComputeState(FileSystemTree newTree, FileDatabase oldState) {
+    public IList<FileData> FilesWithContents { get { return _filesWithContents; } }
+
+    public void ComputeState(FileDatabase previousFileDatabase, FileSystemTree newTree) {
+      if (previousFileDatabase == null)
+        throw new ArgumentNullException("previousFileDatabase");
+
+      if (newTree == null)
+        throw new ArgumentNullException("newTree");
+
       // Compute list of files from tree
       ComputeFileCollection(newTree);
 
       // Merge old state in new state
-      TransferUnchangedFileContents(oldState);
+      TransferUnchangedFileContents(previousFileDatabase);
 
       // Load file contents into newState
       ReadMissingFileContents();
@@ -89,8 +96,7 @@ namespace VsChromium.Server.Search {
       Logger.Log("Freezing FileDatabase state.");
       var sw = Stopwatch.StartNew();
 
-      if (_fileSystemTree == null) {
-        _fileSystemTree = FileSystemTree.Empty;
+      if (_files == null) {
         _files = new Dictionary<FileName, FileData>();
         _directoryNames = new List<DirectoryName>();
       }
@@ -128,7 +134,6 @@ namespace VsChromium.Server.Search {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
       var sw = Stopwatch.StartNew();
 
-      _fileSystemTree = tree;
       _files = new Dictionary<FileName, FileData>();
       _directoryNames = new List<DirectoryName>();
 

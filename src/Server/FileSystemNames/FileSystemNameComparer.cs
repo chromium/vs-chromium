@@ -7,54 +7,15 @@ using System.Collections.Generic;
 using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
-#if true
   public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
     private static readonly FileSystemNameComparer _instance = new FileSystemNameComparer();
 
     public static FileSystemNameComparer Instance { get { return _instance; } }
 
     public int Compare(FileSystemName x, FileSystemName y) {
-      return SystemPathComparer.Instance.Comparer.Compare(x.GetFullName(), y.GetFullName());
-    }
-
-    public bool Equals(FileSystemName x, FileSystemName y) {
-      return Compare(x, y) == 0;
-    }
-
-    public int GetHashCode(FileSystemName x) {
-      return SystemPathComparer.Instance.Comparer.GetHashCode(x.GetFullName());
-    }
-  }
-#else
-  public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
-    private static readonly FileSystemNameComparer _instance = new FileSystemNameComparer();
-
-    public static FileSystemNameComparer Instance { get { return _instance; } }
-
-    public int Compare(FileSystemName x, FileSystemName y) {
-      if (object.ReferenceEquals(x, y))
-        return 0;
-
-      if (x == null && y == null)
-        return 0;
-      if (x == null)
-        return -1;
-      if (y == null)
-        return 1;
-
       var x1 = GetAbsolutePart(x);
       var y1 = GetAbsolutePart(y);
-
-      if (x1.IsRoot && y1.IsRoot)
-        return 0;
-      if (x1.IsRoot)
-        return -1;
-      if (y1.IsRoot)
-        return 1;
-
-      var result = 0;
-      if (!object.ReferenceEquals(x1, y1))
-        result = SystemPathComparer.Instance.Comparer.Compare(x1.Name, y1.Name);
+      var result = SystemPathComparer.Instance.Comparer.Compare(x1.Name, y1.Name);
       if (result == 0)
         result = SystemPathComparer.Instance.Comparer.Compare(x.RelativePathName.RelativeName, y.RelativePathName.RelativeName);
       return result;
@@ -65,21 +26,8 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public int GetHashCode(FileSystemName x) {
-      if (x == null)
-        return 0;
-
       var x1 = GetAbsolutePart(x);
-      if (x1.IsRoot)
-        return 1;
-
-      unchecked {
-        if (x.IsAbsoluteName)
-          return SystemPathComparer.Instance.Comparer.GetHashCode(x1.Name);
-        else
-          return CombineHashCodes(
-            SystemPathComparer.Instance.Comparer.GetHashCode(x1.Name),
-            SystemPathComparer.Instance.Comparer.GetHashCode(x.RelativePathName.RelativeName));
-      }
+      return CombineHashCodes(x1.Name.GetHashCode(), x.RelativePathName.RelativeName.GetHashCode());
     }
 
     private FileSystemName GetAbsolutePart(FileSystemName name) {
@@ -97,5 +45,4 @@ namespace VsChromium.Server.FileSystemNames {
       }
     }
   }
-#endif
 }

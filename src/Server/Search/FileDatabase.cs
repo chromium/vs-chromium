@@ -30,7 +30,7 @@ namespace VsChromium.Server.Search {
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
-    private SortedArray<FileData> _files;
+    private Dictionary<FileName, FileData> _files;
     private DirectoryName[] _directoryNames;
     private FileName[] _fileNames;
     private FileData[] _filesWithContents;
@@ -61,10 +61,16 @@ namespace VsChromium.Server.Search {
     /// Return the <see cref="FileData"/> instance associated to <paramref name="filename"/> or null if not present.
     /// </summary>
     public FileData GetFileData(FileName filename) {
+#if true
+      FileData result;
+      _files.TryGetValue(filename, out result);
+      return result;
+#else
       int index = _files.BinaraySearch(filename, (data, name) => data.FileName.CompareTo(name));
       if (index < 0)
         return null;
       return _files[index];
+#endif
     }
 
     /// <summary>
@@ -130,7 +136,7 @@ namespace VsChromium.Server.Search {
       visitor.Visit();
 
       // Store internally in sorted arrays
-      _files = new SortedArray<FileData>(files.OrderBy(x => x.FileName).ToArray());
+      _files = files.ToDictionary(x => x.FileName, x => x);
       _directoryNames = directoryNames.OrderBy(x => x).ToArray();
 
       sw.Stop();
@@ -146,7 +152,7 @@ namespace VsChromium.Server.Search {
       var sw = Stopwatch.StartNew();
 
       if (_files == null) {
-        _files = new SortedArray<FileData>();
+        _files = new Dictionary<FileName, FileData>();
         _directoryNames = new DirectoryName[0];
       }
 
@@ -162,14 +168,14 @@ namespace VsChromium.Server.Search {
       // not only the same amount of files, but also (as close to as possible) the same
       // amount of "bytes". For example, if we have 100 files totaling 32MB and 4 processors,
       // we will end up with 4 partitions of (exactly) 25 files totalling (approximately) 8MB each.
-      _filesWithContents = _files
+      _filesWithContents = _files.Values
         .Where(x => x.Contents != null)
         .ToList()
         .PartitionEvenly(fileData => fileData.Contents.ByteLength)
         .SelectMany(x => x)
         .ToArray();
 
-      _fileNames = _files.Select(x => x.FileName).ToArray();
+      _fileNames = _files.Select(x => x.Key).ToArray();
 
       _frozen = true;
 
@@ -220,7 +226,7 @@ namespace VsChromium.Server.Search {
       if (_files.Count == 0 || oldState._files.Count == 0)
         return Enumerable.Empty<FileData>();
 
-      return oldState._files.Intersect(_files, FileDataComparer.Instance);
+      return oldState._files.Values.Intersect(_files.Values, FileDataComparer.Instance);
     }
 
     /// <summary>
@@ -252,10 +258,11 @@ namespace VsChromium.Server.Search {
       Logger.Log("Computing list of files to read from disk.");
       var sw = Stopwatch.StartNew();
 
-      var filesToRead = _files
+      var filesToRead = _files.Values
+        .AsParallel()
         .Where(x => x.Contents == null)
         .Where(x => _projectDiscovery.IsFileSearchable(x.FileName))
-        .ToArray();
+        .ToList();
 
       sw.Stop();
       Logger.Log("Done computing list of files to read from disk in {0:n0} msec.", sw.ElapsedMilliseconds);

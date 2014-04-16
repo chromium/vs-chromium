@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace VsChromium.Core.Win32.Memory {
   public static class HeapAllocStatic {
-    private static readonly SafeHeapHandle _processHeap = NativeMethods.GetProcessHeap();
+    private static readonly SafeProcessHeapHandle _processHeap = NativeMethods.GetProcessHeap();
     private static long _totalMemory;
 
     public static long TotalMemory { get { return _totalMemory; } }

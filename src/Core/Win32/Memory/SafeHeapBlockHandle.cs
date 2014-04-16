@@ -13,11 +13,18 @@ namespace VsChromium.Core.Win32.Memory {
     /// Keep a reference to the heap to prevent it from being destroyed during
     /// normal GC operations.
     /// </summary>
-    private readonly SafeHeapHandle _heap;
+    private readonly IntPtr _processHeapPtr;
 
-    public SafeHeapBlockHandle(SafeHeapHandle heap, IntPtr handle, long byteLength)
+    /// <summary>
+    /// Note: We only support process heap for now, as using any other heap
+    /// would require us to keep a SafeHandle to the heap, and this creates
+    /// problems during finalization during .NET CLR shutdown -- referencing and
+    /// using a managed object during finalization leads to undeterministic
+    /// behavior.
+    /// </summary>
+    public SafeHeapBlockHandle(SafeProcessHeapHandle heap, IntPtr handle, long byteLength)
       : base(true) {
-      _heap = heap;
+        _processHeapPtr = heap.DangerousGetHandle();
       _byteLength = byteLength;
       SetHandle(handle);
     }
@@ -28,16 +35,7 @@ namespace VsChromium.Core.Win32.Memory {
 
     protected override bool ReleaseHandle() {
       HeapAllocStatic.OnFree(ByteLength);
-      // During finalization, the heap may be destroyed before us. This
-      // implictly releases all memory associcated to the heap, so it is ok to
-      // not call HeapFree in that case.
-      // TODO(rpaquay): Using methods on other managed objects (_heap) is not
-      // valid during finalization, so this code is in theory incorrect. Is it
-      // in practice?
-      if (!_heap.IsClosed) {
-        return NativeMethods.HeapFree(_heap.DangerousGetHandle(), HeapFlags.Default, handle);
-      }
-      return true;
+      return NativeMethods.HeapFree(_processHeapPtr, HeapFlags.Default, handle);
     }
 
     /// <summary>

@@ -63,9 +63,9 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(string.Format("RemoveFile(\"{0}\")", filename), () => RemoveFileTask(filename));
     }
 
-    public event TreeComputingDelegate TreeComputing;
-    public event TreeComputedDelegate TreeComputed;
-    public event Action<IEnumerable<FileName>> FilesChanged;
+    public event SnapshotComputingDelegate SnapshotComputing;
+    public event SnapshotComputedDelegate SnapshotComputed;
+    public event FilesChangedDelegate FilesChanged;
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       _taskQueue.Enqueue("OnPathsChangedTask()", () => OnPathsChangedTask(changes));
@@ -76,8 +76,8 @@ namespace VsChromium.Server.FileSystem {
         new FileSystemChangesValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
       if (result.RecomputeGraph) {
         RecomputeGraph();
-      } else if (result.ChangeFiles.Any()) {
-        OnFilesChanged(result.ChangeFiles);
+      } else if (result.ChangedFiles.Any()) {
+        OnFilesChanged(result.ChangedFiles);
       }
     }
 
@@ -207,18 +207,18 @@ namespace VsChromium.Server.FileSystem {
     }
 
     protected virtual void OnTreeComputing(long operationId) {
-      var handler = TreeComputing;
+      var handler = SnapshotComputing;
       if (handler != null)
         handler(operationId);
     }
 
     private void OnTreeComputed(long operationId, FileSystemTreeSnapshot oldTree, FileSystemTreeSnapshot newTree) {
-      var handler = TreeComputed;
+      var handler = SnapshotComputed;
       if (handler != null)
         handler(operationId, oldTree, newTree);
     }
 
-    private void OnFilesChanged(IEnumerable<FileName> paths) {
+    private void OnFilesChanged(IEnumerable<Tuple<IProject, FileName>> paths) {
       var handler = FilesChanged;
       if (handler != null)
         handler(paths);

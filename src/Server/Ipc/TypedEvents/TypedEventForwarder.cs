@@ -26,20 +26,20 @@ namespace VsChromium.Server.Ipc.TypedEvents {
     }
 
     public void RegisterEventHandlers() {
-      _fileSystemProcessor.TreeComputing += FileSystemProcessorOnTreeComputing;
-      _fileSystemProcessor.TreeComputed += FileSystemProcessorOnTreeComputed;
+      _fileSystemProcessor.SnapshotComputing += FileSystemProcessorOnSnapshotComputing;
+      _fileSystemProcessor.SnapshotComputed += FileSystemProcessorOnSnapshotComputed;
 
       _searchEngine.FilesLoading += SearchEngineOnFilesLoading;
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
-    private void FileSystemProcessorOnTreeComputing(long operationId) {
+    private void FileSystemProcessorOnSnapshotComputing(long operationId) {
       _typedEventSender.SendEventAsync(new FileSystemTreeComputing {
         OperationId = operationId
       });
     }
 
-    private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot) {
+    private void FileSystemProcessorOnSnapshotComputed(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot) {
       _typedEventSender.SendEventAsync(new FileSystemTreeComputed {
         OperationId = operationId,
         OldVersion = previousSnapshot.Version,

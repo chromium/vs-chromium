@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {
   public interface IFileSystemProcessor {
@@ -13,12 +14,12 @@ namespace VsChromium.Server.FileSystem {
     void RemoveFile(string filename);
     FileSystemTreeSnapshot GetCurrentSnapshot();
 
-    event TreeComputingDelegate TreeComputing;
-    event TreeComputedDelegate TreeComputed;
-    event Action<IEnumerable<FileName>> FilesChanged;
+    event SnapshotComputingDelegate SnapshotComputing;
+    event SnapshotComputedDelegate SnapshotComputed;
+    event FilesChangedDelegate FilesChanged;
   }
 
-  public delegate void TreeComputingDelegate(long operationId);
-
-  public delegate void TreeComputedDelegate(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot);
+  public delegate void SnapshotComputingDelegate(long operationId);
+  public delegate void SnapshotComputedDelegate(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot);
+  public delegate void FilesChangedDelegate(IEnumerable<Tuple<IProject, FileName>> changedFiles);
 }

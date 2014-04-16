@@ -20,25 +20,25 @@ namespace VsChromium.Server.FileSystemSnapshot {
     /// <summary>
     /// Called for each directory entry of the snapshot.
     /// </summary>
-    public Action<DirectorySnapshot> VisitDirectory { get; set; }
+    public Action<ProjectRootSnapshot, DirectorySnapshot> VisitDirectory { get; set; }
 
     /// <summary>
     /// Called for each file of the snapshot.
     /// </summary>
-    public Action<FileName> VisitFile { get; set; }
+    public Action<ProjectRootSnapshot, FileName> VisitFile { get; set; }
 
     /// <summary>
     /// Visits all directory and files, calling <see cref="VisitFile"/> and <see
     /// cref="VisitDirectory"/> appropriately.
     /// </summary>
     public void Visit() {
-      _snapshot.ProjectRoots.ForAll(x => VisitWorker(x.Directory));
+      _snapshot.ProjectRoots.ForAll(x => VisitWorker(x, x.Directory));
     }
 
-    private void VisitWorker(DirectorySnapshot entry) {
-      VisitDirectory(entry);
-      entry.Files.ForAll(x => VisitFile(x));
-      entry.DirectoryEntries.ForAll(x => VisitWorker(x));
+    private void VisitWorker(ProjectRootSnapshot project, DirectorySnapshot directory) {
+      VisitDirectory(project, directory);
+      directory.Files.ForAll(x => VisitFile(project, x));
+      directory.DirectoryEntries.ForAll(x => VisitWorker(project, x));
     }
   }
 }

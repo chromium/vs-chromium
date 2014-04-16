@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using ProtoBuf.ServiceModel;
 using VsChromium.Core;
-using VsChromium.Core.Collections;
+using VsChromium.Core.FileNames;
+using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
@@ -27,17 +29,16 @@ namespace VsChromium.Server.Search {
     /// Note: For debugging purposes only.
     /// </summary>
     private bool OutputDiagnostics = false;
-    private readonly IProjectDiscovery _projectDiscovery;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
+    private List<IProject> _projects;
     private Dictionary<FileName, FileData> _files;
     private DirectoryName[] _directoryNames;
     private FileName[] _fileNames;
     private FileData[] _filesWithContents;
     private bool _frozen;
 
-    public FileDatabase(IProjectDiscovery projectDiscovery, IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
-      _projectDiscovery = projectDiscovery;
+    public FileDatabase(IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
     }
@@ -57,20 +58,10 @@ namespace VsChromium.Server.Search {
     /// </summary>
     public ICollection<FileData> FilesWithContents { get { return _filesWithContents; } }
 
-    /// <summary>
-    /// Return the <see cref="FileData"/> instance associated to <paramref name="filename"/> or null if not present.
-    /// </summary>
-    public FileData GetFileData(FileName filename) {
-#if true
-      FileData result;
-      _files.TryGetValue(filename, out result);
+    public static FileDatabase Empty(IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
+      var result = new FileDatabase(fileContentsFactory, progressTrackerFactory);
+      result.Freeze();
       return result;
-#else
-      int index = _files.BinaraySearch(filename, (data, name) => data.FileName.CompareTo(name));
-      if (index < 0)
-        return null;
-      return _files[index];
-#endif
     }
 
     /// <summary>
@@ -79,7 +70,7 @@ namespace VsChromium.Server.Search {
     /// <see cref="FileSystemTreeSnapshot"/> instance.
     /// </summary>
     public void ComputeState(FileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
-      if (_frozen) 
+      if (_frozen)
         throw new InvalidOperationException("FileDatabase is frozen.");
 
       if (previousFileDatabase == null)
@@ -100,12 +91,10 @@ namespace VsChromium.Server.Search {
       // Done with new state!
       Freeze();
 
-      if (OutputDiagnostics)
-      {
+      if (OutputDiagnostics) {
         // Note: For diagnostic only as this can be quite slow.
         FilesWithContents
-          .GroupBy(x =>
-          {
+          .GroupBy(x => {
             var ext = Path.GetExtension(x.FileName.Name);
             if (string.IsNullOrEmpty(ext))
               return new { Type = "Filename", Value = x.FileName.Name };
@@ -120,6 +109,37 @@ namespace VsChromium.Server.Search {
       }
     }
 
+    public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans) {
+      var fileData = GetFileData(filename);
+      if (fileData == null)
+        return Enumerable.Empty<FileExtract>();
+
+      var contents = fileData.Contents;
+      if (contents == null)
+        return Enumerable.Empty<FileExtract>();
+
+      return contents.GetFileExtracts(spans);
+    }
+
+    public void UpdateFileContents(Tuple<IProject, FileName> changedFile) {
+      // Concurrency: We may update the FileContents value of some entries, but
+      // we ensure we do not update collections and so on. So, all in all, it is
+      // safe to make this change "lock free".
+      var fileData = GetFileData(changedFile.Item2);
+      if (fileData == null)
+        return;
+
+      if (!changedFile.Item1.IsFileSearchable(changedFile.Item2))
+        return;
+
+      fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.GetFullName()));
+    }
+
+    private IProject GetProject(FileName filename) {
+      return _projects
+        .FirstOrDefault(x => SystemPathComparer.Instance.Comparer.Equals(filename.GetProjectRoot().Name, x.RootPath));
+    }
+
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
       var sw = Stopwatch.StartNew();
@@ -128,11 +148,12 @@ namespace VsChromium.Server.Search {
       var directoryNames = new List<DirectoryName>();
 
       var visitor = new FileSystemSnapshotVisitor(snapshot);
-      visitor.VisitFile = filename => files.Add(new FileData(filename, null));
-      visitor.VisitDirectory = directoryEntry => directoryNames.Add(directoryEntry.DirectoryName);
+      visitor.VisitFile = (project, filename) => files.Add(new FileData(filename, null));
+      visitor.VisitDirectory = (project, directoryEntry) => directoryNames.Add(directoryEntry.DirectoryName);
       visitor.Visit();
 
       // Store internally in sorted arrays
+      _projects = snapshot.ProjectRoots.Select(x => x.Project).ToList();
       _files = files.ToDictionary(x => x.FileName, x => x);
       _directoryNames = directoryNames.OrderBy(x => x).ToArray();
 
@@ -141,14 +162,24 @@ namespace VsChromium.Server.Search {
       Logger.LogMemoryStats();
     }
 
-    public void Freeze() {
+    /// <summary>
+    /// Return the <see cref="FileData"/> instance associated to <paramref name="filename"/> or null if not present.
+    /// </summary>
+    private FileData GetFileData(FileName filename) {
+      FileData result;
+      _files.TryGetValue(filename, out result);
+      return result;
+    }
+
+    private void Freeze() {
       if (_frozen)
         throw new InvalidOperationException("FileDatabase is already frozen.");
 
       Logger.Log("Freezing FileDatabase state.");
       var sw = Stopwatch.StartNew();
 
-      if (_files == null) {
+      if (_projects == null) {
+        _projects = new List<IProject>();
         _files = new Dictionary<FileName, FileData>();
         _directoryNames = new DirectoryName[0];
       }
@@ -157,6 +188,7 @@ namespace VsChromium.Server.Search {
       // Compute additional data for fast search!
       //
 
+      Debug.Assert(_projects != null);
       Debug.Assert(_files != null);
       Debug.Assert(_directoryNames != null);
 
@@ -258,7 +290,7 @@ namespace VsChromium.Server.Search {
       var filesToRead = _files.Values
         .AsParallel()
         .Where(x => x.Contents == null)
-        .Where(x => _projectDiscovery.IsFileSearchable(x.FileName))
+        .Where(x => GetProject(x.FileName).IsFileSearchable(x.FileName))
         .ToList();
 
       sw.Stop();
@@ -273,7 +305,7 @@ namespace VsChromium.Server.Search {
       private FileDataComparer() {
       }
 
-      public static FileDataComparer Instance { get { return _instance; }}
+      public static FileDataComparer Instance { get { return _instance; } }
 
       public bool Equals(FileData x, FileData y) {
         return x.FileName.Equals(y.FileName);

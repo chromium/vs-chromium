@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace VsChromium.Server.FileSystem {
             "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
           var fileNames = unfilteredChanges.Select(change => PathToFileName(change.Path)).Where(name => name != null);
           return new FileSystemValidationResult {
-            ChangeFiles = fileNames.ToList()
+            ChangedFiles = fileNames.ToList()
           };
         } else {
           // TODO(rpaquay): Could we be smarter here?
@@ -94,11 +95,12 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private FileName PathToFileName(string path) {
-      var rootPath = _projectDiscovery.GetProjectPath(new FullPathName(path));
-      if (rootPath == null)
+    private Tuple<IProject, FileName> PathToFileName(string path) {
+      var project = _projectDiscovery.GetProject(new FullPathName(path));
+      if (project == null)
         return null;
 
+      var rootPath = project.RootPath;
       var rootLength = rootPath.Length + 1;
       if (rootPath.Last() == Path.DirectorySeparatorChar)
         rootLength--;
@@ -110,7 +112,7 @@ namespace VsChromium.Server.FileSystem {
       });
       foreach (var item in items) {
         if (item == items.Last())
-          return _fileSystemNameFactory.CombineFileName(directoryName, item);
+          return Tuple.Create(project, _fileSystemNameFactory.CombineFileName(directoryName, item));
 
         directoryName = _fileSystemNameFactory.CombineDirectoryNames(directoryName, item);
       }

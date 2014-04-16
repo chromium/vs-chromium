@@ -11,11 +11,6 @@ namespace VsChromium.Server.Search {
     private readonly FileName _fileName;
     private FileContents _contents;
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="fileName">The file name (can't be null)</param>
-    /// <param name="contents">The file contents (can be null if no file contents)</param>
     public FileData(FileName fileName, FileContents contents) {
       if (fileName == null)
         throw new ArgumentNullException("fileName");
@@ -25,16 +20,18 @@ namespace VsChromium.Server.Search {
     }
 
     /// <summary>
-    /// The file name. Note the file may not exist on disk anymore, or the file maybe
-    /// not be indexed. Use FileContent to look for the snapshot of the file contents
-    /// at index creation.
+    /// The file name. Note the file may not exist on disk anymore, or the file
+    /// maybe not be indexed. Use FileContent to look for the snapshot of the
+    /// file contents at index creation.
     /// </summary>
     public FileName FileName { get { return _fileName; } }
 
     /// <summary>
-    /// The file contents. May be null if this file is no part of the search engine text index.
+    /// The file contents. May be null if this file is no part of the search
+    /// engine text index.
     /// </summary>
     public FileContents Contents { get { return _contents; } }
+
 
     public override string ToString() {
       return string.Format("{0} - {1:n0} bytes", _fileName, _contents == null ? -1 : _contents.ByteLength);

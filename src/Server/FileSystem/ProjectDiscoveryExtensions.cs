@@ -19,10 +19,7 @@ namespace VsChromium.Server.FileSystem {
       return project.RootPath;
     }
 
-    public static bool IsFileSearchable(this IProjectDiscovery projectDiscovery, FileName filename) {
-      var project = projectDiscovery.GetProjectFromRootPath(new FullPathName(filename.GetProjectRoot().Name));
-      if (project == null)
-        return false;
+    public static bool IsFileSearchable(this IProject project, FileName filename) {
       return project.SearchableFilesFilter.Include(filename.GetRelativePathFromProjectRoot());
     }
   }

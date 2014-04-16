@@ -56,11 +56,10 @@ namespace VsChromium.Server.Search {
       _searchStringParser = searchStringParser;
 
       // Create a "Null" state
-      _currentState = new FileDatabase(_projectDiscovery, _fileContentsFactory, _progressTrackerFactory);
-      _currentState.Freeze();
+      _currentState = FileDatabase.Empty(_fileContentsFactory, _progressTrackerFactory);
 
       // Setup computing a new state everytime a new tree is computed.
-      fileSystemProcessor.TreeComputed += FileSystemProcessorOnTreeComputed;
+      fileSystemProcessor.SnapshotComputed += FileSystemProcessorOnSnapshotComputed;
       fileSystemProcessor.FilesChanged += FileSystemProcessorOnFilesChanged;
     }
 
@@ -179,43 +178,24 @@ namespace VsChromium.Server.Search {
       if (filename == null)
         return Enumerable.Empty<FileExtract>();
 
-      var fileData = _currentState.GetFileData(filename);
-      if (fileData == null)
-        return Enumerable.Empty<FileExtract>();
-
-      if (fileData.Contents == null)
-        return Enumerable.Empty<FileExtract>();
-
-      return fileData.Contents.GetFileExtracts(spans);
+      return _currentState.GetFileExtracts(filename, spans);
     }
 
     public event Action<long> FilesLoading;
     public event Action<long> FilesLoaded;
 
-    private void FileSystemProcessorOnFilesChanged(IEnumerable<FileName> paths) {
+    private void FileSystemProcessorOnFilesChanged(IEnumerable<Tuple<IProject, FileName>> paths) {
       _customThreadPool.RunAsync(() => UpdateFileContents(paths));
     }
 
-    private void UpdateFileContents(IEnumerable<FileName> paths) {
+    private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> paths) {
       var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
-      // Concurrency: We capture the current state reference locally.
-      // We may update the FileContents value of some entries, but we
-      // ensure we do not update collections and so on. So, all in all,
-      // it is safe to make this change "lock free".
-      var state = _currentState;
-      paths
-        .Where(x => _projectDiscovery.IsFileSearchable(x))
-        .ForAll(x => {
-          var fileData = state.GetFileData(x);
-          if (fileData != null) {
-            fileData.UpdateContents(_fileContentsFactory.GetFileContents(x.GetFullName()));
-          }
-        });
+      paths.ForAll(x => _currentState.UpdateFileContents(x));
       OnFilesLoaded(operationId);
     }
 
-    private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot) {
+    private void FileSystemProcessorOnSnapshotComputed(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot) {
       _customThreadPool.RunAsync(() => ComputeNewState(newSnapshot));
     }
 
@@ -267,7 +247,7 @@ namespace VsChromium.Server.Search {
       var sw = Stopwatch.StartNew();
 
       var oldState = _currentState;
-      var newState = new FileDatabase(_projectDiscovery, _fileContentsFactory, _progressTrackerFactory);
+      var newState = new FileDatabase(_fileContentsFactory, _progressTrackerFactory);
       newState.ComputeState(oldState, newSnapshot);
 
       sw.Stop();

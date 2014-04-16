@@ -15,8 +15,8 @@ using VsChromium.Core.FileNames.PatternMatching;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
@@ -215,7 +215,7 @@ namespace VsChromium.Server.Search {
       OnFilesLoaded(operationId);
     }
 
-    private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemSnapshot previousSnapshot, FileSystemSnapshot newSnapshot) {
+    private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot) {
       _customThreadPool.RunAsync(() => ComputeNewState(newSnapshot));
     }
 
@@ -259,7 +259,7 @@ namespace VsChromium.Server.Search {
       return pattern;
     }
 
-    private void ComputeNewState(FileSystemSnapshot newSnapshot) {
+    private void ComputeNewState(FileSystemTreeSnapshot newSnapshot) {
       var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
 

@@ -12,8 +12,8 @@ using System.Threading;
 using VsChromium.Core;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
@@ -28,7 +28,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly IOperationIdFactory _operationIdFactory;
     private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
     private readonly ITaskQueue _taskQueue;
-    private FileSystemSnapshot _fileSystemSnapshot;
+    private FileSystemTreeSnapshot _fileSystemSnapshot;
     private int _version;
 
     [ImportingConstructor]
@@ -46,10 +46,10 @@ namespace VsChromium.Server.FileSystem {
       _projectDiscovery = projectDiscovery;
       _taskQueue = taskQueueFactory.CreateQueue();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
-      _fileSystemSnapshot = FileSystemSnapshot.Empty;
+      _fileSystemSnapshot = FileSystemTreeSnapshot.Empty;
     }
 
-    public FileSystemSnapshot GetCurrentSnapshot() {
+    public FileSystemTreeSnapshot GetCurrentSnapshot() {
       lock (_lock) {
         return _fileSystemSnapshot;
       }
@@ -177,7 +177,7 @@ namespace VsChromium.Server.FileSystem {
       _directoryChangeWatcher.WatchDirectories(newRoots);
 
       // Update current tree atomically
-      FileSystemSnapshot previousSnapshot;
+      FileSystemTreeSnapshot previousSnapshot;
       lock (_lock) {
         previousSnapshot = _fileSystemSnapshot;
         _fileSystemSnapshot = newSnapshot;
@@ -212,7 +212,7 @@ namespace VsChromium.Server.FileSystem {
         handler(operationId);
     }
 
-    private void OnTreeComputed(long operationId, FileSystemSnapshot oldTree, FileSystemSnapshot newTree) {
+    private void OnTreeComputed(long operationId, FileSystemTreeSnapshot oldTree, FileSystemTreeSnapshot newTree) {
       var handler = TreeComputed;
       if (handler != null)
         handler(operationId, oldTree, newTree);

@@ -6,14 +6,14 @@ using System;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.FileSystem.Snapshot {
+namespace VsChromium.Server.FileSystemSnapshot {
   /// <summary>
-  /// A simple BFS visitor of a <see cref="FileSystemSnapshot"/> instance.
+  /// A simple BFS visitor of a <see cref="FileSystemTreeSnapshot"/> instance.
   /// </summary>
   public class FileSystemSnapshotVisitor {
-    private readonly FileSystemSnapshot _snapshot;
+    private readonly FileSystemTreeSnapshot _snapshot;
 
-    public FileSystemSnapshotVisitor(FileSystemSnapshot snapshot) {
+    public FileSystemSnapshotVisitor(FileSystemTreeSnapshot snapshot) {
       _snapshot = snapshot;
     }
 

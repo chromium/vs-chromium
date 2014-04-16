@@ -12,15 +12,15 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.Search {
   /// <summary>
   /// Exposes am in-memory snapshot of the list of file names, directory names
-  /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
+  /// and file contents for a given <see cref="FileSystemTreeSnapshot"/> snapshot.
   /// </summary>
   public class FileDatabase {
     /// <summary>
@@ -76,9 +76,9 @@ namespace VsChromium.Server.Search {
     /// <summary>
     /// Prepares this instance for searches by computing various snapshots from
     /// the previous <see cref="FileDatabase"/> snapshot and the new current
-    /// <see cref="FileSystemSnapshot"/> instance.
+    /// <see cref="FileSystemTreeSnapshot"/> instance.
     /// </summary>
-    public void ComputeState(FileDatabase previousFileDatabase, FileSystemSnapshot newSnapshot) {
+    public void ComputeState(FileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
       if (_frozen) 
         throw new InvalidOperationException("FileDatabase is frozen.");
 
@@ -120,7 +120,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private void ComputeFileCollection(FileSystemSnapshot snapshot) {
+    private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
       var sw = Stopwatch.StartNew();
 

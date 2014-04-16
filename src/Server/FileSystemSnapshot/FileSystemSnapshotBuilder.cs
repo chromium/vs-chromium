@@ -9,11 +9,12 @@ using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Linq;
+using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.FileSystem.Snapshot {
+namespace VsChromium.Server.FileSystemSnapshot {
   [Export(typeof(IFileSystemSnapshotBuilder))]
   public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
     private readonly IProjectDiscovery _projectDiscovery;
@@ -30,7 +31,7 @@ namespace VsChromium.Server.FileSystem.Snapshot {
       _fileSystemNameFactory = fileSystemNameFactory;
     }
 
-    public FileSystemSnapshot Compute(IEnumerable<FullPathName> filenames, int verion) {
+    public FileSystemTreeSnapshot Compute(IEnumerable<FullPathName> filenames, int verion) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var projectRoots =
           filenames
@@ -41,7 +42,7 @@ namespace VsChromium.Server.FileSystem.Snapshot {
             .OrderBy(projectRoot => projectRoot.Directory.DirectoryName)
             .ToReadOnlyCollection();
 
-        return new FileSystemSnapshot(verion, projectRoots);
+        return new FileSystemTreeSnapshot(verion, projectRoots);
       }
     }
 

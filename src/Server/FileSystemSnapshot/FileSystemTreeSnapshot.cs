@@ -6,16 +6,16 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using VsChromium.Core.Linq;
 
-namespace VsChromium.Server.FileSystem.Snapshot {
+namespace VsChromium.Server.FileSystemSnapshot {
   /// <summary>
   /// A view of the file system (directories and files) of all the projects
   /// known to the server at the time the snapshot was built.
   /// </summary>
-  public class FileSystemSnapshot {
+  public class FileSystemTreeSnapshot {
     private readonly int _version;
     private readonly ReadOnlyCollection<ProjectRootSnapshot> _projectRoots;
 
-    public FileSystemSnapshot(int version, ReadOnlyCollection<ProjectRootSnapshot> projectRoots) {
+    public FileSystemTreeSnapshot(int version, ReadOnlyCollection<ProjectRootSnapshot> projectRoots) {
       _version = version;
       _projectRoots = projectRoots;
     }
@@ -23,9 +23,9 @@ namespace VsChromium.Server.FileSystem.Snapshot {
     public int Version { get { return _version; } }
     public ReadOnlyCollection<ProjectRootSnapshot> ProjectRoots { get { return _projectRoots; } }
 
-    public static FileSystemSnapshot Empty {
+    public static FileSystemTreeSnapshot Empty {
       get {
-        return new FileSystemSnapshot(0, Enumerable.Empty<ProjectRootSnapshot>().ToReadOnlyCollection());
+        return new FileSystemTreeSnapshot(0, Enumerable.Empty<ProjectRootSnapshot>().ToReadOnlyCollection());
       }
     }
   }

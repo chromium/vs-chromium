@@ -4,7 +4,7 @@
 
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.FileSystem.Snapshot {
+namespace VsChromium.Server.FileSystemSnapshot {
   public class ProjectRootSnapshot {
     private readonly IProject _project;
     private readonly DirectorySnapshot _directory;

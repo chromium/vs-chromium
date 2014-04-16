@@ -5,7 +5,7 @@
 using System.Collections.ObjectModel;
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.FileSystem.Snapshot {
+namespace VsChromium.Server.FileSystemSnapshot {
   /// <summary>
   /// A directory snapshot contains the directory name, the list of
   /// sub-directories and the list of file names directly contained in the

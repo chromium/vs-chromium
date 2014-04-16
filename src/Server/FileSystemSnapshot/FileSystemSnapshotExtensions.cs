@@ -3,16 +3,16 @@ using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.FileSystem.Snapshot {
+namespace VsChromium.Server.FileSystemSnapshot {
   public static class FileSystemSnapshotExtensions {
-    public static  FileSystemTree ToIpcFileSystemTree(this FileSystemSnapshot tree) {
+    public static  FileSystemTree ToIpcFileSystemTree(this FileSystemTreeSnapshot tree) {
       return new FileSystemTree {
         Version = tree.Version,
         Root = BuildFileSystemTreeRoot(tree)
       };
     }
 
-    private static DirectoryEntry BuildFileSystemTreeRoot(FileSystemSnapshot fileSystemSnapshot) {
+    private static DirectoryEntry BuildFileSystemTreeRoot(FileSystemTreeSnapshot fileSystemSnapshot) {
       return new DirectoryEntry {
         Name = null,
         Data = null,

@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystem.Snapshot;
+using VsChromium.Server.FileSystemSnapshot;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]

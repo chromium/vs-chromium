@@ -37,8 +37,8 @@ namespace VsChromium.Server.FileSystem.Snapshot {
             .Select(filename => _projectDiscovery.GetProject(filename))
             .Where(project => project != null)
             .Distinct(new ProjectPathComparer())
-            .Select(project => ProcessProject(project, progress))
-            .OrderBy(entry => entry.DirectoryName)
+            .Select(project => new ProjectRootSnapshot(project, ProcessProject(project, progress)))
+            .OrderBy(projectRoot => projectRoot.Directory.DirectoryName)
             .ToReadOnlyCollection();
 
         return new FileSystemSnapshot(verion, projectRoots);

@@ -16,7 +16,7 @@ namespace VsChromium.Server.FileSystem.Snapshot {
       return new DirectoryEntry {
         Name = null,
         Data = null,
-        Entries = fileSystemSnapshot.ProjectRoots.Select(x => BuildDirectoryEntry(x)).Cast<FileSystemEntry>().ToList()
+        Entries = fileSystemSnapshot.ProjectRoots.Select(x => BuildDirectoryEntry(x.Directory)).Cast<FileSystemEntry>().ToList()
       };
     }
 

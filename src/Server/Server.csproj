@@ -33,6 +33,7 @@
     <Compile Include="FileSystemNames\FileSystemNameKey.cs" />
     <Compile Include="FileSystemNames\FileSystemNameKeyComparer.cs" />
     <Compile Include="FileSystemNames\IFileSystemNameFactory.cs" />
+    <Compile Include="FileSystem\Snapshot\ProjectRootSnapshot.cs" />
     <Compile Include="FileSystem\Snapshot\DirectorySnapshot.cs" />
     <Compile Include="FileSystem\Snapshot\FileSystemSnapshot.cs" />
     <Compile Include="FileSystem\PathChangeEntry.cs" />

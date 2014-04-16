@@ -14,7 +14,6 @@ using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
@@ -174,7 +173,7 @@ namespace VsChromium.Server.FileSystem {
 
       // Monitor all the Chromium directories for changes.
       var newRoots = newSnapshot.ProjectRoots
-        .Select(entry => entry.DirectoryName);
+        .Select(entry => entry.Directory.DirectoryName);
       _directoryChangeWatcher.WatchDirectories(newRoots);
 
       // Update current tree atomically
@@ -186,8 +185,8 @@ namespace VsChromium.Server.FileSystem {
 
       sw.Stop();
       Logger.Log("Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
-                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x)),
-                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x)),
+                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
+                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)),
                  sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 

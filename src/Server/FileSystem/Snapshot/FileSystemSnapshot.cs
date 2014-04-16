@@ -13,19 +13,19 @@ namespace VsChromium.Server.FileSystem.Snapshot {
   /// </summary>
   public class FileSystemSnapshot {
     private readonly int _version;
-    private readonly ReadOnlyCollection<DirectorySnapshot> _projectRoots;
+    private readonly ReadOnlyCollection<ProjectRootSnapshot> _projectRoots;
 
-    public FileSystemSnapshot(int version, ReadOnlyCollection<DirectorySnapshot> projectRoots) {
+    public FileSystemSnapshot(int version, ReadOnlyCollection<ProjectRootSnapshot> projectRoots) {
       _version = version;
       _projectRoots = projectRoots;
     }
 
     public int Version { get { return _version; } }
-    public ReadOnlyCollection<DirectorySnapshot> ProjectRoots { get { return _projectRoots; } }
+    public ReadOnlyCollection<ProjectRootSnapshot> ProjectRoots { get { return _projectRoots; } }
 
     public static FileSystemSnapshot Empty {
       get {
-        return new FileSystemSnapshot(0, Enumerable.Empty<DirectorySnapshot>().ToReadOnlyCollection());
+        return new FileSystemSnapshot(0, Enumerable.Empty<ProjectRootSnapshot>().ToReadOnlyCollection());
       }
     }
   }

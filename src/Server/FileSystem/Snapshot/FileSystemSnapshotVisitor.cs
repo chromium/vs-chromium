@@ -18,7 +18,7 @@ namespace VsChromium.Server.FileSystem.Snapshot {
     }
 
     /// <summary>
-    /// Called for each directory entry of the snapshot (including project roots).
+    /// Called for each directory entry of the snapshot.
     /// </summary>
     public Action<DirectorySnapshot> VisitDirectory { get; set; }
 
@@ -32,7 +32,7 @@ namespace VsChromium.Server.FileSystem.Snapshot {
     /// cref="VisitDirectory"/> appropriately.
     /// </summary>
     public void Visit() {
-      _snapshot.ProjectRoots.ForAll(x => VisitWorker(x));
+      _snapshot.ProjectRoots.ForAll(x => VisitWorker(x.Directory));
     }
 
     private void VisitWorker(DirectorySnapshot entry) {

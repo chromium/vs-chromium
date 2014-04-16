@@ -6,6 +6,11 @@ using System.Collections.ObjectModel;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystem.Snapshot {
+  /// <summary>
+  /// A directory snapshot contains the directory name, the list of
+  /// sub-directories and the list of file names directly contained in the
+  /// directory.
+  /// </summary>
   public class DirectorySnapshot {
     private readonly DirectoryName _directoryName;
     private readonly ReadOnlyCollection<DirectorySnapshot> _directoryEntries;
@@ -17,8 +22,17 @@ namespace VsChromium.Server.FileSystem.Snapshot {
       _files = files;
     }
 
+    /// <summary>
+    /// The directory name
+    /// </summary>
     public DirectoryName DirectoryName { get { return _directoryName; } }
+    /// <summary>
+    /// The list of sub-directories.
+    /// </summary>
     public ReadOnlyCollection<DirectorySnapshot> DirectoryEntries { get { return _directoryEntries; } }
+    /// <summary>
+    /// The list of files contained in this directory.
+    /// </summary>
     public ReadOnlyCollection<FileName> Files { get { return _files; } }
   }
 }

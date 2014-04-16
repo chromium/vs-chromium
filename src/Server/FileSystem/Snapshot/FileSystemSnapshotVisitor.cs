@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystem.Snapshot {
+  /// <summary>
+  /// A simple BFS visitor of a <see cref="FileSystemSnapshot"/> instance.
+  /// </summary>
   public class FileSystemSnapshotVisitor {
     private readonly FileSystemSnapshot _snapshot;
 
@@ -15,22 +17,28 @@ namespace VsChromium.Server.FileSystem.Snapshot {
       _snapshot = snapshot;
     }
 
+    /// <summary>
+    /// Called for each directory entry of the snapshot (including project roots).
+    /// </summary>
     public Action<DirectorySnapshot> VisitDirectory { get; set; }
+
+    /// <summary>
+    /// Called for each file of the snapshot.
+    /// </summary>
     public Action<FileName> VisitFile { get; set; }
 
+    /// <summary>
+    /// Visits all directory and files, calling <see cref="VisitFile"/> and <see
+    /// cref="VisitDirectory"/> appropriately.
+    /// </summary>
     public void Visit() {
       _snapshot.ProjectRoots.ForAll(x => VisitWorker(x));
     }
 
     private void VisitWorker(DirectorySnapshot entry) {
-      var stack = new Stack<DirectorySnapshot>();
-      stack.Push(entry);
-      while (stack.Count > 0) {
-        var head = stack.Pop();
-        VisitDirectory(head);
-        head.Files.ForAll(x => VisitFile(x));
-        head.DirectoryEntries.ForAll(x => stack.Push(x));
-      }
+      VisitDirectory(entry);
+      entry.Files.ForAll(x => VisitFile(x));
+      entry.DirectoryEntries.ForAll(x => VisitWorker(x));
     }
   }
 }

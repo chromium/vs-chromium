@@ -7,6 +7,10 @@ using System.Linq;
 using VsChromium.Core.Linq;
 
 namespace VsChromium.Server.FileSystem.Snapshot {
+  /// <summary>
+  /// A view of the file system (directories and files) of all the projects
+  /// known to the server at the time the snapshot was built.
+  /// </summary>
   public class FileSystemSnapshot {
     private readonly int _version;
     private readonly ReadOnlyCollection<DirectorySnapshot> _projectRoots;

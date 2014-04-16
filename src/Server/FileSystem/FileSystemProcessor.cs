@@ -46,7 +46,7 @@ namespace VsChromium.Server.FileSystem {
       _projectDiscovery = projectDiscovery;
       _taskQueue = taskQueueFactory.CreateQueue();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
-      _fileSystemTree = FileSystemTreeInternal.Empty(fileSystemNameFactory);
+      _fileSystemTree = FileSystemTreeInternal.Empty;
     }
 
     public VersionedFileSystemTreeInternal GetTree() {
@@ -176,10 +176,8 @@ namespace VsChromium.Server.FileSystem {
       var newFileSystemTree = _fileSystemTreeBuilder.ComputeTree(files);
 
       // Monitor all the Chromium directories for changes.
-      var newRoots = newFileSystemTree.Root.Entries
-        .OfType<DirectoryEntryInternal>()
-        .Select(entry => entry.DirectoryName)
-        .ToList();
+      var newRoots = newFileSystemTree.ProjectRoots
+        .Select(entry => entry.DirectoryName);
       _directoryChangeWatcher.WatchDirectories(newRoots);
 
       // Update current tree atomically
@@ -192,35 +190,25 @@ namespace VsChromium.Server.FileSystem {
 
       sw.Stop();
       Logger.Log("Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
-                 CountFileEntries(newFileSystemTree.Root), CountDirectoryEntries(newFileSystemTree.Root), sw.ElapsedMilliseconds);
+                 newFileSystemTree.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x)),
+                 newFileSystemTree.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x)),
+                 sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
       // A new tree is available, time to notify our consumers.
       OnTreeComputed(operationId, oldTree, newTree);
     }
 
-    private int CountFileEntries(FileSystemEntryInternal entry) {
-      if (entry == null)
-        return 0;
-
-      var dir = entry as DirectoryEntryInternal;
-      if (dir != null) {
-        return dir.Entries.Aggregate(0, (s, x) => s + CountFileEntries(x));
-      }
-
-      return 1;
+    private int CountFileEntries(DirectoryEntryInternal entry) {
+      return
+        entry.Files.Count +
+        entry.DirectoryEntries.Aggregate(0, (acc, x) => acc + CountFileEntries(x));
     }
 
-    private int CountDirectoryEntries(FileSystemEntryInternal entry) {
-      if (entry == null)
-        return 0;
-
-      var dir = entry as DirectoryEntryInternal;
-      if (dir != null) {
-        return dir.Entries.Aggregate(1, (s, x) => s + CountDirectoryEntries(x));
-      }
-
-      return 0;
+    private int CountDirectoryEntries(DirectoryEntryInternal entry) {
+      return 
+        1 +
+        entry.DirectoryEntries.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
     }
 
     protected virtual void OnTreeComputing(long operationId) {

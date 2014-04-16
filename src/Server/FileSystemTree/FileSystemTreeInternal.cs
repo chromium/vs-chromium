@@ -3,21 +3,23 @@
 // found in the LICENSE file.
 
 using System.Collections.ObjectModel;
-using VsChromium.Server.FileSystemNames;
+using System.Linq;
+using VsChromium.Core.Linq;
 
 namespace VsChromium.Server.FileSystemTree {
   public class FileSystemTreeInternal {
-    private readonly DirectoryEntryInternal _root;
+    private readonly ReadOnlyCollection<DirectoryEntryInternal> _projectRoots;
 
-    public FileSystemTreeInternal(DirectoryEntryInternal root) {
-      _root = root;
+    public FileSystemTreeInternal(ReadOnlyCollection<DirectoryEntryInternal> projectRoots) {
+      _projectRoots = projectRoots;
     }
 
-    public DirectoryEntryInternal Root { get { return _root; } }
+    public ReadOnlyCollection<DirectoryEntryInternal> ProjectRoots { get { return _projectRoots; } }
 
-    public static FileSystemTreeInternal Empty(IFileSystemNameFactory fileSystemNameFactory) {
-      var emptyRoot = new DirectoryEntryInternal(fileSystemNameFactory.Root, new ReadOnlyCollection<FileSystemEntryInternal>(new FileSystemEntryInternal[0]));
-      return new FileSystemTreeInternal(emptyRoot);
+    public static FileSystemTreeInternal Empty {
+      get {
+        return new FileSystemTreeInternal(Enumerable.Empty<DirectoryEntryInternal>().ToReadOnlyCollection());
+      }
     }
   }
 }

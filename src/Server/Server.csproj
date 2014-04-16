@@ -35,8 +35,6 @@
     <Compile Include="FileSystemNames\FileSystemNameKeyComparer.cs" />
     <Compile Include="FileSystemNames\IFileSystemNameFactory.cs" />
     <Compile Include="FileSystemTree\DirectoryEntryInternal.cs" />
-    <Compile Include="FileSystemTree\FileEntryInternal.cs" />
-    <Compile Include="FileSystemTree\FileSystemEntryInternal.cs" />
     <Compile Include="FileSystemTree\FileSystemTreeInternal.cs" />
     <Compile Include="FileSystem\PathChangeEntry.cs" />
     <Compile Include="FileSystem\PathChangeKind.cs" />
@@ -66,6 +64,7 @@
     <Compile Include="Ipc\TypedMessageHandlers\SearchFileNamesRequestHandler.cs" />
     <Compile Include="Ipc\IIpcRequestDispatcher.cs" />
     <Compile Include="Ipc\IIpcResponseQueue.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\VersionedFileSystemTreeExtensions.cs" />
     <Compile Include="IServer.cs" />
     <Compile Include="ProgressTracking\IndeterminateProgressTracker.cs" />
     <Compile Include="ProgressTracking\IProgressTrackerFactory.cs" />

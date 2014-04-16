@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemTree;
 
@@ -16,10 +17,10 @@ namespace VsChromium.Server.Search {
     }
 
     public Action<DirectoryEntryInternal> VisitDirectory { get; set; }
-    public Action<FileEntryInternal> VisitFile { get; set; }
+    public Action<FileName> VisitFile { get; set; }
 
     public void Visit() {
-      VisitWorker(_tree.Root);
+      _tree.ProjectRoots.ForAll(x => VisitWorker(x));
     }
 
     private void VisitWorker(DirectoryEntryInternal entry) {
@@ -28,15 +29,8 @@ namespace VsChromium.Server.Search {
       while (stack.Count > 0) {
         var head = stack.Pop();
         VisitDirectory(head);
-
-        foreach (var child in head.Entries) {
-          var fileEntry = child as FileEntryInternal;
-          if (fileEntry != null) {
-            VisitFile(fileEntry);
-          } else {
-            stack.Push((DirectoryEntryInternal)child);
-          }
-        }
+        head.Files.ForAll(x => VisitFile(x));
+        head.DirectoryEntries.ForAll(x => stack.Push(x));
       }
     }
   }

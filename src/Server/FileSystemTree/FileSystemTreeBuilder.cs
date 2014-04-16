@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
@@ -34,20 +33,16 @@ namespace VsChromium.Server.FileSystemTree {
 
     public FileSystemTreeInternal ComputeTree(IEnumerable<FullPathName> filenames) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
-        var newRoot = new DirectoryEntryInternal(
-          _fileSystemNameFactory.Root,
+        var projectRoots =
           filenames
             .Select(filename => _projectDiscovery.GetProject(filename))
             .Where(project => project != null)
             .Distinct(new ProjectPathComparer())
             .Select(project => ProcessProject(project, progress))
-            .Where(entry => entry != null)
-            .OrderBy(entry => entry.FileSystemName)
-            .Cast<FileSystemEntryInternal>()
-            .ToReadOnlyCollection()
-          );
+            .OrderBy(entry => entry.DirectoryName)
+            .ToReadOnlyCollection();
 
-        return new FileSystemTreeInternal(newRoot);
+        return new FileSystemTreeInternal(projectRoots);
       }
     }
 
@@ -66,7 +61,6 @@ namespace VsChromium.Server.FileSystemTree {
                           PathHelpers.PathCombine(project.RootPath, directoryName.RelativePathName.RelativeName)));
           var entries = traversedDirectoryEntry.ChildrenNames
             .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName.RelativeName))
-            .Select(childFilename => new FileEntryInternal(childFilename))
             .ToList();
 
           return Tuple.Create(directoryName, entries);
@@ -94,22 +88,17 @@ namespace VsChromium.Server.FileSystemTree {
       var directoryEntries = directories.Select(tuple => {
         var directoryName = tuple.Item1;
         var childFileEntries = tuple.Item2;
-        var childDirectoryEntries = direcoryNameToChildDirectoryNames[directoryName].Select(x => directoryNameToEntry[x]).ToList();
 
-        var children = new List<FileSystemEntryInternal>(childFileEntries.Count + childDirectoryEntries.Count);
-        children.AddRange(childDirectoryEntries);
-        children.AddRange(childFileEntries);
-        children.Sort((x, y) => {
-          if (x.GetType() == y.GetType())
-            return x.FileSystemName.CompareTo(y.FileSystemName);
+        var childDirectoryEntries = direcoryNameToChildDirectoryNames[directoryName]
+          .Select(x => directoryNameToEntry[x])
+          .OrderBy(x => x.DirectoryName)
+          .ToReadOnlyCollection();
 
-          if (x is DirectoryEntryInternal)
-            return -1;
+        var childFilenames = childFileEntries
+          .OrderBy(x => x)
+          .ToReadOnlyCollection();
 
-          return 1;
-        });
-
-        var result = new DirectoryEntryInternal(directoryName, new ReadOnlyCollection<FileSystemEntryInternal>(children));
+        var result = new DirectoryEntryInternal(directoryName, childDirectoryEntries, childFilenames);
         directoryNameToEntry[directoryName] = result;
         return result;
       })

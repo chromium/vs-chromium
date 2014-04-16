@@ -6,19 +6,19 @@ using System.Collections.ObjectModel;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemTree {
-  public class DirectoryEntryInternal : FileSystemEntryInternal {
+  public class DirectoryEntryInternal {
     private readonly DirectoryName _directoryName;
-    private readonly ReadOnlyCollection<FileSystemEntryInternal> _children;
+    private readonly ReadOnlyCollection<DirectoryEntryInternal> _directoryEntries;
+    private readonly ReadOnlyCollection<FileName> _files;
 
-    public DirectoryEntryInternal(DirectoryName directoryName, ReadOnlyCollection<FileSystemEntryInternal> children) {
+    public DirectoryEntryInternal(DirectoryName directoryName, ReadOnlyCollection<DirectoryEntryInternal> directoryEntries, ReadOnlyCollection<FileName> files) {
       _directoryName = directoryName;
-      _children = children;
+      _directoryEntries = directoryEntries;
+      _files = files;
     }
 
-    public ReadOnlyCollection<FileSystemEntryInternal> Entries { get { return _children; } }
-
-    public bool IsRoot { get { return FileSystemName.IsRoot; } }
     public DirectoryName DirectoryName { get { return _directoryName; } }
-    public override FileSystemName FileSystemName { get { return _directoryName; } }
+    public ReadOnlyCollection<DirectoryEntryInternal> DirectoryEntries { get { return _directoryEntries; } }
+    public ReadOnlyCollection<FileName> Files { get { return _files; } }
   }
 }

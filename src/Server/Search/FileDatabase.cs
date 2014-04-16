@@ -128,11 +128,8 @@ namespace VsChromium.Server.Search {
       var directoryNames = new List<DirectoryName>();
 
       var visitor = new FileSystemTreeVisitor(tree);
-      visitor.VisitFile = fileEntry => files.Add(new FileData(fileEntry.FileName, null));
-      visitor.VisitDirectory = directoryEntry => {
-        if (!directoryEntry.IsRoot)
-          directoryNames.Add(directoryEntry.DirectoryName);
-      };
+      visitor.VisitFile = filename => files.Add(new FileData(filename, null));
+      visitor.VisitDirectory = directoryEntry => directoryNames.Add(directoryEntry.DirectoryName);
       visitor.Visit();
 
       // Store internally in sorted arrays

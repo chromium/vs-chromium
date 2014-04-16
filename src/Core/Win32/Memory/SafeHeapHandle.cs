@@ -11,7 +11,7 @@ namespace VsChromium.Core.Win32.Memory {
     }
 
     protected override bool ReleaseHandle() {
-      return NativeMethods.HeapDestroy(this);
+      return NativeMethods.HeapDestroy(handle);
     }
   }
 }

@@ -22,11 +22,11 @@ namespace VsChromium.Core.Win32.Memory {
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32")]
-    public static extern bool HeapFree(SafeHeapHandle hHeap, HeapFlags flags, IntPtr block);
+    public static extern bool HeapFree(IntPtr hHeap, HeapFlags flags, IntPtr block);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32", SetLastError = true)]
-    public static extern bool HeapDestroy(SafeHeapHandle hHeap);
+    public static extern bool HeapDestroy(IntPtr hHeap);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll")]

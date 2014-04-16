@@ -71,11 +71,11 @@ namespace VsChromium.Tests.Server {
         }
       }, ServerResponseTimeout)();
       Assert.IsNotNull(response, "Server did not respond within timeout.");
-      Assert.IsNotNull(response.DirectoryNames);
-      Assert.IsNotNull(response.DirectoryNames.Entries);
+      Assert.IsNotNull(response.SearchResult);
+      Assert.IsNotNull(response.SearchResult.Entries);
 
-      Assert.AreEqual(1, response.DirectoryNames.Entries.Count);
-      var chromiumEntry = response.DirectoryNames.Entries[0] as DirectoryEntry;
+      Assert.AreEqual(1, response.SearchResult.Entries.Count);
+      var chromiumEntry = response.SearchResult.Entries[0] as DirectoryEntry;
       Assert.IsNotNull(chromiumEntry);
       Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.Name);
 

@@ -23,7 +23,6 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FileSystemTree\VersionedFileSystemTreeInternal.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcher.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystemNames\DirectoryName.cs" />
@@ -34,19 +33,19 @@
     <Compile Include="FileSystemNames\FileSystemNameKey.cs" />
     <Compile Include="FileSystemNames\FileSystemNameKeyComparer.cs" />
     <Compile Include="FileSystemNames\IFileSystemNameFactory.cs" />
-    <Compile Include="FileSystemTree\DirectoryEntryInternal.cs" />
-    <Compile Include="FileSystemTree\FileSystemTreeInternal.cs" />
+    <Compile Include="FileSystem\Snapshot\DirectorySnapshot.cs" />
+    <Compile Include="FileSystem\Snapshot\FileSystemSnapshot.cs" />
     <Compile Include="FileSystem\PathChangeEntry.cs" />
     <Compile Include="FileSystem\PathChangeKind.cs" />
-    <Compile Include="FileSystemTree\FileSystemTreeBuilder.cs" />
-    <Compile Include="FileSystem\FileSystemTreeValidator.cs" />
+    <Compile Include="FileSystem\Snapshot\FileSystemSnapshotBuilder.cs" />
+    <Compile Include="FileSystem\FileSystemChangesValidator.cs" />
     <Compile Include="FileSystem\FileSystemValidationResult.cs" />
     <Compile Include="FileSystem\IDirectoryChangeWatcher.cs" />
     <Compile Include="FileSystem\FileSystemNameFactoryExtensions.cs" />
     <Compile Include="FileSystem\FileSystemProcessor.cs" />
     <Compile Include="FileSystem\IDirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystem\IFileSystemProcessor.cs" />
-    <Compile Include="FileSystemTree\IFileSystemTreeBuilder.cs" />
+    <Compile Include="FileSystem\Snapshot\IFileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\RelativePathNameExtensions.cs" />
@@ -64,7 +63,7 @@
     <Compile Include="Ipc\TypedMessageHandlers\SearchFileNamesRequestHandler.cs" />
     <Compile Include="Ipc\IIpcRequestDispatcher.cs" />
     <Compile Include="Ipc\IIpcResponseQueue.cs" />
-    <Compile Include="Ipc\TypedMessageHandlers\VersionedFileSystemTreeExtensions.cs" />
+    <Compile Include="FileSystem\Snapshot\FileSystemSnapshotExtensions.cs" />
     <Compile Include="IServer.cs" />
     <Compile Include="ProgressTracking\IndeterminateProgressTracker.cs" />
     <Compile Include="ProgressTracking\IProgressTrackerFactory.cs" />
@@ -106,7 +105,7 @@
     <Compile Include="Threads\TaskQueueFactory.cs" />
     <Compile Include="Search\FileContentsFactory.cs" />
     <Compile Include="Search\FileSearchResult.cs" />
-    <Compile Include="Search\FileSystemTreeVisitor.cs" />
+    <Compile Include="FileSystem\Snapshot\FileSystemSnapshotVisitor.cs" />
     <Compile Include="Search\IFileContentsFactory.cs" />
     <Compile Include="Search\ISearchEngine.cs" />
     <Compile Include="Search\SearchContentsData.cs" />

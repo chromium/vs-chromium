@@ -6,25 +6,24 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemTree;
 
-namespace VsChromium.Server.Search {
-  public class FileSystemTreeVisitor {
-    private readonly FileSystemTreeInternal _tree;
+namespace VsChromium.Server.FileSystem.Snapshot {
+  public class FileSystemSnapshotVisitor {
+    private readonly FileSystemSnapshot _snapshot;
 
-    public FileSystemTreeVisitor(FileSystemTreeInternal tree) {
-      _tree = tree;
+    public FileSystemSnapshotVisitor(FileSystemSnapshot snapshot) {
+      _snapshot = snapshot;
     }
 
-    public Action<DirectoryEntryInternal> VisitDirectory { get; set; }
+    public Action<DirectorySnapshot> VisitDirectory { get; set; }
     public Action<FileName> VisitFile { get; set; }
 
     public void Visit() {
-      _tree.ProjectRoots.ForAll(x => VisitWorker(x));
+      _snapshot.ProjectRoots.ForAll(x => VisitWorker(x));
     }
 
-    private void VisitWorker(DirectoryEntryInternal entry) {
-      var stack = new Stack<DirectoryEntryInternal>();
+    private void VisitWorker(DirectorySnapshot entry) {
+      var stack = new Stack<DirectorySnapshot>();
       stack.Push(entry);
       while (stack.Count > 0) {
         var head = stack.Pop();

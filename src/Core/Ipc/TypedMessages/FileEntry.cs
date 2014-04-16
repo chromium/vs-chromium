@@ -8,7 +8,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class FileEntry : FileSystemEntry {
     public override string ToString() {
-      return string.Format("f:{0}", Name ?? string.Empty);
+      return string.Format("file:\"{0}\"", Name ?? string.Empty);
     }
   }
 }

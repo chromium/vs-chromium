@@ -11,11 +11,11 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {
-  public class FileSystemTreeValidator {
+  public class FileSystemChangesValidator {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly IProjectDiscovery _projectDiscovery;
 
-    public FileSystemTreeValidator(
+    public FileSystemChangesValidator(
       IFileSystemNameFactory fileSystemNameFactory,
       IProjectDiscovery projectDiscovery) {
       _fileSystemNameFactory = fileSystemNameFactory;

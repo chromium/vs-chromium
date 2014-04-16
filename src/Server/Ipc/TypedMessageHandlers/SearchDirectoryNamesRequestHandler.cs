@@ -24,7 +24,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var r = (SearchDirectoryNamesRequest)typedRequest;
       var result = _searchEngine.SearchDirectoryNames(r.SearchParams);
       return new SearchDirectoryNamesResponse {
-        DirectoryNames = _fileSystemNameFactory.ToFlatSearchResult(result.DirectoryNames),
+        SearchResult = _fileSystemNameFactory.ToFlatSearchResult(result.DirectoryNames),
         HitCount = result.DirectoryNames.Count,
         TotalCount = result.TotalCount
       };

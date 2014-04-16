@@ -5,7 +5,7 @@
 using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystemTree;
+using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedEvents {
@@ -39,11 +39,11 @@ namespace VsChromium.Server.Ipc.TypedEvents {
       });
     }
 
-    private void FileSystemProcessorOnTreeComputed(long operationId, VersionedFileSystemTreeInternal oldTree, VersionedFileSystemTreeInternal newTree) {
+    private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemSnapshot previousSnapshot, FileSystemSnapshot newSnapshot) {
       _typedEventSender.SendEventAsync(new FileSystemTreeComputed {
         OperationId = operationId,
-        OldVersion = oldTree.Version,
-        NewVersion = newTree.Version
+        OldVersion = previousSnapshot.Version,
+        NewVersion = newSnapshot.Version
       });
     }
 

@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystem.Snapshot;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
@@ -19,7 +20,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       return new GetFileSystemResponse {
-        Tree = _processor.GetTree().ToIpcFileSystemTree()
+        Tree = _processor.GetCurrentSnapshot().ToIpcFileSystemTree()
       };
     }
   }

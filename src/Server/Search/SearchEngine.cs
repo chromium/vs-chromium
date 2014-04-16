@@ -15,8 +15,8 @@ using VsChromium.Core.FileNames.PatternMatching;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemTree;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
@@ -215,8 +215,8 @@ namespace VsChromium.Server.Search {
       OnFilesLoaded(operationId);
     }
 
-    private void FileSystemProcessorOnTreeComputed(long operationId, VersionedFileSystemTreeInternal oldTree, VersionedFileSystemTreeInternal newTree) {
-      _customThreadPool.RunAsync(() => ComputeNewState(newTree.FileSystemTree));
+    private void FileSystemProcessorOnTreeComputed(long operationId, FileSystemSnapshot previousSnapshot, FileSystemSnapshot newSnapshot) {
+      _customThreadPool.RunAsync(() => ComputeNewState(newSnapshot));
     }
 
     private Func<T, bool> SearchPreProcessParams<T>(
@@ -259,7 +259,7 @@ namespace VsChromium.Server.Search {
       return pattern;
     }
 
-    private void ComputeNewState(FileSystemTreeInternal newTree) {
+    private void ComputeNewState(FileSystemSnapshot newSnapshot) {
       var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
 
@@ -268,7 +268,7 @@ namespace VsChromium.Server.Search {
 
       var oldState = _currentState;
       var newState = new FileDatabase(_projectDiscovery, _fileContentsFactory, _progressTrackerFactory);
-      newState.ComputeState(oldState, newTree);
+      newState.ComputeState(oldState, newSnapshot);
 
       sw.Stop();
       Logger.Log("++++ Done computing new state of file database from file system tree in {0:n0} msec. ++++",

@@ -4,17 +4,21 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemTree;
 
 namespace VsChromium.Server.FileSystem {
   public interface IFileSystemProcessor {
     void AddFile(string filename);
     void RemoveFile(string filename);
-    VersionedFileSystemTreeInternal GetTree();
+    FileSystemSnapshot GetCurrentSnapshot();
 
-    event Action<long> TreeComputing;
-    event Action<long, VersionedFileSystemTreeInternal, VersionedFileSystemTreeInternal> TreeComputed;
+    event TreeComputingDelegate TreeComputing;
+    event TreeComputedDelegate TreeComputed;
     event Action<IEnumerable<FileName>> FilesChanged;
   }
+
+  public delegate void TreeComputingDelegate(long operationId);
+
+  public delegate void TreeComputedDelegate(long operationId, FileSystemSnapshot previousSnapshot, FileSystemSnapshot newSnapshot);
 }

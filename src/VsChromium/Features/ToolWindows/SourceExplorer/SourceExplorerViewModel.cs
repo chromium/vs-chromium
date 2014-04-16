@@ -4,21 +4,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.ComponentModelHost;
 using VsChromium.Core;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Linq;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Threads;
-using VsChromium.Views;
 using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {

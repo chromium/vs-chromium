@@ -9,11 +9,16 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   public class SearchFileNamesResponse : TypedResponse {
     public SearchFileNamesResponse() {
       // To avoid getting "null" property if empty collection deserialized using protobuf.
-      FileNames = new DirectoryEntry();
+      SearchResult = new DirectoryEntry();
     }
 
+    /// <summary>
+    /// This directory entry contains one child directory entry per project
+    /// searched, and each of those entries contains a list of file entries
+    /// matching the search criteria.
+    /// </summary>
     [ProtoMember(1)]
-    public DirectoryEntry FileNames { get; set; }
+    public DirectoryEntry SearchResult { get; set; }
 
     /// <summary>
     /// Total number of entries returned in |FileNames|.

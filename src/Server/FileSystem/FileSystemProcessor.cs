@@ -8,11 +8,12 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using VsChromium.Core;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemTree;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
@@ -26,9 +27,9 @@ namespace VsChromium.Server.FileSystem {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly object _lock = new object();
     private readonly IOperationIdFactory _operationIdFactory;
-    private readonly IFileSystemTreeBuilder _fileSystemTreeBuilder;
+    private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
     private readonly ITaskQueue _taskQueue;
-    private FileSystemTreeInternal _fileSystemTree;
+    private FileSystemSnapshot _fileSystemSnapshot;
     private int _version;
 
     [ImportingConstructor]
@@ -38,20 +39,20 @@ namespace VsChromium.Server.FileSystem {
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
       IOperationIdFactory operationIdFactory,
       ITaskQueueFactory taskQueueFactory,
-      IFileSystemTreeBuilder fileSystemTreeBuilder) {
+      IFileSystemSnapshotBuilder fileSystemSnapshotBuilder) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _operationIdFactory = operationIdFactory;
-      _fileSystemTreeBuilder = fileSystemTreeBuilder;
+      _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
       _projectDiscovery = projectDiscovery;
       _taskQueue = taskQueueFactory.CreateQueue();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
-      _fileSystemTree = FileSystemTreeInternal.Empty;
+      _fileSystemSnapshot = FileSystemSnapshot.Empty;
     }
 
-    public VersionedFileSystemTreeInternal GetTree() {
+    public FileSystemSnapshot GetCurrentSnapshot() {
       lock (_lock) {
-        return GetTree(_version, _fileSystemTree);
+        return _fileSystemSnapshot;
       }
     }
 
@@ -63,8 +64,8 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(string.Format("RemoveFile(\"{0}\")", filename), () => RemoveFileTask(filename));
     }
 
-    public event Action<long> TreeComputing;
-    public event Action<long, VersionedFileSystemTreeInternal, VersionedFileSystemTreeInternal> TreeComputed;
+    public event TreeComputingDelegate TreeComputing;
+    public event TreeComputedDelegate TreeComputed;
     public event Action<IEnumerable<FileName>> FilesChanged;
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
@@ -73,7 +74,7 @@ namespace VsChromium.Server.FileSystem {
 
     private void OnPathsChangedTask(IList<PathChangeEntry> changes) {
       var result =
-        new FileSystemTreeValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
+        new FileSystemChangesValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
       if (result.RecomputeGraph) {
         RecomputeGraph();
       } else if (result.ChangeFiles.Any()) {
@@ -156,10 +157,6 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private VersionedFileSystemTreeInternal GetTree(int version, FileSystemTreeInternal fileSystemTree) {
-      return new VersionedFileSystemTreeInternal(fileSystemTree, version);
-    }
-
     private void RecomputeGraph() {
       var operationId = _operationIdFactory.GetNextId();
       OnTreeComputing(operationId);
@@ -173,39 +170,38 @@ namespace VsChromium.Server.FileSystem {
         files.AddRange(_addedFiles);
       }
 
-      var newFileSystemTree = _fileSystemTreeBuilder.ComputeTree(files);
+      var newSnapshot = _fileSystemSnapshotBuilder.Compute(files, Interlocked.Increment(ref _version));
 
       // Monitor all the Chromium directories for changes.
-      var newRoots = newFileSystemTree.ProjectRoots
+      var newRoots = newSnapshot.ProjectRoots
         .Select(entry => entry.DirectoryName);
       _directoryChangeWatcher.WatchDirectories(newRoots);
 
       // Update current tree atomically
-      var oldTree = GetTree();
+      FileSystemSnapshot previousSnapshot;
       lock (_lock) {
-        _version++;
-        _fileSystemTree = newFileSystemTree;
+        previousSnapshot = _fileSystemSnapshot;
+        _fileSystemSnapshot = newSnapshot;
       }
-      var newTree = GetTree();
 
       sw.Stop();
       Logger.Log("Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
-                 newFileSystemTree.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x)),
-                 newFileSystemTree.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x)),
+                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x)),
+                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x)),
                  sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
       // A new tree is available, time to notify our consumers.
-      OnTreeComputed(operationId, oldTree, newTree);
+      OnTreeComputed(operationId, previousSnapshot, newSnapshot);
     }
 
-    private int CountFileEntries(DirectoryEntryInternal entry) {
+    private int CountFileEntries(DirectorySnapshot entry) {
       return
         entry.Files.Count +
         entry.DirectoryEntries.Aggregate(0, (acc, x) => acc + CountFileEntries(x));
     }
 
-    private int CountDirectoryEntries(DirectoryEntryInternal entry) {
+    private int CountDirectoryEntries(DirectorySnapshot entry) {
       return 
         1 +
         entry.DirectoryEntries.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
@@ -217,7 +213,7 @@ namespace VsChromium.Server.FileSystem {
         handler(operationId);
     }
 
-    private void OnTreeComputed(long operationId, VersionedFileSystemTreeInternal oldTree, VersionedFileSystemTreeInternal newTree) {
+    private void OnTreeComputed(long operationId, FileSystemSnapshot oldTree, FileSystemSnapshot newTree) {
       var handler = TreeComputed;
       if (handler != null)
         handler(operationId, oldTree, newTree);

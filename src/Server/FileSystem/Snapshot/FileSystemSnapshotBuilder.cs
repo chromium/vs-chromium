@@ -9,20 +9,19 @@ using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Linq;
-using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.FileSystemTree {
-  [Export(typeof(IFileSystemTreeBuilder))]
-  public class FileSystemTreeBuilder : IFileSystemTreeBuilder {
+namespace VsChromium.Server.FileSystem.Snapshot {
+  [Export(typeof(IFileSystemSnapshotBuilder))]
+  public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
 
     [ImportingConstructor]
-    public FileSystemTreeBuilder(
+    public FileSystemSnapshotBuilder(
       IProjectDiscovery projectDiscovery,
       IProgressTrackerFactory progressTrackerFactory,
       IFileSystemNameFactory fileSystemNameFactory) {
@@ -31,7 +30,7 @@ namespace VsChromium.Server.FileSystemTree {
       _fileSystemNameFactory = fileSystemNameFactory;
     }
 
-    public FileSystemTreeInternal ComputeTree(IEnumerable<FullPathName> filenames) {
+    public FileSystemSnapshot Compute(IEnumerable<FullPathName> filenames, int verion) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var projectRoots =
           filenames
@@ -42,11 +41,11 @@ namespace VsChromium.Server.FileSystemTree {
             .OrderBy(entry => entry.DirectoryName)
             .ToReadOnlyCollection();
 
-        return new FileSystemTreeInternal(projectRoots);
+        return new FileSystemSnapshot(verion, projectRoots);
       }
     }
 
-    private DirectoryEntryInternal ProcessProject(IProject project, IProgressTracker progress) {
+    private DirectorySnapshot ProcessProject(IProject project, IProgressTracker progress) {
       var projectPath = _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, project.RootPath);
 
       // List [DirectoryName, FileNames]
@@ -84,7 +83,7 @@ namespace VsChromium.Server.FileSystemTree {
       });
 
       // Build directory entries, using a intermediate map to build parent => children relation.
-      var directoryNameToEntry = new Dictionary<DirectoryName, DirectoryEntryInternal>();
+      var directoryNameToEntry = new Dictionary<DirectoryName, DirectorySnapshot>();
       var directoryEntries = directories.Select(tuple => {
         var directoryName = tuple.Item1;
         var childFileEntries = tuple.Item2;
@@ -98,7 +97,7 @@ namespace VsChromium.Server.FileSystemTree {
           .OrderBy(x => x)
           .ToReadOnlyCollection();
 
-        var result = new DirectoryEntryInternal(directoryName, childDirectoryEntries, childFilenames);
+        var result = new DirectorySnapshot(directoryName, childDirectoryEntries, childFilenames);
         directoryNameToEntry[directoryName] = result;
         return result;
       })

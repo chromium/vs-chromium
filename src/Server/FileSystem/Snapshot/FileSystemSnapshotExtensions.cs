@@ -2,26 +2,25 @@
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemTree;
 
-namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public static class VersionedFileSystemTreeExtensions {
-    public static Core.Ipc.TypedMessages.FileSystemTree ToIpcFileSystemTree(this VersionedFileSystemTreeInternal tree) {
-      return new Core.Ipc.TypedMessages.FileSystemTree {
+namespace VsChromium.Server.FileSystem.Snapshot {
+  public static class FileSystemSnapshotExtensions {
+    public static  FileSystemTree ToIpcFileSystemTree(this FileSystemSnapshot tree) {
+      return new FileSystemTree {
         Version = tree.Version,
-        Root = BuildFileSystemTree(tree.FileSystemTree)
+        Root = BuildFileSystemTreeRoot(tree)
       };
     }
 
-    private static DirectoryEntry BuildFileSystemTree(FileSystemTreeInternal fileSystemTree) {
+    private static DirectoryEntry BuildFileSystemTreeRoot(FileSystemSnapshot fileSystemSnapshot) {
       return new DirectoryEntry {
         Name = null,
         Data = null,
-        Entries = fileSystemTree.ProjectRoots.Select(x => BuildDirectoryEntry(x)).Cast<FileSystemEntry>().ToList()
+        Entries = fileSystemSnapshot.ProjectRoots.Select(x => BuildDirectoryEntry(x)).Cast<FileSystemEntry>().ToList()
       };
     }
 
-    private static DirectoryEntry BuildDirectoryEntry(DirectoryEntryInternal directoryEntry) {
+    private static DirectoryEntry BuildDirectoryEntry(DirectorySnapshot directoryEntry) {
       return new DirectoryEntry {
         Name = directoryEntry.DirectoryName.Name,
         Data = null,
@@ -35,7 +34,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         Data = null
       };
     }
-    private static List<FileSystemEntry> BuildEntries(DirectoryEntryInternal directoryEntry) {
+    private static List<FileSystemEntry> BuildEntries(DirectorySnapshot directoryEntry) {
       return directoryEntry.DirectoryEntries
         .Select(x => BuildDirectoryEntry(x))
         .Concat(directoryEntry.Files.Select(x => BuildFileEntry(x)))

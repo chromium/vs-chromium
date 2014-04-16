@@ -12,6 +12,12 @@ namespace VsChromium.Core.Ipc.TypedMessages {
       SearchResults = new DirectoryEntry();
     }
 
+    /// <summary>
+    /// This directory entry contains one child directory entry per project
+    /// searched, and each of those entries containa a list of file entries
+    /// matching the search criteria. Each file entry contains a list of
+    /// FilePositionSpan in the <see cref="FileEntry.Data"/> property.
+    /// </summary>
     [ProtoMember(1)]
     public DirectoryEntry SearchResults { get; set; }
 

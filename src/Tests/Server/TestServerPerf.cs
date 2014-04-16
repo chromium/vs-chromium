@@ -58,7 +58,7 @@ namespace VsChromium.Tests.Server {
             SearchString = "histogram"
           }
         }, ServerResponseTimeout)();
-        if (response != null && response.FileNames != null && response.FileNames.Entries.Count > 0)
+        if (response != null && response.SearchResult != null && response.SearchResult.Entries.Count > 0)
           break;
         Trace.WriteLine("It looks like the file indexer has not yet finished computing the new state.");
         Thread.Sleep(500);

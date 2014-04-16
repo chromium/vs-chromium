@@ -63,7 +63,6 @@ namespace VsChromium.Tests.Server {
         Assert.IsNotNull(response, "Server did not respond within timeout.");
         Assert.IsNotNull(response.Tree);
         Assert.IsNotNull(response.Tree.Root);
-        Assert.IsTrue(response.Tree.Root.IsRoot);
         Assert.IsNotNull(response.Tree.Root.Entries);
 
         // Entry under "Root" is the chromium enlistment entry

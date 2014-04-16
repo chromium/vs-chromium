@@ -210,7 +210,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
             FileNamesSearch.Text);
-          ViewModel.SetFileNamesSearchResult(response.FileNames, msg, true);
+          ViewModel.SetFileNamesSearchResult(response.SearchResult, msg, true);
         }
       });
     }
@@ -234,7 +234,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
             DirectoryNamesSearch.Text);
-          ViewModel.SetDirectoryNamesSearchResult(response.DirectoryNames, msg, true);
+          ViewModel.SetDirectoryNamesSearchResult(response.SearchResult, msg, true);
         }
       });
     }

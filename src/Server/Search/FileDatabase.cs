@@ -12,15 +12,15 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystem.Snapshot;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemTree;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.Search {
   /// <summary>
   /// Exposes am in-memory snapshot of the list of file names, directory names
-  /// and file contents for a given <see cref="FileSystemTreeInternal"/> snapshot.
+  /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
   /// </summary>
   public class FileDatabase {
     /// <summary>
@@ -76,20 +76,20 @@ namespace VsChromium.Server.Search {
     /// <summary>
     /// Prepares this instance for searches by computing various snapshots from
     /// the previous <see cref="FileDatabase"/> snapshot and the new current
-    /// <see cref="FileSystemTreeInternal"/> instance.
+    /// <see cref="FileSystemSnapshot"/> instance.
     /// </summary>
-    public void ComputeState(FileDatabase previousFileDatabase, FileSystemTreeInternal newTree) {
+    public void ComputeState(FileDatabase previousFileDatabase, FileSystemSnapshot newSnapshot) {
       if (_frozen) 
         throw new InvalidOperationException("FileDatabase is frozen.");
 
       if (previousFileDatabase == null)
         throw new ArgumentNullException("previousFileDatabase");
 
-      if (newTree == null)
-        throw new ArgumentNullException("newTree");
+      if (newSnapshot == null)
+        throw new ArgumentNullException("newSnapshot");
 
       // Compute list of files from tree
-      ComputeFileCollection(newTree);
+      ComputeFileCollection(newSnapshot);
 
       // Merge old state in new state
       TransferUnchangedFileContents(previousFileDatabase);
@@ -120,14 +120,14 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private void ComputeFileCollection(FileSystemTreeInternal tree) {
+    private void ComputeFileCollection(FileSystemSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
       var sw = Stopwatch.StartNew();
 
       var files = new List<FileData>();
       var directoryNames = new List<DirectoryName>();
 
-      var visitor = new FileSystemTreeVisitor(tree);
+      var visitor = new FileSystemSnapshotVisitor(snapshot);
       visitor.VisitFile = filename => files.Add(new FileData(filename, null));
       visitor.VisitDirectory = directoryEntry => directoryNames.Add(directoryEntry.DirectoryName);
       visitor.Visit();

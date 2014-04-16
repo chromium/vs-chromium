@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
@@ -16,7 +18,6 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystemTree {
   [Export(typeof(IFileSystemTreeBuilder))]
   public class FileSystemTreeBuilder : IFileSystemTreeBuilder {
-    private static readonly EntryReverseComparer _entryReverseComparerInstance = new EntryReverseComparer();
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
@@ -51,8 +52,9 @@ namespace VsChromium.Server.FileSystemTree {
     }
 
     private DirectoryEntryInternal ProcessProject(IProject project, IProgressTracker progress) {
-      // List of [DirectoryName, DirectoryEntryInternal]
       var projectPath = _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, project.RootPath);
+
+      // List [DirectoryName, FileNames]
       var directories = TraverseFileSystem(project, projectPath)
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
@@ -65,43 +67,55 @@ namespace VsChromium.Server.FileSystemTree {
           var entries = traversedDirectoryEntry.ChildrenNames
             .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName.RelativeName))
             .Select(childFilename => new FileEntryInternal(childFilename))
-            .OfType<FileSystemEntryInternal>()
-            .ToReadOnlyCollection();
+            .ToList();
 
-          var directoryEntry = new DirectoryEntryInternal(directoryName, entries);
-          return new KeyValuePair<DirectoryName, DirectoryEntryInternal>(directoryName, directoryEntry);
+          return Tuple.Create(directoryName, entries);
         })
-        // We sort entries by file name descending to make sure we process
-        // directories bottom up, so that we know it is safe to skip 
-        // DirectoryEntry instances where "Entries.Count" == 0.
-        .OrderByDescending(x => x.Key)
+        // We sort entries by directory name *descending* to make sure we process
+        // directories bottom up, so that we know
+        // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
+        // 2) we create instances of child directories before their parent.
+        .OrderByDescending(x => x.Item1)
         .ToList();
 
-      // Connect directory entries to their parent
-      directories
-        .ForAll(x => {
-          var directoryEntry = x.Value;
+      // Build map from parent directory -> list of child directories
+      var direcoryNameToChildDirectoryNames =
+        directories.ToDictionary(x => x.Item1, x => new List<DirectoryName>());
+      directories.ForAll(x => {
+        var directoryName = x.Item1;
+        if (directoryName.IsRoot || directoryName.IsAbsoluteName)
+          return;
 
-          // Root directory of project has no parent.
-          Debug.Assert(!directoryEntry.Name.IsRoot);
-          if (directoryEntry.Name.IsAbsoluteName) {
-            Debug.Assert(directoryEntry.Name.Equals(projectPath));
-            return;
-          }
+        direcoryNameToChildDirectoryNames[directoryName.Parent].Add(directoryName);
+      });
 
-          // If current entry has no entries, don't add it to the parent entries list.
-          if (directoryEntry.Entries.Count == 0)
-            return;
+      // Build directory entries, using a intermediate map to build parent => children relation.
+      var directoryNameToEntry = new Dictionary<DirectoryName, DirectoryEntryInternal>();
+      var directoryEntries = directories.Select(tuple => {
+        var directoryName = tuple.Item1;
+        var childFileEntries = tuple.Item2;
+        var childDirectoryEntries = direcoryNameToChildDirectoryNames[directoryName].Select(x => directoryNameToEntry[x]).ToList();
 
-          // We attach the entry to the parent directory
-          var parentName = directoryEntry.Name.Parent;
-          var parentEntry = FindEntry(directories, parentName).Value;
-          parentEntry.Entries.Add(directoryEntry);
+        var children = new List<FileSystemEntryInternal>(childFileEntries.Count + childDirectoryEntries.Count);
+        children.AddRange(childDirectoryEntries);
+        children.AddRange(childFileEntries);
+        children.Sort((x, y) => {
+          if (x.GetType() == y.GetType())
+            return x.FileSystemName.CompareTo(y.FileSystemName);
+
+          if (x is DirectoryEntryInternal)
+            return -1;
+
+          return 1;
         });
 
-      var result = FindEntry(directories, projectPath).Value;
-      SortEntries(result);
-      return result;
+        var result = new DirectoryEntryInternal(directoryName, new ReadOnlyCollection<FileSystemEntryInternal>(children));
+        directoryNameToEntry[directoryName] = result;
+        return result;
+      })
+      .ToList();
+
+      return directoryEntries.Single(x => x.Name.Equals(projectPath));
     }
 
     /// <summary>
@@ -129,36 +143,6 @@ namespace VsChromium.Server.FileSystemTree {
           }
           yield return new TraversedDirectoryEntry(head, childFilenames);
         }
-      }
-    }
-
-    private static KeyValuePair<DirectoryName, DirectoryEntryInternal> FindEntry(List<KeyValuePair<DirectoryName, DirectoryEntryInternal>> directories, DirectoryName directoryName) {
-      var item = new KeyValuePair<DirectoryName, DirectoryEntryInternal>(directoryName, null);
-      var result = directories.BinarySearch(item, _entryReverseComparerInstance);
-      Debug.Assert(result >= 0, "Bug: The directory name entry should be present in the list of directories.");
-      return directories[result];
-    }
-
-    private void SortEntries(DirectoryEntryInternal entry) {
-      if (entry == null)
-        return;
-
-      entry.Entries.Sort((x, y) => {
-        if (x.GetType() == y.GetType())
-          return x.FileSystemName.CompareTo(y.FileSystemName);
-
-        if (x is DirectoryEntryInternal)
-          return -1;
-
-        return 1;
-      });
-      entry.Entries.TrimExcess();
-      entry.Entries.OfType<DirectoryEntryInternal>().ForAll(x => SortEntries(x));
-    }
-
-    private class EntryReverseComparer : IComparer<KeyValuePair<DirectoryName, DirectoryEntryInternal>> {
-      public int Compare(KeyValuePair<DirectoryName, DirectoryEntryInternal> x, KeyValuePair<DirectoryName, DirectoryEntryInternal> y) {
-        return -x.Key.CompareTo(y.Key);
       }
     }
 

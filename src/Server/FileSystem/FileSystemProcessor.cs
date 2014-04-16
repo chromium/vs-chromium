@@ -178,7 +178,7 @@ namespace VsChromium.Server.FileSystem {
       // Monitor all the Chromium directories for changes.
       var newRoots = newFileSystemTree.Root.Entries
         .OfType<DirectoryEntryInternal>()
-        .Select(entry => entry.Name)
+        .Select(entry => entry.DirectoryName)
         .ToList();
       _directoryChangeWatcher.WatchDirectories(newRoots);
 

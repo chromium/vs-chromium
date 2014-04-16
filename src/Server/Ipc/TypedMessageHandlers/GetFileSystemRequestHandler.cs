@@ -53,7 +53,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     private static DirectoryEntry BuildDirectoryEntry(DirectoryEntryInternal directoryEntry) {
       return new DirectoryEntry {
-        Name = directoryEntry.IsRoot ? null : directoryEntry.Name.Name,
+        Name = directoryEntry.IsRoot ? null : directoryEntry.DirectoryName.Name,
         Data = null,
         Entries = BuildEntries(directoryEntry.Entries)
       };
@@ -61,7 +61,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     private static FileSystemEntry BuildFileEntry(FileEntryInternal fileEntry) {
       return new FileEntry {
-        Name = fileEntry.Name.Name,
+        Name = fileEntry.FileName.Name,
         Data = null
       };
     }

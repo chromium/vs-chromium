@@ -115,7 +115,7 @@ namespace VsChromium.Server.FileSystemTree {
       })
       .ToList();
 
-      return directoryEntries.Single(x => x.Name.Equals(projectPath));
+      return directoryEntries.Single(x => x.DirectoryName.Equals(projectPath));
     }
 
     /// <summary>

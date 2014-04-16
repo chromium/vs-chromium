@@ -56,5 +56,13 @@ namespace VsChromium.Core.Linq {
     public static ReadOnlyCollection<TSource> ToReadOnlyCollection<TSource>(this IEnumerable<TSource> source) {
       return new ReadOnlyCollection<TSource>(source.ToArray());
     }
+
+    public static SortedSet<TSource> ToSortedSet<TSource>(this IEnumerable<TSource> source) {
+      return new SortedSet<TSource>(source);
+    }
+
+    public static SortedSet<TSource> ToSortedSet<TSource>(this IEnumerable<TSource> source, IComparer<TSource> comparer) {
+      return new SortedSet<TSource>(source, comparer);
+    }
   }
 }

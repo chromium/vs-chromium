@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using VsChromium.Core;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
@@ -18,43 +18,64 @@ using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.Search {
+  /// <summary>
+  /// Exposes am in-memory snapshot of the list of file names, directory names
+  /// and file contents for a given <see cref="FileSystemTreeInternal"/> snapshot.
+  /// </summary>
   public class FileDatabase {
     /// <summary>
     /// Note: For debugging purposes only.
     /// </summary>
     private bool OutputDiagnostics = false;
     private readonly IProjectDiscovery _projectDiscovery;
-    private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
-    private IList<DirectoryName> _directoryNames;
-    private IList<FileName> _fileNames;
-    private Dictionary<FileName, FileData> _files;
-    private IList<FileData> _filesWithContents;
+    private SortedArray<FileData> _files;
+    private DirectoryName[] _directoryNames;
+    private FileName[] _fileNames;
+    private FileData[] _filesWithContents;
     private bool _frozen;
 
-    public FileDatabase(
-      IProjectDiscovery projectDiscovery,
-      IFileSystemNameFactory fileSystemNameFactory,
-      IFileContentsFactory fileContentsFactory,
-      IProgressTrackerFactory progressTrackerFactory) {
+    public FileDatabase(IProjectDiscovery projectDiscovery, IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
       _projectDiscovery = projectDiscovery;
-      _fileSystemNameFactory = fileSystemNameFactory;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public bool Frozen { get { return _frozen; } }
+    /// <summary>
+    /// Returns the list of filenames suitable for file name search.
+    /// </summary>
+    public ICollection<FileName> FileNames { get { return _fileNames; } }
 
-    public Dictionary<FileName, FileData> Files { get { return _files; } }
+    /// <summary>
+    /// Returns the list of directory names suitable for directory name search.
+    /// </summary>
+    public ICollection<DirectoryName> DirectoryNames { get { return _directoryNames; } }
 
-    public IList<FileName> FileNames { get { return _fileNames; } }
+    /// <summary>
+    /// Retunrs the list of files with text contents suitable for text search.
+    /// </summary>
+    public ICollection<FileData> FilesWithContents { get { return _filesWithContents; } }
 
-    public IList<DirectoryName> DirectoryNames { get { return _directoryNames; } }
+    /// <summary>
+    /// Return the <see cref="FileData"/> instance associated to <paramref name="filename"/> or null if not present.
+    /// </summary>
+    public FileData GetFileData(FileName filename) {
+      int index = _files.BinaraySearch(filename, (data, name) => data.FileName.CompareTo(name));
+      if (index < 0)
+        return null;
+      return _files[index];
+    }
 
-    public IList<FileData> FilesWithContents { get { return _filesWithContents; } }
-
+    /// <summary>
+    /// Prepares this instance for searches by computing various snapshots from
+    /// the previous <see cref="FileDatabase"/> snapshot and the new current
+    /// <see cref="FileSystemTreeInternal"/> instance.
+    /// </summary>
     public void ComputeState(FileDatabase previousFileDatabase, FileSystemTreeInternal newTree) {
+      if (_frozen) 
+        throw new InvalidOperationException("FileDatabase is frozen.");
+
       if (previousFileDatabase == null)
         throw new ArgumentNullException("previousFileDatabase");
 
@@ -93,13 +114,40 @@ namespace VsChromium.Server.Search {
       }
     }
 
+    private void ComputeFileCollection(FileSystemTreeInternal tree) {
+      Logger.Log("Computing list of searchable files from FileSystemTree.");
+      var sw = Stopwatch.StartNew();
+
+      var files = new List<FileData>();
+      var directoryNames = new List<DirectoryName>();
+
+      var visitor = new FileSystemTreeVisitor(tree);
+      visitor.VisitFile = fileEntry => files.Add(new FileData(fileEntry.FileName, null));
+      visitor.VisitDirectory = directoryEntry => {
+        if (!directoryEntry.IsRoot)
+          directoryNames.Add(directoryEntry.DirectoryName);
+      };
+      visitor.Visit();
+
+      // Store internally in sorted arrays
+      _files = new SortedArray<FileData>(files.OrderBy(x => x.FileName).ToArray());
+      _directoryNames = directoryNames.OrderBy(x => x).ToArray();
+
+      sw.Stop();
+      Logger.Log("Done computing list of searchable files from FileSystemTree in {0:n0} msec.", sw.ElapsedMilliseconds);
+      Logger.LogMemoryStats();
+    }
+
     public void Freeze() {
+      if (_frozen)
+        throw new InvalidOperationException("FileDatabase is already frozen.");
+
       Logger.Log("Freezing FileDatabase state.");
       var sw = Stopwatch.StartNew();
 
       if (_files == null) {
-        _files = new Dictionary<FileName, FileData>();
-        _directoryNames = new List<DirectoryName>();
+        _files = new SortedArray<FileData>();
+        _directoryNames = new DirectoryName[0];
       }
 
       //
@@ -114,40 +162,19 @@ namespace VsChromium.Server.Search {
       // not only the same amount of files, but also (as close to as possible) the same
       // amount of "bytes". For example, if we have 100 files totaling 32MB and 4 processors,
       // we will end up with 4 partitions of (exactly) 25 files totalling (approximately) 8MB each.
-      _filesWithContents = _files.Values
+      _filesWithContents = _files
         .Where(x => x.Contents != null)
         .ToList()
         .PartitionEvenly(fileData => fileData.Contents.ByteLength)
         .SelectMany(x => x)
         .ToArray();
 
-      _fileNames = _files.Keys
-        .ToArray();
+      _fileNames = _files.Select(x => x.FileName).ToArray();
 
       _frozen = true;
 
       sw.Stop();
       Logger.Log("Done freezing FileDatabase state in {0:n0} msec.", sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
-    }
-
-    private void ComputeFileCollection(FileSystemTreeInternal tree) {
-      Logger.Log("Computing list of searchable files from FileSystemTree.");
-      var sw = Stopwatch.StartNew();
-
-      _files = new Dictionary<FileName, FileData>();
-      _directoryNames = new List<DirectoryName>();
-
-      var visitor = new FileSystemTreeVisitor(tree);
-      visitor.VisitFile = fileEntry => _files.Add(fileEntry.Name, new FileData(fileEntry.Name, null));
-      visitor.VisitDirectory = directoryEntry => {
-        if (!directoryEntry.IsRoot)
-          _directoryNames.Add(directoryEntry.Name);
-      };
-      visitor.Visit();
-
-      sw.Stop();
-      Logger.Log("Done computing list of searchable files from FileSystemTree in {0:n0} msec.", sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
     }
 
@@ -166,7 +193,7 @@ namespace VsChromium.Server.Search {
                             oldFileData.FileName.GetFullName()));
             return IsFileContentsUpToDate(oldFileData);
           })
-          .ForAll(oldFileData => _files[oldFileData.FileName].UpdateContents(oldFileData.Contents));
+          .ForAll(oldFileData => GetFileData(oldFileData.FileName).UpdateContents(oldFileData.Contents));
       }
 
       Logger.Log("Done checking for {0:n0} out of date files in {1:n0} msec.", commonOldFiles.Count,
@@ -190,10 +217,10 @@ namespace VsChromium.Server.Search {
     }
 
     private IEnumerable<FileData> GetCommonFiles(FileDatabase oldState) {
-      if (_files.Count == 0 || oldState.Files.Count == 0)
+      if (_files.Count == 0 || oldState._files.Count == 0)
         return Enumerable.Empty<FileData>();
 
-      return oldState.Files.Values.Intersect(_files.Values, new FileDataComparer());
+      return oldState._files.Intersect(_files, FileDataComparer.Instance);
     }
 
     /// <summary>
@@ -215,29 +242,17 @@ namespace VsChromium.Server.Search {
           });
       }
 
-#if false
-  // Note: This can be very slow (logging of 100,000+ files).
-      _files
-        .Where(x => x.Value.Contents != null)
-        //.OrderByDescending(x => x.Value.Contents.ByteLength)
-        .OrderBy(x => x.Key.RelativePathName.RelativeName)
-        .ForAll(x => Logger.Log("File {0}: {1:n0} bytes.", x.Key.RelativePathName, x.Value.Contents.ByteLength));
-#endif
-
       sw.Stop();
       Logger.Log("Done loading file contents from disk: loaded {0:n0} files in {1:n0} msec.", filesToRead.Count,
                  sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
     }
 
-    private IList<FileData> GetMissingFileContentsList() {
+    private ICollection<FileData> GetMissingFileContentsList() {
       Logger.Log("Computing list of files to read from disk.");
       var sw = Stopwatch.StartNew();
 
-      // Read all files in parallel
       var filesToRead = _files
-        .Select(x => x.Value)
-        .AsParallel()
         .Where(x => x.Contents == null)
         .Where(x => _projectDiscovery.IsFileSearchable(x.FileName))
         .ToArray();
@@ -248,13 +263,24 @@ namespace VsChromium.Server.Search {
       return filesToRead;
     }
 
-    private class FileDataComparer : IEqualityComparer<FileData> {
+    private class FileDataComparer : IEqualityComparer<FileData>, IComparer<FileData> {
+      private static readonly FileDataComparer _instance = new FileDataComparer();
+
+      private FileDataComparer() {
+      }
+
+      public static FileDataComparer Instance { get { return _instance; }}
+
       public bool Equals(FileData x, FileData y) {
         return x.FileName.Equals(y.FileName);
       }
 
       public int GetHashCode(FileData x) {
         return x.FileName.GetHashCode();
+      }
+
+      public int Compare(FileData x, FileData y) {
+        return x.FileName.CompareTo(y.FileName);
       }
     }
   }

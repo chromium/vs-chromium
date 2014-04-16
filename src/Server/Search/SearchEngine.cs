@@ -56,8 +56,7 @@ namespace VsChromium.Server.Search {
       _searchStringParser = searchStringParser;
 
       // Create a "Null" state
-      _currentState = new FileDatabase(_projectDiscovery, _fileSystemNameFactory,
-                                       _fileContentsFactory, _progressTrackerFactory);
+      _currentState = new FileDatabase(_projectDiscovery, _fileContentsFactory, _progressTrackerFactory);
       _currentState.Freeze();
 
       // Setup computing a new state everytime a new tree is computed.
@@ -180,8 +179,8 @@ namespace VsChromium.Server.Search {
       if (filename == null)
         return Enumerable.Empty<FileExtract>();
 
-      FileData fileData;
-      if (!_currentState.Files.TryGetValue(filename, out fileData))
+      var fileData = _currentState.GetFileData(filename);
+      if (fileData == null)
         return Enumerable.Empty<FileExtract>();
 
       if (fileData.Contents == null)
@@ -208,8 +207,8 @@ namespace VsChromium.Server.Search {
       paths
         .Where(x => _projectDiscovery.IsFileSearchable(x))
         .ForAll(x => {
-          FileData fileData;
-          if (state.Files.TryGetValue(x, out fileData)) {
+          var fileData = state.GetFileData(x);
+          if (fileData != null) {
             fileData.UpdateContents(_fileContentsFactory.GetFileContents(x.GetFullName()));
           }
         });
@@ -268,8 +267,7 @@ namespace VsChromium.Server.Search {
       var sw = Stopwatch.StartNew();
 
       var oldState = _currentState;
-      var newState = new FileDatabase(_projectDiscovery, _fileSystemNameFactory,
-                                      _fileContentsFactory, _progressTrackerFactory);
+      var newState = new FileDatabase(_projectDiscovery, _fileContentsFactory, _progressTrackerFactory);
       newState.ComputeState(oldState, newTree);
 
       sw.Stop();

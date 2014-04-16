@@ -82,15 +82,15 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private void AddFileTask(string filename2) {
-      var filename = new FullPathName(filename2);
+    private void AddFileTask(string filename) {
+      var path = new FullPathName(filename);
       bool recompute = ValidateKnownFiles();
 
       lock (_lock) {
-        var known = _addedFiles.Contains(filename);
+        var known = _addedFiles.Contains(path);
         if (!known) {
           var projectPaths1 = GetKnownProjectPaths(_addedFiles);
-          _addedFiles.Add(filename);
+          _addedFiles.Add(path);
           var projectPaths2 = GetKnownProjectPaths(_addedFiles);
           if (!projectPaths1.SequenceEqual(projectPaths2)) {
             recompute = true;
@@ -102,15 +102,15 @@ namespace VsChromium.Server.FileSystem {
         RecomputeGraph();
     }
 
-    private void RemoveFileTask(string filename2) {
-      var filename = new FullPathName(filename2);
+    private void RemoveFileTask(string filename) {
+      var path = new FullPathName(filename);
       bool recompute = ValidateKnownFiles();
 
       lock (_lock) {
-        var known = _addedFiles.Contains(filename);
+        var known = _addedFiles.Contains(path);
         if (known) {
           var projectPaths1 = GetKnownProjectPaths(_addedFiles);
-          _addedFiles.Remove(filename);
+          _addedFiles.Remove(path);
           var projectPaths2 = GetKnownProjectPaths(_addedFiles);
           if (!projectPaths1.SequenceEqual(projectPaths2)) {
             recompute = true;

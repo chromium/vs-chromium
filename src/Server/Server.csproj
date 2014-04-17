@@ -23,6 +23,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcher.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystemNames\DirectoryName.cs" />

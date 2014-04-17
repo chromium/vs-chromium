@@ -25,7 +25,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     private bool OutputDiagnostics = false;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
-    private Dictionary<FileName, FileInfo> _files;
+    private FileNameDictionary<FileInfo> _files;
     private DirectoryName[] _directoryNames;
 
     public FileDatabaseBuilder(IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
@@ -123,7 +123,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       Logger.Log("Done computing list of searchable files from FileSystemTree in {0:n0} msec.", sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
-      _files = files;
+      _files = new FileNameDictionary<FileInfo>(files);
       _directoryNames = directoryNames;
     }
 

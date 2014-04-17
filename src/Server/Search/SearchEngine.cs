@@ -17,7 +17,6 @@ using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
-using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 using VsChromium.Server.NativeInterop;
@@ -27,36 +26,33 @@ namespace VsChromium.Server.Search {
   public class SearchEngine : ISearchEngine {
     private const int MinimumSearchPatternLength = 2;
     private readonly ICustomThreadPool _customThreadPool;
-    private readonly IFileContentsFactory _fileContentsFactory;
+    private readonly IFileDatabaseFactory _fileDatabaseFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly object _lock = new Object();
     private readonly IOperationIdFactory _operationIdFactory;
-    private readonly IProgressTrackerFactory _progressTrackerFactory;
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly ISearchStringParser _searchStringParser;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
-    private volatile FileDatabase _currentState;
+    private volatile IFileDatabase _currentFileDatabase;
 
     [ImportingConstructor]
     public SearchEngine(
       IFileSystemProcessor fileSystemProcessor,
       IFileSystemNameFactory fileSystemNameFactory,
       ICustomThreadPool customThreadPool,
-      IFileContentsFactory fileContentsFactory,
+      IFileDatabaseFactory fileDatabaseFactory,
       IOperationIdFactory operationIdFactory,
-      IProgressTrackerFactory progressTrackerFactory,
       IProjectDiscovery projectDiscovery,
       ISearchStringParser searchStringParser) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _customThreadPool = customThreadPool;
-      _fileContentsFactory = fileContentsFactory;
+      _fileDatabaseFactory = fileDatabaseFactory;
       _operationIdFactory = operationIdFactory;
-      _progressTrackerFactory = progressTrackerFactory;
       _projectDiscovery = projectDiscovery;
       _searchStringParser = searchStringParser;
 
       // Create a "Null" state
-      _currentState = FileDatabase.Empty(_fileContentsFactory, _progressTrackerFactory);
+      _currentFileDatabase = _fileDatabaseFactory.CreateEmpty();
 
       // Setup computing a new state everytime a new tree is computed.
       fileSystemProcessor.SnapshotComputed += FileSystemProcessorOnSnapshotComputed;
@@ -74,7 +70,7 @@ namespace VsChromium.Server.Search {
       // the *last* query, while the previous queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var matches = _currentState.FileNames
+      var matches = _currentFileDatabase.FileNames
         .AsParallel()
         // We need the line below because of "Take" (.net 4.0 PLinq limitation)
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
@@ -85,7 +81,7 @@ namespace VsChromium.Server.Search {
 
       return new SearchFileNamesResult {
         FileNames = matches,
-        TotalCount = _currentState.FileNames.Count
+        TotalCount = _currentFileDatabase.FileNames.Count
       };
     }
 
@@ -101,7 +97,7 @@ namespace VsChromium.Server.Search {
       // the *last* query, while the previous queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var matches = _currentState.DirectoryNames
+      var matches = _currentFileDatabase.DirectoryNames
         .AsParallel()
         // We need the line below because of "Take" (.net 4.0 PLinq limitation)
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
@@ -112,7 +108,7 @@ namespace VsChromium.Server.Search {
 
       return new SearchDirectoryNamesResult {
         DirectoryNames = matches,
-        TotalCount = _currentState.DirectoryNames.Count
+        TotalCount = _currentFileDatabase.DirectoryNames.Count
       };
     }
 
@@ -152,7 +148,7 @@ namespace VsChromium.Server.Search {
     private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, CancellationToken cancellationToken) {
       var taskResults = new TaskResultCounter(maxResults);
       var searchedFileCount = 0;
-      var matches = _currentState.FilesWithContents
+      var matches = _currentFileDatabase.FilesWithContents
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .WithCancellation(cancellationToken)
@@ -167,7 +163,7 @@ namespace VsChromium.Server.Search {
       return new SearchFileContentsResult {
         Entries = matches,
         SearchedFileCount = searchedFileCount,
-        TotalFileCount = _currentState.FilesWithContents.Count,
+        TotalFileCount = _currentFileDatabase.FilesWithContents.Count,
         HitCount = taskResults.Count,
       };
     }
@@ -177,7 +173,7 @@ namespace VsChromium.Server.Search {
       if (filename == null)
         return Enumerable.Empty<FileExtract>();
 
-      return _currentState.GetFileExtracts(filename.Item2, spans);
+      return _currentFileDatabase.GetFileExtracts(filename.Item2, spans);
     }
 
     public event Action<long> FilesLoading;
@@ -190,7 +186,7 @@ namespace VsChromium.Server.Search {
     private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> paths) {
       var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
-      paths.ForAll(x => _currentState.UpdateFileContents(x));
+      paths.ForAll(x => _currentFileDatabase.UpdateFileContents(x));
       OnFilesLoaded(operationId);
     }
 
@@ -245,9 +241,10 @@ namespace VsChromium.Server.Search {
       Logger.Log("++++ Computing new state of file database from file system tree. ++++");
       var sw = Stopwatch.StartNew();
 
-      var oldState = _currentState;
-      var newState = new FileDatabase(_fileContentsFactory, _progressTrackerFactory);
-      newState.ComputeState(oldState, newSnapshot);
+      var oldState = _currentFileDatabase;
+      var newState = _fileDatabaseFactory.CreateIncremental(oldState, newSnapshot);
+        //new FileDatabase(_fileContentsFactory, _progressTrackerFactory);
+        //newState.ComputeState(oldState, newSnapshot);
 
       sw.Stop();
       Logger.Log("++++ Done computing new state of file database from file system tree in {0:n0} msec. ++++",
@@ -256,7 +253,7 @@ namespace VsChromium.Server.Search {
 
       // Swap states
       lock (_lock) {
-        _currentState = newState;
+        _currentFileDatabase = newState;
       }
 
       OnFilesLoaded(operationId);

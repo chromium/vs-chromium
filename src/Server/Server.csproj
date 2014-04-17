@@ -91,6 +91,10 @@
     <Compile Include="Projects\SearchableFilesFilter.cs" />
     <Compile Include="Search\AsciiTextLineOffsets.cs" />
     <Compile Include="Search\FileContentsMemory.cs" />
+    <Compile Include="Search\FileDatabaseBuilder.cs" />
+    <Compile Include="Search\FileDatabaseFactory.cs" />
+    <Compile Include="Search\IFileDatabase.cs" />
+    <Compile Include="Search\IFileDatabaseFactory.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
     <Compile Include="Search\GetLineExtentCache.cs" />
     <Compile Include="Search\SearchContentsAlgorithms.cs" />

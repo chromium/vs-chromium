@@ -96,27 +96,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private Tuple<IProject, FileName> PathToFileName(string path) {
-      var project = _projectDiscovery.GetProject(new FullPathName(path));
-      if (project == null)
-        return null;
-
-      var rootPath = project.RootPath;
-      var rootLength = rootPath.Length + 1;
-      if (rootPath.Last() == Path.DirectorySeparatorChar)
-        rootLength--;
-
-      var directoryName = _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, rootPath);
-      var relativePath = path.Substring(rootLength);
-      var items = relativePath.Split(new char[] {
-        Path.DirectorySeparatorChar
-      });
-      foreach (var item in items) {
-        if (item == items.Last())
-          return Tuple.Create(project, _fileSystemNameFactory.CombineFileName(directoryName, item));
-
-        directoryName = _fileSystemNameFactory.CombineDirectoryNames(directoryName, item);
-      }
-      return null;
+      return _fileSystemNameFactory.PathToFileName(_projectDiscovery, path);
     }
   }
 }

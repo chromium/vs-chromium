@@ -7,9 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using ProtoBuf.ServiceModel;
 using VsChromium.Core;
-using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Win32.Files;
@@ -31,7 +29,6 @@ namespace VsChromium.Server.Search {
     private bool OutputDiagnostics = false;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
-    private List<IProject> _projects;
     private Dictionary<FileName, FileData> _files;
     private DirectoryName[] _directoryNames;
     private FileName[] _fileNames;
@@ -60,7 +57,7 @@ namespace VsChromium.Server.Search {
 
     public static FileDatabase Empty(IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
       var result = new FileDatabase(fileContentsFactory, progressTrackerFactory);
-      result.Freeze();
+      result.Freeze(new IntermediateState());
       return result;
     }
 
@@ -80,16 +77,16 @@ namespace VsChromium.Server.Search {
         throw new ArgumentNullException("newSnapshot");
 
       // Compute list of files from tree
-      ComputeFileCollection(newSnapshot);
+      var state = ComputeFileCollection(newSnapshot);
 
       // Merge old state in new state
-      TransferUnchangedFileContents(previousFileDatabase);
+      TransferUnchangedFileContents(state, previousFileDatabase);
 
       // Load file contents into newState
-      ReadMissingFileContents();
+      ReadMissingFileContents(state);
 
       // Done with new state!
-      Freeze();
+      Freeze(state);
 
       if (OutputDiagnostics) {
         // Note: For diagnostic only as this can be quite slow.
@@ -135,31 +132,29 @@ namespace VsChromium.Server.Search {
       fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.GetFullName()));
     }
 
-    private IProject GetProject(FileName filename) {
-      return _projects
-        .FirstOrDefault(x => SystemPathComparer.Instance.Comparer.Equals(filename.GetProjectRoot().Name, x.RootPath));
-    }
-
-    private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
+    private static IntermediateState ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
       var sw = Stopwatch.StartNew();
 
-      var files = new List<FileData>();
-      var directoryNames = new List<DirectoryName>();
-
-      var visitor = new FileSystemSnapshotVisitor(snapshot);
-      visitor.VisitFile = (project, filename) => files.Add(new FileData(filename, null));
-      visitor.VisitDirectory = (project, directoryEntry) => directoryNames.Add(directoryEntry.DirectoryName);
-      visitor.Visit();
-
-      // Store internally in sorted arrays
-      _projects = snapshot.ProjectRoots.Select(x => x.Project).ToList();
-      _files = files.ToDictionary(x => x.FileName, x => x);
-      _directoryNames = directoryNames.OrderBy(x => x).ToArray();
+      var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot).ToList();
+      var directoryNames = directories
+        .AsParallel()
+        .Select(x => x.Value.DirectoryName)
+        .ToArray();
+      var files = directories
+        .AsParallel()
+        .SelectMany(x => x.Value.Files.Select(y => new KeyValuePair<IProject, FileName>(x.Key, y)))
+        .Select(x => new FileInfo(new FileData(x.Value, null), x.Key.IsFileSearchable(x.Value)))
+        .ToDictionary(x => x.FileData.FileName, x => x);
 
       sw.Stop();
       Logger.Log("Done computing list of searchable files from FileSystemTree in {0:n0} msec.", sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
+
+      return new IntermediateState {
+        Files = files,
+        DirectoryNames = directoryNames,
+      };
     }
 
     /// <summary>
@@ -171,27 +166,16 @@ namespace VsChromium.Server.Search {
       return result;
     }
 
-    private void Freeze() {
+    private void Freeze(IntermediateState state) {
       if (_frozen)
         throw new InvalidOperationException("FileDatabase is already frozen.");
 
       Logger.Log("Freezing FileDatabase state.");
       var sw = Stopwatch.StartNew();
 
-      if (_projects == null) {
-        _projects = new List<IProject>();
-        _files = new Dictionary<FileName, FileData>();
-        _directoryNames = new DirectoryName[0];
-      }
-
-      //
-      // Compute additional data for fast search!
-      //
-
-      Debug.Assert(_projects != null);
-      Debug.Assert(_files != null);
-      Debug.Assert(_directoryNames != null);
-
+      _files = state.Files.ToDictionary(x => x.Key, x => x.Value.FileData);
+      _fileNames = _files.Select(x => x.Key).ToArray();
+      _directoryNames = state.DirectoryNames;
       // Note: Partitioning evenly ensures that each processor used by PLinq will deal with 
       // a partition of equal "weight". In this case, we make sure each partition contains
       // not only the same amount of files, but also (as close to as possible) the same
@@ -204,8 +188,6 @@ namespace VsChromium.Server.Search {
         .SelectMany(x => x)
         .ToArray();
 
-      _fileNames = _files.Select(x => x.Key).ToArray();
-
       _frozen = true;
 
       sw.Stop();
@@ -213,11 +195,11 @@ namespace VsChromium.Server.Search {
       Logger.LogMemoryStats();
     }
 
-    private void TransferUnchangedFileContents(FileDatabase oldState) {
+    private void TransferUnchangedFileContents(IntermediateState state, FileDatabase oldState) {
       Logger.Log("Checking for out of date files.");
       var sw = Stopwatch.StartNew();
 
-      IList<FileData> commonOldFiles = GetCommonFiles(oldState).ToArray();
+      IList<FileData> commonOldFiles = GetCommonFiles(state, oldState).ToArray();
       using (var progress = _progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
         commonOldFiles
           .AsParallel()
@@ -228,7 +210,7 @@ namespace VsChromium.Server.Search {
                             oldFileData.FileName.GetFullName()));
             return IsFileContentsUpToDate(oldFileData);
           })
-          .ForAll(oldFileData => GetFileData(oldFileData.FileName).UpdateContents(oldFileData.Contents));
+          .ForAll(oldFileData => state.Files[oldFileData.FileName].FileData.UpdateContents(oldFileData.Contents));
       }
 
       Logger.Log("Done checking for {0:n0} out of date files in {1:n0} msec.", commonOldFiles.Count,
@@ -251,52 +233,59 @@ namespace VsChromium.Server.Search {
       return false;
     }
 
-    private IEnumerable<FileData> GetCommonFiles(FileDatabase oldState) {
-      if (_files.Count == 0 || oldState._files.Count == 0)
+    private static IEnumerable<FileData> GetCommonFiles(IntermediateState state, FileDatabase oldState) {
+      if (state.Files.Count == 0 || oldState._files.Count == 0)
         return Enumerable.Empty<FileData>();
 
-      return oldState._files.Values.Intersect(_files.Values, FileDataComparer.Instance);
+      return oldState._files.Values.Intersect(state.Files.Values.Select(x => x.FileData), FileDataComparer.Instance);
     }
 
     /// <summary>
     /// Reads the content of all file entries that have no content (yet). Returns the # of files read from disk.
     /// </summary>
-    private void ReadMissingFileContents() {
-      var filesToRead = GetMissingFileContentsList();
-
+    /// <param name="state"></param>
+    private void ReadMissingFileContents(IntermediateState state) {
       Logger.Log("Loading file contents from disk.");
       var sw = Stopwatch.StartNew();
 
-      using (var progress = _progressTrackerFactory.CreateTracker(filesToRead.Count)) {
-        filesToRead
+      using (var progress = _progressTrackerFactory.CreateTracker(state.Files.Count)) {
+        state.Files.Values
           .AsParallel()
           .ForAll(x => {
-            progress.Step(
-              (i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileName.GetFullName()));
-            x.UpdateContents(_fileContentsFactory.GetFileContents(x.FileName.GetFullName()));
+            progress.Step((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileData.FileName.GetFullName()));
+            if (x.IsSearchable && x.FileData.Contents == null) {
+              x.FileData.UpdateContents(_fileContentsFactory.GetFileContents(x.FileData.FileName.GetFullName()));
+            }
           });
       }
 
       sw.Stop();
-      Logger.Log("Done loading file contents from disk: loaded {0:n0} files in {1:n0} msec.", filesToRead.Count,
-                 sw.ElapsedMilliseconds);
+      Logger.Log("Done loading file contents from disk: loaded {0:n0} files in {1:n0} msec.",
+        state.Files.Count,
+        sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
     }
 
-    private ICollection<FileData> GetMissingFileContentsList() {
-      Logger.Log("Computing list of files to read from disk.");
-      var sw = Stopwatch.StartNew();
+    private class IntermediateState {
+      public IntermediateState() {
+        Files = new Dictionary<FileName, FileInfo>();
+        DirectoryNames = new DirectoryName[0];
+      }
+      public Dictionary<FileName, FileInfo> Files { get; set; }
+      public DirectoryName[] DirectoryNames { get; set; }
+    }
 
-      var filesToRead = _files.Values
-        .AsParallel()
-        .Where(x => x.Contents == null)
-        .Where(x => GetProject(x.FileName).IsFileSearchable(x.FileName))
-        .ToList();
+    private struct FileInfo {
+      private readonly FileData _fileData;
+      private readonly bool _isSearchable;
 
-      sw.Stop();
-      Logger.Log("Done computing list of files to read from disk in {0:n0} msec.", sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
-      return filesToRead;
+      public FileInfo(FileData fileData, bool isSearchable) {
+        _fileData = fileData;
+        _isSearchable = isSearchable;
+      }
+
+      public FileData FileData { get { return _fileData; } }
+      public bool IsSearchable { get { return _isSearchable; } }
     }
 
     private class FileDataComparer : IEqualityComparer<FileData>, IComparer<FileData> {

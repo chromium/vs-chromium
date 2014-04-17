@@ -64,5 +64,9 @@ namespace VsChromium.Core.Linq {
     public static SortedSet<TSource> ToSortedSet<TSource>(this IEnumerable<TSource> source, IComparer<TSource> comparer) {
       return new SortedSet<TSource>(source, comparer);
     }
+
+    public static bool IsEmpty<TSource>(this Stack<TSource> stack ) {
+      return stack.Count == 0;
+    }
   }
 }

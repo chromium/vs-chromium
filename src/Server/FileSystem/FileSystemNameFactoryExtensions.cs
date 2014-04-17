@@ -132,11 +132,12 @@ namespace VsChromium.Server.FileSystem {
     /// Return the |FileName| instance corresponding to the full path |path|. Returns |null| if |path| 
     /// is invalid or not part of a project.
     /// </summary>
-    public static FileName PathToFileName(this IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, string path) {
-      var rootPath = projectDiscovery.GetProjectPath(new FullPathName(path));
-      if (rootPath == null)
+    public static Tuple<IProject, FileName> PathToFileName(this IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, string path) {
+      var project = projectDiscovery.GetProject(new FullPathName(path));
+      if (project == null)
         return null;
 
+      var rootPath = project.RootPath;
       var rootLength = rootPath.Length + 1;
       if (rootPath.Last() == Path.DirectorySeparatorChar)
         rootLength--;
@@ -148,7 +149,7 @@ namespace VsChromium.Server.FileSystem {
       });
       foreach (var item in items) {
         if (item == items.Last())
-          return fileSystemNameFactory.CombineFileName(directoryName, item);
+          return Tuple.Create(project, fileSystemNameFactory.CombineFileName(directoryName, item));
 
         directoryName = fileSystemNameFactory.CombineDirectoryNames(directoryName, item);
       }

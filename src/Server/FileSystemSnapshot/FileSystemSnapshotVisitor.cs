@@ -2,43 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
+using System.Collections.Generic;
 using VsChromium.Core.Linq;
-using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemSnapshot {
-  /// <summary>
-  /// A simple BFS visitor of a <see cref="FileSystemTreeSnapshot"/> instance.
-  /// </summary>
   public class FileSystemSnapshotVisitor {
-    private readonly FileSystemTreeSnapshot _snapshot;
+    public static IEnumerable<KeyValuePair<IProject, DirectorySnapshot>> GetDirectories(FileSystemTreeSnapshot snapshot) {
 
-    public FileSystemSnapshotVisitor(FileSystemTreeSnapshot snapshot) {
-      _snapshot = snapshot;
-    }
+      var stack = new Stack<KeyValuePair<IProject, DirectorySnapshot>>();
 
-    /// <summary>
-    /// Called for each directory entry of the snapshot.
-    /// </summary>
-    public Action<ProjectRootSnapshot, DirectorySnapshot> VisitDirectory { get; set; }
+      foreach (var project in snapshot.ProjectRoots) {
+        stack.Push(new KeyValuePair<IProject, DirectorySnapshot>(project.Project, project.Directory));
+      }
 
-    /// <summary>
-    /// Called for each file of the snapshot.
-    /// </summary>
-    public Action<ProjectRootSnapshot, FileName> VisitFile { get; set; }
-
-    /// <summary>
-    /// Visits all directory and files, calling <see cref="VisitFile"/> and <see
-    /// cref="VisitDirectory"/> appropriately.
-    /// </summary>
-    public void Visit() {
-      _snapshot.ProjectRoots.ForAll(x => VisitWorker(x, x.Directory));
-    }
-
-    private void VisitWorker(ProjectRootSnapshot project, DirectorySnapshot directory) {
-      VisitDirectory(project, directory);
-      directory.Files.ForAll(x => VisitFile(project, x));
-      directory.DirectoryEntries.ForAll(x => VisitWorker(project, x));
+      while (!stack.IsEmpty()) {
+        var head = stack.Pop();
+        foreach (var directory in head.Value.DirectoryEntries) {
+          stack.Push(new KeyValuePair<IProject, DirectorySnapshot>(head.Key, directory));
+        }
+        yield return head;
+      }
     }
   }
 }

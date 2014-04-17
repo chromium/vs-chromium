@@ -10,7 +10,6 @@ using VsChromium.Core.Processes;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Debugging;
 using VsChromium.Core.Win32.Strings;
-using NativeMethods = VsChromium.Core.Win32.Debugging.NativeMethods;
 
 namespace VsChromium.Core.Debugger {
   /// <summary>

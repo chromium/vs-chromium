@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Text;
 using VsChromium.Core.Win32.Memory;
 

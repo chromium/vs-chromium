@@ -43,7 +43,7 @@ namespace VsChromium.Core.Processes {
       var stringBuilder = BuildCommandLine(simpleProcessStartupInfo.FileName, simpleProcessStartupInfo.Arguments);
       Logger.Log("CreateProcessWithStartInfo: command line is {0}.", stringBuilder);
 
-      using (var startupInfo = new Win32.Processes.STARTUPINFO()) {
+      using (var startupInfo = new STARTUPINFO()) {
         Logger.Log("CreateProcessWithStartInfo: Creation flags.");
         ProcessCreationFlags processCreationFlags = 0;
         if (simpleProcessStartupInfo.CreateNoWindow) {

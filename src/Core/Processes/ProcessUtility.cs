@@ -1,12 +1,9 @@
-﻿using Microsoft.Win32.SafeHandles;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Win32.SafeHandles;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Core.Win32.Processes;
+using NativeMethods = VsChromium.Core.Win32.Files.NativeMethods;
 
 namespace VsChromium.Core.Processes {
   public static class ProcessUtility {
@@ -16,7 +13,7 @@ namespace VsChromium.Core.Processes {
       // machine type.
       //http://www.microsoft.com/whdc/system/platform/firmware/PECOFF.mspx
       using (SafeFileHandle safeHandle =
-                Win32.Files.NativeMethods.CreateFile(
+                NativeMethods.CreateFile(
                     path,
                     NativeAccessFlags.GenericRead,
                     FileShare.Read,

@@ -3,9 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace VsChromium.Core.Win32.Shell {

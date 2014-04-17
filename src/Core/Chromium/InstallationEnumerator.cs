@@ -1,12 +1,7 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VsChromium.Core.Processes;
-using VsChromium.Core.Win32.Processes;
+using Microsoft.Win32;
 
 namespace VsChromium.Core.Chromium {
   public class InstallationEnumerator : IEnumerable<InstallationData> {
@@ -18,7 +13,7 @@ namespace VsChromium.Core.Chromium {
         yield return data;
     }
 
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+    IEnumerator IEnumerable.GetEnumerator() {
       return this.GetEnumerator();
     }
 

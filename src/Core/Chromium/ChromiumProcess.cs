@@ -8,12 +8,11 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using VsChromium.Core.Processes;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Processes;
 using VsChromium.Core.Win32.Shell;
+using NativeMethods = VsChromium.Core.Win32.Shell.NativeMethods;
 
 namespace VsChromium.Core.Chromium {
   public class ChromiumProcess {
@@ -61,12 +60,12 @@ namespace VsChromium.Core.Chromium {
     public Icon Icon {
       get {
         ushort iconIndex = (ushort)_installationData.IconIndex;
-        IntPtr hicon = Core.Win32.Shell.NativeMethods.ExtractAssociatedIcon(IntPtr.Zero, ExecutablePath, ref iconIndex);
+        IntPtr hicon = NativeMethods.ExtractAssociatedIcon(IntPtr.Zero, ExecutablePath, ref iconIndex);
         if (hicon == IntPtr.Zero) {
           SHFileInfo info = new SHFileInfo(true);
           SHGFI flags = SHGFI.Icon | SHGFI.SmallIcon | SHGFI.OpenIcon | SHGFI.UseFileAttributes;
           int cbFileInfo = Marshal.SizeOf(info);
-          VsChromium.Core.Win32.Shell.NativeMethods.SHGetFileInfo(
+          NativeMethods.SHGetFileInfo(
             ExecutablePath, 256, ref info, (uint)cbFileInfo, (uint)flags);
           hicon = info.hIcon;
         }

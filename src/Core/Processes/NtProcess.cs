@@ -2,19 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using Microsoft.Win32.SafeHandles;
-
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Runtime.InteropServices;
-using System.ComponentModel;
-
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Processes;
-using System.Diagnostics;
 
 namespace VsChromium.Core.Processes {
   public class NtProcess {
@@ -55,7 +47,7 @@ namespace VsChromium.Core.Processes {
 
           ProcessBasicInformation basicInfo = new ProcessBasicInformation();
           int size;
-          int status = VsChromium.Core.Win32.Processes.NativeMethods.NtQueryInformationProcess(
+          int status = NativeMethods.NtQueryInformationProcess(
               handle,
               ProcessInfoClass.BasicInformation,
               ref basicInfo,
@@ -102,12 +94,12 @@ namespace VsChromium.Core.Processes {
       // do that then fallback to requesting access with a lower privilege level.
       flags = ProcessAccessFlags.QueryInformation | ProcessAccessFlags.VmRead;
       SafeProcessHandle handle;
-      handle = Win32.Processes.NativeMethods.OpenProcess(flags, false, _processId);
+      handle = NativeMethods.OpenProcess(flags, false, _processId);
       if (!handle.IsInvalid)
         return handle;
 
       flags = ProcessAccessFlags.QueryLimitedInformation;
-      handle = Win32.Processes.NativeMethods.OpenProcess(flags, false, _processId);
+      handle = NativeMethods.OpenProcess(flags, false, _processId);
       if (handle.IsInvalid)
         flags = ProcessAccessFlags.None;
       return handle;
@@ -148,7 +140,7 @@ namespace VsChromium.Core.Processes {
     private string QueryProcessImageName(SafeProcessHandle handle, ProcessQueryImageNameMode mode) {
       StringBuilder moduleBuffer = new StringBuilder(1024);
       int size = moduleBuffer.Capacity;
-      VsChromium.Core.Win32.Processes.NativeMethods.QueryFullProcessImageName(
+      NativeMethods.QueryFullProcessImageName(
         handle, mode, moduleBuffer, ref size);
       if (mode == ProcessQueryImageNameMode.NativeSystemFormat)
         moduleBuffer.Insert(0, "\\\\?\\GLOBALROOT");

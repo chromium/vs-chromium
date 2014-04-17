@@ -3,12 +3,8 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VsChromium.Core.Win32 {
   public struct ComPtr<T> : IDisposable  where T : class {

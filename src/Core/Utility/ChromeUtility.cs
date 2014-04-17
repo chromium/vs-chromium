@@ -3,12 +3,10 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Win32.Processes;
 
 namespace VsChromium.Core.Utility {
   public static class ChromeUtility {
@@ -25,7 +23,7 @@ namespace VsChromium.Core.Utility {
       IntPtr ptrToSplitArgs;
       string[] splitArgs;
 
-      ptrToSplitArgs = Win32.Processes.NativeMethods.CommandLineToArgvW(unsplitArgumentLine, out numberOfArgs);
+      ptrToSplitArgs = NativeMethods.CommandLineToArgvW(unsplitArgumentLine, out numberOfArgs);
 
       // CommandLineToArgvW returns NULL upon failure.
       if (ptrToSplitArgs == IntPtr.Zero)
@@ -44,7 +42,7 @@ namespace VsChromium.Core.Utility {
         return splitArgs;
       } finally {
         // Free memory obtained by CommandLineToArgW.
-        VsChromium.Core.Win32.Memory.NativeMethods.LocalFree(ptrToSplitArgs);
+        Win32.Memory.NativeMethods.LocalFree(ptrToSplitArgs);
       }
     }
   }

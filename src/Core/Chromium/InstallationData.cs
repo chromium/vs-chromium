@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Processes;
 using VsChromium.Core.Win32.Processes;
@@ -35,7 +31,7 @@ namespace VsChromium.Core.Chromium {
       Distribution = DistributionType.Canary;
       Architecture = ProcessUtility.GetMachineType(exePath);
       Level = level;
-      InstallationPath = new FileNames.FullPathName(location);
+      InstallationPath = new FullPathName(location);
       if (InstallationPath.HasComponent("Chrome SxS"))
         Distribution = DistributionType.Canary;
       else if (InstallationPath.HasComponent("Chrome"))

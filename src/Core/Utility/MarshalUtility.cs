@@ -3,12 +3,8 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.InteropServices;
 using System.ComponentModel;
-
+using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Processes;
 
 namespace VsChromium.Core.Utility {
@@ -20,7 +16,7 @@ namespace VsChromium.Core.Utility {
       byte[] dest = new byte[bytesToRead];
       try {
         uint bytesRead;
-        if (!VsChromium.Core.Win32.Processes.NativeMethods.ReadProcessMemory(
+        if (!NativeMethods.ReadProcessMemory(
                 processHandle, addressInProcess, dest, (uint)bytesToRead, out bytesRead))
           throw new Win32Exception();
         Marshal.Copy(dest, 0, buffer, (int)bytesRead);
@@ -39,7 +35,7 @@ namespace VsChromium.Core.Utility {
       byte[] buffer = new byte[numChars * 2];
 
       try {
-        bool bresult = VsChromium.Core.Win32.Processes.NativeMethods.ReadProcessMemory(processHandle,
+        bool bresult = NativeMethods.ReadProcessMemory(processHandle,
                                                        addressInProcess,
                                                        buffer,
                                                        (uint)(numChars * 2),

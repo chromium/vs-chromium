@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using ProtoBuf;
-using VsChromium.Core.FileNames;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]

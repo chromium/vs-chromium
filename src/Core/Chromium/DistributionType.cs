@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace VsChromium.Core.Chromium {
+﻿namespace VsChromium.Core.Chromium {
   public enum DistributionType {
     Chromium,
     Chrome,

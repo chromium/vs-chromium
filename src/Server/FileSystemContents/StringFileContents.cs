@@ -4,10 +4,10 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Search;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemContents {
   public class StringFileContents : FileContents {
     private static readonly StringFileContents _empty = new StringFileContents("");
     private readonly string _text;
@@ -22,7 +22,7 @@ namespace VsChromium.Server.Search {
     public static StringFileContents Empty { get { return _empty; } }
 
     public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
-      if (object.ReferenceEquals(this, _empty))
+      if (ReferenceEquals(this, _empty))
         return NoSpans;
       // TODO(rpaquay): Maybe we will need this someday. For now, we use this class only for empty file content placeholder.
       throw new NotImplementedException();

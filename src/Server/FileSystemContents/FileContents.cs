@@ -6,8 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Search;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemContents {
   public abstract class FileContents {
     protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();

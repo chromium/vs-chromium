@@ -9,7 +9,7 @@ using VsChromium.Core.Win32.Files;
 using VsChromium.Core.Win32.Strings;
 using VsChromium.Server.NativeInterop;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemContents {
   [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
     public FileContents GetFileContents(string path) {

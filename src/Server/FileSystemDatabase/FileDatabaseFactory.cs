@@ -4,11 +4,12 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
   /// Exposes am in-memory snapshot of the list of file names, directory names
   /// and file contents for a given <see cref="FileSystemTreeSnapshot"/> snapshot.

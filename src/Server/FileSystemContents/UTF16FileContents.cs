@@ -7,8 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.NativeInterop;
+using VsChromium.Server.Search;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemContents {
   public class UTF16FileContents : FileContents {
     private readonly FileContentsMemory _heap;
 

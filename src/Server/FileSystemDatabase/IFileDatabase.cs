@@ -8,7 +8,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabase {
     /// <summary>
     /// Returns the list of filenames suitable for file name search.

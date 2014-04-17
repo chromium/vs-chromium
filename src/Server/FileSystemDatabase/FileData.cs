@@ -4,9 +4,10 @@
 
 using System;
 using System.Threading;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemDatabase {
   public class FileData {
     private readonly FileName _fileName;
     private FileContents _contents;

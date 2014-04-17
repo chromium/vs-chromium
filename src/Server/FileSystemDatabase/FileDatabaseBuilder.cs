@@ -11,12 +11,13 @@ using VsChromium.Core;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
     /// <summary>
     /// Note: For debugging purposes only.

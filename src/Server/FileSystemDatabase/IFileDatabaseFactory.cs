@@ -4,7 +4,7 @@
 
 using VsChromium.Server.FileSystemSnapshot;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabaseFactory {
     IFileDatabase CreateEmpty();
     IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot);

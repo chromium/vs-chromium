@@ -1,7 +1,7 @@
 ﻿using System;
 using VsChromium.Core.Win32.Memory;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemContents {
   public class FileContentsMemory {
     private readonly SafeHeapBlockHandle _block;
     private readonly int _contentsOffset;

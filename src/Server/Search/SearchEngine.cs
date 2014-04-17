@@ -15,11 +15,13 @@ using VsChromium.Core.FileNames.PatternMatching;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
-using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   [Export(typeof(ISearchEngine))]

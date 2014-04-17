@@ -7,8 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.NativeInterop;
+using VsChromium.Server.Search;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemContents {
   /// <summary>
   /// FileContents implementation for files containing only Ascii characters (e.g. all character
   /// values are less than 127).

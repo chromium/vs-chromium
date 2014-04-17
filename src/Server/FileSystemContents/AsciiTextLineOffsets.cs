@@ -6,7 +6,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Strings;
 using VsChromium.Server.NativeInterop;
 
-namespace VsChromium.Server.Search {
+namespace VsChromium.Server.FileSystemContents {
   public unsafe class AsciiTextLineOffsets {
     private const char _lineBreak = '\n';
     private readonly FileContentsMemory _heap;  // Keep this ensure native memory lifetime

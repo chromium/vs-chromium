@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright 2014 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
@@ -10,13 +13,7 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public override DirectoryName Parent { get { return null; } }
-
     public override RelativePathName RelativePathName { get { return default(RelativePathName); } }
-
-    public override bool IsAbsoluteName { get { return true; } }
-
-    public override string Name { get { return _path.FullName; } }
-
     public override FullPathName FullPathName { get { return _path; } }
   }
 }

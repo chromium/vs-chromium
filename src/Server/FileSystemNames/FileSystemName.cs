@@ -6,6 +6,27 @@ using System;
 using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
+  /// <summary>
+  /// Abstraction over a file or directory name in the file system. We use a
+  /// common pattern of having File and Directory names represented relative to
+  /// their parent. However, this particular implementation allows the very
+  /// first part of the name (the <see cref="IsAbsoluteName"/> part) to be a
+  /// directory name with multiple levels (e.g. @"d:\foo\bar"). Also, for
+  /// performance reason, i.e. to keep string memory allocation in check,
+  /// instances store internally either the full path name, or the relative path
+  /// from the parent containing a full path name.
+  ///
+  /// For example, to represent the file name "d:\foo\bar\baz\blah.txt" relative
+  /// to the "d:\foo\bar" absolute directory, we have this hierarchy of
+  /// instances:
+  /// FileName
+  ///   RelativePathName = "baz\blah.txt"
+  ///   Parent => FileName
+  ///     RelativePathName = "baz"
+  ///     Parent => AbsoluteDirectory
+  ///       FullPathName = "d:\foo\bar"
+  ///       Parent = null
+  /// </summary>
   public abstract class FileSystemName : IComparable<FileSystemName>, IEquatable<FileSystemName> {
     /// <summary>
     /// Returns the parent directory, or null if <see cref="IsAbsoluteName"/> is true.

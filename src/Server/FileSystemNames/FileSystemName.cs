@@ -17,11 +17,11 @@ namespace VsChromium.Server.FileSystemNames {
   /// from the parent containing a full path name.
   ///
   /// For example, to represent the file name "d:\foo\bar\baz\blah.txt" relative
-  /// to the "d:\foo\bar" absolute directory, we have this hierarchy of
+  /// to the "d:\foo\bar" absolute path, we have this hierarchy of
   /// instances:
   /// FileName
   ///   RelativePathName = "baz\blah.txt"
-  ///   Parent => FileName
+  ///   Parent => RelativeDirectoryName
   ///     RelativePathName = "baz"
   ///     Parent => AbsoluteDirectory
   ///       FullPathName = "d:\foo\bar"

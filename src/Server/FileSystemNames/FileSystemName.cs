@@ -24,10 +24,10 @@ namespace VsChromium.Server.FileSystemNames {
     /// </summary>
     public abstract bool IsRoot { get; }
 
-    public abstract string GetFullName();
+    public abstract FullPathName FullPathName { get; }
 
     public override string ToString() {
-      return GetFullName();
+      return FullPathName.FullName;
     }
 
     #region Comparison/Equality plumbing

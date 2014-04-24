@@ -33,12 +33,14 @@ namespace VsChromium.Server.FileSystemNames {
 
     public override bool IsRoot { get { return false; } }
 
-    public override string GetFullName() {
-      for (var parent = Parent; parent != null; parent = parent.Parent) {
-        if (parent.IsAbsoluteName)
-          return PathHelpers.PathCombine(parent.Name, _relativePathName.RelativeName);
+    public override FullPathName FullPathName {
+      get {
+        for (var parent = Parent; parent != null; parent = parent.Parent) {
+          if (parent.IsAbsoluteName)
+            return new FullPathName(PathHelpers.PathCombine(parent.Name, _relativePathName.RelativeName));
+        }
+        throw new InvalidOperationException("FileName entry does not have a parent with an absolute path.");
       }
-      throw new InvalidOperationException("FileName entry does not have a parent with an absolute path.");
     }
   }
 }

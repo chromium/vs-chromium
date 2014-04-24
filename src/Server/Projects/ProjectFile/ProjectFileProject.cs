@@ -19,7 +19,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
       _searchableFilesFilter = new SearchableFilesFilter(configurationSectionProvider);
     }
 
-    public string RootPath { get { return _rootPath.FullName; } }
+    public FullPathName RootPath { get { return _rootPath; } }
 
     public IDirectoryFilter DirectoryFilter { get { return _directoryFilter; } }
 

@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel.Composition;
 using VsChromium.Core;
+using VsChromium.Core.FileNames;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Core.Win32.Strings;
 using VsChromium.Server.NativeInterop;
@@ -12,11 +13,11 @@ using VsChromium.Server.NativeInterop;
 namespace VsChromium.Server.FileSystemContents {
   [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
-    public FileContents GetFileContents(string path) {
+    public FileContents GetFileContents(FullPathName path) {
       return ReadFile(path);
     }
 
-    private FileContents ReadFile(string fullName) {
+    private FileContents ReadFile(FullPathName fullName) {
       try {
         var fileInfo = new SlimFileInfo(fullName);
         const int trailingByteCount = 2;

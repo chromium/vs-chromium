@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Search {
@@ -11,7 +12,7 @@ namespace VsChromium.Server.Search {
     SearchFileNamesResult SearchFileNames(SearchParams searchParams);
     SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams);
     SearchFileContentsResult SearchFileContents(SearchParams searchParams);
-    IEnumerable<FileExtract> GetFileExtracts(string filename, IEnumerable<FilePositionSpan> spans);
+    IEnumerable<FileExtract> GetFileExtracts(FullPathName filename, IEnumerable<FilePositionSpan> spans);
 
     event Action<long> FilesLoading;
     event Action<long> FilesLoaded;

@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using VsChromium.Core.FileNames;
+
 namespace VsChromium.Server.Projects {
   public interface IProject {
-    string RootPath { get; }
+    FullPathName RootPath { get; }
 
     IDirectoryFilter DirectoryFilter { get; }
     IFileFilter FileFilter { get; }

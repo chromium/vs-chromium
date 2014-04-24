@@ -58,7 +58,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
           progress.Step(
             (i, n) =>
             string.Format("Traversing directory: {0}",
-                          PathHelpers.PathCombine(project.RootPath, directoryName.RelativePathName.RelativeName)));
+                          PathHelpers.PathCombine(project.RootPath.FullName, directoryName.RelativePathName.RelativeName)));
           var entries = traversedDirectoryEntry.ChildrenNames
             .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName.RelativeName))
             .ToList();

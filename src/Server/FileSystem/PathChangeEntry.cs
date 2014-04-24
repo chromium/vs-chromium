@@ -1,14 +1,16 @@
+using VsChromium.Core.FileNames;
+
 namespace VsChromium.Server.FileSystem {
   public struct PathChangeEntry {
-    private readonly string _path;
+    private readonly FullPathName _path;
     private readonly PathChangeKind _kind;
 
-    public PathChangeEntry(string path, PathChangeKind kind) {
-      this._path = path;
-      this._kind = kind;
+    public PathChangeEntry(FullPathName path, PathChangeKind kind) {
+      _path = path;
+      _kind = kind;
     }
 
-    public string Path { get { return _path; } }
+    public FullPathName Path { get { return _path; } }
     public PathChangeKind Kind { get { return _kind; } }
   }
 }

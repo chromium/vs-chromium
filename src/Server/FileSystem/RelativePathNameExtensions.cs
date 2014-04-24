@@ -8,10 +8,10 @@ using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Server.FileSystem {
   public static class RelativePathNameExtensions {
-    public static void GetFileSystemEntries(string rootPath, RelativePathName path, out RelativePathName[] directories, out RelativePathName[] files) {
+    public static void GetFileSystemEntries(FullPathName rootPath, RelativePathName path, out RelativePathName[] directories, out RelativePathName[] files) {
       IList<string> shortDirectoryNames;
       IList<string> shortFileNames;
-      NativeFile.GetDirectoryEntries(PathHelpers.PathCombine(rootPath, path.RelativeName), out shortDirectoryNames, out shortFileNames);
+      NativeFile.GetDirectoryEntries(PathHelpers.PathCombine(rootPath.FullName, path.RelativeName), out shortDirectoryNames, out shortFileNames);
       directories = CreateChildren(path, shortDirectoryNames);
       files = CreateChildren(path, shortFileNames);
     }

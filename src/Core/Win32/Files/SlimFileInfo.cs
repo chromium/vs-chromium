@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using VsChromium.Core.FileNames;
 
 namespace VsChromium.Core.Win32.Files {
   /// <summary>
@@ -12,11 +13,11 @@ namespace VsChromium.Core.Win32.Files {
   /// is to be more efficient because of fewer checks performed.
   /// </summary>
   public class SlimFileInfo {
-    private readonly string _path;
+    private readonly FullPathName _path;
     private WIN32_FILE_ATTRIBUTE_DATA _data;
     private int _win32Error = -1;
 
-    public SlimFileInfo(string path) {
+    public SlimFileInfo(FullPathName path) {
       _path = path;
     }
 
@@ -41,7 +42,7 @@ namespace VsChromium.Core.Win32.Files {
       }
     }
 
-    public string FullName { get { return _path; } }
+    public FullPathName FullPathName { get { return _path; } }
 
     private long HighLowToLong(int high, int low) {
       return HighLowToLong((uint)high, (uint)low);
@@ -60,7 +61,7 @@ namespace VsChromium.Core.Win32.Files {
     }
 
     private void Refresh() {
-      if (!NativeMethods.GetFileAttributesEx(_path, 0, ref _data))
+      if (!NativeMethods.GetFileAttributesEx(_path.FullName, 0, ref _data))
         _win32Error = Marshal.GetLastWin32Error();
       _win32Error = 0;
     }

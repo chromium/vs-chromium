@@ -34,7 +34,7 @@ namespace VsChromium.Server.Projects.Chromium {
     }
 
     private ChromiumProject CreateProject(FullPathName rootPath) {
-      return new ChromiumProject(_configurationSectionProvider, rootPath.FullName);
+      return new ChromiumProject(_configurationSectionProvider, rootPath);
     }
   }
 }

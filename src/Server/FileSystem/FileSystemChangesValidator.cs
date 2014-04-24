@@ -57,22 +57,22 @@ namespace VsChromium.Server.FileSystem {
       return new FileSystemValidationResult();
     }
 
-    private bool PathIsExcluded(string path) {
-      var project = _projectDiscovery.GetProject(new FullPathName(path));
+    private bool PathIsExcluded(FullPathName path) {
+      var project = _projectDiscovery.GetProject(path);
       if (project == null)
         return true;
 
       var rootPath = project.RootPath;
 
       // If path is root itself, it is never excluded.
-      if (rootPath.Length == path.Length)
+      if (rootPath.FullName.Length == path.FullName.Length)
         return false;
 
-      var rootLength = rootPath.Length + 1; // Move past '\\' character.
-      if (rootPath.Last() == Path.DirectorySeparatorChar)
+      var rootLength = rootPath.FullName.Length + 1; // Move past '\\' character.
+      if (rootPath.FullName.Last() == Path.DirectorySeparatorChar)
         rootLength--;
 
-      var relativePath = path.Substring(rootLength);
+      var relativePath = path.FullName.Substring(rootLength);
       var items = relativePath.Split(new char[] {
         Path.DirectorySeparatorChar
       });
@@ -95,7 +95,7 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private Tuple<IProject, FileName> PathToFileName(string path) {
+    private Tuple<IProject, FileName> PathToFileName(FullPathName path) {
       return _fileSystemNameFactory.PathToFileName(_projectDiscovery, path);
     }
   }

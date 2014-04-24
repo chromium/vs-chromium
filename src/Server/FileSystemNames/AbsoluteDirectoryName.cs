@@ -3,12 +3,10 @@ using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
   public class AbsoluteDirectoryName : DirectoryName {
-    private readonly string _path;
+    private readonly FullPathName _path;
 
-    public AbsoluteDirectoryName(string path) {
+    public AbsoluteDirectoryName(FullPathName path) {
       _path = path;
-      if (!PathHelpers.IsAbsolutePath(path))
-        throw new ArgumentException("Path is not absolute", "path");
     }
 
     public override DirectoryName Parent { get { return null; } }
@@ -17,12 +15,10 @@ namespace VsChromium.Server.FileSystemNames {
 
     public override bool IsAbsoluteName { get { return true; } }
 
-    public override string Name { get { return _path; } }
+    public override string Name { get { return _path.FullName; } }
 
     public override bool IsRoot { get { return false; } }
 
-    public override string GetFullName() {
-      return _path;
-    }
+    public override FullPathName FullPathName { get { return _path; } }
   }
 }

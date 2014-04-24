@@ -7,23 +7,30 @@ using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
   public abstract class FileSystemName : IComparable<FileSystemName>, IEquatable<FileSystemName> {
+    /// <summary>
+    /// Returns the parent directory, or null for a <see cref="IsAbsoluteName"/> is true.
+    /// </summary>
     public abstract DirectoryName Parent { get; }
+    /// <summary>
+    /// Returns the <see cref="RelativePathName"/>, which is empty only if <see
+    /// cref="IsAbsoluteName"/> is true.
+    /// Note: This operation does not perform any memory allocation.
+    /// </summary>
     public abstract RelativePathName RelativePathName { get; }
+    /// <summary>
+    /// Returns true if this instances is an absolute directory name.
+    /// </summary>
     public abstract bool IsAbsoluteName { get; }
-
     /// <summary>
     /// Returns the "name" component of this instances. For first level directory names,
     /// |name| contains the absolute directory name. For lower lever entries, "name" is
     /// is a relative name.
     /// </summary>
     public abstract string Name { get; }
-
     /// <summary>
-    /// Return "true" for the root node of the file system name tree, i.e. it is the node returned from <c>FileSystemNameFactory.Root</c>
-    /// The Root node has no parent and an empty name.
+    /// Return the <see cref="FullPathName"/> of this FileSystemName.
+    /// Note: This operation typically performs a string concatenation.
     /// </summary>
-    public abstract bool IsRoot { get; }
-
     public abstract FullPathName FullPathName { get; }
 
     public override string ToString() {

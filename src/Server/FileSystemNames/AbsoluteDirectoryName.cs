@@ -17,8 +17,6 @@ namespace VsChromium.Server.FileSystemNames {
 
     public override string Name { get { return _path.FullName; } }
 
-    public override bool IsRoot { get { return false; } }
-
     public override FullPathName FullPathName { get { return _path; } }
   }
 }

@@ -30,7 +30,7 @@ namespace VsChromium.Server.FileSystem {
         .GroupBy(x => GetProjectRoot(fileNameMapper(x)))
         .OrderBy(g => g.Key)
         .Select(group => new DirectoryEntry {
-          Name = group.Key.Name,
+          Name = group.Key.FullPathName.FullName,
           Entries = CreateGroup(group, fileNameMapper, dataMapper).ToList()
         });
 

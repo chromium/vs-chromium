@@ -35,17 +35,6 @@ namespace VsChromium.Server.FileSystemNames {
     public bool IsAbsoluteName { get { return Parent == null; } }
 
     /// <summary>
-    /// Returns the <see cref="FullPathName"/> if <see cref="IsAbsoluteName"/> is
-    /// true, or <see cref="RelativePathName"/> otherwise.
-    /// Note: Perf: This operation does not perform any memory allocation.
-    /// </summary>
-    public string Name {
-      get {
-        return IsAbsoluteName ? FullPathName.FullName : RelativePathName.RelativeName;
-      }
-    }
-
-    /// <summary>
     /// Return the <see cref="FullPathName"/> of the parent name.
     /// </summary>
     protected FullPathName GetParentFullPathName() {

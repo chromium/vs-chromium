@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
   public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
@@ -15,19 +14,21 @@ namespace VsChromium.Server.FileSystemNames {
     public int Compare(FileSystemName x, FileSystemName y) {
       var x1 = GetAbsolutePart(x);
       var y1 = GetAbsolutePart(y);
-      var result = SystemPathComparer.Instance.Comparer.Compare(x1.Name, y1.Name);
+      var result = x1.FullPathName.CompareTo(y1.FullPathName);
       if (result == 0)
-        result = SystemPathComparer.Instance.Comparer.Compare(x.RelativePathName.RelativeName, y.RelativePathName.RelativeName);
+        result = x.RelativePathName.CompareTo(y.RelativePathName);
       return result;
     }
 
     public bool Equals(FileSystemName x, FileSystemName y) {
+      if (x == null || y == null)
+        return object.ReferenceEquals(x, y);
       return Compare(x, y) == 0;
     }
 
     public int GetHashCode(FileSystemName x) {
       var x1 = GetAbsolutePart(x);
-      return CombineHashCodes(x1.Name.GetHashCode(), x.RelativePathName.RelativeName.GetHashCode());
+      return CombineHashCodes(x1.FullPathName.GetHashCode(), x.RelativePathName.GetHashCode());
     }
 
     private FileSystemName GetAbsolutePart(FileSystemName name) {

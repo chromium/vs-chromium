@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.IO;
 
 namespace VsChromium.Core.FileNames {
@@ -12,6 +13,11 @@ namespace VsChromium.Core.FileNames {
     /// More efficient than "Path.Combine", because we don't box "Path.DirectorySeparatorChar"
     /// </summary>
     public static string PathCombine(string path1, string path2) {
+      if (path1 == null)
+        throw new ArgumentNullException("path1");
+      if (path2 == null)
+        throw new ArgumentNullException("path2");
+
       if (path2.Length == 0)
         return path1;
 

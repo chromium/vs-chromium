@@ -32,7 +32,7 @@ namespace VsChromium.Server.FileSystemNames {
 
     private FileSystemName GetAbsolutePart(FileSystemName name) {
       for (var x = name; x != null; x = x.Parent) {
-        if (x.IsRoot || x.IsAbsoluteName)
+        if (x.IsAbsoluteName)
           return x;
       }
 

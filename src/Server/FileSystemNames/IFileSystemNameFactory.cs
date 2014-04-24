@@ -7,29 +7,32 @@ using VsChromium.Core.FileNames;
 namespace VsChromium.Server.FileSystemNames {
   public interface IFileSystemNameFactory {
     /// <summary>
-    /// Returns the root node of the file system name table. The Root node has no parent and an empty name.
-    /// It can be used to create "real" directory and file names using the "CombineXxx" methods.
+    /// Returns an absolute directory name instance from an absolute path.
     /// </summary>
-    DirectoryName Root { get; }
+    AbsoluteDirectoryName CreateAbsoluteDirectoryName(string path);
 
     /// <summary>
-    /// Return a file name from the combination of a parent directory and a file name.
+    /// Returns a <see cref="RelativeDirectoryName"/> instance from a parent
+    /// directory and from a relative directory name.
     /// </summary>
-    FileName CombineFileName(DirectoryName parent, string fileName);
+    RelativeDirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName);
 
     /// <summary>
-    /// Return a directory name from the combination of parent directory and a directory name.
-    /// </summary>
-    DirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName);
-
-    /// <summary>
-    /// Return a directory name from the combination of the parent directory |parent| and the file name |relativeFileName|.
+    /// Returns a <see cref="FileName"/> instance from a parent directory and a
+    /// relative file name.
     /// </summary>
     FileName CreateFileName(DirectoryName parent, RelativePathName relativeFileName);
 
     /// <summary>
-    /// Return a directory name from the combination of the parent directory |parent| and the directory name |relativeDirectoryName|.
+    /// Returns a <see cref="FileName"/> instance from the concatenation of a
+    /// parent directory and a simple file name.
     /// </summary>
-    DirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName);
+    FileName CombineFileName(DirectoryName parent, string fileName);
+
+    /// <summary>
+    /// Return a <see cref="RelativeDirectoryName"/> directory name from the
+    /// concatenation of parent directory and a simple directory name.
+    /// </summary>
+    RelativeDirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName);
   }
 }

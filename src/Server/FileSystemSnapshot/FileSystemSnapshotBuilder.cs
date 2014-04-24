@@ -47,7 +47,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     }
 
     private DirectorySnapshot ProcessProject(IProject project, IProgressTracker progress) {
-      var projectPath = _fileSystemNameFactory.CombineDirectoryNames(_fileSystemNameFactory.Root, project.RootPath);
+      var projectPath = _fileSystemNameFactory.CreateAbsoluteDirectoryName(project.RootPath);
 
       // List [DirectoryName, FileNames]
       var directories = TraverseFileSystem(project, projectPath)
@@ -77,7 +77,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         directories.ToDictionary(x => x.Item1, x => new List<DirectoryName>());
       directories.ForAll(x => {
         var directoryName = x.Item1;
-        if (directoryName.IsRoot || directoryName.IsAbsoluteName)
+        if (directoryName.IsAbsoluteName)
           return;
 
         direcoryNameToChildDirectoryNames[directoryName.Parent].Add(directoryName);
@@ -111,7 +111,6 @@ namespace VsChromium.Server.FileSystemSnapshot {
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
     private IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IProject project, DirectoryName projectPath) {
-      Debug.Assert(!projectPath.IsRoot);
       Debug.Assert(projectPath.IsAbsoluteName);
       var stack = new Stack<DirectoryName>();
       stack.Push(projectPath);
@@ -120,7 +119,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePathName.RelativeName)) {
           RelativePathName[] childDirectories;
           RelativePathName[] childFiles;
-          head.RelativePathName.GetFileSystemEntries(project.RootPath, out childDirectories, out childFiles);
+          RelativePathNameExtensions.GetFileSystemEntries(project.RootPath, head.RelativePathName, out childDirectories, out childFiles);
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childDirectories.Length; i++) {
             stack.Push(_fileSystemNameFactory.CreateDirectoryName(head, childDirectories[i]));

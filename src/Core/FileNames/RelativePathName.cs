@@ -28,16 +28,16 @@ namespace VsChromium.Core.FileNames {
       _name = name;
     }
 
-    public string RelativeName { get { return _relativeName; } }
-
-    public string Name { get { return _name; } }
+    public bool IsEmpty { get { return string.IsNullOrEmpty(_name); } }
+    public string RelativeName { get { return _relativeName ?? ""; } }
+    public string Name { get { return _name ?? ""; } }
 
     public override string ToString() {
-      return _relativeName;
+      return this.RelativeName;
     }
 
     public RelativePathName CreateChild(string name) {
-      return new RelativePathName(PathHelpers.PathCombine(_relativeName, name), name);
+      return new RelativePathName(PathHelpers.PathCombine(this.RelativeName, name), name);
     }
   }
 }

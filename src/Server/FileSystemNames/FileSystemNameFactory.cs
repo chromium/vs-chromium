@@ -8,28 +8,28 @@ using VsChromium.Core.FileNames;
 namespace VsChromium.Server.FileSystemNames {
   [Export(typeof(IFileSystemNameFactory))]
   public class FileSystemNameFactory : IFileSystemNameFactory {
-    private readonly DirectoryName _root = new DirectoryName(null, "");
 
-    /// <summary>
-    /// Returns the root node of the file system name table. The Root node has no parent and an empty name.
-    /// It can be used to create "real" directory and file names using the "CombineXxx" methods.
-    /// </summary>
-    public DirectoryName Root { get { return _root; } }
-
-    public FileName CombineFileName(DirectoryName parent, string fileName) {
-      return new FileName(parent, fileName);
+    public AbsoluteDirectoryName CreateAbsoluteDirectoryName(string path) {
+      return new AbsoluteDirectoryName(path);
     }
 
-    public DirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName) {
-      return new DirectoryName(parent, directoryName);
+    public RelativeDirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName) {
+      return new RelativeDirectoryName(parent, relativeDirectoryName);
     }
 
     public FileName CreateFileName(DirectoryName parent, RelativePathName relativeFileName) {
       return new FileName(parent, relativeFileName);
     }
 
-    public DirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName) {
-      return new DirectoryName(parent, relativeDirectoryName);
+    public FileName CombineFileName(DirectoryName parent, string fileName) {
+      var relativePath = parent.RelativePathName.CreateChild(fileName);
+      return CreateFileName(parent, relativePath);
     }
+
+    public RelativeDirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName) {
+      var relativePath = parent.RelativePathName.CreateChild(directoryName);
+      return CreateDirectoryName(parent, relativePath);
+    }
+
   }
 }

@@ -84,16 +84,13 @@ namespace VsChromium.Server.FileSystem {
     /// Return a string representing the relative path from "baseName" (usually a "Chromium" root directory name).
     /// "relativeNames" is used to memoize results, as there are many more files that directories.
     /// </summary>
-    public static string GetRelativePath(
+    private static string GetRelativePath(
       Dictionary<FileSystemName, string> relativeNames,
       FileSystemName name,
       DirectoryName baseName) {
       string result;
       if (relativeNames.TryGetValue(name, out result))
         return result;
-
-      if (name.IsRoot)
-        return name.Name;
 
       if (Equals(name, baseName))
         return string.Empty;
@@ -108,24 +105,13 @@ namespace VsChromium.Server.FileSystem {
     /// Note: This function assumes the first non root name is a project root folder.
     /// </summary>
     public static DirectoryName GetProjectRoot(this FileSystemName name) {
-      if (name == null || name.IsRoot)
-        throw new ArgumentException("Invalid name", "name");
+      if (name == null)
+        throw new ArgumentNullException("name");
 
-      if (name.Parent.IsRoot)
+      if (name.IsAbsoluteName)
         return (DirectoryName)name;
 
       return GetProjectRoot(name.Parent);
-    }
-
-    /// <summary>
-    /// Note: This function assumes the relative path name of |name| is the actual
-    /// relative path from the root of the project.
-    /// </summary>
-    public static string GetRelativePathFromProjectRoot(this FileSystemName name) {
-      if (name == null || name.IsRoot)
-        throw new ArgumentException("Invalid name", "name");
-
-      return name.RelativePathName.RelativeName;
     }
 
     /// <summary>
@@ -142,7 +128,7 @@ namespace VsChromium.Server.FileSystem {
       if (rootPath.Last() == Path.DirectorySeparatorChar)
         rootLength--;
 
-      var directoryName = fileSystemNameFactory.CombineDirectoryNames(fileSystemNameFactory.Root, rootPath);
+      DirectoryName directoryName = fileSystemNameFactory.CreateAbsoluteDirectoryName(rootPath);
       var relativePath = path.Substring(rootLength);
       var items = relativePath.Split(new char[] {
         Path.DirectorySeparatorChar

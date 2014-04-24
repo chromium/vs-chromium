@@ -40,7 +40,7 @@ namespace VsChromium.Server.FileSystem {
         if (unfilteredChanges.All(change => change.Kind == PathChangeKind.Changed)) {
           Logger.Log(
             "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
-          var fileNames = unfilteredChanges.Select(change => PathToFileName(change.Path)).Where(name => name != null);
+          var fileNames = unfilteredChanges.Select(change => GetProjectFileName(change.Path)).Where(name => name != null);
           return new FileSystemValidationResult {
             ChangedFiles = fileNames.ToList()
           };
@@ -95,8 +95,8 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private Tuple<IProject, FileName> PathToFileName(FullPathName path) {
-      return _fileSystemNameFactory.PathToFileName(_projectDiscovery, path);
+    private Tuple<IProject, FileName> GetProjectFileName(FullPathName path) {
+      return FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
     }
   }
 }

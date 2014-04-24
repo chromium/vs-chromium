@@ -14,19 +14,16 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {
   public static class FileSystemNameFactoryExtensions {
-    public static DirectoryEntry ToFlatSearchResult(
-      this IFileSystemNameFactory fileSystemNameFactory,
-      IEnumerable<FileSystemName> names) {
+    public static DirectoryEntry ToFlatSearchResult(IFileSystemNameFactory fileSystemNameFactory, IEnumerable<FileSystemName> names) {
       Func<FileSystemName, FileSystemName> fileNameMapper = x => x;
       Func<FileSystemName, FileSystemEntryData> dataMapper = x => null;
       return ToFlatSearchResult(fileSystemNameFactory, names, fileNameMapper, dataMapper);
     }
 
-    public static DirectoryEntry ToFlatSearchResult<TSource>(
-      this IFileSystemNameFactory fileSystemNameFactory,
-      IEnumerable<TSource> source,
-      Func<TSource, FileSystemName> fileNameMapper,
-      Func<TSource, FileSystemEntryData> dataMapper) {
+    public static DirectoryEntry ToFlatSearchResult<TSource>(IFileSystemNameFactory fileSystemNameFactory,
+                                                             IEnumerable<TSource> source,
+                                                             Func<TSource, FileSystemName> fileNameMapper,
+                                                             Func<TSource, FileSystemEntryData> dataMapper) {
       var sw = Stopwatch.StartNew();
       // Group by root directory (typically one)
       var groups = source
@@ -47,64 +44,36 @@ namespace VsChromium.Server.FileSystem {
       return result;
     }
 
-    private static IEnumerable<FileSystemEntry> CreateGroup<TSource>(
-      IGrouping<DirectoryName, TSource> grouping,
-      Func<TSource, FileSystemName> fileNameMapper,
-      Func<TSource, FileSystemEntryData> dataMapper) {
-      var baseName = grouping.Key;
-      var relativeNames = new Dictionary<FileSystemName, string>();
-
+    private static IEnumerable<FileSystemEntry> CreateGroup<TSource>(IEnumerable<TSource> grouping,
+                                                                     Func<TSource, FileSystemName> fileNameMapper,
+                                                                     Func<TSource, FileSystemEntryData> dataMapper) {
       return grouping
-        .Select(x => CreateFileSystemEntry(relativeNames, baseName, x, fileNameMapper, dataMapper))
-        .Where(x => x.Name != string.Empty) // filter out root node itself!
-        .OrderBy(x => x.Name, SystemPathComparer.Instance.Comparer);
+        .Where(x => !fileNameMapper(x).IsAbsoluteName)
+        .OrderBy(x => fileNameMapper(x).RelativePathName)
+        .Select(x => CreateFileSystemEntry(x, fileNameMapper, dataMapper));
     }
 
-    private static FileSystemEntry CreateFileSystemEntry<T>(
-      Dictionary<FileSystemName, string> relativeNames,
-      DirectoryName baseName,
-      T item,
-      Func<T, FileSystemName> fileNameMapper,
-      Func<T, FileSystemEntryData> dataMapper) {
+    private static FileSystemEntry CreateFileSystemEntry<T>(T item, Func<T, FileSystemName> fileNameMapper, Func<T, FileSystemEntryData> dataMapper) {
       var name = fileNameMapper(item);
       var data = dataMapper(item);
       if (name is FileName)
         return new FileEntry {
-          Name = GetRelativePath(relativeNames, name, baseName),
+          Name = name.RelativePathName.RelativeName,
           Data = data
         };
       else
         return new DirectoryEntry {
-          Name = GetRelativePath(relativeNames, name, baseName),
+          Name = name.RelativePathName.RelativeName,
           Data = data
         };
     }
 
     /// <summary>
-    /// Return a string representing the relative path from "baseName" (usually a "Chromium" root directory name).
-    /// "relativeNames" is used to memoize results, as there are many more files that directories.
+    /// Returns the "project root" part of a <see cref="FileSystemName"/>. This
+    /// function assumes "project root" is the absolute directory of <paramref
+    /// name="name"/>.
     /// </summary>
-    private static string GetRelativePath(
-      Dictionary<FileSystemName, string> relativeNames,
-      FileSystemName name,
-      DirectoryName baseName) {
-      string result;
-      if (relativeNames.TryGetValue(name, out result))
-        return result;
-
-      if (Equals(name, baseName))
-        return string.Empty;
-
-      result = Path.Combine(GetRelativePath(relativeNames, name.Parent, baseName), name.Name);
-      if (name is DirectoryName) // Only add DirectoryNames, as file names are always unique.
-        relativeNames.Add(name, result);
-      return result;
-    }
-
-    /// <summary>
-    /// Note: This function assumes the first non root name is a project root folder.
-    /// </summary>
-    public static DirectoryName GetProjectRoot(this FileSystemName name) {
+    private static DirectoryName GetProjectRoot(FileSystemName name) {
       if (name == null)
         throw new ArgumentNullException("name");
 
@@ -118,7 +87,7 @@ namespace VsChromium.Server.FileSystem {
     /// Return the |FileName| instance corresponding to the full path |path|. Returns |null| if |path| 
     /// is invalid or not part of a project.
     /// </summary>
-    public static Tuple<IProject, FileName> PathToFileName(this IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, FullPathName path) {
+    public static Tuple<IProject, FileName> GetProjectFileName(IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, FullPathName path) {
       var project = projectDiscovery.GetProject(path);
       if (project == null)
         return null;
@@ -128,7 +97,7 @@ namespace VsChromium.Server.FileSystem {
       if (rootPath.FullName.Last() == Path.DirectorySeparatorChar)
         rootLength--;
 
-      DirectoryName directoryName = fileSystemNameFactory.CreateAbsoluteDirectoryName(rootPath);
+      var directoryName = fileSystemNameFactory.CreateAbsoluteDirectoryName(rootPath);
       var relativePath = path.FullName.Substring(rootLength);
       var items = relativePath.Split(new char[] {
         Path.DirectorySeparatorChar

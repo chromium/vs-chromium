@@ -20,7 +20,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public static bool IsFileSearchable(this IProject project, FileName filename) {
-      return project.SearchableFilesFilter.Include(filename.RelativePathName.RelativeName);
+      return project.SearchableFilesFilter.Include(filename.RelativePathName);
     }
   }
 }

@@ -141,7 +141,7 @@ namespace VsChromium.Server.FileSystem {
         filenames = _addedFiles.ToList();
       }
 
-      var deletedFileNames = filenames.Where(x => !File.Exists(x.FullName)).ToList();
+      var deletedFileNames = filenames.Where(x => !x.FileExists).ToList();
 
       if (deletedFileNames.Any()) {
         Logger.Log("Some known files do not exist on disk anymore. Time to recompute the world.");

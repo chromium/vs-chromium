@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using VsChromium.Core.FileNames;
+
 namespace VsChromium.Server.Projects {
   public interface ISearchableFilesFilter {
-    bool Include(string fileName);
+    bool Include(RelativePathName fileName);
   }
 }

@@ -15,10 +15,10 @@ namespace VsChromium.Server.Projects {
       _includePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesInclude);
     }
 
-    public bool Include(string fileName) {
-      if (_ignorePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance))
+    public bool Include(RelativePathName fileName) {
+      if (_ignorePatternsFile.GetPathMatcher().MatchFileName(fileName.RelativeName, SystemPathComparer.Instance))
         return false;
-      return _includePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance);
+      return _includePatternsFile.GetPathMatcher().MatchFileName(fileName.RelativeName, SystemPathComparer.Instance);
     }
   }
 }

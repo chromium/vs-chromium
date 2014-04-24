@@ -9,11 +9,11 @@ namespace VsChromium.Server.FileSystemNames {
   [Export(typeof(IFileSystemNameFactory))]
   public class FileSystemNameFactory : IFileSystemNameFactory {
 
-    public AbsoluteDirectoryName CreateAbsoluteDirectoryName(FullPathName path) {
+    public DirectoryName CreateAbsoluteDirectoryName(FullPathName path) {
       return new AbsoluteDirectoryName(path);
     }
 
-    public RelativeDirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName) {
+    public DirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName) {
       return new RelativeDirectoryName(parent, relativeDirectoryName);
     }
 
@@ -26,7 +26,7 @@ namespace VsChromium.Server.FileSystemNames {
       return CreateFileName(parent, relativePath);
     }
 
-    public RelativeDirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName) {
+    public DirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName) {
       var relativePath = parent.RelativePathName.CreateChild(directoryName);
       return CreateDirectoryName(parent, relativePath);
     }

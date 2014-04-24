@@ -9,13 +9,13 @@ namespace VsChromium.Server.FileSystemNames {
     /// <summary>
     /// Returns an absolute directory name instance from an absolute path.
     /// </summary>
-    AbsoluteDirectoryName CreateAbsoluteDirectoryName(FullPathName path);
+    DirectoryName CreateAbsoluteDirectoryName(FullPathName path);
 
     /// <summary>
     /// Returns a <see cref="RelativeDirectoryName"/> instance from a parent
     /// directory and from a relative directory name.
     /// </summary>
-    RelativeDirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName);
+    DirectoryName CreateDirectoryName(DirectoryName parent, RelativePathName relativeDirectoryName);
 
     /// <summary>
     /// Returns a <see cref="FileName"/> instance from a parent directory and a
@@ -33,6 +33,6 @@ namespace VsChromium.Server.FileSystemNames {
     /// Return a <see cref="RelativeDirectoryName"/> directory name from the
     /// concatenation of parent directory and a simple directory name.
     /// </summary>
-    RelativeDirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName);
+    DirectoryName CombineDirectoryNames(DirectoryName parent, string directoryName);
   }
 }

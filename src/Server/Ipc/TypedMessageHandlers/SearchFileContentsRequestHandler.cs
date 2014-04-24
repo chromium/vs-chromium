@@ -23,16 +23,16 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (SearchFileContentsRequest)typedRequest;
       var result = _searchEngine.SearchFileContents(request.SearchParams);
+      var searchResults = FileSystemNameFactoryExtensions.ToFlatSearchResult(
+        _fileSystemNameFactory,
+        result.Entries,
+        searchResult => searchResult.FileName,
+        searchResult => new FilePositionsData { Positions = searchResult.Spans });
       return new SearchFileContentsResponse {
-        SearchResults = _fileSystemNameFactory.ToFlatSearchResult(
-          result.Entries,
-          searchResult => searchResult.FileName,
-          searchResult => new FilePositionsData {
-            Positions = searchResult.Spans
-          }),
-          HitCount = result.HitCount,
-          TotalFileCount = result.TotalFileCount,
-          SearchedFileCount = result.SearchedFileCount
+        SearchResults = searchResults,
+        HitCount = result.HitCount,
+        TotalFileCount = result.TotalFileCount,
+        SearchedFileCount = result.SearchedFileCount
       };
     }
   }

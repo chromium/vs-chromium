@@ -10,7 +10,7 @@ namespace VsChromium.Core.FileNames {
   /// For performance reasons, we also keep the "name" part of the path
   /// (i.e. the part of the path after the last directory separator).
   /// </summary>
-  public struct RelativePathName {
+  public struct RelativePathName : IEquatable<RelativePathName>, IComparable<RelativePathName> {
     private readonly string _name;
     private readonly string _relativeName;
 
@@ -39,5 +39,27 @@ namespace VsChromium.Core.FileNames {
     public RelativePathName CreateChild(string name) {
       return new RelativePathName(PathHelpers.PathCombine(this.RelativeName, name), name);
     }
+
+    #region Comparison/Equality plumbing
+
+    public int CompareTo(RelativePathName other) {
+      return SystemPathComparer.Instance.Comparer.Compare(this.RelativeName, other.RelativeName);
+    }
+
+    public bool Equals(RelativePathName other) {
+      return SystemPathComparer.Instance.Comparer.Equals(this.RelativeName, other.RelativeName);
+    }
+
+    public override int GetHashCode() {
+      return SystemPathComparer.Instance.Comparer.GetHashCode(this.RelativeName);
+    }
+
+    public override bool Equals(object other) {
+      if (other is RelativePathName)
+        return Equals((RelativePathName)other);
+      return false;
+    }
+
+    #endregion
   }
 }

@@ -204,11 +204,16 @@
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerItemViewModelHost.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\CommandDelegate.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelBase.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelHost.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />
     <Compile Include="Threads\IpcRequestException.cs" />
+    <Compile Include="Threads\ISynchronizationContext.cs" />
+    <Compile Include="Threads\SynchronizationContextDelegate.cs" />
     <Compile Include="Views\ITextDocumentService.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\TextDocumentFactoryObserver.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SearchDirectoryNamesCommandHandler.cs" />

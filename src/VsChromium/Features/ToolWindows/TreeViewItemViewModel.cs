@@ -7,7 +7,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using VsChromium.Core.Linq;
 using VsChromium.Views;
 using VsChromium.Wpf;

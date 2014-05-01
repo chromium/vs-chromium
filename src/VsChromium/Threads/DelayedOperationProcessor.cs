@@ -55,20 +55,11 @@ namespace VsChromium.Threads {
               }
             }
           }
-          requestsToExecute.ForAll(request => WrapActionInvocation(request.Action));
+          requestsToExecute.ForAll(request => Logger.WrapActionInvocation(request.Action));
         }
       }
       catch (Exception e) {
         Logger.LogException(e, "Error in DelayedOperationProcessor.");
-      }
-    }
-
-    private static void WrapActionInvocation(Action action) {
-      try {
-        action();
-      }
-      catch (Exception e) {
-        Logger.LogException(e, "Error calling action in DelayedOperationProcessor");
       }
     }
 

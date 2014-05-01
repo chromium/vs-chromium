@@ -36,6 +36,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IStatusBar _statusBar;
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
+    private bool _swallowsRequestBringIntoView = true;
+
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -64,13 +66,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
+
       _componentModel = componentModel;
-      _uiRequestProcessor = _componentModel.DefaultExportProvider.GetExport<IUIRequestProcessor>().Value;
-      _openDocumentHelper = _componentModel.DefaultExportProvider.GetExport<IOpenDocumentHelper>().Value;
-      _statusBar = _componentModel.DefaultExportProvider.GetExport<IStatusBar>().Value;
-      _typedRequestProcessProxy =
-        _componentModel.DefaultExportProvider.GetExport<ITypedRequestProcessProxy>().Value;
-      _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxyOnEventReceived;
+      _uiRequestProcessor = _componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
+      _openDocumentHelper = _componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
+      _statusBar = _componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
+      _typedRequestProcessProxy =_componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
+      _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
       ViewModel.OnToolWindowCreated(serviceProvider);
       FetchFilesystemTree();
@@ -91,7 +93,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       };
     }
 
-    private void TypedRequestProcessProxyOnEventReceived(TypedEvent typedEvent) {
+    private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
       DispatchFileSystemTreeComputing(typedEvent);
       DispatchFileSystemTreeComputed(typedEvent);
       DispatchSearchEngineFilesLoading(typedEvent);
@@ -112,7 +114,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (@event != null) {
         Wpf.WpfUtilities.Post(this, () => {
           Logger.Log("FileSystemTree is being computed on server.");
-          _progressBarTracker.Start(OperationsIds.FileSystemCollecting,
+          _progressBarTracker.Start(OperationsIds.FileSystemTreeComputing,
                                     "Loading files and directory names from file system.");
           ViewModel.FileSystemTreeComputing();
         });
@@ -125,7 +127,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         Wpf.WpfUtilities.Post(this, () => {
           Logger.Log("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
           FetchFilesystemTree();
-          _progressBarTracker.Stop(OperationsIds.FileSystemCollecting);
+          _progressBarTracker.Stop(OperationsIds.FileSystemTreeComputing);
         });
       }
     }
@@ -265,28 +267,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    private void CancelSearchButton_Click(object sender, RoutedEventArgs e) {
-      ViewModel.SwitchToFileSystemTree();
-    }
-
-    private void TreeViewPreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
-      var tvi = sender as TreeViewItem;
-      if (tvi == null)
-        return;
-
-      if (!tvi.IsSelected)
-        return;
-
-      if (NavigateFromSelectedItem(tvi.DataContext as TreeViewItemViewModel))
-        e.Handled = true;
-    }
-
-    private void FileTreeViewOnPreviewKeyDown(object sender, KeyEventArgs e) {
-      if (e.Key == Key.Return) {
-        e.Handled = NavigateFromSelectedItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
-      }
-    }
-
     private bool NavigateFromSelectedItem(TreeViewItemViewModel tvi) {
       if (tvi == null)
         return false;
@@ -344,7 +324,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private static class OperationsIds {
-      public const string FileSystemCollecting = "file-system-collecting";
+      public const string FileSystemTreeComputing = "file-system-collecting";
       public const string FilesLoading = "files-loading";
       public const string FileContentsSearch = "files-contents-search";
       public const string DirectoryNamesSearch = "directory-names-search";
@@ -359,10 +339,27 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       public string HintText { get; set; }
     }
 
-    private bool _swallowsRequestBringIntoView = true;
-
     private void SwallowsRequestBringIntoView(bool value) {
       _swallowsRequestBringIntoView = value;
+    }
+
+
+    #region WPF Event handlers
+
+    private void CancelSearchButton_Click(object sender, RoutedEventArgs e) {
+      ViewModel.SwitchToFileSystemTree();
+    }
+
+    private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
+      var tvi = sender as TreeViewItem;
+      if (tvi == null)
+        return;
+
+      if (!tvi.IsSelected)
+        return;
+
+      if (NavigateFromSelectedItem(tvi.DataContext as TreeViewItemViewModel))
+        e.Handled = true;
     }
 
     private void TreeViewItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e) {
@@ -377,6 +374,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // Open the default web browser to the update URL.
       Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
       e.Handled = true;
+    }
+
+    private void FileTreeView_OnPreviewKeyDown(object sender, KeyEventArgs e) {
+      if (e.Key == Key.Return) {
+        e.Handled = NavigateFromSelectedItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
+      }
     }
 
     /// <summary>
@@ -395,6 +398,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       treeViewItem.Focus();
       e.Handled = true;
     }
+
+    #endregion
 
     /// <summary>
     /// Returns the first parent of <paramref name="source"/> of type

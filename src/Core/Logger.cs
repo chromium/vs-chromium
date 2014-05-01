@@ -47,5 +47,14 @@ namespace VsChromium.Core {
       msg += string.Format(" HeapAlloc Memory: {0:n0} bytes.", HeapAllocStatic.TotalMemory);
       LogImpl(msg);
     }
+
+    public static void WrapActionInvocation(Action action) {
+      try {
+        action();
+      }
+      catch (Exception e) {
+        Logger.LogException(e, "Error calling action in DelayedOperationProcessor");
+      }
+    }
   }
 }

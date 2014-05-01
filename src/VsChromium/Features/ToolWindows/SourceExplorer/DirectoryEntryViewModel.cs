@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Threads;
-using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class DirectoryEntryViewModel : FileSystemEntryViewModel {
@@ -16,11 +14,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
 
     public DirectoryEntryViewModel(
-        IUIRequestProcessor uiRequestProcessor,
-        IStandarImageSourceFactory imageSourceFactory,
+        ISourceExplorerItemViewModelHost host,
         TreeViewItemViewModel parentViewModel,
         DirectoryEntry directoryEntry)
-      : base(uiRequestProcessor, imageSourceFactory, parentViewModel, directoryEntry.Entries.Count > 0) {
+      : base(host, parentViewModel, directoryEntry.Entries.Count > 0) {
       _directoryEntry = directoryEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
@@ -28,8 +25,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IList<TreeViewItemViewModel> CreateChildren() {
       return _directoryEntry.Entries
         .Select(x => (TreeViewItemViewModel)FileSystemEntryViewModel.Create(
-            UIRequestProcessor, 
-            StandarImageSourceFactory, 
+            this.Host,
             this, 
             x))
         .ToList();

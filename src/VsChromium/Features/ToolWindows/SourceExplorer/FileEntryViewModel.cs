@@ -5,11 +5,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Input;
 using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Threads;
-using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FileEntryViewModel : FileSystemEntryViewModel {
@@ -17,22 +17,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
     private bool _hasExpanded;
 
-    public FileEntryViewModel(
-        IUIRequestProcessor uiRequestProcessor,
-        IStandarImageSourceFactory imageSourceFactory,
-        TreeViewItemViewModel parentViewModel,
-        FileEntry fileEntry)
-      : base(uiRequestProcessor, imageSourceFactory, parentViewModel, fileEntry.Data != null) {
+    public FileEntryViewModel(ISourceExplorerItemViewModelHost host, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
+      : base(host, parentViewModel, fileEntry.Data != null) {
       _fileEntry = fileEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
 
     private IList<TreeViewItemViewModel> CreateChildren() {
-      return FileSystemEntryDataViewModelFactory.CreateViewModels(
-          UIRequestProcessor, 
-          StandarImageSourceFactory, 
-          this, 
-          _fileEntry.Data).ToList();
+      return FileSystemEntryDataViewModelFactory.CreateViewModels(Host, this, _fileEntry.Data).ToList();
     }
 
     public override FileSystemEntry FileSystemEntry { get { return _fileEntry; } }
@@ -53,7 +45,26 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public override ImageSource ImageSourcePath { get { return StandarImageSourceFactory.GetImageForDocument(_fileEntry.Name); } }
+    public override ImageSource ImageSourcePath {
+      get {
+        return StandarImageSourceFactory.GetImageForDocument(_fileEntry.Name);
+      }
+    }
+
+    #region Command Handlers
+
+    public ICommand OpenCommand {
+      get {
+        return CommandDelegate.Create(sender => {
+          // Using "Post" is important: it allows the newly opened document to
+          // receive the focus.
+          Host.SynchronizationContextProvider.UIContext.Post(() => 
+            Host.OpenDocumentHelper.OpenDocument(Path, _ => null));
+        });
+      }
+    }
+
+    #endregion
 
     protected override void OnPropertyChanged(string propertyName) {
       if (propertyName == "IsExpanded") {
@@ -91,7 +102,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         }
       };
 
-      UIRequestProcessor.Post(uiRequest);
+      this.Host.UIRequestProcessor.Post(uiRequest);
     }
 
     protected override IEnumerable<TreeViewItemViewModel> GetChildren() {

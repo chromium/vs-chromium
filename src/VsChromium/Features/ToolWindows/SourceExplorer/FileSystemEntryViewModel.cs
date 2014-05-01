@@ -4,17 +4,14 @@
 
 using System.IO;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Threads;
-using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public abstract class FileSystemEntryViewModel : SourceExplorerItemViewModelBase {
     protected FileSystemEntryViewModel(
-        IUIRequestProcessor uiRequestProcessor,
-        IStandarImageSourceFactory imageSourceFactory,
+        ISourceExplorerItemViewModelHost host,
         TreeViewItemViewModel parentViewModel,
         bool lazyLoadChildren)
-      : base(uiRequestProcessor, imageSourceFactory, parentViewModel, lazyLoadChildren) {
+      : base(host, parentViewModel, lazyLoadChildren) {
     }
 
     public abstract FileSystemEntry FileSystemEntry { get; }
@@ -27,16 +24,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public static FileSystemEntryViewModel Create(
-        IUIRequestProcessor uiRequestProcessor,
-        IStandarImageSourceFactory imageSourceFactory,
-        TreeViewItemViewModel parentViewModel,
-        FileSystemEntry fileSystemEntry) {
+    public static FileSystemEntryViewModel Create(ISourceExplorerItemViewModelHost host, TreeViewItemViewModel parentViewModel, FileSystemEntry fileSystemEntry) {
       var fileEntry = fileSystemEntry as FileEntry;
       if (fileEntry != null)
-        return new FileEntryViewModel(uiRequestProcessor, imageSourceFactory, parentViewModel, fileEntry);
+        return new FileEntryViewModel(host, parentViewModel, fileEntry);
       else
-        return new DirectoryEntryViewModel(uiRequestProcessor, imageSourceFactory, parentViewModel, (DirectoryEntry)fileSystemEntry);
+        return new DirectoryEntryViewModel(host, parentViewModel, (DirectoryEntry)fileSystemEntry);
     }
 
     public string GetPath() {

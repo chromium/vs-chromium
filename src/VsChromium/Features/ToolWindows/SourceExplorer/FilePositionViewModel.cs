@@ -13,11 +13,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private FileExtract _fileExtract;
 
     public FilePositionViewModel(
-        IUIRequestProcessor uiRequestProcessor,
-        IStandarImageSourceFactory imageSourceFactory,
+        ISourceExplorerItemViewModelHost host,
         TreeViewItemViewModel parent,
         FilePositionSpan position)
-      : base(uiRequestProcessor, imageSourceFactory, parent, false) {
+      : base(host, parent, false) {
       _position = position;
     }
 

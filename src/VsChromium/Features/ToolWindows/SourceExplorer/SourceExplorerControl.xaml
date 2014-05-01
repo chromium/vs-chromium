@@ -109,7 +109,7 @@
       ItemsSource="{Binding RootNodes}"
       Name="FileTreeView" Height="Auto"
       Background="{DynamicResource VsBrush.ToolWindowBackground}"
-      Foreground="{DynamicResource VsBrush.WindowText}" PreviewKeyDown="FileTreeViewOnPreviewKeyDown"
+      Foreground="{DynamicResource VsBrush.WindowText}" PreviewKeyDown="FileTreeView_OnPreviewKeyDown"
       VirtualizingStackPanel.IsVirtualizing="True"
       VirtualizingStackPanel.VirtualizationMode="Recycling" PreviewMouseRightButtonDown="FileTreeView_PreviewMouseRightButtonDown">
 
@@ -127,7 +127,7 @@
               </ItemsPanelTemplate>
             </Setter.Value>
           </Setter>
-          <EventSetter Event="PreviewMouseDoubleClick" Handler="TreeViewPreviewMouseDoubleClick"/>
+          <EventSetter Event="PreviewMouseDoubleClick" Handler="TreeViewItem_PreviewMouseDoubleClick"/>
           <EventSetter Event="RequestBringIntoView" Handler="TreeViewItem_RequestBringIntoView"/>
           <!--<EventSetter Event="Selected" Handler="TreeViewSelectedItemChanged" />-->
           <Style.Triggers>
@@ -161,10 +161,10 @@
         </HierarchicalDataTemplate>
 
         <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:FileEntryViewModel}" ItemsSource="{Binding Children}">
-          <StackPanel Orientation="Horizontal">
+          <StackPanel Orientation="Horizontal" >
             <StackPanel.ContextMenu>
               <ContextMenu>
-                <MenuItem Header="Open in Source Explorer" />
+                <MenuItem Header="Open" Command="{Binding OpenCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />

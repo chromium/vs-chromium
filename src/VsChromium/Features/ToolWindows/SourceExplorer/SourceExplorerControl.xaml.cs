@@ -19,6 +19,7 @@ using VsChromium.ServerProxy;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
+using System.Windows.Media;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
@@ -365,9 +366,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void TreeViewItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e) {
-      // This prevents the tree view for scrolling horizontally to make the selected item as visibile as possible.
-      // This is useful for "SearchFileContents", as text extracts are usually wide enough to make tree view navigation
-      // annoying when they are selected.
+      // This prevents the tree view for scrolling horizontally to make the
+      // selected item as visibile as possible. This is useful for
+      // "SearchFileContents", as text extracts are usually wide enough to make
+      // tree view navigation annoying when they are selected.
       e.Handled = _swallowsRequestBringIntoView;
     }
 
@@ -375,6 +377,36 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // Open the default web browser to the update URL.
       Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
       e.Handled = true;
+    }
+
+    /// <summary>
+    /// Ensures the item right-clicked on is selected before showing the context
+    /// menu.
+    /// </summary>
+    private void FileTreeView_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e) {
+      var source = e.OriginalSource as DependencyObject;
+      if (source == null)
+        return;
+
+      var treeViewItem = VisualTreeGetParentOfType<TreeViewItem>(source);
+      if (treeViewItem == null)
+        return;
+
+      treeViewItem.Focus();
+      e.Handled = true;
+    }
+
+    /// <summary>
+    /// Returns the first parent of <paramref name="source"/> of type
+    /// <typeparamref name="T"/>.
+    /// </summary>
+    static T VisualTreeGetParentOfType<T>(DependencyObject source) where T : DependencyObject {
+      while (source != null) {
+        if (source is T)
+          return (T)source;
+        source = VisualTreeHelper.GetParent(source);
+      }
+      return null;
     }
   }
 }

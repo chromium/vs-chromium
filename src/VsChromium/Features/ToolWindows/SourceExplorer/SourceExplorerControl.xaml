@@ -111,7 +111,7 @@
       Background="{DynamicResource VsBrush.ToolWindowBackground}"
       Foreground="{DynamicResource VsBrush.WindowText}" PreviewKeyDown="FileTreeViewOnPreviewKeyDown"
       VirtualizingStackPanel.IsVirtualizing="True"
-      VirtualizingStackPanel.VirtualizationMode="Recycling">
+      VirtualizingStackPanel.VirtualizationMode="Recycling" PreviewMouseRightButtonDown="FileTreeView_PreviewMouseRightButtonDown">
 
       <TreeView.ItemContainerStyle>
         <!-- This Style binds a TreeViewItem to a TreeViewItemViewModel. -->
@@ -162,6 +162,11 @@
 
         <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:FileEntryViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
+            <StackPanel.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Open in Source Explorer" />
+              </ContextMenu>
+            </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>

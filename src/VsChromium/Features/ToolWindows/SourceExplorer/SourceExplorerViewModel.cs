@@ -22,7 +22,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IEnumerable<TreeViewItemViewModel> _fileContentsResultRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileNamesResultRootNodes = new List<TreeViewItemViewModel>();
     private IEnumerable<TreeViewItemViewModel> _fileSystemEntryRootNodes = new List<TreeViewItemViewModel>();
-    private ISourceExplorerItemViewModelHost _sourceExplorerItemViewModelHost;
+    private ISourceExplorerViewModelHost _sourceExplorerViewModelHost;
     private UpdateInfo _updateInfo;
 
     /// <summary>
@@ -75,10 +75,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public override void OnToolWindowCreated(IServiceProvider serviceProvider) {
-      base.OnToolWindowCreated(serviceProvider);
-
-      _sourceExplorerItemViewModelHost = ComponentModel.DefaultExportProvider.GetExportedValue<ISourceExplorerItemViewModelHost>();
+    public void SetHost(ISourceExplorerViewModelHost sourceExplorerViewModelHost) {
+      _sourceExplorerViewModelHost = sourceExplorerViewModelHost;
     }
 
     public void SwitchToFileSystemTree() {
@@ -100,7 +98,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void SetFileSystemTree(FileSystemTree tree) {
       _fileSystemEntryRootNodes = tree.Root
         .Entries
-        .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerItemViewModelHost, null, x))
+        .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x))
         .ToList();
       ExpandNodes(_fileSystemEntryRootNodes, false);
       SwitchToFileSystemTree();
@@ -109,11 +107,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void SetFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
       _fileNamesResultRootNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(_sourceExplorerItemViewModelHost.StandarImageSourceFactory, null, description)
+          new TextItemViewModel(_sourceExplorerViewModelHost.StandarImageSourceFactory, null, description)
         }.Concat(
           fileResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerItemViewModelHost, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x)))
           .ToList();
       ExpandNodes(_fileNamesResultRootNodes, expandAll);
       SwitchToFileNamesSearchResult();
@@ -126,7 +124,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         }.Concat(
           directoryResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerItemViewModelHost, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x)))
           .ToList();
       ExpandNodes(_directoryPathRootNodes, expandAll);
       SwitchToDirectoryNamesSearchResult();
@@ -139,7 +137,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         }.Concat(
           searchResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerItemViewModelHost, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x)))
           .ToList();
       ExpandNodes(_fileContentsResultRootNodes, expandAll);
       SwitchToFileContentsSearchResult();

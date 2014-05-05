@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using Microsoft.VisualStudio.Text;
 using VsChromium.Threads;
 using VsChromium.Views;
 
@@ -9,10 +10,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
   /// Exposes services required by <see cref="SourceExplorerItemViewModelBase"/> instances.
   /// </summary>
-  public interface ISourceExplorerItemViewModelHost {
+  public interface ISourceExplorerViewModelHost {
     IUIRequestProcessor UIRequestProcessor { get; }
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
-    ISynchronizationContextProvider SynchronizationContextProvider { get; }
-    IOpenDocumentHelper OpenDocumentHelper { get; }
+
+    //ISynchronizationContextProvider SynchronizationContextProvider { get; }
+    //IOpenDocumentHelper OpenDocumentHelper { get; }
+
+    void NavigateToFile(FileEntryViewModel fileEntry, Span? span);
+    void NavigateToDirectory(DirectoryEntryViewModel directoryEntry);
   }
 }

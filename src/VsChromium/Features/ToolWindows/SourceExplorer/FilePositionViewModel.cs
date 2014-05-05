@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Threads;
-using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FilePositionViewModel : SourceExplorerItemViewModelBase {
@@ -13,7 +13,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private FileExtract _fileExtract;
 
     public FilePositionViewModel(
-        ISourceExplorerItemViewModelHost host,
+        ISourceExplorerViewModelHost host,
         TreeViewItemViewModel parent,
         FilePositionSpan position)
       : base(host, parent, false) {
@@ -49,5 +49,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _fileExtract = value;
       OnPropertyChanged("DisplayText");
     }
+
+    #region Command Handlers
+
+    public ICommand OpenCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.NavigateToFile((FileEntryViewModel)this.ParentViewModel, new Span(Position, Length)));
+      }
+    }
+
+    #endregion
   }
 }

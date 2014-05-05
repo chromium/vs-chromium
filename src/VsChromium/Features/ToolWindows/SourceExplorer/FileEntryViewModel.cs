@@ -17,7 +17,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
     private bool _hasExpanded;
 
-    public FileEntryViewModel(ISourceExplorerItemViewModelHost host, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
+    public FileEntryViewModel(ISourceExplorerViewModelHost host, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
       : base(host, parentViewModel, fileEntry.Data != null) {
       _fileEntry = fileEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
@@ -55,12 +55,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => {
-          // Using "Post" is important: it allows the newly opened document to
-          // receive the focus.
-          Host.SynchronizationContextProvider.UIContext.Post(() => 
-            Host.OpenDocumentHelper.OpenDocument(Path, _ => null));
-        });
+        return CommandDelegate.Create(sender => Host.NavigateToFile(this, null));
       }
     }
 

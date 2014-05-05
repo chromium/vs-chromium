@@ -9,7 +9,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public static class FileSystemEntryDataViewModelFactory {
     public static IEnumerable<TreeViewItemViewModel> CreateViewModels(
-        ISourceExplorerItemViewModelHost host,
+        ISourceExplorerViewModelHost host,
       TreeViewItemViewModel parent,
       FileSystemEntryData data) {
       var positionsData = data as FilePositionsData;

@@ -4,14 +4,11 @@
 
 using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
-using Microsoft.VisualStudio.Text;
 using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Features.AutoUpdate;
@@ -36,8 +33,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IStatusBar _statusBar;
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
+    private IStandarImageSourceFactory _standarImageSourceFactory;
+    private ISynchronizationContextProvider _synchronizationContextProvider;
     private bool _swallowsRequestBringIntoView = true;
-
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -57,7 +55,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    private SourceExplorerViewModel ViewModel { get { return (SourceExplorerViewModel)DataContext; } }
+    public SourceExplorerViewModel ViewModel { get { return (SourceExplorerViewModel)DataContext; } }
 
     public UpdateInfo UpdateInfo {
       get { return ViewModel.UpdateInfo; }
@@ -69,12 +67,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       _componentModel = componentModel;
       _uiRequestProcessor = _componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
+      _standarImageSourceFactory = _componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
       _openDocumentHelper = _componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
+      _synchronizationContextProvider = _componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
       _statusBar = _componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy =_componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
       ViewModel.OnToolWindowCreated(serviceProvider);
+      ViewModel.SetHost(new SourceExplorerViewModelHost(this, _uiRequestProcessor, _standarImageSourceFactory, _synchronizationContextProvider, _openDocumentHelper));
       FetchFilesystemTree();
     }
 
@@ -277,11 +278,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       {
         var filePosition = tvi as FilePositionViewModel;
         if (filePosition != null) {
-          // The following is important, as it prevents the message from bubbling up
-          // and preventing the newly opened document to receive the focus.
-          SynchronizationContext.Current.Post(_ => _openDocumentHelper.OpenDocument(filePosition.Path,
-                                                                                    (__) => new Span(filePosition.Position, filePosition.Length)), null);
-
+          filePosition.OpenCommand.Execute(filePosition);
           return true;
         }
       }
@@ -289,11 +286,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       {
         var fileEntry = tvi as FileEntryViewModel;
         if (fileEntry != null) {
-          // The following is important, as it prevents the message from bubbling up
-          // and preventing the newly opened document to receive the focus.
-          SynchronizationContext.Current.Post(_ => _openDocumentHelper.OpenDocument(fileEntry.Path, __ => null),
-                                              null);
-
+          fileEntry.OpenCommand.Execute(fileEntry);
           return true;
         }
       }
@@ -301,17 +294,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       {
         var directoryEntry = tvi as DirectoryEntryViewModel;
         if (directoryEntry != null) {
-          // The use of "Post" is significant, as it prevents the message from
-          // bubbling up thus preventing the newly opened document to receive
-          // the focus.
-          SynchronizationContext.Current.Post(_ => {
-            ViewModel.SelectDirectory(directoryEntry,
-                                      FileTreeView,
-                                      () => SwallowsRequestBringIntoView(false),
-                                      () => SwallowsRequestBringIntoView(true));
-          },
-                                              null);
-
+          directoryEntry.OpenCommand.Execute(directoryEntry);
           return true;
         }
       }
@@ -339,7 +322,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       public string HintText { get; set; }
     }
 
-    private void SwallowsRequestBringIntoView(bool value) {
+    public void SwallowsRequestBringIntoView(bool value) {
       _swallowsRequestBringIntoView = value;
     }
 

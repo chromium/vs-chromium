@@ -147,14 +147,14 @@
       </TreeView.ItemsPanel>
 
       <TreeView.Resources>
-        <!--<SolidColorBrush Color="Green" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>-->
-        <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" 
-                         Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}" />-->
-        <!--<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" 
-                         Color="{DynamicResource VsBrush.Highlight}" />-->
 
         <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:DirectoryEntryViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
+            <StackPanel.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Open" Command="{Binding OpenCommand}" />
+              </ContextMenu>
+            </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
@@ -195,6 +195,11 @@
 
         <DataTemplate DataType="{x:Type sourceExplorer:FilePositionViewModel}">
           <StackPanel Orientation="Horizontal">
+            <StackPanel.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Open" Command="{Binding OpenCommand}" />
+              </ContextMenu>
+            </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
             <TextBlock Text="{Binding DisplayText}" FontFamily="Consolas" FontSize="12" />
           </StackPanel>

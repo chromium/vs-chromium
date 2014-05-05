@@ -4,16 +4,16 @@
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class SourceExplorerItemViewModelBase : TreeViewItemViewModel {
-    private readonly ISourceExplorerItemViewModelHost _host;
+    private readonly ISourceExplorerViewModelHost _host;
 
     public SourceExplorerItemViewModelBase(
-        ISourceExplorerItemViewModelHost host,
+        ISourceExplorerViewModelHost host,
         TreeViewItemViewModel parent,
         bool lazyLoadChildren)
       : base(host.StandarImageSourceFactory, parent, lazyLoadChildren) {
       _host = host;
     }
 
-    public ISourceExplorerItemViewModelHost Host { get { return _host; } }
+    public ISourceExplorerViewModelHost Host { get { return _host; } }
   }
 }

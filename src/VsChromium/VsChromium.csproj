@@ -204,10 +204,10 @@
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerItemViewModelHost.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerViewModelHost.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\CommandDelegate.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelHost.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerViewModelHost.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />

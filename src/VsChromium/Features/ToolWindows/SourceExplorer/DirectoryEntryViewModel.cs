@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Input;
 using System.Windows.Media;
 using VsChromium.Core.Ipc.TypedMessages;
 
@@ -14,7 +15,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
 
     public DirectoryEntryViewModel(
-        ISourceExplorerItemViewModelHost host,
+        ISourceExplorerViewModelHost host,
         TreeViewItemViewModel parentViewModel,
         DirectoryEntry directoryEntry)
       : base(host, parentViewModel, directoryEntry.Entries.Count > 0) {
@@ -40,6 +41,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     protected override IEnumerable<TreeViewItemViewModel> GetChildren() {
       return _children.Value;
     }
+
+    #region Command Handlers
+
+    public ICommand OpenCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.NavigateToDirectory(this));
+      }
+    }
+
+    #endregion
+
 
     protected override void OnPropertyChanged(string propertyName) {
       base.OnPropertyChanged(propertyName);

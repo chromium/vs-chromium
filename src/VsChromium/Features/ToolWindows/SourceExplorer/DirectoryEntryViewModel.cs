@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media;
+using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
@@ -47,6 +48,36 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public ICommand OpenCommand {
       get {
         return CommandDelegate.Create(sender => Host.NavigateToDirectory(this));
+      }
+    }
+
+    public ICommand CopyFullPathCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(GetFullPath()));
+      }
+    }
+
+    public ICommand CopyRelativePathCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(GetRelativePath()));
+      }
+    }
+
+    public ICommand CopyFullPathPosixCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(GetFullPath())));
+      }
+    }
+
+    public ICommand CopyRelativePathPosixCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(GetRelativePath())));
+      }
+    }
+
+    public ICommand OpenContainingFolderCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.WindowsExplorer.OpenContainingFolder(this.GetFullPath()));
       }
     }
 

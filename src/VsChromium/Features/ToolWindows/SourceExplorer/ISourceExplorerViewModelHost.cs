@@ -5,6 +5,7 @@
 using Microsoft.VisualStudio.Text;
 using VsChromium.Threads;
 using VsChromium.Views;
+using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
@@ -13,9 +14,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public interface ISourceExplorerViewModelHost {
     IUIRequestProcessor UIRequestProcessor { get; }
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
-
-    //ISynchronizationContextProvider SynchronizationContextProvider { get; }
-    //IOpenDocumentHelper OpenDocumentHelper { get; }
+    IClipboard Clipboard { get; }
+    IWindowsExplorer WindowsExplorer { get; }
 
     void NavigateToFile(FileEntryViewModel fileEntry, Span? span);
     void NavigateToDirectory(DirectoryEntryViewModel directoryEntry);

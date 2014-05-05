@@ -28,13 +28,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private const int _searchFileContentsMaxResults = 10000;
 
     private readonly IProgressBarTracker _progressBarTracker;
-    private IComponentModel _componentModel;
-    private IOpenDocumentHelper _openDocumentHelper;
     private IStatusBar _statusBar;
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
-    private IStandarImageSourceFactory _standarImageSourceFactory;
-    private ISynchronizationContextProvider _synchronizationContextProvider;
     private bool _swallowsRequestBringIntoView = true;
 
     public SourceExplorerControl() {
@@ -65,17 +61,21 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
-      _componentModel = componentModel;
-      _uiRequestProcessor = _componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
-      _standarImageSourceFactory = _componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
-      _openDocumentHelper = _componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
-      _synchronizationContextProvider = _componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
-      _statusBar = _componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
-      _typedRequestProcessProxy =_componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
+      _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
+      _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
+      _typedRequestProcessProxy =componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
+      var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
+      var clipboard = componentModel.DefaultExportProvider.GetExportedValue<IClipboard>();
+      var windowsExplorer = componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>();
+      var openDocumentHelper = componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
+      var synchronizationContextProvider = componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
+      var host = new SourceExplorerViewModelHost(this, _uiRequestProcessor, standarImageSourceFactory, windowsExplorer, clipboard, synchronizationContextProvider, openDocumentHelper);
+      ViewModel.SetHost(host);
+
       ViewModel.OnToolWindowCreated(serviceProvider);
-      ViewModel.SetHost(new SourceExplorerViewModelHost(this, _uiRequestProcessor, _standarImageSourceFactory, _synchronizationContextProvider, _openDocumentHelper));
+
       FetchFilesystemTree();
     }
 

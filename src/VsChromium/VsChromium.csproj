@@ -204,6 +204,9 @@
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
+    <Compile Include="Wpf\IWindowsExplorer.cs" />
+    <Compile Include="Wpf\Clipboard.cs" />
+    <Compile Include="Wpf\IClipboard.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerViewModelHost.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\CommandDelegate.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelBase.cs" />
@@ -285,6 +288,7 @@
     <Compile Include="Wpf\EditableComboBox.cs" />
     <Compile Include="Wpf\StringListViewModel.cs" />
     <Compile Include="Wpf\IHierarchyObject.cs" />
+    <Compile Include="Wpf\WindowsExplorer.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
     <Page Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml">
       <SubType>Designer</SubType>

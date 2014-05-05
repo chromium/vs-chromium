@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.IO;
+using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
@@ -32,11 +32,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         return new DirectoryEntryViewModel(host, parentViewModel, (DirectoryEntry)fileSystemEntry);
     }
 
-    public string GetPath() {
+    public string GetFullPath() {
       var parent = ParentViewModel as FileSystemEntryViewModel;
       if (parent == null)
         return Name;
-      return Path.Combine(parent.GetPath(), Name);
+      return PathHelpers.PathCombine(parent.GetFullPath(), Name);
+    }
+
+    public string GetRelativePath() {
+      var parent = ParentViewModel as FileSystemEntryViewModel;
+      if (parent == null)
+        return "";
+      return PathHelpers.PathCombine(parent.GetRelativePath(), Name);
     }
   }
 }

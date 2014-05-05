@@ -5,20 +5,22 @@
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.VisualStudio.Text;
+using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FilePositionViewModel : SourceExplorerItemViewModelBase {
+    private readonly FileEntryViewModel _parentFile;
     private readonly FilePositionSpan _position;
     private FileExtract _fileExtract;
 
-    public FilePositionViewModel(
-        ISourceExplorerViewModelHost host,
-        TreeViewItemViewModel parent,
-        FilePositionSpan position)
-      : base(host, parent, false) {
+    public FilePositionViewModel(ISourceExplorerViewModelHost host, FileEntryViewModel parentFile, FilePositionSpan position)
+      : base(host, parentFile, false) {
+      _parentFile = parentFile;
       _position = position;
     }
+
+    public FileEntryViewModel ParentFile { get { return _parentFile; } }
 
     public int Position { get { return _position.Position; } }
 
@@ -26,10 +28,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public string Path {
       get {
-        var parent = ParentViewModel as FileEntryViewModel;
-        if (parent == null)
-          return null;
-        return parent.Path;
+        return ParentFile.Path;
       }
     }
 
@@ -54,7 +53,37 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Host.NavigateToFile((FileEntryViewModel)this.ParentViewModel, new Span(Position, Length)));
+        return CommandDelegate.Create(sender => Host.NavigateToFile(ParentFile, new Span(Position, Length)));
+      }
+    }
+
+    public ICommand CopyFullPathCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(ParentFile.GetFullPath()));
+      }
+    }
+
+    public ICommand CopyRelativePathCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(ParentFile.GetRelativePath()));
+      }
+    }
+
+    public ICommand CopyFullPathPosixCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(ParentFile.GetFullPath())));
+      }
+    }
+
+    public ICommand CopyRelativePathPosixCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(ParentFile.GetRelativePath())));
+      }
+    }
+
+    public ICommand OpenContainingFolderCommand {
+      get {
+        return CommandDelegate.Create(sender => Host.WindowsExplorer.OpenContainingFolder(ParentFile.GetFullPath()));
       }
     }
 

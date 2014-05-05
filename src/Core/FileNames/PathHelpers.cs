@@ -45,5 +45,9 @@ namespace VsChromium.Core.FileNames {
 
       return false;
     }
+
+    public static string ToPosix(string path) {
+      return path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
   }
 }

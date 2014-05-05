@@ -4,6 +4,7 @@
 
 using System;
 using System.Windows.Input;
+using VsChromium.Core;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class CommandDelegate : ICommand {
@@ -18,7 +19,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void Execute(object parameter) {
-      _action(parameter);
+      Logger.WrapActionInvocation(() =>_action(parameter));
     }
 
     public event EventHandler CanExecuteChanged { add { } remove{} }

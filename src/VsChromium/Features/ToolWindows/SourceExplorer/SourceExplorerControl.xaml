@@ -152,7 +152,12 @@
           <StackPanel Orientation="Horizontal">
             <StackPanel.ContextMenu>
               <ContextMenu>
-                <MenuItem Header="Open" Command="{Binding OpenCommand}" />
+                <MenuItem Header="Open In Source Explorer" Command="{Binding OpenCommand}" FontWeight="Bold" />
+                <MenuItem Header="Copy Full Path" Command="{Binding CopyFullPathCommand}" />
+                <MenuItem Header="Copy Relative Path" Command="{Binding CopyRelativePathCommand}" />
+                <MenuItem Header="Copy Full Path with &quot;/&quot;" Command="{Binding CopyFullPathPosixCommand}" />
+                <MenuItem Header="Copy Relative Path  with &quot;/&quot;" Command="{Binding CopyRelativePathPosixCommand}" />
+                <MenuItem Header="Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
@@ -164,7 +169,12 @@
           <StackPanel Orientation="Horizontal" >
             <StackPanel.ContextMenu>
               <ContextMenu>
-                <MenuItem Header="Open" Command="{Binding OpenCommand}" />
+                <MenuItem Header="Open" Command="{Binding OpenCommand}" FontWeight="Bold" />
+                <MenuItem Header="Copy Full Path" Command="{Binding CopyFullPathCommand}" />
+                <MenuItem Header="Copy Relative Path" Command="{Binding CopyRelativePathCommand}" />
+                <MenuItem Header="Copy Full Path with &quot;/&quot;" Command="{Binding CopyFullPathPosixCommand}" />
+                <MenuItem Header="Copy Relative Path  with &quot;/&quot;" Command="{Binding CopyRelativePathPosixCommand}" />
+                <MenuItem Header="Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
@@ -198,6 +208,11 @@
             <StackPanel.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Open" Command="{Binding OpenCommand}" />
+                <MenuItem Header="Copy Full Path" Command="{Binding CopyFullPathCommand}" />
+                <MenuItem Header="Copy Relative Path" Command="{Binding CopyRelativePathCommand}" />
+                <MenuItem Header="Copy Full Path with &quot;/&quot;" Command="{Binding CopyFullPathPosixCommand}" />
+                <MenuItem Header="Copy Relative Path  with &quot;/&quot;" Command="{Binding CopyRelativePathPosixCommand}" />
+                <MenuItem Header="Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>

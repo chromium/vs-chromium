@@ -8,14 +8,10 @@ using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public static class FileSystemEntryDataViewModelFactory {
-    public static IEnumerable<TreeViewItemViewModel> CreateViewModels(
-        ISourceExplorerViewModelHost host,
-      TreeViewItemViewModel parent,
-      FileSystemEntryData data) {
+    public static IEnumerable<TreeViewItemViewModel> CreateViewModels(ISourceExplorerViewModelHost host, FileEntryViewModel parent, FileSystemEntryData data) {
       var positionsData = data as FilePositionsData;
       if (positionsData != null)
-        return positionsData.Positions.Select(
-            x => new FilePositionViewModel(host, parent, x));
+        return positionsData.Positions.Select(x => new FilePositionViewModel(host, parent, x));
 
       return Enumerable.Empty<TreeViewItemViewModel>();
     }

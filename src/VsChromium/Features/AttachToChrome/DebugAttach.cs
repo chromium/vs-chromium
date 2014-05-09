@@ -11,6 +11,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using VsChromium.Core.Processes;
 using VsChromium.DkmIntegration;
 
 namespace VsChromium.Features.AttachToChrome {
@@ -23,12 +24,14 @@ namespace VsChromium.Features.AttachToChrome {
 
       try {
         foreach (Process process in processes) {
+          NtProcess ntproc = new NtProcess(process.Id);
+
           VsDebugTargetInfo2 target = new VsDebugTargetInfo2();
           DebugProcessOptions options = new DebugProcessOptions { AutoAttachToChildren = autoAttachToChildren };
           target.dwDebugEngineCount = 1;
           target.dwProcessId = (uint)process.Id;
           target.dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_AlreadyRunning;
-          target.bstrExe = process.MainModule.FileName;
+          target.bstrExe = ntproc.Win32ProcessImagePath;
           target.cbSize = (uint)targetSize;
           target.bstrCurDir = null;
           target.guidPortSupplier = DkmIntegration.Guids.PortSupplier.Default;

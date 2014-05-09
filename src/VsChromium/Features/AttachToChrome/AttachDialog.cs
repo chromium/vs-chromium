@@ -89,7 +89,7 @@ namespace VsChromium.Features.AttachToChrome {
         if (!ntproc.IsValid)
           continue;
 
-        item.Process = ChromiumProcess.Create(p.Id);
+        item.Process = ChromiumProcess.Create(ntproc);
         if (item.Process == null)
           continue;
 

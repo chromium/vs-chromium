@@ -31,6 +31,22 @@ namespace VsChromium.Core.Win32.Processes {
       [In, Out]
       PROCESS_INFORMATION lpProcessInformation);
 
+    [DllImport("ntdll.dll", SetLastError = true)]
+    public static extern int NtReadVirtualMemory(
+        SafeProcessHandle hProcess,
+        IntPtr baseAddress,
+        [Out] byte[] buffer,
+        uint size,
+        out uint lpNumberOfBytesRead);
+
+    [DllImport("ntdll.dll", SetLastError = true)]
+    public static extern int NtWow64ReadVirtualMemory64(
+        SafeProcessHandle hProcess,
+        ulong baseAddress,
+        IntPtr buffer,
+        ulong bufferSize,
+        out ulong lpNumberOfBytesRead);
+
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern SafeProcessHandle OpenProcess(
       [MarshalAs(UnmanagedType.U4)] ProcessAccessFlags dwDesiredAccess,
@@ -51,5 +67,8 @@ namespace VsChromium.Core.Win32.Processes {
 
     [DllImport("ntdll.dll", SetLastError = true)]
     public static extern int NtQueryInformationProcess(SafeProcessHandle hProcess, ProcessInfoClass pic, ref ProcessBasicInformation pbi, int cb, out int pSize);
+
+    [DllImport("ntdll.dll", SetLastError = true)]
+    public static extern int NtWow64QueryInformationProcess64(SafeProcessHandle hProcess, ProcessInfoClass pic, ref ProcessBasicInformationWow64 pbi, int cb, out int pSize);
   }
 }

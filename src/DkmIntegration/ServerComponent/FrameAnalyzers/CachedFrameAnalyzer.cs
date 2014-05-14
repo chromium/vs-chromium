@@ -20,6 +20,10 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
       this._paramValues = values;
     }
 
+    public override ulong PrologueLength {
+      get { return 0; }
+    }
+
     public override object GetArgumentValue(DkmStackWalkFrame frame, int index) {
       return _paramValues[index];
     }

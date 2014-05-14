@@ -26,6 +26,7 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
       }
     }
 
+    public abstract ulong PrologueLength { get; }
     public abstract object GetArgumentValue(DkmStackWalkFrame frame, int index);
 
     public FunctionParameter[] Parameters {

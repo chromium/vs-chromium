@@ -23,6 +23,11 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
     }
 
     public override object GetArgumentValue(DkmStackWalkFrame frame, int index) {
+      ulong rsp = frame.Registers.GetStackPointer();
+      ulong rsp2 = frame.VscxGetRegisterValue64(CpuRegister.Rsp);
+      ulong rbp = frame.VscxGetRegisterValue64(CpuRegister.Rbp);
+      ulong frameBase = frame.FrameBase;
+
       byte[] argumentBuffer = ReadArgumentBytes(frame);
 
       int wordZeroIndex = 0;
@@ -53,10 +58,9 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
         bytesRequired += param.PaddedSize;
       byte[] stack = new byte[bytesRequired];
 
-      // R11 is similar to EBP under x86 calling conventions.
-      ulong r11 = frame.VscxGetRegisterValue64(CpuRegister.R11);
+      ulong rsp = frame.Registers.GetStackPointer();
       // The first word on the stack is the return address, similar to in x86 calling conventions.
-      frame.Process.ReadMemory(r11 + 8, DkmReadMemoryFlags.None, stack);
+      frame.Process.ReadMemory(rsp + 8, DkmReadMemoryFlags.None, stack);
 
       // Since everything is padded, we should have a multiple-of-8 bytes.  The first four
       // arguments may or may not actually be on the stack since it's register spill-over space,
@@ -81,10 +85,6 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
       }
 
       return stack;
-    }
-
-    public override ulong PrologueLength {
-      get { return 7; }
     }
   }
 }

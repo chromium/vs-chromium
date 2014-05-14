@@ -25,12 +25,20 @@ namespace VsChromium.Features.AttachToChrome {
       try {
         foreach (Process process in processes) {
           NtProcess ntproc = new NtProcess(process.Id);
-
           VsDebugTargetInfo2 target = new VsDebugTargetInfo2();
           DebugProcessOptions options = new DebugProcessOptions { AutoAttachToChildren = autoAttachToChildren };
           target.dwDebugEngineCount = 1;
           target.dwProcessId = (uint)process.Id;
           target.dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_AlreadyRunning;
+          if (process.Threads.Count == 1) {
+            // If this is a suspended process, then using DLO_AttachToSuspendedLaunchProcess will
+            // bypass the initial loader breakpoint, causing a seamless and transparent attach.
+            // This is usually the desired behavior, as child processes frequently startup and
+            // shutdown, and it is intrusive to be constantly breaking into the debugger.
+            ProcessThread mainThread = process.Threads[0];
+            if (mainThread.ThreadState == ThreadState.Wait && mainThread.WaitReason == ThreadWaitReason.Suspended)
+              target.dlo |= (uint)_DEBUG_LAUNCH_OPERATION4.DLO_AttachToSuspendedLaunchProcess;
+          }
           target.bstrExe = ntproc.Win32ProcessImagePath;
           target.cbSize = (uint)targetSize;
           target.bstrCurDir = null;

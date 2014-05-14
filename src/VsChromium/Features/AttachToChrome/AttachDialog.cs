@@ -173,7 +173,6 @@ namespace VsChromium.Features.AttachToChrome {
     }
 
     private void buttonAttach_Click(object sender, EventArgs e) {
-      System.Diagnostics.Debug.WriteLine("Closing dialog.");
       Close();
     }
 

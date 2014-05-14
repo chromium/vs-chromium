@@ -40,6 +40,11 @@
     <Compile Include="Guids\PortSupplier.cs" />
     <Compile Include="Guids\Source.cs" />
     <Compile Include="Guids\Vendor.cs" />
+    <Compile Include="ServerComponent\FrameAnalyzers\CachedFrameAnalyzer.cs" />
+    <Compile Include="ServerComponent\FrameAnalyzers\StackFrameAnalyzer.cs" />
+    <Compile Include="ServerComponent\FrameAnalyzers\X64FrameAnalyzer.cs" />
+    <Compile Include="ServerComponent\FrameAnalyzers\StdcallFrameAnalyzer.cs" />
+    <Compile Include="ServerComponent\FunctionParameter.cs" />
     <Compile Include="ServerComponent\IFunctionTracer.cs" />
     <Compile Include="Messages\Component\ChildProcessSpawned.cs" />
     <Compile Include="Messages\Component\MessageCode.cs" />

@@ -12,7 +12,7 @@
     
     <Class Name="VsChromium.DkmIntegration.ServerComponent.ServerComponent">
       <Implements>
-        <InterfaceGroup>
+        <InterfaceGroup Priority="Highest">
           <Filter>
             <RuntimeId RequiredValue="DkmRuntimeId.Native"/>
             <BaseDebugMonitorId RequiredValue="DkmBaseDebugMonitorId.WindowsProcess"/>

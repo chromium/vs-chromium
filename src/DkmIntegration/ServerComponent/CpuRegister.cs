@@ -20,5 +20,13 @@ namespace VsChromium.DkmIntegration.ServerComponent {
     Esi = 23,
     Edi = 24,
     Eip = 33,
+    Rcx = 330,
+    Rdx = 331,
+    Rbp = 334,
+    Rsp = 335,
+    R8 = 336,
+    R9 = 337,
+    R10 = 338,
+    R11 = 339
   }
 }

@@ -8,12 +8,12 @@ using System.Linq;
 using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.Projects {
-  [Export(typeof(IRawProjectDiscovery))]
-  public class RawProjectDiscovery : IRawProjectDiscovery {
+  [Export(typeof(IProjectDiscovery))]
+  public class ProjectDiscovery : IProjectDiscovery {
     private readonly IProjectDiscoveryProvider[] _providers;
 
     [ImportingConstructor]
-    public RawProjectDiscovery([ImportMany] IEnumerable<IProjectDiscoveryProvider> providers) {
+    public ProjectDiscovery([ImportMany] IEnumerable<IProjectDiscoveryProvider> providers) {
       _providers = providers.OrderByDescending(x => x.Priority).ToArray();
     }
 

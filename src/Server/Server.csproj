@@ -81,12 +81,10 @@
     <Compile Include="Projects\IDirectoryFilter.cs" />
     <Compile Include="Projects\IFileFilter.cs" />
     <Compile Include="Projects\IProject.cs" />
-    <Compile Include="Projects\IRawProjectDiscovery.cs" />
-    <Compile Include="Projects\IProjectDiscoveryProvider.cs" />
     <Compile Include="Projects\IProjectDiscovery.cs" />
+    <Compile Include="Projects\IProjectDiscoveryProvider.cs" />
     <Compile Include="Projects\ISearchableFilesFilter.cs" />
-    <Compile Include="Projects\RawProjectDiscovery.cs" />
-    <Compile Include="Projects\ProjectDiscoveryWithCache.cs" />
+    <Compile Include="Projects\ProjectDiscovery.cs" />
     <Compile Include="Projects\ProjectFile\ProjectFileDiscoveryProvider.cs" />
     <Compile Include="Projects\ProjectFile\ProjectFileProject.cs" />
     <Compile Include="Projects\SearchableFilesFilter.cs" />

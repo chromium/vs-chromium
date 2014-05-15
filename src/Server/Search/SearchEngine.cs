@@ -115,7 +115,7 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
-      var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString);
+      var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
       // Don't search empty or very small strings -- no significant results.
       if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
           (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
@@ -216,7 +216,7 @@ namespace VsChromium.Server.Search {
     }
 
     private static string ConvertUserSearchStringToSearchPattern(SearchParams searchParams) {
-      var pattern = searchParams.SearchString;
+      var pattern = searchParams.SearchString ?? "";
 
       pattern = pattern.Trim();
       if (string.IsNullOrWhiteSpace(pattern))
@@ -240,16 +240,14 @@ namespace VsChromium.Server.Search {
       var operationId = _operationIdFactory.GetNextId();
       OnFilesLoading(operationId);
 
-      Logger.Log("++++ Computing new state of file database from file system tree. ++++");
+      Logger.Log("Computing new state of file database from file system tree.");
       var sw = Stopwatch.StartNew();
 
       var oldState = _currentFileDatabase;
       var newState = _fileDatabaseFactory.CreateIncremental(oldState, newSnapshot);
-        //new FileDatabase(_fileContentsFactory, _progressTrackerFactory);
-        //newState.ComputeState(oldState, newSnapshot);
 
       sw.Stop();
-      Logger.Log("++++ Done computing new state of file database from file system tree in {0:n0} msec. ++++",
+      Logger.Log(">>>>>>>> Done computing new state of file database from file system tree in {0:n0} msec.",
                  sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 

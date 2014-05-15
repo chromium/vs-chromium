@@ -138,6 +138,7 @@
     <Compile Include="Processes\NtProcess.cs" />
     <Compile Include="Processes\ProcessUtility.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
+    <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />
     <Compile Include="Utility\ScopedStopWatch.cs" />
     <Compile Include="VsChromiumVersion.cs" />

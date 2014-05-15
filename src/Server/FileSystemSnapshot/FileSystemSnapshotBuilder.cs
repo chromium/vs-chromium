@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
@@ -48,7 +47,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       }
     }
 
-    private static List<TValue> GetOrNewList<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {
+    private static List<TValue> GetOrCreateList<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {
       List<TValue> children;
       if (dictionary.TryGetValue(key, out children))
         return children;
@@ -58,7 +57,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       return children;
     }
 
-    private static IEnumerable<TValue> GetOrEmpty<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {
+    private static IEnumerable<TValue> GetOrEmptyList<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {
       List<TValue> children;
       if (dictionary.TryGetValue(key, out children))
         return children;
@@ -85,7 +84,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
             .OrderBy(x => x.RelativePathName)
             .ToReadOnlyCollection();
 
-          return new KeyValuePair<DirectoryName, ReadOnlyCollection<FileName>>(directoryName, entries);
+          return KeyValuePair.Create(directoryName, entries);
         })
         .ToList();
       ssw.Step(sw => Logger.Log("Done traversing file system in {0:n0} msec.", sw.ElapsedMilliseconds));
@@ -106,7 +105,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         if (directoryName.IsAbsoluteName)
           return;
 
-        GetOrNewList(directoriesToChildDirectories, directoryName.Parent).Add(directoryName);
+        GetOrCreateList(directoriesToChildDirectories, directoryName.Parent).Add(directoryName);
       });
       ssw.Step(sw => Logger.Log("Done creating children directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
@@ -117,7 +116,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         var directoryName = entry.Key;
         var childFilenames = entry.Value;
 
-        var childDirectories = GetOrEmpty(directoriesToChildDirectories, directoryName)
+        var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryName)
           .Select(x => directoriesToSnapshot[x])
           .OrderBy(x => x.DirectoryName.RelativePathName)
           .ToReadOnlyCollection();
@@ -125,7 +124,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         // TODO(rpaquay): Not clear the lines below are a perf win, even though
         // they do not hurt correctness.
         // Remove children since we processed them
-        //GetOrEmpty(directoriesToChildDirectories, directoryName)
+        //GetOrEmptyList(directoriesToChildDirectories, directoryName)
         //  .ForAll(x => directoriesToSnapshot.Remove(x));
 
         var result = new DirectorySnapshot(directoryName, childDirectories, childFilenames);

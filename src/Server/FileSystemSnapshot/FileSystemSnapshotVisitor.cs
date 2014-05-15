@@ -3,25 +3,27 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromium.Core.Linq;
+using VsChromium.Core.Utility;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemSnapshot {
   public class FileSystemSnapshotVisitor {
     public static IEnumerable<KeyValuePair<IProject, DirectorySnapshot>> GetDirectories(FileSystemTreeSnapshot snapshot) {
-
-      var stack = new Stack<KeyValuePair<IProject, DirectorySnapshot>>();
-
+      var result = new List<KeyValuePair<IProject, DirectorySnapshot>>();
       foreach (var project in snapshot.ProjectRoots) {
-        stack.Push(new KeyValuePair<IProject, DirectorySnapshot>(project.Project, project.Directory));
+        ProcessRoot(project, result);
       }
+      return result;
+    }
 
-      while (!stack.IsEmpty()) {
-        var head = stack.Pop();
-        foreach (var directory in head.Value.DirectoryEntries) {
-          stack.Push(new KeyValuePair<IProject, DirectorySnapshot>(head.Key, directory));
-        }
-        yield return head;
+    private static void ProcessRoot(ProjectRootSnapshot project, List<KeyValuePair<IProject, DirectorySnapshot>> result) {
+      ProcessDirectory(project.Project, project.Directory, result);
+    }
+
+    private static void ProcessDirectory(IProject project, DirectorySnapshot directory, List<KeyValuePair<IProject, DirectorySnapshot>> result) {
+      result.Add(KeyValuePair.Create(project, directory));
+      foreach (var child in directory.DirectoryEntries) {
+        ProcessDirectory(project, child, result);
       }
     }
   }

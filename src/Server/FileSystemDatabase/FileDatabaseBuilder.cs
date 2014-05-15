@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using VsChromium.Core;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
@@ -106,21 +108,28 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
-      var sw = Stopwatch.StartNew();
+      var ssw = new ScopedStopWatch();
 
       var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot).ToList();
+      ssw.Step(sw => Logger.Log("Done flattening file system tree snapshot in {0:n0} msec.", sw.ElapsedMilliseconds));
+
       var directoryNames = directories
-        .AsParallel()
         .Select(x => x.Value.DirectoryName)
         .ToArray();
-      var files = directories
-        .AsParallel()
-        .SelectMany(x => x.Value.Files.Select(y => new KeyValuePair<IProject, FileName>(x.Key, y)))
-        .Select(x => new FileInfo(new FileData(x.Value, null), x.Key.IsFileSearchable(x.Value)))
-        .ToDictionary(x => x.FileData.FileName, x => x);
+      ssw.Step(sw => Logger.Log("Done creating array of directory names in {0:n0} msec.", sw.ElapsedMilliseconds));
 
-      sw.Stop();
-      Logger.Log("Done computing list of searchable files from FileSystemTree in {0:n0} msec.", sw.ElapsedMilliseconds);
+      var searchableFiles = directories
+        .AsParallel()
+        .SelectMany(x => x.Value.Files.Select(y => KeyValuePair.Create(x.Key, y)))
+        .Select(x => new FileInfo(new FileData(x.Value, null), x.Key.IsFileSearchable(x.Value)))
+        .ToList();
+      ssw.Step(sw => Logger.Log("Done creating list of files in {0:n0} msec.", sw.ElapsedMilliseconds));
+
+      var files = searchableFiles
+        .ToDictionary(x => x.FileData.FileName, x => x);
+      ssw.Step(sw => Logger.Log("Done creating dictionary of files in {0:n0} msec.", sw.ElapsedMilliseconds));
+
+      Logger.Log("Done computing list of searchable files from FileSystemTree.");
       Logger.LogMemoryStats();
 
       _files = new FileNameDictionary<FileInfo>(files);

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.Search {
   public interface ISearchEngine {
@@ -14,7 +15,8 @@ namespace VsChromium.Server.Search {
     SearchFileContentsResult SearchFileContents(SearchParams searchParams);
     IEnumerable<FileExtract> GetFileExtracts(FullPathName filename, IEnumerable<FilePositionSpan> spans);
 
-    event Action<long> FilesLoading;
-    event Action<long> FilesLoaded;
+    event EventHandler<OperationEventArgs> FilesLoading;
+    event EventHandler<OperationResultEventArgs> FilesLoaded;
   }
+
 }

@@ -83,7 +83,6 @@
     <Compile Include="Ipc\TypedMessages\FileSystemTreeComputed.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileExtractsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileExtractsResponse.cs" />
-    <Compile Include="Ipc\TypedMessages\IOperationIdFactory.cs" />
     <Compile Include="Ipc\TypedMessages\PairedTypedEvent.cs" />
     <Compile Include="Ipc\TypedMessages\ProgressReportEvent.cs" />
     <Compile Include="Ipc\TypedMessages\SearchEngineFilesLoaded.cs" />

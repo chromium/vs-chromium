@@ -28,14 +28,27 @@ namespace VsChromium.Core.FileNames {
       _name = name;
     }
 
+    /// <summary>
+    /// Returns ture if this is the empty (default) relative path instance.
+    /// </summary>
     public bool IsEmpty { get { return string.IsNullOrEmpty(_name); } }
+    /// <summary>
+    /// Returns the string representation of the relative path name.
+    /// </summary>
     public string RelativeName { get { return _relativeName ?? ""; } }
+    /// <summary>
+    /// Returns the string reprensentation of the last part (i.e. the file or
+    /// directory name) of the relative path name.
+    /// </summary>
     public string Name { get { return _name ?? ""; } }
 
     public override string ToString() {
       return this.RelativeName;
     }
 
+    /// <summary>
+    /// Returns a new relative path instance by appending <paramref name="name"/> to this instance.
+    /// </summary>
     public RelativePathName CreateChild(string name) {
       return new RelativePathName(PathHelpers.PathCombine(this.RelativeName, name), name);
     }

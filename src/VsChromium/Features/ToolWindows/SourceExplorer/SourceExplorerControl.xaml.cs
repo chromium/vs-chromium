@@ -63,7 +63,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
-      _typedRequestProcessProxy =componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
+      _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
@@ -126,9 +126,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var @event = typedEvent as FileSystemTreeComputed;
       if (@event != null) {
         Wpf.WpfUtilities.Post(this, () => {
+          _progressBarTracker.Stop(OperationsIds.FileSystemTreeComputing);
+          if (@event.Error != null) {
+            ViewModel.SetErrorResponse(@event.Error);
+            return;
+          }
           Logger.Log("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
           FetchFilesystemTree();
-          _progressBarTracker.Stop(OperationsIds.FileSystemTreeComputing);
         });
       }
     }
@@ -147,8 +151,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var @event = typedEvent as SearchEngineFilesLoaded;
       if (@event != null) {
         Wpf.WpfUtilities.Post(this, () => {
-          Logger.Log("Search engine is done loading files on server.");
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
+          if (@event.Error != null) {
+            ViewModel.SetErrorResponse(@event.Error);
+            return;
+          }
+          Logger.Log("Search engine is done loading files on server.");
         });
       }
     }

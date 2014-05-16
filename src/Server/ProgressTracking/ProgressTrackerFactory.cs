@@ -5,6 +5,7 @@
 using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Ipc.TypedEvents;
+using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.ProgressTracking {
   [Export(typeof(IProgressTrackerFactory))]
@@ -12,7 +13,7 @@ namespace VsChromium.Server.ProgressTracking {
     private readonly ITypedEventSender _typedEventSender;
 
     [ImportingConstructor]
-    public ProgressTrackerFactory(ITypedEventSender typedEventSender, IOperationIdFactory operationIdFactory) {
+    public ProgressTrackerFactory(ITypedEventSender typedEventSender) {
       _typedEventSender = typedEventSender;
     }
 

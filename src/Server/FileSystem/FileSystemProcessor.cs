@@ -6,27 +6,38 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core;
 using VsChromium.Core.FileNames;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.Operations;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystem {
   [Export(typeof(IFileSystemProcessor))]
   public class FileSystemProcessor : IFileSystemProcessor {
+    /// <summary>
+    /// Performance optimization flag: when building a new file system tree
+    /// snapshot, this flag enables code to try to re-use filename instances
+    /// from the previous snapshot. This is currently turned off, as profiling
+    /// showed this slows down the algorithm by about 40% with not advantage
+    /// other than decreasing GC activity. Note that this actually didn't
+    /// decrease memory usage, as FileName instances are orphaned when a new
+    /// snapshot is created (and the previous one is released).
+    /// </summary>
+    private static readonly bool ReuseFileNameInstances = false;
+
     private readonly HashSet<FullPathName> _addedFiles = new HashSet<FullPathName>();
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IDirectoryChangeWatcher _directoryChangeWatcher;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly object _lock = new object();
-    private readonly IOperationIdFactory _operationIdFactory;
     private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
+    private readonly IOperationProcessor<SnapshotComputedEventArgs> _snapshotOperationProcessor;
     private readonly ITaskQueue _taskQueue;
     private FileSystemTreeSnapshot _fileSystemSnapshot;
     private int _version;
@@ -36,13 +47,13 @@ namespace VsChromium.Server.FileSystem {
       IFileSystemNameFactory fileSystemNameFactory,
       IProjectDiscovery projectDiscovery,
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
-      IOperationIdFactory operationIdFactory,
       ITaskQueueFactory taskQueueFactory,
-      IFileSystemSnapshotBuilder fileSystemSnapshotBuilder) {
+      IFileSystemSnapshotBuilder fileSystemSnapshotBuilder,
+      IOperationProcessor<SnapshotComputedEventArgs> snapshotOperationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
-      _operationIdFactory = operationIdFactory;
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
+      _snapshotOperationProcessor = snapshotOperationProcessor;
       _projectDiscovery = projectDiscovery;
       _taskQueue = taskQueueFactory.CreateQueue();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
@@ -63,9 +74,24 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(string.Format("RemoveFile(\"{0}\")", filename), () => RemoveFileTask(filename));
     }
 
-    public event SnapshotComputingDelegate SnapshotComputing;
-    public event SnapshotComputedDelegate SnapshotComputed;
-    public event FilesChangedDelegate FilesChanged;
+    public event EventHandler<OperationEventArgs> SnapshotComputing;
+    public event EventHandler<SnapshotComputedEventArgs> SnapshotComputed;
+    public event EventHandler<FilesChangedEventArgs> FilesChanged;
+
+    protected virtual void OnSnapshotComputing(OperationEventArgs e) {
+      EventHandler<OperationEventArgs> handler = SnapshotComputing;
+      if (handler != null) handler(this, e);
+    }
+
+    protected virtual void OnSnapshotComputed(SnapshotComputedEventArgs e) {
+      EventHandler<SnapshotComputedEventArgs> handler = SnapshotComputed;
+      if (handler != null) handler(this, e);
+    }
+
+    protected virtual void OnFilesChanged(FilesChangedEventArgs e) {
+      EventHandler<FilesChangedEventArgs> handler = FilesChanged;
+      if (handler != null) handler(this, e);
+    }
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       _taskQueue.Enqueue("OnPathsChangedTask()", () => OnPathsChangedTask(changes));
@@ -77,7 +103,9 @@ namespace VsChromium.Server.FileSystem {
       if (result.RecomputeGraph) {
         RecomputeGraph();
       } else if (result.ChangedFiles.Any()) {
-        OnFilesChanged(result.ChangedFiles);
+        OnFilesChanged(new FilesChangedEventArgs {
+          ChangedFiles = result.ChangedFiles.ToReadOnlyCollection()
+        });
       }
     }
 
@@ -156,41 +184,53 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void RecomputeGraph() {
-      var operationId = _operationIdFactory.GetNextId();
-      OnTreeComputing(operationId);
-      Logger.Log("Collecting list of files from file system.");
-      Logger.LogMemoryStats();
-      var sw = Stopwatch.StartNew();
+      _snapshotOperationProcessor.Execute(new OperationInfo<SnapshotComputedEventArgs> {
+        OnBeforeExecute = args => OnSnapshotComputing(args),
+        OnAfterExecute = args => OnSnapshotComputed(args),
+        Execute = args => {
+          Logger.Log("Collecting list of files from file system.");
+          Logger.LogMemoryStats();
+          var sw = Stopwatch.StartNew();
 
-      var files = new List<FullPathName>();
-      lock (_lock) {
-        ValidateKnownFiles();
-        files.AddRange(_addedFiles);
-      }
+          var files = new List<FullPathName>();
+          lock (_lock) {
+            ValidateKnownFiles();
+            files.AddRange(_addedFiles);
+          }
 
-      var newSnapshot = _fileSystemSnapshotBuilder.Compute(files, Interlocked.Increment(ref _version));
+          IFileSystemNameFactory fileNameFactory = _fileSystemNameFactory;
+          if (ReuseFileNameInstances) {
+            if (_fileSystemSnapshot.ProjectRoots.Count > 0) {
+              fileNameFactory = new FileSystemTreeSnapshotNameFactory(_fileSystemSnapshot, fileNameFactory);
+            }
+          }
+          var newSnapshot = _fileSystemSnapshotBuilder.Compute(fileNameFactory, files, Interlocked.Increment(ref _version));
 
-      // Monitor all the Chromium directories for changes.
-      var newRoots = newSnapshot.ProjectRoots
-        .Select(entry => entry.Directory.DirectoryName);
-      _directoryChangeWatcher.WatchDirectories(newRoots);
+          // Monitor all the Chromium directories for changes.
+          var newRoots = newSnapshot.ProjectRoots
+            .Select(entry => entry.Directory.DirectoryName);
+          _directoryChangeWatcher.WatchDirectories(newRoots);
 
-      // Update current tree atomically
-      FileSystemTreeSnapshot previousSnapshot;
-      lock (_lock) {
-        previousSnapshot = _fileSystemSnapshot;
-        _fileSystemSnapshot = newSnapshot;
-      }
+          // Update current tree atomically
+          FileSystemTreeSnapshot previousSnapshot;
+          lock (_lock) {
+            previousSnapshot = _fileSystemSnapshot;
+            _fileSystemSnapshot = newSnapshot;
+          }
 
-      sw.Stop();
-      Logger.Log(">>>>>>>> Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
-                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
-                 newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)),
-                 sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
+          sw.Stop();
+          Logger.Log(">>>>>>>> Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
+            newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
+            newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)),
+            sw.ElapsedMilliseconds);
+          Logger.LogMemoryStats();
 
-      // A new tree is available, time to notify our consumers.
-      OnTreeComputed(operationId, previousSnapshot, newSnapshot);
+          return new SnapshotComputedEventArgs {
+            PreviousSnapshot = previousSnapshot,
+            NewSnapshot = newSnapshot
+          };
+        }
+      });
     }
 
     private int CountFileEntries(DirectorySnapshot entry) {
@@ -200,27 +240,9 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private int CountDirectoryEntries(DirectorySnapshot entry) {
-      return 
+      return
         1 +
         entry.DirectoryEntries.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
-    }
-
-    protected virtual void OnTreeComputing(long operationId) {
-      var handler = SnapshotComputing;
-      if (handler != null)
-        handler(operationId);
-    }
-
-    private void OnTreeComputed(long operationId, FileSystemTreeSnapshot oldTree, FileSystemTreeSnapshot newTree) {
-      var handler = SnapshotComputed;
-      if (handler != null)
-        handler(operationId, oldTree, newTree);
-    }
-
-    private void OnFilesChanged(IEnumerable<Tuple<IProject, FileName>> paths) {
-      var handler = FilesChanged;
-      if (handler != null)
-        handler(paths);
     }
   }
 }

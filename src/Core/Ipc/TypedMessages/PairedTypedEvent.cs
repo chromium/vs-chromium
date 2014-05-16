@@ -13,5 +13,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   public class PairedTypedEvent : TypedEvent {
     [ProtoMember(1)]
     public long OperationId { get; set; }
+
+    [ProtoMember(2)]
+    public ErrorResponse Error { get; set; }
   }
 }

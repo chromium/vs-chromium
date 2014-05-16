@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.Operations;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedEvents {
@@ -33,29 +35,36 @@ namespace VsChromium.Server.Ipc.TypedEvents {
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
-    private void FileSystemProcessorOnSnapshotComputing(long operationId) {
+    private void FileSystemProcessorOnSnapshotComputing(object sender, OperationEventArgs e) {
       _typedEventSender.SendEventAsync(new FileSystemTreeComputing {
-        OperationId = operationId
+        OperationId = e.OperationId
       });
     }
 
-    private void FileSystemProcessorOnSnapshotComputed(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot) {
-      _typedEventSender.SendEventAsync(new FileSystemTreeComputed {
-        OperationId = operationId,
-        OldVersion = previousSnapshot.Version,
-        NewVersion = newSnapshot.Version
-      });
+    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedEventArgs e) {
+      var fileSystemTreeComputed = new FileSystemTreeComputed {
+        OperationId = e.OperationId,
+        Error = ErrorResponseHelper.CreateErrorResponse(e.Error)
+      };
+
+      if (e.PreviousSnapshot != null) {
+        fileSystemTreeComputed.OldVersion = e.PreviousSnapshot.Version;
+        fileSystemTreeComputed.NewVersion = e.NewSnapshot.Version;
+      }
+
+      _typedEventSender.SendEventAsync(fileSystemTreeComputed);
     }
 
-    private void SearchEngineOnFilesLoading(long operationId) {
+    private void SearchEngineOnFilesLoading(object sender, OperationEventArgs args) {
       _typedEventSender.SendEventAsync(new SearchEngineFilesLoading {
-        OperationId = operationId
+        OperationId = args.OperationId
       });
     }
 
-    private void SearchEngineOnFilesLoaded(long operationId) {
+    private void SearchEngineOnFilesLoaded(object sender, OperationResultEventArgs args) {
       _typedEventSender.SendEventAsync(new SearchEngineFilesLoaded {
-        OperationId = operationId
+        OperationId = args.OperationId,
+        Error = ErrorResponseHelper.CreateErrorResponse(args.Error)
       });
     }
   }

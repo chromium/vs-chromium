@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
-using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
-using VsChromium.Server.Projects;
+using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.FileSystem {
   public interface IFileSystemProcessor {
@@ -14,12 +12,8 @@ namespace VsChromium.Server.FileSystem {
     void RemoveFile(string filename);
     FileSystemTreeSnapshot GetCurrentSnapshot();
 
-    event SnapshotComputingDelegate SnapshotComputing;
-    event SnapshotComputedDelegate SnapshotComputed;
-    event FilesChangedDelegate FilesChanged;
+    event EventHandler<OperationEventArgs> SnapshotComputing;
+    event EventHandler<SnapshotComputedEventArgs> SnapshotComputed;
+    event EventHandler<FilesChangedEventArgs> FilesChanged;
   }
-
-  public delegate void SnapshotComputingDelegate(long operationId);
-  public delegate void SnapshotComputedDelegate(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot);
-  public delegate void FilesChangedDelegate(IEnumerable<Tuple<IProject, FileName>> changedFiles);
 }

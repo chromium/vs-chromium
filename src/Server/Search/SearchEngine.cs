@@ -20,6 +20,7 @@ using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.NativeInterop;
+using VsChromium.Server.Operations;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
@@ -31,9 +32,9 @@ namespace VsChromium.Server.Search {
     private readonly IFileDatabaseFactory _fileDatabaseFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly object _lock = new Object();
-    private readonly IOperationIdFactory _operationIdFactory;
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly ISearchStringParser _searchStringParser;
+    private readonly IOperationProcessor<OperationResultEventArgs> _fileLoadingOperationProcessor;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
     private volatile IFileDatabase _currentFileDatabase;
 
@@ -43,15 +44,15 @@ namespace VsChromium.Server.Search {
       IFileSystemNameFactory fileSystemNameFactory,
       ICustomThreadPool customThreadPool,
       IFileDatabaseFactory fileDatabaseFactory,
-      IOperationIdFactory operationIdFactory,
       IProjectDiscovery projectDiscovery,
-      ISearchStringParser searchStringParser) {
+      ISearchStringParser searchStringParser,
+      IOperationProcessor<OperationResultEventArgs> fileLoadingOperationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _customThreadPool = customThreadPool;
       _fileDatabaseFactory = fileDatabaseFactory;
-      _operationIdFactory = operationIdFactory;
       _projectDiscovery = projectDiscovery;
       _searchStringParser = searchStringParser;
+      _fileLoadingOperationProcessor = fileLoadingOperationProcessor;
 
       // Create a "Null" state
       _currentFileDatabase = _fileDatabaseFactory.CreateEmpty();
@@ -66,10 +67,11 @@ namespace VsChromium.Server.Search {
       if (matchFunction == null)
         return SearchFileNamesResult.Empty;
 
-      // taskCancellation is used to make sure we cancel previous tasks as fast as possible
-      // to avoid using too many CPU resources if the caller keeps asking us to search for
-      // things. Note that this assumes the caller is only interested in the result of
-      // the *last* query, while the previous queries will throw an OperationCanceled exception.
+      // taskCancellation is used to make sure we cancel previous tasks as fast
+      // as possible to avoid using too many CPU resources if the caller keeps
+      // asking us to search for things. Note that this assumes the caller is
+      // only interested in the result of the *last* query, while the previous
+      // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
       var matches = _currentFileDatabase.FileNames
@@ -93,10 +95,11 @@ namespace VsChromium.Server.Search {
       if (matchFunction == null)
         return SearchDirectoryNamesResult.Empty;
 
-      // taskCancellation is used to make sure we cancel previous tasks as fast as possible
-      // to avoid using too many CPU resources if the caller keeps asking us to search for
-      // things. Note that this assumes the caller is only interested in the result of
-      // the *last* query, while the previous queries will throw an OperationCanceled exception.
+      // taskCancellation is used to make sure we cancel previous tasks as fast
+      // as possible to avoid using too many CPU resources if the caller keeps
+      // asking us to search for things. Note that this assumes the caller is
+      // only interested in the result of the *last* query, while the previous
+      // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
       var matches = _currentFileDatabase.DirectoryNames
@@ -123,10 +126,11 @@ namespace VsChromium.Server.Search {
       }
 
       using (var searchContentsData = new SearchContentsData(parsedSearchString, CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase))) {
-        // taskCancellation is used to make sure we cancel previous tasks as fast as possible
-        // to avoid using too many CPU resources if the caller keeps asking us to search for
-        // things. Note that this assumes the caller is only interested in the result of
-        // the *last* query, while the previous queries will throw an OperationCanceled exception.
+        // taskCancellation is used to make sure we cancel previous tasks as
+        // fast as possible to avoid using too many CPU resources if the caller
+        // keeps asking us to search for things. Note that this assumes the
+        // caller is only interested in the result of the *last* query, while
+        // the previous queries will throw an OperationCanceled exception.
         _taskCancellation.CancelAll();
         var cancellationToken = _taskCancellation.GetNewToken();
         return DoSearchFileContents(searchContentsData, searchParams.MaxResults, cancellationToken);
@@ -178,22 +182,39 @@ namespace VsChromium.Server.Search {
       return _currentFileDatabase.GetFileExtracts(filename.Item2, spans);
     }
 
-    public event Action<long> FilesLoading;
-    public event Action<long> FilesLoaded;
+    public event EventHandler<OperationEventArgs> FilesLoading;
 
-    private void FileSystemProcessorOnFilesChanged(IEnumerable<Tuple<IProject, FileName>> paths) {
-      _customThreadPool.RunAsync(() => UpdateFileContents(paths));
+    public event EventHandler<OperationResultEventArgs> FilesLoaded;
+
+    protected virtual void OnFilesLoaded(OperationResultEventArgs e) {
+      EventHandler<OperationResultEventArgs> handler = FilesLoaded;
+      if (handler != null) handler(this, e);
+    }
+
+    protected virtual void OnFilesLoading(OperationEventArgs e) {
+      EventHandler<OperationEventArgs> handler = FilesLoading;
+      if (handler != null) handler(this, e);
+    }
+
+    private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
+      _customThreadPool.RunAsync(() => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
     }
 
     private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> paths) {
-      var operationId = _operationIdFactory.GetNextId();
-      OnFilesLoading(operationId);
-      paths.ForAll(x => _currentFileDatabase.UpdateFileContents(x));
-      OnFilesLoaded(operationId);
+      _fileLoadingOperationProcessor.Execute(new OperationInfo<OperationResultEventArgs> {
+        OnBeforeExecute = args => OnFilesLoading(args),
+        OnAfterExecute = args => OnFilesLoaded(args),
+        Execute = _ => {
+          paths.ForAll(x => _currentFileDatabase.UpdateFileContents(x));
+          return new OperationResultEventArgs();
+        }
+      });
     }
 
-    private void FileSystemProcessorOnSnapshotComputed(long operationId, FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot) {
-      _customThreadPool.RunAsync(() => ComputeNewState(newSnapshot));
+    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedEventArgs e) {
+      if (e.NewSnapshot != null) {
+        _customThreadPool.RunAsync(() => ComputeNewState(e.NewSnapshot));
+      }
     }
 
     private Func<T, bool> SearchPreProcessParams<T>(
@@ -237,26 +258,29 @@ namespace VsChromium.Server.Search {
     }
 
     private void ComputeNewState(FileSystemTreeSnapshot newSnapshot) {
-      var operationId = _operationIdFactory.GetNextId();
-      OnFilesLoading(operationId);
+      _fileLoadingOperationProcessor.Execute(new OperationInfo<OperationResultEventArgs> {
+        OnBeforeExecute = args => OnFilesLoading(args),
+        OnAfterExecute = args => OnFilesLoaded(args),
+        Execute = _ => {
+          Logger.Log("Computing new state of file database from file system tree.");
+          var sw = Stopwatch.StartNew();
 
-      Logger.Log("Computing new state of file database from file system tree.");
-      var sw = Stopwatch.StartNew();
+          var oldState = _currentFileDatabase;
+          var newState = _fileDatabaseFactory.CreateIncremental(oldState, newSnapshot);
 
-      var oldState = _currentFileDatabase;
-      var newState = _fileDatabaseFactory.CreateIncremental(oldState, newSnapshot);
+          sw.Stop();
+          Logger.Log(">>>>>>>> Done computing new state of file database from file system tree in {0:n0} msec.",
+            sw.ElapsedMilliseconds);
+          Logger.LogMemoryStats();
 
-      sw.Stop();
-      Logger.Log(">>>>>>>> Done computing new state of file database from file system tree in {0:n0} msec.",
-                 sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
+          // Swap states
+          lock (_lock) {
+            _currentFileDatabase = newState;
+          }
 
-      // Swap states
-      lock (_lock) {
-        _currentFileDatabase = newState;
-      }
-
-      OnFilesLoaded(operationId);
+          return new OperationResultEventArgs();
+        }
+      });
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
@@ -294,18 +318,6 @@ namespace VsChromium.Server.Search {
         FileName = fileData.FileName,
         Spans = spans
       };
-    }
-
-    protected virtual void OnFilesLoading(long operationId) {
-      var handler = FilesLoading;
-      if (handler != null)
-        handler(operationId);
-    }
-
-    protected virtual void OnFilesLoaded(long operationId) {
-      var handler = FilesLoaded;
-      if (handler != null)
-        handler(operationId);
     }
   }
 }

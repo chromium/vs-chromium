@@ -26,6 +26,7 @@
     <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
+    <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshotNameFactory.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcher.cs" />
     <Compile Include="FileSystem\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystemNames\DirectoryName.cs" />
@@ -37,6 +38,7 @@
     <Compile Include="FileSystemSnapshot\ProjectRootSnapshot.cs" />
     <Compile Include="FileSystemSnapshot\DirectorySnapshot.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshot.cs" />
+    <Compile Include="FileSystem\FilesChangedEventArgs.cs" />
     <Compile Include="FileSystem\PathChangeEntry.cs" />
     <Compile Include="FileSystem\PathChangeKind.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotBuilder.cs" />
@@ -51,6 +53,8 @@
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\RelativePathNameExtensions.cs" />
+    <Compile Include="FileSystem\SnapshotComputedEventArgs.cs" />
+    <Compile Include="Operations\IOperationIdFactory.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventForwarder.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventSender.cs" />
     <Compile Include="Ipc\TypedEvents\TypedEventForwarder.cs" />
@@ -67,12 +71,19 @@
     <Compile Include="Ipc\IIpcResponseQueue.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotExtensions.cs" />
     <Compile Include="IServer.cs" />
+    <Compile Include="Operations\OperationEventArgs.cs" />
+    <Compile Include="Operations\OperationIdFactory.cs" />
+    <Compile Include="Operations\OperationInfo.cs" />
+    <Compile Include="Operations\OperationProcessor.cs" />
+    <Compile Include="Operations\OperationResultEventArgs.cs" />
+    <Compile Include="ProgressTracking\EnvironmentTickCountProvider.cs" />
     <Compile Include="ProgressTracking\IndeterminateProgressTracker.cs" />
     <Compile Include="ProgressTracking\IProgressTrackerFactory.cs" />
     <Compile Include="ProgressTracking\IProgressTracker.cs" />
+    <Compile Include="ProgressTracking\ITickCountProvider.cs" />
     <Compile Include="ProgressTracking\ProgressTracker.cs" />
     <Compile Include="ProgressTracking\ProgressTrackerBase.cs" />
-    <Compile Include="ProgressTracking\ProgressTrackerDisplayTextProvider.cs" />
+    <Compile Include="ProgressTracking\DisplayProgressCallback.cs" />
     <Compile Include="ProgressTracking\ProgressTrackerFactory.cs" />
     <Compile Include="Projects\Chromium\ChromiumProject.cs" />
     <Compile Include="Projects\Chromium\ChromiumProjectDiscoveryProvider.cs" />

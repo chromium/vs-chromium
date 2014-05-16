@@ -145,10 +145,9 @@ namespace VsChromium.Server.FileSystemDatabase {
         commonOldFiles
           .AsParallel()
           .Where(oldFileData => {
-            progress.Step(
-              (i, n) =>
-              string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n,
-                            oldFileData.FileName.FullPathName));
+            if (progress.Step()) {
+              progress.DisplayProgress((i, n) => string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPathName));
+            }
             return IsFileContentsUpToDate(oldFileData);
           })
           .ForAll(oldFileData => _files[oldFileData.FileName].FileData.UpdateContents(oldFileData.Contents));
@@ -170,7 +169,9 @@ namespace VsChromium.Server.FileSystemDatabase {
         _files.Values
           .AsParallel()
           .ForAll(x => {
-            progress.Step((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileData.FileName.FullPathName));
+            if (progress.Step()) {
+              progress.DisplayProgress((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileData.FileName.FullPathName));
+            }
             if (x.IsSearchable && x.FileData.Contents == null) {
               x.FileData.UpdateContents(_fileContentsFactory.GetFileContents(x.FileData.FileName.FullPathName));
             }

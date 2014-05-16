@@ -3,5 +3,5 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Server.ProgressTracking {
-  public delegate string ProgressTrackerDisplayTextProvider(int completed, int total);
+  public delegate string DisplayProgressCallback(int completed, int total);
 }

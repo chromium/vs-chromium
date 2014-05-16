@@ -104,9 +104,9 @@ namespace VsChromium.Server.FileSystem {
       });
       foreach (var item in items) {
         if (item == items.Last())
-          return Tuple.Create(project, fileSystemNameFactory.CombineFileName(directoryName, item));
+          return Tuple.Create(project, fileSystemNameFactory.CreateFileName(directoryName, item));
 
-        directoryName = fileSystemNameFactory.CombineDirectoryNames(directoryName, item);
+        directoryName = fileSystemNameFactory.CreateDirectoryName(directoryName, item);
       }
       return null;
     }

@@ -20,26 +20,23 @@ namespace VsChromium.Server.FileSystemSnapshot {
   public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
-    private readonly IFileSystemNameFactory _fileSystemNameFactory;
 
     [ImportingConstructor]
     public FileSystemSnapshotBuilder(
       IProjectDiscovery projectDiscovery,
-      IProgressTrackerFactory progressTrackerFactory,
-      IFileSystemNameFactory fileSystemNameFactory) {
+      IProgressTrackerFactory progressTrackerFactory) {
       _projectDiscovery = projectDiscovery;
       _progressTrackerFactory = progressTrackerFactory;
-      _fileSystemNameFactory = fileSystemNameFactory;
     }
 
-    public FileSystemTreeSnapshot Compute(IEnumerable<FullPathName> filenames, int version) {
+    public FileSystemTreeSnapshot Compute(IFileSystemNameFactory fileNameFactory, IEnumerable<FullPathName> filenames, int version) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var projectRoots =
           filenames
             .Select(filename => _projectDiscovery.GetProject(filename))
             .Where(project => project != null)
             .Distinct(new ProjectPathComparer())
-            .Select(project => new ProjectRootSnapshot(project, ProcessProject(project, progress)))
+            .Select(project => new ProjectRootSnapshot(project, ProcessProject(fileNameFactory, project, progress)))
             .OrderBy(projectRoot => projectRoot.Directory.DirectoryName)
             .ToReadOnlyCollection();
 
@@ -65,20 +62,19 @@ namespace VsChromium.Server.FileSystemSnapshot {
       return Enumerable.Empty<TValue>();
     }
 
-    private DirectorySnapshot ProcessProject(IProject project, IProgressTracker progress) {
-      var projectPath = _fileSystemNameFactory.CreateAbsoluteDirectoryName(project.RootPath);
+    private DirectorySnapshot ProcessProject(IFileSystemNameFactory fileNameFactory, IProject project, IProgressTracker progress) {
+      var projectPath = fileNameFactory.CreateAbsoluteDirectoryName(project.RootPath);
 
       var ssw = new ScopedStopWatch();
       // Create list of pairs (DirectoryName, List[FileNames])
-      var directoriesWithFiles = TraverseFileSystem(project, projectPath)
+      var directoriesWithFiles = TraverseFileSystem(fileNameFactory, project, projectPath)
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .Select(traversedDirectoryEntry => {
           var directoryName = traversedDirectoryEntry.DirectoryName;
-          progress.Step(
-            (i, n) =>
-              string.Format("Traversing directory: {0}",
-                PathHelpers.PathCombine(project.RootPath.FullName, directoryName.RelativePathName.RelativeName)));
+          if (progress.Step()) {
+            progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.FullName, directoryName.RelativePathName.RelativeName));
+          }
           var entries = traversedDirectoryEntry.ChildrenNames
             .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName.RelativeName))
             .OrderBy(x => x.RelativePathName)
@@ -144,24 +140,24 @@ namespace VsChromium.Server.FileSystemSnapshot {
     /// <summary>
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
-    private IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IProject project, DirectoryName projectPath) {
+    private IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IFileSystemNameFactory fileNameFactory, IProject project, DirectoryName projectPath) {
       Debug.Assert(projectPath.IsAbsoluteName);
       var stack = new Stack<DirectoryName>();
       stack.Push(projectPath);
       while (stack.Count > 0) {
         var head = stack.Pop();
         if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePathName.RelativeName)) {
-          RelativePathName[] childDirectories;
-          RelativePathName[] childFiles;
+          IList<string> childDirectories;
+          IList<string> childFiles;
           RelativePathNameExtensions.GetFileSystemEntries(project.RootPath, head.RelativePathName, out childDirectories, out childFiles);
           // Note: Use "for" loop to avoid memory allocations.
-          for (var i = 0; i < childDirectories.Length; i++) {
-            stack.Push(_fileSystemNameFactory.CreateDirectoryName(head, childDirectories[i]));
+          for (var i = 0; i < childDirectories.Count; i++) {
+            stack.Push(fileNameFactory.CreateDirectoryName(head, childDirectories[i]));
           }
           // Note: Use "for" loop to avoid memory allocations.
-          var childFilenames = new FileName[childFiles.Length];
-          for (var i = 0; i < childFiles.Length; i++) {
-            childFilenames[i] = _fileSystemNameFactory.CreateFileName(head, childFiles[i]);
+          var childFilenames = new FileName[childFiles.Count];
+          for (var i = 0; i < childFiles.Count; i++) {
+            childFilenames[i] = fileNameFactory.CreateFileName(head, childFiles[i]);
           }
           yield return new TraversedDirectoryEntry(head, childFilenames);
         }
@@ -170,15 +166,15 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
     private struct TraversedDirectoryEntry {
       private readonly DirectoryName _directoryName;
-      private readonly FileName[] _childrenNames;
+      private readonly IList<FileName> _childrenNames;
 
-      public TraversedDirectoryEntry(DirectoryName directoryName, FileName[] childrenNames) {
+      public TraversedDirectoryEntry(DirectoryName directoryName, IList<FileName> childrenNames) {
         _directoryName = directoryName;
         _childrenNames = childrenNames;
       }
 
       public DirectoryName DirectoryName { get { return _directoryName; } }
-      public FileName[] ChildrenNames { get { return _childrenNames; } }
+      public IList<FileName> ChildrenNames { get { return _childrenNames; } }
     }
   }
 }

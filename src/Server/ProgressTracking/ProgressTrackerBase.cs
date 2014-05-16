@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Ipc.TypedEvents;
@@ -10,26 +9,32 @@ using VsChromium.Server.Ipc.TypedEvents;
 namespace VsChromium.Server.ProgressTracking {
   public abstract class ProgressTrackerBase : IProgressTracker {
     private readonly object _lock = new object();
-    private readonly TimeSpan _refreshDelay = TimeSpan.FromMilliseconds(20);
+    private readonly long  _millisecondsBetweenRefresh = 50;
     private readonly ITypedEventSender _typedEventSender;
+    private readonly ITickCountProvider _tickCountProvider = new EnvironmentTickCountProvider();
     private int _currentStep;
     private bool _eventsSent;
-    private DateTime _lastUpdatedUtc;
+    private long _lastUpdatedTickCount;
 
     protected ProgressTrackerBase(ITypedEventSender typedEventSender) {
       _typedEventSender = typedEventSender;
-      _lastUpdatedUtc = DateTime.UtcNow;
+      _lastUpdatedTickCount = GetTickCount();
     }
 
     public abstract int TotalStepCount { get; }
 
-    public void Step(ProgressTrackerDisplayTextProvider progressTrackerDisplayTextProvider) {
-      Interlocked.Increment(ref _currentStep);
+    private long GetTickCount() {
+      return _tickCountProvider.TickCount;
+    }
 
-      if (IsTimeToSendEvent()) {
-        _eventsSent = true;
-        SendProgressEvent(progressTrackerDisplayTextProvider);
-      }
+    public bool Step() {
+      Interlocked.Increment(ref _currentStep);
+      return IsTimeToSendEvent();
+    }
+
+    public void DisplayProgress(DisplayProgressCallback displayProgressCallback) {
+      _eventsSent = true;
+      SendProgressEvent(displayProgressCallback);
     }
 
     public void Dispose() {
@@ -41,21 +46,23 @@ namespace VsChromium.Server.ProgressTracking {
     }
 
     private bool IsTimeToSendEvent() {
-      var now = DateTime.UtcNow;
-      var timespan = now - _lastUpdatedUtc;
-      if (timespan < _refreshDelay)
+      var now = GetTickCount();
+      var timespan = now - _lastUpdatedTickCount;
+      if (timespan < _millisecondsBetweenRefresh)
         return false;
 
+      // Ensures only one thread returns "true" if we hit this from multiple
+      // threads.
       lock (_lock) {
-        timespan = now - _lastUpdatedUtc;
-        _lastUpdatedUtc = now;
-        return (timespan >= _refreshDelay);
+        timespan = now - _lastUpdatedTickCount;
+        _lastUpdatedTickCount = now;
+        return (timespan >= _millisecondsBetweenRefresh);
       }
     }
 
-    private void SendProgressEvent(ProgressTrackerDisplayTextProvider progressTrackerDisplayTextProvider) {
+    private void SendProgressEvent(DisplayProgressCallback displayProgressCallback) {
       _typedEventSender.SendEventAsync(new ProgressReportEvent {
-        DisplayText = progressTrackerDisplayTextProvider(_currentStep, TotalStepCount),
+        DisplayText = displayProgressCallback(_currentStep, TotalStepCount),
         Completed = _currentStep,
         Total = TotalStepCount,
       });

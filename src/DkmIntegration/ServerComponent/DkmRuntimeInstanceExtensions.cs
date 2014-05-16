@@ -42,8 +42,7 @@ namespace VsChromium.DkmIntegration.ServerComponent {
         ProcessDebugOptionsDataItem optionsDataItem = new ProcessDebugOptionsDataItem(options);
         process.SetDataItem(DkmDataCreationDisposition.CreateAlways, optionsDataItem);
         process.SetDataItem(DkmDataCreationDisposition.CreateAlways, new RuntimeBreakpointHandler());
-        if (forceAutoAttach || (options.AutoAttachToChildren &&
-            !process.SystemInformation.Flags.HasFlag(DkmSystemInformationFlags.Is64Bit))) {
+        if (forceAutoAttach || options.AutoAttachToChildren) {
           process.SetDataItem(DkmDataCreationDisposition.CreateAlways, new AutoAttachToChildHandler());
         }
       }

@@ -39,7 +39,6 @@ namespace VsChromium.Features.AttachToChrome
 
       foreach (EnvDTE90.Process3 p in dte.Debugger.LocalProcesses)
       {
-        System.Diagnostics.Debug.WriteLine("Found process {0}", p.ProcessID);
         if (p.IsBeingDebugged || !ChromeUtility.IsChromeProcess(p.Name))
           continue;
 
@@ -48,7 +47,6 @@ namespace VsChromium.Features.AttachToChrome
           continue;
 
         p.Attach();
-        System.Diagnostics.Debug.WriteLine("Attaching to process successful.");
       }
     }
   }

@@ -29,11 +29,9 @@ namespace VsChromium.Features.AttachToChrome
       var dte = (EnvDTE.DTE)_visualStudioPackageProvider.Package.DTE; //GetService(typeof(EnvDTE.DTE));
       foreach (EnvDTE90.Process3 p in dte.Debugger.LocalProcesses)
       {
-        System.Diagnostics.Debug.WriteLine("Found process {0}", p.ProcessID);
         if (!p.IsBeingDebugged && ChromeUtility.IsChromeProcess(p.Name))
         {
           p.Attach();
-          System.Diagnostics.Debug.WriteLine("Attaching to process successful.");
         }
       }
     }

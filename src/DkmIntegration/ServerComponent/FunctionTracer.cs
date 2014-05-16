@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   // FunctionTracer notifies listeners when a particular function is entered or exited.  It assumes
@@ -23,24 +24,23 @@ namespace VsChromium.DkmIntegration.ServerComponent {
   class FunctionTracer : IFunctionTracer {
     private DkmRuntimeInstructionBreakpoint entryBp = null;
     private DkmNativeInstructionAddress entryAddress = null;
-    private uint paramCount = 0;
-    private object contextData = null;
+    private StackFrameAnalyzer frameAnalyzer = null;
 
-    public delegate void FunctionTraceEnterDelegate(DkmStackWalkFrame frame, uint[] parameters, object context, out bool suppressExitBreakpoint);
-    public delegate void FunctionTraceExitDelegate(DkmStackWalkFrame frame, uint[] parameters, object context);
-    public delegate bool TraceExitConditionDelegate(DkmStackWalkFrame frame);
+    public delegate void FunctionTraceEnterDelegate(
+        DkmStackWalkFrame frame,
+        StackFrameAnalyzer frameAnalyzer, 
+        out bool suppressExitBreakpoint);
+    public delegate void FunctionTraceExitDelegate(DkmStackWalkFrame frame, StackFrameAnalyzer frameAnalyzer);
 
     private class FunctionTraceEntryDataItem : DkmDataItem {
-      public uint[] EntryParameters { get; set; }
+      public object[] EntryArgumentValues { get; set; }
     }
 
-    public FunctionTracer(DkmNativeInstructionAddress address, uint prologueLength, uint paramCount, object context) {
-      this.paramCount = paramCount;
-      this.contextData = context;
+    public FunctionTracer(DkmNativeInstructionAddress address, StackFrameAnalyzer analyzer) {
+      this.frameAnalyzer = analyzer;
 
       DkmProcess process = address.ModuleInstance.Process;
-      entryAddress = (DkmNativeInstructionAddress)process.CreateNativeInstructionAddress(
-          address.CPUInstructionPart.InstructionPointer + prologueLength);
+      entryAddress = address;
     }
 
     public void Enable() {
@@ -59,11 +59,10 @@ namespace VsChromium.DkmIntegration.ServerComponent {
       // The function was just entered.  Install the exit breakpoint on the calling thread at the
       // return address, and notify any listeners.
       DkmStackWalkFrame frame = thread.GetTopStackWalkFrame(bp.RuntimeInstance);
-      uint[] parameters = frame.VscxAnalyzeFunctionParams(paramCount);
 
       bool suppressExitBreakpoint = false;
       if (OnFunctionEntered != null)
-        OnFunctionEntered(frame, parameters, contextData, out suppressExitBreakpoint);
+        OnFunctionEntered(frame, frameAnalyzer, out suppressExitBreakpoint);
 
       if (!suppressExitBreakpoint) {
         ulong ret = frame.VscxGetReturnAddress();
@@ -71,9 +70,10 @@ namespace VsChromium.DkmIntegration.ServerComponent {
         DkmInstructionAddress retAddr = thread.Process.CreateNativeInstructionAddress(ret);
         DkmRuntimeInstructionBreakpoint exitBp = DkmRuntimeInstructionBreakpoint.Create(
             Guids.Source.FunctionTraceExit, thread, retAddr, false, null);
-
+        // Capture the value of every argument now, since when the exit breakpoint gets hit, the
+        // target function will have already returned and its frame will be cleaned up.
         exitBp.SetDataItem(DkmDataCreationDisposition.CreateAlways,
-            new FunctionTraceEntryDataItem { EntryParameters = parameters });
+            new FunctionTraceEntryDataItem { EntryArgumentValues = frameAnalyzer.GetAllArgumentValues(frame) });
         exitBp.SetDataItem(DkmDataCreationDisposition.CreateAlways,
             new FunctionTraceDataItem { Tracer = this });
         exitBp.Enable();
@@ -84,8 +84,12 @@ namespace VsChromium.DkmIntegration.ServerComponent {
       FunctionTraceEntryDataItem traceDataItem = bp.GetDataItem<FunctionTraceEntryDataItem>();
 
       if (OnFunctionExited != null) {
-        uint[] entryParams = (traceDataItem == null) ? null : traceDataItem.EntryParameters;
-        OnFunctionExited(thread.GetTopStackWalkFrame(bp.RuntimeInstance), entryParams, contextData);
+        StackFrameAnalyzer exitAnalyzer = 
+            (traceDataItem == null) 
+                ? null 
+                : new CachedFrameAnalyzer(frameAnalyzer.Parameters, traceDataItem.EntryArgumentValues);
+        DkmStackWalkFrame frame = thread.GetTopStackWalkFrame(bp.RuntimeInstance);
+        OnFunctionExited(frame, exitAnalyzer);
       }
 
       // Since this was a one-shot breakpoint, it is unconditionally closed.

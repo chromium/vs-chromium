@@ -21,15 +21,15 @@ namespace VsChromium.Core.Chromium {
     private string[] _commandLine;
     private NtProcess _ntProcess;
 
-    public static ChromiumProcess Create(int pid) {
-      InstallationData data = InstallationData.Create(pid);
+    public static ChromiumProcess Create(NtProcess process) {
+      InstallationData data = InstallationData.Create(process);
       if (data == null)
         return null;
-      return new ChromiumProcess(pid, data);
+      return new ChromiumProcess(process, data);
     }
 
-    public ChromiumProcess(int pid, InstallationData installationData) {
-      _ntProcess = new NtProcess(pid);
+    public ChromiumProcess(NtProcess process, InstallationData installationData) {
+      _ntProcess = process;
       _installationData = installationData;
       _category = ProcessCategory.Unknown;
       _commandLine = null;

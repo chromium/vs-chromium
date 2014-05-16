@@ -11,18 +11,19 @@ namespace VsChromium.Core.Chromium {
 
     }
 
-    public static InstallationData Create(int pid) {
-      Process p = Process.GetProcessById(pid);
-      if (p == null)
-        return null;
-
+    public static InstallationData Create(NtProcess proc) {
       InstallationEnumerator enumerator = new InstallationEnumerator();
       foreach (InstallationData data in enumerator) {
-        FullPathName fullPath = new FullPathName(p.MainModule.FileName);
+        FullPathName fullPath = new FullPathName(proc.Win32ProcessImagePath);
         if (fullPath.StartsWith(data.InstallationPath))
           return data;
       }
-      return new InstallationData(p.MainModule.FileName, InstallationLevel.Developer, 0, "Developer Chrome", String.Empty);
+      return new InstallationData(
+          proc.Win32ProcessImagePath, 
+          InstallationLevel.Developer, 
+          0, 
+          "Developer Chrome", 
+          String.Empty);
     }
 
     public InstallationData(string exePath, InstallationLevel level, int iconIndex, string name, string version) {

@@ -4,6 +4,7 @@
 
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.CallStack;
+using Microsoft.VisualStudio.Debugger.DefaultPort;
 using Microsoft.VisualStudio.Debugger.Native;
 using System;
 using System.Collections.Generic;
@@ -15,96 +16,107 @@ using System.Threading.Tasks;
 using VsChromium.Core;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Processes;
+using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   class AutoAttachToChildHandler : DkmDataItem {
-    private class CreateProcessDataItem : DkmDataItem {
-      private uint processInformationAddr;
-
-      public const uint kFlagsIndex = 5;
-      public const uint kProcessInformationIndex = 9;
-      public const uint kArgumentCount = 10;
-
-      public CreateProcessDataItem(DkmStackWalkFrame frame) {
-        // The pointer value which refers to the PROCESS_INFORMATION structure.
-        processInformationAddr = frame.VscxGetArgumentValue(kProcessInformationIndex);
-      }
-
-      public CreateProcessDataItem(uint[] arguments) {
-        processInformationAddr = arguments[kProcessInformationIndex];
-      }
-
-      // Pointer to the lpProcessInformation argument, so that it can be analyzed after the
-      // function returns.
-      public ulong ProcessInformationAddr { get { return processInformationAddr; } }
-    }
-
-    private class CreateProcessContextData {
-      public int FlagsParamIndex { get; set; }
-      public int ProcessInformationParamIndex { get; set; }
-    }
-
-    private FunctionTracer createProcessTracer;
-    private FunctionTracer createProcessAsUserTracer;
+    private FunctionTracer _createProcessTracer;
+    private FunctionTracer _createProcessAsUserTracer;
 
     public AutoAttachToChildHandler() {
     }
 
     public void OnModuleInstanceLoad(DkmNativeModuleInstance module, DkmWorkList workList) {
       if (module.Name.Equals("KernelBase.dll", StringComparison.CurrentCultureIgnoreCase)) {
-        createProcessTracer = new FunctionTracer(
+        DkmSystemInformationFlags systemInformationFlags = module.Process.SystemInformation.Flags;
+        bool isTarget64Bit = systemInformationFlags.HasFlag(DkmSystemInformationFlags.Is64Bit);
+        int pointerSize = (isTarget64Bit) ? 8 : 4;
+        FunctionParameter[] createProcessParams = {
+            new FunctionParameter("lpApplicationName", pointerSize, pointerSize),
+            new FunctionParameter("lpCommandLine", pointerSize, pointerSize),
+            new FunctionParameter("lpProcessAttributes", pointerSize, pointerSize),
+            new FunctionParameter("lpThreadAttributes", pointerSize, pointerSize),
+            new FunctionParameter("bInheritHandles", 4, pointerSize),
+            new FunctionParameter("dwCreationFlags", 4, pointerSize),
+            new FunctionParameter("lpEnvironment", pointerSize, pointerSize),
+            new FunctionParameter("lpCurrentDirectory", pointerSize, pointerSize),
+            new FunctionParameter("lpStartupInfo", pointerSize, pointerSize),
+            new FunctionParameter("lpProcessInformation", pointerSize, pointerSize)
+        };
+        FunctionParameter[] createProcessAsUserParams = {
+            new FunctionParameter("hToken", pointerSize, pointerSize)
+        };
+        createProcessAsUserParams = createProcessAsUserParams.Concat(createProcessParams).ToArray();
+        StackFrameAnalyzer createProcessFrameAnalyzer = null;
+        StackFrameAnalyzer createProcessAsUserFrameAnalyzer = null;
+
+        if (isTarget64Bit) {
+          createProcessFrameAnalyzer = new X64FrameAnalyzer(createProcessParams);
+          createProcessAsUserFrameAnalyzer = new X64FrameAnalyzer(createProcessAsUserParams);
+        } else {
+          createProcessFrameAnalyzer = new StdcallFrameAnalyzer(createProcessParams);
+          createProcessAsUserFrameAnalyzer = new StdcallFrameAnalyzer(createProcessAsUserParams);
+        }
+
+        _createProcessTracer = new FunctionTracer(
             module.FindExportName("CreateProcessW", true),
-            5,
-            10,
-            new CreateProcessContextData { FlagsParamIndex = 5, ProcessInformationParamIndex = 9 });
+            createProcessFrameAnalyzer);
 
-        createProcessAsUserTracer = new FunctionTracer(
+        _createProcessAsUserTracer = new FunctionTracer(
             module.FindExportName("CreateProcessAsUserW", true),
-            5,
-            11,
-            new CreateProcessContextData { FlagsParamIndex = 6, ProcessInformationParamIndex = 10 });
+            createProcessAsUserFrameAnalyzer);
 
-        createProcessTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
-        createProcessTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
-        createProcessAsUserTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
-        createProcessAsUserTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
+        _createProcessTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
+        _createProcessTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
+        _createProcessAsUserTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
+        _createProcessAsUserTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
 
-        createProcessTracer.Enable();
-        createProcessAsUserTracer.Enable();
+        _createProcessTracer.Enable();
+        _createProcessAsUserTracer.Enable();
       }
     }
 
-    void createProcessTracer_OnFunctionEntered(DkmStackWalkFrame frame, uint[] parameters, object context, out bool suppressExitBreakpoint) {
-      CreateProcessContextData cpContext = (CreateProcessContextData)context;
-      ProcessCreationFlags flags = (ProcessCreationFlags)parameters[cpContext.FlagsParamIndex];
+    void createProcessTracer_OnFunctionEntered(
+        DkmStackWalkFrame frame, 
+        StackFrameAnalyzer functionAnalyzer, 
+        out bool suppressExitBreakpoint) {
+      // If this was not created with CREATE_SUSPENDED, then we can't automatically attach to this
+      // child process.
+      // TODO(zturner): OR in CREATE_SUSPENDED using WriteProcessMemory, then when the exit bp
+      // hits, check if we OR'ed in CREATE_SUSPENDED, and if so, resume the process after the
+      // attach.
+      ProcessCreationFlags flags = (ProcessCreationFlags)
+          Convert.ToUInt32(functionAnalyzer.GetArgumentValue(frame, "dwCreationFlags"));
       suppressExitBreakpoint = !flags.HasFlag(ProcessCreationFlags.CREATE_SUSPENDED);
     }
 
-    void createProcessTracer_OnFunctionExited(DkmStackWalkFrame frame, uint[] parameters, object context) {
-      CreateProcessContextData cpContext = (CreateProcessContextData)context;
-      HandleCreateProcessExit(frame, parameters[cpContext.ProcessInformationParamIndex]);
-    }
+    void createProcessTracer_OnFunctionExited(
+        DkmStackWalkFrame frame, 
+        StackFrameAnalyzer frameAnalyzer) {
+      ulong processInfoAddr = Convert.ToUInt64(
+          frameAnalyzer.GetArgumentValue(frame, "lpProcessInformation"));
 
-    private void HandleCreateProcessExit(DkmStackWalkFrame frame, uint processInformationAddr) {
-      // Check the return address first, it should be in EAX.
-      uint eax = frame.VscxGetRegisterValue32(CpuRegister.Eax);
-      if (eax == 0)
+      // Check the return address first, it should be in EAX.  CreateProcessAsUser and
+      // CreateProcess both return 0 on failure.  If the function failed, there is no child to
+      // attach to.
+      if (0 == frame.VscxGetRegisterValue32(CpuRegister.Eax))
         return;
 
-      DkmProcess process = frame.Process;
       // The process was successfully created.  Extract the PID from the PROCESS_INFORMATION
-      // output param.
+      // output param.  An attachment request must happend through the EnvDTE, which can only
+      // be accessed from the VsPackage, so a request must be sent via a component message.
+      DkmProcess process = frame.Process;
       int size = Marshal.SizeOf(typeof(PROCESS_INFORMATION));
       byte[] buffer = new byte[size];
-      process.ReadMemory(processInformationAddr, DkmReadMemoryFlags.None, buffer);
+      process.ReadMemory(processInfoAddr, DkmReadMemoryFlags.None, buffer);
       PROCESS_INFORMATION info = MarshalUtility.ByteArrayToStructure<PROCESS_INFORMATION>(buffer);
       DkmCustomMessage attachRequest = DkmCustomMessage.Create(
           process.Connection,
           process,
           Guids.Source.VsPackageMessage,
           (int)Messages.Component.MessageCode.AttachToChild,
-          new Messages.Component.AttachToChild { ParentId = process.LivePart.Id, ChildId = info.dwProcessId },
-          null);
+          process.LivePart.Id,
+          info.dwProcessId);
       attachRequest.SendToVsService(PackageServices.DkmComponentEventHandler, false);
     }
   }

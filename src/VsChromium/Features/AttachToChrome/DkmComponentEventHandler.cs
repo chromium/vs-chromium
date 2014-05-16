@@ -20,8 +20,9 @@ namespace VsChromium.Features.AttachToChrome {
       MessageCode code = (MessageCode)message.MessageCode;
       switch (code) {
         case MessageCode.AttachToChild:
-          AttachToChild attachMessage = (AttachToChild)message.Parameter1;
-          Process proc = Process.GetProcessById(attachMessage.ChildId);
+          int parentId = (int)message.Parameter1;
+          int childId = (int)message.Parameter2;
+          Process proc = Process.GetProcessById(childId);
           if (proc != null)
             DebugAttach.AttachToProcess(new Process[] { proc }, true);
           return 0;

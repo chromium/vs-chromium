@@ -89,7 +89,7 @@ namespace VsChromium.Features.AttachToChrome {
         if (!ntproc.IsValid)
           continue;
 
-        item.Process = ChromiumProcess.Create(p.Id);
+        item.Process = ChromiumProcess.Create(ntproc);
         if (item.Process == null)
           continue;
 
@@ -173,7 +173,6 @@ namespace VsChromium.Features.AttachToChrome {
     }
 
     private void buttonAttach_Click(object sender, EventArgs e) {
-      System.Diagnostics.Debug.WriteLine("Closing dialog.");
       Close();
     }
 

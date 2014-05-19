@@ -20,14 +20,16 @@ using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   class AutoAttachToChildHandler : DkmDataItem {
-    private FunctionTracer _createProcessTracer;
-    private FunctionTracer _createProcessAsUserTracer;
+    private List<FunctionTracer> _functionTracers;
 
     public AutoAttachToChildHandler() {
+      _functionTracers = new List<FunctionTracer>();
     }
 
     public void OnModuleInstanceLoad(DkmNativeModuleInstance module, DkmWorkList workList) {
-      if (module.Name.Equals("KernelBase.dll", StringComparison.CurrentCultureIgnoreCase)) {
+      bool isKernel32 = module.Name.Equals("Kernel32.dll", StringComparison.CurrentCultureIgnoreCase);
+      bool isAdvapi = module.Name.Equals("Advapi32.dll", StringComparison.CurrentCultureIgnoreCase);
+      if (isKernel32 || isAdvapi) {
         DkmSystemInformationFlags systemInformationFlags = module.Process.SystemInformation.Flags;
         bool isTarget64Bit = systemInformationFlags.HasFlag(DkmSystemInformationFlags.Is64Bit);
         int pointerSize = (isTarget64Bit) ? 8 : 4;
@@ -58,21 +60,29 @@ namespace VsChromium.DkmIntegration.ServerComponent {
           createProcessAsUserFrameAnalyzer = new StdcallFrameAnalyzer(createProcessAsUserParams);
         }
 
-        _createProcessTracer = new FunctionTracer(
-            module.FindExportName("CreateProcessW", true),
-            createProcessFrameAnalyzer);
+        // Advapi32 doesn't export CreateProcessW, only CreateProcessAsUserW.
+        if (isKernel32)
+          HookCreateProcess(module, "CreateProcessW", createProcessFrameAnalyzer);
 
-        _createProcessAsUserTracer = new FunctionTracer(
-            module.FindExportName("CreateProcessAsUserW", true),
-            createProcessAsUserFrameAnalyzer);
+        // Both Advapi32 and Kernel32 export CreateProcessAsUserW.
+        HookCreateProcess(module, "CreateProcessAsUserW", createProcessAsUserFrameAnalyzer);
+      }
+    }
 
-        _createProcessTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
-        _createProcessTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
-        _createProcessAsUserTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
-        _createProcessAsUserTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
+    private void HookCreateProcess(DkmNativeModuleInstance module, string export, StackFrameAnalyzer frameAnalyzer) {
+      try {
+        FunctionTracer tracer = new FunctionTracer(
+            module.FindExportName(export, true), frameAnalyzer);
+        tracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
+        tracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
+        tracer.Enable();
 
-        _createProcessTracer.Enable();
-        _createProcessAsUserTracer.Enable();
+        _functionTracers.Add(tracer);
+      } catch (DkmException) {
+        // For some reason, sandboxed processes act strangely (e.g. FindExportName throws an
+        // exception with E_FAIL.  It's not clear why this happens, but these processes can't
+        // create child processes anyway, so just handle this failure gracefully.
+        return;
       }
     }
 

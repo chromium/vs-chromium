@@ -61,16 +61,20 @@ namespace VsChromium.DkmIntegration.ServerComponent {
     }
 
     public void OnModuleInstanceLoad(DkmNativeModuleInstance module, DkmWorkList workList) {
-      bool isKernel32 = module.Name.Equals("Kernel32.dll", StringComparison.CurrentCultureIgnoreCase);
-      bool isAdvapi = module.Name.Equals("Advapi32.dll", StringComparison.CurrentCultureIgnoreCase);
-      if (!isKernel32 && !isAdvapi)
-        return;
+      bool isKernel32 = module.Name.Equals(
+          "Kernel32.dll", 
+          StringComparison.CurrentCultureIgnoreCase);
+      bool isAdvapi32 = module.Name.Equals(
+          "Advapi32.dll", 
+          StringComparison.CurrentCultureIgnoreCase);
 
+      // For historical reasons, Kernel32.dll contains CreateProcess and Advapi32.dll contains
+      // CreateProcessAsUser.
       if (isKernel32) {
         HookCreateProcess(module, 
                           "CreateProcessW",
                           CreateFrameAnalyzer(module, _createProcessParams));
-      } else {
+      } else if (isAdvapi32) {
         HookCreateProcess(module, 
                           "CreateProcessAsUserW",
                           CreateFrameAnalyzer(module, _createProcessAsUserParams));

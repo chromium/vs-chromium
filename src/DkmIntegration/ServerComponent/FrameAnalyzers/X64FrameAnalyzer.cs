@@ -23,11 +23,6 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
     }
 
     public override object GetArgumentValue(DkmStackWalkFrame frame, int index) {
-      ulong rsp = frame.Registers.GetStackPointer();
-      ulong rsp2 = frame.VscxGetRegisterValue64(CpuRegister.Rsp);
-      ulong rbp = frame.VscxGetRegisterValue64(CpuRegister.Rbp);
-      ulong frameBase = frame.FrameBase;
-
       byte[] argumentBuffer = ReadArgumentBytes(frame);
 
       int wordZeroIndex = 0;

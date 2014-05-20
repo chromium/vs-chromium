@@ -21,51 +21,59 @@ using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;
 namespace VsChromium.DkmIntegration.ServerComponent {
   class AutoAttachToChildHandler : DkmDataItem {
     private List<FunctionTracer> _functionTracers;
+    private static readonly FunctionParameter[] _createProcessParams = null;
+    private static readonly FunctionParameter[] _createProcessAsUserParams = null;
+
+    static AutoAttachToChildHandler() {
+      List<FunctionParameter> parameters = new List<FunctionParameter>();
+      parameters.Add(new FunctionParameter("lpApplicationName", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpCommandLine", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpProcessAttributes", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpThreadAttributes", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("bInheritHandles", ParameterType.Int32));
+      parameters.Add(new FunctionParameter("dwCreationFlags", ParameterType.Int32));
+      parameters.Add(new FunctionParameter("lpEnvironment", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpCurrentDirectory", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpStartupInfo", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpProcessInformation", ParameterType.Pointer));
+      _createProcessParams = parameters.ToArray();
+
+      parameters.Insert(0, new FunctionParameter("hToken", ParameterType.Pointer));
+      _createProcessAsUserParams = parameters.ToArray();
+    }
 
     public AutoAttachToChildHandler() {
       _functionTracers = new List<FunctionTracer>();
     }
 
+    private StackFrameAnalyzer CreateFrameAnalyzer(
+        DkmNativeModuleInstance module, 
+        FunctionParameter[] parameters) {
+
+      DkmSystemInformationFlags systemInformationFlags = module.Process.SystemInformation.Flags;
+      bool isTarget64Bit = systemInformationFlags.HasFlag(DkmSystemInformationFlags.Is64Bit);
+      int pointerSize = (isTarget64Bit) ? 8 : 4;
+
+      if (isTarget64Bit) 
+        return new X64FrameAnalyzer(parameters);
+      else
+        return new StdcallFrameAnalyzer(parameters);
+    }
+
     public void OnModuleInstanceLoad(DkmNativeModuleInstance module, DkmWorkList workList) {
       bool isKernel32 = module.Name.Equals("Kernel32.dll", StringComparison.CurrentCultureIgnoreCase);
       bool isAdvapi = module.Name.Equals("Advapi32.dll", StringComparison.CurrentCultureIgnoreCase);
-      if (isKernel32 || isAdvapi) {
-        DkmSystemInformationFlags systemInformationFlags = module.Process.SystemInformation.Flags;
-        bool isTarget64Bit = systemInformationFlags.HasFlag(DkmSystemInformationFlags.Is64Bit);
-        int pointerSize = (isTarget64Bit) ? 8 : 4;
-        FunctionParameter[] createProcessParams = {
-            new FunctionParameter("lpApplicationName", pointerSize, pointerSize),
-            new FunctionParameter("lpCommandLine", pointerSize, pointerSize),
-            new FunctionParameter("lpProcessAttributes", pointerSize, pointerSize),
-            new FunctionParameter("lpThreadAttributes", pointerSize, pointerSize),
-            new FunctionParameter("bInheritHandles", 4, pointerSize),
-            new FunctionParameter("dwCreationFlags", 4, pointerSize),
-            new FunctionParameter("lpEnvironment", pointerSize, pointerSize),
-            new FunctionParameter("lpCurrentDirectory", pointerSize, pointerSize),
-            new FunctionParameter("lpStartupInfo", pointerSize, pointerSize),
-            new FunctionParameter("lpProcessInformation", pointerSize, pointerSize)
-        };
-        FunctionParameter[] createProcessAsUserParams = {
-            new FunctionParameter("hToken", pointerSize, pointerSize)
-        };
-        createProcessAsUserParams = createProcessAsUserParams.Concat(createProcessParams).ToArray();
-        StackFrameAnalyzer createProcessFrameAnalyzer = null;
-        StackFrameAnalyzer createProcessAsUserFrameAnalyzer = null;
+      if (!isKernel32 && !isAdvapi)
+        return;
 
-        if (isTarget64Bit) {
-          createProcessFrameAnalyzer = new X64FrameAnalyzer(createProcessParams);
-          createProcessAsUserFrameAnalyzer = new X64FrameAnalyzer(createProcessAsUserParams);
-        } else {
-          createProcessFrameAnalyzer = new StdcallFrameAnalyzer(createProcessParams);
-          createProcessAsUserFrameAnalyzer = new StdcallFrameAnalyzer(createProcessAsUserParams);
-        }
-
-        // Advapi32 doesn't export CreateProcessW, only CreateProcessAsUserW.
-        if (isKernel32)
-          HookCreateProcess(module, "CreateProcessW", createProcessFrameAnalyzer);
-
-        // Both Advapi32 and Kernel32 export CreateProcessAsUserW.
-        HookCreateProcess(module, "CreateProcessAsUserW", createProcessAsUserFrameAnalyzer);
+      if (isKernel32) {
+        HookCreateProcess(module, 
+                          "CreateProcessW",
+                          CreateFrameAnalyzer(module, _createProcessParams));
+      } else {
+        HookCreateProcess(module, 
+                          "CreateProcessAsUserW",
+                          CreateFrameAnalyzer(module, _createProcessAsUserParams));
       }
     }
 

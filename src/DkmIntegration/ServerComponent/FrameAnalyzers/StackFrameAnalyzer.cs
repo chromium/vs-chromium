@@ -22,11 +22,12 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
       // Deep copy the FunctionParameter list.
       this._parameters = new List<FunctionParameter>();
       foreach (FunctionParameter param in parameters) {
-        this._parameters.Add(new FunctionParameter(param.Name, param.Size, param.WordSize));
+        this._parameters.Add(new FunctionParameter(param.Name, param.Type));
       }
     }
 
     public abstract object GetArgumentValue(DkmStackWalkFrame frame, int index);
+    public abstract int WordSize { get; }
 
     public FunctionParameter[] Parameters {
       get { return _parameters.ToArray(); }

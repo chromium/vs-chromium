@@ -8,6 +8,7 @@ namespace VsChromium.Views {
   public interface IStandarImageSourceFactory {
     ImageSource OpenFolder { get; }
     ImageSource ClosedFolder { get; }
+    ImageSource LightningBolt { get; }
     ImageSource GetImageForDocument(string path);
     ImageSource GetImage(string resourceName);
   }

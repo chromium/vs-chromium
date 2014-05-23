@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using VsChromium.Core;
+using VsChromium.Core.DkmShared;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Processes;
 using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;
@@ -115,31 +116,38 @@ namespace VsChromium.DkmIntegration.ServerComponent {
     void createProcessTracer_OnFunctionExited(
         DkmStackWalkFrame frame, 
         StackFrameAnalyzer frameAnalyzer) {
-      ulong processInfoAddr = Convert.ToUInt64(
-          frameAnalyzer.GetArgumentValue(frame, "lpProcessInformation"));
+      try {
+        ulong processInfoAddr = Convert.ToUInt64(
+            frameAnalyzer.GetArgumentValue(frame, "lpProcessInformation"));
 
-      // Check the return address first, it should be in EAX.  CreateProcessAsUser and
-      // CreateProcess both return 0 on failure.  If the function failed, there is no child to
-      // attach to.
-      if (0 == frame.VscxGetRegisterValue32(CpuRegister.Eax))
-        return;
+        // Check the return address first, it should be in EAX.  CreateProcessAsUser and
+        // CreateProcess both return 0 on failure.  If the function failed, there is no child to
+        // attach to.
+        if (0 == frame.VscxGetRegisterValue32(CpuRegister.Eax))
+          return;
 
-      // The process was successfully created.  Extract the PID from the PROCESS_INFORMATION
-      // output param.  An attachment request must happend through the EnvDTE, which can only
-      // be accessed from the VsPackage, so a request must be sent via a component message.
-      DkmProcess process = frame.Process;
-      int size = Marshal.SizeOf(typeof(PROCESS_INFORMATION));
-      byte[] buffer = new byte[size];
-      process.ReadMemory(processInfoAddr, DkmReadMemoryFlags.None, buffer);
-      PROCESS_INFORMATION info = MarshalUtility.ByteArrayToStructure<PROCESS_INFORMATION>(buffer);
-      DkmCustomMessage attachRequest = DkmCustomMessage.Create(
-          process.Connection,
-          process,
-          Guids.Source.VsPackageMessage,
-          (int)Messages.Component.MessageCode.AttachToChild,
-          process.LivePart.Id,
-          info.dwProcessId);
-      attachRequest.SendToVsService(PackageServices.DkmComponentEventHandler, false);
+        // The process was successfully created.  Extract the PID from the PROCESS_INFORMATION
+        // output param.  An attachment request must happend through the EnvDTE, which can only
+        // be accessed from the VsPackage, so a request must be sent via a component message.
+        DkmProcess process = frame.Process;
+        int size = Marshal.SizeOf(typeof(PROCESS_INFORMATION));
+        byte[] buffer = new byte[size];
+        process.ReadMemory(processInfoAddr, DkmReadMemoryFlags.None, buffer);
+        PROCESS_INFORMATION info = MarshalUtility.ByteArrayToStructure<PROCESS_INFORMATION>(buffer);
+        DkmCustomMessage attachRequest = DkmCustomMessage.Create(
+            process.Connection,
+            process,
+            PackageServices.VsPackageMessageGuid,
+            (int)VsPackageMessage.AttachToChild,
+            process.LivePart.Id,
+            info.dwProcessId);
+        attachRequest.SendToVsService(PackageServices.DkmComponentEventHandler, false);
+      } catch (Exception exception) {
+        Logger.LogException(
+            exception,
+            "An error occured handling the exit breakpoint.  HR = 0x{0:X}", 
+            exception.HResult);
+      }
     }
   }
 }

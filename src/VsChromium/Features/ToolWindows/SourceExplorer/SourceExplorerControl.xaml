@@ -61,6 +61,9 @@
 
     <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
       <ToggleButton Content="Aa" IsChecked="{Binding MatchCase}" ToolTip="Match case for searches" IsTabStop="False" />
+      <ToggleButton IsChecked="{Binding EnableChildDebugging}" ToolTip="Enable child-process debugging for launch/attach scenarios other than those available through the Attach to Chrome dialog." IsTabStop="False">
+        <Image Source="{Binding LightningBoltImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None"/>
+      </ToggleButton>
     </ToolBar>
 
     <!-- SEARCH AREA -->

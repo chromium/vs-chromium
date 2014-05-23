@@ -8,15 +8,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VsChromium.Core.DkmShared;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   class ProcessDebugOptionsDataItem : DkmDataItem {
-    private DebugProcessOptions options;
+    private DebugProcessOptions _options;
 
     public ProcessDebugOptionsDataItem(DebugProcessOptions options) {
-      this.options = options;
+      this._options = options;
     }
 
-    public DebugProcessOptions Options { get { return options; } }
+    public DebugProcessOptions Options { get { return _options; } }
   }
 }

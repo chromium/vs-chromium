@@ -46,12 +46,9 @@
     <Compile Include="ServerComponent\FrameAnalyzers\StdcallFrameAnalyzer.cs" />
     <Compile Include="ServerComponent\FunctionParameter.cs" />
     <Compile Include="ServerComponent\IFunctionTracer.cs" />
-    <Compile Include="Messages\Component\ChildProcessSpawned.cs" />
-    <Compile Include="Messages\Component\MessageCode.cs" />
     <Compile Include="ServerComponent\FunctionTraceDataItem.cs" />
     <Compile Include="ServerComponent\RuntimeBreakpointHandler.cs" />
     <Compile Include="ServerComponent\FunctionTracer.cs" />
-    <Compile Include="DebugProcessOptions.cs" />
     <Compile Include="ServerComponent\ProcessDebugOptionsDataItem.cs" />
     <Compile Include="ServerComponent\AutoAttachToChildHandler.cs" />
     <Compile Include="ServerComponent\CpuRegister.cs" />

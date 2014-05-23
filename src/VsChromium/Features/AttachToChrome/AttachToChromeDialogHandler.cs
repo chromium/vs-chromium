@@ -16,6 +16,7 @@ using System.Windows.Forms;
 using VsChromium.Core.Processes;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
+using VsChromium.Core.DkmShared;
 
 namespace VsChromium.Features.AttachToChrome {
   [Export(typeof(IPackageCommandHandler))]
@@ -55,7 +56,10 @@ namespace VsChromium.Features.AttachToChrome {
           }
         }
         List<Process> processList = new List<Process>(processes);
-        DebugAttach.AttachToProcess(processList.ToArray(), dialog.AutoAttachToFutureChildren);
+        ChildDebuggingMode mode = (dialog.AutoAttachToFutureChildren)
+            ? ChildDebuggingMode.AlwaysAttach
+            : ChildDebuggingMode.UseDefault;
+        DebugAttach.AttachToProcess(processList.ToArray(), mode);
       }
     }
   }

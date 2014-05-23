@@ -8,8 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VsChromium.DkmIntegration.Messages.Component {
-  public enum MessageCode {
+namespace VsChromium.Core.DkmShared {
+  public enum VsPackageMessage {
     AttachToChild,
+    IsChildDebuggingEnabled,
   }
 }

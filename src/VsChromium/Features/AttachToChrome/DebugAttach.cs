@@ -11,12 +11,13 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using VsChromium.Core.DkmShared;
 using VsChromium.Core.Processes;
 using VsChromium.DkmIntegration;
 
 namespace VsChromium.Features.AttachToChrome {
   static class DebugAttach {
-    public static void AttachToProcess(Process[] processes, bool autoAttachToChildren) {
+    public static void AttachToProcess(Process[] processes, ChildDebuggingMode mode) {
       List<VsDebugTargetInfo2> targetList = new List<VsDebugTargetInfo2>();
       IntPtr targetsBuffer = IntPtr.Zero;
       int targetSize = Marshal.SizeOf(typeof(VsDebugTargetInfo2));
@@ -26,7 +27,7 @@ namespace VsChromium.Features.AttachToChrome {
         foreach (Process process in processes) {
           NtProcess ntproc = new NtProcess(process.Id);
           VsDebugTargetInfo2 target = new VsDebugTargetInfo2();
-          DebugProcessOptions options = new DebugProcessOptions { AutoAttachToChildren = autoAttachToChildren };
+          DebugProcessOptions options = new DebugProcessOptions { ChildDebuggingMode = mode };
           target.dwDebugEngineCount = 1;
           target.dwProcessId = (uint)process.Id;
           target.dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_AlreadyRunning;

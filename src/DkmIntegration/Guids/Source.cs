@@ -14,6 +14,5 @@ namespace VsChromium.DkmIntegration.Guids {
     public static readonly Guid FunctionTraceExit = new Guid("0B6A3423-7861-46F7-B96F-14AFD344820F");
     public static readonly Guid CreateProcessEnter = new Guid("F1721021-3227-4345-AF50-D2E8D2BE996C");
     public static readonly Guid CreateProcessReturn = new Guid("5D1634CC-0EDB-46E3-8AEC-E227C477C562");
-    public static readonly Guid VsPackageMessage = new Guid("A2D51FDA-7CC6-4469-BA5C-1BA83D22629A");
   }
 }

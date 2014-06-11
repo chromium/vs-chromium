@@ -28,19 +28,27 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
 
       int stackOffset = 0;
       for (int i = 0; i < index; ++i)
-        stackOffset += _parameters[i].PaddedSize;
+        stackOffset += _parameters[i].GetPaddedSize(WordSize);
 
       // The return address (4 bytes) is at the top of the stack, so offset by 4 to skip the return
       // address.
       ulong stackAddress = esp + 4 + (ulong)stackOffset;
-      int paramSize = _parameters[index].Size;
+      int paramSize = _parameters[index].GetSize(WordSize);
       byte[] parameter = new byte[paramSize];
 
       frame.Process.ReadMemory(stackAddress, DkmReadMemoryFlags.None, parameter);
-      if (paramSize == 4)
-        return BitConverter.ToUInt32(parameter, 0);
-      else
-        return parameter;
+      switch (paramSize) {
+        case 4:
+          return BitConverter.ToUInt32(parameter, 0);
+        case 8:
+          return BitConverter.ToUInt64(parameter, 0);
+        default:
+          return parameter;
+      }
+    }
+
+    public override int WordSize {
+      get { return 4; }
     }
   }
 }

@@ -24,9 +24,29 @@ namespace VsChromium.Views {
       _glyphService = glyphService;
     }
 
-    public ImageSource OpenFolder { get { return _glyphService.GetGlyph(StandardGlyphGroup.GlyphOpenFolder, StandardGlyphItem.GlyphItemPublic); } }
+    public ImageSource OpenFolder { 
+      get { 
+        return _glyphService.GetGlyph(
+            StandardGlyphGroup.GlyphOpenFolder, 
+            StandardGlyphItem.GlyphItemPublic); 
+      } 
+    }
 
-    public ImageSource ClosedFolder { get { return _glyphService.GetGlyph(StandardGlyphGroup.GlyphClosedFolder, StandardGlyphItem.GlyphItemPublic); } }
+    public ImageSource ClosedFolder { 
+      get { 
+        return _glyphService.GetGlyph(
+            StandardGlyphGroup.GlyphClosedFolder, 
+            StandardGlyphItem.GlyphItemPublic); 
+      } 
+    }
+
+    public ImageSource LightningBolt { 
+      get { 
+        return _glyphService.GetGlyph(
+            StandardGlyphGroup.GlyphGroupEvent, 
+            StandardGlyphItem.GlyphItemProtected); 
+      } 
+    }
 
     public ImageSource GetImageForDocument(string path) {
       return GetImage("TextDocument");

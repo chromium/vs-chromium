@@ -14,65 +14,88 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using VsChromium.Core;
+using VsChromium.Core.DkmShared;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Processes;
 using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   class AutoAttachToChildHandler : DkmDataItem {
-    private FunctionTracer _createProcessTracer;
-    private FunctionTracer _createProcessAsUserTracer;
+    private List<FunctionTracer> _functionTracers;
+    private static readonly FunctionParameter[] _createProcessParams = null;
+    private static readonly FunctionParameter[] _createProcessAsUserParams = null;
+
+    static AutoAttachToChildHandler() {
+      List<FunctionParameter> parameters = new List<FunctionParameter>();
+      parameters.Add(new FunctionParameter("lpApplicationName", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpCommandLine", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpProcessAttributes", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpThreadAttributes", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("bInheritHandles", ParameterType.Int32));
+      parameters.Add(new FunctionParameter("dwCreationFlags", ParameterType.Int32));
+      parameters.Add(new FunctionParameter("lpEnvironment", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpCurrentDirectory", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpStartupInfo", ParameterType.Pointer));
+      parameters.Add(new FunctionParameter("lpProcessInformation", ParameterType.Pointer));
+      _createProcessParams = parameters.ToArray();
+
+      parameters.Insert(0, new FunctionParameter("hToken", ParameterType.Pointer));
+      _createProcessAsUserParams = parameters.ToArray();
+    }
 
     public AutoAttachToChildHandler() {
+      _functionTracers = new List<FunctionTracer>();
+    }
+
+    private StackFrameAnalyzer CreateFrameAnalyzer(
+        DkmNativeModuleInstance module, 
+        FunctionParameter[] parameters) {
+
+      DkmSystemInformationFlags systemInformationFlags = module.Process.SystemInformation.Flags;
+      bool isTarget64Bit = systemInformationFlags.HasFlag(DkmSystemInformationFlags.Is64Bit);
+      int pointerSize = (isTarget64Bit) ? 8 : 4;
+
+      if (isTarget64Bit) 
+        return new X64FrameAnalyzer(parameters);
+      else
+        return new StdcallFrameAnalyzer(parameters);
     }
 
     public void OnModuleInstanceLoad(DkmNativeModuleInstance module, DkmWorkList workList) {
-      if (module.Name.Equals("KernelBase.dll", StringComparison.CurrentCultureIgnoreCase)) {
-        DkmSystemInformationFlags systemInformationFlags = module.Process.SystemInformation.Flags;
-        bool isTarget64Bit = systemInformationFlags.HasFlag(DkmSystemInformationFlags.Is64Bit);
-        int pointerSize = (isTarget64Bit) ? 8 : 4;
-        FunctionParameter[] createProcessParams = {
-            new FunctionParameter("lpApplicationName", pointerSize, pointerSize),
-            new FunctionParameter("lpCommandLine", pointerSize, pointerSize),
-            new FunctionParameter("lpProcessAttributes", pointerSize, pointerSize),
-            new FunctionParameter("lpThreadAttributes", pointerSize, pointerSize),
-            new FunctionParameter("bInheritHandles", 4, pointerSize),
-            new FunctionParameter("dwCreationFlags", 4, pointerSize),
-            new FunctionParameter("lpEnvironment", pointerSize, pointerSize),
-            new FunctionParameter("lpCurrentDirectory", pointerSize, pointerSize),
-            new FunctionParameter("lpStartupInfo", pointerSize, pointerSize),
-            new FunctionParameter("lpProcessInformation", pointerSize, pointerSize)
-        };
-        FunctionParameter[] createProcessAsUserParams = {
-            new FunctionParameter("hToken", pointerSize, pointerSize)
-        };
-        createProcessAsUserParams = createProcessAsUserParams.Concat(createProcessParams).ToArray();
-        StackFrameAnalyzer createProcessFrameAnalyzer = null;
-        StackFrameAnalyzer createProcessAsUserFrameAnalyzer = null;
+      bool isKernel32 = module.Name.Equals(
+          "Kernel32.dll", 
+          StringComparison.CurrentCultureIgnoreCase);
+      bool isAdvapi32 = module.Name.Equals(
+          "Advapi32.dll", 
+          StringComparison.CurrentCultureIgnoreCase);
 
-        if (isTarget64Bit) {
-          createProcessFrameAnalyzer = new X64FrameAnalyzer(createProcessParams);
-          createProcessAsUserFrameAnalyzer = new X64FrameAnalyzer(createProcessAsUserParams);
-        } else {
-          createProcessFrameAnalyzer = new StdcallFrameAnalyzer(createProcessParams);
-          createProcessAsUserFrameAnalyzer = new StdcallFrameAnalyzer(createProcessAsUserParams);
-        }
+      // For historical reasons, Kernel32.dll contains CreateProcess and Advapi32.dll contains
+      // CreateProcessAsUser.
+      if (isKernel32) {
+        HookCreateProcess(module, 
+                          "CreateProcessW",
+                          CreateFrameAnalyzer(module, _createProcessParams));
+      } else if (isAdvapi32) {
+        HookCreateProcess(module, 
+                          "CreateProcessAsUserW",
+                          CreateFrameAnalyzer(module, _createProcessAsUserParams));
+      }
+    }
 
-        _createProcessTracer = new FunctionTracer(
-            module.FindExportName("CreateProcessW", true),
-            createProcessFrameAnalyzer);
+    private void HookCreateProcess(DkmNativeModuleInstance module, string export, StackFrameAnalyzer frameAnalyzer) {
+      try {
+        FunctionTracer tracer = new FunctionTracer(
+            module.FindExportName(export, true), frameAnalyzer);
+        tracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
+        tracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
+        tracer.Enable();
 
-        _createProcessAsUserTracer = new FunctionTracer(
-            module.FindExportName("CreateProcessAsUserW", true),
-            createProcessAsUserFrameAnalyzer);
-
-        _createProcessTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
-        _createProcessTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
-        _createProcessAsUserTracer.OnFunctionEntered += createProcessTracer_OnFunctionEntered;
-        _createProcessAsUserTracer.OnFunctionExited += createProcessTracer_OnFunctionExited;
-
-        _createProcessTracer.Enable();
-        _createProcessAsUserTracer.Enable();
+        _functionTracers.Add(tracer);
+      } catch (DkmException) {
+        // For some reason, sandboxed processes act strangely (e.g. FindExportName throws an
+        // exception with E_FAIL.  It's not clear why this happens, but these processes can't
+        // create child processes anyway, so just handle this failure gracefully.
+        return;
       }
     }
 
@@ -93,31 +116,38 @@ namespace VsChromium.DkmIntegration.ServerComponent {
     void createProcessTracer_OnFunctionExited(
         DkmStackWalkFrame frame, 
         StackFrameAnalyzer frameAnalyzer) {
-      ulong processInfoAddr = Convert.ToUInt64(
-          frameAnalyzer.GetArgumentValue(frame, "lpProcessInformation"));
+      try {
+        ulong processInfoAddr = Convert.ToUInt64(
+            frameAnalyzer.GetArgumentValue(frame, "lpProcessInformation"));
 
-      // Check the return address first, it should be in EAX.  CreateProcessAsUser and
-      // CreateProcess both return 0 on failure.  If the function failed, there is no child to
-      // attach to.
-      if (0 == frame.VscxGetRegisterValue32(CpuRegister.Eax))
-        return;
+        // Check the return address first, it should be in EAX.  CreateProcessAsUser and
+        // CreateProcess both return 0 on failure.  If the function failed, there is no child to
+        // attach to.
+        if (0 == frame.VscxGetRegisterValue32(CpuRegister.Eax))
+          return;
 
-      // The process was successfully created.  Extract the PID from the PROCESS_INFORMATION
-      // output param.  An attachment request must happend through the EnvDTE, which can only
-      // be accessed from the VsPackage, so a request must be sent via a component message.
-      DkmProcess process = frame.Process;
-      int size = Marshal.SizeOf(typeof(PROCESS_INFORMATION));
-      byte[] buffer = new byte[size];
-      process.ReadMemory(processInfoAddr, DkmReadMemoryFlags.None, buffer);
-      PROCESS_INFORMATION info = MarshalUtility.ByteArrayToStructure<PROCESS_INFORMATION>(buffer);
-      DkmCustomMessage attachRequest = DkmCustomMessage.Create(
-          process.Connection,
-          process,
-          Guids.Source.VsPackageMessage,
-          (int)Messages.Component.MessageCode.AttachToChild,
-          process.LivePart.Id,
-          info.dwProcessId);
-      attachRequest.SendToVsService(PackageServices.DkmComponentEventHandler, false);
+        // The process was successfully created.  Extract the PID from the PROCESS_INFORMATION
+        // output param.  An attachment request must happend through the EnvDTE, which can only
+        // be accessed from the VsPackage, so a request must be sent via a component message.
+        DkmProcess process = frame.Process;
+        int size = Marshal.SizeOf(typeof(PROCESS_INFORMATION));
+        byte[] buffer = new byte[size];
+        process.ReadMemory(processInfoAddr, DkmReadMemoryFlags.None, buffer);
+        PROCESS_INFORMATION info = MarshalUtility.ByteArrayToStructure<PROCESS_INFORMATION>(buffer);
+        DkmCustomMessage attachRequest = DkmCustomMessage.Create(
+            process.Connection,
+            process,
+            PackageServices.VsPackageMessageGuid,
+            (int)VsPackageMessage.AttachToChild,
+            process.LivePart.Id,
+            info.dwProcessId);
+        attachRequest.SendToVsService(PackageServices.DkmComponentEventHandler, false);
+      } catch (Exception exception) {
+        Logger.LogException(
+            exception,
+            "An error occured handling the exit breakpoint.  HR = 0x{0:X}", 
+            exception.HResult);
+      }
     }
   }
 }

@@ -14,14 +14,20 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
   // destroyed.
   public class CachedFrameAnalyzer : StackFrameAnalyzer {
     object[] _paramValues;
+    int _wordSize;
 
-    public CachedFrameAnalyzer(IEnumerable<FunctionParameter> parameters, object[] values)
+    public CachedFrameAnalyzer(IEnumerable<FunctionParameter> parameters, object[] values, int wordSize)
         : base(parameters) {
       this._paramValues = values;
+      this._wordSize = wordSize;
     }
 
     public override object GetArgumentValue(DkmStackWalkFrame frame, int index) {
       return _paramValues[index];
+    }
+
+    public override int WordSize {
+      get { return _wordSize; }
     }
   }
 }

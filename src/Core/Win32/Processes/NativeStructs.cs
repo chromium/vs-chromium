@@ -31,6 +31,7 @@ namespace VsChromium.Core.Win32.Processes {
     private UnicodeString currentDirectoryPath;
     private IntPtr currentDirectoryHandle;
     private UnicodeString dllPath;
+    private UnicodeString imagePathName;
     private UnicodeString commandLine;
 
     public UnicodeString CommandLine { get { return commandLine; } }

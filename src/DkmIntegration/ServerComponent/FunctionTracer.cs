@@ -5,6 +5,7 @@
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.Breakpoints;
 using Microsoft.VisualStudio.Debugger.CallStack;
+using Microsoft.VisualStudio.Debugger.DefaultPort;
 using Microsoft.VisualStudio.Debugger.Native;
 using System;
 using System.Collections.Generic;
@@ -73,7 +74,9 @@ namespace VsChromium.DkmIntegration.ServerComponent {
         // Capture the value of every argument now, since when the exit breakpoint gets hit, the
         // target function will have already returned and its frame will be cleaned up.
         exitBp.SetDataItem(DkmDataCreationDisposition.CreateAlways,
-            new FunctionTraceEntryDataItem { EntryArgumentValues = frameAnalyzer.GetAllArgumentValues(frame) });
+            new FunctionTraceEntryDataItem { 
+                EntryArgumentValues = frameAnalyzer.GetAllArgumentValues(frame) 
+            });
         exitBp.SetDataItem(DkmDataCreationDisposition.CreateAlways,
             new FunctionTraceDataItem { Tracer = this });
         exitBp.Enable();
@@ -84,11 +87,18 @@ namespace VsChromium.DkmIntegration.ServerComponent {
       FunctionTraceEntryDataItem traceDataItem = bp.GetDataItem<FunctionTraceEntryDataItem>();
 
       if (OnFunctionExited != null) {
-        StackFrameAnalyzer exitAnalyzer = 
-            (traceDataItem == null) 
-                ? null 
-                : new CachedFrameAnalyzer(frameAnalyzer.Parameters, traceDataItem.EntryArgumentValues);
         DkmStackWalkFrame frame = thread.GetTopStackWalkFrame(bp.RuntimeInstance);
+        StackFrameAnalyzer exitAnalyzer = null;
+        if (traceDataItem != null) {
+          DkmSystemInformationFlags systemInformationFlags = 
+              frame.ModuleInstance.Process.SystemInformation.Flags;
+          bool isTarget64Bit = systemInformationFlags.HasFlag(DkmSystemInformationFlags.Is64Bit);
+          int pointerSize = (isTarget64Bit) ? 8 : 4;
+          exitAnalyzer = new CachedFrameAnalyzer(
+              frameAnalyzer.Parameters, 
+              traceDataItem.EntryArgumentValues, 
+              pointerSize);
+        }
         OnFunctionExited(frame, exitAnalyzer);
       }
 

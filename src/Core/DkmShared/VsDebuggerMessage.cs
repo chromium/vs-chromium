@@ -8,9 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VsChromium.DkmIntegration.Messages.Component {
-  public class AttachToChild {
-    public int ParentId { get; set; }
-    public int ChildId { get; set; }
+namespace VsChromium.Core.DkmShared {
+  public enum VsDebuggerMessage {
+    EnableChildProcessDebugging,
   }
 }

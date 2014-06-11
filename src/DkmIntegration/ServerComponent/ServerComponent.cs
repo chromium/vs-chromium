@@ -11,6 +11,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VsChromium.Core;
+using VsChromium.Core.DkmShared;
 using VsChromium.Core.Win32.Processes;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
@@ -27,7 +29,8 @@ namespace VsChromium.DkmIntegration.ServerComponent {
   class ServerComponent
       : IDkmRuntimeInstanceLoadNotification
       , IDkmModuleInstanceLoadNotification
-      , IDkmRuntimeBreakpointReceived {
+      , IDkmRuntimeBreakpointReceived
+      , IDkmCustomMessageForwardReceiver {
     public ServerComponent() {
     }
 
@@ -42,6 +45,43 @@ namespace VsChromium.DkmIntegration.ServerComponent {
     void IDkmRuntimeBreakpointReceived.OnRuntimeBreakpointReceived(DkmRuntimeBreakpoint bp, DkmThread thread, bool hasException, DkmEventDescriptorS eventDescriptor) {
       DkmProcess process = bp.Process;
       process.VscxOnRuntimeBreakpointReceived(bp, thread, hasException, eventDescriptor);
+    }
+
+    public DkmCustomMessage SendLower(DkmCustomMessage customMessage) {
+      try {
+        Debug.Assert(customMessage.SourceId == PackageServices.VsDebuggerMessageGuid);
+        VsDebuggerMessage code = (VsDebuggerMessage)customMessage.MessageCode;
+        switch (code) {
+          case VsDebuggerMessage.EnableChildProcessDebugging:
+            Guid processGuid = (Guid)customMessage.Parameter1;
+            DkmProcess process = DkmProcess.FindProcess(processGuid);
+            if (process != null) {
+              process.SetDataItem(
+                  DkmDataCreationDisposition.CreateNew, 
+                  new RuntimeBreakpointHandler());
+              process.SetDataItem(
+                  DkmDataCreationDisposition.CreateNew, 
+                  new AutoAttachToChildHandler());
+              Logger.Log(
+                "Successfully delay-enabled child debugging for process {0}.", 
+                processGuid);
+            } else {
+              Logger.LogError(
+                  "Unable to find process {0} while trying to enable child process debugging.", 
+                  processGuid);
+            }
+            break;
+          default:
+            Logger.LogError("Debug component received unknown message code {0}.", code);
+            break;
+        }
+      } catch (DkmException exception) {
+        Logger.LogException(
+            exception, 
+            "An error occurred while handling a debugger message.  HR = 0x{0:X}",
+            exception.HResult);
+      }
+      return null;
     }
   }
 }

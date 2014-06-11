@@ -10,26 +10,41 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
+  public enum ParameterType {
+    Int32,
+    Int64,
+    Pointer
+  }
+
   public class FunctionParameter {
     private string _name;
-    private int _size;
-    private int _wordSize;
-    public FunctionParameter(string name, int size, int wordSize) {
-      // Ensure that wordSize is a power of 2.
+    private ParameterType _type;
+    public FunctionParameter(string name, ParameterType type) {
+      this._name = name;
+      this._type = type;
+    }
+
+    public string Name { get { return _name; } }
+    public ParameterType Type { get { return _type; } }
+
+    public int GetSize(int wordSize) {
       Debug.Assert((wordSize & (wordSize - 1)) == 0);
 
-      this._name = name;
-      this._size = size;
-      this._wordSize = wordSize;
-    }
-    public string Name { get { return _name; } }
-    public int Size { get { return _size; } }
-    public int WordSize { get { return _wordSize; } }
-    public int PaddedSize { 
-      get {
-        // When n is a power of 2, (x + n - 1) & ~(n - 1) rounds x up to the next multiple of n.
-        return (Size + (WordSize - 1)) & ~(WordSize - 1);
+      switch (_type) {
+        case ParameterType.Int32: 
+          return 4;
+        case ParameterType.Int64: 
+          return 8;
+        default:
+          Debug.Assert(_type == ParameterType.Pointer);
+          return wordSize;
       }
+    }
+
+    public int GetPaddedSize(int wordSize) {
+      Debug.Assert((wordSize & (wordSize - 1)) == 0);
+
+      return (GetSize(wordSize) + (wordSize - 1)) & ~(wordSize - 1);
     }
   }
 }

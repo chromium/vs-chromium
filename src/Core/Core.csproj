@@ -48,6 +48,10 @@
     <Compile Include="Configuration\IConfigurationFileProvider.cs" />
     <Compile Include="Configuration\IPathPatternsFile.cs" />
     <Compile Include="Configuration\PathPatternsFile.cs" />
+    <Compile Include="DkmShared\ChildDebuggingMode.cs" />
+    <Compile Include="DkmShared\DebugProcessOptions.cs" />
+    <Compile Include="DkmShared\VsDebuggerMessage.cs" />
+    <Compile Include="DkmShared\VsPackageMessage.cs" />
     <Compile Include="FileNames\PathHelpers.cs" />
     <Compile Include="FileNames\SystemPathComparer.cs" />
     <Compile Include="FileNames\FullPathNameSet.cs" />
@@ -132,7 +136,7 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Ipc\IpcRequest.cs" />
     <Compile Include="Debugger\DebuggerThread.cs" />
-    <Compile Include="PackageServices.cs" />
+    <Compile Include="DkmShared\PackageServices.cs" />
     <Compile Include="Processes\ExtensionMethods.cs" />
     <Compile Include="Processes\NtProcess.cs" />
     <Compile Include="Processes\ProcessUtility.cs" />

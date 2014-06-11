@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 using VsChromium.Core;
 using VsChromium.Core.FileNames;
@@ -29,6 +30,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// Databound!
     /// </summary>
     public bool MatchCase { get; set; }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool EnableChildDebugging { get; set; }
+
+    public ImageSource LightningBoltImage {
+      get {
+        return _sourceExplorerViewModelHost.StandarImageSourceFactory.LightningBolt;
+      }
+    }
 
     /// <summary>
     /// Databound!

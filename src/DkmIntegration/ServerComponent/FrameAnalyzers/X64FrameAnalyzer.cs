@@ -23,28 +23,29 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
     }
 
     public override object GetArgumentValue(DkmStackWalkFrame frame, int index) {
-      ulong rsp = frame.Registers.GetStackPointer();
-      ulong rsp2 = frame.VscxGetRegisterValue64(CpuRegister.Rsp);
-      ulong rbp = frame.VscxGetRegisterValue64(CpuRegister.Rbp);
-      ulong frameBase = frame.FrameBase;
-
       byte[] argumentBuffer = ReadArgumentBytes(frame);
 
       int wordZeroIndex = 0;
       for (int i=0; i < index; ++i)
-        wordZeroIndex += _parameters[i].PaddedSize;
+        wordZeroIndex += _parameters[i].GetPaddedSize(WordSize);
       FunctionParameter requestedParameter = _parameters[index];
-      byte[] result = new byte[requestedParameter.Size];
+      int requestedParamSize = requestedParameter.GetSize(WordSize);
+      byte[] result = new byte[requestedParamSize];
 
-      int wordsUsed = requestedParameter.PaddedSize / requestedParameter.WordSize;
-      Array.ConstrainedCopy(argumentBuffer, wordZeroIndex, result, 0, requestedParameter.Size);
+      Array.ConstrainedCopy(argumentBuffer, wordZeroIndex, result, 0, requestedParamSize);
 
-      if (requestedParameter.Size == 4)
-        return BitConverter.ToUInt32(result, 0);
-      else if (requestedParameter.Size == 8)
-        return BitConverter.ToUInt64(result, 0);
-      else
-        return result;
+      switch (requestedParamSize) {
+        case 4:
+          return BitConverter.ToUInt32(result, 0);
+        case 8:
+          return BitConverter.ToUInt64(result, 0);
+        default:
+          return result;
+      }
+    }
+
+    public override int WordSize {
+      get { return 8; }
     }
 
     private byte[] ReadArgumentBytes(DkmStackWalkFrame frame) {
@@ -55,7 +56,7 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
       // function parameters, even if the function accepts less than 4 arguments.
       int bytesRequired = 0;
       foreach (FunctionParameter param in _parameters)
-        bytesRequired += param.PaddedSize;
+        bytesRequired += param.GetPaddedSize(WordSize);
       byte[] stack = new byte[bytesRequired];
 
       ulong rsp = frame.Registers.GetStackPointer();

@@ -260,6 +260,8 @@
       where as the equivalent "Find in files" search takes 30+ seconds.
     </p>
 
+    <h2>Search pattern format</h2>
+
     <p>
       The search engine performs a "raw" string search in the text of the files, so the search pattern
       can be any combination of characters (including space, tabs and special characters such as
@@ -269,10 +271,17 @@
     </p>
 
     <p>
+      The "*" character is used as a wildcard matching any characters between two strings.
+      The "\" character is used to escape the "*" or "\" characters.
+      By default, the search is not case sensitive, but this this can be altered by clicking the "Aa" button in the toolbar.
+    </p>
+    <p>Note that there is currently no support for wildcards and the search is always case <b>sensitive</b>.</p>
+
+    <p>
       The search results contain one entry per file, and one sub-entry per match in the file. Both can be clicked
       in the Tree View to navigate to the corresponding location.
     </p>
-    <p>Note that there is currently no support for wildcards and the search is always case <b>sensitive</b>.</p>
+
     <img src="Screenshots/SearchFileContents.png"></img>
 
   </div>
@@ -458,6 +467,18 @@
   <!-------------------------------------------------------------------------------->
   <div id="whatsnew">
     <h1>What's new</h1>
+    <h2 id="whatsnew-0-9-8">v0.9.8</h2>
+    <h3>Source Exporer features</h3>
+    <ul>
+      <li>Support for wildcard character ("*") in text searches.</li>
+      <li>Support for context menus in tree view.</li>
+      <li>Various UI and performance improvements.</li>
+    </ul>
+    <h3>Debugger features</h3>
+    <ul>
+      <li>Attach to Chrome and Child process debugging works with x64</li>
+      <li>Child process debugging works in launch (i.e. F5) scenarios. Note this feature needs to be enabled by a toolbar button in Chromium Source Explorer</li>
+    </ul>
     <h2 id="whatsnew-0-9-7">v0.9.7</h2>
     <h3>Debugger features</h3>
     <ul>
@@ -484,7 +505,18 @@
       in the Visual Studio IDE, it is not advisable to leave the processes debug window opened
       by default when using auto attach to children.
     </p>
-  </div>
+    <h2 id="whatsnew-0-9-1">v0.9.1</h2>
+    <h3>Debugger features</h3>
+    <ul>
+      <li>Attach to all running Chrome processes</li>
+      <li>Attach to child Chrome processes</li>
+    </ul>
+    <h3>Editor features</h3>
+    <ul>
+      <li><a href="#pmconsole">Navigate to Build Errors</a></li>
+      <li>Minor stability and performance improvements.</li>
+    </ul>
+   </div>
   <hr />
 
   <!-------------------------------------------------------------------------------->
@@ -582,7 +614,7 @@
   <div id="installation">
     <h1>Installation Instructions</h1>
     <ul>
-      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.7">VsChromium.vsix</a></li>
+      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.8">VsChromium.vsix</a></li>
       <li>Open the file: this will open a Visual Studio Installation dialog.
       <img src="Screenshots/VsixInstall.png" />
       </li>

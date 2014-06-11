@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{6F70C76F-5A3A-4657-A073-075A08555BAD}"
 EndProject
@@ -32,7 +32,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerNativeInterop", "Serv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DkmIntegration", "DkmIntegration\DkmIntegration.csproj", "{58572470-7222-49BE-850B-C6CE224A813A}"
 EndProject
-Project("{911E67C6-3D85-4FCE-B560-20A9C3E3FF48}") = "msvsmon", "..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\Remote Debugger\x64\msvsmon.exe", "{5DEAC785-1203-4133-AAA3-F501375BD845}"
+Project("{911E67C6-3D85-4FCE-B560-20A9C3E3FF48}") = "msvsmon", "..\..\..\..\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\Remote Debugger\x64\msvsmon.exe", "{5DEAC785-1203-4133-AAA3-F501375BD845}"
 	ProjectSection(DebuggerProjectSystem) = preProject
 		PortSupplier = 00000000-0000-0000-0000-000000000000
 		Executable = C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\Remote Debugger\x64\msvsmon.exe
@@ -137,12 +137,12 @@ Global
 		{58572470-7222-49BE-850B-C6CE224A813A}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{58572470-7222-49BE-850B-C6CE224A813A}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{58572470-7222-49BE-850B-C6CE224A813A}.Release|x64.ActiveCfg = Release|Any CPU
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Debug|x64.ActiveCfg = Debug|x64
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Release|Any CPU.ActiveCfg = Debug|x64
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Release|Mixed Platforms.ActiveCfg = Debug|x64
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Release|x64.ActiveCfg = Debug|x64
+		{5DEAC785-1203-4133-AAA3-F501375BD845}.Debug|Any CPU.ActiveCfg = Debug
+		{5DEAC785-1203-4133-AAA3-F501375BD845}.Debug|Mixed Platforms.ActiveCfg = Debug
+		{5DEAC785-1203-4133-AAA3-F501375BD845}.Debug|x64.ActiveCfg = Debug
+		{5DEAC785-1203-4133-AAA3-F501375BD845}.Release|Any CPU.ActiveCfg = Debug
+		{5DEAC785-1203-4133-AAA3-F501375BD845}.Release|Mixed Platforms.ActiveCfg = Debug
+		{5DEAC785-1203-4133-AAA3-F501375BD845}.Release|x64.ActiveCfg = Debug
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

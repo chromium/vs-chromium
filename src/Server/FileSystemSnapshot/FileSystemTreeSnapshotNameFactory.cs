@@ -10,9 +10,9 @@ namespace VsChromium.Server.FileSystemSnapshot {
     // for previously re-used names.
     private static readonly IComparer<string> NameComparer = StringComparer.Ordinal;
     private static readonly Func<ProjectRootSnapshot, FullPathName, int> ProjectRootComparer = (x, item) => NameComparer.Compare(x.Directory.DirectoryName.FullPathName.FullName, item.FullName);
-    private static readonly Func<DirectorySnapshot, string, int> DirectoryComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePathName.Name, item);
-    private static readonly Func<DirectorySnapshot, DirectoryName, int> DirectoryNameComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePathName.Name, item.RelativePathName.Name);
-    private static readonly Func<FileName, string, int> FileComparer = (x, item) => NameComparer.Compare(x.RelativePathName.Name, item);
+    private static readonly Func<DirectorySnapshot, string, int> DirectoryComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePathName.FileName, item);
+    private static readonly Func<DirectorySnapshot, DirectoryName, int> DirectoryNameComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePathName.FileName, item.RelativePathName.FileName);
+    private static readonly Func<FileName, string, int> FileComparer = (x, item) => NameComparer.Compare(x.RelativePathName.FileName, item);
 
     private readonly FileSystemTreeSnapshot _snapshot;
     private readonly IFileSystemNameFactory _previous;
@@ -30,28 +30,28 @@ namespace VsChromium.Server.FileSystemSnapshot {
       return _previous.CreateAbsoluteDirectoryName(rootPath);
     }
 
-    public DirectoryName CreateDirectoryName(DirectoryName parent, string simpleName) {
+    public DirectoryName CreateDirectoryName(DirectoryName parent, string name) {
       var directory = FindDirectory(parent);
       if (directory != null) {
         // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-        int index = SortedArray.BinarySearch(directory.DirectoryEntries, simpleName, DirectoryComparer);
+        int index = SortedArray.BinarySearch(directory.DirectoryEntries, name, DirectoryComparer);
         if (index >= 0) {
           return directory.DirectoryEntries[index].DirectoryName;
         }
       }
-      return _previous.CreateDirectoryName(parent, simpleName);
+      return _previous.CreateDirectoryName(parent, name);
     }
 
-    public FileName CreateFileName(DirectoryName parent, string simpleName) {
+    public FileName CreateFileName(DirectoryName parent, string name) {
       var directory = FindDirectory(parent);
       if (directory != null) {
         // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-        int index = SortedArray.BinarySearch(directory.Files, simpleName, FileComparer);
+        int index = SortedArray.BinarySearch(directory.Files, name, FileComparer);
         if (index >= 0) {
           return directory.Files[index];
         }
       }
-      return _previous.CreateFileName(parent, simpleName);
+      return _previous.CreateFileName(parent, name);
     }
 
     public DirectorySnapshot FindRootDirectory(FullPathName rootPath) {

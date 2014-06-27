@@ -32,19 +32,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerNativeInterop", "Serv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DkmIntegration", "DkmIntegration\DkmIntegration.csproj", "{58572470-7222-49BE-850B-C6CE224A813A}"
 EndProject
-Project("{911E67C6-3D85-4FCE-B560-20A9C3E3FF48}") = "msvsmon", "..\..\..\..\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\Remote Debugger\x64\msvsmon.exe", "{5DEAC785-1203-4133-AAA3-F501375BD845}"
-	ProjectSection(DebuggerProjectSystem) = preProject
-		PortSupplier = 00000000-0000-0000-0000-000000000000
-		Executable = C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\Remote Debugger\x64\msvsmon.exe
-		RemoteMachine = ZTURNER-WIN81
-		StartingDirectory = C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\Remote Debugger\x64
-		Environment = Default
-		LaunchingEngine = fb0d4648-f776-4980-95f8-bb7f36ebc1ee
-		UseLegacyDebugEngines = No
-		LaunchSQLEngine = No
-		AttachLaunchAction = Yes
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,8 +70,6 @@ Global
 		{58572470-7222-49BE-850B-C6CE224A813A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{58572470-7222-49BE-850B-C6CE224A813A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{58572470-7222-49BE-850B-C6CE224A813A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Debug|Any CPU.ActiveCfg = Debug
-		{5DEAC785-1203-4133-AAA3-F501375BD845}.Release|Any CPU.ActiveCfg = Debug
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

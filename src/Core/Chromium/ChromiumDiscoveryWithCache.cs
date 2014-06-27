@@ -45,8 +45,8 @@ namespace VsChromium.Core.Chromium {
 
     public void ValidateCache() {
       lock (_lock) {
-        _nonChromiumDirectories.RemoveWhere(x => !x.DirectoryExists);
-        _chromiumRootDirectories.RemoveWhere(x => !x.DirectoryExists);
+        _nonChromiumDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
+        _chromiumRootDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
       }
     }
 

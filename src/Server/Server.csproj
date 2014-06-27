@@ -85,7 +85,6 @@
     <Compile Include="ProgressTracking\ProgressTrackerBase.cs" />
     <Compile Include="ProgressTracking\DisplayProgressCallback.cs" />
     <Compile Include="ProgressTracking\ProgressTrackerFactory.cs" />
-    <Compile Include="Projects\Chromium\ChromiumProject.cs" />
     <Compile Include="Projects\Chromium\ChromiumProjectDiscoveryProvider.cs" />
     <Compile Include="Projects\DirectoryFilter.cs" />
     <Compile Include="Projects\FileFilter.cs" />
@@ -95,9 +94,9 @@
     <Compile Include="Projects\IProjectDiscovery.cs" />
     <Compile Include="Projects\IProjectDiscoveryProvider.cs" />
     <Compile Include="Projects\ISearchableFilesFilter.cs" />
+    <Compile Include="Projects\Project.cs" />
     <Compile Include="Projects\ProjectDiscovery.cs" />
     <Compile Include="Projects\ProjectFile\ProjectFileDiscoveryProvider.cs" />
-    <Compile Include="Projects\ProjectFile\ProjectFileProject.cs" />
     <Compile Include="Projects\SearchableFilesFilter.cs" />
     <Compile Include="FileSystemContents\AsciiTextLineOffsets.cs" />
     <Compile Include="FileSystemContents\FileContentsMemory.cs" />

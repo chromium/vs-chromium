@@ -284,7 +284,7 @@ namespace VsChromium.Server.Search {
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
-      return matcher.MatchFileName(fileName.RelativePathName.Name, comparer);
+      return matcher.MatchFileName(fileName.RelativePathName.FileName, comparer);
     }
 
     private bool MatchFileRelativePath(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
@@ -296,7 +296,7 @@ namespace VsChromium.Server.Search {
       if (directoryName.IsAbsoluteName)
         return false;
 
-      return matcher.MatchDirectoryName(directoryName.RelativePathName.Name, comparer);
+      return matcher.MatchDirectoryName(directoryName.RelativePathName.FileName, comparer);
     }
 
     private bool MatchDirectoryRelativePath(IPathMatcher matcher, DirectoryName directoryName, IPathComparer comparer) {

@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using VsChromium.Core.Configuration;
+using VsChromium.Core.FileNames;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker {
   /// <summary>
@@ -31,15 +32,15 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker {
 
     private IList<string> ReadDisableCheckers() {
       return
-        _configurationFileProvider.ReadFile(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled,
-                                            x => x.Where(line => !line.TrimStart().StartsWith("#"))).ToList();
+        _configurationFileProvider.ReadFile(new RelativePathName(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled),
+                                            (filename, x) => x.Where(line => !line.TrimStart().StartsWith("#"))).ToList();
     }
 
     /// <summary>
     /// This method scans the given SnapshotSpan for potential matches for this classification.
     /// In this instance, it classifies everything and returns each span as a new ClassificationSpan.
     /// </summary>
-    /// <param name="trackingSpan">The span currently being classified</param>
+    /// <param name="span">The span currently being classified</param>
     /// <returns>A list of ClassificationSpans that represent spans identified to be of this classification</returns>
     public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span) {
       var checkers = _checkers

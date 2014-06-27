@@ -11,12 +11,12 @@ namespace VsChromium.Server.Projects.Chromium {
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ChromiumProjectDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly IConfigurationSectionProvider _configurationSectionProvider;
-    private readonly IChromiumDiscoveryWithCache<ChromiumProject> _chromiumDiscovery;
+    private readonly IChromiumDiscoveryWithCache<Project> _chromiumDiscovery;
 
     [ImportingConstructor]
     public ChromiumProjectDiscoveryProvider(IConfigurationFileProvider configurationFileProvider) {
       _configurationSectionProvider = new ConfigurationFileSectionProvider(configurationFileProvider);
-      _chromiumDiscovery = new ChromiumDiscoveryWithCache<ChromiumProject>(_configurationSectionProvider);
+      _chromiumDiscovery = new ChromiumDiscoveryWithCache<Project>(_configurationSectionProvider);
     }
 
     public IProject GetProjectFromRootPath(FullPathName projectRootPath) {
@@ -33,8 +33,8 @@ namespace VsChromium.Server.Projects.Chromium {
       _chromiumDiscovery.ValidateCache();
     }
 
-    private ChromiumProject CreateProject(FullPathName rootPath) {
-      return new ChromiumProject(_configurationSectionProvider, rootPath);
+    private Project CreateProject(FullPathName rootPath) {
+      return new Project(_configurationSectionProvider, rootPath);
     }
   }
 }

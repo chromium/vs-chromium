@@ -12,7 +12,7 @@ using VsChromium.Core.Linq;
 namespace VsChromium.Server.Projects.ProjectFile {
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ProjectFileDiscoveryProvider : IProjectDiscoveryProvider {
-    private readonly FullPathNameSet<IProject> _knownProjectRootDirectories = new FullPathNameSet<IProject>();
+    private readonly FullPathNameSet<Project> _knownProjectRootDirectories = new FullPathNameSet<Project>();
     private readonly FullPathNameSet<object> _knownNonProjectDirectories = new FullPathNameSet<object>();
     private readonly object _lock = new object();
 
@@ -49,8 +49,9 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
     public void ValidateCache() {
       lock (_lock) {
-        _knownProjectRootDirectories.RemoveWhere(x => !x.DirectoryExists);
-        _knownNonProjectDirectories.RemoveWhere(x => !x.DirectoryExists);
+        _knownProjectRootDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
+        _knownProjectRootDirectories.RemoveWhere(x => x.Value.IsOutdated);
+        _knownNonProjectDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
       }
     }
 
@@ -70,10 +71,10 @@ namespace VsChromium.Server.Projects.ProjectFile {
       return null;
     }
 
-    private IProject CreateProject(FullPathName rootPath) {
-      var fileWithSections = new FileWithSections(rootPath.Combine(ConfigurationFilenames.ProjectFileNameDetection).FullName);
+    private Project CreateProject(FullPathName rootPath) {
+      var fileWithSections = new FileWithSections(rootPath.Combine(ConfigurationFilenames.ProjectFileNameDetection));
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
-      return new ProjectFileProject(configurationProvider, rootPath);
+      return new Project(configurationProvider, rootPath);
     }
 
     private static IEnumerable<FullPathName> EnumerateParents(FullPathName path) {

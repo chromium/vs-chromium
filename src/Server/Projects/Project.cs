@@ -1,19 +1,17 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-using VsChromium.Core.Configuration;
+﻿using VsChromium.Core.Configuration;
 using VsChromium.Core.FileNames;
 
-namespace VsChromium.Server.Projects.Chromium {
-  public class ChromiumProject : IProject {
+namespace VsChromium.Server.Projects {
+  public class Project : IProject {
     private readonly FullPathName _rootPath;
+    private readonly IVolatileToken _configurationToken;
     private readonly IDirectoryFilter _directoryFilter;
     private readonly IFileFilter _fileFilter;
     private readonly ISearchableFilesFilter _searchableFilesFilter;
 
-    public ChromiumProject(IConfigurationSectionProvider configurationSectionProvider, FullPathName rootPath) {
+    public Project(IConfigurationSectionProvider configurationSectionProvider, FullPathName rootPath) {
       _rootPath = rootPath;
+      _configurationToken = configurationSectionProvider.WhenUpdated();
       _directoryFilter = new DirectoryFilter(configurationSectionProvider);
       _fileFilter = new FileFilter(configurationSectionProvider);
       _searchableFilesFilter = new SearchableFilesFilter(configurationSectionProvider);
@@ -26,5 +24,7 @@ namespace VsChromium.Server.Projects.Chromium {
     public IFileFilter FileFilter { get { return _fileFilter; } }
 
     public ISearchableFilesFilter SearchableFilesFilter { get { return _searchableFilesFilter; } }
+
+    public bool IsOutdated { get { return !_configurationToken.IsCurrent; } }
   }
 }

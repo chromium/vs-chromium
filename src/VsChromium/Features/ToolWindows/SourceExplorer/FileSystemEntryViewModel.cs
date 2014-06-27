@@ -36,14 +36,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var parent = ParentViewModel as FileSystemEntryViewModel;
       if (parent == null)
         return Name;
-      return PathHelpers.PathCombine(parent.GetFullPath(), Name);
+      return PathHelpers.CombinePaths(parent.GetFullPath(), Name);
     }
 
     public string GetRelativePath() {
       var parent = ParentViewModel as FileSystemEntryViewModel;
       if (parent == null)
         return "";
-      return PathHelpers.PathCombine(parent.GetRelativePath(), Name);
+      return PathHelpers.CombinePaths(parent.GetRelativePath(), Name);
     }
   }
 }

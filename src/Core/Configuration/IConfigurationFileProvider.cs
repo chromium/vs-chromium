@@ -4,9 +4,10 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.FileNames;
 
 namespace VsChromium.Core.Configuration {
   public interface IConfigurationFileProvider {
-    IEnumerable<string> ReadFile(string name, Func<IEnumerable<string>, IEnumerable<string>> postProcessing);
+    IEnumerable<string> ReadFile(RelativePathName name, Func<FullPathName, IEnumerable<string>, IEnumerable<string>> postProcessing);
   }
 }

@@ -91,9 +91,9 @@ namespace VsChromium.Server.FileSystemDatabase {
         // Note: For diagnostic only as this can be quite slow.
         filesWithContents
           .GroupBy(x => {
-            var ext = Path.GetExtension(x.FileName.RelativePathName.Name);
+            var ext = Path.GetExtension(x.FileName.RelativePathName.FileName);
             if (string.IsNullOrEmpty(ext))
-              return new { Type = "Filename", Value = x.FileName.RelativePathName.Name };
+              return new { Type = "Filename", Value = x.FileName.RelativePathName.FileName };
             else
               return new { Type = "Extension", Value = ext };
           })

@@ -15,12 +15,12 @@ namespace VsChromium.Server.FileSystemNames {
     /// Returns a <see cref="RelativeDirectoryName"/> instance from a parent
     /// directory and from a simple directory name.
     /// </summary>
-    DirectoryName CreateDirectoryName(DirectoryName parent, string simpleName);
+    DirectoryName CreateDirectoryName(DirectoryName parent, string name);
 
     /// <summary>
     /// Returns a <see cref="FileName"/> instance from the concatenation of a
     /// parent directory and a simple file name.
     /// </summary>
-    FileName CreateFileName(DirectoryName parent, string simpleName);
+    FileName CreateFileName(DirectoryName parent, string name);
   }
 }

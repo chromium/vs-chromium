@@ -40,6 +40,8 @@
     <Compile Include="Collections\SortedArray.cs" />
     <Compile Include="Configuration\ConfigurationFilenames.cs" />
     <Compile Include="Configuration\ConfigurationFileSectionProvider.cs" />
+    <Compile Include="Configuration\ConfigurationFileSectionProviderVolatileToken.cs" />
+    <Compile Include="Configuration\FileUpdateVolatileToken.cs" />
     <Compile Include="Configuration\FileWithSectionConfigurationProvider.cs" />
     <Compile Include="Configuration\IConfigurationSectionProvider.cs" />
     <Compile Include="Configuration\IFileWithSections.cs" />
@@ -97,6 +99,7 @@
     <Compile Include="Collections\IHeap.cs" />
     <Compile Include="Collections\MaxHeap.cs" />
     <Compile Include="Collections\MinHeap.cs" />
+    <Compile Include="IVolatileToken.cs" />
     <Compile Include="Linq\PLinqExtensions.cs" />
     <Compile Include="Linq\EnumerableExtensions.cs" />
     <Compile Include="Ipc\IIpcStream.cs" />

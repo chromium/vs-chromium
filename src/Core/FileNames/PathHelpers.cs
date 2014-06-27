@@ -7,12 +7,15 @@ using System.IO;
 
 namespace VsChromium.Core.FileNames {
   public static class PathHelpers {
-    private static readonly string _directorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
+    private static readonly string DirectorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
+    private static readonly char[] DirectorySeparatorArray = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
 
     /// <summary>
-    /// More efficient than "Path.Combine", because we don't box "Path.DirectorySeparatorChar"
+    /// Combines two paths into a single path. More efficient than <see
+    /// cref="System.IO.Path.Combine(string, string)"/>, because we don't box
+    /// "Path.DirectorySeparatorChar"
     /// </summary>
-    public static string PathCombine(string path1, string path2) {
+    public static string CombinePaths(string path1, string path2) {
       if (path1 == null)
         throw new ArgumentNullException("path1");
       if (path2 == null)
@@ -26,11 +29,17 @@ namespace VsChromium.Core.FileNames {
 
       var c = path1[path1.Length - 1];
       if (c != Path.DirectorySeparatorChar && c != Path.AltDirectorySeparatorChar && c != Path.VolumeSeparatorChar) {
-        return path1 + _directorySeparatorString + path2;
+        return path1 + DirectorySeparatorString + path2;
       }
       return path1 + path2;
     }
 
+    /// <summary>
+    /// Returns true if the <paramref name="path"/> argument represents an
+    /// absolute path. More efficient than <see
+    /// cref="System.IO.Path.IsPathRooted"/>, but is not 100% correct, so this
+    /// method should only be used in assertion code.
+    /// </summary>
     public static bool IsAbsolutePath(string path) {
       // Quick & dirty check, but faster than "Path.IsPathRooted".
       var l = path.Length;
@@ -46,6 +55,19 @@ namespace VsChromium.Core.FileNames {
       return false;
     }
 
+    /// <summary>
+    /// Returns true if <paramref name="path"/> is a simple file name and
+    /// extension, i.e. if <paramref name="path"/> does not contain any
+    /// directory separator.
+    /// </summary>
+    public static bool IsFileName(string path) {
+      return path.IndexOfAny(DirectorySeparatorArray) < 0;
+    }
+
+    /// <summary>
+    /// Return the <paramref name="path"/> argument where all directory
+    /// separators are replaced with the Posix separator ("/")
+    /// </summary>
     public static string ToPosix(string path) {
       return path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     }

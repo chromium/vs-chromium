@@ -6,20 +6,24 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using VsChromium.Core.FileNames;
+using VsChromium.Server.Projects;
 
 namespace VsChromium.Core.Configuration {
   public class FileWithSections : IFileWithSections {
-    private readonly string _filename;
+    private readonly FullPathName _filename;
+    private readonly IVolatileToken _fileUpdateVolatileToken;
     private readonly Lazy<Dictionary<string, List<string>>> _sections;
     private Func<IEnumerable<string>, IEnumerable<string>> _postProcessing;
 
-    public FileWithSections(string filename) {
+    public FileWithSections(FullPathName filename) {
       _filename = filename;
+      _fileUpdateVolatileToken = new FileUpdateVolatileToken(filename);
       _sections = new Lazy<Dictionary<string, List<string>>>(ReadFile);
     }
 
     private Dictionary<string, List<string>> ReadFile() {
-      var lines = File.ReadAllLines(_filename);
+      var lines = File.ReadAllLines(_filename.FullName);
       var result = new Dictionary<string, List<string>>();
       var sectionName = "";
       foreach (var line in lines) {
@@ -61,6 +65,10 @@ namespace VsChromium.Core.Configuration {
       finally {
         _postProcessing = null;
       }
+    }
+
+    public IVolatileToken WhenFileUpdated() {
+      return _fileUpdateVolatileToken;
     }
   }
 }

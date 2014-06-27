@@ -48,7 +48,7 @@ namespace VsChromium.Core.FileNames {
     /// <paramref name="name"/> appened at the end.
     /// </summary>
     public FullPathName Combine(string name) {
-      return new FullPathName(PathHelpers.PathCombine(_path, name));
+      return new FullPathName(PathHelpers.CombinePaths(_path, name));
     }
 
     /// <summary>

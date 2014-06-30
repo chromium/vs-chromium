@@ -76,9 +76,9 @@ namespace VsChromium.Server.FileSystem {
       var items = relativePath.Split(new char[] {
         Path.DirectorySeparatorChar
       });
-      var pathToItem = "";
+      var pathToItem = new RelativePathName();
       foreach (var item in items) {
-        var relativePathToItem = Path.Combine(pathToItem, item);
+        var relativePathToItem = pathToItem.CreateChild(item);
 
         if (!project.DirectoryFilter.Include(relativePathToItem))
           return true;

@@ -76,7 +76,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
             progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.FullName, directoryName.RelativePathName.RelativeName));
           }
           var entries = traversedDirectoryEntry.ChildrenNames
-            .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName.RelativeName))
+            .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName))
             .OrderBy(x => x.RelativePathName)
             .ToReadOnlyCollection();
 
@@ -146,7 +146,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       stack.Push(projectPath);
       while (stack.Count > 0) {
         var head = stack.Pop();
-        if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePathName.RelativeName)) {
+        if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePathName)) {
           IList<string> childDirectories;
           IList<string> childFiles;
           RelativePathNameExtensions.GetFileSystemEntries(project.RootPath, head.RelativePathName, out childDirectories, out childFiles);

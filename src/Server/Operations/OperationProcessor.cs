@@ -3,10 +3,6 @@ using System.ComponentModel.Composition;
 using VsChromium.Core;
 
 namespace VsChromium.Server.Operations {
-  public interface IOperationProcessor<T> where T : OperationResultEventArgs, new() {
-    void Execute(OperationInfo<T> operationInfo);
-  }
-
   [Export(typeof(IOperationProcessor<>))]
   public class OperationProcessor<T> : IOperationProcessor<T> where T : OperationResultEventArgs, new() {
     private readonly IOperationIdFactory _operationIdFactory;

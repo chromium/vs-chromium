@@ -28,27 +28,32 @@ namespace VsChromium.Server.Search {
   [Export(typeof(ISearchEngine))]
   public class SearchEngine : ISearchEngine {
     private const int MinimumSearchPatternLength = 2;
-    private readonly ICustomThreadPool _customThreadPool;
     private readonly IFileDatabaseFactory _fileDatabaseFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
-    private readonly object _lock = new Object();
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly ISearchStringParser _searchStringParser;
     private readonly IOperationProcessor<OperationResultEventArgs> _fileLoadingOperationProcessor;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
+    /// <summary>
+    /// We use a <see cref="ITaskQueue"/> to ensure that we process all events
+    /// in sequence (asynchronously). This ensure the final state of <see
+    /// cref="_currentFileDatabase"/> reflects the state we should keep wrt to
+    /// the last event reveived.
+    /// </summary>
+    private readonly ITaskQueue _taskQueue;
     private volatile IFileDatabase _currentFileDatabase;
 
     [ImportingConstructor]
     public SearchEngine(
       IFileSystemProcessor fileSystemProcessor,
       IFileSystemNameFactory fileSystemNameFactory,
-      ICustomThreadPool customThreadPool,
+      ITaskQueueFactory taskQueueFactory,
       IFileDatabaseFactory fileDatabaseFactory,
       IProjectDiscovery projectDiscovery,
       ISearchStringParser searchStringParser,
       IOperationProcessor<OperationResultEventArgs> fileLoadingOperationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
-      _customThreadPool = customThreadPool;
+      _taskQueue = taskQueueFactory.CreateQueue("SearchEngine Task Queue");
       _fileDatabaseFactory = fileDatabaseFactory;
       _projectDiscovery = projectDiscovery;
       _searchStringParser = searchStringParser;
@@ -197,7 +202,7 @@ namespace VsChromium.Server.Search {
     }
 
     private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
-      _customThreadPool.RunAsync(() => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
+      _taskQueue.Enqueue("FileSystemProcessorOnFilesChanged", () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
     }
 
     private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> paths) {
@@ -212,9 +217,23 @@ namespace VsChromium.Server.Search {
     }
 
     private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedEventArgs e) {
-      if (e.NewSnapshot != null) {
-        _customThreadPool.RunAsync(() => ComputeNewState(e.NewSnapshot));
-      }
+      if (e.Error != null)
+        return;
+
+      _taskQueue.Enqueue("FileSystemProcessorOnSnapshotComputed", () => ComputeNewState(e.NewSnapshot));
+
+      // Enqueue a GC at this point makes sense as there might be a lot of
+      // garbage to reclaim from previous file contents stored in native heap.
+      // By performin a full GC and waiting for finalizer, we ensure that (most)
+      // orphan SafeHandles are released in a timely fashion. We enqueue a
+      // separate task to ensure there is no potential state keeping these
+      // variables alive for slightly too long.
+      _taskQueue.Enqueue("FileSystemProcessorOnSnapshotComputed - GarbageCollect", () => {
+        Logger.LogMemoryStats();
+        GC.Collect(GC.MaxGeneration);
+        GC.WaitForPendingFinalizers();
+        Logger.LogMemoryStats();
+      });
     }
 
     private Func<T, bool> SearchPreProcessParams<T>(
@@ -273,10 +292,8 @@ namespace VsChromium.Server.Search {
             sw.ElapsedMilliseconds);
           Logger.LogMemoryStats();
 
-          // Swap states
-          lock (_lock) {
-            _currentFileDatabase = newState;
-          }
+          // Store and activate new state (atomic operation).
+          _currentFileDatabase = newState;
 
           return new OperationResultEventArgs();
         }

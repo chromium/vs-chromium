@@ -8,11 +8,13 @@ using VsChromium.Core;
 
 namespace VsChromium.Server.Threads {
   public class TaskQueue : ITaskQueue {
+    private readonly string _description;
     private readonly ICustomThreadPool _customThreadPool;
     private readonly object _lock = new object();
     private readonly Queue<Entry> _tasks = new Queue<Entry>();
 
-    public TaskQueue(ICustomThreadPool customThreadPool) {
+    public TaskQueue(string description, ICustomThreadPool customThreadPool) {
+      _description = description;
       _customThreadPool = customThreadPool;
     }
 
@@ -28,7 +30,7 @@ namespace VsChromium.Server.Threads {
           }
         }
       };
-      Logger.Log("Enqueing task: {0}", entry.Description);
+      Logger.Log("Queue \"{0}\": Enqueing task \"{1}\"", _description, entry.Description);
 
       bool isFirstTask;
       lock (_lock) {
@@ -53,14 +55,14 @@ namespace VsChromium.Server.Threads {
         }
       }
 
-      Logger.Log("Executed task: {0}", previous.Description);
+      Logger.Log("Queue \"{0}\": Executed task \"{1}\"", _description, previous.Description);
 
       if (entry != null)
         RunTaskAsync(entry);
     }
 
     private void RunTaskAsync(Entry entry) {
-      Logger.Log("Running task: {0}", entry.Description);
+      Logger.Log("Queue \"{0}\": Executing task \"{1}\"", _description, entry.Description);
       _customThreadPool.RunAsync(entry.Task);
     }
 

@@ -13,8 +13,8 @@ namespace VsChromium.Server.Projects {
       _ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnore);
     }
 
-    public bool Include(string relativePath) {
-      var ignore = _ignorePatternsFile.GetPathMatcher().MatchFileName(relativePath, SystemPathComparer.Instance);
+    public bool Include(RelativePathName relativePath) {
+      var ignore = _ignorePatternsFile.GetPathMatcher().MatchFileName(relativePath.RelativeName, SystemPathComparer.Instance);
       return !ignore;
     }
   }

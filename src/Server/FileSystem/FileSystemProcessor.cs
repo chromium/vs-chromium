@@ -55,7 +55,7 @@ namespace VsChromium.Server.FileSystem {
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
       _snapshotOperationProcessor = snapshotOperationProcessor;
       _projectDiscovery = projectDiscovery;
-      _taskQueue = taskQueueFactory.CreateQueue();
+      _taskQueue = taskQueueFactory.CreateQueue("FileSystemProcessor Task Queue");
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
       _fileSystemSnapshot = FileSystemTreeSnapshot.Empty;
     }

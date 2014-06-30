@@ -4,6 +4,6 @@
 
 namespace VsChromium.Server.Threads {
   public interface ITaskQueueFactory {
-    ITaskQueue CreateQueue();
+    ITaskQueue CreateQueue(string description);
   }
 }

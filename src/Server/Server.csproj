@@ -71,6 +71,7 @@
     <Compile Include="Ipc\IIpcResponseQueue.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotExtensions.cs" />
     <Compile Include="IServer.cs" />
+    <Compile Include="Operations\IOperationProcessor.cs" />
     <Compile Include="Operations\OperationEventArgs.cs" />
     <Compile Include="Operations\OperationIdFactory.cs" />
     <Compile Include="Operations\OperationInfo.cs" />

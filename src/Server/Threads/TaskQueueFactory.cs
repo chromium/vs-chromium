@@ -14,8 +14,8 @@ namespace VsChromium.Server.Threads {
       _customThreadPool = customThreadPool;
     }
 
-    public ITaskQueue CreateQueue() {
-      return new TaskQueue(_customThreadPool);
+    public ITaskQueue CreateQueue(string description) {
+      return new TaskQueue(description, _customThreadPool);
     }
   }
 }

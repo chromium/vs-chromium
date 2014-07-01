@@ -35,15 +35,15 @@ namespace VsChromium.Server.Ipc.TypedEvents {
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
-    private void FileSystemProcessorOnSnapshotComputing(object sender, OperationEventArgs e) {
+    private void FileSystemProcessorOnSnapshotComputing(object sender, OperationInfo e) {
       _typedEventSender.SendEventAsync(new FileSystemTreeComputing {
         OperationId = e.OperationId
       });
     }
 
-    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedEventArgs e) {
+    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedResult e) {
       var fileSystemTreeComputed = new FileSystemTreeComputed {
-        OperationId = e.OperationId,
+        OperationId = e.OperationInfo.OperationId,
         Error = ErrorResponseHelper.CreateErrorResponse(e.Error)
       };
 
@@ -55,15 +55,15 @@ namespace VsChromium.Server.Ipc.TypedEvents {
       _typedEventSender.SendEventAsync(fileSystemTreeComputed);
     }
 
-    private void SearchEngineOnFilesLoading(object sender, OperationEventArgs args) {
+    private void SearchEngineOnFilesLoading(object sender, OperationInfo args) {
       _typedEventSender.SendEventAsync(new SearchEngineFilesLoading {
         OperationId = args.OperationId
       });
     }
 
-    private void SearchEngineOnFilesLoaded(object sender, OperationResultEventArgs args) {
+    private void SearchEngineOnFilesLoaded(object sender, FilesLoadedResult args) {
       _typedEventSender.SendEventAsync(new SearchEngineFilesLoaded {
-        OperationId = args.OperationId,
+        OperationId = args.OperationInfo.OperationId,
         Error = ErrorResponseHelper.CreateErrorResponse(args.Error)
       });
     }

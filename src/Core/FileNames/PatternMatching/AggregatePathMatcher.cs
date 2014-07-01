@@ -16,31 +16,33 @@ namespace VsChromium.Core.FileNames.PatternMatching {
       Optimize(pathMatchers.ToArray());
     }
 
-    public bool MatchDirectoryName(string path, IPathComparer comparer) {
-      if (path == null)
-        throw new ArgumentNullException("path");
+    public bool MatchDirectoryName(RelativePathName relativePath, IPathComparer comparer) {
+      if (relativePath.IsEmpty)
+        throw new ArgumentNullException("relativePath");
+      var path = relativePath.RelativeName;
 
       if (_fileExtensions.Contains(Path.GetExtension(path)))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"
       for (var index = 0; index < _pathMatchers.Length; index++) {
-        if (_pathMatchers[index].MatchDirectoryName(path, comparer))
+        if (_pathMatchers[index].MatchDirectoryName(relativePath, comparer))
           return true;
       }
       return false;
     }
 
-    public bool MatchFileName(string path, IPathComparer comparer) {
-      if (path == null)
-        throw new ArgumentNullException("path");
+    public bool MatchFileName(RelativePathName relativePath, IPathComparer comparer) {
+      if (relativePath.IsEmpty)
+        throw new ArgumentNullException("relativePath");
+      var path = relativePath.RelativeName;
 
       if (_fileExtensions.Contains(Path.GetExtension(path)))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"
       for (var index = 0; index < _pathMatchers.Length; index++) {
-        if (_pathMatchers[index].MatchFileName(path, comparer))
+        if (_pathMatchers[index].MatchFileName(relativePath, comparer))
           return true;
       }
       return false;

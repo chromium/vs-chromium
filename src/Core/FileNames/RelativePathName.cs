@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
 
 namespace VsChromium.Core.FileNames {
   /// <summary>
@@ -15,12 +16,13 @@ namespace VsChromium.Core.FileNames {
     private readonly string _filename;
 
     /// <summary>
-    /// Creates a <see cref="RelativePathName"/> instance from a simple file
-    /// name + extension. The file name may not contains any directory
-    /// separators.
+    /// Creates a <see cref="RelativePathName"/> instance from a relative path
+    /// name string. Note this constructor is less efficient than the
+    /// constructor with two arguments, as this constuctor needs to extract the
+    /// file name from the relative path name.
     /// </summary>
-    public RelativePathName(string filename)
-      : this(filename, filename) {
+    public RelativePathName(string relativeName)
+      : this(relativeName, ExtractFileName(relativeName)) {
     }
 
     /// <summary>
@@ -50,6 +52,14 @@ namespace VsChromium.Core.FileNames {
 
       _relativeName = relativeName;
       _filename = filename;
+    }
+
+    private static string ExtractFileName(string relativeName) {
+      if (relativeName == null)
+        throw new ArgumentNullException("relativeName");
+      if (PathHelpers.IsFileName(relativeName))
+        return relativeName;
+      return Path.GetFileName(relativeName);
     }
 
     /// <summary>

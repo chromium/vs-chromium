@@ -3,8 +3,8 @@ using System.ComponentModel.Composition;
 using VsChromium.Core;
 
 namespace VsChromium.Server.Operations {
-  [Export(typeof(IOperationProcessor<>))]
-  public class OperationProcessor<T> : IOperationProcessor<T> where T : OperationResultEventArgs, new() {
+  [Export(typeof(IOperationProcessor))]
+  public class OperationProcessor : IOperationProcessor {
     private readonly IOperationIdFactory _operationIdFactory;
 
     [ImportingConstructor]
@@ -12,23 +12,17 @@ namespace VsChromium.Server.Operations {
       _operationIdFactory = operationIdFactory;
     }
 
-    public void Execute(OperationInfo<T> operationInfo) {
-      var operationId = _operationIdFactory.GetNextId();
-      var operationEventArgs = new OperationEventArgs {
-        OperationId = operationId
+    public void Execute(OperationHandlers operationHandlers) {
+      var info = new OperationInfo {
+        OperationId = _operationIdFactory.GetNextId()
       };
-      operationInfo.OnBeforeExecute(operationEventArgs);
+      operationHandlers.OnBeforeExecute(info);
       try {
-        var result = operationInfo.Execute(operationEventArgs);
-        result.OperationId = operationId;
-        operationInfo.OnAfterExecute(result);
+        operationHandlers.Execute(info);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error executing operation {0}", operationId);
-        operationInfo.OnAfterExecute(new T {
-          OperationId = operationId, 
-          Error = e
-        });
+        Logger.LogException(e, "Error executing operation {0}", _operationIdFactory.GetNextId());
+        operationHandlers.OnError(info, e);
       }
     }
   }

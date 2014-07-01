@@ -4,7 +4,7 @@
 
 namespace VsChromium.Core.FileNames.PatternMatching {
   public interface IPathMatcher {
-    bool MatchDirectoryName(string path, IPathComparer comparer);
-    bool MatchFileName(string path, IPathComparer comparer);
+    bool MatchDirectoryName(RelativePathName path, IPathComparer comparer);
+    bool MatchFileName(RelativePathName path, IPathComparer comparer);
   }
 }

@@ -16,9 +16,9 @@ namespace VsChromium.Server.Projects {
     }
 
     public bool Include(RelativePathName fileName) {
-      if (_ignorePatternsFile.GetPathMatcher().MatchFileName(fileName.RelativeName, SystemPathComparer.Instance))
+      if (_ignorePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance))
         return false;
-      return _includePatternsFile.GetPathMatcher().MatchFileName(fileName.RelativeName, SystemPathComparer.Instance);
+      return _includePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance);
     }
   }
 }

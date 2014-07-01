@@ -48,8 +48,8 @@ namespace VsChromium.Core.Chromium {
 
     private static bool MatchFileOrDirectory(IPathMatcher item, IEnumerable<string> directories, IEnumerable<string> files) {
       return
-        directories.Any(d => item.MatchDirectoryName(d, SystemPathComparer.Instance)) ||
-        files.Any(f => item.MatchFileName(f, SystemPathComparer.Instance));
+        directories.Any(d => item.MatchDirectoryName(new RelativePathName(d), SystemPathComparer.Instance)) ||
+        files.Any(f => item.MatchFileName(new RelativePathName(f), SystemPathComparer.Instance));
     }
   }
 }

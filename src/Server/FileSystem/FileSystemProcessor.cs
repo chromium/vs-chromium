@@ -37,7 +37,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly object _lock = new object();
     private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
-    private readonly IOperationProcessor<SnapshotComputedEventArgs> _snapshotOperationProcessor;
+    private readonly IOperationProcessor _operationProcessor;
     private readonly ITaskQueue _taskQueue;
     private FileSystemTreeSnapshot _fileSystemSnapshot;
     private int _version;
@@ -49,11 +49,11 @@ namespace VsChromium.Server.FileSystem {
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
       ITaskQueueFactory taskQueueFactory,
       IFileSystemSnapshotBuilder fileSystemSnapshotBuilder,
-      IOperationProcessor<SnapshotComputedEventArgs> snapshotOperationProcessor) {
+      IOperationProcessor operationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
-      _snapshotOperationProcessor = snapshotOperationProcessor;
+      _operationProcessor = operationProcessor;
       _projectDiscovery = projectDiscovery;
       _taskQueue = taskQueueFactory.CreateQueue("FileSystemProcessor Task Queue");
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
@@ -74,17 +74,17 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(string.Format("RemoveFile(\"{0}\")", filename), () => RemoveFileTask(filename));
     }
 
-    public event EventHandler<OperationEventArgs> SnapshotComputing;
-    public event EventHandler<SnapshotComputedEventArgs> SnapshotComputed;
+    public event EventHandler<OperationInfo> SnapshotComputing;
+    public event EventHandler<SnapshotComputedResult> SnapshotComputed;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;
 
-    protected virtual void OnSnapshotComputing(OperationEventArgs e) {
-      EventHandler<OperationEventArgs> handler = SnapshotComputing;
+    protected virtual void OnSnapshotComputing(OperationInfo e) {
+      EventHandler<OperationInfo> handler = SnapshotComputing;
       if (handler != null) handler(this, e);
     }
 
-    protected virtual void OnSnapshotComputed(SnapshotComputedEventArgs e) {
-      EventHandler<SnapshotComputedEventArgs> handler = SnapshotComputed;
+    protected virtual void OnSnapshotComputed(SnapshotComputedResult e) {
+      EventHandler<SnapshotComputedResult> handler = SnapshotComputed;
       if (handler != null) handler(this, e);
     }
 
@@ -184,10 +184,10 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void RecomputeGraph() {
-      _snapshotOperationProcessor.Execute(new OperationInfo<SnapshotComputedEventArgs> {
-        OnBeforeExecute = args => OnSnapshotComputing(args),
-        OnAfterExecute = args => OnSnapshotComputed(args),
-        Execute = args => {
+      _operationProcessor.Execute(new OperationHandlers {
+        OnBeforeExecute = info => OnSnapshotComputing(info),
+        OnError = (info, error) => OnSnapshotComputed(new SnapshotComputedResult { OperationInfo = info, Error = error }),
+        Execute = info => {
           Logger.Log("Collecting list of files from file system.");
           Logger.LogMemoryStats();
           var sw = Stopwatch.StartNew();
@@ -225,10 +225,11 @@ namespace VsChromium.Server.FileSystem {
             sw.ElapsedMilliseconds);
           Logger.LogMemoryStats();
 
-          return new SnapshotComputedEventArgs {
+          OnSnapshotComputed(new SnapshotComputedResult {
+            OperationInfo = info,
             PreviousSnapshot = previousSnapshot,
             NewSnapshot = newSnapshot
-          };
+          });
         }
       });
     }

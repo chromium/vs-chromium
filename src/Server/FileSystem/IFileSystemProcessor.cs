@@ -12,8 +12,8 @@ namespace VsChromium.Server.FileSystem {
     void RemoveFile(string filename);
     FileSystemTreeSnapshot GetCurrentSnapshot();
 
-    event EventHandler<OperationEventArgs> SnapshotComputing;
-    event EventHandler<SnapshotComputedEventArgs> SnapshotComputed;
+    event EventHandler<OperationInfo> SnapshotComputing;
+    event EventHandler<SnapshotComputedResult> SnapshotComputed;
     event EventHandler<FilesChangedEventArgs> FilesChanged;
   }
 }

@@ -32,7 +32,7 @@ namespace VsChromium.Server.Search {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly ISearchStringParser _searchStringParser;
-    private readonly IOperationProcessor<OperationResultEventArgs> _fileLoadingOperationProcessor;
+    private readonly IOperationProcessor _operationProcessor;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
     /// <summary>
     /// We use a <see cref="ITaskQueue"/> to ensure that we process all events
@@ -51,13 +51,13 @@ namespace VsChromium.Server.Search {
       IFileDatabaseFactory fileDatabaseFactory,
       IProjectDiscovery projectDiscovery,
       ISearchStringParser searchStringParser,
-      IOperationProcessor<OperationResultEventArgs> fileLoadingOperationProcessor) {
+      IOperationProcessor operationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _taskQueue = taskQueueFactory.CreateQueue("SearchEngine Task Queue");
       _fileDatabaseFactory = fileDatabaseFactory;
       _projectDiscovery = projectDiscovery;
       _searchStringParser = searchStringParser;
-      _fileLoadingOperationProcessor = fileLoadingOperationProcessor;
+      _operationProcessor = operationProcessor;
 
       // Create a "Null" state
       _currentFileDatabase = _fileDatabaseFactory.CreateEmpty();
@@ -187,17 +187,17 @@ namespace VsChromium.Server.Search {
       return _currentFileDatabase.GetFileExtracts(filename.Item2, spans);
     }
 
-    public event EventHandler<OperationEventArgs> FilesLoading;
+    public event EventHandler<OperationInfo> FilesLoading;
 
-    public event EventHandler<OperationResultEventArgs> FilesLoaded;
+    public event EventHandler<FilesLoadedResult> FilesLoaded;
 
-    protected virtual void OnFilesLoaded(OperationResultEventArgs e) {
-      EventHandler<OperationResultEventArgs> handler = FilesLoaded;
+    protected virtual void OnFilesLoaded(FilesLoadedResult e) {
+      EventHandler<FilesLoadedResult> handler = FilesLoaded;
       if (handler != null) handler(this, e);
     }
 
-    protected virtual void OnFilesLoading(OperationEventArgs e) {
-      EventHandler<OperationEventArgs> handler = FilesLoading;
+    protected virtual void OnFilesLoading(OperationInfo e) {
+      EventHandler<OperationInfo> handler = FilesLoading;
       if (handler != null) handler(this, e);
     }
 
@@ -206,17 +206,17 @@ namespace VsChromium.Server.Search {
     }
 
     private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> paths) {
-      _fileLoadingOperationProcessor.Execute(new OperationInfo<OperationResultEventArgs> {
-        OnBeforeExecute = args => OnFilesLoading(args),
-        OnAfterExecute = args => OnFilesLoaded(args),
-        Execute = _ => {
+      _operationProcessor.Execute(new OperationHandlers {
+        OnBeforeExecute = info => OnFilesLoading(info),
+        OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
+        Execute = info => {
           paths.ForAll(x => _currentFileDatabase.UpdateFileContents(x));
-          return new OperationResultEventArgs();
+          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });
         }
       });
     }
 
-    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedEventArgs e) {
+    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedResult e) {
       if (e.Error != null)
         return;
 
@@ -277,10 +277,10 @@ namespace VsChromium.Server.Search {
     }
 
     private void ComputeNewState(FileSystemTreeSnapshot newSnapshot) {
-      _fileLoadingOperationProcessor.Execute(new OperationInfo<OperationResultEventArgs> {
-        OnBeforeExecute = args => OnFilesLoading(args),
-        OnAfterExecute = args => OnFilesLoaded(args),
-        Execute = _ => {
+      _operationProcessor.Execute(new OperationHandlers {
+        OnBeforeExecute = info => OnFilesLoading(info),
+        OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
+        Execute = info => {
           Logger.Log("Computing new state of file database from file system tree.");
           var sw = Stopwatch.StartNew();
 
@@ -294,18 +294,17 @@ namespace VsChromium.Server.Search {
 
           // Store and activate new state (atomic operation).
           _currentFileDatabase = newState;
-
-          return new OperationResultEventArgs();
+          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });
         }
       });
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
-      return matcher.MatchFileName(fileName.RelativePathName.FileName, comparer);
+      return matcher.MatchFileName(new RelativePathName(fileName.RelativePathName.FileName), comparer);
     }
 
     private bool MatchFileRelativePath(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
-      return matcher.MatchFileName(fileName.RelativePathName.RelativeName, comparer);
+      return matcher.MatchFileName(fileName.RelativePathName, comparer);
     }
 
     private bool MatchDirectoryName(IPathMatcher matcher, DirectoryName directoryName, IPathComparer comparer) {
@@ -313,7 +312,7 @@ namespace VsChromium.Server.Search {
       if (directoryName.IsAbsoluteName)
         return false;
 
-      return matcher.MatchDirectoryName(directoryName.RelativePathName.FileName, comparer);
+      return matcher.MatchDirectoryName(new RelativePathName(directoryName.RelativePathName.FileName), comparer);
     }
 
     private bool MatchDirectoryRelativePath(IPathMatcher matcher, DirectoryName directoryName, IPathComparer comparer) {
@@ -321,7 +320,7 @@ namespace VsChromium.Server.Search {
       if (directoryName.IsAbsoluteName)
         return false;
 
-      return matcher.MatchDirectoryName(directoryName.RelativePathName.RelativeName, comparer);
+      return matcher.MatchDirectoryName(directoryName.RelativePathName, comparer);
     }
 
     private static FileSearchResult MatchFileContents(FileData fileData, SearchContentsData searchContentsData, TaskResultCounter taskResultCounter) {

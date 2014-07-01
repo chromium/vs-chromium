@@ -53,7 +53,7 @@
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\RelativePathNameExtensions.cs" />
-    <Compile Include="FileSystem\SnapshotComputedEventArgs.cs" />
+    <Compile Include="FileSystem\SnapshotComputedResult.cs" />
     <Compile Include="Operations\IOperationIdFactory.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventForwarder.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventSender.cs" />
@@ -72,11 +72,11 @@
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotExtensions.cs" />
     <Compile Include="IServer.cs" />
     <Compile Include="Operations\IOperationProcessor.cs" />
-    <Compile Include="Operations\OperationEventArgs.cs" />
-    <Compile Include="Operations\OperationIdFactory.cs" />
     <Compile Include="Operations\OperationInfo.cs" />
+    <Compile Include="Operations\OperationIdFactory.cs" />
+    <Compile Include="Operations\OperationHandlers.cs" />
     <Compile Include="Operations\OperationProcessor.cs" />
-    <Compile Include="Operations\OperationResultEventArgs.cs" />
+    <Compile Include="Search\FilesLoadedResult.cs" />
     <Compile Include="ProgressTracking\EnvironmentTickCountProvider.cs" />
     <Compile Include="ProgressTracking\IndeterminateProgressTracker.cs" />
     <Compile Include="ProgressTracking\IProgressTrackerFactory.cs" />

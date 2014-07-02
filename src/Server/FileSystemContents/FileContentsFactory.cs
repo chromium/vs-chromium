@@ -13,11 +13,11 @@ using VsChromium.Server.NativeInterop;
 namespace VsChromium.Server.FileSystemContents {
   [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
-    public FileContents GetFileContents(FullPathName path) {
+    public FileContents GetFileContents(FullPath path) {
       return ReadFile(path);
     }
 
-    private FileContents ReadFile(FullPathName fullName) {
+    private FileContents ReadFile(FullPath fullName) {
       try {
         var fileInfo = new SlimFileInfo(fullName);
         const int trailingByteCount = 2;

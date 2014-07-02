@@ -9,7 +9,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     // We can use the fast case sentive comparer as this factory is merely a cache
     // for previously re-used names.
     private static readonly IComparer<string> NameComparer = StringComparer.Ordinal;
-    private static readonly Func<ProjectRootSnapshot, FullPathName, int> ProjectRootComparer = (x, item) => NameComparer.Compare(x.Directory.DirectoryName.FullPathName.FullName, item.FullName);
+    private static readonly Func<ProjectRootSnapshot, FullPath, int> ProjectRootComparer = (x, item) => NameComparer.Compare(x.Directory.DirectoryName.FullPath.FullName, item.FullName);
     private static readonly Func<DirectorySnapshot, string, int> DirectoryComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePath.FileName, item);
     private static readonly Func<DirectorySnapshot, DirectoryName, int> DirectoryNameComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePath.FileName, item.RelativePath.FileName);
     private static readonly Func<FileName, string, int> FileComparer = (x, item) => NameComparer.Compare(x.RelativePath.FileName, item);
@@ -22,7 +22,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       _previous = previous;
     }
 
-    public DirectoryName CreateAbsoluteDirectoryName(FullPathName rootPath) {
+    public DirectoryName CreateAbsoluteDirectoryName(FullPath rootPath) {
       var rootdirectory = FindRootDirectory(rootPath);
       if (rootdirectory != null)
         return rootdirectory.DirectoryName;
@@ -54,7 +54,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       return _previous.CreateFileName(parent, name);
     }
 
-    public DirectorySnapshot FindRootDirectory(FullPathName rootPath) {
+    public DirectorySnapshot FindRootDirectory(FullPath rootPath) {
       var index = SortedArray.BinarySearch(_snapshot.ProjectRoots, rootPath, ProjectRootComparer);
       if (index >= 0)
         return _snapshot.ProjectRoots[index].Directory;
@@ -64,7 +64,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
     private DirectorySnapshot FindDirectory(DirectoryName name) {
       if (name.IsAbsoluteName)
-        return FindRootDirectory(name.FullPathName);
+        return FindRootDirectory(name.FullPath);
 
       var parent = FindDirectory(name.Parent);
       if (parent == null)

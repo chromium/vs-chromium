@@ -9,7 +9,7 @@ namespace VsChromium.Server.FileSystemNames {
     /// <summary>
     /// Returns an absolute directory name instance from an absolute path.
     /// </summary>
-    DirectoryName CreateAbsoluteDirectoryName(FullPathName path);
+    DirectoryName CreateAbsoluteDirectoryName(FullPath path);
 
     /// <summary>
     /// Returns a <see cref="RelativeDirectoryName"/> instance from a parent

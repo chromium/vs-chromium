@@ -11,12 +11,12 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Core.Configuration {
   public class FileWithSections : IFileWithSections {
-    private readonly FullPathName _filename;
+    private readonly FullPath _filename;
     private readonly IVolatileToken _fileUpdateVolatileToken;
     private readonly Lazy<Dictionary<string, List<string>>> _sections;
     private Func<IEnumerable<string>, IEnumerable<string>> _postProcessing;
 
-    public FileWithSections(FullPathName filename) {
+    public FileWithSections(FullPath filename) {
       _filename = filename;
       _fileUpdateVolatileToken = new FileUpdateVolatileToken(filename);
       _sections = new Lazy<Dictionary<string, List<string>>>(ReadFile);

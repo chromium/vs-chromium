@@ -30,7 +30,7 @@ namespace VsChromium.Server.FileSystem {
         .GroupBy(x => GetProjectRoot(fileNameMapper(x)))
         .OrderBy(g => g.Key)
         .Select(group => new DirectoryEntry {
-          Name = group.Key.FullPathName.FullName,
+          Name = group.Key.FullPath.FullName,
           Entries = CreateGroup(group, fileNameMapper, dataMapper).ToList()
         });
 
@@ -87,7 +87,7 @@ namespace VsChromium.Server.FileSystem {
     /// Return the |FileName| instance corresponding to the full path |path|. Returns |null| if |path| 
     /// is invalid or not part of a project.
     /// </summary>
-    public static Tuple<IProject, FileName> GetProjectFileName(IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, FullPathName path) {
+    public static Tuple<IProject, FileName> GetProjectFileName(IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, FullPath path) {
       var project = projectDiscovery.GetProject(path);
       if (project == null)
         return null;

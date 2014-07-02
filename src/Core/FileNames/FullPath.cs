@@ -10,10 +10,10 @@ namespace VsChromium.Core.FileNames {
   /// <summary>
   /// Wraps a string representing the full path of a file or directory.
   /// </summary>
-  public struct FullPathName : IEquatable<FullPathName>, IComparable<FullPathName> {
+  public struct FullPath : IEquatable<FullPath>, IComparable<FullPath> {
     private readonly string _path;
 
-    public FullPathName(string path) {
+    public FullPath(string path) {
       if (!PathHelpers.IsAbsolutePath(path))
         ThrowInvalidPath(path);
       _path = path;
@@ -26,10 +26,10 @@ namespace VsChromium.Core.FileNames {
     /// <summary>
     /// Returns the parent path or null if this is a root path.
     /// </summary>
-    public FullPathName Parent {
+    public FullPath Parent {
       get {
         var parent = Directory.GetParent(_path);
-        return parent == null ? default(FullPathName) : new FullPathName(parent.FullName);
+        return parent == null ? default(FullPath) : new FullPath(parent.FullName);
       }
     }
 
@@ -47,8 +47,8 @@ namespace VsChromium.Core.FileNames {
     /// Returns a full path instance as the combination of this full path with
     /// <paramref name="name"/> appened at the end.
     /// </summary>
-    public FullPathName Combine(string name) {
-      return new FullPathName(PathHelpers.CombinePaths(_path, name));
+    public FullPath Combine(string name) {
+      return new FullPath(PathHelpers.CombinePaths(_path, name));
     }
 
     /// <summary>
@@ -62,11 +62,11 @@ namespace VsChromium.Core.FileNames {
     /// </summary>
     public bool DirectoryExists { get { return Directory.Exists(_path); } }
 
-    public static bool operator ==(FullPathName x, FullPathName y) {
+    public static bool operator ==(FullPath x, FullPath y) {
       return x.Equals(y);
     }
 
-    public static bool operator !=(FullPathName x, FullPathName y) {
+    public static bool operator !=(FullPath x, FullPath y) {
       return !(x == y);
     }
 
@@ -74,7 +74,7 @@ namespace VsChromium.Core.FileNames {
     /// Returns true if <paramref name="other"/> is equal to this full path. Use
     /// FileSystem case insensitive comparer.
     /// </summary>
-    public bool Equals(FullPathName other) {
+    public bool Equals(FullPath other) {
       return SystemPathComparer.Instance.Comparer.Equals(_path, other._path);
     }
 
@@ -82,7 +82,7 @@ namespace VsChromium.Core.FileNames {
     /// Compares this full path with <paramref name="other"/>. Use FileSystem
     /// case insensitive comparer.
     /// </summary>
-    public int CompareTo(FullPathName other) {
+    public int CompareTo(FullPath other) {
       return SystemPathComparer.Instance.Comparer.Compare(_path, other._path);
     }
 
@@ -95,8 +95,8 @@ namespace VsChromium.Core.FileNames {
     /// FileSystem case insensitive comparer.
     /// </summary>
     public override bool Equals(object obj) {
-      if (obj is FullPathName)
-        return Equals((FullPathName)obj);
+      if (obj is FullPath)
+        return Equals((FullPath)obj);
       return false;
     }
 
@@ -111,7 +111,7 @@ namespace VsChromium.Core.FileNames {
     /// <summary>
     /// Returns true if this full path starts with <paramref name="x"/>
     /// </summary>
-    public bool StartsWith(FullPathName x) {
+    public bool StartsWith(FullPath x) {
       return _path.StartsWith(x._path, SystemPathComparer.Instance.Comparison);
     }
 
@@ -130,8 +130,8 @@ namespace VsChromium.Core.FileNames {
     /// <summary>
     /// Returns the enumeration of the parent full path of this full path.
     /// </summary>
-    public IEnumerable<FullPathName> EnumerateParents() {
-      for (var parent = Parent; parent != default(FullPathName); parent = parent.Parent) {
+    public IEnumerable<FullPath> EnumerateParents() {
+      for (var parent = Parent; parent != default(FullPath); parent = parent.Parent) {
         yield return parent;
       }
     }

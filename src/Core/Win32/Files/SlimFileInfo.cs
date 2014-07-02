@@ -13,11 +13,11 @@ namespace VsChromium.Core.Win32.Files {
   /// is to be more efficient because of fewer checks performed.
   /// </summary>
   public class SlimFileInfo {
-    private readonly FullPathName _path;
+    private readonly FullPath _path;
     private WIN32_FILE_ATTRIBUTE_DATA _data;
     private int _win32Error = -1;
 
-    public SlimFileInfo(FullPathName path) {
+    public SlimFileInfo(FullPath path) {
       _path = path;
     }
 
@@ -42,7 +42,7 @@ namespace VsChromium.Core.Win32.Files {
       }
     }
 
-    public FullPathName FullPathName { get { return _path; } }
+    public FullPath FullPath { get { return _path; } }
 
     private long HighLowToLong(int high, int low) {
       return HighLowToLong((uint)high, (uint)low);

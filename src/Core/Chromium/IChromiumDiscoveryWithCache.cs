@@ -7,8 +7,8 @@ using VsChromium.Core.FileNames;
 
 namespace VsChromium.Core.Chromium {
   public interface IChromiumDiscoveryWithCache<T> {
-    T GetEnlistmentRootFromRootpath(FullPathName root, Func<FullPathName, T> factory);
-    T GetEnlistmentRootFromFilename(FullPathName filename, Func<FullPathName, T> factory);
+    T GetEnlistmentRootFromRootpath(FullPath root, Func<FullPath, T> factory);
+    T GetEnlistmentRootFromFilename(FullPath filename, Func<FullPath, T> factory);
     void ValidateCache();
   }
 }

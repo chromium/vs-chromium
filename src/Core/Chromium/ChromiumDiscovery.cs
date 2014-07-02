@@ -21,23 +21,23 @@ namespace VsChromium.Core.Chromium {
       // Nothing to do
     }
 
-    public FullPathName GetEnlistmentRoot(FullPathName filename) {
+    public FullPath GetEnlistmentRoot(FullPath filename) {
       var directory = filename.Parent;
       if (!directory.DirectoryExists)
-        return default(FullPathName);
+        return default(FullPath);
 
       return EnumerateParents(filename)
         .FirstOrDefault(x => IsChromiumSourceDirectory(x, _chromiumEnlistmentPatterns));
     }
 
-    private IEnumerable<FullPathName> EnumerateParents(FullPathName path) {
+    private IEnumerable<FullPath> EnumerateParents(FullPath path) {
       var directory = path.Parent;
-      for (var parent = directory; parent != default(FullPathName); parent = parent.Parent) {
+      for (var parent = directory; parent != default(FullPath); parent = parent.Parent) {
         yield return parent;
       }
     }
 
-    public static bool IsChromiumSourceDirectory(FullPathName path, IPathPatternsFile chromiumEnlistmentPatterns) {
+    public static bool IsChromiumSourceDirectory(FullPath path, IPathPatternsFile chromiumEnlistmentPatterns) {
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
       IList<string> directories;
       IList<string> files;

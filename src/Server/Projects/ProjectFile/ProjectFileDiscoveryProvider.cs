@@ -18,7 +18,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
     public int Priority { get { return 100; } }
 
-    public IProject GetProject(FullPathName filename) {
+    public IProject GetProject(FullPath filename) {
       var name = filename;
       lock (_lock) {
         // Cache hit?
@@ -26,7 +26,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
           .Where(x => name.StartsWith(x.Key))
           .OrderByDescending(x => x.Key.FullName.Length)
           .FirstOrDefault();
-        if (root.Key != default(FullPathName)) {
+        if (root.Key != default(FullPath)) {
           return root.Value;
         }
 
@@ -40,7 +40,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
       }
     }
 
-    public IProject GetProjectFromRootPath(FullPathName projectRootPath) {
+    public IProject GetProjectFromRootPath(FullPath projectRootPath) {
       var name = projectRootPath;
       lock (_lock) {
         return _knownProjectRootDirectories.Get(name);
@@ -55,11 +55,11 @@ namespace VsChromium.Server.Projects.ProjectFile {
       }
     }
 
-    private IProject GetProjectWorker(FullPathName filepath) {
+    private IProject GetProjectWorker(FullPath filepath) {
       var directory = filepath.Parent;
       if (directory.DirectoryExists) {
         var projectPath = EnumerateParents(filepath).FirstOrDefault(x => ContainsProjectFile(x));
-        if (projectPath != default(FullPathName)) {
+        if (projectPath != default(FullPath)) {
           var project = CreateProject(projectPath);
           _knownProjectRootDirectories.Add(projectPath, project);
           return project;
@@ -71,20 +71,20 @@ namespace VsChromium.Server.Projects.ProjectFile {
       return null;
     }
 
-    private Project CreateProject(FullPathName rootPath) {
+    private Project CreateProject(FullPath rootPath) {
       var fileWithSections = new FileWithSections(rootPath.Combine(ConfigurationFilenames.ProjectFileNameDetection));
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
       return new Project(configurationProvider, rootPath);
     }
 
-    private static IEnumerable<FullPathName> EnumerateParents(FullPathName path) {
+    private static IEnumerable<FullPath> EnumerateParents(FullPath path) {
       var directory = path.Parent;
-      for (var parent = directory; parent != default(FullPathName); parent = parent.Parent) {
+      for (var parent = directory; parent != default(FullPath); parent = parent.Parent) {
         yield return parent;
       }
     }
 
-    public static bool ContainsProjectFile(FullPathName path) {
+    public static bool ContainsProjectFile(FullPath path) {
       return path.Combine(ConfigurationFilenames.ProjectFileNameDetection).FileExists;
     }
   }

@@ -5,9 +5,9 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Core.Configuration {
   public class ConfigurationFileSectionProviderVolatileToken : IVolatileToken {
-    private readonly ConcurrentDictionary<FullPathName, IVolatileToken> _files = new ConcurrentDictionary<FullPathName, IVolatileToken>();
+    private readonly ConcurrentDictionary<FullPath, IVolatileToken> _files = new ConcurrentDictionary<FullPath, IVolatileToken>();
 
-    public void AddFile(FullPathName name) {
+    public void AddFile(FullPath name) {
       _files.AddOrUpdate(name, x => new FileUpdateVolatileToken(x), (k, v) => v);
     }
 

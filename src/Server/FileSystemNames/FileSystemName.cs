@@ -24,7 +24,7 @@ namespace VsChromium.Server.FileSystemNames {
   ///   Parent => RelativeDirectoryName
   ///     RelativePath = "baz"
   ///     Parent => AbsoluteDirectory
-  ///       FullPathName = "d:\foo\bar"
+  ///       FullPath = "d:\foo\bar"
   ///       Parent = null
   /// </summary>
   public abstract class FileSystemName : IComparable<FileSystemName>, IEquatable<FileSystemName> {
@@ -42,11 +42,11 @@ namespace VsChromium.Server.FileSystemNames {
     public abstract RelativePath RelativePath { get; }
 
     /// <summary>
-    /// Return the <see cref="FullPathName"/> of this instance.
+    /// Return the <see cref="FullPath"/> of this instance.
     /// Note: Perf: This operation performs a string concatenation, unless <see
     /// cref="IsAbsoluteName"/> is true.
     /// </summary>
-    public abstract FullPathName FullPathName { get; }
+    public abstract FullPath FullPath { get; }
 
     /// <summary>
     /// Returns true if this instance is an absolute directory name, false
@@ -56,20 +56,20 @@ namespace VsChromium.Server.FileSystemNames {
     public bool IsAbsoluteName { get { return Parent == null; } }
 
     /// <summary>
-    /// Return the <see cref="FullPathName"/> of the parent name.
+    /// Return the <see cref="FullPath"/> of the parent name.
     /// </summary>
-    protected FullPathName GetParentAbsolutePathName() {
+    protected FullPath GetParentAbsolutePathName() {
       if (Parent == null)
         throw new InvalidOperationException("Name does not have a parent with an absolute path.");
 
       if (Parent.IsAbsoluteName)
-        return Parent.FullPathName;
+        return Parent.FullPath;
 
       return Parent.GetParentAbsolutePathName();
     }
 
     public override string ToString() {
-      return FullPathName.FullName;
+      return FullPath.FullName;
     }
 
     #region Comparison/Equality plumbing

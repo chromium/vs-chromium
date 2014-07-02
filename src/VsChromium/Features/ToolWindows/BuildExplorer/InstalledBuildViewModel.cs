@@ -55,7 +55,7 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
         if (!ntproc.IsValid)
           continue;
 
-        FullPathName processPath = new FullPathName(ntproc.Win32ProcessImagePath);
+        FullPath processPath = new FullPath(ntproc.Win32ProcessImagePath);
         if (processPath.StartsWith(_installationData.InstallationPath)) {
           chromes.Add(new ChromiumProcess(ntproc, _installationData));
           chromePids.Add(p.Id);

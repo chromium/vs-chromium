@@ -9,7 +9,7 @@ namespace VsChromium.Server.FileSystemNames {
   [Export(typeof(IFileSystemNameFactory))]
   public class FileSystemNameFactory : IFileSystemNameFactory {
 
-    public DirectoryName CreateAbsoluteDirectoryName(FullPathName path) {
+    public DirectoryName CreateAbsoluteDirectoryName(FullPath path) {
       return new AbsoluteDirectoryName(path);
     }
 

@@ -4,6 +4,6 @@ using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemSnapshot {
   public interface IFileSystemSnapshotBuilder {
-    FileSystemTreeSnapshot Compute(IFileSystemNameFactory fileNameFactory, IEnumerable<FullPathName> filenames, int version);
+    FileSystemTreeSnapshot Compute(IFileSystemNameFactory fileNameFactory, IEnumerable<FullPath> filenames, int version);
   }
 }

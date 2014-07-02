@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace VsChromium.Core.FileNames {
-  public class FullPathNameSet<T> : IEnumerable<KeyValuePair<FullPathName, T>> {
-    private readonly Dictionary<FullPathName, T> _entries = new Dictionary<FullPathName, T>();
+  public class FullPathNameSet<T> : IEnumerable<KeyValuePair<FullPath, T>> {
+    private readonly Dictionary<FullPath, T> _entries = new Dictionary<FullPath, T>();
 
-    public IEnumerator<KeyValuePair<FullPathName, T>> GetEnumerator() {
+    public IEnumerator<KeyValuePair<FullPath, T>> GetEnumerator() {
       return _entries.GetEnumerator();
     }
 
@@ -19,19 +19,19 @@ namespace VsChromium.Core.FileNames {
       return GetEnumerator();
     }
 
-    public void Add(FullPathName name, T value) {
+    public void Add(FullPath name, T value) {
       _entries[name] = value;
     }
 
-    public bool Contains(FullPathName name) {
+    public bool Contains(FullPath name) {
       return _entries.ContainsKey(name);
     }
 
-    //public int RemoveWhere(Predicate<FullPathName> match) {
+    //public int RemoveWhere(Predicate<FullPath> match) {
     //  return RemoveWhere(x => match(x.Key));
     //}
 
-    public int RemoveWhere(Predicate<KeyValuePair<FullPathName, T>> match) {
+    public int RemoveWhere(Predicate<KeyValuePair<FullPath, T>> match) {
       var keys = _entries.Where(x => match(x)).ToList();
       foreach (var key in keys) {
         _entries.Remove(key.Key);
@@ -43,14 +43,14 @@ namespace VsChromium.Core.FileNames {
       _entries.Clear();
     }
 
-    public T Get(FullPathName name) {
+    public T Get(FullPath name) {
       T result;
       if (_entries.TryGetValue(name, out result))
         return result;
       return default(T);
     }
 
-    public bool TryGet(FullPathName name, out T value) {
+    public bool TryGet(FullPath name, out T value) {
       return _entries.TryGetValue(name, out value);
     }
   }

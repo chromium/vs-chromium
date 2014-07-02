@@ -57,7 +57,7 @@ namespace VsChromium.Server.FileSystem {
       return new FileSystemValidationResult();
     }
 
-    private bool PathIsExcluded(FullPathName path) {
+    private bool PathIsExcluded(FullPath path) {
       var project = _projectDiscovery.GetProject(path);
       if (project == null)
         return true;
@@ -95,7 +95,7 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private Tuple<IProject, FileName> GetProjectFileName(FullPathName path) {
+    private Tuple<IProject, FileName> GetProjectFileName(FullPath path) {
       return FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
     }
   }

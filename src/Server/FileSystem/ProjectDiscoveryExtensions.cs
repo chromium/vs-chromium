@@ -12,10 +12,10 @@ namespace VsChromium.Server.FileSystem {
     /// Returns the absolute path of the project containing |filename|.
     /// Returns |null| if |filename| is not located within a local project directory.
     /// </summary>
-    public static FullPathName GetProjectPath(this IProjectDiscovery projectDiscovery, FullPathName filename) {
+    public static FullPath GetProjectPath(this IProjectDiscovery projectDiscovery, FullPath filename) {
       var project = projectDiscovery.GetProject(filename);
       if (project == null)
-        return default(FullPathName);
+        return default(FullPath);
       return project.RootPath;
     }
 

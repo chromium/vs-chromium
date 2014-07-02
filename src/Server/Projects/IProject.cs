@@ -6,7 +6,7 @@ using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.Projects {
   public interface IProject {
-    FullPathName RootPath { get; }
+    FullPath RootPath { get; }
 
     IDirectoryFilter DirectoryFilter { get; }
     IFileFilter FileFilter { get; }

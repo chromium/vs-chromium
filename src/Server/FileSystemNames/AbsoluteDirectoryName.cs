@@ -6,14 +6,14 @@ using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystemNames {
   public class AbsoluteDirectoryName : DirectoryName {
-    private readonly FullPathName _path;
+    private readonly FullPath _path;
 
-    public AbsoluteDirectoryName(FullPathName path) {
+    public AbsoluteDirectoryName(FullPath path) {
       _path = path;
     }
 
     public override DirectoryName Parent { get { return null; } }
     public override RelativePath RelativePath { get { return default(RelativePath); } }
-    public override FullPathName FullPathName { get { return _path; } }
+    public override FullPath FullPath { get { return _path; } }
   }
 }

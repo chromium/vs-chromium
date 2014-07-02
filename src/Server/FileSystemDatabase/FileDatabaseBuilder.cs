@@ -146,7 +146,7 @@ namespace VsChromium.Server.FileSystemDatabase {
           .AsParallel()
           .Where(oldFileData => {
             if (progress.Step()) {
-              progress.DisplayProgress((i, n) => string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPathName));
+              progress.DisplayProgress((i, n) => string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPath));
             }
             return IsFileContentsUpToDate(oldFileData);
           })
@@ -170,10 +170,10 @@ namespace VsChromium.Server.FileSystemDatabase {
           .AsParallel()
           .ForAll(x => {
             if (progress.Step()) {
-              progress.DisplayProgress((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileData.FileName.FullPathName));
+              progress.DisplayProgress((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileData.FileName.FullPath));
             }
             if (x.IsSearchable && x.FileData.Contents == null) {
-              x.FileData.UpdateContents(_fileContentsFactory.GetFileContents(x.FileData.FileName.FullPathName));
+              x.FileData.UpdateContents(_fileContentsFactory.GetFileContents(x.FileData.FileName.FullPath));
             }
           });
       }
@@ -189,7 +189,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       // TODO(rpaquay): The following File.Exists and File.GetLastWriteTimUtc are expensive operations.
       //  Given we have FileSystemChanged events when files change on disk, we could be smarter here
       // and avoid 99% of these checks in common cases.
-      var fi = new SlimFileInfo(oldFileData.FileName.FullPathName);
+      var fi = new SlimFileInfo(oldFileData.FileName.FullPath);
       if (fi.Exists) {
         var contents = oldFileData.Contents;
         if (contents != null) {

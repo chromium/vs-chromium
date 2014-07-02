@@ -17,7 +17,7 @@ namespace VsChromium.Server.Projects {
       _providers = providers.OrderByDescending(x => x.Priority).ToArray();
     }
 
-    public IProject GetProject(FullPathName filename) {
+    public IProject GetProject(FullPath filename) {
       return _providers
         .Select(t => t.GetProject(filename))
         .Where(project => project != null)
@@ -25,7 +25,7 @@ namespace VsChromium.Server.Projects {
         .FirstOrDefault();
     }
 
-    public IProject GetProjectFromRootPath(FullPathName projectRootPath) {
+    public IProject GetProjectFromRootPath(FullPath projectRootPath) {
       return _providers
         .Select(t => t.GetProjectFromRootPath(projectRootPath))
         .FirstOrDefault(project => project != null);

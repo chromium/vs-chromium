@@ -70,7 +70,7 @@
     <Compile Include="FileNames\PatternMatching\BaseOperator.cs" />
     <Compile Include="FileNames\PatternMatching\OpDirectoryOnly.cs" />
     <Compile Include="FileNames\PatternMatching\FileNameMatching.cs" />
-    <Compile Include="FileNames\FullPathName.cs" />
+    <Compile Include="FileNames\FullPath.cs" />
     <Compile Include="FileNames\PatternMatching\PathMatcher.cs" />
     <Compile Include="FileNames\PatternMatching\MatchKind.cs" />
     <Compile Include="FileNames\PatternMatching\OpNoMatch.cs" />

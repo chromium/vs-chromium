@@ -22,7 +22,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
     private static DirectoryEntry BuildDirectoryEntry(DirectorySnapshot directoryEntry) {
       return new DirectoryEntry {
-        Name = (directoryEntry.DirectoryName.IsAbsoluteName ? directoryEntry.DirectoryName.FullPathName.FullName : directoryEntry.DirectoryName.RelativePath.FileName),
+        Name = (directoryEntry.DirectoryName.IsAbsoluteName ? directoryEntry.DirectoryName.FullPath.FullName : directoryEntry.DirectoryName.RelativePath.FileName),
         Data = null,
         Entries = BuildEntries(directoryEntry)
       };

@@ -18,13 +18,13 @@ namespace VsChromium.Core.Chromium {
       _chromiumDiscovery = new ChromiumDiscovery(configurationSectionProvider);
     }
 
-    public T GetEnlistmentRootFromRootpath(FullPathName root, Func<FullPathName, T> factory) {
+    public T GetEnlistmentRootFromRootpath(FullPath root, Func<FullPath, T> factory) {
       lock (_lock) {
         return _chromiumRootDirectories.Get(root);
       }
     }
 
-    public T GetEnlistmentRootFromFilename(FullPathName filename, Func<FullPathName, T> factory) {
+    public T GetEnlistmentRootFromFilename(FullPath filename, Func<FullPath, T> factory) {
       lock (_lock) {
         // Cache hit?
         foreach (var parent in filename.EnumerateParents()) {
@@ -50,9 +50,9 @@ namespace VsChromium.Core.Chromium {
       }
     }
 
-    private T GetChromeRootFolderWorker(FullPathName filename, Func<FullPathName, T> factory) {
+    private T GetChromeRootFolderWorker(FullPath filename, Func<FullPath, T> factory) {
       var root = _chromiumDiscovery.GetEnlistmentRoot(filename);
-      if (root == default(FullPathName)) {
+      if (root == default(FullPath)) {
         lock (_lock) {
           // No one in the parent chain is a Chromium directory.
           filename.EnumerateParents().ForAll(x => _nonChromiumDirectories.Add(x, null));

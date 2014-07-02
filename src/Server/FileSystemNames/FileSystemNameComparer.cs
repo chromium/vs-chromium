@@ -24,7 +24,7 @@ namespace VsChromium.Server.FileSystemNames {
 
       var x1 = GetAbsolutePart(x);
       var y1 = GetAbsolutePart(y);
-      var result = x1.FullPathName.CompareTo(y1.FullPathName);
+      var result = x1.FullPath.CompareTo(y1.FullPath);
       if (result == 0)
         result = x.RelativePath.CompareTo(y.RelativePath);
       else {
@@ -32,7 +32,7 @@ namespace VsChromium.Server.FileSystemNames {
         // have 2 distinct representations of the same canonical path name.
         // Instead of implementing a complex algorithm, just compare the full
         // paths (at the cost of a string concatenation).
-        return x.FullPathName.CompareTo(y.FullPathName);
+        return x.FullPath.CompareTo(y.FullPath);
       }
       return result;
     }
@@ -42,7 +42,7 @@ namespace VsChromium.Server.FileSystemNames {
         return object.ReferenceEquals(x, y);
       var x1 = GetAbsolutePart(x);
       var y1 = GetAbsolutePart(y);
-      var result = x1.FullPathName.Equals(y1.FullPathName);
+      var result = x1.FullPath.Equals(y1.FullPath);
       if (result)
         result = x.RelativePath.Equals(y.RelativePath);
       else {
@@ -50,14 +50,14 @@ namespace VsChromium.Server.FileSystemNames {
         // have 2 distinct representations of the same canonical path name.
         // Instead of implementing a complex algorithm, just compare the full
         // paths (at the cost of a string concatenation).
-        return x.FullPathName.Equals(y.FullPathName);
+        return x.FullPath.Equals(y.FullPath);
       }
       return result;
     }
 
     public int GetHashCode(FileSystemName x) {
       var x1 = GetAbsolutePart(x);
-      return CombineHashCodes(x1.FullPathName.GetHashCode(), x.RelativePath.GetHashCode());
+      return CombineHashCodes(x1.FullPath.GetHashCode(), x.RelativePath.GetHashCode());
     }
 
     private FileSystemName GetAbsolutePart(FileSystemName name) {

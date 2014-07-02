@@ -15,13 +15,13 @@ namespace VsChromium.Server.Projects {
     /// Returns the |IProject| corresponding to the project containing |filename|.
     /// Returns |null| if |filename| is not known to this project provider.
     /// </summary>
-    IProject GetProject(FullPathName filename);
+    IProject GetProject(FullPath filename);
 
     /// <summary>
     /// Returns the |IProject| corresponding to the project root path |projectRootPath|.
     /// Returns |null| if |projectRootPath| is not known to this project provider.
     /// </summary>
-    IProject GetProjectFromRootPath(FullPathName projectRootPath);
+    IProject GetProjectFromRootPath(FullPath projectRootPath);
 
     /// <summary>
     /// Reset internal cache, usually called when something drastic happened on the file system.

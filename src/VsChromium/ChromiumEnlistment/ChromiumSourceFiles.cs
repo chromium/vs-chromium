@@ -16,13 +16,13 @@ namespace VsChromium.ChromiumEnlistment {
       new ConcurrentDictionary<string, bool>(SystemPathComparer.Instance.Comparer);
 
     private readonly IPathPatternsFile _chromiumCodingStylePatterns;
-    private readonly IChromiumDiscoveryWithCache<FullPathName> _chromiumDiscoveryProvider;
+    private readonly IChromiumDiscoveryWithCache<FullPath> _chromiumDiscoveryProvider;
 
     [ImportingConstructor]
     public ChromiumSourceFiles(IConfigurationFileProvider configurationFileProvider) {
       var configurationSectionProvider = new ConfigurationFileSectionProvider(configurationFileProvider);
       _chromiumCodingStylePatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationStyleFilenames.ChromiumCodingStyleIgnore);
-      _chromiumDiscoveryProvider = new ChromiumDiscoveryWithCache<FullPathName>(configurationSectionProvider);
+      _chromiumDiscoveryProvider = new ChromiumDiscoveryWithCache<FullPath>(configurationSectionProvider);
     }
 
     public void ValidateCache() {
@@ -30,15 +30,15 @@ namespace VsChromium.ChromiumEnlistment {
     }
 
     public bool ApplyCodingStyle(string filename) {
-      var path = new FullPathName(filename);
+      var path = new FullPath(filename);
       var root = _chromiumDiscoveryProvider.GetEnlistmentRootFromFilename(path, x => x);
-      if (root == default(FullPathName))
+      if (root == default(FullPath))
         return false;
 
       return _applyCodingStyleResults.GetOrAdd(filename, (key) => ApplyCodingStyleWorker(root, key));
     }
 
-    private bool ApplyCodingStyleWorker(FullPathName root, string filename) {
+    private bool ApplyCodingStyleWorker(FullPath root, string filename) {
       var relativePath = filename.Substring(root.FullName.Length);
       if (relativePath.Length == 0)
         return false;

@@ -30,7 +30,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public FileSystemTreeSnapshot Compute(IFileSystemNameFactory fileNameFactory, IEnumerable<FullPathName> filenames, int version) {
+    public FileSystemTreeSnapshot Compute(IFileSystemNameFactory fileNameFactory, IEnumerable<FullPath> filenames, int version) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var projectRoots =
           filenames

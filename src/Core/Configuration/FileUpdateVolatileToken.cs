@@ -5,10 +5,10 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Core.Configuration {
   public class FileUpdateVolatileToken : IVolatileToken {
-    private readonly FullPathName _fileName;
+    private readonly FullPath _fileName;
     private readonly DateTime _lastWritetimeUtc;
 
-    public FileUpdateVolatileToken(FullPathName fileName) {
+    public FileUpdateVolatileToken(FullPath fileName) {
       _fileName = fileName;
       _lastWritetimeUtc = File.GetLastWriteTimeUtc(_fileName.FullName);
     }

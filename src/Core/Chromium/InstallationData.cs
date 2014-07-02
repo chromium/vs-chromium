@@ -14,7 +14,7 @@ namespace VsChromium.Core.Chromium {
     public static InstallationData Create(NtProcess proc) {
       InstallationEnumerator enumerator = new InstallationEnumerator();
       foreach (InstallationData data in enumerator) {
-        FullPathName fullPath = new FullPathName(proc.Win32ProcessImagePath);
+        FullPath fullPath = new FullPath(proc.Win32ProcessImagePath);
         if (fullPath.StartsWith(data.InstallationPath))
           return data;
       }
@@ -32,7 +32,7 @@ namespace VsChromium.Core.Chromium {
       Distribution = DistributionType.Canary;
       Architecture = ProcessUtility.GetMachineType(exePath);
       Level = level;
-      InstallationPath = new FullPathName(location);
+      InstallationPath = new FullPath(location);
       if (InstallationPath.HasComponent("Chrome SxS"))
         Distribution = DistributionType.Canary;
       else if (InstallationPath.HasComponent("Chrome"))
@@ -46,7 +46,7 @@ namespace VsChromium.Core.Chromium {
     }
 
     public DistributionType Distribution { get; set; }
-    public FullPathName InstallationPath { get; set; }
+    public FullPath InstallationPath { get; set; }
     public InstallationLevel Level { get; set; }
     public MachineType Architecture { get; set; }
     public string Version { get; set; }

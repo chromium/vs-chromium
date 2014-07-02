@@ -31,7 +31,7 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     private static readonly bool ReuseFileNameInstances = false;
 
-    private readonly HashSet<FullPathName> _addedFiles = new HashSet<FullPathName>();
+    private readonly HashSet<FullPath> _addedFiles = new HashSet<FullPath>();
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IDirectoryChangeWatcher _directoryChangeWatcher;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
@@ -110,7 +110,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void AddFileTask(string filename) {
-      var path = new FullPathName(filename);
+      var path = new FullPath(filename);
       bool recompute = ValidateKnownFiles();
 
       lock (_lock) {
@@ -130,7 +130,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void RemoveFileTask(string filename) {
-      var path = new FullPathName(filename);
+      var path = new FullPath(filename);
       bool recompute = ValidateKnownFiles();
 
       lock (_lock) {
@@ -149,10 +149,10 @@ namespace VsChromium.Server.FileSystem {
         RecomputeGraph();
     }
 
-    private IEnumerable<FullPathName> GetKnownProjectPaths(IEnumerable<FullPathName> knownFileNames) {
+    private IEnumerable<FullPath> GetKnownProjectPaths(IEnumerable<FullPath> knownFileNames) {
       return knownFileNames
         .Select(x => _projectDiscovery.GetProjectPath(x))
-        .Where(x => x != default(FullPathName))
+        .Where(x => x != default(FullPath))
         .Distinct()
         .OrderBy(x => x)
         .ToList();
@@ -164,7 +164,7 @@ namespace VsChromium.Server.FileSystem {
     private bool ValidateKnownFiles() {
       // We take the lock twice because we want to avoid calling "File.Exists" inside
       // the lock.
-      IList<FullPathName> filenames;
+      IList<FullPath> filenames;
       lock (_lock) {
         filenames = _addedFiles.ToList();
       }
@@ -192,7 +192,7 @@ namespace VsChromium.Server.FileSystem {
           Logger.LogMemoryStats();
           var sw = Stopwatch.StartNew();
 
-          var files = new List<FullPathName>();
+          var files = new List<FullPath>();
           lock (_lock) {
             ValidateKnownFiles();
             files.AddRange(_addedFiles);

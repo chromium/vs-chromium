@@ -24,7 +24,7 @@ namespace VsChromium.Core.Win32.Files {
 
     private static SafeHeapBlockHandle ReadFileWorker(SlimFileInfo fileInfo, int trailingByteCount) {
       using (
-        var fileHandle = NativeMethods.CreateFile(fileInfo.FullPathName.FullName, NativeAccessFlags.GenericRead, FileShare.Read, IntPtr.Zero,
+        var fileHandle = NativeMethods.CreateFile(fileInfo.FullPath.FullName, NativeAccessFlags.GenericRead, FileShare.Read, IntPtr.Zero,
                                                   FileMode.Open, 0, IntPtr.Zero)) {
         if (fileHandle.IsInvalid)
           throw new Win32Exception();

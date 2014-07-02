@@ -81,7 +81,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       if (!changedFile.Item1.IsFileSearchable(changedFile.Item2))
         return;
 
-      fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPathName));
+      fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPath));
     }
 
     /// <summary>

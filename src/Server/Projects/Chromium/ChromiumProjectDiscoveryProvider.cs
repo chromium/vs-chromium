@@ -19,13 +19,13 @@ namespace VsChromium.Server.Projects.Chromium {
       _chromiumDiscovery = new ChromiumDiscoveryWithCache<Project>(_configurationSectionProvider);
     }
 
-    public IProject GetProjectFromRootPath(FullPathName projectRootPath) {
+    public IProject GetProjectFromRootPath(FullPath projectRootPath) {
       return _chromiumDiscovery.GetEnlistmentRootFromRootpath(projectRootPath, CreateProject);
     }
 
     public int Priority { get { return -100; } }
 
-    public IProject GetProject(FullPathName filename) {
+    public IProject GetProject(FullPath filename) {
       return _chromiumDiscovery.GetEnlistmentRootFromFilename(filename, CreateProject);
     }
 
@@ -33,7 +33,7 @@ namespace VsChromium.Server.Projects.Chromium {
       _chromiumDiscovery.ValidateCache();
     }
 
-    private Project CreateProject(FullPathName rootPath) {
+    private Project CreateProject(FullPath rootPath) {
       return new Project(_configurationSectionProvider, rootPath);
     }
   }

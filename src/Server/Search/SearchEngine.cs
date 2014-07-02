@@ -179,7 +179,7 @@ namespace VsChromium.Server.Search {
       };
     }
 
-    public IEnumerable<FileExtract> GetFileExtracts(FullPathName path, IEnumerable<FilePositionSpan> spans) {
+    public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans) {
       var filename = FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
       if (filename == null)
         return Enumerable.Empty<FileExtract>();

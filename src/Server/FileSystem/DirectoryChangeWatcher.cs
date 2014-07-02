@@ -23,7 +23,7 @@ namespace VsChromium.Server.FileSystem {
       new Dictionary<DirectoryName, FileSystemWatcher>();
     private readonly object _watchersLock = new object();
 
-    private Dictionary<FullPathName, PathChangeKind> _changedPaths = new Dictionary<FullPathName, PathChangeKind>();
+    private Dictionary<FullPath, PathChangeKind> _changedPaths = new Dictionary<FullPath, PathChangeKind>();
     private readonly object _changedPathsLock = new object();
     private Thread _thread;
 
@@ -59,8 +59,8 @@ namespace VsChromium.Server.FileSystem {
         _watchers.Add(directory, watcher);
       }
 
-      Logger.Log("Starting monitoring directory \"{0}\" for change notifications.", directory.FullPathName);
-      watcher.Path = directory.FullPathName.FullName;
+      Logger.Log("Starting monitoring directory \"{0}\" for change notifications.", directory.FullPath);
+      watcher.Path = directory.FullPath.FullName;
       watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
       watcher.IncludeSubdirectories = true;
       watcher.InternalBufferSize = 50 * 1024; // 50KB sounds more reasonable than 8KB
@@ -79,7 +79,7 @@ namespace VsChromium.Server.FileSystem {
           return;
         _watchers.Remove(directory);
       }
-      Logger.Log("Removing directory \"{0}\" from change notification monitoring.", directory.FullPathName);
+      Logger.Log("Removing directory \"{0}\" from change notification monitoring.", directory.FullPath);
       watcher.Dispose();
     }
 
@@ -101,12 +101,12 @@ namespace VsChromium.Server.FileSystem {
     private void CheckDeletedRoots() {
       lock (_watchersLock) {
         var deletedWatchers = _watchers
-          .Where(item => !item.Key.FullPathName.DirectoryExists)
+          .Where(item => !item.Key.FullPath.DirectoryExists)
           .ToList();
 
         deletedWatchers
           .ForAll(item => {
-            EnqueueChangeEvent(item.Key.FullPathName, PathChangeKind.Deleted);
+            EnqueueChangeEvent(item.Key.FullPath, PathChangeKind.Deleted);
             RemoveDirectory(item.Key);
           });
       }
@@ -145,7 +145,7 @@ namespace VsChromium.Server.FileSystem {
       OnPathsChanged(entries);
     }
 
-    private void PostSimplePathsChangedEvents(Dictionary<FullPathName, PathChangeKind> paths) {
+    private void PostSimplePathsChangedEvents(Dictionary<FullPath, PathChangeKind> paths) {
       var simpleChanges = paths
         .Where(x => x.Value == PathChangeKind.Changed)
         .Select(x => new PathChangeEntry(x.Key, x.Value))
@@ -176,10 +176,10 @@ namespace VsChromium.Server.FileSystem {
       return true;
     }
 
-    private Dictionary<FullPathName, PathChangeKind> DequeueEvents() {
+    private Dictionary<FullPath, PathChangeKind> DequeueEvents() {
       lock (_changedPathsLock) {
         var temp = _changedPaths;
-        _changedPaths = new Dictionary<FullPathName, PathChangeKind>();
+        _changedPaths = new Dictionary<FullPath, PathChangeKind>();
         return temp;
       }
     }
@@ -190,13 +190,13 @@ namespace VsChromium.Server.FileSystem {
                           ((FileSystemWatcher)sender).Path);
     }
 
-    private void EnqueueChangeEvent(FullPathName path, PathChangeKind changeKind) {
+    private void EnqueueChangeEvent(FullPath path, PathChangeKind changeKind) {
       lock (_changedPathsLock) {
         MergePathChange(_changedPaths, path, changeKind);
       }
     }
 
-    private static void MergePathChange(Dictionary<FullPathName, PathChangeKind> changes, FullPathName path, PathChangeKind kind) {
+    private static void MergePathChange(Dictionary<FullPath, PathChangeKind> changes, FullPath path, PathChangeKind kind) {
       PathChangeKind currentChangeKind;
       if (!changes.TryGetValue(path, out currentChangeKind)) {
         currentChangeKind = PathChangeKind.None;
@@ -253,23 +253,23 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void WatcherOnRenamed(object sender, RenamedEventArgs renamedEventArgs) {
-      EnqueueChangeEvent(new FullPathName(renamedEventArgs.OldFullPath), PathChangeKind.Deleted);
-      EnqueueChangeEvent(new FullPathName(renamedEventArgs.FullPath), PathChangeKind.Created);
+      EnqueueChangeEvent(new FullPath(renamedEventArgs.OldFullPath), PathChangeKind.Deleted);
+      EnqueueChangeEvent(new FullPath(renamedEventArgs.FullPath), PathChangeKind.Created);
       _eventReceived.Set();
     }
 
     private void WatcherOnDeleted(object sender, FileSystemEventArgs fileSystemEventArgs) {
-      EnqueueChangeEvent(new FullPathName(fileSystemEventArgs.FullPath), PathChangeKind.Deleted);
+      EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Deleted);
       _eventReceived.Set();
     }
 
     private void WatcherOnCreated(object sender, FileSystemEventArgs fileSystemEventArgs) {
-      EnqueueChangeEvent(new FullPathName(fileSystemEventArgs.FullPath), PathChangeKind.Created);
+      EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Created);
       _eventReceived.Set();
     }
 
     private void WatcherOnChanged(object sender, FileSystemEventArgs fileSystemEventArgs) {
-      EnqueueChangeEvent(new FullPathName(fileSystemEventArgs.FullPath), PathChangeKind.Changed);
+      EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Changed);
       _eventReceived.Set();
     }
 

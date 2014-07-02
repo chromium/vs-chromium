@@ -49,7 +49,7 @@ namespace VsChromium.Server.FileSystem {
                                                                      Func<TSource, FileSystemEntryData> dataMapper) {
       return grouping
         .Where(x => !fileNameMapper(x).IsAbsoluteName)
-        .OrderBy(x => fileNameMapper(x).RelativePathName)
+        .OrderBy(x => fileNameMapper(x).RelativePath)
         .Select(x => CreateFileSystemEntry(x, fileNameMapper, dataMapper));
     }
 
@@ -58,12 +58,12 @@ namespace VsChromium.Server.FileSystem {
       var data = dataMapper(item);
       if (name is FileName)
         return new FileEntry {
-          Name = name.RelativePathName.RelativeName,
+          Name = name.RelativePath.Value,
           Data = data
         };
       else
         return new DirectoryEntry {
-          Name = name.RelativePathName.RelativeName,
+          Name = name.RelativePath.Value,
           Data = data
         };
     }

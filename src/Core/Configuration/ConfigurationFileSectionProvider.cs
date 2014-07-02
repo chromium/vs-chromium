@@ -18,7 +18,7 @@ namespace VsChromium.Core.Configuration {
     }
 
     public IEnumerable<string> GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
-      var filename = new RelativePathName(sectionName);
+      var filename = new RelativePath(sectionName);
       return _configurationFileProvider.ReadFile(filename, (fullPathName, lines) => {
         _volatileToken.AddFile(fullPathName);
         return postProcessing(lines);

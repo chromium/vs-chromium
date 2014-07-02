@@ -6,6 +6,6 @@ using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.Projects {
   public interface ISearchableFilesFilter {
-    bool Include(RelativePathName fileName);
+    bool Include(RelativePath fileName);
   }
 }

@@ -20,9 +20,9 @@ namespace VsChromium.Server.FileSystemNames {
   /// to the "d:\foo\bar" absolute path, we have this hierarchy of
   /// instances:
   /// FileName
-  ///   RelativePathName = "baz\blah.txt"
+  ///   RelativePath = "baz\blah.txt"
   ///   Parent => RelativeDirectoryName
-  ///     RelativePathName = "baz"
+  ///     RelativePath = "baz"
   ///     Parent => AbsoluteDirectory
   ///       FullPathName = "d:\foo\bar"
   ///       Parent = null
@@ -34,12 +34,12 @@ namespace VsChromium.Server.FileSystemNames {
     public abstract DirectoryName Parent { get; }
 
     /// <summary>
-    /// Returns a valid <see cref="RelativePathName"/> if <see
+    /// Returns a valid <see cref="RelativePath"/> if <see
     /// cref="IsAbsoluteName"/> is false, or the empty <see
-    /// cref="RelativePathName"/> otherwise.
+    /// cref="RelativePath"/> otherwise.
     /// Note: Perf: This operation does not perform any memory allocation.
     /// </summary>
-    public abstract RelativePathName RelativePathName { get; }
+    public abstract RelativePath RelativePath { get; }
 
     /// <summary>
     /// Return the <see cref="FullPathName"/> of this instance.
@@ -51,7 +51,7 @@ namespace VsChromium.Server.FileSystemNames {
     /// <summary>
     /// Returns true if this instance is an absolute directory name, false
     /// otherwise. <see cref="IsAbsoluteName"/> implies <see cref="Parent"/> is
-    /// null and <see cref="RelativePathName"/> is empty.
+    /// null and <see cref="RelativePath"/> is empty.
     /// </summary>
     public bool IsAbsoluteName { get { return Parent == null; } }
 

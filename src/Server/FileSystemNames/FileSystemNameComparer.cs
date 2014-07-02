@@ -26,7 +26,7 @@ namespace VsChromium.Server.FileSystemNames {
       var y1 = GetAbsolutePart(y);
       var result = x1.FullPathName.CompareTo(y1.FullPathName);
       if (result == 0)
-        result = x.RelativePathName.CompareTo(y.RelativePathName);
+        result = x.RelativePath.CompareTo(y.RelativePath);
       else {
         // If the absolute parts are not equal, we may be in a case where we
         // have 2 distinct representations of the same canonical path name.
@@ -44,7 +44,7 @@ namespace VsChromium.Server.FileSystemNames {
       var y1 = GetAbsolutePart(y);
       var result = x1.FullPathName.Equals(y1.FullPathName);
       if (result)
-        result = x.RelativePathName.Equals(y.RelativePathName);
+        result = x.RelativePath.Equals(y.RelativePath);
       else {
         // If the absolute parts are not equal, we may be in a case where we
         // have 2 distinct representations of the same canonical path name.
@@ -57,7 +57,7 @@ namespace VsChromium.Server.FileSystemNames {
 
     public int GetHashCode(FileSystemName x) {
       var x1 = GetAbsolutePart(x);
-      return CombineHashCodes(x1.FullPathName.GetHashCode(), x.RelativePathName.GetHashCode());
+      return CombineHashCodes(x1.FullPathName.GetHashCode(), x.RelativePath.GetHashCode());
     }
 
     private FileSystemName GetAbsolutePart(FileSystemName name) {

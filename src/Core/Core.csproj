@@ -76,7 +76,7 @@
     <Compile Include="FileNames\PatternMatching\OpNoMatch.cs" />
     <Compile Include="FileNames\PatternMatching\PatternWrapper.cs" />
     <Compile Include="FileNames\PatternMatching\OpText.cs" />
-    <Compile Include="FileNames\RelativePathName.cs" />
+    <Compile Include="FileNames\RelativePath.cs" />
     <Compile Include="Ipc\ErrorResponseException.cs" />
     <Compile Include="Ipc\ErrorResponseHelper.cs" />
     <Compile Include="Ipc\IIpcRequestIdFactory.cs" />
@@ -146,7 +146,7 @@
     <Compile Include="Utility\ChromeUtility.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />
-    <Compile Include="Utility\ScopedStopWatch.cs" />
+    <Compile Include="Utility\MultiStepStopWatch.cs" />
     <Compile Include="VsChromiumVersion.cs" />
     <Compile Include="Win32\ComPtr.cs" />
     <Compile Include="Win32\Contants.cs" />

@@ -91,9 +91,9 @@ namespace VsChromium.Server.FileSystemDatabase {
         // Note: For diagnostic only as this can be quite slow.
         filesWithContents
           .GroupBy(x => {
-            var ext = Path.GetExtension(x.FileName.RelativePathName.FileName);
+            var ext = Path.GetExtension(x.FileName.RelativePath.FileName);
             if (string.IsNullOrEmpty(ext))
-              return new { Type = "Filename", Value = x.FileName.RelativePathName.FileName };
+              return new { Type = "Filename", Value = x.FileName.RelativePath.FileName };
             else
               return new { Type = "Extension", Value = ext };
           })
@@ -108,7 +108,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");
-      var ssw = new ScopedStopWatch();
+      var ssw = new MultiStepStopWatch();
 
       var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot).ToList();
       ssw.Step(sw => Logger.Log("Done flattening file system tree snapshot in {0:n0} msec.", sw.ElapsedMilliseconds));

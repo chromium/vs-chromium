@@ -16,10 +16,10 @@ namespace VsChromium.Core.FileNames.PatternMatching {
       Optimize(pathMatchers.ToArray());
     }
 
-    public bool MatchDirectoryName(RelativePathName relativePath, IPathComparer comparer) {
+    public bool MatchDirectoryName(RelativePath relativePath, IPathComparer comparer) {
       if (relativePath.IsEmpty)
         throw new ArgumentNullException("relativePath");
-      var path = relativePath.RelativeName;
+      var path = relativePath.Value;
 
       if (_fileExtensions.Contains(Path.GetExtension(path)))
         return true;
@@ -32,10 +32,10 @@ namespace VsChromium.Core.FileNames.PatternMatching {
       return false;
     }
 
-    public bool MatchFileName(RelativePathName relativePath, IPathComparer comparer) {
+    public bool MatchFileName(RelativePath relativePath, IPathComparer comparer) {
       if (relativePath.IsEmpty)
         throw new ArgumentNullException("relativePath");
-      var path = relativePath.RelativeName;
+      var path = relativePath.Value;
 
       if (_fileExtensions.Contains(Path.GetExtension(path)))
         return true;

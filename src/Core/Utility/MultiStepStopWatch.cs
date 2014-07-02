@@ -2,7 +2,7 @@
 using System.Diagnostics;
 
 namespace VsChromium.Core.Utility {
-  public class ScopedStopWatch {
+  public class MultiStepStopWatch {
     private readonly Stopwatch _sw = Stopwatch.StartNew();
 
     public void Step(Action<Stopwatch> action) {

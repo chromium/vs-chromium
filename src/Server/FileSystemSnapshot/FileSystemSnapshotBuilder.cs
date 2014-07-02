@@ -10,6 +10,7 @@ using VsChromium.Core;
 using VsChromium.Core.FileNames;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
+using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
@@ -65,7 +66,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     private DirectorySnapshot ProcessProject(IFileSystemNameFactory fileNameFactory, IProject project, IProgressTracker progress) {
       var projectPath = fileNameFactory.CreateAbsoluteDirectoryName(project.RootPath);
 
-      var ssw = new ScopedStopWatch();
+      var ssw = new MultiStepStopWatch();
       // Create list of pairs (DirectoryName, List[FileNames])
       var directoriesWithFiles = TraverseFileSystem(fileNameFactory, project, projectPath)
         .AsParallel()
@@ -73,11 +74,11 @@ namespace VsChromium.Server.FileSystemSnapshot {
         .Select(traversedDirectoryEntry => {
           var directoryName = traversedDirectoryEntry.DirectoryName;
           if (progress.Step()) {
-            progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.FullName, directoryName.RelativePathName.RelativeName));
+            progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.FullName, directoryName.RelativePath.Value));
           }
-          var entries = traversedDirectoryEntry.ChildrenNames
-            .Where(childFilename => project.FileFilter.Include(childFilename.RelativePathName))
-            .OrderBy(x => x.RelativePathName)
+          var entries = traversedDirectoryEntry.ChildFileNames
+            .Where(childFilename => project.FileFilter.Include(childFilename.RelativePath))
+            .OrderBy(x => x.RelativePath)
             .ToReadOnlyCollection();
 
           return KeyValuePair.Create(directoryName, entries);
@@ -89,7 +90,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       // directories bottom up, so that we know
       // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
       // 2) we create instances of child directories before their parent.
-      directoriesWithFiles.Sort((x, y) => -x.Key.RelativePathName.CompareTo(y.Key.RelativePathName));
+      directoriesWithFiles.Sort((x, y) => -x.Key.RelativePath.CompareTo(y.Key.RelativePath));
       ssw.Step(sw => Logger.Log("Done sorting list of directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Build map from parent directory -> list of child directories
@@ -114,7 +115,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
         var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryName)
           .Select(x => directoriesToSnapshot[x])
-          .OrderBy(x => x.DirectoryName.RelativePathName)
+          .OrderBy(x => x.DirectoryName.RelativePath)
           .ToReadOnlyCollection();
 
         // TODO(rpaquay): Not clear the lines below are a perf win, even though
@@ -140,41 +141,41 @@ namespace VsChromium.Server.FileSystemSnapshot {
     /// <summary>
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
-    private IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IFileSystemNameFactory fileNameFactory, IProject project, DirectoryName projectPath) {
+    private static IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IFileSystemNameFactory fileNameFactory, IProject project, DirectoryName projectPath) {
       Debug.Assert(projectPath.IsAbsoluteName);
       var stack = new Stack<DirectoryName>();
       stack.Push(projectPath);
       while (stack.Count > 0) {
         var head = stack.Pop();
-        if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePathName)) {
+        if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePath)) {
           IList<string> childDirectories;
           IList<string> childFiles;
-          RelativePathNameExtensions.GetFileSystemEntries(project.RootPath, head.RelativePathName, out childDirectories, out childFiles);
+          NativeFile.GetDirectoryEntries(PathHelpers.CombinePaths(project.RootPath.FullName, head.RelativePath.Value), out childDirectories, out childFiles);
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childDirectories.Count; i++) {
             stack.Push(fileNameFactory.CreateDirectoryName(head, childDirectories[i]));
           }
           // Note: Use "for" loop to avoid memory allocations.
-          var childFilenames = new FileName[childFiles.Count];
+          var childFileNames = new FileName[childFiles.Count];
           for (var i = 0; i < childFiles.Count; i++) {
-            childFilenames[i] = fileNameFactory.CreateFileName(head, childFiles[i]);
+            childFileNames[i] = fileNameFactory.CreateFileName(head, childFiles[i]);
           }
-          yield return new TraversedDirectoryEntry(head, childFilenames);
+          yield return new TraversedDirectoryEntry(head, childFileNames);
         }
       }
     }
 
     private struct TraversedDirectoryEntry {
       private readonly DirectoryName _directoryName;
-      private readonly IList<FileName> _childrenNames;
+      private readonly IList<FileName> _childFileNames;
 
-      public TraversedDirectoryEntry(DirectoryName directoryName, IList<FileName> childrenNames) {
+      public TraversedDirectoryEntry(DirectoryName directoryName, IList<FileName> childFileNames) {
         _directoryName = directoryName;
-        _childrenNames = childrenNames;
+        _childFileNames = childFileNames;
       }
 
       public DirectoryName DirectoryName { get { return _directoryName; } }
-      public IList<FileName> ChildrenNames { get { return _childrenNames; } }
+      public IList<FileName> ChildFileNames { get { return _childFileNames; } }
     }
   }
 }

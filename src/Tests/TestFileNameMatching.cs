@@ -146,9 +146,9 @@ namespace VsChromium.Tests {
         }
 
         if (kind == MatchKind.Directory)
-          Assert.AreEqual(result, matcher.MatchDirectoryName(new RelativePathName(path), SystemPathComparer.Instance));
+          Assert.AreEqual(result, matcher.MatchDirectoryName(new RelativePath(path), SystemPathComparer.Instance));
         else
-          Assert.AreEqual(result, matcher.MatchFileName(new RelativePathName(path), SystemPathComparer.Instance));
+          Assert.AreEqual(result, matcher.MatchFileName(new RelativePath(path), SystemPathComparer.Instance));
       }
     }
 

@@ -49,7 +49,7 @@ namespace VsChromium.ChromiumEnlistment {
       if (relativePath.Length == 0)
         return false;
 
-      return !_chromiumCodingStylePatterns.GetPathMatcher().MatchFileName(new RelativePathName(relativePath), SystemPathComparer.Instance);
+      return !_chromiumCodingStylePatterns.GetPathMatcher().MatchFileName(new RelativePath(relativePath), SystemPathComparer.Instance);
     }
   }
 }

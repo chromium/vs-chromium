@@ -15,7 +15,7 @@ namespace VsChromium.Server.Projects {
       _includePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesInclude);
     }
 
-    public bool Include(RelativePathName fileName) {
+    public bool Include(RelativePath fileName) {
       if (_ignorePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance))
         return false;
       return _includePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance);

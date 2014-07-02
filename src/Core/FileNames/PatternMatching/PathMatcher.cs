@@ -18,8 +18,8 @@ namespace VsChromium.Core.FileNames.PatternMatching {
 
     public IList<BaseOperator> Operators { get { return _operators; } }
 
-    public bool MatchDirectoryName(RelativePathName relativePath, IPathComparer comparer) {
-      var path = relativePath.RelativeName;
+    public bool MatchDirectoryName(RelativePath relativePath, IPathComparer comparer) {
+      var path = relativePath.Value;
       CheckPath(path);
 
       if (PrePassWontMatch(MatchKind.Directory, path, comparer))
@@ -29,8 +29,8 @@ namespace VsChromium.Core.FileNames.PatternMatching {
       return IsMatch(path, result);
     }
 
-    public bool MatchFileName(RelativePathName relativePath, IPathComparer comparer) {
-      var path = relativePath.RelativeName;
+    public bool MatchFileName(RelativePath relativePath, IPathComparer comparer) {
+      var path = relativePath.Value;
       CheckPath(path);
 
       if (PrePassWontMatch(MatchKind.File, path, comparer))

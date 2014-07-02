@@ -8,19 +8,19 @@ using VsChromium.Core.FileNames;
 namespace VsChromium.Server.FileSystemNames {
   public class RelativeDirectoryName : DirectoryName {
     private readonly DirectoryName _parent;
-    private readonly RelativePathName _relativePathName;
+    private readonly RelativePath _relativePath;
 
-    public RelativeDirectoryName(DirectoryName parent, RelativePathName relativePathName) {
+    public RelativeDirectoryName(DirectoryName parent, RelativePath relativePath) {
       if (parent == null)
         throw new ArgumentNullException("parent");
-      if (relativePathName.IsEmpty)
-        throw new ArgumentException("Relative path is empty", "relativePathName");
+      if (relativePath.IsEmpty)
+        throw new ArgumentException("Relative path is empty", "relativePath");
       _parent = parent;
-      _relativePathName = relativePathName;
+      _relativePath = relativePath;
     }
 
     public override DirectoryName Parent { get { return _parent; } }
-    public override RelativePathName RelativePathName { get { return _relativePathName; } }
-    public override FullPathName FullPathName { get { return GetParentAbsolutePathName().Combine(_relativePathName.RelativeName); } }
+    public override RelativePath RelativePath { get { return _relativePath; } }
+    public override FullPathName FullPathName { get { return GetParentAbsolutePathName().Combine(_relativePath.Value); } }
   }
 }

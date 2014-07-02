@@ -32,7 +32,7 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker {
 
     private IList<string> ReadDisableCheckers() {
       return
-        _configurationFileProvider.ReadFile(new RelativePathName(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled),
+        _configurationFileProvider.ReadFile(new RelativePath(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled),
                                             (filename, x) => x.Where(line => !line.TrimStart().StartsWith("#"))).ToList();
     }
 

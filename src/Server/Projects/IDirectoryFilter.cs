@@ -6,6 +6,6 @@ using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.Projects {
   public interface IDirectoryFilter {
-    bool Include(RelativePathName relativePath);
+    bool Include(RelativePath relativePath);
   }
 }

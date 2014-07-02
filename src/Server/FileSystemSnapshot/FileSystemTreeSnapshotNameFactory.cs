@@ -10,9 +10,9 @@ namespace VsChromium.Server.FileSystemSnapshot {
     // for previously re-used names.
     private static readonly IComparer<string> NameComparer = StringComparer.Ordinal;
     private static readonly Func<ProjectRootSnapshot, FullPathName, int> ProjectRootComparer = (x, item) => NameComparer.Compare(x.Directory.DirectoryName.FullPathName.FullName, item.FullName);
-    private static readonly Func<DirectorySnapshot, string, int> DirectoryComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePathName.FileName, item);
-    private static readonly Func<DirectorySnapshot, DirectoryName, int> DirectoryNameComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePathName.FileName, item.RelativePathName.FileName);
-    private static readonly Func<FileName, string, int> FileComparer = (x, item) => NameComparer.Compare(x.RelativePathName.FileName, item);
+    private static readonly Func<DirectorySnapshot, string, int> DirectoryComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePath.FileName, item);
+    private static readonly Func<DirectorySnapshot, DirectoryName, int> DirectoryNameComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePath.FileName, item.RelativePath.FileName);
+    private static readonly Func<FileName, string, int> FileComparer = (x, item) => NameComparer.Compare(x.RelativePath.FileName, item);
 
     private readonly FileSystemTreeSnapshot _snapshot;
     private readonly IFileSystemNameFactory _previous;

@@ -16,9 +16,9 @@ namespace VsChromium.Core.Configuration {
     private const string _configurationDirectoryName = "Configuration";
     private const string _localConfigurationDirectoryName = ".VsChromium";
 
-    public IEnumerable<string> ReadFile(RelativePathName name, Func<FullPathName, IEnumerable<string>, IEnumerable<string>> postProcessing) {
+    public IEnumerable<string> ReadFile(RelativePath name, Func<FullPathName, IEnumerable<string>, IEnumerable<string>> postProcessing) {
       foreach (var directoryName in PossibleDirectoryNames()) {
-        var path = directoryName.Combine(name.RelativeName);
+        var path = directoryName.Combine(name.Value);
         if (path.FileExists)
           return postProcessing(path, File.ReadAllLines(path.FullName));
       }

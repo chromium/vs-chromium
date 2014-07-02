@@ -5,6 +5,7 @@
 using System;
 using System.Net.Sockets;
 using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Ipc {
   public class IpcStreamOverNetworkStream : IIpcStream {

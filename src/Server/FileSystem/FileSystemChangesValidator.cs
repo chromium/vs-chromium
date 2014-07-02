@@ -7,7 +7,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using VsChromium.Core;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
+using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
 

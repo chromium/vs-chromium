@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using VsChromium.Core;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Package.CommandHandler {
   [Export(typeof(IPackagePostInitializer))]

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using VsChromium.Core.Configuration;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
   public class FileFilter : IFileFilter {

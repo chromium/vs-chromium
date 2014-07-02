@@ -5,7 +5,7 @@
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {

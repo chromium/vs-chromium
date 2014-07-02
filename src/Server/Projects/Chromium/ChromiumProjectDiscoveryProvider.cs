@@ -5,7 +5,7 @@
 using System.ComponentModel.Composition;
 using VsChromium.Core.Chromium;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects.Chromium {
   [Export(typeof(IProjectDiscoveryProvider))]

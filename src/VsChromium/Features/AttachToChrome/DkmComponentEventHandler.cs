@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VsChromium.Core;
 using VsChromium.Core.DkmShared;
+using VsChromium.Core.Logging;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
 

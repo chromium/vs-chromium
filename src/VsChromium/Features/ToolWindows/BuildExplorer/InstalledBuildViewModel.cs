@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VsChromium.Commands;
 using VsChromium.Core.Chromium;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Core.Processes;
 
 namespace VsChromium.Features.ToolWindows.BuildExplorer {

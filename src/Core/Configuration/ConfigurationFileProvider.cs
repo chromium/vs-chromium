@@ -8,7 +8,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
   [Export(typeof(IConfigurationFileProvider))]

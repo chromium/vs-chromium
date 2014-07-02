@@ -6,8 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using VsChromium.Core.FileNames;
-using VsChromium.Server.Projects;
+using VsChromium.Core.Caching;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
   public class FileWithSections : IFileWithSections {

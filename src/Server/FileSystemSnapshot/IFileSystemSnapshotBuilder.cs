@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemSnapshot {

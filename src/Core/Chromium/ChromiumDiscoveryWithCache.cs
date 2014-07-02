@@ -4,7 +4,7 @@
 
 using System;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 
 namespace VsChromium.Core.Chromium {

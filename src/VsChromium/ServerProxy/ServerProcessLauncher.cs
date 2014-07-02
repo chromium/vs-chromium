@@ -9,7 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using VsChromium.Core;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Processes;
 using VsChromium.Package;
 

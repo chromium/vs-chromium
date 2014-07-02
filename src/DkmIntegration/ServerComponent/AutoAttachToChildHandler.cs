@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VsChromium.Core;
 using VsChromium.Core.DkmShared;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Processes;
 using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;

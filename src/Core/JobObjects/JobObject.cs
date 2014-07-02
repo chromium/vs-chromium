@@ -10,6 +10,9 @@ using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Jobs;
 
 namespace VsChromium.Core.JobObjects {
+  /// <summary>
+  /// Wraps a Win32 Job object handle.
+  /// </summary>
   public class JobObject : IDisposable {
     private SafeFileHandle _handle;
 

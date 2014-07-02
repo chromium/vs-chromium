@@ -12,6 +12,7 @@ using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Processes;
 using VsChromium.Threads;
 

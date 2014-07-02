@@ -1,42 +1,15 @@
-﻿// Copyright 2014 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace VsChromium.Core.Collections {
-  public class SortedArray {
-    public static int BinarySearch<T, TKey>(IList<T> array, TKey item, Func<T, TKey, int> itemComparer) {
-      return BinarySearch(array, 0, array.Count, item, itemComparer);
-    }
-
-    public static int BinarySearch<T, TKey>(IList<T> array, int index, int length, TKey item, Func<T, TKey, int> itemComparer) {
-      var max = index + length - 1;
-      var cur = 0;
-      while (cur <= max) {
-        var median = GetMedian(cur, max);
-
-        var compareResult = itemComparer(array[median], item);
-        if (compareResult < 0) {
-          cur = median + 1;
-        } else if (compareResult > 0) {
-          max = median - 1;
-        } else {
-          return median;
-        }
-      }
-      return ~cur;
-    }
-
-    private static int GetMedian(int low, int hi) {
-      return low + (hi - low >> 1);
-    }
-  }
-
-  public class SortedArray<T> : IList<T>, ICollection<T> {
+  /// <summary>
+  /// Wraps a sorted array of <typeparamref name="T"/> elements as a read only
+  /// collection, implements IList&lt;<typeparamref name="T"/>&gt; and exposing
+  /// a <see cref="BinarySearch{TKey}"/> method.
+  /// </summary>
+  public class SortedArray<T> : IList<T> {
     private readonly T[] _items;
 
     public SortedArray() {
@@ -59,8 +32,8 @@ namespace VsChromium.Core.Collections {
       return this.GetEnumerator();
     }
 
-    public int BinaraySearch<TKey>(TKey item, Func<T, TKey, int> itemComparer) {
-      return SortedArray.BinarySearch(_items, 0, _items.Length, item, itemComparer);
+    public int BinarySearch<TValue>(TValue value, Func<T, TValue, int> valueComparer) {
+      return SortedArrayHelpers.BinarySearch(_items, 0, _items.Length, value, valueComparer);
     }
 
     public void Add(T item) {

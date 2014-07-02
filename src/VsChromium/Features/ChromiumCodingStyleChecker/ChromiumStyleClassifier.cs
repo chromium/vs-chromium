@@ -8,7 +8,7 @@ using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker {
   /// <summary>

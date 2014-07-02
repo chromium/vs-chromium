@@ -4,7 +4,7 @@
 
 using System.IO;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.ChromiumEnlistment;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker {

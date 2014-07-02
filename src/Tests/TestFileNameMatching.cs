@@ -6,8 +6,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.FileNames;
-using VsChromium.Core.FileNames.PatternMatching;
+using VsChromium.Core.Files;
+using VsChromium.Core.Files.PatternMatching;
 
 namespace VsChromium.Tests {
   [TestClass]

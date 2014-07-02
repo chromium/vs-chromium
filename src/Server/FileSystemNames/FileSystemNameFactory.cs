@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Server.FileSystemNames {
   [Export(typeof(IFileSystemNameFactory))]

@@ -5,8 +5,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.FileNames;
-using VsChromium.Core.FileNames.PatternMatching;
+using VsChromium.Core.Files;
+using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Core.Chromium {

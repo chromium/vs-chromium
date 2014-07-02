@@ -4,7 +4,7 @@
 
 using System.ComponentModel.Composition;
 using System.Linq;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Search;
 

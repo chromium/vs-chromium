@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Core.Collections {
+  /// <summary>
+  /// Common interface for a Max or Min heap implementation.
+  /// </summary>
+  /// <typeparam name="T"></typeparam>
   public interface IHeap<T> {
     int Count { get; }
     T Root { get; }

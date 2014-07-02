@@ -5,6 +5,7 @@
 using System;
 using System.Windows.Input;
 using VsChromium.Core;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class CommandDelegate : ICommand {

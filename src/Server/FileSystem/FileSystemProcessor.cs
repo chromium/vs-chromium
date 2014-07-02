@@ -8,9 +8,9 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using VsChromium.Core;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.Operations;
@@ -211,7 +211,7 @@ namespace VsChromium.Server.FileSystem {
 
           // Monitor all the Chromium directories for changes.
           var newRoots = newSnapshot.ProjectRoots
-            .Select(entry => entry.Directory.DirectoryName);
+            .Select(entry => entry.Directory.DirectoryName.FullPath);
           _directoryChangeWatcher.WatchDirectories(newRoots);
 
           // Update current tree atomically

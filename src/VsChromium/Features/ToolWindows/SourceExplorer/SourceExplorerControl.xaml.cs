@@ -11,6 +11,7 @@ using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
 using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using VsChromium.Core;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Package;
 using VsChromium.Threads;
 

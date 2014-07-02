@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromium.Core.FileNames.PatternMatching;
+using VsChromium.Core.Files.PatternMatching;
 
 namespace VsChromium.Core.Configuration {
   public interface IPathPatternsFile {

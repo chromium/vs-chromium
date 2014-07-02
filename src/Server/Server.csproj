@@ -27,8 +27,6 @@
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshotNameFactory.cs" />
-    <Compile Include="FileSystem\DirectoryChangeWatcher.cs" />
-    <Compile Include="FileSystem\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystemNames\DirectoryName.cs" />
     <Compile Include="FileSystemNames\FileName.cs" />
     <Compile Include="FileSystemNames\FileSystemName.cs" />
@@ -39,15 +37,11 @@
     <Compile Include="FileSystemSnapshot\DirectorySnapshot.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshot.cs" />
     <Compile Include="FileSystem\FilesChangedEventArgs.cs" />
-    <Compile Include="FileSystem\PathChangeEntry.cs" />
-    <Compile Include="FileSystem\PathChangeKind.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystem\FileSystemChangesValidator.cs" />
     <Compile Include="FileSystem\FileSystemValidationResult.cs" />
-    <Compile Include="FileSystem\IDirectoryChangeWatcher.cs" />
     <Compile Include="FileSystem\FileSystemNameFactoryExtensions.cs" />
     <Compile Include="FileSystem\FileSystemProcessor.cs" />
-    <Compile Include="FileSystem\IDirectoryChangeWatcherFactory.cs" />
     <Compile Include="FileSystem\IFileSystemProcessor.cs" />
     <Compile Include="FileSystemSnapshot\IFileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />

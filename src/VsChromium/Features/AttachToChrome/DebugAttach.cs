@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using VsChromium.Core.DkmShared;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Processes;
 using VsChromium.DkmIntegration;
 
@@ -58,13 +59,13 @@ namespace VsChromium.Features.AttachToChrome {
         }
 
         IVsDebugger2 debugger = (IVsDebugger2)VsPackage.GetGlobalService(typeof(SVsShellDebugger));
-        Core.Logger.Log("Launching {0} debug targets", processes.Length);
+        Logger.Log("Launching {0} debug targets", processes.Length);
         int hr = debugger.LaunchDebugTargets2((uint)processes.Length, targetsBuffer);
         if (hr != 0) {
           IVsUIShell shell = (IVsUIShell)VsPackage.GetGlobalService(typeof(SVsUIShell));
           string error;
           shell.GetErrorInfo(out error);
-          Core.Logger.LogError("An error occured while attaching to process (hr = 0x{0:x}).  {1}", hr, error);
+          Logger.LogError("An error occured while attaching to process (hr = 0x{0:x}).  {1}", hr, error);
         }
       } finally {
         foreach (VsDebugTargetInfo2 target in targetList) {

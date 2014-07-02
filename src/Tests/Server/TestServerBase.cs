@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.ServerProxy;
 
 namespace VsChromium.Tests.Server {

@@ -1,5 +1,6 @@
-﻿using VsChromium.Core.Configuration;
-using VsChromium.Core.FileNames;
+﻿using VsChromium.Core.Caching;
+using VsChromium.Core.Configuration;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
   public class Project : IProject {

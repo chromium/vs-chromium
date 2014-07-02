@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Win32;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Chromium {
   public class InstallationEnumerator : IEnumerable<InstallationData> {

@@ -7,7 +7,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using VsChromium.Core.Chromium;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.ChromiumEnlistment {
   [Export(typeof(IChromiumSourceFiles))]

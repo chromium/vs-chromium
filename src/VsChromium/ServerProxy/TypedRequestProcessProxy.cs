@@ -11,6 +11,7 @@ using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.ServerProxy {
   [Export(typeof(ITypedRequestProcessProxy))]

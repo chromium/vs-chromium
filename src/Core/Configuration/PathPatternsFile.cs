@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using VsChromium.Core.FileNames.PatternMatching;
+using VsChromium.Core.Files.PatternMatching;
 
 namespace VsChromium.Core.Configuration {
   public class PathPatternsFile : IPathPatternsFile {

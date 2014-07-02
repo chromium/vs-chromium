@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Processes;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Debugging;

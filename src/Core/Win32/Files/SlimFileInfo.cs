@@ -5,7 +5,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Win32.Files {
   /// <summary>

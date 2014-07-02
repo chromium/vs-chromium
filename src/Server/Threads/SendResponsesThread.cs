@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Threading;
 using VsChromium.Core;
 using VsChromium.Core.Ipc;
+using VsChromium.Core.Logging;
 using VsChromium.Server.Ipc;
 
 namespace VsChromium.Server.Threads {

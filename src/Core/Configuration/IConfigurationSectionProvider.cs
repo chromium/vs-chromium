@@ -4,7 +4,7 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Server.Projects;
+using VsChromium.Core.Caching;
 
 namespace VsChromium.Core.Configuration {
   /// <summary>

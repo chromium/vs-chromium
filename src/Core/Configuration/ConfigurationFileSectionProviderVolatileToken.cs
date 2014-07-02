@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq;
-using VsChromium.Core.FileNames;
-using VsChromium.Server.Projects;
+using VsChromium.Core.Caching;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
   public class ConfigurationFileSectionProviderVolatileToken : IVolatileToken {

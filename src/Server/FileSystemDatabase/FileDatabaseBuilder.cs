@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using VsChromium.Core;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;

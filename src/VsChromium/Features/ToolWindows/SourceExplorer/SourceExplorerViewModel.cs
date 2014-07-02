@@ -11,9 +11,10 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using VsChromium.Core;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Wpf;
 

@@ -8,6 +8,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using VsChromium.Core.Debugger;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Processes;
 

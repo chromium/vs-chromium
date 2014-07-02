@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.Text.Outlining;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Core;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Views {
   [Export(typeof(IOpenDocumentHelper))]

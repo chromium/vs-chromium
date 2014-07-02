@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Reflection;
 using VsChromium.Core;
 using VsChromium.Core.JobObjects;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Processes;
 
 namespace VsChromium.Host {

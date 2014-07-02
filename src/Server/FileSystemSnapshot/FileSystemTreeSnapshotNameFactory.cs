@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using VsChromium.Core.Collections;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemSnapshot {
@@ -34,7 +34,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       var directory = FindDirectory(parent);
       if (directory != null) {
         // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-        int index = SortedArray.BinarySearch(directory.DirectoryEntries, name, DirectoryComparer);
+        int index = SortedArrayHelpers.BinarySearch(directory.DirectoryEntries, name, DirectoryComparer);
         if (index >= 0) {
           return directory.DirectoryEntries[index].DirectoryName;
         }
@@ -46,7 +46,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       var directory = FindDirectory(parent);
       if (directory != null) {
         // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-        int index = SortedArray.BinarySearch(directory.Files, name, FileComparer);
+        int index = SortedArrayHelpers.BinarySearch(directory.Files, name, FileComparer);
         if (index >= 0) {
           return directory.Files[index];
         }
@@ -55,7 +55,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     }
 
     public DirectorySnapshot FindRootDirectory(FullPath rootPath) {
-      var index = SortedArray.BinarySearch(_snapshot.ProjectRoots, rootPath, ProjectRootComparer);
+      var index = SortedArrayHelpers.BinarySearch(_snapshot.ProjectRoots, rootPath, ProjectRootComparer);
       if (index >= 0)
         return _snapshot.ProjectRoots[index].Directory;
 
@@ -71,7 +71,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         return null;
 
       // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-      var index = SortedArray.BinarySearch(parent.DirectoryEntries, name, DirectoryNameComparer);
+      var index = SortedArrayHelpers.BinarySearch(parent.DirectoryEntries, name, DirectoryNameComparer);
       if (index < 0)
         return null;
 

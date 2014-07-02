@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Views {
   [Export(typeof(IStandarImageSourceFactory))]

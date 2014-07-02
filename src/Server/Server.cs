@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Logging;
 using VsChromium.Server.Ipc.TypedEvents;
 using VsChromium.Server.Threads;
 

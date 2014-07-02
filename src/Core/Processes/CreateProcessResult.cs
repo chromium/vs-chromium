@@ -5,6 +5,7 @@
 using System;
 using System.Diagnostics;
 using VsChromium.Core.Debugger;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Processes {
   public class CreateProcessResult : IDisposable {

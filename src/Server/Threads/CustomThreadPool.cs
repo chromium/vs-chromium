@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using VsChromium.Core;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Server.Threads {
   [Export(typeof(ICustomThreadPool))]

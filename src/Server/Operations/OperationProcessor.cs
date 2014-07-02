@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.Composition;
 using VsChromium.Core;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Server.Operations {
   [Export(typeof(IOperationProcessor))]

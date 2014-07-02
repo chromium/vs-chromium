@@ -7,7 +7,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {

@@ -4,7 +4,7 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.FileNames;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Operations;
 

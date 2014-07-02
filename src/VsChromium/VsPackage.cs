@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core;
 using VsChromium.Commands;
+using VsChromium.Core.Logging;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
 using VsChromium.Features.ToolWindows.BuildExplorer;

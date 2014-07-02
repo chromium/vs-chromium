@@ -6,6 +6,9 @@ using System;
 using System.Collections.Generic;
 
 namespace VsChromium.Core.Collections {
+  /// <summary>
+  /// Implements a Max heap, using a custom (or the default) comparer.
+  /// </summary>
   public class MaxHeap<T> : IHeap<T> {
     private const int _defaultCapacity = 6;
 

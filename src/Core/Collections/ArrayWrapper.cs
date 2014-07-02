@@ -7,6 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace VsChromium.Core.Collections {
+  /// <summary>
+  /// Wraps an IList{T} or {t}[] and expose a <see cref="CopyTo"/> method.
+  /// </summary>
   public class ArrayWrapper<T> {
     private readonly int _count;
     private readonly T[] _sourceArray;

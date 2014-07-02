@@ -5,6 +5,9 @@
 using System.Collections.Generic;
 
 namespace VsChromium.Core.Collections {
+  /// <summary>
+  /// Implements a Min heap, using a custom (or the default) comparer.
+  /// </summary>
   public class MinHeap<T> : IHeap<T> {
     private readonly MaxHeap<T> _maxpHeap;
 

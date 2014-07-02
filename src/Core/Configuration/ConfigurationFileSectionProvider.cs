@@ -4,8 +4,8 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.FileNames;
-using VsChromium.Server.Projects;
+using VsChromium.Core.Caching;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
   public class ConfigurationFileSectionProvider : IConfigurationSectionProvider {

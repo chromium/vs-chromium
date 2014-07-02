@@ -11,19 +11,21 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Core.Configuration {
   public class FileWithSections : IFileWithSections {
+    private readonly IFileSystem _fileSystem;
     private readonly FullPath _filename;
     private readonly IVolatileToken _fileUpdateVolatileToken;
     private readonly Lazy<Dictionary<string, List<string>>> _sections;
     private Func<IEnumerable<string>, IEnumerable<string>> _postProcessing;
 
-    public FileWithSections(FullPath filename) {
+    public FileWithSections(IFileSystem fileSystem, FullPath filename) {
+      _fileSystem = fileSystem;
       _filename = filename;
-      _fileUpdateVolatileToken = new FileUpdateVolatileToken(filename);
+      _fileUpdateVolatileToken = new FileUpdateVolatileToken(_fileSystem, filename);
       _sections = new Lazy<Dictionary<string, List<string>>>(ReadFile);
     }
 
     private Dictionary<string, List<string>> ReadFile() {
-      var lines = File.ReadAllLines(_filename.FullName);
+      var lines = _fileSystem.ReadAllLines(_filename);
       var result = new Dictionary<string, List<string>>();
       var sectionName = "";
       foreach (var line in lines) {

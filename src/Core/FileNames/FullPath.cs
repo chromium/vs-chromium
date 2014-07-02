@@ -51,11 +51,6 @@ namespace VsChromium.Core.FileNames {
       return new FullPath(PathHelpers.CombinePaths(_path, name));
     }
 
-    /// <summary>
-    /// Returns true if the file corresponding to the full path exists on disk.
-    /// </summary>
-    public bool FileExists { get { return File.Exists(_path); } }
-
     public static bool operator ==(FullPath x, FullPath y) {
       return x.Equals(y);
     }

@@ -7,6 +7,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
+using VsChromium.Core.FileNames;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -15,19 +16,21 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// </summary>
   [Export(typeof(ITextLineChecker))]
   public class TrailingSpacesChecker : ITextLineChecker {
-    private const string _whitespaceCharacters = " \t";
+    private const string WhitespaceCharacters = " \t";
 
     [Import]
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
+    [Import]
+    private IFileSystem _fileSystem = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("code");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
         foreach (var point in line.GetFragment(line.Start, line.End, TextLineFragment.Options.Reverse).GetPoints()) {
-          if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
+          if (WhitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
             yield return new TextLineCheckerError {
               Span = new SnapshotSpan(point, point + 1),
               Message = "Trailing whitespaces are not allowed.",

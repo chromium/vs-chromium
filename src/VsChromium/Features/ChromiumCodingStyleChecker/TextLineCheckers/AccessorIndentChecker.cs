@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
+using VsChromium.Core.FileNames;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -16,21 +17,23 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   /// </summary>
   [Export(typeof(ITextLineChecker))]
   public class AccessorIndentChecker : ITextLineChecker {
-    private const string _whitespaceCharacters = " \t";
+    private const string WhitespaceCharacters = " \t";
 
     [Import]
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
+    [Import]
+    private IFileSystem _fileSystem = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("C/C++");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
         int indent = 0;
         var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
         foreach (var point in fragment.GetPoints()) {
-          if (_whitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
+          if (WhitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
             // continue as long as we find whitespaces
             indent++;
           } else if (GetMarker(line, fragment, point) != null) {

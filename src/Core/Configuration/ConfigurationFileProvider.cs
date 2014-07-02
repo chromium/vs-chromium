@@ -15,12 +15,18 @@ namespace VsChromium.Core.Configuration {
   public class ConfigurationFileProvider : IConfigurationFileProvider {
     private const string _configurationDirectoryName = "Configuration";
     private const string _localConfigurationDirectoryName = ".VsChromium";
+    private readonly IFileSystem _fileSystem;
+
+    [ImportingConstructor]
+    public ConfigurationFileProvider(IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
+    }
 
     public IEnumerable<string> ReadFile(RelativePath name, Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing) {
       foreach (var directoryName in PossibleDirectoryNames()) {
         var path = directoryName.Combine(name.Value);
-        if (path.FileExists)
-          return postProcessing(path, File.ReadAllLines(path.FullName));
+        if (_fileSystem.FileExists(path))
+          return postProcessing(path, _fileSystem.ReadAllLines(path));
       }
 
       throw new FileLoadException(

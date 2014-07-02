@@ -7,6 +7,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
+using VsChromium.Core.FileNames;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -17,13 +18,15 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
   public class TabCharacterChecker : ITextLineChecker {
     [Import]
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
+    [Import]
+    private IFileSystem _fileSystem = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("code");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(line)) {
+      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
         if (line.Length == 0) {
           yield break;
         }

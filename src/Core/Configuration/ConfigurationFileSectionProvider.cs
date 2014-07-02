@@ -12,9 +12,9 @@ namespace VsChromium.Core.Configuration {
     private readonly IConfigurationFileProvider _configurationFileProvider;
     private readonly ConfigurationFileSectionProviderVolatileToken _volatileToken;
 
-    public ConfigurationFileSectionProvider(IConfigurationFileProvider configurationFileProvider) {
+    public ConfigurationFileSectionProvider(IConfigurationFileProvider configurationFileProvider, IFileSystem fileSystem) {
       _configurationFileProvider = configurationFileProvider;
-      _volatileToken = new ConfigurationFileSectionProviderVolatileToken();
+      _volatileToken = new ConfigurationFileSectionProviderVolatileToken(fileSystem);
     }
 
     public IEnumerable<string> GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {

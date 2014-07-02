@@ -1,22 +1,23 @@
 using System;
-using System.IO;
 using VsChromium.Core.FileNames;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Core.Configuration {
   public class FileUpdateVolatileToken : IVolatileToken {
+    private readonly IFileSystem _fileSystem;
     private readonly FullPath _fileName;
     private readonly DateTime _lastWritetimeUtc;
 
-    public FileUpdateVolatileToken(FullPath fileName) {
+    public FileUpdateVolatileToken(IFileSystem fileSystem, FullPath fileName) {
+      _fileSystem = fileSystem;
       _fileName = fileName;
-      _lastWritetimeUtc = File.GetLastWriteTimeUtc(_fileName.FullName);
+      _lastWritetimeUtc = _fileSystem.GetFileLastWriteTimeUtc(_fileName);
     }
 
     public bool IsCurrent {
       get {
-        return _fileName.FileExists &&
-               _lastWritetimeUtc == File.GetLastWriteTimeUtc(_fileName.FullName);
+        return _fileSystem.FileExists(_fileName) &&
+               _lastWritetimeUtc == _fileSystem.GetFileLastWriteTimeUtc(_fileName);
       }
     }
   }

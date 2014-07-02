@@ -35,6 +35,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IDirectoryChangeWatcher _directoryChangeWatcher;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
+    private readonly IFileSystem _fileSystem;
     private readonly object _lock = new object();
     private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
     private readonly IOperationProcessor _operationProcessor;
@@ -45,12 +46,14 @@ namespace VsChromium.Server.FileSystem {
     [ImportingConstructor]
     public FileSystemProcessor(
       IFileSystemNameFactory fileSystemNameFactory,
+      IFileSystem fileSystem,
       IProjectDiscovery projectDiscovery,
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
       ITaskQueueFactory taskQueueFactory,
       IFileSystemSnapshotBuilder fileSystemSnapshotBuilder,
       IOperationProcessor operationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
+      _fileSystem = fileSystem;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
       _operationProcessor = operationProcessor;
@@ -169,7 +172,7 @@ namespace VsChromium.Server.FileSystem {
         filenames = _addedFiles.ToList();
       }
 
-      var deletedFileNames = filenames.Where(x => !x.FileExists).ToList();
+      var deletedFileNames = filenames.Where(x => !_fileSystem.FileExists(x)).ToList();
 
       if (deletedFileNames.Any()) {
         Logger.Log("Some known files do not exist on disk anymore. Time to recompute the world.");

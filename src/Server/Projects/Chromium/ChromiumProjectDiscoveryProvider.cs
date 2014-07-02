@@ -15,7 +15,7 @@ namespace VsChromium.Server.Projects.Chromium {
 
     [ImportingConstructor]
     public ChromiumProjectDiscoveryProvider(IConfigurationFileProvider configurationFileProvider, IFileSystem fileSystem) {
-      _configurationSectionProvider = new ConfigurationFileSectionProvider(configurationFileProvider);
+      _configurationSectionProvider = new ConfigurationFileSectionProvider(configurationFileProvider, fileSystem);
       _chromiumDiscovery = new ChromiumDiscoveryWithCache<Project>(_configurationSectionProvider, fileSystem);
     }
 

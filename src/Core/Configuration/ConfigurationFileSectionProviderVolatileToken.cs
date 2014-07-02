@@ -5,10 +5,15 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Core.Configuration {
   public class ConfigurationFileSectionProviderVolatileToken : IVolatileToken {
+    private readonly IFileSystem _fileSystem;
     private readonly ConcurrentDictionary<FullPath, IVolatileToken> _files = new ConcurrentDictionary<FullPath, IVolatileToken>();
 
+    public ConfigurationFileSectionProviderVolatileToken(IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
+    }
+
     public void AddFile(FullPath name) {
-      _files.AddOrUpdate(name, x => new FileUpdateVolatileToken(x), (k, v) => v);
+      _files.AddOrUpdate(name, x => new FileUpdateVolatileToken(_fileSystem, x), (k, v) => v);
     }
 
     public bool IsCurrent {

@@ -9,10 +9,12 @@ namespace VsChromium.Views {
   [Export(typeof(ITextDocumentService))]
   public class TextDocumentService : ITextDocumentService {
     private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly IFileSystem _fileSystem;
 
     [ImportingConstructor]
-    public TextDocumentService(IUIRequestProcessor uiRequestProcessor) {
+    public TextDocumentService(IUIRequestProcessor uiRequestProcessor, IFileSystem fileSystem) {
       _uiRequestProcessor = uiRequestProcessor;
+      _fileSystem = fileSystem;
     }
 
     public void OnDocumentOpen(ITextDocument document) {
@@ -47,12 +49,12 @@ namespace VsChromium.Views {
       _uiRequestProcessor.Post(request);
     }
 
-    private static bool IsPhysicalFile(string path) {
+    private bool IsPhysicalFile(string path) {
       // This can happen with "Find in files" for example, as it uses a fake filename.
       if (!PathHelpers.IsAbsolutePath(path))
         return false;
 
-      return File.Exists(path);
+      return _fileSystem.FileExists(new FullPath(path));
     }
   }
 }

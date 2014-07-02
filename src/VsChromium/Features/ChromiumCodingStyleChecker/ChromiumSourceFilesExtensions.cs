@@ -9,7 +9,7 @@ using VsChromium.ChromiumEnlistment;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker {
   public static class ChromiumSourceFilesExtensions {
-    public static bool ApplyCodingStyle(this IChromiumSourceFiles chromiumSourceFiles, ITextSnapshotLine line) {
+    public static bool ApplyCodingStyle(this IChromiumSourceFiles chromiumSourceFiles, IFileSystem fileSystem, ITextSnapshotLine line) {
       // Check document is part of a Chromium source repository
       ITextDocument document;
       if (!line.Snapshot.TextBuffer.Properties.TryGetProperty<ITextDocument>(typeof(ITextDocument), out document))
@@ -19,7 +19,7 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker {
       if (!PathHelpers.IsAbsolutePath(path))
         return false;
 
-      if (!File.Exists(path))
+      if (!fileSystem.FileExists(new FullPath(path)))
         return false;
 
       return chromiumSourceFiles.ApplyCodingStyle(document.FilePath);

@@ -54,9 +54,11 @@
     <Compile Include="DkmShared\DebugProcessOptions.cs" />
     <Compile Include="DkmShared\VsDebuggerMessage.cs" />
     <Compile Include="DkmShared\VsPackageMessage.cs" />
+    <Compile Include="FileNames\FileSystem.cs" />
+    <Compile Include="FileNames\IFileSystem.cs" />
     <Compile Include="FileNames\PathHelpers.cs" />
     <Compile Include="FileNames\SystemPathComparer.cs" />
-    <Compile Include="FileNames\FullPathNameSet.cs" />
+    <Compile Include="FileNames\FullPathDictionary.cs" />
     <Compile Include="FileNames\CaseInsensitivePathComparer.cs" />
     <Compile Include="FileNames\CaseSensitivePathComparer.cs" />
     <Compile Include="FileNames\IPathComparer.cs" />

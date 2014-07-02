@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace VsChromium.Core.FileNames {
-  public class FullPathNameSet<T> : IEnumerable<KeyValuePair<FullPath, T>> {
+  public class FullPathDictionary<T> : IEnumerable<KeyValuePair<FullPath, T>> {
     private readonly Dictionary<FullPath, T> _entries = new Dictionary<FullPath, T>();
 
     public IEnumerator<KeyValuePair<FullPath, T>> GetEnumerator() {
@@ -26,10 +26,6 @@ namespace VsChromium.Core.FileNames {
     public bool Contains(FullPath name) {
       return _entries.ContainsKey(name);
     }
-
-    //public int RemoveWhere(Predicate<FullPath> match) {
-    //  return RemoveWhere(x => match(x.Key));
-    //}
 
     public int RemoveWhere(Predicate<KeyValuePair<FullPath, T>> match) {
       var keys = _entries.Where(x => match(x)).ToList();

@@ -11,9 +11,11 @@ using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Core.Chromium {
   public class ChromiumDiscovery : IChromiumDiscovery {
+    private readonly IFileSystem _fileSystem;
     private readonly IPathPatternsFile _chromiumEnlistmentPatterns;
 
-    public ChromiumDiscovery(IConfigurationSectionProvider configurationSectionProvider) {
+    public ChromiumDiscovery(IConfigurationSectionProvider configurationSectionProvider, IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
       _chromiumEnlistmentPatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationFilenames.ChromiumEnlistmentDetectionPatterns);
     }
 
@@ -23,7 +25,7 @@ namespace VsChromium.Core.Chromium {
 
     public FullPath GetEnlistmentRoot(FullPath filename) {
       var directory = filename.Parent;
-      if (!directory.DirectoryExists)
+      if (!_fileSystem.DirectoryExists(directory))
         return default(FullPath);
 
       return EnumerateParents(filename)

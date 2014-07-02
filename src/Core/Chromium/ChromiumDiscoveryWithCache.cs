@@ -9,13 +9,15 @@ using VsChromium.Core.Linq;
 
 namespace VsChromium.Core.Chromium {
   public class ChromiumDiscoveryWithCache<T> : IChromiumDiscoveryWithCache<T> {
+    private readonly IFileSystem _fileSystem;
     private readonly IChromiumDiscovery _chromiumDiscovery;
-    private readonly FullPathNameSet<T> _chromiumRootDirectories = new FullPathNameSet<T>();
-    private readonly FullPathNameSet<object> _nonChromiumDirectories = new FullPathNameSet<object>();
+    private readonly FullPathDictionary<T> _chromiumRootDirectories = new FullPathDictionary<T>();
+    private readonly FullPathDictionary<object> _nonChromiumDirectories = new FullPathDictionary<object>();
     private readonly object _lock = new object();
 
-    public ChromiumDiscoveryWithCache(IConfigurationSectionProvider configurationSectionProvider) {
-      _chromiumDiscovery = new ChromiumDiscovery(configurationSectionProvider);
+    public ChromiumDiscoveryWithCache(IConfigurationSectionProvider configurationSectionProvider, IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
+      _chromiumDiscovery = new ChromiumDiscovery(configurationSectionProvider, fileSystem);
     }
 
     public T GetEnlistmentRootFromRootpath(FullPath root, Func<FullPath, T> factory) {
@@ -45,8 +47,8 @@ namespace VsChromium.Core.Chromium {
 
     public void ValidateCache() {
       lock (_lock) {
-        _nonChromiumDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
-        _chromiumRootDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
+        _nonChromiumDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
+        _chromiumRootDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
       }
     }
 

@@ -12,12 +12,17 @@ using VsChromium.Core.Linq;
 namespace VsChromium.Server.Projects.ProjectFile {
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ProjectFileDiscoveryProvider : IProjectDiscoveryProvider {
-    private readonly FullPathNameSet<Project> _knownProjectRootDirectories = new FullPathNameSet<Project>();
-    private readonly FullPathNameSet<object> _knownNonProjectDirectories = new FullPathNameSet<object>();
+    private readonly IFileSystem _fileSystem;
+    private readonly FullPathDictionary<Project> _knownProjectRootDirectories = new FullPathDictionary<Project>();
+    private readonly FullPathDictionary<object> _knownNonProjectDirectories = new FullPathDictionary<object>();
     private readonly object _lock = new object();
 
     public int Priority { get { return 100; } }
 
+    [ImportingConstructor]
+    public ProjectFileDiscoveryProvider(IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
+    }
     public IProject GetProject(FullPath filename) {
       var name = filename;
       lock (_lock) {
@@ -49,15 +54,15 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
     public void ValidateCache() {
       lock (_lock) {
-        _knownProjectRootDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
+        _knownProjectRootDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
         _knownProjectRootDirectories.RemoveWhere(x => x.Value.IsOutdated);
-        _knownNonProjectDirectories.RemoveWhere(x => !x.Key.DirectoryExists);
+        _knownNonProjectDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
       }
     }
 
     private IProject GetProjectWorker(FullPath filepath) {
       var directory = filepath.Parent;
-      if (directory.DirectoryExists) {
+      if (_fileSystem.DirectoryExists(directory)) {
         var projectPath = EnumerateParents(filepath).FirstOrDefault(x => ContainsProjectFile(x));
         if (projectPath != default(FullPath)) {
           var project = CreateProject(projectPath);

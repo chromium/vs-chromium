@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Core.FileNames {
+  /// <summary>
+  /// The comparer instance to use for file s system paths comparisons.
+  /// </summary>
   public static class SystemPathComparer {
     public static IPathComparer Instance {
       get {

@@ -14,18 +14,22 @@ using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystem {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
+    private readonly IFileSystem _fileSystem;
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
     private readonly TimeSpan _eventReceivedTimeout = TimeSpan.FromSeconds(10.0);
     private readonly TimeSpan _pathsChangedDelay = TimeSpan.FromSeconds(10.0);
     private readonly TimeSpan _simplePathsChangedDelay = TimeSpan.FromSeconds(1.0);
 
-    private readonly Dictionary<DirectoryName, FileSystemWatcher> _watchers =
-      new Dictionary<DirectoryName, FileSystemWatcher>();
+    private readonly Dictionary<DirectoryName, FileSystemWatcher> _watchers = new Dictionary<DirectoryName, FileSystemWatcher>();
     private readonly object _watchersLock = new object();
 
     private Dictionary<FullPath, PathChangeKind> _changedPaths = new Dictionary<FullPath, PathChangeKind>();
     private readonly object _changedPathsLock = new object();
     private Thread _thread;
+
+    public DirectoryChangeWatcher(IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
+    }
 
     public void WatchDirectories(IEnumerable<DirectoryName> directories) {
       lock (_watchersLock) {
@@ -101,7 +105,7 @@ namespace VsChromium.Server.FileSystem {
     private void CheckDeletedRoots() {
       lock (_watchersLock) {
         var deletedWatchers = _watchers
-          .Where(item => !item.Key.FullPath.DirectoryExists)
+          .Where(item => !_fileSystem.DirectoryExists(item.Key.FullPath))
           .ToList();
 
         deletedWatchers
@@ -168,7 +172,7 @@ namespace VsChromium.Server.FileSystem {
 
       // Creation/changes to a directory entry are irrelevant (we will get notifications
       // for files inside the directory is anything relevant occured.)
-      if (path.DirectoryExists) {
+      if (_fileSystem.DirectoryExists(path)) {
         if (changeType == PathChangeKind.Changed || changeType == PathChangeKind.Created)
           return false;
       }

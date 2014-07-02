@@ -3,12 +3,20 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
+using VsChromium.Core.FileNames;
 
 namespace VsChromium.Server.FileSystem {
   [Export(typeof(IDirectoryChangeWatcherFactory))]
   public class DirectoryChangeWatcherFactory : IDirectoryChangeWatcherFactory {
+    private readonly IFileSystem _fileSystem;
+
+    [ImportingConstructor]
+    public DirectoryChangeWatcherFactory(IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
+    }
+
     public IDirectoryChangeWatcher CreateWatcher() {
-      return new DirectoryChangeWatcher();
+      return new DirectoryChangeWatcher(_fileSystem);
     }
   }
 }

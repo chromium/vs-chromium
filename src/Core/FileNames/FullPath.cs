@@ -56,12 +56,6 @@ namespace VsChromium.Core.FileNames {
     /// </summary>
     public bool FileExists { get { return File.Exists(_path); } }
 
-    /// <summary>
-    /// Returns true if the directory corresponding to the full path exists on
-    /// disk
-    /// </summary>
-    public bool DirectoryExists { get { return Directory.Exists(_path); } }
-
     public static bool operator ==(FullPath x, FullPath y) {
       return x.Equals(y);
     }

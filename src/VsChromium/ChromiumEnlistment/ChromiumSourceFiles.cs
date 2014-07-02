@@ -19,10 +19,10 @@ namespace VsChromium.ChromiumEnlistment {
     private readonly IChromiumDiscoveryWithCache<FullPath> _chromiumDiscoveryProvider;
 
     [ImportingConstructor]
-    public ChromiumSourceFiles(IConfigurationFileProvider configurationFileProvider) {
+    public ChromiumSourceFiles(IConfigurationFileProvider configurationFileProvider, IFileSystem fileSystem) {
       var configurationSectionProvider = new ConfigurationFileSectionProvider(configurationFileProvider);
       _chromiumCodingStylePatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationStyleFilenames.ChromiumCodingStyleIgnore);
-      _chromiumDiscoveryProvider = new ChromiumDiscoveryWithCache<FullPath>(configurationSectionProvider);
+      _chromiumDiscoveryProvider = new ChromiumDiscoveryWithCache<FullPath>(configurationSectionProvider, fileSystem);
     }
 
     public void ValidateCache() {

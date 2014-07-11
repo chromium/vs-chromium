@@ -30,7 +30,7 @@ namespace VsChromium.Server.FileSystem {
         .GroupBy(x => GetProjectRoot(fileNameMapper(x)))
         .OrderBy(g => g.Key)
         .Select(group => new DirectoryEntry {
-          Name = group.Key.FullPath.FullName,
+          Name = group.Key.FullPath.Value,
           Entries = CreateGroup(group, fileNameMapper, dataMapper).ToList()
         });
 
@@ -93,12 +93,12 @@ namespace VsChromium.Server.FileSystem {
         return null;
 
       var rootPath = project.RootPath;
-      var rootLength = rootPath.FullName.Length + 1;
-      if (rootPath.FullName.Last() == Path.DirectorySeparatorChar)
+      var rootLength = rootPath.Value.Length + 1;
+      if (rootPath.Value.Last() == Path.DirectorySeparatorChar)
         rootLength--;
 
       var directoryName = fileSystemNameFactory.CreateAbsoluteDirectoryName(rootPath);
-      var relativePath = path.FullName.Substring(rootLength);
+      var relativePath = path.Value.Substring(rootLength);
       var items = relativePath.Split(new char[] {
         Path.DirectorySeparatorChar
       });

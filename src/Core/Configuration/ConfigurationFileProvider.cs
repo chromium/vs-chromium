@@ -13,8 +13,8 @@ using VsChromium.Core.Files;
 namespace VsChromium.Core.Configuration {
   [Export(typeof(IConfigurationFileProvider))]
   public class ConfigurationFileProvider : IConfigurationFileProvider {
-    private const string _configurationDirectoryName = "Configuration";
-    private const string _localConfigurationDirectoryName = ".VsChromium";
+    private const string ConfigurationDirectoryName = "Configuration";
+    private const string LocalConfigurationDirectoryName = ".VsChromium";
     private readonly IFileSystem _fileSystem;
 
     [ImportingConstructor]
@@ -22,21 +22,21 @@ namespace VsChromium.Core.Configuration {
       _fileSystem = fileSystem;
     }
 
-    public IEnumerable<string> ReadFile(RelativePath name, Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing) {
+    public IEnumerable<string> ReadFile(RelativePath relativePath, Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing) {
       foreach (var directoryName in PossibleDirectoryNames()) {
-        var path = directoryName.Combine(name.Value);
+        var path = directoryName.Combine(relativePath);
         if (_fileSystem.FileExists(path))
           return postProcessing(path, _fileSystem.ReadAllLines(path));
       }
 
       throw new FileLoadException(
-        string.Format("Could not load configuration file \"{0}\" from the following locations:{1}", name,
+        string.Format("Could not load configuration file \"{0}\" from the following locations:{1}", relativePath,
                       PossibleDirectoryNames().Aggregate("", (x, y) => x + "\n" + y)));
     }
 
     private IEnumerable<FullPath> PossibleDirectoryNames() {
-      yield return new FullPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)).Combine(_localConfigurationDirectoryName);
-      yield return new FullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)).Combine(_configurationDirectoryName);
+      yield return new FullPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)).Combine(new RelativePath(LocalConfigurationDirectoryName));
+      yield return new FullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)).Combine(new RelativePath(ConfigurationDirectoryName));
     }
   }
 }

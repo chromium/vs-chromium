@@ -39,7 +39,7 @@ namespace VsChromium.ChromiumEnlistment {
     }
 
     private bool ApplyCodingStyleWorker(FullPath root, string filename) {
-      var relativePath = filename.Substring(root.FullName.Length);
+      var relativePath = filename.Substring(root.Value.Length);
       if (relativePath.Length == 0)
         return false;
 

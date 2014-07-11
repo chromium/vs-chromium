@@ -36,19 +36,19 @@ namespace VsChromium.Core.Files {
     /// <summary>
     /// Return the string representation of this full path.
     /// </summary>
-    public string FullName { get { return _path; } }
+    public string Value { get { return _path; } }
 
     /// <summary>
     /// Return the file name part of this full path.
     /// </summary>
-    public string Name { get { return Path.GetFileName(_path); } }
+    public string FileName { get { return Path.GetFileName(_path); } }
 
     /// <summary>
     /// Returns a full path instance as the combination of this full path with
-    /// <paramref name="name"/> appened at the end.
+    /// <paramref name="relativePath"/> appened at the end.
     /// </summary>
-    public FullPath Combine(string name) {
-      return new FullPath(PathHelpers.CombinePaths(_path, name));
+    public FullPath Combine(RelativePath relativePath) {
+      return new FullPath(PathHelpers.CombinePaths(_path, relativePath.Value));
     }
 
     public static bool operator ==(FullPath x, FullPath y) {

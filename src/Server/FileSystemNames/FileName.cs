@@ -21,6 +21,6 @@ namespace VsChromium.Server.FileSystemNames {
 
     public override DirectoryName Parent { get { return _parent; } }
     public override RelativePath RelativePath { get { return _relativePath; } }
-    public override FullPath FullPath { get { return GetParentAbsolutePathName().Combine(_relativePath.Value); } }
+    public override FullPath FullPath { get { return GetParentAbsolutePathName().Combine(_relativePath); } }
   }
 }

@@ -62,7 +62,7 @@ namespace VsChromium.Core.Files {
       }
 
       Logger.Log("Starting monitoring directory \"{0}\" for change notifications.", directory);
-      watcher.Path = directory.FullName;
+      watcher.Path = directory.Value;
       watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
       watcher.IncludeSubdirectories = true;
       watcher.InternalBufferSize = 50 * 1024; // 50KB sounds more reasonable than 8KB

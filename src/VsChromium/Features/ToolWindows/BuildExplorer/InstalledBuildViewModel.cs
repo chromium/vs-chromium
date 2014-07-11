@@ -29,7 +29,7 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
       IntPtr hicon = IntPtr.Zero;
 
       try {
-        string iconPath = Path.Combine(_installationData.InstallationPath.FullName, "chrome.exe");
+        string iconPath = Path.Combine(_installationData.InstallationPath.Value, "chrome.exe");
         ushort index = (ushort)_installationData.IconIndex;
         hicon = Core.Win32.Shell.NativeMethods.ExtractAssociatedIcon(IntPtr.Zero, iconPath, ref index);
         using (Icon icon = Icon.FromHandle(hicon)) {

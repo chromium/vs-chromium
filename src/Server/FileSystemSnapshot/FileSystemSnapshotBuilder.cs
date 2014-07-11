@@ -75,7 +75,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         .Select(traversedDirectoryEntry => {
           var directoryName = traversedDirectoryEntry.DirectoryName;
           if (progress.Step()) {
-            progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.FullName, directoryName.RelativePath.Value));
+            progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.Value, directoryName.RelativePath.Value));
           }
           var entries = traversedDirectoryEntry.ChildFileNames
             .Where(childFilename => project.FileFilter.Include(childFilename.RelativePath))
@@ -151,7 +151,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePath)) {
           IList<string> childDirectories;
           IList<string> childFiles;
-          NativeFile.GetDirectoryEntries(PathHelpers.CombinePaths(project.RootPath.FullName, head.RelativePath.Value), out childDirectories, out childFiles);
+          NativeFile.GetDirectoryEntries(PathHelpers.CombinePaths(project.RootPath.Value, head.RelativePath.Value), out childDirectories, out childFiles);
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childDirectories.Count; i++) {
             stack.Push(fileNameFactory.CreateDirectoryName(head, childDirectories[i]));

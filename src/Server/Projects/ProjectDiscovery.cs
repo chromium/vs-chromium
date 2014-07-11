@@ -21,7 +21,7 @@ namespace VsChromium.Server.Projects {
       return _providers
         .Select(t => t.GetProject(filename))
         .Where(project => project != null)
-        .OrderByDescending(p => p.RootPath.FullName.Length)
+        .OrderByDescending(p => p.RootPath.Value.Length)
         .FirstOrDefault();
     }
 

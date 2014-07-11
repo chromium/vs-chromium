@@ -61,7 +61,7 @@ namespace VsChromium.Core.Win32.Files {
     }
 
     private void Refresh() {
-      if (!NativeMethods.GetFileAttributesEx(_path.FullName, 0, ref _data))
+      if (!NativeMethods.GetFileAttributesEx(_path.Value, 0, ref _data))
         _win32Error = Marshal.GetLastWin32Error();
       _win32Error = 0;
     }

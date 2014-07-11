@@ -69,7 +69,7 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public override string ToString() {
-      return FullPath.FullName;
+      return FullPath.Value;
     }
 
     #region Comparison/Equality plumbing

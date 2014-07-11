@@ -43,7 +43,7 @@ namespace VsChromium.Core.Chromium {
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
       IList<string> directories;
       IList<string> files;
-      NativeFile.GetDirectoryEntries(path.FullName, out directories, out files);
+      NativeFile.GetDirectoryEntries(path.Value, out directories, out files);
       return chromiumEnlistmentPatterns.GetPathMatcherLines()
         .All(item => MatchFileOrDirectory(item, directories, files));
     }

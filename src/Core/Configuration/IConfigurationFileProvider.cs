@@ -8,6 +8,6 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
   public interface IConfigurationFileProvider {
-    IEnumerable<string> ReadFile(RelativePath name, Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing);
+    IEnumerable<string> ReadFile(RelativePath relativePath, Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing);
   }
 }

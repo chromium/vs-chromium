@@ -66,14 +66,14 @@ namespace VsChromium.Server.FileSystem {
       var rootPath = project.RootPath;
 
       // If path is root itself, it is never excluded.
-      if (rootPath.FullName.Length == path.FullName.Length)
+      if (rootPath.Value.Length == path.Value.Length)
         return false;
 
-      var rootLength = rootPath.FullName.Length + 1; // Move past '\\' character.
-      if (rootPath.FullName.Last() == Path.DirectorySeparatorChar)
+      var rootLength = rootPath.Value.Length + 1; // Move past '\\' character.
+      if (rootPath.Value.Last() == Path.DirectorySeparatorChar)
         rootLength--;
 
-      var relativePath = path.FullName.Substring(rootLength);
+      var relativePath = path.Value.Substring(rootLength);
       var items = relativePath.Split(new char[] {
         Path.DirectorySeparatorChar
       });

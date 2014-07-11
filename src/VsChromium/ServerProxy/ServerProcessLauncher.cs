@@ -52,7 +52,7 @@ namespace VsChromium.ServerProxy {
       Logger.Log("Creating VsChromiumHost process.");
       var path = GetProcessPath();
       Logger.Log("  Path={0}", path);
-      var serverPath = Path.Combine(Path.GetDirectoryName(path.FullName), ServerName);
+      var serverPath = Path.Combine(Path.GetDirectoryName(path.Value), ServerName);
       Logger.Log("  Server path={0}", serverPath);
 
       var arguments = new List<string>();
@@ -64,7 +64,7 @@ namespace VsChromium.ServerProxy {
 
       var argumentLine = arguments.Aggregate("", (x, v) => x + QuoteArgument(v) + " ");
       Logger.Log("  Arguments={0}", argumentLine);
-      _serverProcess = _processCreator.CreateProcess(path.FullName, argumentLine,
+      _serverProcess = _processCreator.CreateProcess(path.Value, argumentLine,
                                                      CreateProcessOptions.AttachDebugger |
                                                      CreateProcessOptions.BreakAwayFromJob);
       Logger.Log("VsChromiumHost process created (pid={0}).", _serverProcess.Process.Id);
@@ -91,12 +91,12 @@ namespace VsChromium.ServerProxy {
 
     private IEnumerable<FullPath> GetCandidateProcessPaths() {
       var folder = new FullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-      yield return folder.Combine(ProxyServerName);
+      yield return folder.Combine(new RelativePath(ProxyServerName));
 
-      var serverFolder = folder.Combine("..").Combine("..");
+      var serverFolder = folder.Parent.Parent;
 
-      yield return serverFolder.Combine("bin\\Debug").Combine(ServerName);
-      yield return serverFolder.Combine("bin\\Release").Combine(ServerName);
+      yield return serverFolder.Combine(new RelativePath("bin\\Debug")).Combine(new RelativePath(ServerName));
+      yield return serverFolder.Combine(new RelativePath("bin\\Release")).Combine(new RelativePath(ServerName));
     }
 
     public int Priority { get { return 0; } }

@@ -47,20 +47,21 @@ namespace VsChromium.Server.FileSystem {
     public FileSystemProcessor(
       IFileSystemNameFactory fileSystemNameFactory,
       IFileSystem fileSystem,
+      IFileSystemSnapshotBuilder fileSystemSnapshotBuilder,
+      IOperationProcessor operationProcessor,
       IProjectDiscovery projectDiscovery,
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
-      ITaskQueueFactory taskQueueFactory,
-      IFileSystemSnapshotBuilder fileSystemSnapshotBuilder,
-      IOperationProcessor operationProcessor) {
+      ITaskQueueFactory taskQueueFactory) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _fileSystem = fileSystem;
-      _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
       _operationProcessor = operationProcessor;
       _projectDiscovery = projectDiscovery;
+
       _taskQueue = taskQueueFactory.CreateQueue("FileSystemProcessor Task Queue");
-      _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
       _fileSystemSnapshot = FileSystemTreeSnapshot.Empty;
+      _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
+      _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
     }
 
     public FileSystemTreeSnapshot GetCurrentSnapshot() {

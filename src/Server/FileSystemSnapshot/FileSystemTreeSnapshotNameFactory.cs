@@ -9,7 +9,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     // We can use the fast case sentive comparer as this factory is merely a cache
     // for previously re-used names.
     private static readonly IComparer<string> NameComparer = StringComparer.Ordinal;
-    private static readonly Func<ProjectRootSnapshot, FullPath, int> ProjectRootComparer = (x, item) => NameComparer.Compare(x.Directory.DirectoryName.FullPath.FullName, item.FullName);
+    private static readonly Func<ProjectRootSnapshot, FullPath, int> ProjectRootComparer = (x, item) => NameComparer.Compare(x.Directory.DirectoryName.FullPath.Value, item.Value);
     private static readonly Func<DirectorySnapshot, string, int> DirectoryComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePath.FileName, item);
     private static readonly Func<DirectorySnapshot, DirectoryName, int> DirectoryNameComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePath.FileName, item.RelativePath.FileName);
     private static readonly Func<FileName, string, int> FileComparer = (x, item) => NameComparer.Compare(x.RelativePath.FileName, item);

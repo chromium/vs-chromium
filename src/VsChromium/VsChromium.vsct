@@ -84,7 +84,7 @@
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachChoose" />
         <Strings>
           <CommandName>Chrome Debug: Open "Attach To Chrome" dialog</CommandName>
-          <ButtonText>Choose...</ButtonText>
+          <ButtonText>Attach to Chrome Process...</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToAllChromes" priority="0x0000" type="Button">
@@ -92,7 +92,7 @@
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachAll" />
         <Strings>
           <CommandName>Chrome Debug: Attach to all running Chrome processes</CommandName>
-          <ButtonText>All Running Processes</ButtonText>
+          <ButtonText>Attach to All Chrome Processes</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeTree" priority="0x0001" type="Button">
@@ -100,7 +100,7 @@
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachDescendants" />
         <Strings>
           <CommandName>Chrome Debug: Attach to descendants of current debug session</CommandName>
-          <ButtonText>Descendants of Current Debug Session</ButtonText>
+          <ButtonText>Attach to Descendents of Currently Debugged Processes</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -111,10 +111,16 @@
   </Commands>
   <KeyBindings>
     <!-- Note: VK_OEM_1 is the semicolon character on US keyboards. -->
+    <!-- Note: VK_OEM_4 is the [ character on US keyboards. This is picked
+         so "Ctrl+Alt+[" (vs-chromium's Attach to Chrome chooser dialog) is adjacent
+         to "Ctrl+Alt+P" (Visual Studio's inbuilt Attach To Process... dialog). -->
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileContents" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c" />
+    <KeyBinding guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeDialog" editor="guidVSStd97" key1="VK_OEM_4" mod1="Control Alt" />
+    <KeyBinding guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeTree" editor="guidVSStd97" key1="VK_OEM_4" mod1="Alt" />
+    <KeyBinding guid="guidChromeDebugCmdSet" id="cmdidAttachToAllChromes" editor="guidVSStd97" key1="VK_OEM_4" mod1="Control" />
   </KeyBindings>
   <Symbols>
     <!-- This is the package guid. -->

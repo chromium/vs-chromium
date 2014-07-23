@@ -2,14 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using Microsoft.VisualStudio.Debugger;
-using Microsoft.VisualStudio.Debugger.CallStack;
-using Microsoft.VisualStudio.Debugger.Native;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.Debugger;
+using Microsoft.VisualStudio.Debugger.CallStack;
 
 namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
   // Analyzes basic stdcall stack frames, where all parameters are passed on the stack.  This is

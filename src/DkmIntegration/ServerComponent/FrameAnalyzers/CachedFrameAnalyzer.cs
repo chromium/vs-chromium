@@ -2,12 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using Microsoft.VisualStudio.Debugger.CallStack;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.Debugger.CallStack;
 
 namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
   // Caches the parameter values from a stack frame so that they can be used after the frame is

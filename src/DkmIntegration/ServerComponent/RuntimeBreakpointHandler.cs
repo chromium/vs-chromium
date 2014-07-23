@@ -4,11 +4,6 @@
 
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.Breakpoints;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   class RuntimeBreakpointHandler : DkmDataItem {

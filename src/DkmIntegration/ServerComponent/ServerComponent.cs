@@ -2,19 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
+using System.Diagnostics;
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.Breakpoints;
 using Microsoft.VisualStudio.Debugger.ComponentInterfaces;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VsChromium.Core;
 using VsChromium.Core.DkmShared;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Win32.Processes;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   // Visual Studio's debugger component model is a layered one, similar to a driver filter chain,

@@ -7,11 +7,6 @@ using Microsoft.VisualStudio.Debugger.Breakpoints;
 using Microsoft.VisualStudio.Debugger.CallStack;
 using Microsoft.VisualStudio.Debugger.DefaultPort;
 using Microsoft.VisualStudio.Debugger.Native;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers;
 
 namespace VsChromium.DkmIntegration.ServerComponent {

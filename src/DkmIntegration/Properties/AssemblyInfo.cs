@@ -4,7 +4,6 @@
 
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("VsChromium.DkmIntegration")]
 [assembly: AssemblyDescription("Visual Studio debugger integration for VsChromium.")]

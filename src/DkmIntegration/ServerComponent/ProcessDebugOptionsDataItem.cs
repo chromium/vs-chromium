@@ -3,11 +3,6 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.Debugger;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VsChromium.Core.DkmShared;
 
 namespace VsChromium.DkmIntegration.ServerComponent {

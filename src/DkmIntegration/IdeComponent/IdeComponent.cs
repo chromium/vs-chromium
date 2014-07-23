@@ -3,22 +3,11 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.ComponentInterfaces;
 using Microsoft.VisualStudio.Debugger.Evaluation;
-
-using Microsoft.VisualStudio.Debugger.FunctionResolution;
-using Microsoft.VisualStudio.Debugger.Breakpoints;
-using Microsoft.VisualStudio.Debugger.Native;
-
 using VsChromium.DkmIntegration.Visualizers;
-using System.Runtime.Serialization;
 
 namespace VsChromium.DkmIntegration.IdeComponent
 {

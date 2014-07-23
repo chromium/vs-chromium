@@ -83,7 +83,7 @@
         <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" />
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachChoose" />
         <Strings>
-          <CommandName>cmdidAttachToChromeDialog</CommandName>
+          <CommandName>Chrome Debug: Open "Attach To Chrome" dialog</CommandName>
           <ButtonText>Choose...</ButtonText>
         </Strings>
       </Button>
@@ -91,7 +91,7 @@
         <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" />
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachAll" />
         <Strings>
-          <CommandName>cmdidAttachToAllChromes</CommandName>
+          <CommandName>Chrome Debug: Attach to all running Chrome processes</CommandName>
           <ButtonText>All Running Processes</ButtonText>
         </Strings>
       </Button>
@@ -99,7 +99,7 @@
         <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" />
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachDescendants" />
         <Strings>
-          <CommandName>cmdidAttachToChromeTree</CommandName>
+          <CommandName>Chrome Debug: Attach to descendants of current debug session</CommandName>
           <ButtonText>Descendants of Current Debug Session</ButtonText>
         </Strings>
       </Button>

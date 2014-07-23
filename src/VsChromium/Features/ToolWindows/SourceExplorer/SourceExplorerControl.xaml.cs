@@ -7,9 +7,9 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
-using VsChromium.Core;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
@@ -17,7 +17,6 @@ using VsChromium.ServerProxy;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
-using System.Windows.Media;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>

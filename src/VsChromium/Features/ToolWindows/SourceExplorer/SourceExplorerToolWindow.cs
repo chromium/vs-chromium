@@ -2,14 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 using VsChromium.Commands;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Wpf;
-using System.ComponentModel.Design;
-using Microsoft.VisualStudio.ComponentModelHost;
-using VsChromium.Package;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>

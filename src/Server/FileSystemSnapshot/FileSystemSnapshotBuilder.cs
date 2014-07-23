@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
-using VsChromium.Core;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;

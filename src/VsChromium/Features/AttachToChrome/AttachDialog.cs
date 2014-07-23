@@ -6,15 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using VsChromium.Core.Win32.Processes;
-using VsChromium.Core.Processes;
-using VsChromium.Core.Utility;
-using VsChromium.Core.Win32.Shell;
-using System.Runtime.InteropServices;
 using VsChromium.Core.Chromium;
+using VsChromium.Core.Processes;
 
 namespace VsChromium.Features.AttachToChrome {
   // The form that is displayed to allow the user to select processes to attach to.  Note that we

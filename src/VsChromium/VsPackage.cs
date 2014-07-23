@@ -12,10 +12,9 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
+using VsChromium.Features.ToolWindows.BuildExplorer;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
-using VsChromium.Features.ToolWindows.BuildExplorer;
-using IServiceProvider = System.IServiceProvider;
 
 namespace VsChromium {
   [PackageRegistration(UseManagedResourcesOnly = true)]

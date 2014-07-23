@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Server.Threads {

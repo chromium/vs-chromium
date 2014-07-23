@@ -3,9 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Ipc.TypedEvents;
-using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.ProgressTracking {
   [Export(typeof(IProgressTrackerFactory))]

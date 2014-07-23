@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.IO;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Files;
 using VsChromium.ChromiumEnlistment;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker {
   public static class ChromiumSourceFilesExtensions {

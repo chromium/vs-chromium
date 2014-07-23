@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using VsChromium.Core;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystemNames;

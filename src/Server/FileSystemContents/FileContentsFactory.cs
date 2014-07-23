@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel.Composition;
-using VsChromium.Core;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Files;

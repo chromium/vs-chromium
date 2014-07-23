@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel.Composition;
-using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;

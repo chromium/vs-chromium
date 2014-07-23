@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using VsChromium.Core;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -18,7 +16,6 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
-using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {

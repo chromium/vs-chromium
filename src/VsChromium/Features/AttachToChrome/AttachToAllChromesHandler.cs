@@ -5,9 +5,9 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
+using VsChromium.Core.Utility;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
-using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.AttachToChrome
 {

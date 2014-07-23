@@ -8,7 +8,6 @@ using System.ComponentModel.Composition;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Core.Ipc.TypedMessages;

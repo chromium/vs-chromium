@@ -6,7 +6,6 @@ using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Search;
 

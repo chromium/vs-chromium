@@ -4,14 +4,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Windows.Forms;
+using VsChromium.Core.DkmShared;
 using VsChromium.Core.Processes;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
-using VsChromium.Core.DkmShared;
 
 namespace VsChromium.Features.AttachToChrome {
   [Export(typeof(IPackageCommandHandler))]

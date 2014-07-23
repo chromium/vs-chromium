@@ -2,15 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using Microsoft.VisualStudio.ComponentModelHost;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VsChromium.Core.Chromium;
-using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.BuildExplorer {
   public class BuildExplorerViewModel {

@@ -2,19 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using Microsoft.VisualStudio.Debugger;
-using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.Debugger;
+using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.DkmShared;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Processes;
-using VsChromium.DkmIntegration;
 
 namespace VsChromium.Features.AttachToChrome {
   static class DebugAttach {

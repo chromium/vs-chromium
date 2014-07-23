@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
-using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;
 using VsChromium.Server.Ipc.ProtocolHandlers;

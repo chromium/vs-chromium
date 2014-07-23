@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Server {

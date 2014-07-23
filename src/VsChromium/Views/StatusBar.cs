@@ -6,7 +6,6 @@ using System;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using VsChromium.Core;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Views {

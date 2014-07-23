@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Windows.Documents;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;

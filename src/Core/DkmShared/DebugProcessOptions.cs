@@ -4,10 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VsChromium.Core.DkmShared;
 
 namespace VsChromium.Core.DkmShared {
   public class DebugProcessOptions {

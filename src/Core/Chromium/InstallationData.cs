@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using VsChromium.Core.Files;
 using VsChromium.Core.Processes;

@@ -8,6 +8,8 @@ using VsChromium.Commands;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Wpf;
 using System.ComponentModel.Design;
+using Microsoft.VisualStudio.ComponentModelHost;
+using VsChromium.Package;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
@@ -57,8 +59,24 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public SourceExplorerControl ExplorerControl {
-      get { return Content as SourceExplorerControl; } 
+      get { return Content as SourceExplorerControl; }
       set { Content = value; }
+    }
+
+    public bool HasNextLocation() {
+      return ExplorerControl.ViewModel.HasNextLocation();
+    }
+
+    public bool HasPreviousLocation() {
+      return ExplorerControl.ViewModel.HasPreviousLocation();
+    }
+
+    public void NavigateToNextLocation() {
+      ExplorerControl.ViewModel.NavigateToNextLocation();
+    }
+
+    public void NavigateToPreviousLocation() {
+      ExplorerControl.ViewModel.NavigateToPreviousLocation();
     }
 
     public override void OnToolWindowCreated() {

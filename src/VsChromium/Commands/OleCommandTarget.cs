@@ -7,7 +7,6 @@ using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
-using VsChromium.Core;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Commands {

@@ -15,7 +15,7 @@ using VsChromium.Core.Processes;
 namespace VsChromium.Features.AttachToChrome
 {
   [Export(typeof(IPackageCommandHandler))]
-  public class AttachToChromeDescendantsHandler : IPackageCommandHandler
+  public class AttachToChromeDescendantsHandler : PackageCommandHandlerBase
   {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
@@ -25,9 +25,9 @@ namespace VsChromium.Features.AttachToChrome
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToDescendants); } }
+    public override CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToDescendants); } }
 
-    public void Execute(object sender, EventArgs e)
+    public override void Execute(object sender, EventArgs e)
     {
       var dte = (EnvDTE.DTE)_visualStudioPackageProvider.Package.DTE; //GetService(typeof(EnvDTE.DTE));
 

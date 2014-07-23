@@ -152,4 +152,8 @@
       <IDSymbol name="bmpAttachChoose" value="4" />
     </GuidSymbol>
   </Symbols>
+  <UsedCommands>
+    <UsedCommand guid="guidVSStd97" id="cmdidNextLocation"/>
+    <UsedCommand guid="guidVSStd97" id="cmdidPreviousLocation"/>
+  </UsedCommands>
 </CommandTable>

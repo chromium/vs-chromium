@@ -88,6 +88,28 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
+    public bool HasNextLocation() {
+      // TODO(rpaquay): Implement this fully.
+      Logger.Log("TODO(rpaquay): Implement HasNextLocation");
+      return ReferenceEquals(CurrentRootNodesViewModel, _fileContentsResultRootNodes);
+    }
+
+    public bool HasPreviousLocation() {
+      // TODO(rpaquay): Implement this fully.
+      Logger.Log("TODO(rpaquay): Implement HasPreviousLocation");
+      return ReferenceEquals(CurrentRootNodesViewModel, _fileContentsResultRootNodes);
+    }
+
+    public void NavigateToNextLocation() {
+      // TODO(rpaquay): Implement this fully.
+      Logger.Log("TODO(rpaquay): Implement NavigateToNextLocation");
+    }
+
+    public void NavigateToPreviousLocation() {
+      // TODO(rpaquay): Implement this fully.
+      Logger.Log("TODO(rpaquay): Implement NavigateToPreviousLocation");
+    }
+
     public void SetHost(ISourceExplorerViewModelHost sourceExplorerViewModelHost) {
       _sourceExplorerViewModelHost = sourceExplorerViewModelHost;
     }

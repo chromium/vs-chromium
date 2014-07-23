@@ -10,17 +10,17 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   [Export(typeof(IPackageCommandHandler))]
-  public class SearchDirectoryNamesCommandHandler : IPackageCommandHandler {
-    private readonly ToolWindowAccessor _toolWindowAccessor;
+  public class SearchDirectoryNamesCommandHandler : PackageCommandHandlerBase {
+    private readonly IToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public SearchDirectoryNamesCommandHandler(ToolWindowAccessor toolWindowAccessor) {
+    public SearchDirectoryNamesCommandHandler(IToolWindowAccessor toolWindowAccessor) {
       _toolWindowAccessor = toolWindowAccessor;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchDirectoryNames); } }
+    public override CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchDirectoryNames); } }
 
-    public void Execute(object sender, EventArgs e) {
+    public override void Execute(object sender, EventArgs e) {
       _toolWindowAccessor.SourceExplorer.FocusSearchTextBox(CommandId);
     }
   }

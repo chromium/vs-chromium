@@ -18,7 +18,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileNamesResponse(server, testFile.Name, testFile.Directory, testFile.Name, 1);
         }
@@ -33,7 +33,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileNamesResponse(server, searchPattern, testFile.Directory, fileName, 3);
         }
@@ -48,7 +48,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileNamesResponse(server, searchPattern, testFile.Directory, fileName, 3);
         }

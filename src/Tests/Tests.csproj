@@ -26,6 +26,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Server\TestUnregisterFile.cs" />
+    <Compile Include="Server\TestFileSystemTree.cs" />
     <Compile Include="Server\TestSearchStringParser.cs" />
     <Compile Include="TestBuildOutputAnalyzer.cs" />
     <Compile Include="Mocks\TextEditMock.cs" />
@@ -43,7 +45,7 @@
     <Compile Include="MefBaseTest.cs" />
     <Compile Include="Server\TestEchoProtocol.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Server\TestAddFile.cs" />
+    <Compile Include="Server\TestRegisterFile.cs" />
     <Compile Include="Mocks\TextBufferMock.cs" />
     <Compile Include="Mocks\TextSnapshotLineMock.cs" />
     <Compile Include="Mocks\TextSnapshotMock.cs" />

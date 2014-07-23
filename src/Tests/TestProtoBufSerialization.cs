@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -34,14 +33,14 @@ namespace VsChromium.Tests {
     }
 
     [TestMethod]
-    public void ProtoBufSerializationWorksForAddFileNameRequest() {
+    public void ProtoBufSerializationWorksForRegisterFileRequest() {
       using (var container = SetupMefContainer()) {
         var serializer = container.GetExport<IProtoBufSerializer>().Value;
 
         var req = new IpcRequest {
           RequestId = 7,
           Protocol = IpcProtocols.TypedMessage,
-          Data = new AddFileNameRequest {
+          Data = new RegisterFileRequest {
             FileName = "c:\\hhhh"
           }
         };

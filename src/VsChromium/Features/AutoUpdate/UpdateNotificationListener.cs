@@ -4,10 +4,10 @@ using VsChromium.Features.ToolWindows;
 namespace VsChromium.Features.AutoUpdate {
   [Export(typeof(IUpdateNotificationListener))]
   public class UpdateNotificationListener : IUpdateNotificationListener {
-    private readonly ToolWindowAccessor _toolWindowAccessor;
+    private readonly IToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public UpdateNotificationListener(ToolWindowAccessor toolWindowAccessor) {
+    public UpdateNotificationListener(IToolWindowAccessor toolWindowAccessor) {
       _toolWindowAccessor = toolWindowAccessor;
     }
 

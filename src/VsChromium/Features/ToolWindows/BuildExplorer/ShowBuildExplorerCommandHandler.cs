@@ -9,8 +9,7 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.BuildExplorer {
   [Export(typeof(IPackageCommandHandler))]
-  public class ShowBuildExplorerCommandHandler
-      : ShowToolWindowCommandHandler<BuildExplorerToolWindow> {
+  public class ShowBuildExplorerCommandHandler : ShowToolWindowCommandHandler<BuildExplorerToolWindow> {
 
     [ImportingConstructor]
     public ShowBuildExplorerCommandHandler(IVisualStudioPackageProvider provider)

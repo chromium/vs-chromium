@@ -6,14 +6,15 @@ using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
-  [ProtoInclude(10, typeof(AddFileNameRequest))]
+  [ProtoInclude(10, typeof(RegisterFileRequest))]
   [ProtoInclude(11, typeof(GetFileSystemRequest))]
   [ProtoInclude(12, typeof(SearchFileNamesRequest))]
   [ProtoInclude(13, typeof(SearchFileContentsRequest))]
   [ProtoInclude(14, typeof(GetFileSystemVersionRequest))]
   [ProtoInclude(15, typeof(SearchDirectoryNamesRequest))]
   [ProtoInclude(16, typeof(GetFileExtractsRequest))]
-  [ProtoInclude(17, typeof(RemoveFileNameRequest))]
+  [ProtoInclude(17, typeof(UnregisterFileRequest))]
+  [ProtoInclude(18, typeof(GetDirectoryStatisticsRequest))]
   public class TypedRequest : TypedMessage {
   }
 }

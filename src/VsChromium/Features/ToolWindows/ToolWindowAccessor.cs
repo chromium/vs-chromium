@@ -4,19 +4,15 @@
 
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VsChromium.Commands;
 using VsChromium.Features.ToolWindows.BuildExplorer;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
 
 namespace VsChromium.Features.ToolWindows {
-  [Export(typeof(ToolWindowAccessor))]
-  public class ToolWindowAccessor {
+  [Export(typeof(IToolWindowAccessor))]
+  public class ToolWindowAccessor : IToolWindowAccessor {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]

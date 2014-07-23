@@ -11,6 +11,10 @@ namespace VsChromium.Package.CommandHandler {
   /// </summary>
   public interface IPackageCommandHandler {
     CommandID CommandId { get; }
+    bool Supported { get; }
+    bool Enabled { get; }
+    bool Visible { get; }
+    bool Checked { get; }
     void Execute(object sender, EventArgs e);
   }
 }

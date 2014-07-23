@@ -33,7 +33,7 @@ namespace VsChromium.Tests.Server {
           }, ServerResponseTimeout)();
 
           // Send "AddFile" request, and wait for response.
-          SendAddFileRequest(server, testFile, ServerResponseTimeout);
+          SendRegisterFileRequest(server, testFile, ServerResponseTimeout);
 
           while (true) {
             var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {

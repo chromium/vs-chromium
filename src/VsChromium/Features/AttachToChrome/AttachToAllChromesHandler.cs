@@ -12,7 +12,7 @@ using VsChromium.Core.Utility;
 namespace VsChromium.Features.AttachToChrome
 {
   [Export(typeof(IPackageCommandHandler))]
-  public class AttachToAllChromesHandler : IPackageCommandHandler
+  public class AttachToAllChromesHandler : PackageCommandHandlerBase
   {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
@@ -22,9 +22,9 @@ namespace VsChromium.Features.AttachToChrome
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToAllChromes); } }
+    public override CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToAllChromes); } }
 
-    public void Execute(object sender, EventArgs e)
+    public override void Execute(object sender, EventArgs e)
     {
       var dte = (EnvDTE.DTE)_visualStudioPackageProvider.Package.DTE; //GetService(typeof(EnvDTE.DTE));
       foreach (EnvDTE90.Process3 p in dte.Debugger.LocalProcesses)

@@ -31,7 +31,7 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     private static readonly bool ReuseFileNameInstances = false;
 
-    private readonly HashSet<FullPath> _addedFiles = new HashSet<FullPath>();
+    private readonly HashSet<FullPath> _registeredFiles = new HashSet<FullPath>();
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IDirectoryChangeWatcher _directoryChangeWatcher;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
@@ -70,12 +70,12 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    public void AddFile(string filename) {
-      _taskQueue.Enqueue(string.Format("AddFile(\"{0}\")", filename), () => AddFileTask(filename));
+    public void RegisterFile(string filename) {
+      _taskQueue.Enqueue(string.Format("RegisterFile(\"{0}\")", filename), () => RegisterFileTask(filename));
     }
 
-    public void RemoveFile(string filename) {
-      _taskQueue.Enqueue(string.Format("RemoveFile(\"{0}\")", filename), () => RemoveFileTask(filename));
+    public void UnregisterFile(string filename) {
+      _taskQueue.Enqueue(string.Format("UnregisterFile(\"{0}\")", filename), () => UnregisterFileTask(filename));
     }
 
     public event EventHandler<OperationInfo> SnapshotComputing;
@@ -113,16 +113,16 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private void AddFileTask(string filename) {
+    private void RegisterFileTask(string filename) {
       var path = new FullPath(filename);
       bool recompute = ValidateKnownFiles();
 
       lock (_lock) {
-        var known = _addedFiles.Contains(path);
+        var known = _registeredFiles.Contains(path);
         if (!known) {
-          var projectPaths1 = GetKnownProjectPaths(_addedFiles);
-          _addedFiles.Add(path);
-          var projectPaths2 = GetKnownProjectPaths(_addedFiles);
+          var projectPaths1 = GetKnownProjectPaths(_registeredFiles);
+          _registeredFiles.Add(path);
+          var projectPaths2 = GetKnownProjectPaths(_registeredFiles);
           if (!projectPaths1.SequenceEqual(projectPaths2)) {
             recompute = true;
           }
@@ -133,16 +133,16 @@ namespace VsChromium.Server.FileSystem {
         RecomputeGraph();
     }
 
-    private void RemoveFileTask(string filename) {
+    private void UnregisterFileTask(string filename) {
       var path = new FullPath(filename);
       bool recompute = ValidateKnownFiles();
 
       lock (_lock) {
-        var known = _addedFiles.Contains(path);
+        var known = _registeredFiles.Contains(path);
         if (known) {
-          var projectPaths1 = GetKnownProjectPaths(_addedFiles);
-          _addedFiles.Remove(path);
-          var projectPaths2 = GetKnownProjectPaths(_addedFiles);
+          var projectPaths1 = GetKnownProjectPaths(_registeredFiles);
+          _registeredFiles.Remove(path);
+          var projectPaths2 = GetKnownProjectPaths(_registeredFiles);
           if (!projectPaths1.SequenceEqual(projectPaths2)) {
             recompute = true;
           }
@@ -170,7 +170,7 @@ namespace VsChromium.Server.FileSystem {
       // the lock.
       IList<FullPath> filenames;
       lock (_lock) {
-        filenames = _addedFiles.ToList();
+        filenames = _registeredFiles.ToList();
       }
 
       var deletedFileNames = filenames.Where(x => !_fileSystem.FileExists(x)).ToList();
@@ -178,7 +178,7 @@ namespace VsChromium.Server.FileSystem {
       if (deletedFileNames.Any()) {
         Logger.Log("Some known files do not exist on disk anymore. Time to recompute the world.");
         lock (_lock) {
-          deletedFileNames.ForEach(x => _addedFiles.Remove(x));
+          deletedFileNames.ForEach(x => _registeredFiles.Remove(x));
         }
         _projectDiscovery.ValidateCache();
         return true;
@@ -199,7 +199,7 @@ namespace VsChromium.Server.FileSystem {
           var files = new List<FullPath>();
           lock (_lock) {
             ValidateKnownFiles();
-            files.AddRange(_addedFiles);
+            files.AddRange(_registeredFiles);
           }
 
           IFileSystemNameFactory fileNameFactory = _fileSystemNameFactory;

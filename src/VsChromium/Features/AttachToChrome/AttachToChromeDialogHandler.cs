@@ -2,16 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Debugger;
-using Microsoft.VisualStudio.Debugger.DefaultPort;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using VsChromium.Core.Processes;
 using VsChromium.Package;
@@ -20,7 +15,7 @@ using VsChromium.Core.DkmShared;
 
 namespace VsChromium.Features.AttachToChrome {
   [Export(typeof(IPackageCommandHandler))]
-  public class AttachToChromeDialogHandler : IPackageCommandHandler {
+  public class AttachToChromeDialogHandler : PackageCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
@@ -28,9 +23,9 @@ namespace VsChromium.Features.AttachToChrome {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToChromeDialog); } }
+    public override CommandID CommandId { get { return new CommandID(GuidList.GuidAttachToChromeCmdSet, (int)PkgCmdIDList.CmdidAttachToChromeDialog); } }
 
-    public void Execute(object sender, EventArgs e) {
+    public override void Execute(object sender, EventArgs e) {
       var dte = (EnvDTE.DTE)_visualStudioPackageProvider.Package.DTE; //GetService(typeof(EnvDTE.DTE));
 
       var uiShell = _visualStudioPackageProvider.Package.VsUIShell;

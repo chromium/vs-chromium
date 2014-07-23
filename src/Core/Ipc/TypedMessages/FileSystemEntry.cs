@@ -9,6 +9,11 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoInclude(10, typeof(FileEntry))]
   [ProtoInclude(11, typeof(DirectoryEntry))]
   public abstract class FileSystemEntry {
+    protected FileSystemEntry() {
+      // To avoid getting "null" property.
+      Name = string.Empty;
+    }
+
     [ProtoMember(1)]
     public string Name { get; set; }
 

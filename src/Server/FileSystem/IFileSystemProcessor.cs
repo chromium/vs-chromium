@@ -8,8 +8,8 @@ using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.FileSystem {
   public interface IFileSystemProcessor {
-    void AddFile(string filename);
-    void RemoveFile(string filename);
+    void RegisterFile(string filename);
+    void UnregisterFile(string filename);
     FileSystemTreeSnapshot GetCurrentSnapshot();
 
     event EventHandler<OperationInfo> SnapshotComputing;

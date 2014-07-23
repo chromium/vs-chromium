@@ -11,20 +11,19 @@ using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows {
-  public class ShowToolWindowCommandHandler<ToolWindow> : IPackageCommandHandler {
+  public class ShowToolWindowCommandHandler<TToolWindow> : PackageCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
     private readonly int _cmdid;
 
-    public ShowToolWindowCommandHandler(
-        IVisualStudioPackageProvider visualStudioPackageProvider, int cmdid) {
+    public ShowToolWindowCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider, int cmdid) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _cmdid = cmdid;
     }
 
-    public CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, _cmdid); } }
+    public override CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, _cmdid); } }
 
-    public void Execute(object sender, EventArgs e) {
-      var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(ToolWindow), 0 /*instance id*/, true /*create*/);
+    public override void Execute(object sender, EventArgs e) {
+      var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(TToolWindow), 0 /*instance id*/, true /*create*/);
       if (window == null || window.Frame == null) {
         throw new NotSupportedException("Can not create \"Chromium Source Explorer\" tool window.");
       }

@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+﻿// Copyright 2014 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,27 +9,13 @@ using VsChromium.ServerProxy;
 
 namespace VsChromium.Tests.Server {
   [TestClass]
-  public class TestAddFile : TestServerBase {
-    [TestMethod]
-    public void AddFileRequestWorks() {
-      var testFile = GetChromiumEnlistmentFile();
-
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          // Send "AddFile" request, and wait for response.
-          // We don't care if the request is processed properly.
-          var response = SendAddFileRequest(server, testFile, ServerResponseTimeout)();
-          Assert.IsNotNull(response, "Server did not respond within timeout.");
-        }
-      }
-    }
-
+  public class TestFileSystemTree : TestServerBase {
     [TestMethod]
     public void FileSystemTreeCreationWorks() {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          var tree = GetFileSystemTreeFromServer(server, testFile);
+          var tree = GetFileSystemFromServer(server, testFile);
           var chromiumEntry = tree.Root.Entries[0] as DirectoryEntry;
           Assert.IsNotNull(chromiumEntry);
 

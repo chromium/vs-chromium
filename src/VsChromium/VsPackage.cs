@@ -6,15 +6,16 @@ using System;
 using System.ComponentModel.Design;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using VsChromium.Core;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
 using VsChromium.Features.ToolWindows.BuildExplorer;
+using IServiceProvider = System.IServiceProvider;
 
 namespace VsChromium {
   [PackageRegistration(UseManagedResourcesOnly = true)]
@@ -22,21 +23,53 @@ namespace VsChromium {
   // When in development mode, update the version # below every time there is a change to the .VSCT file,
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
   // VS 2012 and later since package updates is more explicit).
-  [ProvideMenuResource("Menus.ctmenu", 8)]
+  [ProvideMenuResource("Menus.ctmenu", 12)]
   [ProvideToolWindow(typeof(SourceExplorerToolWindow))]
   [ProvideToolWindow(typeof(BuildExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage {
+    private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
+
     public VsPackage() {
     }
 
-    public IComponentModel ComponentModel { get { return (IComponentModel)GetService(typeof(SComponentModel)); } }
+    public IComponentModel ComponentModel {
+      get {
+        return (IComponentModel) GetService(typeof (SComponentModel));
+      }
+    }
 
-    public OleMenuCommandService OleMenuCommandService { get { return GetService(typeof(IMenuCommandService)) as OleMenuCommandService; } }
+    public OleMenuCommandService OleMenuCommandService {
+      get {
+        return GetService(typeof (IMenuCommandService)) as OleMenuCommandService;
+      }
+    }
 
-    public IVsUIShell VsUIShell { get { return GetService(typeof(SVsUIShell)) as IVsUIShell; } }
+    public IVsRegisterPriorityCommandTarget VsRegisterPriorityCommandTarget {
+      get { return GetService(typeof(SVsRegisterPriorityCommandTarget)) as IVsRegisterPriorityCommandTarget; }
+    }
 
-    public EnvDTE.DTE DTE { get { return (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE)); } }
+    public IVsUIShell VsUIShell {
+      get {
+        return GetService(typeof (SVsUIShell)) as IVsUIShell;
+      }
+    }
+
+    public EnvDTE.DTE DTE {
+      get {
+        return (EnvDTE.DTE) GetService(typeof (EnvDTE.DTE));
+      }
+    }
+
+    public IServiceProvider ServiceProvider {
+      get {
+        return this;
+      }
+    }
+
+    public IDisposeContainer DisposeContainer {
+      get { return _disposeContainer; }
+    }
 
     protected override void Dispose(bool disposing) {
       if (disposing) {
@@ -47,6 +80,7 @@ namespace VsChromium {
               disposer.Run(this);
             }
           }
+          _disposeContainer.RunAll();
         }
         catch (Exception e) {
           Logger.LogException(e, "Error disposing VsChromium package.");
@@ -77,6 +111,26 @@ namespace VsChromium {
     private void PostInitialize() {
       foreach (var initializer in ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostInitializer>().OrderByDescending(x => x.Priority)) {
         initializer.Run(this);
+      }
+
+      //var serviceContainer = this as IServiceContainer;
+      //serviceContainer.AddService(typeof(IOleCommandTarget), new OleCommandTarget(new PackageCommandTarget()));
+    }
+
+    public class PackageCommandTarget : ICommandTarget {
+      public bool HandlesCommand(CommandID commandId) {
+        if (commandId.Guid == VSConstants.GUID_VSStandardCommandSet97 &&
+            commandId.ID == (int) VSConstants.VSStd97CmdID.NextLocation) {
+          Logger.Log("HELLO THERE.");
+        }
+        return false;
+      }
+
+      public bool IsEnabled(CommandID commandId) {
+        return false;
+      }
+
+      public void Execute(CommandID commandId) {
       }
     }
   }

@@ -20,7 +20,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1);
 
@@ -37,7 +37,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 3);
 
@@ -54,7 +54,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 22);
 
@@ -71,7 +71,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 15, 12);
 
@@ -88,7 +88,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
 
@@ -105,7 +105,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
 
@@ -122,7 +122,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 5, 22);
 
@@ -139,7 +139,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 7 ,8);
 
@@ -156,7 +156,7 @@ namespace VsChromium.Tests.Server {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemTreeFromServer(server, testFile);
+          GetFileSystemFromServer(server, testFile);
 
           VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 39, 8);
 

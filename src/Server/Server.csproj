@@ -47,6 +47,7 @@
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotComputedResult.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\GetDirectoryStatisticsRequestHandler.cs" />
     <Compile Include="Operations\IOperationIdFactory.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventForwarder.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventSender.cs" />
@@ -54,7 +55,7 @@
     <Compile Include="Ipc\TypedEvents\TypedEventSender.cs" />
     <Compile Include="Ipc\ProtocolHandlers\IProtocolHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileExtractsRequestHandler.cs" />
-    <Compile Include="Ipc\TypedMessageHandlers\RemoveFileNameRequestHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\UnregisterFileRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\SearchDirectoryNamesRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileSystemVersionRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\ITypedMessageRequestHandler.cs" />
@@ -131,7 +132,7 @@
     <Compile Include="Ipc\ProtocolHandlers\HelloProtocolHandler.cs" />
     <Compile Include="Ipc\ProtocolHandlers\TypedMessageProtocolHandler.cs" />
     <Compile Include="Ipc\ProtocolHandlers\ProtocolHandler.cs" />
-    <Compile Include="Ipc\TypedMessageHandlers\AddFileNameRequestHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\RegisterFileRequestHandler.cs" />
     <Compile Include="ServerStub.cs" />
     <Compile Include="Ipc\IpcResponseQueue.cs" />
     <Compile Include="Ipc\IpcRequestDispatcher.cs" />

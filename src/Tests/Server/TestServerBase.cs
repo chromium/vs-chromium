@@ -8,7 +8,6 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
@@ -39,48 +38,70 @@ namespace VsChromium.Tests.Server {
 #endif
     }
 
-    protected FileSystemTree GetFileSystemTreeFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
-      // Handle used to wait for "FileSystemTreeComputed" event.
+    protected FileSystemTree GetFileSystemFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
+      SendFileSystemRequest(server, testFile, SendRegisterFileRequest);
+      var tree = SendGetFileSystemRequest(server);
+
+      // Entry under "Root" is the chromium enlistment entry
+      Assert.IsTrue(tree.Root.Entries.Count == 1);
+      var chromiumEntry = tree.Root.Entries[0] as DirectoryEntry;
+      Assert.IsNotNull(chromiumEntry);
+      Assert.AreEqual(testFile.DirectoryName, chromiumEntry.Name);
+
+      return tree;
+    }
+
+    protected FileSystemTree SendGetFileSystemRequest(ITypedRequestProcessProxy server) {
+      var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {
+        KnownVersion = -1
+      }, ServerResponseTimeout)();
+      Assert.IsNotNull(response, "Server did not respond within timeout.");
+      Assert.IsNotNull(response.Tree);
+      Assert.IsNotNull(response.Tree.Root);
+      Assert.IsNotNull(response.Tree.Root.Entries);
+
+      return response.Tree;
+    }
+
+    protected delegate Func<DoneResponse> RequestProcessor(ITypedRequestProcessProxy server, FileInfo filename, TimeSpan timeout);
+
+    protected void SendFileSystemRequest(ITypedRequestProcessProxy server, FileInfo testFile, RequestProcessor requestProcessor) {
+      // Handle used to wait for "SearchEngineFilesLoaded" event.
       var filesLoadedEvent = new ManualResetEvent(false);
-      server.EventReceived += @event => {
+      Action<TypedEvent> eventHandler = @event => {
         if (@event is SearchEngineFilesLoaded) {
           filesLoadedEvent.Set();
         }
       };
 
-      // Send "AddFile" request, and wait for response.
-      {
-        var response = SendAddFileRequest(server, testFile, ServerResponseTimeout);
-        Assert.IsNotNull(response, "Server did not respond within timeout.");
+      server.EventReceived += eventHandler;
+      try {
+        // Send request and wait for response.
+        {
+          var response = requestProcessor(server, testFile, ServerResponseTimeout)();
+          Assert.IsNotNull(response, "Server did not respond within timeout.");
+        }
+
+        Assert.IsTrue(filesLoadedEvent.WaitOne(ServerResponseTimeout),
+          "Server did not compute new file system tree within timeout.");
       }
-
-      Assert.IsTrue(filesLoadedEvent.WaitOne(ServerResponseTimeout),
-                    "Server did not compute new file system tree within timeout.");
-
-      {
-        var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {
-          KnownVersion = -1
-        }, ServerResponseTimeout)();
-        Assert.IsNotNull(response, "Server did not respond within timeout.");
-        Assert.IsNotNull(response.Tree);
-        Assert.IsNotNull(response.Tree.Root);
-        Assert.IsNotNull(response.Tree.Root.Entries);
-
-        // Entry under "Root" is the chromium enlistment entry
-        Assert.IsTrue(response.Tree.Root.Entries.Count == 1);
-        var chromiumEntry = response.Tree.Root.Entries[0] as DirectoryEntry;
-        Assert.IsNotNull(chromiumEntry);
-        Assert.AreEqual(testFile.DirectoryName, chromiumEntry.Name);
-
-        return response.Tree;
+      finally {
+        server.EventReceived -= eventHandler;
       }
     }
 
-    protected static Func<DoneResponse> SendAddFileRequest(
+    protected static Func<DoneResponse> SendRegisterFileRequest(ITypedRequestProcessProxy server, FileInfo filename, TimeSpan timeout) {
+      var request = new RegisterFileRequest {
+        FileName = filename.FullName
+      };
+      return SendRequest<DoneResponse>(server, request, timeout);
+    }
+
+    protected static Func<DoneResponse> SendUnregisterFileRequest(
       ITypedRequestProcessProxy server,
       FileInfo filename,
       TimeSpan timeout) {
-      var request = new AddFileNameRequest {
+      var request = new UnregisterFileRequest {
         FileName = filename.FullName
       };
       return SendRequest<DoneResponse>(server, request, timeout);

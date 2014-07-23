@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Windows.Documents;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -11,8 +12,11 @@ namespace VsChromium.Package {
   public interface IVisualStudioPackage {
     IComponentModel ComponentModel { get; }
     OleMenuCommandService OleMenuCommandService { get; }
+    IVsRegisterPriorityCommandTarget VsRegisterPriorityCommandTarget { get; }
     IVsUIShell VsUIShell { get; }
     EnvDTE.DTE DTE { get; }
+    IServiceProvider ServiceProvider { get; }
+    IDisposeContainer DisposeContainer { get; }
 
     ToolWindowPane FindToolWindow(Type toolWindowType, int id, bool create);
   }

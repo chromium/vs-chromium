@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using VsChromium.Core;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Ipc.TypedMessages;

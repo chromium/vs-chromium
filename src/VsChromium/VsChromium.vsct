@@ -100,7 +100,7 @@
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachDescendants" />
         <Strings>
           <CommandName>Chrome Debug: Attach to descendants of current debug session</CommandName>
-          <ButtonText>Attach to Descendents of Currently Debugged Processes</ButtonText>
+          <ButtonText>Attach to Descendants of Currently Debugged Processes</ButtonText>
         </Strings>
       </Button>
     </Buttons>

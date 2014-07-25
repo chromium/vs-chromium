@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -13,18 +14,38 @@ using System.Windows.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class SourceExplorerViewModel : ChromiumExplorerViewModelBase {
-    private IEnumerable<TreeViewItemViewModel> _directoryPathRootNodes = new List<TreeViewItemViewModel>();
-    private IEnumerable<TreeViewItemViewModel> _fileContentsResultRootNodes = new List<TreeViewItemViewModel>();
-    private IEnumerable<TreeViewItemViewModel> _fileNamesResultRootNodes = new List<TreeViewItemViewModel>();
-    private IEnumerable<TreeViewItemViewModel> _fileSystemEntryRootNodes = new List<TreeViewItemViewModel>();
+    private List<TreeViewItemViewModel> _directoryNameSearchResultNodes = new List<TreeViewItemViewModel>();
+    private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();
+    private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
+    private List<TreeViewItemViewModel> _fileSystemNodes = new List<TreeViewItemViewModel>();
     private ISourceExplorerViewModelHost _sourceExplorerViewModelHost;
     private UpdateInfo _updateInfo;
+
+    public enum DisplayKind {
+      FileSystem,
+      FileNameSearchResult,
+      DirectoryNameSearchResult,
+      TextSearchResult,
+    }
+
+    public DisplayKind ActiveDisplay {
+      get {
+        if (ReferenceEquals(CurrentRootNodesViewModel, _textSearchResultNodes))
+          return DisplayKind.TextSearchResult;
+        if (ReferenceEquals(CurrentRootNodesViewModel, _fileNameSearchResultNodes))
+          return DisplayKind.FileNameSearchResult;
+        if (ReferenceEquals(CurrentRootNodesViewModel, _directoryNameSearchResultNodes))
+          return DisplayKind.DirectoryNameSearchResult;
+        return DisplayKind.FileSystem;
+      }
+    }
 
     /// <summary>
     /// Databound!
@@ -87,104 +108,92 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public bool HasNextLocation() {
-      // TODO(rpaquay): Implement this fully.
-      Logger.Log("TODO(rpaquay): Implement HasNextLocation");
-      return ReferenceEquals(CurrentRootNodesViewModel, _fileContentsResultRootNodes);
-    }
-
-    public bool HasPreviousLocation() {
-      // TODO(rpaquay): Implement this fully.
-      Logger.Log("TODO(rpaquay): Implement HasPreviousLocation");
-      return ReferenceEquals(CurrentRootNodesViewModel, _fileContentsResultRootNodes);
-    }
-
-    public void NavigateToNextLocation() {
-      // TODO(rpaquay): Implement this fully.
-      Logger.Log("TODO(rpaquay): Implement NavigateToNextLocation");
-    }
-
-    public void NavigateToPreviousLocation() {
-      // TODO(rpaquay): Implement this fully.
-      Logger.Log("TODO(rpaquay): Implement NavigateToPreviousLocation");
-    }
-
     public void SetHost(ISourceExplorerViewModelHost sourceExplorerViewModelHost) {
       _sourceExplorerViewModelHost = sourceExplorerViewModelHost;
     }
 
+    public ISourceExplorerViewModelHost Host { get { return _sourceExplorerViewModelHost; }}
+
     public void SwitchToFileSystemTree() {
-      SetRootNodes(_fileSystemEntryRootNodes, "Open a source file from a local Chromium enlistment.");
+      SetRootNodes(_fileSystemNodes, "Open a source file from a local Chromium enlistment.");
     }
 
     private void SwitchToFileNamesSearchResult() {
-      SetRootNodes(_fileNamesResultRootNodes);
+      SetRootNodes(_fileNameSearchResultNodes);
     }
 
     private void SwitchToDirectoryNamesSearchResult() {
-      SetRootNodes(_directoryPathRootNodes);
+      SetRootNodes(_directoryNameSearchResultNodes);
     }
 
     private void SwitchToFileContentsSearchResult() {
-      SetRootNodes(_fileContentsResultRootNodes);
+      SetRootNodes(_textSearchResultNodes);
     }
 
     public void SetFileSystemTree(FileSystemTree tree) {
-      _fileSystemEntryRootNodes = tree.Root
+      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
+      _fileSystemNodes = new List<TreeViewItemViewModel>(tree.Root
         .Entries
-        .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x))
-        .ToList();
-      ExpandNodes(_fileSystemEntryRootNodes, false);
+        .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)));
+      _fileSystemNodes.ForAll(x => rootNode.AddChild(x));
+      ExpandNodes(_fileSystemNodes, false);
       SwitchToFileSystemTree();
     }
 
     public void SetFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
-      _fileNamesResultRootNodes =
+      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
+      _fileNameSearchResultNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(_sourceExplorerViewModelHost.StandarImageSourceFactory, null, description)
+          new TextItemViewModel(_sourceExplorerViewModelHost.StandarImageSourceFactory, rootNode, description)
         }.Concat(
           fileResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)))
           .ToList();
-      ExpandNodes(_fileNamesResultRootNodes, expandAll);
+      _fileNameSearchResultNodes.ForAll(x => rootNode.AddChild(x));
+      ExpandNodes(_fileNameSearchResultNodes, expandAll);
       SwitchToFileNamesSearchResult();
     }
 
     public void SetDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
-      _directoryPathRootNodes =
+      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
+      _directoryNameSearchResultNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(ImageSourceFactory, null, description)
+          new TextItemViewModel(ImageSourceFactory, rootNode, description)
         }.Concat(
           directoryResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)))
           .ToList();
-      ExpandNodes(_directoryPathRootNodes, expandAll);
+      _directoryNameSearchResultNodes.ForAll(x => rootNode.AddChild(x));
+      ExpandNodes(_directoryNameSearchResultNodes, expandAll);
       SwitchToDirectoryNamesSearchResult();
     }
 
     public void SetFileContentsSearchResult(DirectoryEntry searchResults, string description, bool expandAll) {
-      _fileContentsResultRootNodes =
+      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
+      _textSearchResultNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(ImageSourceFactory, null, description)
+          new TextItemViewModel(ImageSourceFactory, rootNode, description)
         }.Concat(
           searchResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, null, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)))
           .ToList();
-      ExpandNodes(_fileContentsResultRootNodes, expandAll);
+      _textSearchResultNodes.ForAll(x => rootNode.AddChild(x));
+      ExpandNodes(_textSearchResultNodes, expandAll);
       SwitchToFileContentsSearchResult();
     }
 
     public void SelectDirectory(DirectoryEntryViewModel directoryEntry, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
-      if (ReferenceEquals(CurrentRootNodesViewModel, _fileSystemEntryRootNodes))
+      if (ReferenceEquals(CurrentRootNodesViewModel, _fileSystemNodes))
         return;
 
       var chromiumRoot = GetChromiumRoot(directoryEntry);
+      Debug.Assert(chromiumRoot != null);
 
       var entryViewModel =
-        _fileSystemEntryRootNodes.OfType<DirectoryEntryViewModel>()
+        _fileSystemNodes.OfType<DirectoryEntryViewModel>()
           .FirstOrDefault(x => SystemPathComparer.Instance.Comparer.Equals(x.Name, chromiumRoot.Name));
       if (entryViewModel == null)
         return;
@@ -208,13 +217,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
 
       SwitchToFileSystemTree();
-      entryViewModel.IsExpanded = true;
-      entryViewModel.IsSelected = true;
+      SelectItem(entryViewModel, treeView, beforeSelectItem, afterSelectItem);
+    }
+
+    public void SelectItem(TreeViewItemViewModel item, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
+      item.IsExpanded = true;
+      item.IsSelected = true;
       WpfUtilities.Invoke(treeView, DispatcherPriority.ApplicationIdle, () => {
         try {
           beforeSelectItem();
           try {
-            WpfUtilities.SelectItem(treeView, entryViewModel);
+            WpfUtilities.SelectItem(treeView, item);
           }
           finally {
             afterSelectItem();
@@ -227,9 +240,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private DirectoryEntryViewModel GetChromiumRoot(DirectoryEntryViewModel directoryEntry) {
-      for (TreeViewItemViewModel parent = directoryEntry; parent != null; parent = parent.ParentViewModel) {
-        if (parent.ParentViewModel == null) {
-          var model = parent as DirectoryEntryViewModel;
+      for (TreeViewItemViewModel current = directoryEntry; current != null; current = current.ParentViewModel) {
+        if (current.ParentViewModel is RootTreeViewItemViewModel) {
+          var model = current as DirectoryEntryViewModel;
           if (model != null)
             return model;
           break;
@@ -240,8 +253,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void FileSystemTreeComputing() {
-      if (!_fileSystemEntryRootNodes.Any()) {
-        SetRootNodes(_fileSystemEntryRootNodes, "(Loading files from Chromium enlistment...)");
+      if (!_fileSystemNodes.Any()) {
+        SetRootNodes(_fileSystemNodes, "(Loading files from Chromium enlistment...)");
       }
     }
 

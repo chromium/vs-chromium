@@ -202,6 +202,7 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\ShowBuildExplorerCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
     <Compile Include="Features\ToolWindows\IToolWindowAccessor.cs" />
+    <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
@@ -212,6 +213,7 @@
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerRegistration.cs" />
     <Compile Include="Package\DisposeContainer.cs" />
     <Compile Include="Package\IDisposeContainer.cs" />
+    <Compile Include="Wpf\HierarchyObjectNavigator.cs" />
     <Compile Include="Wpf\IWindowsExplorer.cs" />
     <Compile Include="Wpf\Clipboard.cs" />
     <Compile Include="Wpf\IClipboard.cs" />

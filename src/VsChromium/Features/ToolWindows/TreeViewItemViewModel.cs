@@ -108,10 +108,22 @@ namespace VsChromium.Features.ToolWindows {
     }
 
     public TreeViewItemViewModel ParentViewModel { get { return _parentViewModel; } }
+    protected virtual bool IsVisual { get { return true; } }
 
-    IHierarchyObject IHierarchyObject.Parent { get { return ParentViewModel; } }
+    #region IHierarchyObject
+    bool IHierarchyObject.IsVisual {
+      get { return this.IsVisual; }
+    }
 
-    IEnumerable<IHierarchyObject> IHierarchyObject.Children { get { return Children.Cast<IHierarchyObject>(); } }
+    IHierarchyObject IHierarchyObject.GetParent() {
+      return this.ParentViewModel;
+    }
+
+    IList<IHierarchyObject> IHierarchyObject.GetAllChildren() {
+      this.EnsureAllChildrenLoaded();
+      return this.Children.Cast<IHierarchyObject>().ToList();
+    }
+    #endregion
 
     public event PropertyChangedEventHandler PropertyChanged;
 

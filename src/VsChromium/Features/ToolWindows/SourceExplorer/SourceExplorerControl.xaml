@@ -192,21 +192,21 @@
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <DataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
+        <HierarchicalDataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
-        </DataTemplate>
+        </HierarchicalDataTemplate>
 
-        <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
+        <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
-        </DataTemplate>
+        </HierarchicalDataTemplate>
 
-        <DataTemplate DataType="{x:Type sourceExplorer:FilePositionViewModel}">
+        <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:FilePositionViewModel}">
           <StackPanel Orientation="Horizontal">
             <StackPanel.ContextMenu>
               <ContextMenu>
@@ -221,7 +221,7 @@
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
             <TextBlock Text="{Binding DisplayText}" FontFamily="Consolas" FontSize="12" />
           </StackPanel>
-        </DataTemplate>
+        </HierarchicalDataTemplate>
 
       </TreeView.Resources>
     </TreeView>

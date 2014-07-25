@@ -99,6 +99,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           LoadFileExtracts();
         }
       }
+      base.OnPropertyChanged(propertyName);
     }
 
     private void LoadFileExtracts() {

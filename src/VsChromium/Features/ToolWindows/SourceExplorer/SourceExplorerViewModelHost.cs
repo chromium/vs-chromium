@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -57,6 +58,22 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
                                   _control.FileTreeView,
                                   () => _control.SwallowsRequestBringIntoView(false),
                                   () => _control.SwallowsRequestBringIntoView(true)));
+    }
+
+    public void SelectTreeViewItem(TreeViewItemViewModel item, Action callback) {
+      // The use of "Post" is significant, as it prevents the message from
+      // bubbling up thus preventing the newly opened document to receive
+      // the focus.
+      SynchronizationContextProvider.UIContext.Post(() =>
+        _control.ViewModel.SelectItem(item,
+                                  _control.FileTreeView,
+          () => {
+            _control.SwallowsRequestBringIntoView(false);
+          },
+          () => {
+            _control.SwallowsRequestBringIntoView(true);
+            callback();
+          }));
     }
   }
 }

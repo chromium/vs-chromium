@@ -61,20 +61,59 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       set { Content = value; }
     }
 
+    enum Direction {
+      Next,
+      Previous
+    }
+
+    private T GetNextLocationEntry<T>(Direction direction) where T:class, IHierarchyObject {
+      if (ExplorerControl.ViewModel.ActiveDisplay != SourceExplorerViewModel.DisplayKind.TextSearchResult)
+        return null;
+
+      var item = ExplorerControl.FileTreeView.SelectedItem;
+      if (item == null) {
+        if (ExplorerControl.ViewModel.CurrentRootNodesViewModel == null)
+          return null;
+
+        if (ExplorerControl.ViewModel.CurrentRootNodesViewModel.Count == 0)
+          return null;
+
+        item = ExplorerControl.ViewModel.CurrentRootNodesViewModel[0].ParentViewModel;
+        if (item == null)
+          return null;
+      }
+
+      var nextItem = (direction == Direction.Next)
+        ? new HierarchyObjectNavigator().GetNextItemOfType<T>(item as IHierarchyObject)
+        : new HierarchyObjectNavigator().GetPreviousItemOfType<T>(item as IHierarchyObject);
+
+      return nextItem;
+    }
+
     public bool HasNextLocation() {
-      return ExplorerControl.ViewModel.HasNextLocation();
+      return GetNextLocationEntry<FilePositionViewModel>(Direction.Next) != null;
     }
 
     public bool HasPreviousLocation() {
-      return ExplorerControl.ViewModel.HasPreviousLocation();
+      return GetNextLocationEntry<FilePositionViewModel>(Direction.Previous) != null;
     }
 
     public void NavigateToNextLocation() {
-      ExplorerControl.ViewModel.NavigateToNextLocation();
+      var nextItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Next);
+      if (nextItem == null)
+        return;
+      ExplorerControl.ViewModel.Host.SelectTreeViewItem(nextItem, () => {
+        ExplorerControl.NavigateFromSelectedItem(nextItem); 
+      });
     }
 
     public void NavigateToPreviousLocation() {
-      ExplorerControl.ViewModel.NavigateToPreviousLocation();
+      var previousItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Previous);
+      if (previousItem == null)
+        return;
+      ExplorerControl.ViewModel.Host.SelectTreeViewItem(previousItem, () => {
+        ExplorerControl.NavigateFromSelectedItem(previousItem); 
+      });
     }
 
     public override void OnToolWindowCreated() {

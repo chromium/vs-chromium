@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
@@ -88,46 +89,45 @@ namespace VsChromium.Wpf {
     }
 
     public static void SelectItem(ItemsControl items, IHierarchyObject item) {
-      ItemsControl itemsControl = items;
       var viewItems = new Stack<IHierarchyObject>();
       while (item != null) {
         viewItems.Push(item);
-        item = item.Parent;
+        item = item.GetParent();
       }
 
+      ItemsControl parentItemsControl = items;
       IHierarchyObject parentViewItem = null;
       while (viewItems.Count > 0) {
         var viewItem = viewItems.Pop();
 
-        itemsControl = BringViewItemToView(items, itemsControl, parentViewItem, viewItem);
-        if (itemsControl == null)
-          break;
+        if (viewItem.IsVisual) {
+          parentItemsControl = BringViewItemToView(items, parentItemsControl, parentViewItem, viewItem);
+          if (parentItemsControl == null)
+            break;
+        }
 
         parentViewItem = viewItem;
       }
 
       // If the desired selection is found, select it 
-      var desiredSelection = itemsControl as TreeViewItem;
+      var desiredSelection = parentItemsControl as TreeViewItem;
       if (desiredSelection != null) {
         desiredSelection.IsSelected = true;
         desiredSelection.Focus();
       }
     }
 
-    private static ItemsControl BringViewItemToView(
-      DispatcherObject dispatcher,
-      ItemsControl itemsControl,
-      IHierarchyObject parentViewItem,
-      IHierarchyObject viewItem) {
+    private static ItemsControl BringViewItemToView(DispatcherObject dispatcher, ItemsControl parentItemsControl, IHierarchyObject parentViewItem, IHierarchyObject viewItem) {
+      Debug.Assert(parentViewItem != null);
       // Access the custom VSP that exposes BringIntoView 
-      var itemsHost = FindVisualChild<MyVirtualizingStackPanel>(itemsControl);
+      var itemsHost = FindVisualChild<MyVirtualizingStackPanel>(parentItemsControl);
       if (itemsHost == null) {
-        Logger.LogError("Can't find itemsHost for itemsControl.");
+        Logger.LogError("Can't find itemsHost for parentItemsControl.");
         return null;
       }
 
-      var index = (parentViewItem == null ? 0 : parentViewItem.Children.ToList().IndexOf(viewItem));
-      if (index >= itemsControl.Items.Count) {
+      var viewItemIndex = parentViewItem.GetAllChildren().IndexOf(viewItem);
+      if (viewItemIndex >= parentItemsControl.Items.Count) {
         Logger.LogError("Can't find child of itemsHost.");
         return null;
       }
@@ -135,8 +135,8 @@ namespace VsChromium.Wpf {
       // Due to virtualization, BringIntoView may not predict the offset correctly the first time. 
       return TryAction(
         dispatcher,
-        () => itemsHost.BringIntoView(index),
-        () => (ItemsControl)itemsControl.ItemContainerGenerator.ContainerFromIndex(index),
+        () => itemsHost.BringIntoView(viewItemIndex),
+        () => (ItemsControl)parentItemsControl.ItemContainerGenerator.ContainerFromIndex(viewItemIndex),
         10);
     }
 

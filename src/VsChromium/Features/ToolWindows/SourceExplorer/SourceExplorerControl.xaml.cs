@@ -276,7 +276,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    private bool NavigateFromSelectedItem(TreeViewItemViewModel tvi) {
+    public bool NavigateFromSelectedItem(TreeViewItemViewModel tvi) {
       if (tvi == null)
         return false;
 

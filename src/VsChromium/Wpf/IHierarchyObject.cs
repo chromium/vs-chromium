@@ -6,7 +6,8 @@ using System.Collections.Generic;
 
 namespace VsChromium.Wpf {
   public interface IHierarchyObject {
-    IHierarchyObject Parent { get; }
-    IEnumerable<IHierarchyObject> Children { get; }
+    bool IsVisual { get; }
+    IHierarchyObject GetParent();
+    IList<IHierarchyObject> GetAllChildren();
   }
 }

@@ -49,6 +49,7 @@
     <Compile Include="Mocks\TextBufferMock.cs" />
     <Compile Include="Mocks\TextSnapshotLineMock.cs" />
     <Compile Include="Mocks\TextSnapshotMock.cs" />
+    <Compile Include="VsChromium\Wpf\TestHiararchyObjectNavigator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">

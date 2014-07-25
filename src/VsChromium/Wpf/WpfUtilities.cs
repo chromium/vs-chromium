@@ -5,8 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.Reflection;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -88,20 +89,28 @@ namespace VsChromium.Wpf {
       }
     }
 
-    public static void SelectItem(ItemsControl items, IHierarchyObject item) {
+    /// <summary>
+    /// Select the visual TreeViewItem corresponding to the ViewModel |item|
+    /// object. Note: This method is synchronous (i.e. does not post any message
+    /// to the UI thread queue).
+    /// </summary>
+    public static void SelectItem(TreeView treeView, IHierarchyObject item) {
+      // Build child->parent->ancestor(s) stack so we can go top-down in the tree later on.
       var viewItems = new Stack<IHierarchyObject>();
       while (item != null) {
         viewItems.Push(item);
         item = item.GetParent();
       }
 
-      ItemsControl parentItemsControl = items;
+      // For each visual element in the stack, expand and bring to view the
+      // corresponding TreeViewItem
+      ItemsControl parentItemsControl = treeView;
       IHierarchyObject parentViewItem = null;
       while (viewItems.Count > 0) {
         var viewItem = viewItems.Pop();
 
         if (viewItem.IsVisual) {
-          parentItemsControl = BringViewItemToView(items, parentItemsControl, parentViewItem, viewItem);
+          parentItemsControl = BringViewItemToView(treeView, parentItemsControl, parentViewItem, viewItem);
           if (parentItemsControl == null)
             break;
         }
@@ -112,9 +121,30 @@ namespace VsChromium.Wpf {
       // If the desired selection is found, select it 
       var desiredSelection = parentItemsControl as TreeViewItem;
       if (desiredSelection != null) {
-        desiredSelection.IsSelected = true;
-        desiredSelection.Focus();
+        SetSelectedItem(treeView, desiredSelection);
+        //desiredSelection.IsSelected = true;
+        //desiredSelection.Focus();
       }
+    }
+    /// <summary>
+    /// Programmatically select an item from a tree view.
+    /// From http://www.askernest.com/archive/2008/01/23/how-to-programmatically-change-the-selecteditem-in-a-wpf-treeview.aspx
+    /// </summary>
+    public static void SetSelectedItem(TreeView treeView, TreeViewItem item) {
+      Logger.WrapActionInvocation(() => {
+        //DependencyObject dObject = treeView
+        //.ItemContainerGenerator
+        //.ContainerFromItem(item);
+
+        //uncomment the following line if UI updates are unnecessary
+        //((TreeViewItem)dObject).IsSelected = true;                
+
+        MethodInfo selectMethod =
+          typeof (TreeViewItem).GetMethod("Select",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        selectMethod.Invoke(item, new object[] {true});
+      });
     }
 
     private static ItemsControl BringViewItemToView(DispatcherObject dispatcher, ItemsControl parentItemsControl, IHierarchyObject parentViewItem, IHierarchyObject viewItem) {

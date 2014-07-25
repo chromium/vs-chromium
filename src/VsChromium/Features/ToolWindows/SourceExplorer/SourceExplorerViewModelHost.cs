@@ -45,35 +45,24 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void NavigateToFile(FileEntryViewModel fileEntry, Span? span) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
-      SynchronizationContextProvider.UIContext.Post(() => 
+      SynchronizationContextProvider.UIContext.Post(() =>
         OpenDocumentHelper.OpenDocument(fileEntry.Path, _ => span));
     }
 
     public void NavigateToDirectory(DirectoryEntryViewModel directoryEntry) {
-      // The use of "Post" is significant, as it prevents the message from
-      // bubbling up thus preventing the newly opened document to receive
-      // the focus.
-      SynchronizationContextProvider.UIContext.Post(() =>
-        _control.ViewModel.SelectDirectory(directoryEntry,
-                                  _control.FileTreeView,
-                                  () => _control.SwallowsRequestBringIntoView(false),
-                                  () => _control.SwallowsRequestBringIntoView(true)));
+      _control.ViewModel.SelectDirectory(directoryEntry,
+        _control.FileTreeView,
+        () => _control.SwallowsRequestBringIntoView(false),
+        () => _control.SwallowsRequestBringIntoView(true));
     }
 
     public void SelectTreeViewItem(TreeViewItemViewModel item, Action callback) {
-      // The use of "Post" is significant, as it prevents the message from
-      // bubbling up thus preventing the newly opened document to receive
-      // the focus.
-      SynchronizationContextProvider.UIContext.Post(() =>
-        _control.ViewModel.SelectItem(item,
-                                  _control.FileTreeView,
-          () => {
-            _control.SwallowsRequestBringIntoView(false);
-          },
-          () => {
-            _control.SwallowsRequestBringIntoView(true);
-            callback();
-          }));
+      _control.ViewModel.SelectTreeViewItem(item, _control.FileTreeView,
+        () => _control.SwallowsRequestBringIntoView(true),
+        () => {
+          _control.SwallowsRequestBringIntoView(true);
+          callback();
+        });
     }
   }
 }

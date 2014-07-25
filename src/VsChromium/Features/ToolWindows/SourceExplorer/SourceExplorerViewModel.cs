@@ -112,7 +112,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _sourceExplorerViewModelHost = sourceExplorerViewModelHost;
     }
 
-    public ISourceExplorerViewModelHost Host { get { return _sourceExplorerViewModelHost; }}
+    public ISourceExplorerViewModelHost Host { get { return _sourceExplorerViewModelHost; } }
 
     public void SwitchToFileSystemTree() {
       SetRootNodes(_fileSystemNodes, "Open a source file from a local Chromium enlistment.");
@@ -217,24 +217,19 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
 
       SwitchToFileSystemTree();
-      SelectItem(entryViewModel, treeView, beforeSelectItem, afterSelectItem);
+      SelectTreeViewItem(entryViewModel, treeView, beforeSelectItem, afterSelectItem);
     }
 
-    public void SelectItem(TreeViewItemViewModel item, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
+    public void SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
+      // We need to expand the item so that the WPF UI knows about all the TreeViewItem nodes up to |item|.
       item.IsExpanded = true;
-      item.IsSelected = true;
-      WpfUtilities.Invoke(treeView, DispatcherPriority.ApplicationIdle, () => {
+      Logger.WrapActionInvocation(() => {
+        beforeSelectItem();
         try {
-          beforeSelectItem();
-          try {
-            WpfUtilities.SelectItem(treeView, item);
-          }
-          finally {
-            afterSelectItem();
-          }
+          WpfUtilities.SelectTreeViewItem(treeView, item);
         }
-        catch (Exception e) {
-          Logger.LogException(e, "Error updating TreeView UI to show selected item.");
+        finally {
+          afterSelectItem();
         }
       });
     }

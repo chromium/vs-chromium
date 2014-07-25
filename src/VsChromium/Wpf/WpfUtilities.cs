@@ -94,8 +94,9 @@ namespace VsChromium.Wpf {
     /// object. Note: This method is synchronous (i.e. does not post any message
     /// to the UI thread queue).
     /// </summary>
-    public static void SelectItem(TreeView treeView, IHierarchyObject item) {
-      // Build child->parent->ancestor(s) stack so we can go top-down in the tree later on.
+    public static void SelectTreeViewItem(TreeView treeView, IHierarchyObject item) {
+      // Build child->parent->ancestor(s) stack so we can go top-down in the
+      // tree during next phase.
       var viewItems = new Stack<IHierarchyObject>();
       while (item != null) {
         viewItems.Push(item);
@@ -122,23 +123,13 @@ namespace VsChromium.Wpf {
       var desiredSelection = parentItemsControl as TreeViewItem;
       if (desiredSelection != null) {
         SetSelectedItem(treeView, desiredSelection);
-        //desiredSelection.IsSelected = true;
-        //desiredSelection.Focus();
       }
     }
     /// <summary>
-    /// Programmatically select an item from a tree view.
-    /// From http://www.askernest.com/archive/2008/01/23/how-to-programmatically-change-the-selecteditem-in-a-wpf-treeview.aspx
+    /// Programmatically select an item from a tree view (idea from http://goo.gl/w0KFL5)
     /// </summary>
     public static void SetSelectedItem(TreeView treeView, TreeViewItem item) {
       Logger.WrapActionInvocation(() => {
-        //DependencyObject dObject = treeView
-        //.ItemContainerGenerator
-        //.ContainerFromItem(item);
-
-        //uncomment the following line if UI updates are unnecessary
-        //((TreeViewItem)dObject).IsSelected = true;                
-
         MethodInfo selectMethod =
           typeof (TreeViewItem).GetMethod("Select",
             BindingFlags.NonPublic | BindingFlags.Instance);
@@ -175,6 +166,9 @@ namespace VsChromium.Wpf {
       for (var i = 0; i < maxLoops; i++) {
         action();
         var result = WpfUtilities.Invoke(dispatcher, DispatcherPriority.Background, func);
+        if (result == null) {
+          Logger.Log("Trying action again.");
+        }
         if (result != null)
           return result;
       }

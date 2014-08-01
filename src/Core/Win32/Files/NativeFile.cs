@@ -54,7 +54,7 @@ namespace VsChromium.Core.Win32.Files {
       using (var handle = NativeMethods.FindFirstFile(pattern, out data)) {
         if (handle.IsInvalid) {
           var lastWin32Error = Marshal.GetLastWin32Error();
-          if (lastWin32Error != 2 && lastWin32Error != 18) {
+          if (lastWin32Error != 2 && lastWin32Error != 18 && lastWin32Error != 3) {
             throw new LastWin32ErrorException(lastWin32Error, string.Format("Error getting first entry of file entries for path \"{0}\".", path));
           }
           return;

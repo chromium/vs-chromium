@@ -11,6 +11,17 @@ using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Win32.Files {
   public static class NativeFile {
+    // http://msdn.microsoft.com/en-us/library/windows/desktop/ms681382(v=vs.85).aspx
+    public enum Win32Errors {
+      ERROR_SUCCESS = 0,
+      ERROR_INVALID_FUNCTION = 1,
+      ERROR_FILE_NOT_FOUND = 2,
+      ERROR_PATH_NOT_FOUND = 3,
+      ERROR_ACCESS_DENIED = 5,
+      ERROR_INVALID_DRIVE = 15,
+      ERROR_NO_MORE_FILES = 18,
+    }
+
     public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo, int trailingByteCount) {
       var result = ReadFileWorker(fileInfo, trailingByteCount);
 
@@ -54,7 +65,9 @@ namespace VsChromium.Core.Win32.Files {
       using (var handle = NativeMethods.FindFirstFile(pattern, out data)) {
         if (handle.IsInvalid) {
           var lastWin32Error = Marshal.GetLastWin32Error();
-          if (lastWin32Error != 2 && lastWin32Error != 18) {
+          if (lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
+              lastWin32Error != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
+              lastWin32Error != (int)Win32Errors.ERROR_NO_MORE_FILES) {
             throw new LastWin32ErrorException(lastWin32Error, string.Format("Error getting first entry of file entries for path \"{0}\".", path));
           }
           return;
@@ -65,7 +78,10 @@ namespace VsChromium.Core.Win32.Files {
           AddResult(ref data, directories, files);
         }
         var lastWin32Error2 = Marshal.GetLastWin32Error();
-        if (lastWin32Error2 != 0 && lastWin32Error2 != 18 && lastWin32Error2 != 2) {
+        if (lastWin32Error2 != (int)Win32Errors.ERROR_SUCCESS &&
+            lastWin32Error2 != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
+            lastWin32Error2 != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
+            lastWin32Error2 != (int)Win32Errors.ERROR_NO_MORE_FILES) {
           throw new LastWin32ErrorException(lastWin32Error2, string.Format("Error getting next entry of file entries for path \"{0}\".", path));
         }
       }
@@ -79,11 +95,14 @@ namespace VsChromium.Core.Win32.Files {
     }
 
     internal static bool IsFile(ref WIN32_FIND_DATA data) {
-      return 0 == (data.dwFileAttributes & 16);
+      return (data.dwFileAttributes & (uint)Win32.Files.FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) == 0;
     }
 
     internal static bool IsDir(ref WIN32_FIND_DATA data) {
-      return (data.dwFileAttributes & 16) != 0 && !data.cFileName.Equals(".") && !data.cFileName.Equals("..");
+      return 
+        (data.dwFileAttributes & (uint)Win32.Files.FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) != 0 &&
+        !data.cFileName.Equals(".") &&
+        !data.cFileName.Equals("..");
     }
   }
 }

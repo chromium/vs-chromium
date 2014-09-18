@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace VsChromium.Core.Files.PatternMatching {
   public static class PatternParser {
@@ -12,61 +13,74 @@ namespace VsChromium.Core.Files.PatternMatching {
       if (pattern.IndexOf(Path.AltDirectorySeparatorChar) >= 0)
         throw new ArgumentException("Pattern should not contain alternative directory seperator character.", "pattern");
 
-      return new PathMatcher(ParsePatternWorker(pattern));
+      return new PathMatcher(ParsePatternWorker(new PatternWrapper(pattern)));
     }
 
-    private static IEnumerable<BaseOperator> ParsePatternWorker(string patternText) {
-      var pattern = new PatternWrapper(patternText);
+    private static readonly char PathSeparator = Path.DirectorySeparatorChar;
+    private static string AnyDirMatchPrefix = "**" + PathSeparator;
+    private static string AnyDirMatch = PathSeparator + "**" + PathSeparator;
 
-      if (pattern.IsEmpty)
-        yield return new OpNoMatch();
+    private static IEnumerable<BaseOperator> ParsePatternWorker(PatternWrapper pattern) {
+      var result = new List<BaseOperator>();
+
+      if (pattern.IsEmpty) {
+        result.Add(new OpNoMatch());
+        return result;
+      }
 
       // Check for "/" suffix
-      if (IsPathSeparator(pattern.Last)) {
-        yield return new OpDirectoryOnly();
+      if (pattern.Last == PathSeparator) {
+        result.Add(new OpDirectoryOnly());
         pattern.RemoveLast();
       }
 
-      if (pattern.IsEmpty)
-        yield return new OpNoMatch();
+      if (pattern.IsEmpty) {
+        result.Add(new OpNoMatch());
+        return result;
+      }
 
       // Check for "/" prefix
-      if (IsPathSeparator(pattern.First))
+      if (pattern.First == PathSeparator)
         pattern.Skip(1);
       else
-        yield return new OpRelativeDirectory();
+        result.Add(new OpRelativeDirectory());
 
       // Check for "**/" prefix
-      if (pattern.StartsWith("**\\"))
+      if (pattern.StartsWith(AnyDirMatchPrefix))
         pattern.Skip(3);
 
-      if (pattern.IsEmpty)
-        yield return new OpNoMatch();
+      if (pattern.IsEmpty) {
+        result.Add(new OpNoMatch());
+        return result;
+      }
 
-      while (!pattern.IsEmpty) {
-        var anyDirIndex = pattern.IndexOf("\\**\\");
-        if (anyDirIndex >= 0) {
-          if (anyDirIndex >= pattern.Index)
-            yield return new OpText(pattern.Take(anyDirIndex - pattern.Index));
-          yield return new OpRecursiveDir();
-          pattern.Skip(4);
-          continue;
+      var sb = new StringBuilder();
+      Action addOpText = () => {
+        if (sb.Length > 0) {
+          result.Add(new OpText(sb.ToString()));
+          sb.Clear();
         }
-
-        var asteriskIndex = pattern.IndexOf("*");
-        if (asteriskIndex >= 0) {
-          if (asteriskIndex > pattern.Index)
-            yield return new OpText(pattern.Take(asteriskIndex - pattern.Index));
-          yield return new OpAsterisk();
+      };
+      while (!pattern.IsEmpty) {
+        if (pattern.StartsWith(AnyDirMatch)) {
+          addOpText();
+          result.Add(new OpRecursiveDir());
+          pattern.Skip(4);
+        } else if (pattern.First == PathSeparator) {
+          addOpText();
+          result.Add(new OpDirectorySeparator());
+          pattern.Skip(1);
+        } else if (pattern.First == '*') {
+          addOpText();
+          result.Add(new OpAsterisk());
           pattern.Skip(1);
         } else {
-          yield return new OpText(pattern.Take(pattern.Remaining));
+          sb.Append(pattern.First);
+          pattern.Skip(1);
         }
       }
-    }
-
-    private static bool IsPathSeparator(char ch) {
-      return ch == Path.DirectorySeparatorChar;
+      addOpText();
+      return result;
     }
   }
 }

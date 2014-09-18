@@ -64,6 +64,7 @@
     <Compile Include="Files\PathChangeEntry.cs" />
     <Compile Include="Files\PathChangeKind.cs" />
     <Compile Include="Files\PathHelpers.cs" />
+    <Compile Include="Files\PatternMatching\OpDirectorySeparator.cs" />
     <Compile Include="Files\SystemPathComparer.cs" />
     <Compile Include="Files\FullPathDictionary.cs" />
     <Compile Include="Files\CaseSensitivePathComparer.cs" />

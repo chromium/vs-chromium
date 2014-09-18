@@ -38,13 +38,13 @@ namespace VsChromium.Core.Files.PatternMatching {
 
       // Full "*" semantics (recursive...)
       for (var i = pathIndex; i < path.Length; i++) {
-        // Stop at first path separator
-        if (FileNameMatching.IsPathSeparator(path[i]))
-          break;
-
         var result = Match(kind, comparer, operators, operatorIndex + 1, path, i);
         if (result == path.Length)
           return result;
+
+        // Stop at first path separator
+        if (FileNameMatching.IsPathSeparator(path[i]))
+          break;
       }
 
       return -1;

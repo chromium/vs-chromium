@@ -82,6 +82,8 @@ namespace VsChromium.Tests {
     [TestMethod]
     public void MatchDirectoryNameNameWorks() {
       object[,] expectedResults = {
+        {"foo/*/bar", "foo/boo/bar", true},
+
         // Pattern, Path, Expected Result
         {"foo/**/bar", "bar/test/foo", false},
         {"foo/bar", "foo/bar", true},
@@ -101,18 +103,32 @@ namespace VsChromium.Tests {
         {"/foo/bar/", "test/foo/bar/blah", false},
         {"foo/*bar", "foo/blah/bar", false},
 
-        // **/ has special meaning
-        {"**/bar", "bar", true},
-        {"**/bar", "blah/bar", true},
-        {"**/bar", "foo/blah/bar", true},
+        // **/ has special meaning:
+        // http://git-scm.com/docs/gitignore
+        //  A leading "**" followed by a slash means match in all directories. For example, "**/foo" matches file or directory "foo" anywhere, the same as pattern "foo"
+        {"**/foo", "foo", true},
+        {"**/foo", "blah/foo/bar", true},
+        {"**/foo", "foo/blah/bar", true},
+
+        // http://git-scm.com/docs/gitignore
+        //  "**/foo/bar" matches file or directory "bar" anywhere that is directly under directory "foo".
+        {"**/foo/bar", "foo/bar", true},
+        {"**/foo/bar", "blah/foo/bar", true},
+        {"**/foo/bar", "foo/bar/blah/foo2", true},
+
         // /**/ has special meaning
-        {"foo/**/bar", "foo/blah/bar", true},
-        {"foo/**/bar", "foo/blah/boo/bar", true},
-        {"foo/**/bar", "foo/blah/boobar", false},
+        // http://git-scm.com/docs/gitignore
+        //  A slash followed by two consecutive asterisks then a slash matches zero or more directories. For example, "a/**/b" matches "a/b", "a/x/b", "a/x/y/b" and so on.
+        {"a/**/b", "a/b", true},
+        {"a/**/b", "a/x/b", true},
+        {"a/**/b", "a/x/y/b", true},
+        {"a/**/b", "a/blah/boo", false},
 
         // any other form of "**" means "double asterisk" which means "asterisk" really.
         {"foo/**bar", "foo/blahbar", true},
         {"foo/**bar", "foo/blah/blahbar", false},
+
+        {"foo/*/bar", "foo/boo/bar", true},
       };
 
       AssertMatch(MatchKind.Directory, expectedResults);

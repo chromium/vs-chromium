@@ -3,13 +3,47 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
 
 namespace VsChromium.Core.Files {
   public interface IFileSystem {
-    bool FileExists(FullPath path);
-    bool DirectoryExists(FullPath path);
-
-    DateTime GetFileLastWriteTimeUtc(FullPath path);
     string[] ReadAllLines(FullPath path);
+
+    /// <summary>
+    /// Returns attributes of a file or directory in the file system.
+    /// </summary>
+    IFileInfoSnapshot GetFileInfoSnapshot(FullPath path);
+  }
+
+  public interface IFileInfoSnapshot {
+    bool IsFile { get; }
+    bool IsDirectory { get; }
+
+    FullPath Path { get; }
+    bool Exists { get; }
+    DateTime LastWriteTimeUtc { get; }
+  }
+
+  public static class FileSystemExtensions {
+    public static bool FileExists(this IFileSystem fileSystem, FullPath path) {
+      var fileInfo = fileSystem.GetFileInfoSnapshot(path);
+      return fileInfo.Exists && fileInfo.IsFile;
+    }
+
+    public static bool DirectoryExists(this IFileSystem fileSystem, FullPath path) {
+      var fileInfo = fileSystem.GetFileInfoSnapshot(path);
+      return fileInfo.Exists && fileInfo.IsDirectory;
+    }
+
+    public static DateTime GetFileLastWriteTimeUtc(this IFileSystem fileSystem, FullPath path) {
+      var fileInfo = fileSystem.GetFileInfoSnapshot(path);
+      if (!fileInfo.Exists) {
+        throw new IOException(string.Format("File \"{0}\" does not exist", path.Value));
+      }
+      if (!fileInfo.IsFile) {
+        throw new IOException(string.Format("File system entry \"{0}\" is not a file", path.Value));
+      }
+      return fileInfo.LastWriteTimeUtc;
+    }
   }
 }

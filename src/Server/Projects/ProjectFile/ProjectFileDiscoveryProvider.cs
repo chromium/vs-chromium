@@ -54,9 +54,11 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
     public void ValidateCache() {
       lock (_lock) {
-        _knownProjectRootDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
-        _knownProjectRootDirectories.RemoveWhere(x => x.Value.IsOutdated);
-        _knownNonProjectDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
+        _knownProjectRootDirectories.Clear();
+        _knownNonProjectDirectories.Clear();
+        //_knownProjectRootDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
+        //_knownProjectRootDirectories.RemoveWhere(x => x.Value.IsOutdated);
+        //_knownNonProjectDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
       }
     }
 

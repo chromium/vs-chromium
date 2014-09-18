@@ -6,7 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
@@ -29,15 +31,23 @@ namespace VsChromium.Server.FileSystem {
         .Where(x => !PathIsExcluded(x.Path))
         .ToList();
 
-      Logger.Log("DirectoryChangeWatcherOnPathsChanged: {0:n0} items left out of {1:n0} after filtering.",
+      Logger.Log("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering.",
                  unfilteredChanges.Count, changes.Count);
+      {
+        var count = Math.Min(10, changes.Count);
+        Enumerable.Range(0, count).ForAll(index =>
+          Logger.Log("ProcessPathsChangedEvent({0}).", changes[index]));
+      }
       // Too verbose
       //unfilteredChanges.ForAll(change => Logger.Log("DirectoryChangeWatcherOnPathsChanged({0}).", change));
 
       if (unfilteredChanges.Any()) {
         // If the only changes we see are file modification, don't recompute the graph, just 
-        // raise a "files changes event".
-        if (unfilteredChanges.All(change => change.Kind == PathChangeKind.Changed)) {
+        // raise a "files changes event". Note that we also watch for any "special" filename.
+        bool isLowImpactChange =
+          unfilteredChanges.All(change => change.Kind == PathChangeKind.Changed) &&
+          unfilteredChanges.All(change => change.Path.FileName != ConfigurationFilenames.ProjectFileNameDetection);
+        if (isLowImpactChange) {
           Logger.Log(
             "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
           var fileNames = unfilteredChanges.Select(change => GetProjectFileName(change.Path)).Where(name => name != null);

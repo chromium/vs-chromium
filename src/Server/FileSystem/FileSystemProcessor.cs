@@ -166,6 +166,13 @@ namespace VsChromium.Server.FileSystem {
     /// Sanety check: remove all files that don't exist on the file system anymore.
     /// </summary>
     private bool ValidateKnownFiles() {
+      // Reset our knowledge about the file system, as a safety measure, since we don't
+      // currently fully implement watching all changes in the file system that could affect
+      // the cache. For example, if a ".chromium-project" file is added to a child
+      // directory of a file we have been notified, it could totally change how we compute
+      // the world.
+      _projectDiscovery.ValidateCache();
+
       // We take the lock twice because we want to avoid calling "File.Exists" inside
       // the lock.
       IList<FullPath> filenames;
@@ -180,7 +187,6 @@ namespace VsChromium.Server.FileSystem {
         lock (_lock) {
           deletedFileNames.ForEach(x => _registeredFiles.Remove(x));
         }
-        _projectDiscovery.ValidateCache();
         return true;
       }
 

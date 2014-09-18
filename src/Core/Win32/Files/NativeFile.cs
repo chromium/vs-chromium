@@ -25,7 +25,6 @@ namespace VsChromium.Core.Win32.Files {
     public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo, int trailingByteCount) {
       var result = ReadFileWorker(fileInfo, trailingByteCount);
 
-      // Use of WriteInt16 is tied to "2" bytes.
       var trailingPtr = result.Pointer.ToInt64() + result.ByteLength - trailingByteCount;
       for (var i = 0; i < trailingByteCount; i++) {
         Marshal.WriteByte(new IntPtr(trailingPtr + i), 0);

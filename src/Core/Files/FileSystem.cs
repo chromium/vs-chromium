@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using VsChromium.Core.Win32.Files;
+using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Files {
   [Export(typeof(IFileSystem))]
@@ -26,19 +27,8 @@ namespace VsChromium.Core.Files {
       return File.ReadAllLines(path.Value);
     }
 
-  }
-
-  public class FileInfoSnapshot : IFileInfoSnapshot {
-    private readonly SlimFileInfo _fileInfo;
-
-    public FileInfoSnapshot(FullPath path) {
-      _fileInfo = new SlimFileInfo(path);
+    public SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount) {
+      return NativeFile.ReadFileNulTerminated(((FileInfoSnapshot)fileInfo).SlimFileInfo, trailingByteCount);
     }
-
-    public bool IsFile { get { return _fileInfo.IsFile; } }
-    public bool IsDirectory { get { return _fileInfo.IsDirectory; } }
-    public bool Exists { get { return _fileInfo.Exists; } }
-    public FullPath Path { get { return _fileInfo.FullPath; } }
-    public DateTime LastWriteTimeUtc { get { return _fileInfo.LastWriteTimeUtc; } }
   }
 }

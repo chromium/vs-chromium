@@ -57,9 +57,12 @@
     <Compile Include="DkmShared\VsPackageMessage.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.cs" />
     <Compile Include="Files\DirectoryChangeWatcherFactory.cs" />
+    <Compile Include="Files\FileInfoSnapshot.cs" />
     <Compile Include="Files\FileSystem.cs" />
+    <Compile Include="Files\FileSystemExtensions.cs" />
     <Compile Include="Files\IDirectoryChangeWatcher.cs" />
     <Compile Include="Files\IDirectoryChangeWatcherFactory.cs" />
+    <Compile Include="Files\IFileInfoSnapshot.cs" />
     <Compile Include="Files\IFileSystem.cs" />
     <Compile Include="Files\PathChangeEntry.cs" />
     <Compile Include="Files\PathChangeKind.cs" />

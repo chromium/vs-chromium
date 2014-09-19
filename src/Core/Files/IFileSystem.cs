@@ -2,48 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
-using System.IO;
+using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Files {
   public interface IFileSystem {
-    string[] ReadAllLines(FullPath path);
-
     /// <summary>
     /// Returns attributes of a file or directory in the file system.
     /// </summary>
     IFileInfoSnapshot GetFileInfoSnapshot(FullPath path);
-  }
 
-  public interface IFileInfoSnapshot {
-    bool IsFile { get; }
-    bool IsDirectory { get; }
+    /// <summary>
+    /// Reads the full contents of a text file into a list of strings.
+    /// </summary>
+    string[] ReadAllLines(FullPath path);
 
-    FullPath Path { get; }
-    bool Exists { get; }
-    DateTime LastWriteTimeUtc { get; }
-  }
-
-  public static class FileSystemExtensions {
-    public static bool FileExists(this IFileSystem fileSystem, FullPath path) {
-      var fileInfo = fileSystem.GetFileInfoSnapshot(path);
-      return fileInfo.Exists && fileInfo.IsFile;
-    }
-
-    public static bool DirectoryExists(this IFileSystem fileSystem, FullPath path) {
-      var fileInfo = fileSystem.GetFileInfoSnapshot(path);
-      return fileInfo.Exists && fileInfo.IsDirectory;
-    }
-
-    public static DateTime GetFileLastWriteTimeUtc(this IFileSystem fileSystem, FullPath path) {
-      var fileInfo = fileSystem.GetFileInfoSnapshot(path);
-      if (!fileInfo.Exists) {
-        throw new IOException(string.Format("File \"{0}\" does not exist", path.Value));
-      }
-      if (!fileInfo.IsFile) {
-        throw new IOException(string.Format("File system entry \"{0}\" is not a file", path.Value));
-      }
-      return fileInfo.LastWriteTimeUtc;
-    }
+    /// <summary>
+    /// Reads the full contents of a file in memory, with <paramref
+    /// name="trailingByteCount"/> null bytes as suffix.
+    /// </summary>
+    SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount);
   }
 }

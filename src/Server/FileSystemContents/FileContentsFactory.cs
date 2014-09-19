@@ -13,15 +13,22 @@ using VsChromium.Server.NativeInterop;
 namespace VsChromium.Server.FileSystemContents {
   [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
+    private readonly IFileSystem _fileSystem;
+
+    [ImportingConstructor]
+    public FileContentsFactory(IFileSystem fileSystem) {
+      _fileSystem = fileSystem;
+    }
+
     public FileContents GetFileContents(FullPath path) {
       return ReadFile(path);
     }
 
     private FileContents ReadFile(FullPath fullName) {
       try {
-        var fileInfo = new SlimFileInfo(fullName);
+        var fileInfo = _fileSystem.GetFileInfoSnapshot(fullName);
         const int trailingByteCount = 2;
-        var block = NativeFile.ReadFileNulTerminated(fileInfo, trailingByteCount);
+        var block = _fileSystem.ReadFileNulTerminated(fileInfo, trailingByteCount);
         var contentsByteCount = (int)block.ByteLength - trailingByteCount; // Padding added by ReadFileNulTerminated
         var kind = NativeMethods.Text_GetKind(block.Pointer, contentsByteCount);
 

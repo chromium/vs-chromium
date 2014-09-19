@@ -41,7 +41,11 @@ namespace VsChromium.Tests {
 
         // Trailing "/"
         // http://git-scm.com/docs/gitignore
-        //   If the pattern ends with a slash, it is removed for the purpose of the following description, but it would only find a match with a directory. In other words, foo/ will match a directory foo and paths underneath it, but will not match a regular file or a symbolic link foo 
+        // If the pattern ends with a slash, it is removed for the purpose of
+        // the following description, but it would only find a match with a
+        // directory. In other words, foo/ will match a directory foo and paths
+        // underneath it, but will not match a regular file or a symbolic link
+        // foo
         {"foo/bar/", "foo/bar", false},
         {"foo/bar/", "foo/bar2", false},
         {"foo/bar/", "foo/bar/blah", true},
@@ -50,7 +54,8 @@ namespace VsChromium.Tests {
 
         // Leading "/"
         // http://git-scm.com/docs/gitignore
-        //  A leading slash matches the beginning of the pathname. For example, "/*.c" matches "cat-file.c" but not "mozilla-sha1/sha1.c".
+        // A leading slash matches the beginning of the pathname. For example,
+        // "/*.c" matches "cat-file.c" but not "mozilla-sha1/sha1.c".
         {"/foo/bar", "foo/bar", true},
         {"/foo/bar", "foo/bar2", false},
         {"/foo/bar", "foo/bar/blah", true},
@@ -66,7 +71,10 @@ namespace VsChromium.Tests {
 
         // "*" has special meaning
         // http://git-scm.com/docs/gitignore
-        //  wildcards in the pattern will not match a / in the pathname. For example, "Documentation/*.html" matches "Documentation/git.html" but not "Documentation/ppc/ppc.html" or "tools/perf/Documentation/perf.html"
+        // wildcards in the pattern will not match a / in the pathname. For
+        // example, "Documentation/*.html" matches "Documentation/git.html" but
+        // not "Documentation/ppc/ppc.html" or
+        // "tools/perf/Documentation/perf.html"
         {"foo/*/bar", "foo/boo/bar", true},
         {"foo/*/bar", "foo/bar", false},
         {"foo/*/*/bar", "foo/boo/bar", false},
@@ -75,7 +83,9 @@ namespace VsChromium.Tests {
 
         // "/**/" has special meaning
         // http://git-scm.com/docs/gitignore
-        //  A slash followed by two consecutive asterisks then a slash matches zero or more directories. For example, "a/**/b" matches "a/b", "a/x/b", "a/x/y/b" and so on.
+        // A slash followed by two consecutive asterisks then a slash matches
+        // zero or more directories. For example, "a/**/b" matches "a/b",
+        // "a/x/b", "a/x/y/b" and so on.
         {"foo/**/bar", "foo/blah/bar", true},
         {"foo/**/bar", "foo/blah/boo/bar", true},
         {"foo/**/bar", "foo/blah/boobar", false},
@@ -85,21 +95,24 @@ namespace VsChromium.Tests {
         {"foo/*/**/bar", "foo/boo/bar", true},
         {"foo/*/**/bar", "foo/boo/blah/bar", true},
 
-        // any other form of "**" means "double asterisk" which means "asterisk" really.
+        // any other form of "**" means "double asterisk" which means "asterisk"
+        // really.
         {"foo/**bar", "foo/blahbar", true},
         {"foo/**bar", "foo/blah/blahbar", false},
         {"foo/*bar*", "foo/blah/bar", false},
         {"foo/**/bar*", "foo/blah/bar", true},
         {"foo/**/bar*", "foo/blah/boo/bar", true},
         {"foo/**/bar*", "foo/blah/boobar", false},
-        // any other form of "**" means "double asterisk" which means "asterisk" really.
+        // any other form of "**" means "double asterisk" which means "asterisk"
+        // really.
         {"foo/**bar*", "foo/blahbar", true},
         {"foo/**bar*", "foo/blah/blahbar", false},
         {"foo/*bar.*", "foo/blah/bar.cs", false},
         {"foo/**/bar.*", "foo/blah/bar.cs", true},
         {"foo/**/bar.*", "foo/blah/boo/bar.cs", true},
         {"foo/**/bar.*", "foo/blah/boobar.cs", false},
-        // any other form of "**" means "double asterisk" which means "asterisk" really.
+        // any other form of "**" means "double asterisk" which means "asterisk"
+        // really.
         {"foo/**bar.*", "foo/blahbar.cs", true},
         {"foo/**bar.*", "foo/blah/blahbar.cs", false},
       };
@@ -119,7 +132,8 @@ namespace VsChromium.Tests {
 
         // Leading "/"
         // http://git-scm.com/docs/gitignore
-        //  A leading slash matches the beginning of the pathname. For example, "/*.c" matches "cat-file.c" but not "mozilla-sha1/sha1.c".
+        // A leading slash matches the beginning of the pathname. For example,
+        // "/*.c" matches "cat-file.c" but not "mozilla-sha1/sha1.c".
         {"/foo/bar", "foo/bar", true},
         {"/foo/bar", "foo/bar2", false},
         {"/foo/bar", "foo/bar/blah", true},
@@ -128,7 +142,11 @@ namespace VsChromium.Tests {
 
         // Trailing "/"
         // http://git-scm.com/docs/gitignore
-        //   If the pattern ends with a slash, it is removed for the purpose of the following description, but it would only find a match with a directory. In other words, foo/ will match a directory foo and paths underneath it, but will not match a regular file or a symbolic link foo 
+        // If the pattern ends with a slash, it is removed for the purpose of
+        // the following description, but it would only find a match with a
+        // directory. In other words, foo/ will match a directory foo and paths
+        // underneath it, but will not match a regular file or a symbolic link
+        // foo
         {"/foo/bar/", "foo/bar", true},
         {"/foo/bar/", "foo/bar2", false},
         {"/foo/bar/", "foo/bar/blah", true},
@@ -139,33 +157,42 @@ namespace VsChromium.Tests {
 
         // "**/" has special meaning:
         // http://git-scm.com/docs/gitignore
-        //  A leading "**" followed by a slash means match in all directories. For example, "**/foo" matches file or directory "foo" anywhere, the same as pattern "foo"
+        // A leading "**" followed by a slash means match in all directories.
+        // For example, "**/foo" matches file or directory "foo" anywhere, the
+        // same as pattern "foo"
         {"**/foo", "foo", true},
         {"**/foo", "blah/foo/bar", true},
         {"**/foo", "foo/blah/bar", true},
 
         // http://git-scm.com/docs/gitignore
-        //  "**/foo/bar" matches file or directory "bar" anywhere that is directly under directory "foo".
+        // "**/foo/bar" matches file or directory "bar" anywhere that is
+        // directly under directory "foo".
         {"**/foo/bar", "foo/bar", true},
         {"**/foo/bar", "blah/foo/bar", true},
         {"**/foo/bar", "foo/bar/blah/foo2", true},
 
         // "/**/" has special meaning
         // http://git-scm.com/docs/gitignore
-        //  A slash followed by two consecutive asterisks then a slash matches zero or more directories. For example, "a/**/b" matches "a/b", "a/x/b", "a/x/y/b" and so on.
+        // A slash followed by two consecutive asterisks then a slash matches
+        // zero or more directories. For example, "a/**/b" matches "a/b",
+        // "a/x/b", "a/x/y/b" and so on.
         {"a/**/b", "a/b", true},
         {"a/**/b", "a/x/b", true},
         {"a/**/b", "a/x/y/b", true},
         {"a/**/b", "a/blah/boo", false},
 
-        // any other form of "**" means "double asterisk" which means "asterisk" really.
+        // any other form of "**" means "double asterisk" which means "asterisk"
+        // really.
         {"foo/**bar", "foo/blahbar", true},
         {"foo/**bar", "foo/blah/blahbar", false},
         {"foo/**/bar", "bar/test/foo", false},
 
         // "*" rules
         // http://git-scm.com/docs/gitignore
-        //  wildcards in the pattern will not match a / in the pathname. For example, "Documentation/*.html" matches "Documentation/git.html" but not "Documentation/ppc/ppc.html" or "tools/perf/Documentation/perf.html"
+        // wildcards in the pattern will not match a / in the pathname. For
+        // example, "Documentation/*.html" matches "Documentation/git.html" but
+        // not "Documentation/ppc/ppc.html" or
+        // "tools/perf/Documentation/perf.html"
         {"foo/*/bar", "foo/boo/bar", true},
         {"foo/*/bar", "foo/bar", false},
         {"foo/*/*/bar", "foo/boo/bar", false},

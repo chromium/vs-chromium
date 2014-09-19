@@ -24,18 +24,18 @@ namespace VsChromium.Core.Files.PatternMatching {
       var result = new List<BaseOperator>();
 
       if (pattern.IsEmpty) {
-        result.Add(new OpNoMatch());
+        result.Add(new OpIsNoMatch());
         return result;
       }
 
       // Check for "/" suffix
       if (pattern.Last == PathSeparator) {
-        result.Add(new OpDirectoryOnly());
+        result.Add(new OpIsDirectoryOnly());
         pattern.RemoveLast();
       }
 
       if (pattern.IsEmpty) {
-        result.Add(new OpNoMatch());
+        result.Add(new OpIsNoMatch());
         return result;
       }
 
@@ -43,14 +43,14 @@ namespace VsChromium.Core.Files.PatternMatching {
       if (pattern.First == PathSeparator)
         pattern.Skip(1);
       else
-        result.Add(new OpRelativeDirectory());
+        result.Add(new OpIsRelativeDirectory());
 
       // Check for "**/" prefix
       if (pattern.StartsWith(AnyDirMatchPrefix))
         pattern.Skip(3);
 
       if (pattern.IsEmpty) {
-        result.Add(new OpNoMatch());
+        result.Add(new OpIsNoMatch());
         return result;
       }
 

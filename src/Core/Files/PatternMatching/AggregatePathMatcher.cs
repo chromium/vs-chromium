@@ -69,7 +69,7 @@ namespace VsChromium.Core.Files.PatternMatching {
       ext = "";
       var result =
         pathMatcher.Operators.Count == 3 &&
-        pathMatcher.Operators[0] is OpRelativeDirectory &&
+        pathMatcher.Operators[0] is OpIsRelativeDirectory &&
         pathMatcher.Operators[1] is OpAsterisk &&
         pathMatcher.Operators[2] is OpText &&
         IsFileExtensionString(((OpText)pathMatcher.Operators[2]).Text);

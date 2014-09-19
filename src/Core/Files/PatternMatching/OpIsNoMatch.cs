@@ -5,7 +5,7 @@
 using System.Collections.Generic;
 
 namespace VsChromium.Core.Files.PatternMatching {
-  public class OpNoMatch : BaseOperator, IPrePassWontMatch {
+  public class OpIsNoMatch : BaseOperator, IPrePassWontMatch {
     public bool PrePassWontMatch(MatchKind kind, string path, IPathComparer comparer) {
       return true;
     }

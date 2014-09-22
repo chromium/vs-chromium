@@ -10,7 +10,6 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
-using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
@@ -19,13 +18,16 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystemSnapshot {
   [Export(typeof(IFileSystemSnapshotBuilder))]
   public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
+    private readonly IFileSystem _fileSystem;
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
     [ImportingConstructor]
     public FileSystemSnapshotBuilder(
+      IFileSystem fileSystem,
       IProjectDiscovery projectDiscovery,
       IProgressTrackerFactory progressTrackerFactory) {
+      _fileSystem = fileSystem;
       _projectDiscovery = projectDiscovery;
       _progressTrackerFactory = progressTrackerFactory;
     }
@@ -68,7 +70,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
       var ssw = new MultiStepStopWatch();
       // Create list of pairs (DirectoryName, List[FileNames])
-      var directoriesWithFiles = TraverseFileSystem(fileNameFactory, project, projectPath)
+      var directoriesWithFiles = TraverseFileSystem(_fileSystem, fileNameFactory, project, projectPath)
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .Select(traversedDirectoryEntry => {
@@ -141,7 +143,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     /// <summary>
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
-    private static IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IFileSystemNameFactory fileNameFactory, IProject project, DirectoryName projectPath) {
+    private static IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IFileSystem fileSystem, IFileSystemNameFactory fileNameFactory, IProject project, DirectoryName projectPath) {
       Debug.Assert(projectPath.IsAbsoluteName);
       var stack = new Stack<DirectoryName>();
       stack.Push(projectPath);
@@ -150,7 +152,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePath)) {
           IList<string> childDirectories;
           IList<string> childFiles;
-          NativeFile.GetDirectoryEntries(PathHelpers.CombinePaths(project.RootPath.Value, head.RelativePath.Value), out childDirectories, out childFiles);
+          fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath), out childDirectories, out childFiles);
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childDirectories.Count; i++) {
             stack.Push(fileNameFactory.CreateDirectoryName(head, childDirectories[i]));

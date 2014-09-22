@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Files;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Win32.Files {
@@ -22,6 +23,9 @@ namespace VsChromium.Core.Win32.Files {
       ERROR_NO_MORE_FILES = 18,
     }
 
+    /// <summary>
+    /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
+    /// </summary>
     public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo, int trailingByteCount) {
       var result = ReadFileWorker(fileInfo, trailingByteCount);
 
@@ -54,6 +58,9 @@ namespace VsChromium.Core.Win32.Files {
       }
     }
 
+    /// <summary>
+    /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
+    /// </summary>
     public static void GetDirectoryEntries(string path, out IList<string> directories, out IList<string> files) {
       var pattern = path + "\\*";
 
@@ -93,11 +100,11 @@ namespace VsChromium.Core.Win32.Files {
         directories.Add(data.cFileName);
     }
 
-    internal static bool IsFile(ref WIN32_FIND_DATA data) {
+    private static bool IsFile(ref WIN32_FIND_DATA data) {
       return (data.dwFileAttributes & (uint)Win32.Files.FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) == 0;
     }
 
-    internal static bool IsDir(ref WIN32_FIND_DATA data) {
+    private static bool IsDir(ref WIN32_FIND_DATA data) {
       return 
         (data.dwFileAttributes & (uint)Win32.Files.FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) != 0 &&
         !data.cFileName.Equals(".") &&

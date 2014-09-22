@@ -7,7 +7,6 @@ using System.Linq;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
-using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Core.Chromium {
   public class ChromiumDiscovery : IChromiumDiscovery {
@@ -39,11 +38,11 @@ namespace VsChromium.Core.Chromium {
       }
     }
 
-    public static bool IsChromiumSourceDirectory(FullPath path, IPathPatternsFile chromiumEnlistmentPatterns) {
+    private bool IsChromiumSourceDirectory(FullPath path, IPathPatternsFile chromiumEnlistmentPatterns) {
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
       IList<string> directories;
       IList<string> files;
-      NativeFile.GetDirectoryEntries(path.Value, out directories, out files);
+      _fileSystem.GetDirectoryEntries(path, out directories, out files);
       return chromiumEnlistmentPatterns.GetPathMatcherLines()
         .All(item => MatchFileOrDirectory(item, directories, files));
     }

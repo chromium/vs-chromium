@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using VsChromium.Core.Win32.Files;
@@ -29,6 +30,10 @@ namespace VsChromium.Core.Files {
 
     public SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount) {
       return NativeFile.ReadFileNulTerminated(((FileInfoSnapshot)fileInfo).SlimFileInfo, trailingByteCount);
+    }
+
+    public void GetDirectoryEntries(FullPath path, out IList<string> directories, out IList<string> files) {
+      NativeFile.GetDirectoryEntries(path.Value, out directories, out files);
     }
   }
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.Collections.Generic;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Files {
@@ -21,5 +22,7 @@ namespace VsChromium.Core.Files {
     /// name="trailingByteCount"/> null bytes as suffix.
     /// </summary>
     SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount);
+
+    void GetDirectoryEntries(FullPath path, out IList<string> directories, out IList<string> files);
   }
 }

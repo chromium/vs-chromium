@@ -7,10 +7,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
-using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
@@ -23,12 +23,15 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// Note: For debugging purposes only.
     /// </summary>
     private bool OutputDiagnostics = false;
+
+    private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private FileNameDictionary<FileInfo> _files;
     private DirectoryName[] _directoryNames;
 
-    public FileDatabaseBuilder(IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
+    public FileDatabaseBuilder(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
+      _fileSystem = fileSystem;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
     }
@@ -183,11 +186,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       Logger.LogMemoryStats();
     }
 
-    private static bool IsFileContentsUpToDate(FileData oldFileData) {
+    private bool IsFileContentsUpToDate(FileData oldFileData) {
       // TODO(rpaquay): The following File.Exists and File.GetLastWriteTimUtc are expensive operations.
       //  Given we have FileSystemChanged events when files change on disk, we could be smarter here
       // and avoid 99% of these checks in common cases.
-      var fi = new SlimFileInfo(oldFileData.FileName.FullPath);
+      var fi = _fileSystem.GetFileInfoSnapshot(oldFileData.FileName.FullPath);
       if (fi.Exists) {
         var contents = oldFileData.Contents;
         if (contents != null) {

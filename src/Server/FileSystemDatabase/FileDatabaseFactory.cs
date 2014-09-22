@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
@@ -16,6 +17,8 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// </summary>
   [Export(typeof(IFileDatabaseFactory))]
   public class FileDatabaseFactory : IFileDatabaseFactory {
+    private readonly IFileSystem _fileSystem;
+
     /// <summary>
     /// Note: For debugging purposes only.
     /// </summary>
@@ -23,7 +26,8 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
     [ImportingConstructor]
-    public FileDatabaseFactory(IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
+    public FileDatabaseFactory(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
+      _fileSystem = fileSystem;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
     }
@@ -33,7 +37,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
-      return new FileDatabaseBuilder(_fileContentsFactory, _progressTrackerFactory).Build(previousFileDatabase, newSnapshot);
+      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory).Build(previousFileDatabase, newSnapshot);
     }
   }
 }

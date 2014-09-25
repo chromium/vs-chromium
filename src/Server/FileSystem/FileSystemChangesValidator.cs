@@ -27,30 +27,30 @@ namespace VsChromium.Server.FileSystem {
 
     public FileSystemValidationResult ProcessPathsChangedEvent(IList<PathChangeEntry> changes) {
       // Skip files from filtered out directories
-      var unfilteredChanges = changes
+      var filteredChanges = changes
         .Where(x => !PathIsExcluded(x.Path))
         .ToList();
 
       Logger.Log("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering.",
-                 unfilteredChanges.Count, changes.Count);
+                 filteredChanges.Count, changes.Count);
       {
-        var count = Math.Min(10, changes.Count);
+        var count = Math.Min(10, filteredChanges.Count);
         Enumerable.Range(0, count).ForAll(index =>
-          Logger.Log("ProcessPathsChangedEvent({0}).", changes[index]));
+          Logger.Log("ProcessPathsChangedEvent({0}).", filteredChanges[index]));
       }
       // Too verbose
       //unfilteredChanges.ForAll(change => Logger.Log("DirectoryChangeWatcherOnPathsChanged({0}).", change));
 
-      if (unfilteredChanges.Any()) {
+      if (filteredChanges.Any()) {
         // If the only changes we see are file modification, don't recompute the graph, just 
         // raise a "files changes event". Note that we also watch for any "special" filename.
         bool isLowImpactChange =
-          unfilteredChanges.All(change => change.Kind == PathChangeKind.Changed) &&
-          unfilteredChanges.All(change => change.Path.FileName != ConfigurationFilenames.ProjectFileNameDetection);
+          filteredChanges.All(change => change.Kind == PathChangeKind.Changed) &&
+          filteredChanges.All(change => change.Path.FileName != ConfigurationFilenames.ProjectFileNameDetection);
         if (isLowImpactChange) {
           Logger.Log(
             "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
-          var fileNames = unfilteredChanges.Select(change => GetProjectFileName(change.Path)).Where(name => name != null);
+          var fileNames = filteredChanges.Select(change => GetProjectFileName(change.Path)).Where(name => name != null);
           return new FileSystemValidationResult {
             ChangedFiles = fileNames.ToList()
           };

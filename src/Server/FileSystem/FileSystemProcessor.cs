@@ -118,8 +118,12 @@ namespace VsChromium.Server.FileSystem {
 
     private void FlushFileRegistrationQueueTask() {
       var entries = _fileRegistrationQueue.DequeueAll();
+      if (!entries.Any())
+        return;
+
+      Logger.Log("FlushFileRegistrationQueueTask:");
       foreach (var entry in entries) {
-        Logger.Log("FlushFileRegistrationQueueTask: \"{0}\"-{1}", entry.Path, entry.Kind);
+        Logger.Log("    Path=\"{0}\", Kind={1}", entry.Path, entry.Kind);
       }
 
       bool recompute = ValidateKnownFiles();

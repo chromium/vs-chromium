@@ -9,6 +9,6 @@ namespace VsChromium.Server.Threads {
   /// Ability to run tasks sequentially on a thread from the custom thread pool.
   /// </summary>
   public interface ITaskQueue {
-    void Enqueue(string description, Action task);
+    void Enqueue(string description, Action task, object id = null);
   }
 }

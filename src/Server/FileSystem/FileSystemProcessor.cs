@@ -71,14 +71,15 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
+    private static readonly String FlushFileRegistrationQueueTaskId = "FlushFileRegistrationQueueTaskId";
     public void RegisterFile(FullPath path) {
       _fileRegistrationQueue.Enqueue(FileRegistrationKind.Register, path);
-      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask);
+      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask, FlushFileRegistrationQueueTaskId);
     }
 
     public void UnregisterFile(FullPath path) {
       _fileRegistrationQueue.Enqueue(FileRegistrationKind.Unregister, path);
-      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask);
+      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask, FlushFileRegistrationQueueTaskId);
     }
 
     public event EventHandler<OperationInfo> SnapshotComputing;

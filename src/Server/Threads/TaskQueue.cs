@@ -13,7 +13,8 @@ namespace VsChromium.Server.Threads {
     private readonly string _description;
     private readonly ICustomThreadPool _customThreadPool;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly Queue<TaskEntry> _tasks = new Queue<TaskEntry>();
+    private readonly TaskEntryQueue _tasks = new TaskEntryQueue();
+    private volatile TaskEntry _runningTask;
     private readonly object _lock = new object();
 
     public TaskQueue(string description, ICustomThreadPool customThreadPool, IDateTimeProvider dateTimeProvider) {
@@ -22,8 +23,9 @@ namespace VsChromium.Server.Threads {
       _dateTimeProvider = dateTimeProvider;
     }
 
-    public void Enqueue(string description, Action task) {
+    public void Enqueue(string description, Action task, object id = null) {
       var entry = new TaskEntry {
+        Id = id ?? new object(),
         Description = description,
         EnqueuedDateTimeUtc = _dateTimeProvider.UtcNow,
         Action = task,
@@ -34,8 +36,13 @@ namespace VsChromium.Server.Threads {
 
       bool isFirstTask;
       lock (_lock) {
-        _tasks.Enqueue(entry);
-        isFirstTask = (_tasks.Count == 1);
+        if (_runningTask == null) {
+          _runningTask = entry;
+          isFirstTask = true;
+        } else {
+          _tasks.Enqueue(entry);
+          isFirstTask = false;
+        }
       }
 
       if (isFirstTask)
@@ -58,31 +65,50 @@ namespace VsChromium.Server.Threads {
       });
     }
 
-    private void OnTaskFinished(TaskEntry entry) {
-      entry.StopWatch.Stop();
-      Logger.Log("Queue \"{0}\": Executed task \"{1}\" in {2:n0} msec", 
+    private void OnTaskFinished(TaskEntry task) {
+      task.StopWatch.Stop();
+      Logger.Log("Queue \"{0}\": Executed task \"{1}\" in {2:n0} msec",
         _description,
-        entry.Description,
-        entry.StopWatch.ElapsedMilliseconds);
+        task.Description,
+        task.StopWatch.ElapsedMilliseconds);
 
-      TaskEntry nextEntry = null;
+      TaskEntry nextTask = null;
       lock (_lock) {
-        // Dequeue the current task...
-        TaskEntry previousEntry = _tasks.Dequeue();
-        Debug.Assert(object.ReferenceEquals(previousEntry, entry));
-
-        // Are there other tasks?
-        if (_tasks.Count > 0) {
-          nextEntry = _tasks.Peek();
-        }
+        Debug.Assert(object.ReferenceEquals(_runningTask, task));
+        nextTask = _runningTask = _tasks.Dequeue();
       }
 
+      if (nextTask != null)
+        RunTaskAsync(nextTask);
+    }
 
-      if (nextEntry != null)
-        RunTaskAsync(nextEntry);
+    private class TaskEntryQueue {
+      private readonly Dictionary<object, LinkedListNode<TaskEntry>> _map = new Dictionary<object, LinkedListNode<TaskEntry>>();
+      private readonly LinkedList<TaskEntry> _queue = new LinkedList<TaskEntry>();
+
+      public void Enqueue(TaskEntry entry) {
+        LinkedListNode<TaskEntry> currentEntry;
+        if (_map.TryGetValue(entry.Id, out currentEntry)) {
+          _queue.Remove(currentEntry);
+          _map.Remove(entry.Id);
+        }
+        var newEntry = _queue.AddLast(entry);
+        _map.Add(entry.Id, newEntry);
+      }
+
+      public TaskEntry Dequeue() {
+        if (_queue.Count == 0)
+          return null;
+
+        var result = _queue.First.Value;
+        _queue.RemoveFirst();
+        _map.Remove(result.Id);
+        return result;
+      }
     }
 
     private class TaskEntry {
+      public Object Id { get; set; }
       public string Description { get; set; }
       public Action Action { get; set; }
       public DateTime EnqueuedDateTimeUtc { get; set; }

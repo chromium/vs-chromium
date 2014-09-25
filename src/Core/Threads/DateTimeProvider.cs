@@ -5,7 +5,7 @@
 using System;
 using System.ComponentModel.Composition;
 
-namespace VsChromium.Threads {
+namespace VsChromium.Core.Threads {
   [Export(typeof(IDateTimeProvider))]
   public class DateTimeProvider : IDateTimeProvider {
     public DateTime UtcNow { get { return DateTime.UtcNow; } }

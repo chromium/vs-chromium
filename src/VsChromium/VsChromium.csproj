@@ -250,8 +250,6 @@
     <Compile Include="Package\IVisualStudioPackage.cs" />
     <Compile Include="ServerProxy\IServerProcessLauncher.cs" />
     <Compile Include="ServerProxy\IServerProcessProxy.cs" />
-    <Compile Include="Threads\DateTimeProvider.cs" />
-    <Compile Include="Threads\IDateTimeProvider.cs" />
     <Compile Include="Threads\IReceiveResponsesThread.cs" />
     <Compile Include="Threads\IRequestQueue.cs" />
     <Compile Include="Threads\ISendRequestsThread.cs" />

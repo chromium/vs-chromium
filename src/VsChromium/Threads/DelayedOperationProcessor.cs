@@ -4,6 +4,7 @@ using System.ComponentModel.Composition;
 using System.Threading;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Threads;
 
 namespace VsChromium.Threads {
   [Export(typeof(IDelayedOperationProcessor))]

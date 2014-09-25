@@ -158,6 +158,8 @@
     <Compile Include="Processes\ExtensionMethods.cs" />
     <Compile Include="Processes\NtProcess.cs" />
     <Compile Include="Processes\ProcessUtility.cs" />
+    <Compile Include="Threads\DateTimeProvider.cs" />
+    <Compile Include="Threads\IDateTimeProvider.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />

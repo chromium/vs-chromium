@@ -27,6 +27,8 @@ using VsChromium.Server.Threads;
 namespace VsChromium.Server.Search {
   [Export(typeof(ISearchEngine))]
   public class SearchEngine : ISearchEngine {
+    private static readonly TaskId ComputeNewStatedId = new TaskId("ComputeNewStateId");
+    private static readonly TaskId GarbageCollectId = new TaskId("GarbageCollectId");
     private const int MinimumSearchPatternLength = 2;
     private readonly IFileDatabaseFactory _fileDatabaseFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
@@ -202,7 +204,7 @@ namespace VsChromium.Server.Search {
     }
 
     private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
-      _taskQueue.Enqueue("FileSystemProcessorOnFilesChanged", () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
+      _taskQueue.Enqueue(new TaskId("FileSystemProcessorOnFilesChanged"), () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
     }
 
     private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> paths) {
@@ -220,7 +222,7 @@ namespace VsChromium.Server.Search {
       if (e.Error != null)
         return;
 
-      _taskQueue.Enqueue("FileSystemProcessorOnSnapshotComputed", () => ComputeNewState(e.NewSnapshot));
+      _taskQueue.Enqueue(ComputeNewStatedId, () => ComputeNewState(e.NewSnapshot));
 
       // Enqueue a GC at this point makes sense as there might be a lot of
       // garbage to reclaim from previous file contents stored in native heap.
@@ -228,7 +230,7 @@ namespace VsChromium.Server.Search {
       // orphan SafeHandles are released in a timely fashion. We enqueue a
       // separate task to ensure there is no potential state keeping these
       // variables alive for slightly too long.
-      _taskQueue.Enqueue("FileSystemProcessorOnSnapshotComputed - GarbageCollect", () => {
+      _taskQueue.Enqueue(GarbageCollectId, () => {
         Logger.LogMemoryStats();
         GC.Collect(GC.MaxGeneration);
         GC.WaitForPendingFinalizers();

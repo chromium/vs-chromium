@@ -23,16 +23,15 @@ namespace VsChromium.Server.Threads {
       _dateTimeProvider = dateTimeProvider;
     }
 
-    public void Enqueue(string description, Action task, object id = null) {
+    public void Enqueue(TaskId id, Action task) {
       var entry = new TaskEntry {
-        Id = id ?? new object(),
-        Description = description,
+        Id = id,
         EnqueuedDateTimeUtc = _dateTimeProvider.UtcNow,
         Action = task,
         StopWatch = new Stopwatch(),
       };
 
-      Logger.Log("Queue \"{0}\": Enqueing task \"{1}\"", _description, entry.Description);
+      Logger.Log("Queue \"{0}\": Enqueing task \"{1}\"", _description, entry.Id.Description);
 
       bool isFirstTask;
       lock (_lock) {
@@ -54,7 +53,7 @@ namespace VsChromium.Server.Threads {
         try {
           Logger.Log("Queue \"{0}\": Executing task \"{1}\" after waiting for {2:n0} msec",
             _description,
-            entry.Description,
+            entry.Id.Description,
             (_dateTimeProvider.UtcNow - entry.EnqueuedDateTimeUtc).TotalMilliseconds);
           entry.StopWatch.Start();
           entry.Action();
@@ -69,7 +68,7 @@ namespace VsChromium.Server.Threads {
       task.StopWatch.Stop();
       Logger.Log("Queue \"{0}\": Executed task \"{1}\" in {2:n0} msec",
         _description,
-        task.Description,
+        task.Id.Description,
         task.StopWatch.ElapsedMilliseconds);
 
       TaskEntry nextTask = null;
@@ -108,8 +107,7 @@ namespace VsChromium.Server.Threads {
     }
 
     private class TaskEntry {
-      public Object Id { get; set; }
-      public string Description { get; set; }
+      public TaskId Id { get; set; }
       public Action Action { get; set; }
       public DateTime EnqueuedDateTimeUtc { get; set; }
       public Stopwatch StopWatch { get; set; }

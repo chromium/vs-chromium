@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
@@ -20,6 +21,8 @@ using VsChromium.Server.Threads;
 namespace VsChromium.Server.FileSystem {
   [Export(typeof(IFileSystemProcessor))]
   public class FileSystemProcessor : IFileSystemProcessor {
+    private static readonly TaskId FlushFileRegistrationQueueTaskId = new TaskId("FlushFileRegistrationQueueTaskId");
+    private static readonly TaskId FlushPathsChangedQueueTaskId = new TaskId("FlushPathsChangedQueueTaskId");
     /// <summary>
     /// Performance optimization flag: when building a new file system tree
     /// snapshot, this flag enables code to try to re-use filename instances
@@ -41,6 +44,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly IOperationProcessor _operationProcessor;
     private readonly ITaskQueue _taskQueue;
     private readonly FileRegistrationQueue _fileRegistrationQueue = new FileRegistrationQueue();
+    private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue = new SimpleConcurrentQueue<IList<PathChangeEntry>>();
     private FileSystemTreeSnapshot _fileSystemSnapshot;
     private int _version;
 
@@ -71,15 +75,14 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private static readonly String FlushFileRegistrationQueueTaskId = "FlushFileRegistrationQueueTaskId";
     public void RegisterFile(FullPath path) {
       _fileRegistrationQueue.Enqueue(FileRegistrationKind.Register, path);
-      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask, FlushFileRegistrationQueueTaskId);
+      _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
     }
 
     public void UnregisterFile(FullPath path) {
       _fileRegistrationQueue.Enqueue(FileRegistrationKind.Unregister, path);
-      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask, FlushFileRegistrationQueueTaskId);
+      _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
     }
 
     public event EventHandler<OperationInfo> SnapshotComputing;
@@ -102,17 +105,23 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
-      _taskQueue.Enqueue("OnPathsChangedTask()", () => OnPathsChangedTask(changes));
+      _pathsChangedQueue.Enqueue(changes);
+      _taskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
     }
 
-    private void OnPathsChangedTask(IList<PathChangeEntry> changes) {
-      var result =
+    private void FlushPathsChangedQueueTask() {
+      var changes = _pathsChangedQueue
+        .DequeueAll()
+        .SelectMany(x => x)
+        .ToList();
+
+      var validationResult =
         new FileSystemChangesValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
-      if (result.RecomputeGraph) {
+      if (validationResult.RecomputeGraph) {
         RecomputeGraph();
-      } else if (result.ChangedFiles.Any()) {
+      } else if (validationResult.ChangedFiles.Any()) {
         OnFilesChanged(new FilesChangedEventArgs {
-          ChangedFiles = result.ChangedFiles.ToReadOnlyCollection()
+          ChangedFiles = validationResult.ChangedFiles.ToReadOnlyCollection()
         });
       }
     }

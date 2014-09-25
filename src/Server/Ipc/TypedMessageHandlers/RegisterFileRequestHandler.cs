@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
@@ -17,7 +18,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      _processor.RegisterFile(((RegisterFileRequest)typedRequest).FileName);
+      _processor.RegisterFile(new FullPath(((RegisterFileRequest)typedRequest).FileName));
 
       return new DoneResponse {
         Info = "processing..."

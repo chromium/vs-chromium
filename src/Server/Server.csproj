@@ -36,6 +36,7 @@
     <Compile Include="FileSystemSnapshot\ProjectRootSnapshot.cs" />
     <Compile Include="FileSystemSnapshot\DirectorySnapshot.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshot.cs" />
+    <Compile Include="FileSystem\FileRegistrationQueue.cs" />
     <Compile Include="FileSystem\FilesChangedEventArgs.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystem\FileSystemChangesValidator.cs" />

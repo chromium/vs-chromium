@@ -40,6 +40,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
     private readonly IOperationProcessor _operationProcessor;
     private readonly ITaskQueue _taskQueue;
+    private readonly FileRegistrationQueue _fileRegistrationQueue = new FileRegistrationQueue();
     private FileSystemTreeSnapshot _fileSystemSnapshot;
     private int _version;
 
@@ -70,12 +71,14 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    public void RegisterFile(string filename) {
-      _taskQueue.Enqueue(string.Format("RegisterFile(\"{0}\")", filename), () => RegisterFileTask(filename));
+    public void RegisterFile(FullPath path) {
+      _fileRegistrationQueue.Enqueue(FileRegistrationKind.Register, path);
+      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask);
     }
 
-    public void UnregisterFile(string filename) {
-      _taskQueue.Enqueue(string.Format("UnregisterFile(\"{0}\")", filename), () => UnregisterFileTask(filename));
+    public void UnregisterFile(FullPath path) {
+      _fileRegistrationQueue.Enqueue(FileRegistrationKind.Unregister, path);
+      _taskQueue.Enqueue("FlushFileRegistrationQueueTask", FlushFileRegistrationQueueTask);
     }
 
     public event EventHandler<OperationInfo> SnapshotComputing;
@@ -113,19 +116,36 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private void RegisterFileTask(string filename) {
-      var path = new FullPath(filename);
+    private void FlushFileRegistrationQueueTask() {
+      var entries = _fileRegistrationQueue.DequeueAll();
+      foreach (var entry in entries) {
+        Logger.Log("FlushFileRegistrationQueueTask: \"{0}\"-{1}", entry.Path, entry.Kind);
+      }
+
       bool recompute = ValidateKnownFiles();
 
       lock (_lock) {
-        var known = _registeredFiles.Contains(path);
-        if (!known) {
-          var projectPaths1 = GetKnownProjectPaths(_registeredFiles);
-          _registeredFiles.Add(path);
-          var projectPaths2 = GetKnownProjectPaths(_registeredFiles);
-          if (!projectPaths1.SequenceEqual(projectPaths2)) {
-            recompute = true;
+        // Take a snapshot of all known project paths before applying changes
+        var projectPaths1 = CollectKnownProjectPathsSorted(_registeredFiles);
+
+        // Apply changes
+        foreach (var entry in entries) {
+          switch (entry.Kind) {
+            case FileRegistrationKind.Register:
+              _registeredFiles.Add(entry.Path);
+              break;
+            case FileRegistrationKind.Unregister:
+              _registeredFiles.Remove(entry.Path);
+              break;
+            default:
+              throw new ArgumentOutOfRangeException();
           }
+        }
+
+        // Take a snapshot after applying changes, and compare
+        var projectPaths2 = CollectKnownProjectPathsSorted(_registeredFiles);
+        if (!projectPaths1.SequenceEqual(projectPaths2)) {
+          recompute = true;
         }
       }
 
@@ -133,27 +153,7 @@ namespace VsChromium.Server.FileSystem {
         RecomputeGraph();
     }
 
-    private void UnregisterFileTask(string filename) {
-      var path = new FullPath(filename);
-      bool recompute = ValidateKnownFiles();
-
-      lock (_lock) {
-        var known = _registeredFiles.Contains(path);
-        if (known) {
-          var projectPaths1 = GetKnownProjectPaths(_registeredFiles);
-          _registeredFiles.Remove(path);
-          var projectPaths2 = GetKnownProjectPaths(_registeredFiles);
-          if (!projectPaths1.SequenceEqual(projectPaths2)) {
-            recompute = true;
-          }
-        }
-      }
-
-      if (recompute)
-        RecomputeGraph();
-    }
-
-    private IEnumerable<FullPath> GetKnownProjectPaths(IEnumerable<FullPath> knownFileNames) {
+    private IEnumerable<FullPath> CollectKnownProjectPathsSorted(IEnumerable<FullPath> knownFileNames) {
       return knownFileNames
         .Select(x => _projectDiscovery.GetProjectPath(x))
         .Where(x => x != default(FullPath))

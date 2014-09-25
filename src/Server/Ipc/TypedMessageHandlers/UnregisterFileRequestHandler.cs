@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.Composition;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
@@ -13,7 +14,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      _processor.UnregisterFile(((UnregisterFileRequest)typedRequest).FileName);
+      _processor.UnregisterFile(new FullPath(((UnregisterFileRequest)typedRequest).FileName));
 
       return new DoneResponse {
         Info = "processing..."

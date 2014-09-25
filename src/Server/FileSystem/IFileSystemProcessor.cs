@@ -3,13 +3,14 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.FileSystem {
   public interface IFileSystemProcessor {
-    void RegisterFile(string filename);
-    void UnregisterFile(string filename);
+    void RegisterFile(FullPath path);
+    void UnregisterFile(FullPath path);
     FileSystemTreeSnapshot GetCurrentSnapshot();
 
     event EventHandler<OperationInfo> SnapshotComputing;

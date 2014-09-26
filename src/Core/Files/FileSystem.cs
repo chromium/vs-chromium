@@ -32,8 +32,19 @@ namespace VsChromium.Core.Files {
       return NativeFile.ReadFileNulTerminated(((FileInfoSnapshot)fileInfo).SlimFileInfo, trailingByteCount);
     }
 
-    public void GetDirectoryEntries(FullPath path, out IList<string> directories, out IList<string> files) {
-      NativeFile.GetDirectoryEntries(path.Value, out directories, out files);
+    public DirectoryEntries GetDirectoryEntries(FullPath path, GetDirectoryEntriesOptions options) {
+      Func<string, FILE_ATTRIBUTE, bool> filter = (fileName, attr) => {
+        if (attr.HasFlag(FILE_ATTRIBUTE.FILE_ATTRIBUTE_REPARSE_POINT)) {
+          return options.HasFlag(GetDirectoryEntriesOptions.FollowSymlinks);
+        }
+        return true;
+      };
+      IList<string> directories;
+      IList<string> files;
+
+      NativeFile.GetDirectoryEntries(path.Value, filter, out directories, out files);
+
+      return new DirectoryEntries(directories, files);
     }
   }
 }

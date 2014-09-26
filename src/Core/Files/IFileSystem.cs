@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using VsChromium.Core.Win32.Memory;
 
@@ -23,6 +24,30 @@ namespace VsChromium.Core.Files {
     /// </summary>
     SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount);
 
-    void GetDirectoryEntries(FullPath path, out IList<string> directories, out IList<string> files);
+    DirectoryEntries GetDirectoryEntries(FullPath path, GetDirectoryEntriesOptions options = GetDirectoryEntriesOptions.Default);
+  }
+
+  [Flags]
+  public enum GetDirectoryEntriesOptions {
+    Default = 0x0000,
+    FollowSymlinks = 0x0001,
+  }
+
+  public struct DirectoryEntries {
+    private readonly IList<string> _directories;
+    private readonly IList<string> _files;
+
+    public DirectoryEntries(IList<string> directories, IList<string> files) : this() {
+      _directories = directories;
+      _files = files;
+    }
+
+    public IList<string> Directories {
+      get { return _directories; }
+    }
+
+    public IList<string> Files {
+      get { return _files; }
+    }
   }
 }

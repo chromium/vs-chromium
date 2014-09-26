@@ -61,7 +61,7 @@ namespace VsChromium.Core.Win32.Files {
     /// <summary>
     /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
     /// </summary>
-    public static void GetDirectoryEntries(string path, out IList<string> directories, out IList<string> files) {
+    public static void GetDirectoryEntries(string path, Func<string, FILE_ATTRIBUTE, bool> filter, out IList<string> directories, out IList<string> files) {
       var pattern = path + "\\*";
 
       files = new List<string>();
@@ -79,9 +79,9 @@ namespace VsChromium.Core.Win32.Files {
           return;
         }
 
-        AddResult(ref data, directories, files);
+        AddResult(ref data, filter, directories, files);
         while (NativeMethods.FindNextFile(handle, out data)) {
-          AddResult(ref data, directories, files);
+          AddResult(ref data, filter, directories, files);
         }
         var lastWin32Error2 = Marshal.GetLastWin32Error();
         if (lastWin32Error2 != (int)Win32Errors.ERROR_SUCCESS &&
@@ -93,11 +93,13 @@ namespace VsChromium.Core.Win32.Files {
       }
     }
 
-    private static void AddResult(ref WIN32_FIND_DATA data, IList<string> directories, IList<string> files) {
-      if (IsFile(ref data))
-        files.Add(data.cFileName);
-      else if (IsDir(ref data))
-        directories.Add(data.cFileName);
+    private static void AddResult(ref WIN32_FIND_DATA data, Func<string, FILE_ATTRIBUTE, bool> filter, IList<string> directories, IList<string> files) {
+      if (filter(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes)) {
+        if (IsFile(ref data))
+          files.Add(data.cFileName);
+        else if (IsDir(ref data))
+          directories.Add(data.cFileName);
+      }
     }
 
     private static bool IsFile(ref WIN32_FIND_DATA data) {

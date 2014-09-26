@@ -150,17 +150,15 @@ namespace VsChromium.Server.FileSystemSnapshot {
       while (stack.Count > 0) {
         var head = stack.Pop();
         if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePath)) {
-          IList<string> childDirectories;
-          IList<string> childFiles;
-          fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath), out childDirectories, out childFiles);
+          var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath));
           // Note: Use "for" loop to avoid memory allocations.
-          for (var i = 0; i < childDirectories.Count; i++) {
-            stack.Push(fileNameFactory.CreateDirectoryName(head, childDirectories[i]));
+          for (var i = 0; i < childEntries.Directories.Count; i++) {
+            stack.Push(fileNameFactory.CreateDirectoryName(head, childEntries.Directories[i]));
           }
           // Note: Use "for" loop to avoid memory allocations.
-          var childFileNames = new FileName[childFiles.Count];
-          for (var i = 0; i < childFiles.Count; i++) {
-            childFileNames[i] = fileNameFactory.CreateFileName(head, childFiles[i]);
+          var childFileNames = new FileName[childEntries.Files.Count];
+          for (var i = 0; i < childEntries.Files.Count; i++) {
+            childFileNames[i] = fileNameFactory.CreateFileName(head, childEntries.Files[i]);
           }
           yield return new TraversedDirectoryEntry(head, childFileNames);
         }

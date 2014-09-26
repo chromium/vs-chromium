@@ -40,17 +40,15 @@ namespace VsChromium.Core.Chromium {
 
     private bool IsChromiumSourceDirectory(FullPath path, IPathPatternsFile chromiumEnlistmentPatterns) {
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
-      IList<string> directories;
-      IList<string> files;
-      _fileSystem.GetDirectoryEntries(path, out directories, out files);
+      var entries = _fileSystem.GetDirectoryEntries(path);
       return chromiumEnlistmentPatterns.GetPathMatcherLines()
-        .All(item => MatchFileOrDirectory(item, directories, files));
+        .All(item => MatchFileOrDirectory(item, entries));
     }
 
-    private static bool MatchFileOrDirectory(IPathMatcher item, IEnumerable<string> directories, IEnumerable<string> files) {
+    private static bool MatchFileOrDirectory(IPathMatcher item, DirectoryEntries entries) {
       return
-        directories.Any(d => item.MatchDirectoryName(new RelativePath(d), SystemPathComparer.Instance)) ||
-        files.Any(f => item.MatchFileName(new RelativePath(f), SystemPathComparer.Instance));
+        entries.Directories.Any(d => item.MatchDirectoryName(new RelativePath(d), SystemPathComparer.Instance)) ||
+        entries.Files.Any(f => item.MatchFileName(new RelativePath(f), SystemPathComparer.Instance));
     }
   }
 }

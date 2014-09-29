@@ -9,16 +9,19 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
+  /// <summary>
+  /// Abstraction over a file contents
+  /// </summary>
   public abstract class FileContents {
     protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
-    private readonly DateTime _utcLastWriteTime;
+    private readonly DateTime _utcLastModified;
 
-    protected FileContents(DateTime utcLastWriteTime) {
-      _utcLastWriteTime = utcLastWriteTime;
+    protected FileContents(DateTime utcLastModified) {
+      _utcLastModified = utcLastModified;
     }
 
-    public DateTime UtcLastModified { get { return _utcLastWriteTime; } }
+    public DateTime UtcLastModified { get { return _utcLastModified; } }
 
     public abstract long ByteLength { get; }
 

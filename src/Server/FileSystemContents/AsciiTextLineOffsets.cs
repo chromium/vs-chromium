@@ -16,8 +16,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     public AsciiTextLineOffsets(FileContentsMemory heap) {
       _heap = heap;
-      _blockStart = (byte *)heap.ContentsPointer.ToPointer();
-      _blockEnd = _blockStart + heap.ContentsByteLength;
+      _blockStart = (byte *)heap.Pointer.ToPointer();
+      _blockEnd = _blockStart + heap.ByteLength;
     }
 
     public void CollectLineOffsets() {

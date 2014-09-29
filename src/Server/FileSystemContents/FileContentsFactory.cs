@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
@@ -13,19 +14,96 @@ namespace VsChromium.Server.FileSystemContents {
   [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
     private readonly IFileSystem _fileSystem;
+    private readonly ICache _cache = new PassThroughCache();
+    /// <summary>
+    /// Note: We use an instance variable to avoid creating delegate instances
+    /// at every invocation of the cache.
+    /// </summary>
+    private readonly Func<IFileInfoSnapshot, FileContents> _creator;
+
+    public interface ICache {
+      FileContents GetOrAdd(IFileInfoSnapshot fileInfo, Func<IFileInfoSnapshot, FileContents> creator);
+    }
+
+    public class PassThroughCache : ICache {
+      public FileContents GetOrAdd(IFileInfoSnapshot fileInfo, Func<IFileInfoSnapshot, FileContents> creator) {
+        return creator(fileInfo);
+      }
+    }
+
+    /// <summary>
+    /// TODO(rpaquay) This is experimental only, as the key we use is not unique enough to make this cache reliable.
+    /// </summary>
+    public class WeakRefCache : ICache {
+      private readonly Dictionary<MapKey, WeakReference<FileContents>> _map = new Dictionary<MapKey, WeakReference<FileContents>>();
+      private readonly object _lock = new object();
+
+      public FileContents GetOrAdd(IFileInfoSnapshot fileInfo, Func<IFileInfoSnapshot, FileContents> creator) {
+        var key = new MapKey(fileInfo.Path.FileName, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        lock (_lock) {
+          WeakReference<FileContents> contents;
+          if (_map.TryGetValue(key, out contents)) {
+            FileContents fileContents;
+            if (contents.TryGetTarget(out fileContents)) {
+              return fileContents;
+            }
+          }
+        }
+
+        {
+          FileContents fileContents = creator(fileInfo);
+          lock (_lock) {
+            _map[key] = new WeakReference<FileContents>(fileContents);
+          }
+          return fileContents;
+        }
+      }
+
+      public struct MapKey : IEquatable<MapKey> {
+        private readonly string _fileName;
+        private readonly long _length;
+        private readonly DateTime _lastWriteTimeUtc;
+
+        public MapKey(string fileName, long length, DateTime lastWriteTimeUtc) {
+          _fileName = fileName;
+          _length = length;
+          _lastWriteTimeUtc = lastWriteTimeUtc;
+        }
+
+        public string FileName {
+          get { return _fileName; }
+        }
+
+        public long Length {
+          get { return _length; }
+        }
+
+        public DateTime LastWriteTimeUtc {
+          get { return _lastWriteTimeUtc; }
+        }
+
+        public bool Equals(MapKey other) {
+          return
+            this.Length == other.Length &&
+            this.LastWriteTimeUtc == other.LastWriteTimeUtc &&
+            SystemPathComparer.Instance.Comparer.Equals(this.FileName, other.FileName);
+        }
+      }
+    }
 
     [ImportingConstructor]
     public FileContentsFactory(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
+      _creator = this.ReadFileContents;
     }
 
     public FileContents GetFileContents(FullPath path) {
-      return ReadFile(path);
+      var fileInfo = _fileSystem.GetFileInfoSnapshot(path);
+      return _cache.GetOrAdd(fileInfo, _creator);
     }
 
-    private FileContents ReadFile(FullPath fullName) {
+    private FileContents ReadFileContents(IFileInfoSnapshot fileInfo) {
       try {
-        var fileInfo = _fileSystem.GetFileInfoSnapshot(fullName);
         const int trailingByteCount = 2;
         var block = _fileSystem.ReadFileNulTerminated(fileInfo, trailingByteCount);
         var contentsByteCount = (int)block.ByteLength - trailingByteCount; // Padding added by ReadFileNulTerminated
@@ -53,7 +131,7 @@ namespace VsChromium.Server.FileSystemContents {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error reading content of text file \"{0}\", skipping file.", fullName);
+        Logger.LogException(e, "Error reading content of text file \"{0}\", skipping file.", fileInfo.Path);
         return StringFileContents.Empty;
       }
     }

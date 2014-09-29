@@ -12,5 +12,6 @@ namespace VsChromium.Core.Files {
     FullPath Path { get; }
     bool Exists { get; }
     DateTime LastWriteTimeUtc { get; }
+    long Length { get; }
   }
 }

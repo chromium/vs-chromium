@@ -18,14 +18,14 @@ namespace VsChromium.Server.FileSystemContents {
     private const int _maxTextExtent = 50;
     private readonly FileContentsMemory _heap;
 
-    public AsciiFileContents(FileContentsMemory heap, DateTime utcLastWriteTime)
-      : base(utcLastWriteTime) {
+    public AsciiFileContents(FileContentsMemory heap, DateTime utcLastModified)
+      : base(utcLastModified) {
       _heap = heap;
     }
 
-    public override long ByteLength { get { return _heap.ContentsByteLength; } }
-    private IntPtr Pointer { get { return _heap.ContentsPointer; } }
-    private long CharacterCount { get { return _heap.ContentsByteLength; } }
+    public override long ByteLength { get { return _heap.ByteLength; } }
+    private IntPtr Pointer { get { return _heap.Pointer; } }
+    private long CharacterCount { get { return _heap.ByteLength; } }
 
     public static AsciiStringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
       if (pattern.Length <= 64)

@@ -13,15 +13,15 @@ namespace VsChromium.Server.FileSystemContents {
   public class UTF16FileContents : FileContents {
     private readonly FileContentsMemory _heap;
 
-    public UTF16FileContents(FileContentsMemory heap, DateTime utcLastWriteTime)
-      : base(utcLastWriteTime) {
+    public UTF16FileContents(FileContentsMemory heap, DateTime utcLastModified)
+      : base(utcLastModified) {
       _heap = heap;
     }
 
-    public override long ByteLength { get { return _heap.ContentsByteLength; } }
+    public override long ByteLength { get { return _heap.ByteLength; } }
 
-    private IntPtr Pointer { get { return _heap.ContentsPointer; } }
-    private long CharacterCount { get { return _heap.ContentsByteLength / 2; } }
+    private IntPtr Pointer { get { return _heap.Pointer; } }
+    private long CharacterCount { get { return _heap.ByteLength / 2; } }
 
     public static UTF16StringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
       return new StrStrWStringSearchAlgorithm(pattern, searchOptions);
@@ -33,7 +33,7 @@ namespace VsChromium.Server.FileSystemContents {
 
       var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).UTF16StringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
-      var result = algo.SearchAll(_heap.ContentsPointer, checked((int)_heap.ContentsByteLength));
+      var result = algo.SearchAll(_heap.Pointer, checked((int)_heap.ByteLength));
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
           searchContentsData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return result.ToList();

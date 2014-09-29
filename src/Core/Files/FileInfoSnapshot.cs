@@ -16,5 +16,6 @@ namespace VsChromium.Core.Files {
     public bool Exists { get { return _fileInfo.Exists; } }
     public FullPath Path { get { return _fileInfo.FullPath; } }
     public DateTime LastWriteTimeUtc { get { return _fileInfo.LastWriteTimeUtc; } }
+    public long Length { get { return _fileInfo.Length; } }
   }
 }

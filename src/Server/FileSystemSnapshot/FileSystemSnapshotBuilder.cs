@@ -150,7 +150,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       while (stack.Count > 0) {
         var head = stack.Pop();
         if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePath)) {
-          var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath));
+          var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath), GetDirectoryEntriesOptions.FollowSymlinks);
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childEntries.Directories.Count; i++) {
             stack.Push(fileNameFactory.CreateDirectoryName(head, childEntries.Directories[i]));

@@ -40,7 +40,7 @@ namespace VsChromium.Core.Chromium {
 
     private bool IsChromiumSourceDirectory(FullPath path, IPathPatternsFile chromiumEnlistmentPatterns) {
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
-      var entries = _fileSystem.GetDirectoryEntries(path);
+      var entries = _fileSystem.GetDirectoryEntries(path, GetDirectoryEntriesOptions.FollowSymlinks);
       return chromiumEnlistmentPatterns.GetPathMatcherLines()
         .All(item => MatchFileOrDirectory(item, entries));
     }

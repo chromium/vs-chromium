@@ -39,8 +39,8 @@ namespace VsChromium.Core.Files {
         }
         return true;
       };
-      IList<string> directories;
-      IList<string> files;
+      IList<DirectoryEntry> directories;
+      IList<DirectoryEntry> files;
 
       NativeFile.GetDirectoryEntries(path.Value, filter, out directories, out files);
 

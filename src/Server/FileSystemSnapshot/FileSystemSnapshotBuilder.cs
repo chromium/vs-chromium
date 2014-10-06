@@ -153,12 +153,12 @@ namespace VsChromium.Server.FileSystemSnapshot {
           var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath), GetDirectoryEntriesOptions.FollowSymlinks);
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childEntries.Directories.Count; i++) {
-            stack.Push(fileNameFactory.CreateDirectoryName(head, childEntries.Directories[i]));
+            stack.Push(fileNameFactory.CreateDirectoryName(head, childEntries.Directories[i].Name));
           }
           // Note: Use "for" loop to avoid memory allocations.
           var childFileNames = new FileName[childEntries.Files.Count];
           for (var i = 0; i < childEntries.Files.Count; i++) {
-            childFileNames[i] = fileNameFactory.CreateFileName(head, childEntries.Files[i]);
+            childFileNames[i] = fileNameFactory.CreateFileName(head, childEntries.Files[i].Name);
           }
           yield return new TraversedDirectoryEntry(head, childFileNames);
         }

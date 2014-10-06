@@ -47,8 +47,8 @@ namespace VsChromium.Core.Chromium {
 
     private static bool MatchFileOrDirectory(IPathMatcher item, DirectoryEntries entries) {
       return
-        entries.Directories.Any(d => item.MatchDirectoryName(new RelativePath(d), SystemPathComparer.Instance)) ||
-        entries.Files.Any(f => item.MatchFileName(new RelativePath(f), SystemPathComparer.Instance));
+        entries.Directories.Any(d => item.MatchDirectoryName(new RelativePath(d.Name), SystemPathComparer.Instance)) ||
+        entries.Files.Any(f => item.MatchFileName(new RelativePath(f.Name), SystemPathComparer.Instance));
     }
   }
 }

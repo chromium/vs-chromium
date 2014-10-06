@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Files;
+using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Win32.Files {
@@ -61,11 +62,11 @@ namespace VsChromium.Core.Win32.Files {
     /// <summary>
     /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
     /// </summary>
-    public static void GetDirectoryEntries(string path, Func<string, FILE_ATTRIBUTE, bool> filter, out IList<string> directories, out IList<string> files) {
+    public static void GetDirectoryEntries(string path, Func<string, FILE_ATTRIBUTE, bool> filter, out IList<DirectoryEntry> directories, out IList<DirectoryEntry> files) {
       var pattern = path + "\\*";
 
-      files = new List<string>();
-      directories = new List<string>();
+      files = new List<DirectoryEntry>();
+      directories = new List<DirectoryEntry>();
 
       WIN32_FIND_DATA data;
       using (var handle = NativeMethods.FindFirstFile(pattern, out data)) {
@@ -93,12 +94,13 @@ namespace VsChromium.Core.Win32.Files {
       }
     }
 
-    private static void AddResult(ref WIN32_FIND_DATA data, Func<string, FILE_ATTRIBUTE, bool> filter, IList<string> directories, IList<string> files) {
+    private static void AddResult(ref WIN32_FIND_DATA data, Func<string, FILE_ATTRIBUTE, bool> filter, IList<DirectoryEntry> directories, IList<DirectoryEntry> files) {
       if (filter(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes)) {
-        if (IsFile(ref data))
-          files.Add(data.cFileName);
-        else if (IsDir(ref data))
-          directories.Add(data.cFileName);
+        if (IsFile(ref data)) {
+          files.Add(new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes));
+        } else if (IsDir(ref data)) {
+          directories.Add(new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes));
+        }
       }
     }
 
@@ -111,6 +113,24 @@ namespace VsChromium.Core.Win32.Files {
         (data.dwFileAttributes & (uint)Win32.Files.FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) != 0 &&
         !data.cFileName.Equals(".") &&
         !data.cFileName.Equals("..");
+    }
+  }
+
+  public struct DirectoryEntry {
+    private readonly string _name;
+    private readonly FILE_ATTRIBUTE _attributes;
+
+    public DirectoryEntry(string name, FILE_ATTRIBUTE attributes) {
+      _name = name;
+      _attributes = attributes;
+    }
+
+    public string Name {
+      get { return _name; }
+    }
+
+    public FILE_ATTRIBUTE Attributes {
+      get { return _attributes; }
     }
   }
 }

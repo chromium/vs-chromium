@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.Win32.Files;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Files {
@@ -34,19 +35,20 @@ namespace VsChromium.Core.Files {
   }
 
   public struct DirectoryEntries {
-    private readonly IList<string> _directories;
-    private readonly IList<string> _files;
+    private readonly IList<DirectoryEntry> _directories;
+    private readonly IList<DirectoryEntry> _files;
 
-    public DirectoryEntries(IList<string> directories, IList<string> files) : this() {
+    public DirectoryEntries(IList<DirectoryEntry> directories, IList<DirectoryEntry> files)
+      : this() {
       _directories = directories;
       _files = files;
     }
 
-    public IList<string> Directories {
+    public IList<DirectoryEntry> Directories {
       get { return _directories; }
     }
 
-    public IList<string> Files {
+    public IList<DirectoryEntry> Files {
       get { return _files; }
     }
   }

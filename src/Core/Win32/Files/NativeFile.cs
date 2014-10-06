@@ -8,7 +8,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Win32.Files {
@@ -62,12 +61,10 @@ namespace VsChromium.Core.Win32.Files {
     /// <summary>
     /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
     /// </summary>
-    public static void GetDirectoryEntries(string path, Func<string, FILE_ATTRIBUTE, bool> filter, out IList<DirectoryEntry> directories, out IList<DirectoryEntry> files) {
+    public static List<DirectoryEntry> GetDirectoryEntries(string path) {
       var pattern = path + "\\*";
 
-      files = new List<DirectoryEntry>();
-      directories = new List<DirectoryEntry>();
-
+      var result = new List<DirectoryEntry>();
       WIN32_FIND_DATA data;
       using (var handle = NativeMethods.FindFirstFile(pattern, out data)) {
         if (handle.IsInvalid) {
@@ -77,12 +74,12 @@ namespace VsChromium.Core.Win32.Files {
               lastWin32Error != (int)Win32Errors.ERROR_NO_MORE_FILES) {
             throw new LastWin32ErrorException(lastWin32Error, string.Format("Error getting first entry of file entries for path \"{0}\".", path));
           }
-          return;
+          return result;
         }
 
-        AddResult(ref data, filter, directories, files);
+        AddResult(ref data, result);
         while (NativeMethods.FindNextFile(handle, out data)) {
-          AddResult(ref data, filter, directories, files);
+          AddResult(ref data, result);
         }
         var lastWin32Error2 = Marshal.GetLastWin32Error();
         if (lastWin32Error2 != (int)Win32Errors.ERROR_SUCCESS &&
@@ -92,27 +89,19 @@ namespace VsChromium.Core.Win32.Files {
           throw new LastWin32ErrorException(lastWin32Error2, string.Format("Error getting next entry of file entries for path \"{0}\".", path));
         }
       }
+      return result;
     }
 
-    private static void AddResult(ref WIN32_FIND_DATA data, Func<string, FILE_ATTRIBUTE, bool> filter, IList<DirectoryEntry> directories, IList<DirectoryEntry> files) {
-      if (filter(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes)) {
-        if (IsFile(ref data)) {
-          files.Add(new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes));
-        } else if (IsDir(ref data)) {
-          directories.Add(new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes));
-        }
-      }
+    private static void AddResult(ref WIN32_FIND_DATA data, List<DirectoryEntry> entries) {
+      var entry = new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes);
+      if (SkipSpecialEntry(entry))
+        return;
+
+      entries.Add(entry);
     }
 
-    private static bool IsFile(ref WIN32_FIND_DATA data) {
-      return (data.dwFileAttributes & (uint)Win32.Files.FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) == 0;
-    }
-
-    private static bool IsDir(ref WIN32_FIND_DATA data) {
-      return 
-        (data.dwFileAttributes & (uint)Win32.Files.FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) != 0 &&
-        !data.cFileName.Equals(".") &&
-        !data.cFileName.Equals("..");
+    private static bool SkipSpecialEntry(DirectoryEntry entry) {
+      return (entry.IsDirectory) && (entry.Name.Equals(".") || entry.Name.Equals(".."));
     }
   }
 
@@ -131,6 +120,24 @@ namespace VsChromium.Core.Win32.Files {
 
     public FILE_ATTRIBUTE Attributes {
       get { return _attributes; }
+    }
+
+    public bool IsFile {
+      get {
+        return (_attributes & FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) == 0;
+      }
+    }
+
+    public bool IsDirectory {
+      get {
+        return (_attributes & FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) != 0;
+      }
+    }
+
+    public bool IsSymLink {
+      get {
+        return (_attributes & FILE_ATTRIBUTE.FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+      }
     }
   }
 }

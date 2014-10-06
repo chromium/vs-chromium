@@ -7,6 +7,7 @@ using System.Linq;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
+using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Core.Chromium {
   public class ChromiumDiscovery : IChromiumDiscovery {
@@ -40,15 +41,15 @@ namespace VsChromium.Core.Chromium {
 
     private bool IsChromiumSourceDirectory(FullPath path, IPathPatternsFile chromiumEnlistmentPatterns) {
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
-      var entries = _fileSystem.GetDirectoryEntries(path, GetDirectoryEntriesOptions.FollowSymlinks);
+      var entries = _fileSystem.GetDirectoryEntries(path);
       return chromiumEnlistmentPatterns.GetPathMatcherLines()
         .All(item => MatchFileOrDirectory(item, entries));
     }
 
-    private static bool MatchFileOrDirectory(IPathMatcher item, DirectoryEntries entries) {
+    private static bool MatchFileOrDirectory(IPathMatcher item, IList<DirectoryEntry> entries) {
       return
-        entries.Directories.Any(d => item.MatchDirectoryName(new RelativePath(d.Name), SystemPathComparer.Instance)) ||
-        entries.Files.Any(f => item.MatchFileName(new RelativePath(f.Name), SystemPathComparer.Instance));
+        entries.Any(d => d.IsDirectory && item.MatchDirectoryName(new RelativePath(d.Name), SystemPathComparer.Instance)) ||
+        entries.Any(f => f.IsFile && item.MatchFileName(new RelativePath(f.Name), SystemPathComparer.Instance));
     }
   }
 }

@@ -10,6 +10,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
@@ -78,12 +79,12 @@ namespace VsChromium.Server.FileSystemSnapshot {
           if (progress.Step()) {
             progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.Value, directoryName.RelativePath.Value));
           }
-          var entries = traversedDirectoryEntry.ChildFileNames
+          var fileNames = traversedDirectoryEntry.ChildFileNames
             .Where(childFilename => project.FileFilter.Include(childFilename.RelativePath))
             .OrderBy(x => x.RelativePath)
             .ToReadOnlyCollection();
 
-          return KeyValuePair.Create(directoryName, entries);
+          return KeyValuePair.Create(directoryName, fileNames);
         })
         .ToList();
       ssw.Step(sw => Logger.Log("Done traversing file system in {0:n0} msec.", sw.ElapsedMilliseconds));
@@ -150,15 +151,16 @@ namespace VsChromium.Server.FileSystemSnapshot {
       while (stack.Count > 0) {
         var head = stack.Pop();
         if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePath)) {
-          var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath), GetDirectoryEntriesOptions.FollowSymlinks);
+          var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath));
+          var childFileNames = new List<FileName>();
           // Note: Use "for" loop to avoid memory allocations.
-          for (var i = 0; i < childEntries.Directories.Count; i++) {
-            stack.Push(fileNameFactory.CreateDirectoryName(head, childEntries.Directories[i].Name));
-          }
-          // Note: Use "for" loop to avoid memory allocations.
-          var childFileNames = new FileName[childEntries.Files.Count];
-          for (var i = 0; i < childEntries.Files.Count; i++) {
-            childFileNames[i] = fileNameFactory.CreateFileName(head, childEntries.Files[i].Name);
+          for (var i = 0; i < childEntries.Count; i++) {
+            DirectoryEntry entry = childEntries[i];
+            if (entry.IsDirectory) {
+              stack.Push(fileNameFactory.CreateDirectoryName(head, entry.Name));
+            } else if (entry.IsFile) {
+              childFileNames.Add(fileNameFactory.CreateFileName(head, entry.Name));
+            }
           }
           yield return new TraversedDirectoryEntry(head, childFileNames);
         }

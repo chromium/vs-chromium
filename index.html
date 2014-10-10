@@ -467,6 +467,18 @@
   <!-------------------------------------------------------------------------------->
   <div id="whatsnew">
     <h1>What's new</h1>
+    <h2 id="whatsnew-0-9-9">v0.9.9</h2>
+    <h3>Source Exporer features</h3>
+    <ul>
+      <li>Support for F8/Shift-F8 (goto next/previous result) when file contents search result is active.</li>
+      <li>Support for traversing symlinks (i.e. reparse points) when enumerating files and directories.</li>
+      <li>Additional button in Source Explorer toolbar to control whether searches include (or not) files and
+        directories contained in symlink directories. This feature, along with the previous one, is particularly
+        useful when working with Dart projects and packages, as package folders are symlinks to a local user folder.</li>
+      <li>Fix support for certain wildcard pattern matching. E.g. foo/*/bar was not correctly supported.</li>
+      <li>Improve caching validation algorithm, so that restarting Visual Studio is not necessary anymore when updating configuration file project.vs-chromium-project.</li>
+      <li>Various UI and performance improvements.</li>
+    </ul>
     <h2 id="whatsnew-0-9-8">v0.9.8</h2>
     <h3>Source Exporer features</h3>
     <ul>
@@ -614,7 +626,7 @@
   <div id="installation">
     <h1>Installation Instructions</h1>
     <ul>
-      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.8">VsChromium.vsix</a></li>
+      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.9">VsChromium.vsix</a></li>
       <li>Open the file: this will open a Visual Studio Installation dialog.
       <img src="Screenshots/VsixInstall.png" />
       </li>

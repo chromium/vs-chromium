@@ -38,5 +38,10 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// type of file change events.
     /// </summary>
     void UpdateFileContents(Tuple<IProject, FileName> projectFile);
+
+    /// <summary>
+    /// Returns true if <paramref name="name"/> or any of its parent is a symlink directory.
+    /// </summary>
+    bool IsContainedInSymLink(DirectoryName name);
   }
 }

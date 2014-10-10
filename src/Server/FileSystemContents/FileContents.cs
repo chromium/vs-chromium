@@ -25,6 +25,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     public abstract long ByteLength { get; }
 
+    public abstract bool HasSameContents(FileContents other);
+
     public virtual List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
       return NoSpans;
     }

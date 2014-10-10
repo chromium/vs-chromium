@@ -28,7 +28,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private FileNameDictionary<FileInfo> _files;
-    private DirectoryName[] _directoryNames;
+    private Dictionary<DirectoryName, DirectoryData> _directories;
 
     public FileDatabaseBuilder(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
       _fileSystem = fileSystem;
@@ -69,8 +69,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       var sw = Stopwatch.StartNew();
 
       var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
-      var fileNames = _files.Select(x => x.Key).ToArray();
-      var directoryNames = _directoryNames;
+      var directories = _directories;
       // Note: Partitioning evenly ensures that each processor used by PLinq will deal with 
       // a partition of equal "weight". In this case, we make sure each partition contains
       // not only the same amount of files, but also (as close to as possible) the same
@@ -104,7 +103,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             Logger.Log("{0} \"{1}\": {2:n0} files totalling {3:n0} bytes.", g.Key.Type, g.Key.Value, g.Count(), byteLength);
           });
       }
-      return new FileDatabase(_fileContentsFactory, files, fileNames, directoryNames, filesWithContents);
+      return new FileDatabase(_fileContentsFactory, files, directories, filesWithContents);
     }
 
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
@@ -115,13 +114,12 @@ namespace VsChromium.Server.FileSystemDatabase {
       ssw.Step(sw => Logger.Log("Done flattening file system tree snapshot in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       var directoryNames = directories
-        .Select(x => x.Value.DirectoryName)
-        .ToArray();
+        .ToDictionary(x => x.Value.DirectoryName, x => x.Value.DirectoryData);
       ssw.Step(sw => Logger.Log("Done creating array of directory names in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       var searchableFiles = directories
         .AsParallel()
-        .SelectMany(x => x.Value.Files.Select(y => KeyValuePair.Create(x.Key, y)))
+        .SelectMany(x => x.Value.ChildFiles.Select(y => KeyValuePair.Create(x.Key, y)))
         .Select(x => new FileInfo(new FileData(x.Value, null), x.Key.IsFileSearchable(x.Value)))
         .ToList();
       ssw.Step(sw => Logger.Log("Done creating list of files in {0:n0} msec.", sw.ElapsedMilliseconds));
@@ -134,7 +132,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       Logger.LogMemoryStats();
 
       _files = new FileNameDictionary<FileInfo>(files);
-      _directoryNames = directoryNames;
+      _directories = directoryNames;
     }
 
     private void TransferUnchangedFileContents(FileDatabase oldState) {

@@ -35,9 +35,9 @@ namespace VsChromium.Server.FileSystemSnapshot {
       };
     }
     private static List<FileSystemEntry> BuildEntries(DirectorySnapshot directoryEntry) {
-      return directoryEntry.DirectoryEntries
+      return directoryEntry.ChildDirectories
         .Select(x => BuildDirectoryEntry(x))
-        .Concat(directoryEntry.Files.Select(x => BuildFileEntry(x)))
+        .Concat(directoryEntry.ChildFiles.Select(x => BuildFileEntry(x)))
         .ToList();
     }
 

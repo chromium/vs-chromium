@@ -20,19 +20,16 @@ namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabase : IFileDatabase {
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IDictionary<FileName, FileData> _files;
-    private readonly ICollection<DirectoryName> _directoryNames;
-    private readonly ICollection<FileName> _fileNames;
+    private readonly IDictionary<DirectoryName, DirectoryData> _directories;
     private readonly ICollection<FileData> _filesWithContents;
 
     public FileDatabase(IFileContentsFactory fileContentsFactory,
                         IDictionary<FileName, FileData> files,
-                        ICollection<FileName> filenames,
-                        ICollection<DirectoryName> directoryNames,
+                        IDictionary<DirectoryName, DirectoryData> directories,
                         ICollection<FileData> filesWithContents) {
       _fileContentsFactory = fileContentsFactory;
       _files = files;
-      _fileNames = filenames;
-      _directoryNames = directoryNames;
+      _directories = directories;
       _filesWithContents = filesWithContents;
     }
 
@@ -46,12 +43,12 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// <summary>
     /// Returns the list of filenames suitable for file name search.
     /// </summary>
-    public ICollection<FileName> FileNames { get { return _fileNames; } }
+    public ICollection<FileName> FileNames { get { return _files.Keys; } }
 
     /// <summary>
     /// Returns the list of directory names suitable for directory name search.
     /// </summary>
-    public ICollection<DirectoryName> DirectoryNames { get { return _directoryNames; } }
+    public ICollection<DirectoryName> DirectoryNames { get { return _directories.Keys; } }
 
     /// <summary>
     /// Retunrs the list of files with text contents suitable for text search.
@@ -82,6 +79,21 @@ namespace VsChromium.Server.FileSystemDatabase {
         return;
 
       fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPath));
+    }
+
+    public bool IsContainedInSymLink(DirectoryName name) {
+      DirectoryData entry;
+      if (!_directories.TryGetValue(name, out entry))
+        return false;
+
+      if (entry.DirectoryEntry.IsSymLink)
+        return true;
+
+      var parent = entry.DirectoryName.Parent;
+      if (parent == null)
+        return false;
+
+      return IsContainedInSymLink(parent);
     }
 
     /// <summary>

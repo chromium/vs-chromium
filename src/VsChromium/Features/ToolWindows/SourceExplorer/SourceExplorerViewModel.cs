@@ -35,6 +35,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       TextSearchResult,
     }
 
+    public SourceExplorerViewModel() {
+      this.IncludeSymLinks = true;
+    }
+
     public DisplayKind ActiveDisplay {
       get {
         if (ReferenceEquals(CurrentRootNodesViewModel, _textSearchResultNodes))
@@ -55,10 +59,34 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
+    public string MatchCaseToolTip {
+      get { return string.Format("Toggle case matching for all searches. Searches are currently case {0}.", MatchCase ? "sensitive" : "insensitive"); }
+    }
+    
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool IncludeSymLinks { get; set; }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string IncludeSymLinksToolTip {
+      get { return string.Format("Toggle searching inside symbolic link folders for searches. Searches currently {0} files and directories inside symlinks.", IncludeSymLinks ? "include" : "exclude"); }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
     public bool EnableChildDebugging { get; set; }
 
+    /// <summary>
+    /// Databound!
+    /// </summary>
     public ImageSource LightningBoltImage {
       get {
+        if (_sourceExplorerViewModelHost == null)
+          return null;
         return _sourceExplorerViewModelHost.StandarImageSourceFactory.LightningBolt;
       }
     }

@@ -23,6 +23,13 @@ namespace VsChromium.Server.FileSystemContents {
     private IntPtr Pointer { get { return _heap.Pointer; } }
     private long CharacterCount { get { return _heap.ByteLength / 2; } }
 
+    public override bool HasSameContents(FileContents other) {
+      var other2 = other as UTF16FileContents;
+      if (other2 == null)
+        return false;
+      return NativeMemoryUtils.UnsafeCompare(this.Pointer, this.ByteLength, other2.Pointer, other2.ByteLength);
+    }
+
     public static UTF16StringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
       return new StrStrWStringSearchAlgorithm(pattern, searchOptions);
     }

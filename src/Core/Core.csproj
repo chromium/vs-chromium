@@ -188,6 +188,7 @@
     <Compile Include="Win32\Debugging\OUTPUT_DEBUG_STRING_INFO.cs" />
     <Compile Include="Win32\Debugging\RIP_INFO.cs" />
     <Compile Include="Win32\Debugging\UNLOAD_DLL_DEBUG_INFO.cs" />
+    <Compile Include="Win32\Files\DirectoryEntry.cs" />
     <Compile Include="Win32\Files\NativeAccessFlags.cs" />
     <Compile Include="Win32\HResults.cs" />
     <Compile Include="Win32\Jobs\IO_COUNTERS.cs" />

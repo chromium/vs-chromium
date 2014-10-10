@@ -14,7 +14,7 @@ namespace VsChromium.Server.FileSystemContents {
   [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
     private readonly IFileSystem _fileSystem;
-    private readonly ICache _cache = new PassThroughCache();
+    private readonly ICache _cache = new WeakRefCache();
     /// <summary>
     /// Note: We use an instance variable to avoid creating delegate instances
     /// at every invocation of the cache.
@@ -40,6 +40,15 @@ namespace VsChromium.Server.FileSystemContents {
 
       public FileContents GetOrAdd(IFileInfoSnapshot fileInfo, Func<IFileInfoSnapshot, FileContents> creator) {
         var key = new MapKey(fileInfo.Path.FileName, fileInfo.Length, fileInfo.LastWriteTimeUtc);
+        var newFileContents = creator(fileInfo);
+        var oldFileContents = LookupFileContents(key);
+        if (oldFileContents != null && oldFileContents.HasSameContents(newFileContents)) {
+          return oldFileContents;
+        }
+        return StoreFileContents(key, newFileContents);
+      }
+
+      private FileContents LookupFileContents(MapKey key) {
         lock (_lock) {
           WeakReference<FileContents> contents;
           if (_map.TryGetValue(key, out contents)) {
@@ -49,14 +58,14 @@ namespace VsChromium.Server.FileSystemContents {
             }
           }
         }
+        return null;
+      }
 
-        {
-          FileContents fileContents = creator(fileInfo);
-          lock (_lock) {
-            _map[key] = new WeakReference<FileContents>(fileContents);
-          }
-          return fileContents;
+      private FileContents StoreFileContents(MapKey key, FileContents value) {
+        lock (_lock) {
+          _map[key] = new WeakReference<FileContents>(value);
         }
+        return value;
       }
 
       public struct MapKey : IEquatable<MapKey> {
@@ -127,7 +136,7 @@ namespace VsChromium.Server.FileSystemContents {
             // TODO(rpaquay): Figure out a better way to detect encoding.
             //Logger.Log("Text Encoding of file \"{0}\" is not recognized.", fullName);
             return new AsciiFileContents(new FileContentsMemory(block, 0, contentsByteCount), fileInfo.LastWriteTimeUtc);
-            //throw new NotImplementedException(string.Format("Text Encoding of file \"{0}\" is not recognized.", fullName));
+          //throw new NotImplementedException(string.Format("Text Encoding of file \"{0}\" is not recognized.", fullName));
         }
       }
       catch (Exception e) {

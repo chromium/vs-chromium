@@ -260,14 +260,14 @@ namespace VsChromium.Server.FileSystem {
 
     private int CountFileEntries(DirectorySnapshot entry) {
       return
-        entry.Files.Count +
-        entry.DirectoryEntries.Aggregate(0, (acc, x) => acc + CountFileEntries(x));
+        entry.ChildFiles.Count +
+        entry.ChildDirectories.Aggregate(0, (acc, x) => acc + CountFileEntries(x));
     }
 
     private int CountDirectoryEntries(DirectorySnapshot entry) {
       return
         1 +
-        entry.DirectoryEntries.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
+        entry.ChildDirectories.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
     }
   }
 }

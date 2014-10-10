@@ -22,7 +22,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
     private static void ProcessDirectory(IProject project, DirectorySnapshot directory, List<KeyValuePair<IProject, DirectorySnapshot>> result) {
       result.Add(KeyValuePair.Create(project, directory));
-      foreach (var child in directory.DirectoryEntries) {
+      foreach (var child in directory.ChildDirectories) {
         ProcessDirectory(project, child, result);
       }
     }

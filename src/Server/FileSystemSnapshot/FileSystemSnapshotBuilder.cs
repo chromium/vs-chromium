@@ -75,7 +75,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .Select(traversedDirectoryEntry => {
-          var directoryName = traversedDirectoryEntry.DirectoryName;
+          var directoryName = traversedDirectoryEntry.DirectoryData.DirectoryName;
           if (progress.Step()) {
             progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", project.RootPath.Value, directoryName.RelativePath.Value));
           }
@@ -84,7 +84,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
             .OrderBy(x => x.RelativePath)
             .ToReadOnlyCollection();
 
-          return KeyValuePair.Create(directoryName, fileNames);
+          return KeyValuePair.Create(traversedDirectoryEntry.DirectoryData, fileNames);
         })
         .ToList();
       ssw.Step(sw => Logger.Log("Done traversing file system in {0:n0} msec.", sw.ElapsedMilliseconds));
@@ -93,7 +93,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       // directories bottom up, so that we know
       // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
       // 2) we create instances of child directories before their parent.
-      directoriesWithFiles.Sort((x, y) => -x.Key.RelativePath.CompareTo(y.Key.RelativePath));
+      directoriesWithFiles.Sort((x, y) => -x.Key.DirectoryName.RelativePath.CompareTo(y.Key.DirectoryName.RelativePath));
       ssw.Step(sw => Logger.Log("Done sorting list of directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Build map from parent directory -> list of child directories
@@ -102,10 +102,10 @@ namespace VsChromium.Server.FileSystemSnapshot {
         var directoryName = x.Key;
 
         // Ignore root project directory name
-        if (directoryName.IsAbsoluteName)
+        if (directoryName.DirectoryName.IsAbsoluteName)
           return;
 
-        GetOrCreateList(directoriesToChildDirectories, directoryName.Parent).Add(directoryName);
+        GetOrCreateList(directoriesToChildDirectories, directoryName.DirectoryName.Parent).Add(directoryName.DirectoryName);
       });
       ssw.Step(sw => Logger.Log("Done creating children directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
@@ -113,10 +113,10 @@ namespace VsChromium.Server.FileSystemSnapshot {
       // intermediate map to enable connecting snapshots to their parent.
       var directoriesToSnapshot = new Dictionary<DirectoryName, DirectorySnapshot>();
       var directorySnapshots = directoriesWithFiles.Select(entry => {
-        var directoryName = entry.Key;
+        var directoryElement = entry.Key;
         var childFilenames = entry.Value;
 
-        var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryName)
+        var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryElement.DirectoryName)
           .Select(x => directoriesToSnapshot[x])
           .OrderBy(x => x.DirectoryName.RelativePath)
           .ToReadOnlyCollection();
@@ -127,8 +127,8 @@ namespace VsChromium.Server.FileSystemSnapshot {
         //GetOrEmptyList(directoriesToChildDirectories, directoryName)
         //  .ForAll(x => directoriesToSnapshot.Remove(x));
 
-        var result = new DirectorySnapshot(directoryName, childDirectories, childFilenames);
-        directoriesToSnapshot.Add(directoryName, result);
+        var result = new DirectorySnapshot(directoryElement, childDirectories, childFilenames);
+        directoriesToSnapshot.Add(directoryElement.DirectoryName, result);
         return result;
       })
       .ToList();
@@ -146,20 +146,20 @@ namespace VsChromium.Server.FileSystemSnapshot {
     /// </summary>
     private static IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IFileSystem fileSystem, IFileSystemNameFactory fileNameFactory, IProject project, DirectoryName projectPath) {
       Debug.Assert(projectPath.IsAbsoluteName);
-      var stack = new Stack<DirectoryName>();
-      stack.Push(projectPath);
+      var stack = new Stack<DirectoryData>();
+      stack.Push(new DirectoryData(projectPath, default(DirectoryEntry)));
       while (stack.Count > 0) {
         var head = stack.Pop();
-        if (head.IsAbsoluteName || project.DirectoryFilter.Include(head.RelativePath)) {
-          var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.RelativePath));
+        if (head.DirectoryName.IsAbsoluteName || project.DirectoryFilter.Include(head.DirectoryName.RelativePath)) {
+          var childEntries = fileSystem.GetDirectoryEntries(project.RootPath.Combine(head.DirectoryName.RelativePath));
           var childFileNames = new List<FileName>();
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childEntries.Count; i++) {
             DirectoryEntry entry = childEntries[i];
             if (entry.IsDirectory) {
-              stack.Push(fileNameFactory.CreateDirectoryName(head, entry.Name));
+              stack.Push(new DirectoryData(fileNameFactory.CreateDirectoryName(head.DirectoryName, entry.Name), entry));
             } else if (entry.IsFile) {
-              childFileNames.Add(fileNameFactory.CreateFileName(head, entry.Name));
+              childFileNames.Add(fileNameFactory.CreateFileName(head.DirectoryName, entry.Name));
             }
           }
           yield return new TraversedDirectoryEntry(head, childFileNames);
@@ -168,16 +168,16 @@ namespace VsChromium.Server.FileSystemSnapshot {
     }
 
     private struct TraversedDirectoryEntry {
-      private readonly DirectoryName _directoryName;
+      private readonly DirectoryData _directoryData;
       private readonly IList<FileName> _childFileNames;
 
-      public TraversedDirectoryEntry(DirectoryName directoryName, IList<FileName> childFileNames) {
-        _directoryName = directoryName;
+      public TraversedDirectoryEntry(DirectoryData directoryData, IList<FileName> childFileNames) {
+        _directoryData = directoryData;
         _childFileNames = childFileNames;
       }
 
-      public DirectoryName DirectoryName { get { return _directoryName; } }
-      public IList<FileName> ChildFileNames { get { return _childFileNames; } }
+      public DirectoryData DirectoryData { get { return _directoryData; } }
+      public IEnumerable<FileName> ChildFileNames { get { return _childFileNames; } }
     }
   }
 }

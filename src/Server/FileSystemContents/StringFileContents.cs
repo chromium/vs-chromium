@@ -21,6 +21,13 @@ namespace VsChromium.Server.FileSystemContents {
 
     public static StringFileContents Empty { get { return _empty; } }
 
+    public override bool HasSameContents(FileContents other) {
+      var other2 = other as StringFileContents;
+      if (other2 == null)
+        return false;
+      return _text == other2._text;
+    }
+
     public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
       if (ReferenceEquals(this, _empty))
         return NoSpans;

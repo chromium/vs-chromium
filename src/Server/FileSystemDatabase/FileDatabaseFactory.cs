@@ -33,7 +33,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabase CreateEmpty() {
-      return new FileDatabase(_fileContentsFactory, new Dictionary<FileName, FileData>(), new List<FileName>(), new List<DirectoryName>(), new List<FileData>());
+      return new FileDatabase(_fileContentsFactory, new Dictionary<FileName, FileData>(), new Dictionary<DirectoryName, DirectoryData>(), new List<FileData>());
     }
 
     public IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {

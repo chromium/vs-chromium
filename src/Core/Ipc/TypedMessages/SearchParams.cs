@@ -19,5 +19,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(3)]
     public bool MatchCase { get; set; }
+
+    [ProtoMember(4)]
+    public bool IncludeSymLinks { get; set; }
   }
 }

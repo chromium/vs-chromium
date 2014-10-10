@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
@@ -80,19 +81,26 @@ namespace VsChromium.Server.Search {
       // only interested in the result of the *last* query, while the previous
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
-
+      var searchedFileCount = 0;
       var matches = _currentFileDatabase.FileNames
         .AsParallel()
         // We need the line below because of "Take" (.net 4.0 PLinq limitation)
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .WithCancellation(_taskCancellation.GetNewToken())
-        .Where(item => matchFunction(item))
+        .Where(item => {
+          if (!searchParams.IncludeSymLinks) {
+            if (_currentFileDatabase.IsContainedInSymLink(item.Parent))
+              return false;
+          }
+          Interlocked.Increment(ref searchedFileCount);
+          return matchFunction(item);
+        })
         .Take(searchParams.MaxResults)
         .ToList();
 
       return new SearchFileNamesResult {
         FileNames = matches,
-        TotalCount = _currentFileDatabase.FileNames.Count
+        TotalCount = searchedFileCount
       };
     }
 
@@ -108,19 +116,26 @@ namespace VsChromium.Server.Search {
       // only interested in the result of the *last* query, while the previous
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
-
+      var searchedFileCount = 0;
       var matches = _currentFileDatabase.DirectoryNames
         .AsParallel()
         // We need the line below because of "Take" (.net 4.0 PLinq limitation)
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .WithCancellation(_taskCancellation.GetNewToken())
-        .Where(item => matchFunction(item))
+        .Where(item => {
+          if (!searchParams.IncludeSymLinks) {
+            if (_currentFileDatabase.IsContainedInSymLink(item))
+              return false;
+          }
+          Interlocked.Increment(ref searchedFileCount);
+          return matchFunction(item);
+        })
         .Take(searchParams.MaxResults)
         .ToList();
 
       return new SearchDirectoryNamesResult {
         DirectoryNames = matches,
-        TotalCount = _currentFileDatabase.DirectoryNames.Count
+        TotalCount = searchedFileCount
       };
     }
 
@@ -140,7 +155,7 @@ namespace VsChromium.Server.Search {
         // the previous queries will throw an OperationCanceled exception.
         _taskCancellation.CancelAll();
         var cancellationToken = _taskCancellation.GetNewToken();
-        return DoSearchFileContents(searchContentsData, searchParams.MaxResults, cancellationToken);
+        return DoSearchFileContents(searchContentsData, searchParams.MaxResults, searchParams.IncludeSymLinks, cancellationToken);
       }
     }
 
@@ -158,7 +173,7 @@ namespace VsChromium.Server.Search {
         .ToList();
     }
 
-    private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, CancellationToken cancellationToken) {
+    private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
       var taskResults = new TaskResultCounter(maxResults);
       var searchedFileCount = 0;
       var matches = _currentFileDatabase.FilesWithContents
@@ -167,6 +182,10 @@ namespace VsChromium.Server.Search {
         .WithCancellation(cancellationToken)
         .Where(x => !taskResults.Done)
         .Select(item => {
+          if (!includeSymLinks) {
+            if (_currentFileDatabase.IsContainedInSymLink(item.FileName.Parent))
+              return null;
+          }
           Interlocked.Increment(ref searchedFileCount);
           return MatchFileContents(item, searchContentsData, taskResults);
         })

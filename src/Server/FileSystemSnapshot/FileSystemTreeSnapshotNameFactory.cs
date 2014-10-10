@@ -34,9 +34,9 @@ namespace VsChromium.Server.FileSystemSnapshot {
       var directory = FindDirectory(parent);
       if (directory != null) {
         // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-        int index = SortedArrayHelpers.BinarySearch(directory.DirectoryEntries, name, DirectoryComparer);
+        int index = SortedArrayHelpers.BinarySearch(directory.ChildDirectories, name, DirectoryComparer);
         if (index >= 0) {
-          return directory.DirectoryEntries[index].DirectoryName;
+          return directory.ChildDirectories[index].DirectoryName;
         }
       }
       return _previous.CreateDirectoryName(parent, name);
@@ -46,9 +46,9 @@ namespace VsChromium.Server.FileSystemSnapshot {
       var directory = FindDirectory(parent);
       if (directory != null) {
         // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-        int index = SortedArrayHelpers.BinarySearch(directory.Files, name, FileComparer);
+        int index = SortedArrayHelpers.BinarySearch(directory.ChildFiles, name, FileComparer);
         if (index >= 0) {
-          return directory.Files[index];
+          return directory.ChildFiles[index];
         }
       }
       return _previous.CreateFileName(parent, name);
@@ -71,11 +71,11 @@ namespace VsChromium.Server.FileSystemSnapshot {
         return null;
 
       // Note: We found the corresponding parent, we just need to check the "simple" name part of the relative name.
-      var index = SortedArrayHelpers.BinarySearch(parent.DirectoryEntries, name, DirectoryNameComparer);
+      var index = SortedArrayHelpers.BinarySearch(parent.ChildDirectories, name, DirectoryNameComparer);
       if (index < 0)
         return null;
 
-      return parent.DirectoryEntries[index];
+      return parent.ChildDirectories[index];
     }
   }
 }

@@ -151,7 +151,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             return IsFileContentsUpToDate(oldFileData);
           })
           .ForAll(oldFileData => {
-            var contents = fileContentsMemoization.Get(oldFileData, oldFileData.Contents);
+            var contents = fileContentsMemoization.Get(oldFileData.FileName, oldFileData.Contents);
             _files[oldFileData.FileName].FileData.UpdateContents(contents);
           });
       }
@@ -171,13 +171,13 @@ namespace VsChromium.Server.FileSystemDatabase {
       using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
         _files.Values
           .AsParallel()
-          .ForAll(x => {
+          .ForAll(fileInfo => {
             if (progress.Step()) {
-              progress.DisplayProgress((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileData.FileName.FullPath));
+              progress.DisplayProgress((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileInfo.FileData.FileName.FullPath));
             }
-            if (x.IsSearchable && x.FileData.Contents == null) {
-              var fileContents = _fileContentsFactory.GetFileContents(x.FileData.FileName.FullPath);
-              x.FileData.UpdateContents(fileContentsMemoization.Get(x.FileData, fileContents));
+            if (fileInfo.IsSearchable && fileInfo.FileData.Contents == null) {
+              var fileContents = _fileContentsFactory.GetFileContents(fileInfo.FileData.FileName.FullPath);
+              fileInfo.FileData.UpdateContents(fileContentsMemoization.Get(fileInfo.FileData.FileName, fileContents));
             }
           });
       }

@@ -3,9 +3,14 @@
 // found in the LICENSE file.
 
 using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemDatabase {
   interface IFileContentsMemoization {
-    FileContents Get(FileData fileData, FileContents fileContents);
+    /// <summary>
+    /// Returns the unique instance of <see cref="FileContents"/> identical
+    /// to the passed in <paramref name="fileContents"/>.
+    /// </summary>
+    FileContents Get(FileName fileName, FileContents fileContents);
   }
 }

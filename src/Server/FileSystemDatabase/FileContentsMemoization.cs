@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Concurrent;
 using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileContentsMemoization : IFileContentsMemoization {
     private readonly ConcurrentDictionary<MapKey, FileContents> _map = new ConcurrentDictionary<MapKey, FileContents>();
 
-    public FileContents Get(FileData fileData, FileContents fileContents) {
-      var key = new MapKey(fileData, fileContents);
+    public FileContents Get(FileName fileName, FileContents fileContents) {
+      var key = new MapKey(fileName, fileContents);
       return _map.GetOrAdd(key, fileContents);
     }
 
@@ -15,11 +16,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       private readonly FileContents _fileContents;
       private readonly int _hashCode;
 
-      public MapKey(FileData fileData, FileContents fileContents) {
+      public MapKey(FileName fileName, FileContents fileContents) {
         _fileContents = fileContents;
         _hashCode =
           CombineHashCodes(
-            fileData.FileName.RelativePath.FileName.GetHashCode(),
+            fileName.RelativePath.FileName.GetHashCode(),
             CombineHashCodes(
               (int)(fileContents.ByteLength & uint.MaxValue),
               (int)(fileContents.ByteLength >> 32)));

@@ -56,13 +56,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       ComputeFileCollection(newSnapshot);
 
       // Merge old state in new state
-      TransferUnchangedFileContents(previousFileDatabase);
+      var fileContentsMemoization = new FileContentsMemoization();
+      TransferUnchangedFileContents(previousFileDatabase, fileContentsMemoization);
 
       // Load file contents into newState
-      ReadMissingFileContents();
-
-      // Merge indentical file contents into single entries.
-      CompactFileContents();
+      ReadMissingFileContents(fileContentsMemoization);
 
       return CreateFileDatabse();
     }
@@ -138,7 +136,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       _directories = directoryNames;
     }
 
-    private void TransferUnchangedFileContents(FileDatabase oldState) {
+    private void TransferUnchangedFileContents(FileDatabase oldState, IFileContentsMemoization fileContentsMemoization) {
       Logger.Log("Checking for out of date files.");
       var sw = Stopwatch.StartNew();
 
@@ -152,7 +150,10 @@ namespace VsChromium.Server.FileSystemDatabase {
             }
             return IsFileContentsUpToDate(oldFileData);
           })
-          .ForAll(oldFileData => _files[oldFileData.FileName].FileData.UpdateContents(oldFileData.Contents));
+          .ForAll(oldFileData => {
+            var contents = fileContentsMemoization.Get(oldFileData, oldFileData.Contents);
+            _files[oldFileData.FileName].FileData.UpdateContents(contents);
+          });
       }
 
       Logger.Log("Done checking for {0:n0} out of date files in {1:n0} msec.", commonOldFiles.Count,
@@ -163,7 +164,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// <summary>
     /// Reads the content of all file entries that have no content (yet). Returns the # of files read from disk.
     /// </summary>
-    private void ReadMissingFileContents() {
+    private void ReadMissingFileContents(IFileContentsMemoization fileContentsMemoization) {
       Logger.Log("Loading file contents from disk.");
       var sw = Stopwatch.StartNew();
 
@@ -175,7 +176,8 @@ namespace VsChromium.Server.FileSystemDatabase {
               progress.DisplayProgress((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, x.FileData.FileName.FullPath));
             }
             if (x.IsSearchable && x.FileData.Contents == null) {
-              x.FileData.UpdateContents(_fileContentsFactory.GetFileContents(x.FileData.FileName.FullPath));
+              var fileContents = _fileContentsFactory.GetFileContents(x.FileData.FileName.FullPath);
+              x.FileData.UpdateContents(fileContentsMemoization.Get(x.FileData, fileContents));
             }
           });
       }
@@ -184,21 +186,6 @@ namespace VsChromium.Server.FileSystemDatabase {
       Logger.Log("Done loading file contents from disk: loaded {0:n0} files in {1:n0} msec.",
         _files.Count,
         sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
-    }
-
-    /// <summary>
-    /// Merge all file contents which are identical (same text content)
-    /// </summary>
-    private void CompactFileContents() {
-      Logger.Log("Compact file contents in memory.");
-      var sw = Stopwatch.StartNew();
-
-      var compacter = new FileContentsCompacter();
-      compacter.Compact(_files);
-
-      sw.Stop();
-      Logger.Log("Done compacting file contents in memory in {0:n0} msec.", sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
     }
 

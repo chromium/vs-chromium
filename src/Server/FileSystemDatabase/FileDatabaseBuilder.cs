@@ -61,6 +61,9 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Load file contents into newState
       ReadMissingFileContents();
 
+      // Merge indentical file contents into single entries.
+      CompactFileContents();
+
       return CreateFileDatabse();
     }
 
@@ -184,6 +187,21 @@ namespace VsChromium.Server.FileSystemDatabase {
       Logger.LogMemoryStats();
     }
 
+    /// <summary>
+    /// Merge all file contents which are identical (same text content)
+    /// </summary>
+    private void CompactFileContents() {
+      Logger.Log("Compact file contents in memory.");
+      var sw = Stopwatch.StartNew();
+
+      var compacter = new FileContentsCompacter();
+      compacter.Compact(_files);
+
+      sw.Stop();
+      Logger.Log("Done compacting file contents in memory in {0:n0} msec.", sw.ElapsedMilliseconds);
+      Logger.LogMemoryStats();
+    }
+
     private bool IsFileContentsUpToDate(FileData oldFileData) {
       // TODO(rpaquay): The following File.Exists and File.GetLastWriteTimUtc are expensive operations.
       //  Given we have FileSystemChanged events when files change on disk, we could be smarter here
@@ -206,7 +224,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       return oldState.Files.Values.Intersect(_files.Values.Select(x => x.FileData), FileDataComparer.Instance);
     }
 
-    private struct FileInfo {
+    public struct FileInfo {
       private readonly FileData _fileData;
       private readonly bool _isSearchable;
 

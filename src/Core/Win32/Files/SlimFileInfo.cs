@@ -67,8 +67,14 @@ namespace VsChromium.Core.Win32.Files {
     }
 
     private void ThrowOnError() {
-      if (_win32Error != (int)NativeFile.Win32Errors.ERROR_SUCCESS)
-        throw new Win32Exception(_win32Error);
+      if (_win32Error != (int) NativeFile.Win32Errors.ERROR_SUCCESS) {
+        try {
+          throw new Win32Exception(_win32Error);
+        }
+        catch (Exception e) {
+          throw new Exception(string.Format("Error reading attributes of file \"{0}\"", _path), e);
+        }
+      }
     }
 
     private static long HighLowToLong(int high, int low) {

@@ -55,11 +55,20 @@ namespace VsChromium.Server.NativeInterop {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static extern bool Ascii_Compare(IntPtr text1, long text1Length, IntPtr text2, long text2Length);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+      SetLastError = false)]
+    [return: MarshalAs(UnmanagedType.I1)]
     public static extern bool Ascii_GetLineExtentFromPosition(IntPtr text, int textLen, int position, out int lineStartPosition, out int lineLength);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
+    [return: MarshalAs(UnmanagedType.I1)]
     public static extern bool UTF16_GetLineExtentFromPosition(IntPtr text, int textLen, int position, out int lineStartPosition, out int lineLength);
+
   }
 }

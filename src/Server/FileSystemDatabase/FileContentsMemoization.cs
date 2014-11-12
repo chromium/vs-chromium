@@ -12,6 +12,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       return _map.GetOrAdd(key, fileContents);
     }
 
+    public int Count { get { return _map.Count; } }
+
     private struct MapKey : IEquatable<MapKey> {
       private readonly FileContents _fileContents;
       private readonly int _hashCode;

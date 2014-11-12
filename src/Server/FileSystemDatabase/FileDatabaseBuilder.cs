@@ -62,6 +62,9 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Load file contents into newState
       ReadMissingFileContents(fileContentsMemoization);
 
+      Logger.Log("{0:n0} unique file contents remaining in memory after memoization of {1:n0} files.", 
+        fileContentsMemoization.Count, _files.Values.Count(x => x.FileData.Contents != null));
+
       return CreateFileDatabse();
     }
 

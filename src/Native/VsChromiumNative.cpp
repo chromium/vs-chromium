@@ -8,6 +8,7 @@
 #include "stdafx.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "search_bndm32.h"
 #include "search_bndm64.h"
@@ -147,6 +148,13 @@ EXPORT TextKind __stdcall Text_GetKind(const char* text, int textLen) {
     else
       return Unknown;
   }
+}
+
+EXPORT bool __stdcall Ascii_Compare(const char *text1, size_t text1Length, const char* text2, size_t text2Length) {
+  if (text1Length != text2Length)
+    return false;
+
+  return memcmp(text1, text2, text1Length) == 0;
 }
 
 EXPORT bool __stdcall Ascii_GetLineExtentFromPosition(const char* text, int textLen, int position, int* lineStartPosition, int* lineLen) {

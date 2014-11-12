@@ -31,7 +31,7 @@ namespace VsChromium.Server.FileSystemContents {
       var other2 = other as AsciiFileContents;
       if (other2 == null)
         return false;
-      return NativeMemoryUtils.UnsafeCompare(this.Pointer, this.ByteLength, other2.Pointer, other2.ByteLength);
+      return NativeMethods.Ascii_Compare(this.Pointer, this.ByteLength, other2.Pointer, other2.ByteLength);
     }
 
     public static AsciiStringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {

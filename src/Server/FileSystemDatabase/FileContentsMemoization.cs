@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 
@@ -21,17 +22,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       public MapKey(FileName fileName, FileContents fileContents) {
         _fileContents = fileContents;
         _hashCode =
-          CombineHashCodes(
+          HashCode.Combine(
             fileName.RelativePath.FileName.GetHashCode(),
-            CombineHashCodes(
+            HashCode.Combine(
               (int)(fileContents.ByteLength & uint.MaxValue),
               (int)(fileContents.ByteLength >> 32)));
-      }
-
-      private static int CombineHashCodes(int h1, int h2) {
-        unchecked {
-          return (h1 << 5) + h1 ^ h2;
-        }
       }
 
       public bool Equals(MapKey other) {

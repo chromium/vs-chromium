@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.FileSystemNames {
   public class FileSystemNameComparer : IComparer<FileSystemName>, IEqualityComparer<FileSystemName> {
@@ -57,7 +58,7 @@ namespace VsChromium.Server.FileSystemNames {
 
     public int GetHashCode(FileSystemName x) {
       var x1 = GetAbsolutePart(x);
-      return CombineHashCodes(x1.FullPath.GetHashCode(), x.RelativePath.GetHashCode());
+      return HashCode.Combine(x1.FullPath.GetHashCode(), x.RelativePath.GetHashCode());
     }
 
     private FileSystemName GetAbsolutePart(FileSystemName name) {
@@ -67,12 +68,6 @@ namespace VsChromium.Server.FileSystemNames {
       }
 
       throw new InvalidOperationException("Invalid file system name (bug).");
-    }
-
-    private int CombineHashCodes(int h1, int h2) {
-      unchecked {
-        return (h1 << 5) + h1 ^ h2;
-      }
     }
   }
 }

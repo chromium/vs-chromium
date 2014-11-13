@@ -162,6 +162,7 @@
     <Compile Include="Threads\IDateTimeProvider.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
+    <Compile Include="Utility\HashCode.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />
     <Compile Include="Logging\MultiStepStopWatch.cs" />
     <Compile Include="VsChromiumVersion.cs" />

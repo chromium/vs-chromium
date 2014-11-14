@@ -21,6 +21,7 @@ namespace VsChromium.Tests {
       Assert.IsTrue(comparer.Compare(@"foo1\bar", @"foo\bar") > 0);
       Assert.IsTrue(comparer.Compare(@"foo-1\bar", @"foo\bar") > 0);
       Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo-1\bar") < 0);
+      Assert.IsTrue(comparer.Compare(@"axiom-shell\out\chrome_app\polymer\axiom_view_manager.js", @"test-apps\venkman\view_manager.ts") < 0);
     }
   }
 }

@@ -56,6 +56,7 @@
     <Compile Include="DkmShared\DebugProcessOptions.cs" />
     <Compile Include="DkmShared\VsDebuggerMessage.cs" />
     <Compile Include="DkmShared\VsPackageMessage.cs" />
+    <Compile Include="Files\CustomPathComparer.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.cs" />
     <Compile Include="Files\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="Files\FileInfoSnapshot.cs" />
@@ -67,6 +68,11 @@
     <Compile Include="Files\IFileSystem.cs" />
     <Compile Include="Files\PathChangeEntry.cs" />
     <Compile Include="Files\PathChangeKind.cs" />
+    <Compile Include="Files\PathComparerRegistry.cs" />
+    <Compile Include="Files\PathComparisonOption.cs" />
+    <Compile Include="Files\PathComponent.cs" />
+    <Compile Include="Files\PathComponentEnumerator.cs" />
+    <Compile Include="Files\PathComponentSplitter.cs" />
     <Compile Include="Files\PathHelpers.cs" />
     <Compile Include="Files\PatternMatching\OpDirectorySeparator.cs" />
     <Compile Include="Files\SystemPathComparer.cs" />

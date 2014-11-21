@@ -7,10 +7,10 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Tests {
   [TestClass]
-  public class TestPathUtils {
+  public class TestCustomPathComparer {
     [TestMethod]
     public void CustomPathComparerWorks() {
-      var comparer = CustomPathComparer.Instance;
+      var comparer = new CustomPathComparer(PathComparisonOption.CaseInsensitive);
       Assert.IsTrue(comparer.Compare(@"foo", @"foo") == 0);
       Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo\bar") == 0);
       Assert.IsTrue(comparer.Compare(@"foo/bar", @"foo/bar") == 0);

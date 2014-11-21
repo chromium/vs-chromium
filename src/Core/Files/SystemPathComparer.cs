@@ -9,8 +9,7 @@ namespace VsChromium.Core.Files {
   public static class SystemPathComparer {
     public static IPathComparer Instance {
       get {
-        // TODO(rpaquay): Maybe one day we will support *nix file systems.
-        return CaseInsensitivePathComparer.Instance;
+        return PathComparerRegistry.Default;
       }
     }
   }

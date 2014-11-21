@@ -268,8 +268,8 @@ namespace VsChromium.Server.Search {
       var matcher = FileNameMatching.ParsePattern(pattern);
 
       var comparer = searchParams.MatchCase ?
-                       CaseSensitivePathComparer.Instance :
-                       CaseInsensitivePathComparer.Instance;
+                       PathComparerRegistry.CaseSensitive :
+                       PathComparerRegistry.CaseInsensitive;
       if (pattern.Contains(Path.DirectorySeparatorChar))
         return (item) => matchRelativeName(matcher, item, comparer);
       else

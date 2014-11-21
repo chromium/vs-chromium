@@ -11,11 +11,9 @@ namespace VsChromium.Core.Files {
   /// of ".gitignore" files, which are case sensitive.
   /// </summary>
   public class CaseSensitivePathComparer : IPathComparer {
-    private static readonly CaseSensitivePathComparer _theInstance = new CaseSensitivePathComparer();
+    private readonly CustomPathComparer _pathComparer = new CustomPathComparer(PathComparisonOption.CaseSensitive);
 
-    public static IPathComparer Instance { get { return _theInstance; } }
-
-    public StringComparer Comparer { get { return StringComparer.Ordinal; } }
+    public StringComparer Comparer { get { return _pathComparer; } }
 
     public StringComparison Comparison { get { return StringComparison.Ordinal; } }
   }

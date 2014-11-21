@@ -31,7 +31,9 @@
     <Compile Include="Server\TestSearchStringParser.cs" />
     <Compile Include="TestBuildOutputAnalyzer.cs" />
     <Compile Include="Mocks\TextEditMock.cs" />
-    <Compile Include="TestPathUtils.cs" />
+    <Compile Include="TestCustomPathComparer.cs" />
+    <Compile Include="TestPathComponentEnumerator.cs" />
+    <Compile Include="TestPathComponent.cs" />
     <Compile Include="TestFormatComments.cs" />
     <Compile Include="Server\TestSearchFileContents.cs" />
     <Compile Include="Server\TestSearchDirectoryNames.cs" />

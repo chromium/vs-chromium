@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Files;
 
@@ -11,25 +12,31 @@ namespace VsChromium.Tests {
     [TestMethod]
     public void CustomPathComparerWorks() {
       var comparer = new CustomPathComparer(PathComparisonOption.CaseInsensitive);
-      Assert.IsTrue(comparer.Compare(@"foo", @"foo") == 0);
-      Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo\bar") == 0);
-      Assert.IsTrue(comparer.Compare(@"foobar", @"foo\bar") > 0);
-      Assert.IsTrue(comparer.Compare(@"foo", @"foobar\bar") < 0);
-      Assert.IsTrue(comparer.Compare(@"foo", @"foo\bar") < 0);
-      Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo") > 0);
-      Assert.IsTrue(comparer.Compare(@"xoo", @"foo\bar") > 0);
-      Assert.IsTrue(comparer.Compare(@"foo\bar", @"xoo") < 0);
-      Assert.IsTrue(comparer.Compare(@"foo", @"xoo\bar") < 0);
-      Assert.IsTrue(comparer.Compare(@"xoo\bar", @"foo") > 0);
-      Assert.IsTrue(comparer.Compare(@"foo/bar", @"foo/bar") == 0);
-      Assert.IsTrue(comparer.Compare(@"foo/bar", @"foo/bar") == 0);
-      Assert.IsTrue(comparer.Compare(@"foo/bar", @"foo\bar") == 0);
-      Assert.IsTrue(comparer.Compare(@"foo\bar2", @"foo\bar") > 0);
-      Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo\bar2") < 0);
-      Assert.IsTrue(comparer.Compare(@"foo1\bar", @"foo\bar") > 0);
-      Assert.IsTrue(comparer.Compare(@"foo-1\bar", @"foo\bar") > 0);
-      Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo-1\bar") < 0);
-      Assert.IsTrue(comparer.Compare(@"axiom-shell\out\chrome_app\polymer\axiom_view_manager.js", @"test-apps\venkman\view_manager.ts") < 0);
+      Assert.IsTrue(Compare(comparer, @"foo", @"foo") == 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar") == 0);
+      Assert.IsTrue(Compare(comparer, @"foobar", @"foo/bar") > 0);
+      Assert.IsTrue(Compare(comparer, @"foo", @"foobar/bar") < 0);
+      Assert.IsTrue(Compare(comparer, @"foo", @"foo/bar") < 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo") > 0);
+      Assert.IsTrue(Compare(comparer, @"xoo", @"foo/bar") > 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"xoo") < 0);
+      Assert.IsTrue(Compare(comparer, @"foo", @"xoo/bar") < 0);
+      Assert.IsTrue(Compare(comparer, @"xoo/bar", @"foo") > 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar") == 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar") == 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar") == 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar2", @"foo/bar") > 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar2") < 0);
+      Assert.IsTrue(Compare(comparer, @"foo1/bar", @"foo/bar") > 0);
+      Assert.IsTrue(Compare(comparer, @"foo-1/bar", @"foo/bar") > 0);
+      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo-1/bar") < 0);
+      Assert.IsTrue(Compare(comparer, @"axiom-shell/out/chrome_app/polymer/axiom_view_manager.js", @"test-apps/venkman/view_manager.ts") < 0);
+    }
+
+    public int Compare(CustomPathComparer comparer, string x, string y) {
+      x = x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+      y = y.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+      return comparer.Compare(x, y);
     }
   }
 }

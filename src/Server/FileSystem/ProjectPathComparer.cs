@@ -9,11 +9,11 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystem {
   public class ProjectPathComparer : IEqualityComparer<IProject> {
     public bool Equals(IProject x, IProject y) {
-      return SystemPathComparer.Instance.Comparer.Equals(x.RootPath, y.RootPath);
+      return SystemPathComparer.Instance.StringComparer.Equals(x.RootPath, y.RootPath);
     }
 
     public int GetHashCode(IProject obj) {
-      return SystemPathComparer.Instance.Comparer.GetHashCode(obj.RootPath);
+      return SystemPathComparer.Instance.StringComparer.GetHashCode(obj.RootPath);
     }
   }
 }

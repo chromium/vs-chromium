@@ -17,7 +17,7 @@ namespace VsChromium.Views {
     private readonly IGlyphService _glyphService;
 
     private readonly ConcurrentDictionary<string, BitmapImage> _images =
-      new ConcurrentDictionary<string, BitmapImage>(SystemPathComparer.Instance.Comparer);
+      new ConcurrentDictionary<string, BitmapImage>(SystemPathComparer.Instance.StringComparer);
 
     [ImportingConstructor]
     public StandarImageSourceFactory(IGlyphService glyphService) {

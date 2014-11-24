@@ -222,7 +222,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       var entryViewModel =
         _fileSystemNodes.OfType<DirectoryEntryViewModel>()
-          .FirstOrDefault(x => SystemPathComparer.Instance.Comparer.Equals(x.Name, chromiumRoot.Name));
+          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, chromiumRoot.Name));
       if (entryViewModel == null)
         return;
 
@@ -230,13 +230,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         var childViewModel = entryViewModel
           .Children
           .OfType<DirectoryEntryViewModel>()
-          .FirstOrDefault(x => SystemPathComparer.Instance.Comparer.Equals(x.Name, childName));
+          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
         if (childViewModel == null) {
           entryViewModel.EnsureAllChildrenLoaded();
           childViewModel = entryViewModel
             .Children
             .OfType<DirectoryEntryViewModel>()
-            .FirstOrDefault(x => SystemPathComparer.Instance.Comparer.Equals(x.Name, childName));
+            .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
           if (childViewModel == null)
             return;
         }

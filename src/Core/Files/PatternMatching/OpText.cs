@@ -16,7 +16,7 @@ namespace VsChromium.Core.Files.PatternMatching {
     public string Text { get { return _text; } }
 
     public bool PrePassWontMatch(MatchKind kind, string path, IPathComparer comparer) {
-      return path.IndexOf(_text, 0, path.Length, comparer.Comparison) < 0;
+      return comparer.IndexOf(path, _text, 0, path.Length) < 0;
     }
 
     public override string ToString() {
@@ -26,7 +26,7 @@ namespace VsChromium.Core.Files.PatternMatching {
     public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
       var len = _text.Length;
 
-      if (String.Compare(_text, 0, path, pathIndex, len, comparer.Comparison) != 0)
+      if (comparer.Compare(_text, 0, path, pathIndex, len) != 0)
         return -1;
 
       return Match(kind, comparer, operators, operatorIndex + 1, path, pathIndex + len);

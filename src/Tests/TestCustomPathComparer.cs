@@ -23,8 +23,6 @@ namespace VsChromium.Tests {
       Assert.IsTrue(Compare(comparer, @"foo", @"xoo/bar") < 0);
       Assert.IsTrue(Compare(comparer, @"xoo/bar", @"foo") > 0);
       Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar") == 0);
-      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar") == 0);
-      Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar") == 0);
       Assert.IsTrue(Compare(comparer, @"foo/bar2", @"foo/bar") > 0);
       Assert.IsTrue(Compare(comparer, @"foo/bar", @"foo/bar2") < 0);
       Assert.IsTrue(Compare(comparer, @"foo1/bar", @"foo/bar") > 0);
@@ -37,6 +35,25 @@ namespace VsChromium.Tests {
       x = x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
       y = y.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
       return comparer.Compare(x, y);
+    }
+
+    [TestMethod]
+    public void CustomPathComparerWorks2() {
+      var comparer = new CustomPathComparer(PathComparisonOption.CaseInsensitive);
+      Assert.IsTrue(comparer.Compare(@"foo", 0, @"foo", 0, 1) == 0);
+      Assert.IsTrue(comparer.Compare(@"foo", 0, @"foo", 0, 2) == 0);
+      Assert.IsTrue(comparer.Compare(@"foo", 0, @"foo", 0, 3) == 0);
+      Assert.IsTrue(comparer.Compare(@"1foo", 1, @"12foo", 2, 3) == 0);
+      Assert.IsTrue(comparer.Compare(@"12foo", 2, @"1foo", 1, 3) == 0);
+      Assert.IsTrue(comparer.Compare(@"12foo", 2, @"foo", 0, 3) == 0);
+      Assert.IsTrue(comparer.Compare(@"1foo12", 1, @"12foo12", 2, 3) == 0);
+      Assert.IsTrue(comparer.Compare(@"12foo12", 2, @"1foo12", 1, 3) == 0);
+      Assert.IsTrue(comparer.Compare(@"12foo12", 2, @"foo12", 0, 3) == 0);
+      Assert.IsTrue(comparer.Compare(@"1foo\bar12", 1, @"12foo\bar12", 2, 7) == 0);
+      Assert.IsTrue(comparer.Compare(@"12foo\bar12", 2, @"1foo\bar12", 1, 7) == 0);
+      Assert.IsTrue(comparer.Compare(@"12foo\bar12", 2, @"foo\bar12", 0, 7) == 0);
+      Assert.IsTrue(comparer.Compare(@"xoo", 0, @"foo\xxx", 0, 7) > 0);
+      Assert.IsTrue(comparer.Compare(@"xoo", 0, @"foo\xxx", 4, 3) < 0);
     }
   }
 }

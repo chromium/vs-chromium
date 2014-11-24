@@ -25,7 +25,7 @@ namespace VsChromium.Core.Files.PatternMatching {
           if (operatorIndex + 1 == operators.Count - 1) {
             var opText = operators[operatorIndex + 1] as OpText;
             if (opText != null) {
-              if (path.EndsWith(opText.Text, comparer.Comparison)) {
+              if (comparer.EndsWith(path, opText.Text)) {
                 var remaining = path.Length - pathIndex;
                 if (remaining >= opText.Text.Length)
                   return path.Length;

@@ -64,7 +64,7 @@ namespace VsChromium.Core.Files {
     /// FileSystem case insensitive comparer.
     /// </summary>
     public bool Equals(FullPath other) {
-      return SystemPathComparer.Instance.Comparer.Equals(_path, other._path);
+      return SystemPathComparer.Instance.StringComparer.Equals(_path, other._path);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ namespace VsChromium.Core.Files {
     /// case insensitive comparer.
     /// </summary>
     public int CompareTo(FullPath other) {
-      return SystemPathComparer.Instance.Comparer.Compare(_path, other._path);
+      return SystemPathComparer.Instance.StringComparer.Compare(_path, other._path);
     }
 
     public override string ToString() {
@@ -94,14 +94,14 @@ namespace VsChromium.Core.Files {
     /// comparer.
     /// </summary>
     public override int GetHashCode() {
-      return SystemPathComparer.Instance.Comparer.GetHashCode(_path);
+      return SystemPathComparer.Instance.StringComparer.GetHashCode(_path);
     }
 
     /// <summary>
     /// Returns true if this full path starts with <paramref name="x"/>
     /// </summary>
     public bool StartsWith(FullPath x) {
-      return _path.StartsWith(x._path, SystemPathComparer.Instance.Comparison);
+      return SystemPathComparer.Instance.StartsWith(_path, x._path);
     }
 
     /// <summary>

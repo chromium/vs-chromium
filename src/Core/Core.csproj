@@ -77,7 +77,6 @@
     <Compile Include="Files\PatternMatching\OpDirectorySeparator.cs" />
     <Compile Include="Files\SystemPathComparer.cs" />
     <Compile Include="Files\FullPathDictionary.cs" />
-    <Compile Include="Files\CaseSensitivePathComparer.cs" />
     <Compile Include="Files\IPathComparer.cs" />
     <Compile Include="Files\PatternMatching\IPathMatcher.cs" />
     <Compile Include="Files\PatternMatching\AggregatePathMatcher.cs" />
@@ -96,7 +95,7 @@
     <Compile Include="Files\PatternMatching\PatternWrapper.cs" />
     <Compile Include="Files\PatternMatching\OpText.cs" />
     <Compile Include="Files\RelativePath.cs" />
-    <Compile Include="Files\CaseInsensitivePathComparer.cs" />
+    <Compile Include="Files\PathComparer.cs" />
     <Compile Include="Ipc\ErrorResponseException.cs" />
     <Compile Include="Ipc\ErrorResponseHelper.cs" />
     <Compile Include="Ipc\IIpcRequestIdFactory.cs" />

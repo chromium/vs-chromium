@@ -44,11 +44,11 @@ namespace VsChromium.Core.Files.PatternMatching {
     }
 
     public bool StartsWith(string value) {
-      return _patternText.IndexOf(value, _index, _remaining, SystemPathComparer.Instance.Comparison) == _index;
+      return SystemPathComparer.Instance.IndexOf(_patternText, value, _index, _remaining) == _index;
     }
 
     public int IndexOf(string value) {
-      var result = _patternText.IndexOf(value, _index, _remaining, SystemPathComparer.Instance.Comparison);
+      var result = SystemPathComparer.Instance.IndexOf(_patternText, value, _index, _remaining);
       if (result < _index)
         return -1;
       return result;

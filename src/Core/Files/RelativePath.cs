@@ -93,15 +93,15 @@ namespace VsChromium.Core.Files {
     #region Comparison/Equality plumbing
 
     public int CompareTo(RelativePath other) {
-      return SystemPathComparer.Instance.Comparer.Compare(this.Value, other.Value);
+      return SystemPathComparer.Instance.StringComparer.Compare(this.Value, other.Value);
     }
 
     public bool Equals(RelativePath other) {
-      return SystemPathComparer.Instance.Comparer.Equals(this.Value, other.Value);
+      return SystemPathComparer.Instance.StringComparer.Equals(this.Value, other.Value);
     }
 
     public override int GetHashCode() {
-      return SystemPathComparer.Instance.Comparer.GetHashCode(this.Value);
+      return SystemPathComparer.Instance.StringComparer.GetHashCode(this.Value);
     }
 
     public override bool Equals(object other) {

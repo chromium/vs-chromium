@@ -13,7 +13,7 @@ namespace VsChromium.ChromiumEnlistment {
   [Export(typeof(IChromiumSourceFiles))]
   public class ChromiumSourceFiles : IChromiumSourceFiles {
     private readonly ConcurrentDictionary<string, bool> _applyCodingStyleResults =
-      new ConcurrentDictionary<string, bool>(SystemPathComparer.Instance.Comparer);
+      new ConcurrentDictionary<string, bool>(SystemPathComparer.Instance.StringComparer);
 
     private readonly IPathPatternsFile _chromiumCodingStylePatterns;
     private readonly IChromiumDiscoveryWithCache<FullPath> _chromiumDiscoveryProvider;

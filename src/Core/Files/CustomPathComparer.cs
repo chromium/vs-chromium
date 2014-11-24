@@ -23,40 +23,60 @@ namespace VsChromium.Core.Files {
         : StringComparer.Ordinal);
     }
 
+    public int IndexOf(string value, string searchText, int index, int count) {
+      return value.IndexOf(searchText, index, count, _comparison);
+    }
+
     public override int Compare(string x, string y) {
-      if (object.ReferenceEquals(x, y))
+      x = (x ?? string.Empty);
+      y = (y ?? string.Empty);
+      return Compare(x, 0, y, 0, Math.Max(x.Length, y.Length));
+    }
+
+    public int Compare(string value1, int startIndex1, string value2, int startIndex2, int length) {
+      if (object.ReferenceEquals(value1, value2))
         return 0;
 
-      if (x == null)
+      if (value1 == null)
         return -1;
 
-      if (y == null)
+      if (value2 == null)
         return 1;
 
-      var startIndex = 0;
       while (true) {
-        var xindex = x.IndexOf(Path.DirectorySeparatorChar, startIndex);
-        var yindex = y.IndexOf(Path.DirectorySeparatorChar, startIndex);
-        if (xindex < 0 || yindex < 0) {
+        var index1 = value1.IndexOf(Path.DirectorySeparatorChar, startIndex1);
+        var index2 = value2.IndexOf(Path.DirectorySeparatorChar, startIndex2);
+        bool outside1 = (index1 < 0) || (index1 >= startIndex1 + length);
+        bool outside2 = (index2 < 0) || (index2 >= startIndex2 + length);
+        if (outside1 || outside2) {
+          int len1 = (index1 < 0 ? value1.Length : index1) - startIndex1;
+          len1 = Math.Min(length, len1);
+          int len2 = (index2 < 0 ? value2.Length : index2) - startIndex2;
+          len2 = Math.Min(length, len2);
           var result = CompareSubStrings(
-            x, startIndex, (xindex < 0 ? x.Length : xindex) - startIndex,
-            y, startIndex, (yindex < 0 ? y.Length : yindex) - startIndex);
+            value1, startIndex1, len1,
+            value2, startIndex2, len2);
           if (result != 0)
             return result;
-          if (xindex < 0 && yindex < 0)
+          if (outside1 && outside2)
             return 0;
-          if (xindex < 0)
+          if (outside1)
             return -1;
+          Debug.Assert(outside2);
           return 1;
         } else {
+          int len1 = index1 - startIndex1;
+          int len2 = index2 - startIndex2;
           var result = CompareSubStrings(
-            x, startIndex, xindex - startIndex,
-            y, startIndex, yindex - startIndex);
+            value1, startIndex1, len1,
+            value2, startIndex2, len2);
           if (result != 0)
             return result;
 
-          Debug.Assert(xindex == yindex);
-          startIndex = xindex + 1;
+          Debug.Assert(len1 == len2);
+          length -= (len1 + 1);
+          startIndex1 = index1 + 1;
+          startIndex2 = index2 + 1;
         }
       }
     }

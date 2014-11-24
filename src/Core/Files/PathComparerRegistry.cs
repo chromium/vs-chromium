@@ -4,8 +4,8 @@
 
 namespace VsChromium.Core.Files {
   public class PathComparerRegistry {
-    private static readonly IPathComparer _caseInsensitive = new CaseInsensitivePathComparer();
-    private static readonly IPathComparer _caseSensitive = new CaseSensitivePathComparer();
+    private static readonly IPathComparer _caseInsensitive = new PathComparer(PathComparisonOption.CaseInsensitive);
+    private static readonly IPathComparer _caseSensitive = new PathComparer(PathComparisonOption.CaseSensitive);
 
     public static IPathComparer Default {
       get {

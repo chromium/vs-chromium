@@ -50,7 +50,7 @@ namespace VsChromium.Core.Files.PatternMatching {
 
     private void Optimize(IEnumerable<PathMatcher> matchers) {
       var pathMatchers = new List<IPathMatcher>();
-      var fileExtensions = new HashSet<string>(SystemPathComparer.Instance.Comparer);
+      var fileExtensions = new HashSet<string>(SystemPathComparer.Instance.StringComparer);
 
       foreach (var x in matchers) {
         string fileExtension;

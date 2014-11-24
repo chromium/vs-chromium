@@ -13,15 +13,12 @@ namespace VsChromium.Server.FileSystemNames {
     public static FileSystemNameComparer Instance { get { return _instance; } }
 
     public int Compare(FileSystemName x, FileSystemName y) {
-      if (x == null) {
-        if (y == null)
-          return 0;
-        else
-          return -1;
-      } else {
-        if (y == null)
-          return 1;
-      }
+      if (object.ReferenceEquals(x, y))
+        return 0;
+      if (x == null)
+        return -1;
+      if (y == null)
+        return 1;
 
       var x1 = GetAbsolutePart(x);
       var y1 = GetAbsolutePart(y);

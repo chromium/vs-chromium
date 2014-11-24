@@ -13,6 +13,14 @@ namespace VsChromium.Tests {
       var comparer = new CustomPathComparer(PathComparisonOption.CaseInsensitive);
       Assert.IsTrue(comparer.Compare(@"foo", @"foo") == 0);
       Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo\bar") == 0);
+      Assert.IsTrue(comparer.Compare(@"foobar", @"foo\bar") > 0);
+      Assert.IsTrue(comparer.Compare(@"foo", @"foobar\bar") < 0);
+      Assert.IsTrue(comparer.Compare(@"foo", @"foo\bar") < 0);
+      Assert.IsTrue(comparer.Compare(@"foo\bar", @"foo") > 0);
+      Assert.IsTrue(comparer.Compare(@"xoo", @"foo\bar") > 0);
+      Assert.IsTrue(comparer.Compare(@"foo\bar", @"xoo") < 0);
+      Assert.IsTrue(comparer.Compare(@"foo", @"xoo\bar") < 0);
+      Assert.IsTrue(comparer.Compare(@"xoo\bar", @"foo") > 0);
       Assert.IsTrue(comparer.Compare(@"foo/bar", @"foo/bar") == 0);
       Assert.IsTrue(comparer.Compare(@"foo/bar", @"foo/bar") == 0);
       Assert.IsTrue(comparer.Compare(@"foo/bar", @"foo\bar") == 0);

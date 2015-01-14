@@ -150,6 +150,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\AggregateCommandTarget.cs" />
     <Compile Include="Features\AttachToChrome\ColumnSorter.cs" />
     <Compile Include="Features\AttachToChrome\DebugAttach.cs" />
     <Compile Include="Features\AttachToChrome\DkmComponentMessageInitializer.cs" />
@@ -207,6 +208,7 @@
     <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoNextLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerBase.cs" />
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerBase.cs" />

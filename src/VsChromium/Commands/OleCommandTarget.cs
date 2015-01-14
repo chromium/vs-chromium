@@ -23,6 +23,8 @@ namespace VsChromium.Commands {
     /// <summary>
     /// The next command target in the chain. The caller is responsible for initializing.
     /// This has to be a public field, because it may have to be assigned from an "out" parameter.
+    /// If the property is not set, the default behavior is to return OLECMDERR_E_NOTSUPPORTED from
+    /// QueryStatus and Exec.
     /// </summary>
     public IOleCommandTarget NextCommandTarget;
 
@@ -37,7 +39,11 @@ namespace VsChromium.Commands {
         Logger.LogException(e, "Error in {0}.HandlesCommand.", _commandTarget.GetType().FullName);
       }
       if (!isSupported) {
-        return NextCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+        if (NextCommandTarget == null) {
+          return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+        } else {
+          return NextCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+        }
       }
 
       bool isEnabled = _commandTarget.IsEnabled(commandId);
@@ -53,7 +59,11 @@ namespace VsChromium.Commands {
 
       bool isSupported = _commandTarget.HandlesCommand(commandId);
       if (!isSupported) {
-        return NextCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+        if (NextCommandTarget == null) {
+          return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+        } else {
+          return NextCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+        }
       }
 
       try {

@@ -15,7 +15,6 @@ namespace VsChromium.Server.FileSystemContents {
   public abstract class FileContents {
     protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
-    protected static IEnumerable<String> NoWords = Enumerable.Empty<string>();
     private readonly DateTime _utcLastModified;
 
     protected FileContents(DateTime utcLastModified) {
@@ -34,10 +33,6 @@ namespace VsChromium.Server.FileSystemContents {
 
     public virtual IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
       return NoFileExtracts;
-    }
-
-    public virtual IEnumerable<string> EnumerateWords() {
-      return NoWords;
     }
   }
 }

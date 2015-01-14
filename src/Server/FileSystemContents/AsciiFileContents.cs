@@ -85,51 +85,5 @@ namespace VsChromium.Server.FileSystemContents {
         .Where(x => x != null)
         .ToList();
     }
-
-    public override IEnumerable<string> EnumerateWords() {
-      var ptr = this.Pointer;
-      var count = this.CharacterCount;
-      var sb = new StringBuilder();
-      while (true) {
-        GetNextWord(sb, ref ptr, ref count);
-        if (sb.Length > 0) {
-          yield return sb.ToString();
-        } else {
-          break;
-        }
-      }
-    }
-
-    private unsafe void GetNextWord(StringBuilder sb, ref IntPtr ptr, ref long count) {
-      sb.Clear();
-      var current = (byte*)ptr;
-      var insideWord = false;
-      while (count > 0) {
-        var ch = (char)(*current);
-
-        // Significant character
-        //if (char.IsLetterOrDigit(ch)) {
-        if (IsLetterOrDigit(ch)) {
-          sb.Append(ch);
-          insideWord = true;
-        } else {
-          // Whitespace, delimiter, etc.
-          if (insideWord) {
-            ptr = new IntPtr(current);
-            return;
-          }
-        }
-
-        count--;
-        current++;
-      }
-    }
-
-    private bool IsLetterOrDigit(char ch) {
-      return
-        (ch >= '0' && ch <= '9') ||
-        (ch >= 'a' && ch <= 'z') ||
-        (ch >= 'A' && ch <= 'Z');
-    }
   }
 }

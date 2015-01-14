@@ -115,22 +115,5 @@ namespace VsChromium {
       //var serviceContainer = this as IServiceContainer;
       //serviceContainer.AddService(typeof(IOleCommandTarget), new OleCommandTarget(new PackageCommandTarget()));
     }
-
-    public class PackageCommandTarget : ICommandTarget {
-      public bool HandlesCommand(CommandID commandId) {
-        if (commandId.Guid == VSConstants.GUID_VSStandardCommandSet97 &&
-            commandId.ID == (int) VSConstants.VSStd97CmdID.NextLocation) {
-          Logger.Log("HELLO THERE.");
-        }
-        return false;
-      }
-
-      public bool IsEnabled(CommandID commandId) {
-        return false;
-      }
-
-      public void Execute(CommandID commandId) {
-      }
-    }
   }
 }

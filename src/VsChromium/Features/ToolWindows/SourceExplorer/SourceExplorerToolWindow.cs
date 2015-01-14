@@ -4,8 +4,11 @@
 
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
+using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Wpf;
 
@@ -21,6 +24,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// </summary>
   [Guid(GuidList.GuidSourceExplorerToolWindowString)]
   public class SourceExplorerToolWindow : ToolWindowPane {
+    private FrameNotify _frameNotify;
+
     /// <summary>
     /// Standard constructor for the tool window.
     /// </summary>
@@ -42,6 +47,29 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       ExplorerControl = new SourceExplorerControl();
     }
 
+    public override void OnToolWindowCreated() {
+      base.OnToolWindowCreated();
+      ExplorerControl.OnToolWindowCreated(this);
+
+      var frame = this.Frame as IVsWindowFrame2;
+      if (frame != null) {
+        _frameNotify = new FrameNotify(frame);
+        _frameNotify.Advise();
+      } 
+    }
+
+    public SourceExplorerControl ExplorerControl {
+      get { return Content as SourceExplorerControl; }
+      set { Content = value; }
+    }
+
+    public bool IsVisible {
+      get {
+        return _frameNotify != null &&
+               _frameNotify.IsVisible;
+      }
+    }
+
     public void FocusSearchTextBox(CommandID commandId) {
       switch (commandId.ID) {
         case PkgCmdIdList.CmdidSearchFileNames:
@@ -54,11 +82,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           ExplorerControl.FileContentsSearch.Focus();
           break;
       }
-    }
-
-    public SourceExplorerControl ExplorerControl {
-      get { return Content as SourceExplorerControl; }
-      set { Content = value; }
     }
 
     enum Direction {
@@ -116,15 +139,73 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public override void OnToolWindowCreated() {
-      base.OnToolWindowCreated();
-      ExplorerControl.OnToolWindowCreated(this);
-    }
-
     public void NotifyPackageUpdate(UpdateInfo updateInfo) {
       WpfUtilities.Post(ExplorerControl, () => {
         ExplorerControl.UpdateInfo = updateInfo;
       });
+    }
+
+    private class FrameNotify : IVsWindowFrameNotify {
+      private readonly IVsWindowFrame2 _frame;
+      private uint _notifyCookie;
+      private bool _isVisible;
+
+      public FrameNotify(IVsWindowFrame2 frame) {
+        _frame = frame;
+        _isVisible = true;
+      }
+
+      public bool IsVisible {
+        get { return _isVisible; }
+      }
+
+      public void Advise() {
+        var hr = _frame.Advise(this, out _notifyCookie);
+        if (ErrorHandler.Failed(hr)) {
+          Logger.LogError("IVsWindowFrame2.Advise() failed: hr={0}", hr);
+        }
+      }
+
+      int IVsWindowFrameNotify.OnShow(int fShow) {
+        var show = (__FRAMESHOW)fShow;
+        switch (show) {
+          case __FRAMESHOW.FRAMESHOW_Hidden:
+            _isVisible = false;
+            break;
+          case __FRAMESHOW.FRAMESHOW_WinShown:
+            _isVisible = true;
+            break;
+          case __FRAMESHOW.FRAMESHOW_WinClosed:
+            _isVisible = false;
+            var hr = _frame.Unadvise(_notifyCookie);
+            if (ErrorHandler.Failed(hr)) {
+              Logger.Log("IVsWindowFrame2.Unadvise() failed: hr={0}", hr);
+            }
+            break;
+          case __FRAMESHOW.FRAMESHOW_TabActivated:
+          case __FRAMESHOW.FRAMESHOW_TabDeactivated:
+          case __FRAMESHOW.FRAMESHOW_WinRestored:
+          case __FRAMESHOW.FRAMESHOW_WinMinimized:
+          case __FRAMESHOW.FRAMESHOW_WinMaximized:
+          case __FRAMESHOW.FRAMESHOW_DestroyMultInst:
+          case __FRAMESHOW.FRAMESHOW_AutoHideSlideBegin:
+          default:
+            break;
+        }
+        return VSConstants.S_OK;
+      }
+
+      int IVsWindowFrameNotify.OnMove() {
+        return VSConstants.S_OK;
+      }
+
+      int IVsWindowFrameNotify.OnSize() {
+        return VSConstants.S_OK;
+      }
+
+      int IVsWindowFrameNotify.OnDockableChange(int fDockable) {
+        return VSConstants.S_OK;
+      }
     }
   }
 }

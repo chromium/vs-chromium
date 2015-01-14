@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
 
@@ -29,6 +28,7 @@ namespace VsChromium.Package.CommandHandler {
       var aggregate = new AggregateCommandTarget(commandTargets);
       var oleCommandTarget = new OleCommandTarget(aggregate);
 
+      // Register the ole command target as a VS priority command target
       var registerPriorityCommandTarget = package.VsRegisterPriorityCommandTarget;
       uint cookie;
       int hr = registerPriorityCommandTarget.RegisterPriorityCommandTarget(0, oleCommandTarget, out cookie);

@@ -26,6 +26,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(SourceExplorerToolWindow), 0, false) as SourceExplorerToolWindow;
         if (window == null)
           return false;
+        if (!window.IsVisible)
+          return false;
         return window.HasNextLocation();
       }
     }

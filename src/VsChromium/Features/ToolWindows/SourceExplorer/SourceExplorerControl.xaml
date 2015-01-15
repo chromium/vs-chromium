@@ -66,6 +66,11 @@
           <TextBlock Text="{Binding MatchCaseToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
+      <ToggleButton Content="Regex" IsChecked="{Binding UseRegex}" IsTabStop="False">
+        <ToggleButton.ToolTip>
+          <TextBlock Text="{Binding UseRegexToolTip}"/>
+        </ToggleButton.ToolTip>
+      </ToggleButton>
       <ToggleButton Content="lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>

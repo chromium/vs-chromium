@@ -213,7 +213,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             SearchString = FileNamesSearch.Text,
             MaxResults = _searchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
-            IncludeSymLinks = ViewModel.IncludeSymLinks
+            IncludeSymLinks = ViewModel.IncludeSymLinks,
+            Regex = ViewModel.UseRegex,
           }
         },
         ProcessResponse = (typedResponse, stopwatch) => {
@@ -238,7 +239,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             SearchString = DirectoryNamesSearch.Text,
             MaxResults = _searchDirectoryNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
-            IncludeSymLinks = ViewModel.IncludeSymLinks
+            IncludeSymLinks = ViewModel.IncludeSymLinks,
+            Regex = ViewModel.UseRegex,
           }
         },
         ProcessResponse = (typedResponse, stopwatch) => {
@@ -263,7 +265,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             SearchString = FileContentsSearch.Text,
             MaxResults = _searchFileContentsMaxResults,
             MatchCase = ViewModel.MatchCase,
-            IncludeSymLinks = ViewModel.IncludeSymLinks
+            IncludeSymLinks = ViewModel.IncludeSymLinks,
+            Regex = ViewModel.UseRegex,
           }
         },
         ProcessResponse = (typedResponse, stopwatch) => {

@@ -60,9 +60,31 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// Databound!
     /// </summary>
     public string MatchCaseToolTip {
-      get { return string.Format("Toggle case matching for all searches. Searches are currently case {0}.", MatchCase ? "sensitive" : "insensitive"); }
+      get {
+        return string.Format(
+          "Toggle case matching for all searches. " + 
+          "Searches are currently case {0}.",
+          MatchCase ? "sensitive" : "insensitive");
+      }
     }
-    
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool UseRegex { get; set; }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string UseRegexToolTip {
+      get { 
+        return string.Format(
+          "Toggle usage of regular expressions for file searches. " +
+          "Use Regular expression is currently {0}.",
+          UseRegex ? "enabled" : "disabled");
+      }
+    }
+
     /// <summary>
     /// Databound!
     /// </summary>
@@ -72,7 +94,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// Databound!
     /// </summary>
     public string IncludeSymLinksToolTip {
-      get { return string.Format("Toggle searching inside symbolic link folders for searches. Searches currently {0} files and directories inside symlinks.", IncludeSymLinks ? "include" : "exclude"); }
+      get {
+        return string.Format(
+          "Toggle searching inside symbolic link directories. " +
+          "Files and directories inside symbolic links are currently {0} in search results.",
+          IncludeSymLinks ? "included" : "excluded");
+      }
     }
 
     /// <summary>

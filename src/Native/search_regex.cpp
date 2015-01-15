@@ -8,6 +8,24 @@
 
 #include "search_regex.h"
 
+
+class regex_traits_fast_icase : public std::regex_traits<char> {
+public:
+  char translate_nocase(char _Ch) const {
+    if (_Ch >= 'A' && _Ch <= 'Z')
+      _Ch |= 0x20;
+    return _Ch;
+  }
+};
+
+#if 1
+typedef std::basic_regex<char, regex_traits_fast_icase> regex_t;
+typedef std::regex_iterator<const char *, char, regex_traits_fast_icase> regex_iterator_t;
+#else
+typedef std::regex regex_t;
+typedef std::cregex_iterator regex_iterator_t;
+#endif
+
 class RegexSearchImpl {
 public:
   RegexSearchImpl() : regex_(nullptr) {
@@ -15,8 +33,8 @@ public:
   ~RegexSearchImpl() {
     delete regex_;
   }
-  std::regex* regex_;
-  std::cregex_iterator it_end_;
+  regex_t* regex_;
+  regex_iterator_t it_end_;
 };
 
 RegexSearch::RegexSearch()
@@ -39,7 +57,7 @@ void RegexSearch::PreProcess(
     flags = flags | std::regex::icase;
   }
   try {
-    impl_->regex_ = new std::regex(pattern, patternLen, flags);
+    impl_->regex_ = new regex_t(pattern, patternLen, flags);
   } catch(std::regex_error& error) {
     result.HResult = E_INVALIDARG;
     // Format the error message: remove the leading text up to ':'
@@ -63,21 +81,21 @@ int RegexSearch::GetSearchBufferSize() {
 }
 
 void RegexSearch::Search(SearchParams* searchParams) {
-  std::cregex_iterator* pit =
-      reinterpret_cast<std::cregex_iterator *>(searchParams->SearchBuffer);
+  regex_iterator_t* pit =
+      reinterpret_cast<regex_iterator_t*>(searchParams->SearchBuffer);
   // Placement new for the iterator on the 1st call
   if (searchParams->MatchStart == nullptr) {
-    pit = new(pit) std::cregex_iterator(
+    pit = new(pit) regex_iterator_t(
         searchParams->TextStart,
         searchParams->TextStart + searchParams->TextLength,
         *impl_->regex_);
   }
   // Iterate
-  std::cregex_iterator& it(*pit);
+  regex_iterator_t& it(*pit);
   if (it == impl_->it_end_) {
     // Explicit call to destructor on last call.
     searchParams->MatchStart = nullptr;
-    pit->std::cregex_iterator::~cregex_iterator();
+    pit->regex_iterator_t::~regex_iterator_t();
     return;
   }
   // Set result if match found

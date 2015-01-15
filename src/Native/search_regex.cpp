@@ -29,7 +29,11 @@ RegexSearch::~RegexSearch() {
   delete impl_;
 }
 
-void RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
+void RegexSearch::PreProcess(
+    const char *pattern,
+    int patternLen,
+    SearchOptions options,
+    SearchCreateResult& result) {
   auto flags = std::regex::ECMAScript | std::regex::optimize;
   if ((options & kMatchCase) == 0) {
     flags = flags | std::regex::icase;

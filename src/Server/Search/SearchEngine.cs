@@ -189,9 +189,9 @@ namespace VsChromium.Server.Search {
       var taskResults = new TaskResultCounter(maxResults);
       var searchedFileCount = 0;
       var matches = _currentFileDatabase.FilesWithContents
-        //.AsParallel()
-        //.WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        //.WithCancellation(cancellationToken)
+        .AsParallel()
+        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+        .WithCancellation(cancellationToken)
         .Where(x => !taskResults.Done)
         .Select(item => {
           if (!includeSymLinks) {

@@ -36,10 +36,13 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     public static AsciiStringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
+      if (searchOptions.HasFlag(NativeMethods.SearchOptions.kRegex))
+        return new AsciiStringSearchRegex(pattern, searchOptions);
+
       if (pattern.Length <= 64)
         return new AsciiStringSearchBndm64(pattern, searchOptions);
-      else
-        return new AsciiStringSearchBoyerMoore(pattern, searchOptions);
+
+      return new AsciiStringSearchBoyerMoore(pattern, searchOptions);
     }
 
     public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
@@ -62,9 +65,9 @@ namespace VsChromium.Server.FileSystemContents {
         var algo = searchContentsData.GetSearchAlgorithms(entry).AsciiStringSearchAlgo;
         var start = Pointers.AddPtr(this.Pointer, position);
         var result = algo.Search(start, length);
-        if (result == IntPtr.Zero)
+        if (result.Position == IntPtr.Zero)
           return -1;
-        return position + Pointers.Offset32(start, result);
+        return position + Pointers.Offset32(start, result.Position);
       };
       GetLineExtentFunction getLineExtent = position => {
         int lineStart;

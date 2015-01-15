@@ -22,5 +22,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(4)]
     public bool IncludeSymLinks { get; set; }
+
+    [ProtoMember(5)]
+    public bool Regex { get; set; }
   }
 }

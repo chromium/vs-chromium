@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.ServerProxy;
@@ -166,10 +167,46 @@ namespace VsChromium.Tests.Server {
       }
     }
 
+    [TestMethod]
+    public void RegexWorks() {
+      const string searchPattern = "Test directory looking like";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 1);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 1);
+        }
+      }
+    }
+
+    // TODO(rpaquay): Disable for now!
+    //[TestMethod]
+    public void RegexWorks2() {
+      const string searchPattern = "[a-z]*";
+
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+          var testFile = GetChromiumEnlistmentFile();
+          GetFileSystemFromServer(server, testFile);
+
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 1);
+
+          var searchPatternLower = searchPattern.ToLowerInvariant();
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 1);
+        }
+      }
+    }
+
     [Flags]
     private enum Options {
       None = 0,
-      MatchCase = 1,
+      MatchCase = 0x01,
+      Regex = 0x02,
     }
 
     private static void VerifySearchFileContentsResponse(
@@ -183,7 +220,8 @@ namespace VsChromium.Tests.Server {
         SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,
-          MatchCase = ((options & Options.MatchCase) != 0)
+          MatchCase = options.HasFlag(Options.MatchCase),
+          Regex = options.HasFlag(Options.Regex),
         }
       }, ServerResponseTimeout)();
       Assert.IsNotNull(response, "Server did not respond within timeout.");
@@ -200,7 +238,7 @@ namespace VsChromium.Tests.Server {
         Assert.IsNotNull(x.Data);
         Assert.IsTrue(x.Data is FilePositionsData);
         ((FilePositionsData)x.Data).Positions.ForEach(y => {
-          Debug.WriteLine(string.Format("   Text position: offset={0}, length={1}", y.Position, y.Length));
+          Debug.WriteLine(string.Format("   Text position: offset={0}, length={1}, text={2}", y.Position, y.Length, ExtractFileText(chromiumEntry, x, y)));
           if (positionsAndLengths != null && positionsAndLengths.Length > 0) {
             Assert.AreEqual(positionsAndLengths[index * 2], y.Position);
             Assert.AreEqual(positionsAndLengths[(index * 2) + 1], y.Length);
@@ -208,6 +246,23 @@ namespace VsChromium.Tests.Server {
         });
       });
       Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
+    }
+
+    private static string ExtractFileText(DirectoryEntry chromiumEntry, FileSystemEntry fileSystemEntry, FilePositionSpan filePositionSpan) {
+      var path = PathHelpers.CombinePaths(chromiumEntry.Name, fileSystemEntry.Name);
+      if (!File.Exists(path))
+        return string.Format("File not found: {0}", path);
+      var text = File.ReadAllText(path);
+      var offset = filePositionSpan.Position;
+      var length = Math.Min(80, filePositionSpan.Length);
+      if (offset < 0)
+        return "<Invalid offset>";
+      if (length < 0)
+        return "<Invalid length>";
+      if (offset + length > text.Length)
+        return "<Invalid span>";
+      var extract = text.Substring(offset, length);
+      return extract;
     }
   }
 }

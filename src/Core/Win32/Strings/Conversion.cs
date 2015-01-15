@@ -46,6 +46,11 @@ namespace VsChromium.Core.Win32.Strings {
     }
 
     public static unsafe string AnsiToUnicode(byte[] bytes) {
+      // Note: When debugging unit tests, the following line will sometime
+      // throw an exception of type "AccessViolationException" from 
+      // VsChromium.Core.Debugger.DebuggerThread.GetOutputDebugString()
+      // The only workaround found so far is to disable the call (see comment
+      // in the method above).
       fixed (byte* pointer = bytes) {
         return new string((sbyte*)pointer);
       }

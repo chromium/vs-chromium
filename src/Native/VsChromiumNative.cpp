@@ -14,6 +14,7 @@
 #include "search_bndm64.h"
 #include "search_boyer_moore.h"
 #include "search_strstr.h"
+#include "search_regex.h"
 
 #define EXPORT __declspec(dllexport)
 
@@ -55,7 +56,8 @@ enum SearchAlgorithmKind {
   kStrStr = 1,
   kBndm32 = 2,
   kBndm64 =3,
-  kBoyerMoore = 4
+  kBoyerMoore = 4,
+  kRegex,
 };
 
 EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
@@ -81,6 +83,9 @@ EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
     case kStrStr:
       result = new StrStrSearch();
       break;
+    case kRegex:
+      result = new RegexSearch();
+      break;
   }
 
   if (!result)
@@ -95,9 +100,9 @@ EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
   return result;
 }
 
-EXPORT const char* __stdcall AsciiSearchAlgorithm_Search(
-    AsciiSearchBase* search, const char* text, int textLen) {
-  return search->Search(text, textLen);
+EXPORT void __stdcall AsciiSearchAlgorithm_Search(
+    AsciiSearchBase* search, const char* text, int textLen, AsciiSearchBase::SearchResult* result) {
+  *result = search->Search(text, textLen);
 }
 
 EXPORT void __stdcall AsciiSearchAlgorithm_Delete(AsciiSearchBase* search) {

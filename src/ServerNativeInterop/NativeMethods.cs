@@ -12,13 +12,15 @@ namespace VsChromium.Server.NativeInterop {
       kStrStr = 1,
       kBndm32 = 2,
       kBndm64 = 3,
-      kBoyerMoore = 4
+      kBoyerMoore = 4,
+      kRegex = 5,
     }
 
     [Flags]
     public enum SearchOptions {
       kNone = 0x0000,
-      kMatchCase = 0x0001
+      kMatchCase = 0x0001,
+      kRegex = 0x0002
     }
 
     public enum TextKind {
@@ -26,6 +28,12 @@ namespace VsChromium.Server.NativeInterop {
       AsciiWithUtf8Bom,
       Utf8WithBom,
       Unknown
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SearchResult {
+      public IntPtr Position;
+      public int Length;
     }
 
     [SuppressUnmanagedCodeSecurity]
@@ -40,7 +48,11 @@ namespace VsChromium.Server.NativeInterop {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
-    public static extern IntPtr AsciiSearchAlgorithm_Search(SafeSearchHandle handle, IntPtr text, int textLen);
+    public static extern void AsciiSearchAlgorithm_Search(
+      SafeSearchHandle handle,
+      IntPtr text,
+      int textLen,
+      out SearchResult result);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,

@@ -17,6 +17,7 @@ bool StrStrSearch::PreProcess(const char *pattern, int patternLen, SearchOptions
   return true;
 }
 
-const char *StrStrSearch::Search(const char *text, int textLen) {
-  return strstr(text, pattern_);
+StrStrSearch::SearchResult StrStrSearch::Search(const char *text, int textLen) {
+  const char* str = strstr(text, pattern_);
+  return SearchResult(str, patternLen_);
 }

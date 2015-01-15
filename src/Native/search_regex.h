@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include <regex>
+
 #include "search_base.h"
 
-class BoyerMooreSearch : public AsciiSearchBase {
+class RegexSearch : public AsciiSearchBase {
  public:
-  BoyerMooreSearch();
-  virtual ~BoyerMooreSearch();
+  RegexSearch();
+  virtual ~RegexSearch() OVERRIDE;
 
   virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) OVERRIDE;
   virtual SearchResult Search(const char *text, int texLen) OVERRIDE;
@@ -17,7 +19,5 @@ class BoyerMooreSearch : public AsciiSearchBase {
  private:
   const char *pattern_;
   int patternLen_;
-  bool matchCase_;
-  int delta1_[kAlphabetLen];
-  int *delta2_;
+  std::regex* regex_;
 };

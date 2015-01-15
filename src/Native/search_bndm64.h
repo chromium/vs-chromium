@@ -30,8 +30,9 @@ class Bndm64Search : public AsciiSearchBaseTemplate<T> {
     return true;
   }
 
-  virtual const char *Search(const char *text, int textLen) OVERRIDE {
-    return bndm64_algo(text, textLen, pattern_, patternLen_, maskv_);
+  virtual SearchResult Search(const char *text, int textLen) OVERRIDE {
+    const char* str = bndm64_algo(text, textLen, pattern_, patternLen_, maskv_);
+    return SearchResult(str, patternLen_);
   }
 
  private:

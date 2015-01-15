@@ -22,15 +22,19 @@ namespace VsChromium.Server.NativeInterop {
       var currentPtr = textPtr;
       var remainingLength = textLen;
       while (true) {
-        currentPtr = Search(currentPtr, remainingLength);
-        if (currentPtr == IntPtr.Zero)
+        var result = Search(currentPtr, remainingLength);
+        if (result.Position == IntPtr.Zero)
           break;
-
+        currentPtr = result.Position;
         // TODO(rpaquay): We are limited to 2GB for now.
         var offset = Pointers.Offset32(textPtr, currentPtr);
-        yield return new FilePositionSpan {Position = offset, Length = PatternLength};
-        currentPtr += PatternLength;
-        remainingLength = textLen - offset - PatternLength;
+        yield return new FilePositionSpan {Position = offset, Length = result.Length};
+        currentPtr += result.Length;
+        remainingLength = textLen - offset - result.Length;
+        if (remainingLength <= 0) {
+          // This should not happen...
+          break;
+        }
       }
     }
 
@@ -39,6 +43,6 @@ namespace VsChromium.Server.NativeInterop {
     /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
     /// characters. Returns |IntPtr.Zero| if the pattern is not present.
     /// </summary>
-    public abstract IntPtr Search(IntPtr textPtr, int textLen);
+    public abstract NativeMethods.SearchResult Search(IntPtr textPtr, int textLen);
   }
 }

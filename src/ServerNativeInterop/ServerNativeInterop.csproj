@@ -27,6 +27,7 @@
     <Compile Include="AsciiStringSearchBndm64.cs" />
     <Compile Include="AsciiStringSearchBoyerMoore.cs" />
     <Compile Include="AsciiStringSearchNative.cs" />
+    <Compile Include="AsciiStringSearchRegex.cs" />
     <Compile Include="AsciiStringSearchStrStr.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Pointers.cs" />

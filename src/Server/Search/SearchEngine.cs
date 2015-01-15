@@ -8,7 +8,6 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
@@ -140,14 +139,23 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
-      var parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
-      // Don't search empty or very small strings -- no significant results.
-      if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
-          (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
-        return SearchFileContentsResult.Empty;
+      ParsedSearchString parsedSearchString;
+      if (searchParams.Regex) {
+        parsedSearchString = new ParsedSearchString(
+          new ParsedSearchString.Entry { Text = searchParams.SearchString },
+          Enumerable.Empty<ParsedSearchString.Entry>(),
+          Enumerable.Empty<ParsedSearchString.Entry>());
+      } else {
+        parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
+        // Don't search empty or very small strings -- no significant results.
+        if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
+            (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
+          return SearchFileContentsResult.Empty;
+        }
       }
 
-      using (var searchContentsData = new SearchContentsData(parsedSearchString, CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase))) {
+      var searchContentsAlgorithms = CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase, searchParams.Regex);
+      using (var searchContentsData = new SearchContentsData(parsedSearchString, searchContentsAlgorithms)) {
         // taskCancellation is used to make sure we cancel previous tasks as
         // fast as possible to avoid using too many CPU resources if the caller
         // keeps asking us to search for things. Note that this assumes the
@@ -159,8 +167,12 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private static List<SearchContentsAlgorithms> CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase) {
-      var searchOptions = matchCase ? NativeMethods.SearchOptions.kMatchCase : NativeMethods.SearchOptions.kNone;
+    private static List<SearchContentsAlgorithms> CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase, bool regex) {
+      var searchOptions = NativeMethods.SearchOptions.kNone;
+      if (matchCase)
+        searchOptions |= NativeMethods.SearchOptions.kMatchCase;
+      if (regex)
+        searchOptions |= NativeMethods.SearchOptions.kRegex;
       return parsedSearchString.EntriesBeforeMainEntry
         .Concat(new[] { parsedSearchString.MainEntry })
         .Concat(parsedSearchString.EntriesAfterMainEntry)
@@ -177,9 +189,9 @@ namespace VsChromium.Server.Search {
       var taskResults = new TaskResultCounter(maxResults);
       var searchedFileCount = 0;
       var matches = _currentFileDatabase.FilesWithContents
-        .AsParallel()
-        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        .WithCancellation(cancellationToken)
+        //.AsParallel()
+        //.WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+        //.WithCancellation(cancellationToken)
         .Where(x => !taskResults.Done)
         .Select(item => {
           if (!includeSymLinks) {

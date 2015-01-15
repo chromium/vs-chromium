@@ -117,10 +117,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       };
 
       var uiRequest = new UIRequest() {
-        TypedRequest = request,
+        Request = request,
         Id = "FileEntryViewModel-" + Path,
         Delay = TimeSpan.FromSeconds(0.0),
-        SuccessCallback = (typedResponse) => {
+        OnSuccess = (typedResponse) => {
           var response = (GetFileExtractsResponse)typedResponse;
           positions
             .Zip(response.FileExtracts, (x, y) => new { FilePositionViewModel = x, FileExtract = y })

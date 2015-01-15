@@ -24,7 +24,7 @@ namespace VsChromium.Views {
 
       var request = new UIRequest {
         Id = "AddFileNameRequest-" + path,
-        TypedRequest = new RegisterFileRequest {
+        Request = new RegisterFileRequest {
           FileName = path
         }
       };
@@ -40,7 +40,7 @@ namespace VsChromium.Views {
 
       var request = new UIRequest {
         Id = "RemoveFileNameRequest-" + path,
-        TypedRequest = new UnregisterFileRequest {
+        Request = new UnregisterFileRequest {
           FileName = path
         }
       };

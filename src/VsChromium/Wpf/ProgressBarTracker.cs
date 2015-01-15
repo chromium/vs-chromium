@@ -11,7 +11,8 @@ using System.Windows.Controls;
 
 namespace VsChromium.Wpf {
   /// <summary>
-  /// This class is thread safe, but all operations will be run in the Dispatcher thread of the ProgressBar instance.
+  /// This class is thread safe, but all operations will be run in the
+  /// Dispatcher thread of the ProgressBar instance.
   /// </summary>
   public class ProgressBarTracker : IProgressBarTracker {
     private readonly List<ProgressBarItem> _items = new List<ProgressBarItem>();
@@ -23,8 +24,8 @@ namespace VsChromium.Wpf {
     }
 
     /// <summary>
-    /// Enqueue a progress bar request for the given operation id.
-    /// The progress bar will be shown only after a short delay (.5 sec).
+    /// Enqueue a progress bar request for the given operation id. The progress
+    /// bar will be shown only after a short delay (.3 sec).
     /// </summary>
     public void Start(string operationId, string toolTipText) {
       var item = AddOrUpdateOperation(operationId, toolTipText);
@@ -37,19 +38,24 @@ namespace VsChromium.Wpf {
       });
     }
 
-    private ProgressBarItem AddOrUpdateOperation(string operationId, string toolTipText) {
-      lock (_lock) {
-        CancelExistingOperation(operationId);
-        return AddOperation(operationId, toolTipText);
-      }
-    }
-
+    /// <summary>
+    /// Enqueue a progress bar "stop" request for the given operation id. The
+    /// progress bar will be hidden only after a short delay (.1 sec) in case a
+    /// new operation comes in.
+    /// </summary>
     public void Stop(string operationId) {
       WpfUtilities.Post(new DispatchAction {
         Dispatcher = _progressBar.Dispatcher,
         Delay = TimeSpan.FromSeconds(0.1),
         Action = () => StopWorker(operationId)
       });
+    }
+
+    private ProgressBarItem AddOrUpdateOperation(string operationId, string toolTipText) {
+      lock (_lock) {
+        CancelExistingOperation(operationId);
+        return AddOperation(operationId, toolTipText);
+      }
     }
 
     private ProgressBarItem AddOperation(string operationId, string toolTipText) {

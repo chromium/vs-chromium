@@ -164,13 +164,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void FetchFilesystemTree() {
       var request = new UIRequest() {
         Id = "GetFileSystemRequest",
-        TypedRequest = new GetFileSystemRequest {
+        Request = new GetFileSystemRequest {
         },
-        SuccessCallback = (typedResponse) => {
+        OnSuccess = (typedResponse) => {
           var response = (GetFileSystemResponse)typedResponse;
           ViewModel.SetFileSystemTree(response.Tree);
         },
-        ErrorCallback = (errorResponse) => {
+        OnError = (errorResponse) => {
           ViewModel.SetErrorResponse(errorResponse);
         }
       };
@@ -182,20 +182,20 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var sw = new Stopwatch();
       var request = new UIRequest() {
         Id = "MetaSearch",
-        TypedRequest = metadata.TypedRequest,
+        Request = metadata.TypedRequest,
         Delay = metadata.Delay,
-        OnBeforeRun = () => {
+        OnSend = () => {
           sw.Start();
           _progressBarTracker.Start(metadata.OperationId, metadata.HintText);
         },
-        OnAfterRun = () => {
+        OnReceive = () => {
           sw.Stop();
           _progressBarTracker.Stop(metadata.OperationId);
         },
-        SuccessCallback = typedResponse => {
+        OnSuccess = typedResponse => {
           metadata.ProcessResponse(typedResponse, sw);
         },
-        ErrorCallback = errorResponse => {
+        OnError = errorResponse => {
           ViewModel.SetErrorResponse(errorResponse);
         }
       };

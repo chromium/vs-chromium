@@ -13,39 +13,42 @@ namespace VsChromium.Threads {
     }
 
     /// <summary>
-    /// (Required) The request ID, used to cancel previous request with the same ID.
+    /// (Required) The request ID, used to cancel previous request with the same
+    /// ID.
     /// </summary>
     public string Id { get; set; }
 
     /// <summary>
-    /// (Optional) Timespan to wait before starting the request (default is 0.1 second)
+    /// (Optional) Timespan to wait before starting the request (default is 0.1
+    /// second)
     /// </summary>
     public TimeSpan Delay { get; set; }
 
     /// <summary>
     /// (Required) The request object to send to the server.
     /// </summary>
-    public TypedRequest TypedRequest { get; set; }
+    public TypedRequest Request { get; set; }
 
     /// <summary>
-    /// (Optional) Action executed just before the request is sent to the server.
+    /// (Optional) Action executed just before the request is sent to the
+    /// server.
     /// </summary>
-    public Action OnBeforeRun { get; set; }
+    public Action OnSend { get; set; }
 
     /// <summary>
-    /// (Optional) Action executed just before calling |SuccessCallback| or
-    /// |ErrorCallback|.
+    /// (Optional) Action executed when the response is received from the
+    /// server, just before calling |SuccessCallback| or |ErrorCallback|.
     /// </summary>
-    public Action OnAfterRun { get; set; }
+    public Action OnReceive { get; set; }
 
     /// <summary>
     /// (Optional) Action executed once the server request finished.
     /// </summary>
-    public Action<TypedResponse> SuccessCallback { get; set; }
+    public Action<TypedResponse> OnSuccess { get; set; }
 
     /// <summary>
     /// (Optional) Action executed if request processing resulted in an error.
     /// </summary>
-    public Action<ErrorResponse> ErrorCallback { get; set; }
+    public Action<ErrorResponse> OnError { get; set; }
   }
 }

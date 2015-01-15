@@ -30,17 +30,17 @@ namespace VsChromium.Threads {
         throw new ArgumentNullException("request");
       if (request.Id == null)
         throw new ArgumentException(@"Request must have an Id.", "request");
-      if (request.TypedRequest == null)
+      if (request.Request == null)
         throw new ArgumentException(@"Request must have a typed request.", "request");
 
       var operation = new DelayedOperation {
         Id = request.Id,
         Delay = request.Delay,
         Action = () => {
-          if (request.OnBeforeRun != null)
-            Logger.WrapActionInvocation(request.OnBeforeRun);
+          if (request.OnSend != null)
+            Logger.WrapActionInvocation(request.OnSend);
 
-          _typedRequestProcessProxy.RunAsync(request.TypedRequest,
+          _typedRequestProcessProxy.RunAsync(request.Request,
             response => OnRequestSuccess(request, response),
             errorResponse => OnRequestError(request, errorResponse));
         }
@@ -50,26 +50,26 @@ namespace VsChromium.Threads {
     }
 
     private void OnRequestSuccess(UIRequest request, TypedResponse response) {
-      if (request.SuccessCallback != null || request.OnAfterRun != null) {
+      if (request.OnSuccess != null || request.OnReceive != null) {
         _synchronizationContextProvider.UIContext.Post(() => {
-          if (request.OnAfterRun != null)
-            request.OnAfterRun();
-          if (request.SuccessCallback != null)
-            request.SuccessCallback(response);
+          if (request.OnReceive != null)
+            request.OnReceive();
+          if (request.OnSuccess != null)
+            request.OnSuccess(response);
         });
       }
     }
 
     private void OnRequestError(UIRequest request, ErrorResponse errorResponse) {
-      if (request.ErrorCallback != null || request.OnAfterRun != null) {
+      if (request.OnError != null || request.OnReceive != null) {
         _synchronizationContextProvider.UIContext.Post(() => {
-          if (request.OnAfterRun != null)
-            request.OnAfterRun();
-          if (request.ErrorCallback != null)
+          if (request.OnReceive != null)
+            request.OnReceive();
+          if (request.OnError != null)
             if (errorResponse.IsOperationCanceled()) { // UIRequest are cancelable at any point.
 
             } else {
-              request.ErrorCallback(errorResponse);
+              request.OnError(errorResponse);
             }
         });
       }

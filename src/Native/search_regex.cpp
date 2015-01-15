@@ -34,7 +34,6 @@ int RegexSearch::GetSearchBufferSize() {
 }
 
 void RegexSearch::Search(SearchParams* searchParams) {
-  std::cregex_iterator end;
   std::cregex_iterator* pit =
       reinterpret_cast<std::cregex_iterator *>(searchParams->SearchBuffer);
   // Placement new for the iterator on the 1st call
@@ -46,7 +45,7 @@ void RegexSearch::Search(SearchParams* searchParams) {
   }
   // Iterate
   std::cregex_iterator& it(*pit);
-  if (it == end) {
+  if (it == it_end_) {
     // Explicit call to destructor on last call.
     searchParams->MatchStart = nullptr;
     pit->std::cregex_iterator::~cregex_iterator();

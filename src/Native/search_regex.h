@@ -21,4 +21,5 @@ class RegexSearch : public AsciiSearchBase {
   const char *pattern_;
   int patternLen_;
   std::regex* regex_;
+  std::cregex_iterator it_end_;
 };

@@ -184,10 +184,9 @@ namespace VsChromium.Tests.Server {
       }
     }
 
-    // TODO(rpaquay): Disable for now!
-    //[TestMethod]
+    [TestMethod]
     public void RegexWorks2() {
-      const string searchPattern = "[a-z]*";
+      const string searchPattern = "[a-z]+";
 
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {

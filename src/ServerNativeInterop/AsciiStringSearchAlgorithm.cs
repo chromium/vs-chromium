@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.NativeInterop {
@@ -13,14 +14,17 @@ namespace VsChromium.Server.NativeInterop {
     public virtual void Dispose() {
     }
 
+    private static List<FilePositionSpan> NoResult = new List<FilePositionSpan>();
     /// <summary>
     /// Find all occurrences of the pattern in the text block starting at
     /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
     /// characters.
     /// </summary>
     public IEnumerable<FilePositionSpan> SearchAll(IntPtr textPtr, int textLen) {
-      var result = new List<FilePositionSpan>();
+      List<FilePositionSpan> result = null;
       NativeMethods.SearchCallback matchFound = (matchStart, matchLength) => {
+        if (result == null)
+          result = new List<FilePositionSpan>();
         // TODO(rpaquay): We are limited to 2GB for now.
         var offset = Pointers.Offset32(textPtr, matchStart);
         result.Add(new FilePositionSpan {
@@ -30,7 +34,7 @@ namespace VsChromium.Server.NativeInterop {
         return true; // We have no cancellation mechanism right now.
       };
       this.Search(textPtr, textLen, matchFound);
-      return result;
+      return result ?? NoResult;
     }
 
     /// <summary>

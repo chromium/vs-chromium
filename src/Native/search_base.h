@@ -18,7 +18,7 @@ class AsciiSearchBase {
     int TextLength;
     const char* MatchStart;
     int MatchLength;
-    uint8_t Data[32];
+    uint8_t Data[180];
   };
 
   AsciiSearchBase();

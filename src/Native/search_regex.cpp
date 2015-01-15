@@ -30,14 +30,21 @@ bool RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions 
 }
 
 void RegexSearch::Search(SearchParams* searchParams) {
-#if 0
   std::cregex_iterator end;
-  std::cregex_iterator it(text, text + textLen, *regex_);
-
-  while (it != end) {
-    if (!matchFound(text + (*it).position(), (*it).length()))
-      break;
-    ++it;
+  std::cregex_iterator* pit = reinterpret_cast<std::cregex_iterator *>(&searchParams->Data[0]);
+  if (searchParams->MatchStart == nullptr) {
+    pit = new(pit) std::cregex_iterator(
+      searchParams->TextStart,
+      searchParams->TextStart + searchParams->TextLength,
+      *regex_);
   }
-#endif
+  std::cregex_iterator& it(*pit);
+  if (it == end) {
+    searchParams->MatchStart = nullptr;
+    pit->std::cregex_iterator::~cregex_iterator();
+    return;
+  }
+  searchParams->MatchStart = searchParams->TextStart + it->position();
+  searchParams->MatchLength = (int)it->length(); // TODO(rpaquay): 2GB limit
+  ++it;
 }

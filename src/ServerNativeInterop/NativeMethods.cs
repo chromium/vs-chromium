@@ -37,7 +37,7 @@ namespace VsChromium.Server.NativeInterop {
       public int TextLength;
       public IntPtr MatchStart;
       public int MatchLength;
-      public fixed byte Data [32];
+      public fixed byte Data [180];
     }
 
     [SuppressUnmanagedCodeSecurity]

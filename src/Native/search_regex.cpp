@@ -19,7 +19,7 @@ RegexSearch::~RegexSearch() {
 }
 
 void RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
-  auto flags = std::regex::ECMAScript;
+  auto flags = std::regex::ECMAScript | std::regex::optimize;
   if ((options & kMatchCase) == 0) {
     flags = flags | std::regex::icase;
   }

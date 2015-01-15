@@ -158,14 +158,26 @@ bool BoyerMooreSearch::PreProcess(const char *pattern, int patternLen, SearchOpt
   return true;
 }
 
-AsciiSearchBase::SearchResult BoyerMooreSearch::Search(const char *text, int textLen) {
-  const char* str = (const char*)boyer_moore_algo(
-    (const uint8_t*)text,
-    textLen,
-    (const uint8_t*)pattern_,
-    patternLen_,
-    matchCase_,
-    delta1_,
-    delta2_);
-  return SearchResult(str, patternLen_);
+#include "stdio.h"
+
+void BoyerMooreSearch::Search(const char *text, int textLen, Callback matchFound) {
+  const char* end = text + textLen;
+  while(true) {
+      const char* str = (const char*)boyer_moore_algo(
+        (const uint8_t*)text,
+        textLen,
+        (const uint8_t*)pattern_,
+        patternLen_,
+        matchCase_,
+        delta1_,
+        delta2_);
+      if (str == nullptr)
+        break;
+
+      if (!matchFound(str, patternLen_))
+        break;
+
+      text = str + patternLen_;
+      textLen = (int)(end - text);
+    }
 }

@@ -19,30 +19,25 @@ namespace VsChromium.Server.NativeInterop {
     /// characters.
     /// </summary>
     public IEnumerable<FilePositionSpan> SearchAll(IntPtr textPtr, int textLen) {
-      var currentPtr = textPtr;
-      var remainingLength = textLen;
-      while (true) {
-        var result = Search(currentPtr, remainingLength);
-        if (result.Position == IntPtr.Zero)
-          break;
-        currentPtr = result.Position;
+      var result = new List<FilePositionSpan>();
+      NativeMethods.SearchCallback matchFound = (matchStart, matchLength) => {
         // TODO(rpaquay): We are limited to 2GB for now.
-        var offset = Pointers.Offset32(textPtr, currentPtr);
-        yield return new FilePositionSpan {Position = offset, Length = result.Length};
-        currentPtr += result.Length;
-        remainingLength = textLen - offset - result.Length;
-        if (remainingLength <= 0) {
-          // This should not happen...
-          break;
-        }
-      }
+        var offset = Pointers.Offset32(textPtr, matchStart);
+        result.Add(new FilePositionSpan {
+          Position = offset,
+          Length = matchLength
+        });
+        return true; // We have no cancellation mechanism right now.
+      };
+      this.Search(textPtr, textLen, matchFound);
+      return result;
     }
 
     /// <summary>
-    /// Find the first occurrence of the pattern in the text block starting at
+    /// Find all occurrences of the pattern in the text block starting at
     /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
-    /// characters. Returns |IntPtr.Zero| if the pattern is not present.
+    /// characters.
     /// </summary>
-    public abstract NativeMethods.SearchResult Search(IntPtr textPtr, int textLen);
+    public abstract void Search(IntPtr textPtr, int textLen, NativeMethods.SearchCallback matchFound);
   }
 }

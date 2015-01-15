@@ -101,8 +101,11 @@ EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
 }
 
 EXPORT void __stdcall AsciiSearchAlgorithm_Search(
-    AsciiSearchBase* search, const char* text, int textLen, AsciiSearchBase::SearchResult* result) {
-  *result = search->Search(text, textLen);
+    AsciiSearchBase* search,
+    const char* text,
+    int textLen,
+    AsciiSearchBase::Callback matchFound) {
+  search->Search(text, textLen, matchFound);
 }
 
 EXPORT void __stdcall AsciiSearchAlgorithm_Delete(AsciiSearchBase* search) {

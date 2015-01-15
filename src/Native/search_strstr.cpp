@@ -17,7 +17,17 @@ bool StrStrSearch::PreProcess(const char *pattern, int patternLen, SearchOptions
   return true;
 }
 
-StrStrSearch::SearchResult StrStrSearch::Search(const char *text, int textLen) {
-  const char* str = strstr(text, pattern_);
-  return SearchResult(str, patternLen_);
+void StrStrSearch::Search(const char *text, int textLen, Callback matchFound) {
+  const char* end = text + textLen;
+  while(true) {
+    const char* str = strstr(text, pattern_);
+    if (str == nullptr)
+      break;
+
+    if (!matchFound(str, patternLen_))
+      break;
+
+    text = str + patternLen_;
+    textLen = (int)(end - text);
+  }
 }

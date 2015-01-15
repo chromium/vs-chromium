@@ -37,6 +37,10 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     [SuppressUnmanagedCodeSecurity]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public delegate bool SearchCallback(IntPtr matchStart, int matchLength);
+
+    [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern SafeSearchHandle AsciiSearchAlgorithm_Create(
@@ -52,7 +56,7 @@ namespace VsChromium.Server.NativeInterop {
       SafeSearchHandle handle,
       IntPtr text,
       int textLen,
-      out SearchResult result);
+      SearchCallback matchFound);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,

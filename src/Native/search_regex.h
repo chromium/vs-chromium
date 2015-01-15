@@ -14,7 +14,7 @@ class RegexSearch : public AsciiSearchBase {
   virtual ~RegexSearch() OVERRIDE;
 
   virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) OVERRIDE;
-  virtual SearchResult Search(const char *text, int texLen) OVERRIDE;
+  virtual void Search(const char *text, int texLen, Callback matchFound) OVERRIDE;
 
  private:
   const char *pattern_;

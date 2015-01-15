@@ -64,10 +64,15 @@ namespace VsChromium.Server.FileSystemContents {
       FindEntryFunction findEntry = (position, length, entry) => {
         var algo = searchContentsData.GetSearchAlgorithms(entry).AsciiStringSearchAlgo;
         var start = Pointers.AddPtr(this.Pointer, position);
-        var result = algo.Search(start, length);
-        if (result.Position == IntPtr.Zero)
+        var matchFound = IntPtr.Zero;
+        // TODO(rpaquay): Perf: We should not allocate an extra delegate here.
+        algo.Search(start, length, (matchStart, matchLength) => {
+          matchFound = matchStart;
+          return false;
+        });
+        if (matchFound == IntPtr.Zero)
           return -1;
-        return position + Pointers.Offset32(start, result.Position);
+        return position + Pointers.Offset32(start, matchFound);
       };
       GetLineExtentFunction getLineExtent = position => {
         int lineStart;

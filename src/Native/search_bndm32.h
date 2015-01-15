@@ -30,9 +30,19 @@ class Bndm32Search : public AsciiSearchBaseTemplate<T> {
     return true;
   }
 
-  virtual SearchResult Search(const char *text, int textLen) OVERRIDE {
-    const char* str = bndm32_algo(text, textLen, pattern_, patternLen_, maskv_);
-    return SearchResult(str, patternLen_);
+  virtual void Search(const char *text, int textLen, Callback matchFound) OVERRIDE {
+    const char* end = text + textLen;
+    while(true) {
+      const char* str = bndm32_algo(text, textLen, pattern_, patternLen_, maskv_);
+      if (str == nullptr)
+        break;
+
+      if (!matchFound(str, patternLen_))
+        break;
+
+      text = str + patternLen_;
+      textLen = (int)(end - text);
+    }
   }
 
  private:

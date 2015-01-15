@@ -29,7 +29,8 @@ bool RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions 
   return true;
 }
 
-AsciiSearchBase::SearchResult RegexSearch::Search(const char *text, int textLen) {
+void RegexSearch::Search(const char *text, int textLen, Callback matchFound) {
+#if 0
   const char* first = text;
   const char* last = text + textLen;
   std::cmatch match;
@@ -46,4 +47,5 @@ AsciiSearchBase::SearchResult RegexSearch::Search(const char *text, int textLen)
     return SearchResult();
   }
   return SearchResult(first + position, length);
+#endif
 }

@@ -30,22 +30,12 @@ bool RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions 
 }
 
 void RegexSearch::Search(const char *text, int textLen, Callback matchFound) {
-#if 0
-  const char* first = text;
-  const char* last = text + textLen;
-  std::cmatch match;
-  bool result = std::regex_search(first, last, match, *regex_, std::regex_constants::match_default);
-  if (!result) {
-    return SearchResult();
-  }
-  auto position = match.position();
-  auto length = match.length();
+  std::cregex_iterator end;
+  std::cregex_iterator it(text, text + textLen, *regex_);
 
-  // Special case of regex that match empty sequence (e.g. [a-z]*).
-  // We assume this is a "no result" to avoid infinite loops.
-  if (position == 0 && length == 0) {
-    return SearchResult();
+  while (it != end) {
+    if (!matchFound(text + (*it).position(), (*it).length()))
+      break;
+    ++it;
   }
-  return SearchResult(first + position, length);
-#endif
 }

@@ -60,13 +60,17 @@ namespace VsChromium.Server.FileSystemContents {
       return FilterOnOtherEntries(searchContentsData, result).ToList();
     }
 
-    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(SearchContentsData searchContentsData, IEnumerable<FilePositionSpan> matches) {
+    private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(SearchContentsData searchContentsData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (position, length, entry) => {
         var algo = searchContentsData.GetSearchAlgorithms(entry).AsciiStringSearchAlgo;
         var start = Pointers.AddPtr(this.Pointer, position);
+        // Note: From C# spec: If E is zero, then no allocation is made, and
+        // the pointer returned is implementation-defined. 
+        byte* searchBuffer = stackalloc byte[algo.SearchBufferSize];
         var searchParams = new NativeMethods.SearchParams {
           TextStart = start,
-          TextLength = length
+          TextLength = length,
+          SearchBuffer = new IntPtr(searchBuffer),
         };
         algo.Search(ref searchParams);
         if (searchParams.MatchStart == IntPtr.Zero)

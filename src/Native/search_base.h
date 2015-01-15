@@ -18,7 +18,7 @@ class AsciiSearchBase {
     int TextLength;
     const char* MatchStart;
     int MatchLength;
-    uint8_t Data[180];
+    void* SearchBuffer;
   };
 
   AsciiSearchBase();
@@ -26,6 +26,7 @@ class AsciiSearchBase {
 
   virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) = 0;
   virtual void Search(SearchParams* searchParams) = 0;
+  virtual int GetSearchBufferSize() { return 0; }
 
   static const uint8_t read_byte(const uint8_t* text, int index, bool matchCase) {
     uint8_t value = text[index];

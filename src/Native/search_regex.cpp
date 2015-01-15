@@ -1,4 +1,4 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -29,21 +29,30 @@ bool RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions 
   return true;
 }
 
+int RegexSearch::GetSearchBufferSize() {
+  return sizeof(std::cregex_iterator);
+}
+
 void RegexSearch::Search(SearchParams* searchParams) {
   std::cregex_iterator end;
-  std::cregex_iterator* pit = reinterpret_cast<std::cregex_iterator *>(&searchParams->Data[0]);
+  std::cregex_iterator* pit =
+      reinterpret_cast<std::cregex_iterator *>(searchParams->SearchBuffer);
+  // Placement new for the iterator on the 1st call
   if (searchParams->MatchStart == nullptr) {
     pit = new(pit) std::cregex_iterator(
-      searchParams->TextStart,
-      searchParams->TextStart + searchParams->TextLength,
-      *regex_);
+        searchParams->TextStart,
+        searchParams->TextStart + searchParams->TextLength,
+        *regex_);
   }
+  // Iterate
   std::cregex_iterator& it(*pit);
   if (it == end) {
+    // Explicit call to destructor on last call.
     searchParams->MatchStart = nullptr;
     pit->std::cregex_iterator::~cregex_iterator();
     return;
   }
+  // Set result if match found
   searchParams->MatchStart = searchParams->TextStart + it->position();
   searchParams->MatchLength = (int)it->length(); // TODO(rpaquay): 2GB limit
   ++it;

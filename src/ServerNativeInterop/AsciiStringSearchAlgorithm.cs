@@ -10,21 +10,28 @@ using VsChromium.Core.Ipc.TypedMessages;
 namespace VsChromium.Server.NativeInterop {
   public abstract class AsciiStringSearchAlgorithm : IDisposable {
     public abstract int PatternLength { get; }
+    public abstract int SearchBufferSize { get; }
+
+    public abstract void Search(ref NativeMethods.SearchParams searchParams);
 
     public virtual void Dispose() {
     }
 
-    private static List<FilePositionSpan> NoResult = new List<FilePositionSpan>();
+    private static readonly List<FilePositionSpan> NoResult = new List<FilePositionSpan>();
     /// <summary>
     /// Find all occurrences of the pattern in the text block starting at
     /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
     /// characters.
     /// </summary>
-    public IEnumerable<FilePositionSpan> SearchAll(IntPtr textPtr, int textLen) {
+    public unsafe IEnumerable<FilePositionSpan> SearchAll(IntPtr textPtr, int textLen) {
       List<FilePositionSpan> result = null;
+      // Note: From C# spec: If E is zero, then no allocation is made, and
+      // the pointer returned is implementation-defined. 
+      byte* searchBuffer = stackalloc byte[this.SearchBufferSize];
       var searchParams = new NativeMethods.SearchParams {
         TextStart = textPtr,
-        TextLength = textLen
+        TextLength = textLen,
+        SearchBuffer = new IntPtr(searchBuffer),
       };
       while (true) {
         Search(ref searchParams);
@@ -42,7 +49,5 @@ namespace VsChromium.Server.NativeInterop {
       }
       return result ?? NoResult;
     }
-
-    public abstract void Search(ref NativeMethods.SearchParams searchParams);
   }
 }

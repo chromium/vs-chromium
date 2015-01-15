@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 
@@ -32,16 +31,19 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct SearchParams {
+    public struct SearchParams {
       public IntPtr TextStart;
       public int TextLength;
       public IntPtr MatchStart;
       public int MatchLength;
-      public fixed byte Data [180];
+      public IntPtr SearchBuffer;
     }
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern SafeSearchHandle AsciiSearchAlgorithm_Create(
       SearchAlgorithmKind kind,
@@ -50,39 +52,79 @@ namespace VsChromium.Server.NativeInterop {
       SearchOptions options);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
+      SetLastError = false)]
+    public static extern Int32 AsciiSearchAlgorithm_GetSearchBufferSize(
+      SafeSearchHandle handle);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern void AsciiSearchAlgorithm_Search(
       SafeSearchHandle handle,
       ref SearchParams searchParams);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern void AsciiSearchAlgorithm_Delete(IntPtr handle);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
       SetLastError = false)]
     public static extern TextKind Text_GetKind(IntPtr text, int textLen);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
       SetLastError = false)]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static extern bool Ascii_Compare(IntPtr text1, long text1Length, IntPtr text2, long text2Length);
+    public static extern bool Ascii_Compare(
+      IntPtr text1,
+      long text1Length,
+      IntPtr text2,
+      long text2Length);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
       SetLastError = false)]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static extern bool Ascii_GetLineExtentFromPosition(IntPtr text, int textLen, int position, out int lineStartPosition, out int lineLength);
+    public static extern bool Ascii_GetLineExtentFromPosition(
+      IntPtr text,
+      int textLen,
+      int position,
+      out int lineStartPosition,
+      out int lineLength);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
       SetLastError = false)]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static extern bool UTF16_GetLineExtentFromPosition(IntPtr text, int textLen, int position, out int lineStartPosition, out int lineLength);
-
+    public static extern bool UTF16_GetLineExtentFromPosition(
+      IntPtr text,
+      int textLen,
+      int position,
+      out int lineStartPosition,
+      out int lineLength);
   }
 }

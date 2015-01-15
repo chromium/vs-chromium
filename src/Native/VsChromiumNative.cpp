@@ -100,6 +100,10 @@ EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
   return result;
 }
 
+EXPORT int __stdcall AsciiSearchAlgorithm_GetSearchBufferSize(AsciiSearchBase* search) {
+  return search->GetSearchBufferSize();
+}
+
 EXPORT void __stdcall AsciiSearchAlgorithm_Search(
     AsciiSearchBase* search,
     AsciiSearchBase::SearchParams* searchParams) {

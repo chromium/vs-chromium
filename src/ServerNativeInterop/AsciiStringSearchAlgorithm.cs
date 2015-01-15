@@ -22,26 +22,27 @@ namespace VsChromium.Server.NativeInterop {
     /// </summary>
     public IEnumerable<FilePositionSpan> SearchAll(IntPtr textPtr, int textLen) {
       List<FilePositionSpan> result = null;
-      NativeMethods.SearchCallback matchFound = (matchStart, matchLength) => {
+      var searchParams = new NativeMethods.SearchParams {
+        TextStart = textPtr,
+        TextLength = textLen
+      };
+      while (true) {
+        Search(ref searchParams);
+        if (searchParams.MatchStart == IntPtr.Zero)
+          break;
+
         if (result == null)
           result = new List<FilePositionSpan>();
         // TODO(rpaquay): We are limited to 2GB for now.
-        var offset = Pointers.Offset32(textPtr, matchStart);
+        var offset = Pointers.Offset32(textPtr, searchParams.MatchStart);
         result.Add(new FilePositionSpan {
           Position = offset,
-          Length = matchLength
+          Length = searchParams.MatchLength
         });
-        return true; // We have no cancellation mechanism right now.
-      };
-      this.Search(textPtr, textLen, matchFound);
+      }
       return result ?? NoResult;
     }
 
-    /// <summary>
-    /// Find all occurrences of the pattern in the text block starting at
-    /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
-    /// characters.
-    /// </summary>
-    public abstract void Search(IntPtr textPtr, int textLen, NativeMethods.SearchCallback matchFound);
+    public abstract void Search(ref NativeMethods.SearchParams searchParams);
   }
 }

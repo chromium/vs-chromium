@@ -13,13 +13,19 @@ class AsciiSearchBase {
     kMatchCase = 0x0001,
   };
 
-  typedef bool (__stdcall * Callback)(const char* matchStart, int matchLen);
+  struct SearchParams {
+    const char* TextStart;
+    int TextLength;
+    const char* MatchStart;
+    int MatchLength;
+    uint8_t Data[32];
+  };
 
   AsciiSearchBase();
   virtual ~AsciiSearchBase();
 
   virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) = 0;
-  virtual void Search(const char *text, int texLen, Callback matchFound) = 0;
+  virtual void Search(SearchParams* searchParams) = 0;
 
   static const uint8_t read_byte(const uint8_t* text, int index, bool matchCase) {
     uint8_t value = text[index];

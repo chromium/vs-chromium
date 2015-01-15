@@ -160,24 +160,24 @@ bool BoyerMooreSearch::PreProcess(const char *pattern, int patternLen, SearchOpt
 
 #include "stdio.h"
 
-void BoyerMooreSearch::Search(const char *text, int textLen, Callback matchFound) {
-  const char* end = text + textLen;
-  while(true) {
-      const char* str = (const char*)boyer_moore_algo(
-        (const uint8_t*)text,
-        textLen,
-        (const uint8_t*)pattern_,
-        patternLen_,
-        matchCase_,
-        delta1_,
-        delta2_);
-      if (str == nullptr)
-        break;
+void BoyerMooreSearch::Search(SearchParams* searchParams) {
+  const char* text = searchParams->TextStart;
+  int textLen = searchParams->TextLength;
+  if (searchParams->MatchStart != nullptr) {
+    text = searchParams->MatchStart + searchParams->MatchLength;
+    // TODO(rpaquay): 2GB Limit
+    textLen = (int)(searchParams->TextStart + searchParams->TextLength - text);
+  }
 
-      if (!matchFound(str, patternLen_))
-        break;
-
-      text = str + patternLen_;
-      textLen = (int)(end - text);
-    }
+  searchParams->MatchStart = (const char*)boyer_moore_algo(
+    (const uint8_t*)text,
+    textLen,
+    (const uint8_t*)pattern_,
+    patternLen_,
+    matchCase_,
+    delta1_,
+    delta2_);
+  if (searchParams->MatchStart != nullptr) {
+    searchParams->MatchLength = patternLen_;
+  }
 }

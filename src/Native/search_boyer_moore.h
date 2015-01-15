@@ -12,7 +12,7 @@ class BoyerMooreSearch : public AsciiSearchBase {
   virtual ~BoyerMooreSearch();
 
   virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) OVERRIDE;
-  virtual void Search(const char *text, int texLen, Callback matchFound) OVERRIDE;
+  virtual void Search(SearchParams* searchParams) OVERRIDE;
 
  private:
   const char *pattern_;

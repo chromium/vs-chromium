@@ -29,7 +29,8 @@ bool RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions 
   return true;
 }
 
-void RegexSearch::Search(const char *text, int textLen, Callback matchFound) {
+void RegexSearch::Search(SearchParams* searchParams) {
+#if 0
   std::cregex_iterator end;
   std::cregex_iterator it(text, text + textLen, *regex_);
 
@@ -38,4 +39,5 @@ void RegexSearch::Search(const char *text, int textLen, Callback matchFound) {
       break;
     ++it;
   }
+#endif
 }

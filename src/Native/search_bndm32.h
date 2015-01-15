@@ -30,18 +30,18 @@ class Bndm32Search : public AsciiSearchBaseTemplate<T> {
     return true;
   }
 
-  virtual void Search(const char *text, int textLen, Callback matchFound) OVERRIDE {
-    const char* end = text + textLen;
-    while(true) {
-      const char* str = bndm32_algo(text, textLen, pattern_, patternLen_, maskv_);
-      if (str == nullptr)
-        break;
+  virtual void Search(SearchParams* searchParams) OVERRIDE {
+    const char* text = searchParams->TextStart;
+    int textLen = searchParams->TextLength;
+    if (searchParams->MatchStart != nullptr) {
+      text = searchParams->MatchStart + searchParams->MatchLength;
+      // TODO(rpaquay): 2GB Limit
+      textLen = (int)(searchParams->TextStart + searchParams->TextLength - text);
+    }
 
-      if (!matchFound(str, patternLen_))
-        break;
-
-      text = str + patternLen_;
-      textLen = (int)(end - text);
+    searchParams->MatchStart = bndm32_algo(text, textLen, pattern_, patternLen_, maskv_);
+    if (searchParams->MatchStart != nullptr) {
+      searchParams->MatchLength = patternLen_;
     }
   }
 

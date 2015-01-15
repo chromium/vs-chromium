@@ -17,17 +17,14 @@ bool StrStrSearch::PreProcess(const char *pattern, int patternLen, SearchOptions
   return true;
 }
 
-void StrStrSearch::Search(const char *text, int textLen, Callback matchFound) {
-  const char* end = text + textLen;
-  while(true) {
-    const char* str = strstr(text, pattern_);
-    if (str == nullptr)
-      break;
+void StrStrSearch::Search(SearchParams* searchParams) {
+  const char* start = searchParams->TextStart;
+  if (searchParams->MatchStart) {
+    start = searchParams->MatchStart + searchParams->MatchLength;
+  }
 
-    if (!matchFound(str, patternLen_))
-      break;
-
-    text = str + patternLen_;
-    textLen = (int)(end - text);
+  searchParams->MatchStart = strstr(start, pattern_);
+  if (searchParams->MatchStart != nullptr) {
+    searchParams->MatchLength = patternLen_;
   }
 }

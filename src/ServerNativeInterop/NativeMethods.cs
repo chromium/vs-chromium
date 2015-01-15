@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 
@@ -31,14 +32,13 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct SearchResult {
-      public IntPtr Position;
-      public int Length;
+    public unsafe struct SearchParams {
+      public IntPtr TextStart;
+      public int TextLength;
+      public IntPtr MatchStart;
+      public int MatchLength;
+      public fixed byte Data [32];
     }
-
-    [SuppressUnmanagedCodeSecurity]
-    [return: MarshalAs(UnmanagedType.I1)]
-    public delegate bool SearchCallback(IntPtr matchStart, int matchLength);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,
@@ -54,9 +54,7 @@ namespace VsChromium.Server.NativeInterop {
       SetLastError = false)]
     public static extern void AsciiSearchAlgorithm_Search(
       SafeSearchHandle handle,
-      IntPtr text,
-      int textLen,
-      SearchCallback matchFound);
+      ref SearchParams searchParams);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("VsChromium.Native.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi,

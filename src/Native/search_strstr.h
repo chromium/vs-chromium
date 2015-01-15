@@ -11,7 +11,7 @@ class StrStrSearch : public AsciiSearchBase {
   StrStrSearch();
 
   virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) OVERRIDE;
-  virtual void Search(const char *text, int texLen, Callback matchFound) OVERRIDE;
+  virtual void Search(SearchParams* searchParams) OVERRIDE;
 
  private:
   const char *pattern_;

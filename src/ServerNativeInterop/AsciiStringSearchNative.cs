@@ -20,8 +20,8 @@ namespace VsChromium.Server.NativeInterop {
 
     public override int PatternLength { get { return _patternLength; } }
 
-    public override void Search(IntPtr textPtr, int textLen, NativeMethods.SearchCallback matchFound) {
-      NativeMethods.AsciiSearchAlgorithm_Search(_handle, textPtr, textLen, matchFound);
+    public override void Search(ref NativeMethods.SearchParams searchParams) {
+      NativeMethods.AsciiSearchAlgorithm_Search(_handle, ref searchParams);
     }
 
     public override void Dispose() {

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <regex>
-
 #include "search_base.h"
+
+class RegexSearchImpl;
 
 class RegexSearch : public AsciiSearchBase {
  public:
@@ -20,6 +20,5 @@ class RegexSearch : public AsciiSearchBase {
  private:
   const char *pattern_;
   int patternLen_;
-  std::regex* regex_;
-  std::cregex_iterator it_end_;
+  RegexSearchImpl* impl_;
 };

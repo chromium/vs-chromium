@@ -8,14 +8,25 @@
 
 #include "search_regex.h"
 
+class RegexSearchImpl {
+public:
+  RegexSearchImpl() : regex_(nullptr) {
+  }
+  ~RegexSearchImpl() {
+    delete regex_;
+  }
+  std::regex* regex_;
+  std::cregex_iterator it_end_;
+};
+
 RegexSearch::RegexSearch()
     : pattern_(NULL),
       patternLen_(0),
-      regex_(nullptr) {
+      impl_(new RegexSearchImpl()) {
 }
 
 RegexSearch::~RegexSearch() {
-  delete regex_;
+  delete impl_;
 }
 
 void RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
@@ -24,7 +35,7 @@ void RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions 
     flags = flags | std::regex::icase;
   }
   try {
-    regex_ = new std::regex(pattern, patternLen, flags);
+    impl_->regex_ = new std::regex(pattern, patternLen, flags);
   } catch(std::regex_error& error) {
     result.HResult = E_INVALIDARG;
     // Format the error message: remove the leading text up to ':'
@@ -55,11 +66,11 @@ void RegexSearch::Search(SearchParams* searchParams) {
     pit = new(pit) std::cregex_iterator(
         searchParams->TextStart,
         searchParams->TextStart + searchParams->TextLength,
-        *regex_);
+        *impl_->regex_);
   }
   // Iterate
   std::cregex_iterator& it(*pit);
-  if (it == it_end_) {
+  if (it == impl_->it_end_) {
     // Explicit call to destructor on last call.
     searchParams->MatchStart = nullptr;
     pit->std::cregex_iterator::~cregex_iterator();

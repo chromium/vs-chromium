@@ -18,15 +18,29 @@ RegexSearch::~RegexSearch() {
   delete regex_;
 }
 
-bool RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options) {
+void RegexSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
   auto flags = std::regex::ECMAScript;
   if ((options & kMatchCase) == 0) {
     flags = flags | std::regex::icase;
   }
-  regex_ = new std::regex(pattern, patternLen, flags);
+  try {
+    regex_ = new std::regex(pattern, patternLen, flags);
+  } catch(std::regex_error& error) {
+    result.HResult = E_INVALIDARG;
+    // Format the error message: remove the leading text up to ':'
+    //
+    // See regex_error stringify function, for example:
+    //  "regex_error(error_brace): The expression contained mismatched { and }."
+    std::string errorMessage = error.what();
+    size_t index = errorMessage.find(": ");
+    if (index != std::string::npos) {
+      errorMessage = errorMessage.substr(index + 2);
+    }
+    errorMessage = std::string("Invalid Regular expression: ") + errorMessage;
+    strcpy_s(result.ErrorMessage, errorMessage.c_str());
+  }
   pattern_ = pattern;
   patternLen_ = patternLen;
-  return true;
 }
 
 int RegexSearch::GetSearchBufferSize() {

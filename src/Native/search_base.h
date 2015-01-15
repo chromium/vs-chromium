@@ -21,10 +21,22 @@ class AsciiSearchBase {
     void* SearchBuffer;
   };
 
+  struct SearchCreateResult {
+    SearchCreateResult() : HResult(S_OK) {
+      ErrorMessage[0] = 0;
+    }
+    void SetError(HRESULT hr, const char* message) {
+      this->HResult = E_OUTOFMEMORY;
+      strcpy_s(this->ErrorMessage, message);
+    }
+    HRESULT HResult;
+    char ErrorMessage[128];
+  };
+
   AsciiSearchBase();
   virtual ~AsciiSearchBase();
 
-  virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) = 0;
+  virtual void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) = 0;
   virtual void Search(SearchParams* searchParams) = 0;
   virtual int GetSearchBufferSize() { return 0; }
 

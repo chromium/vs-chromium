@@ -13,7 +13,7 @@ class RegexSearch : public AsciiSearchBase {
   RegexSearch();
   virtual ~RegexSearch() OVERRIDE;
 
-  virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) OVERRIDE;
+  virtual void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE;
   virtual int GetSearchBufferSize() OVERRIDE;
   virtual void Search(SearchParams* searchParams) OVERRIDE;
 

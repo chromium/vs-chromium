@@ -61,7 +61,12 @@ enum SearchAlgorithmKind {
 };
 
 EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
-    SearchAlgorithmKind kind, const char* pattern, int patternLen, AsciiSearchBase::SearchOptions options) {
+    SearchAlgorithmKind kind,
+    const char* pattern,
+    int patternLen,
+    AsciiSearchBase::SearchOptions options, 
+    AsciiSearchBase::SearchCreateResult* searchCreateResult) {
+  (*searchCreateResult) = AsciiSearchBase::SearchCreateResult();
   AsciiSearchBase* result = NULL;
 
   switch(kind) {
@@ -88,11 +93,13 @@ EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
       break;
   }
 
-  if (!result)
+  if (!result) {
+    searchCreateResult->SetError(E_OUTOFMEMORY, "Out of memory");
     return result;
+  }
 
-  bool success = result->PreProcess(pattern, patternLen, options);
-  if (!success) {
+  result->PreProcess(pattern, patternLen, options, *searchCreateResult);
+  if (FAILED(searchCreateResult->HResult)) {
     delete result;
     return NULL;
   }

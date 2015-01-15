@@ -39,6 +39,12 @@ namespace VsChromium.Server.NativeInterop {
       public IntPtr SearchBuffer;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct SearchCreateResult {
+      public int HResult;
+      public fixed byte ErrorMessage [128];
+    }
+
     [SuppressUnmanagedCodeSecurity]
     [DllImport(
       "VsChromium.Native.dll",
@@ -49,7 +55,8 @@ namespace VsChromium.Server.NativeInterop {
       SearchAlgorithmKind kind,
       IntPtr pattern,
       int patternLen,
-      SearchOptions options);
+      SearchOptions options,
+      [Out]out SearchCreateResult result);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport(

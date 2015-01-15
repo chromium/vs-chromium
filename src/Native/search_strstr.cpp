@@ -11,10 +11,9 @@ StrStrSearch::StrStrSearch()
       patternLen_(0) {
 }
 
-bool StrStrSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options) {
+void StrStrSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
   pattern_ = pattern;
   patternLen_ = patternLen;
-  return true;
 }
 
 void StrStrSearch::Search(SearchParams* searchParams) {

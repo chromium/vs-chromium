@@ -146,16 +146,17 @@ BoyerMooreSearch::~BoyerMooreSearch() {
     free(delta2_);
 }
 
-bool BoyerMooreSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options) {
+void BoyerMooreSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
   pattern_ = pattern;
   patternLen_ = patternLen;
   matchCase_ = (options & kMatchCase);
   delta2_ = (int *)malloc(patternLen * sizeof(int));
-  if (delta2_ == NULL)
-    return false;
+  if (delta2_ == NULL) {
+    result.SetError(E_OUTOFMEMORY, "Out of memory");
+    return;
+  }
   make_delta1(delta1_, kAlphabetLen, (const uint8_t*)pattern, patternLen, matchCase_);
   make_delta2(delta2_, (const uint8_t*)pattern, patternLen, matchCase_);
-  return true;
 }
 
 #include "stdio.h"

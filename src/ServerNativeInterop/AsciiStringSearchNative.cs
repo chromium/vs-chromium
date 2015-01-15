@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
 
@@ -14,9 +15,32 @@ namespace VsChromium.Server.NativeInterop {
 
     public AsciiStringSearchNative(NativeMethods.SearchAlgorithmKind kind, string pattern, NativeMethods.SearchOptions searchOptions) {
       _patternHandle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(pattern));
-      _handle = NativeMethods.AsciiSearchAlgorithm_Create(kind, _patternHandle.Pointer, pattern.Length, searchOptions);
       _patternLength = pattern.Length;
+
+      _handle = CreateSearchHandle(kind, _patternHandle, _patternLength, searchOptions);
       _searchBufferSize = NativeMethods.AsciiSearchAlgorithm_GetSearchBufferSize(_handle);
+    }
+
+    private static unsafe SafeSearchHandle CreateSearchHandle(
+      NativeMethods.SearchAlgorithmKind kind,
+      SafeHGlobalHandle patternHandle,
+      int patternLength,
+      NativeMethods.SearchOptions searchOptions) {
+
+      NativeMethods.SearchCreateResult createResult;
+      var result = NativeMethods.AsciiSearchAlgorithm_Create(
+        kind,
+        patternHandle.Pointer,
+        patternLength,
+        searchOptions,
+        out createResult);
+
+      if (createResult.HResult < 0) {
+        var message = Marshal.PtrToStringAnsi(new IntPtr(createResult.ErrorMessage));
+        throw new ArgumentException(message);
+      }
+
+      return result;
     }
 
     public override int PatternLength {

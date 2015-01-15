@@ -10,7 +10,7 @@ class StrStrSearch : public AsciiSearchBase {
  public:
   StrStrSearch();
 
-  virtual bool PreProcess(const char *pattern, int patternLen, SearchOptions options) OVERRIDE;
+  virtual void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE;
   virtual void Search(SearchParams* searchParams) OVERRIDE;
 
  private:

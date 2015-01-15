@@ -101,6 +101,7 @@
     <Compile Include="Ipc\IIpcRequestIdFactory.cs" />
     <Compile Include="Ipc\IpcEvent.cs" />
     <Compile Include="Ipc\IpcMessage.cs" />
+    <Compile Include="Ipc\RecoverableErrorException.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\UnregisterFileRequest.cs" />

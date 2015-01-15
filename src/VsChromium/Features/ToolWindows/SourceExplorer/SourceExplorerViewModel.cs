@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -310,12 +311,31 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public void SetErrorResponse(ErrorResponse errorResponse) {
       var messages = new List<TreeViewItemViewModel>();
-      var rootError = new RootErrorItemViewModel(ImageSourceFactory, null, "Error processing request. You may need to restart Visual Studio.");
-      messages.Add(rootError);
-      while (errorResponse != null) {
-        rootError.Children.Add(new TextItemViewModel(ImageSourceFactory, rootError, errorResponse.Message));
-        errorResponse = errorResponse.InnerError;
+      if (errorResponse.IsRecoverable()) {
+        // For a recoverable error, the deepest exception contains the 
+        // "user friendly" error message.
+        var rootError = new TextWarningItemViewModel(
+          ImageSourceFactory,
+          null,
+          errorResponse.GetBaseError().Message);
+        messages.Add(rootError);
+      } else {
+        // In case of non recoverable error, display a generic "user friendly"
+        // message, with nested nodes for exception messages.
+        var rootError = new TextErrorItemViewModel(
+          ImageSourceFactory,
+          null,
+          "Error processing request. You may need to restart Visual Studio.");
+        messages.Add(rootError);
+
+        // Add all errors to the parent
+        while (errorResponse != null) {
+          rootError.Children.Add(new TextItemViewModel(ImageSourceFactory, rootError, errorResponse.Message));
+          errorResponse = errorResponse.InnerError;
+        }
       }
+
+      // Update tree with error messages
       SetRootNodes(messages);
     }
   }

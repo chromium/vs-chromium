@@ -135,6 +135,8 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Views\Images\Error.png" />
+    <Resource Include="Views\Images\Warning.png" />
     <Resource Include="Views\Images\TextDocument.png" />
     <Resource Include="Views\Images\Refresh.png" />
     <Resource Include="Views\Images\ProcessWorking.png" />
@@ -205,10 +207,11 @@
     <Compile Include="Features\ToolWindows\IToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\RootErrorItemViewModel.cs" />
+    <Compile Include="Features\ToolWindows\TextErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoNextLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
     <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerBase.cs" />
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerBase.cs" />

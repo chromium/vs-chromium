@@ -4,6 +4,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Server.NativeInterop {
@@ -36,8 +37,10 @@ namespace VsChromium.Server.NativeInterop {
         out createResult);
 
       if (createResult.HResult < 0) {
+        // The error is recoverable, since we are dealing with an invalid pattern
+        // or something along the lines.
         var message = Marshal.PtrToStringAnsi(new IntPtr(createResult.ErrorMessage));
-        throw new ArgumentException(message);
+        throw new RecoverableErrorException(message);
       }
 
       return result;

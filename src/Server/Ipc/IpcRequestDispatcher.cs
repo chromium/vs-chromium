@@ -58,6 +58,11 @@ namespace VsChromium.Server.Ipc {
                    request.RequestId, request.Data.GetType().Name);
         return ErrorResponseHelper.CreateIpcErrorResponse(request, e);
       }
+      catch (RecoverableErrorException e) {
+        Logger.Log("Request {0} of type \"{1}\" generated a recoverable error: {2}.",
+                   request.RequestId, request.Data.GetType().Name, e.Message);
+        return ErrorResponseHelper.CreateIpcErrorResponse(request, e);
+      }
       catch (Exception e) {
         var message = string.Format("Error executing request {0} of type \"{1}\".",
                             request.RequestId, request.Data.GetType().Name);

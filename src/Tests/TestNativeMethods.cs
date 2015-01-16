@@ -4,11 +4,9 @@
 
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Memory;
-using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Tests {

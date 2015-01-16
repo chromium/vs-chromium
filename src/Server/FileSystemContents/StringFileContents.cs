@@ -4,9 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
+using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
@@ -30,10 +30,14 @@ namespace VsChromium.Server.FileSystemContents {
       return _text == other2._text;
     }
 
-    public override List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker) {
+    public override List<FilePositionSpan> Search(
+        FileName fileName,
+        SearchContentsData searchContentsData,
+        IOperationProgressTracker progressTracker) {
       if (ReferenceEquals(this, _empty))
         return NoSpans;
-      // TODO(rpaquay): Maybe we will need this someday. For now, we use this class only for empty file content placeholder.
+      // TODO(rpaquay): Maybe we will need this someday. For now, we use this
+      // class only for empty file content placeholder.
       throw new NotImplementedException();
 #if false
       Logger.Log("Searching file contents");

@@ -8,6 +8,7 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Memory;
+using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Tests {
@@ -123,10 +124,18 @@ namespace VsChromium.Tests {
       return (double)kbytes / s;
     }
 
-    private static int PerformSearch(SafeHeapBlockHandle textBlock, AsciiStringSearchAlgorithm algo, int repeat) {
+    private static int PerformSearch(
+        SafeHeapBlockHandle textBlock,
+        AsciiStringSearchAlgorithm algo,
+        int repeat) {
       int matchCount = 0;
       for (var i = 0; i < repeat; i++) {
-        matchCount = algo.SearchAll(textBlock.Pointer, (int)textBlock.ByteLength, OperationProgressTracker.None).Count();
+        matchCount = algo.SearchAll(
+            "test.txt",
+            textBlock.Pointer,
+            // TODO(rpaquay): 2GB limit.
+            (int)textBlock.ByteLength,
+            OperationProgressTracker.None).Count();
       }
       return matchCount;
     }

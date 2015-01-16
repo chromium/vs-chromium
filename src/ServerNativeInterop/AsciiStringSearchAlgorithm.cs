@@ -4,8 +4,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {
@@ -27,16 +29,30 @@ namespace VsChromium.Server.NativeInterop {
     /// characters.
     /// </summary>
     public IEnumerable<FilePositionSpan> SearchAll(
-      IntPtr textPtr,
-      int textLength,
-      IOperationProgressTracker progressTracker) {
-      return SearchAllWorker(textPtr, textLength, progressTracker);
+        string path,
+        IntPtr textPtr,
+        int textLength,
+        IOperationProgressTracker progressTracker) {
+      Stopwatch sw = null;
+      if (textLength >= 3*1024*1024) {
+        sw = Stopwatch.StartNew();
+      }
+      var result = SearchAllWorker(textPtr, textLength, progressTracker);
+      if (textLength >= 3*1024*1024) {
+        sw.Stop();
+        Logger.Log("Search time took {0:n0} msec in file \"{1}\" of size {2:n0} bytes", sw.ElapsedMilliseconds, path, textLength);
+      }
+      return result;
     }
 
     private unsafe IEnumerable<FilePositionSpan> SearchAllWorker(
       IntPtr textPtr,
       int textLength,
       IOperationProgressTracker progressTracker) {
+      if (progressTracker.ShouldEndProcessing) {
+        return NoResult;
+      }
+
       List<FilePositionSpan> result = null;
       // Note: From C# spec: If E is zero, then no allocation is made, and
       // the pointer returned is implementation-defined. 

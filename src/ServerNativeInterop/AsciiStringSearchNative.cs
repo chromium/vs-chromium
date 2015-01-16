@@ -14,7 +14,10 @@ namespace VsChromium.Server.NativeInterop {
     private readonly int _patternLength;
     private readonly int _searchBufferSize;
 
-    public AsciiStringSearchNative(NativeMethods.SearchAlgorithmKind kind, string pattern, NativeMethods.SearchOptions searchOptions) {
+    public AsciiStringSearchNative(
+        NativeMethods.SearchAlgorithmKind kind,
+        string pattern,
+        NativeMethods.SearchOptions searchOptions) {
       _patternHandle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(pattern));
       _patternLength = pattern.Length;
 
@@ -23,18 +26,17 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     private static unsafe SafeSearchHandle CreateSearchHandle(
-      NativeMethods.SearchAlgorithmKind kind,
-      SafeHGlobalHandle patternHandle,
-      int patternLength,
-      NativeMethods.SearchOptions searchOptions) {
-
+        NativeMethods.SearchAlgorithmKind kind,
+        SafeHGlobalHandle patternHandle,
+        int patternLength,
+        NativeMethods.SearchOptions searchOptions) {
       NativeMethods.SearchCreateResult createResult;
       var result = NativeMethods.AsciiSearchAlgorithm_Create(
-        kind,
-        patternHandle.Pointer,
-        patternLength,
-        searchOptions,
-        out createResult);
+          kind,
+          patternHandle.Pointer,
+          patternLength,
+          searchOptions,
+          out createResult);
 
       if (createResult.HResult < 0) {
         // The error is recoverable, since we are dealing with an invalid pattern

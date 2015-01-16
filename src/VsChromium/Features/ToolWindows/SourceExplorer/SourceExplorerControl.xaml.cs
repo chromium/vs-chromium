@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -32,6 +33,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
+    private int _operationSequenceId;
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -179,8 +181,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void MetaSearch(SearchMetadata metadata) {
+      var id = Interlocked.Increment(ref _operationSequenceId);
+      metadata.OperationId = string.Format("{0}-{1}", metadata.OperationId, id);
+
       var sw = new Stopwatch();
-      var request = new UIRequest() {
+      var request = new UIRequest {
         Id = "MetaSearch",
         Request = metadata.TypedRequest,
         Delay = metadata.Delay,

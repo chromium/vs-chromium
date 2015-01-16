@@ -95,6 +95,7 @@ void RegexSearch::Search(SearchParams* searchParams) {
   if (it == impl_->it_end_) {
     // Implicit cleanup on completed search.
     CancelSearch(searchParams);
+    return;
   }
   // Set result if match found
   searchParams->MatchStart = searchParams->TextStart + it->position();

@@ -83,6 +83,16 @@ namespace VsChromium.Server.NativeInterop {
       CallingConvention = CallingConvention.StdCall,
       CharSet = CharSet.Ansi,
       SetLastError = false)]
+    public static extern void AsciiSearchAlgorithm_CancelSearch(
+      SafeSearchHandle handle,
+      ref SearchParams searchParams);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
+      SetLastError = false)]
     public static extern void AsciiSearchAlgorithm_Delete(IntPtr handle);
 
     [SuppressUnmanagedCodeSecurity]

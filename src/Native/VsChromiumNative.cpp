@@ -117,6 +117,12 @@ EXPORT void __stdcall AsciiSearchAlgorithm_Search(
   search->Search(searchParams);
 }
 
+EXPORT void __stdcall AsciiSearchAlgorithm_CancelSearch(
+    AsciiSearchBase* search,
+    AsciiSearchBase::SearchParams* searchParams) {
+  search->CancelSearch(searchParams);
+}
+
 EXPORT void __stdcall AsciiSearchAlgorithm_Delete(AsciiSearchBase* search) {
   delete search;
 }

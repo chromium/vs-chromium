@@ -38,6 +38,7 @@ class AsciiSearchBase {
 
   virtual void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) = 0;
   virtual void Search(SearchParams* searchParams) = 0;
+  virtual void CancelSearch(SearchParams* searchParams) {}
   virtual int GetSearchBufferSize() { return 0; }
 
   static const uint8_t read_byte(const uint8_t* text, int index, bool matchCase) {

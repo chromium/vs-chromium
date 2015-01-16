@@ -93,13 +93,19 @@ void RegexSearch::Search(SearchParams* searchParams) {
   // Iterate
   regex_iterator_t& it(*pit);
   if (it == impl_->it_end_) {
-    // Explicit call to destructor on last call.
-    searchParams->MatchStart = nullptr;
-    pit->regex_iterator_t::~regex_iterator_t();
-    return;
+    // Implicit cleanup on completed search.
+    CancelSearch(searchParams);
   }
   // Set result if match found
   searchParams->MatchStart = searchParams->TextStart + it->position();
   searchParams->MatchLength = (int)it->length(); // TODO(rpaquay): 2GB limit
   ++it;
+}
+
+void RegexSearch::CancelSearch(SearchParams* searchParams) {
+  regex_iterator_t* pit =
+      reinterpret_cast<regex_iterator_t*>(searchParams->SearchBuffer);
+  // Explicit destructor call to match placement new call.
+  pit->regex_iterator_t::~regex_iterator_t();
+  searchParams->MatchStart = nullptr;
 }

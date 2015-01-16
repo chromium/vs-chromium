@@ -14,6 +14,7 @@ namespace VsChromium.Server.NativeInterop {
     public abstract int SearchBufferSize { get; }
 
     public abstract void Search(ref NativeMethods.SearchParams searchParams);
+    public abstract void CancelSearch(ref NativeMethods.SearchParams searchParams);
 
     public virtual void Dispose() {
     }
@@ -46,22 +47,26 @@ namespace VsChromium.Server.NativeInterop {
         SearchBuffer = new IntPtr(searchBuffer),
       };
       while (true) {
-        if (progressTracker.ShouldEndProcessing)
-          break;
-
+        // Perform next search
         Search(ref searchParams);
         if (searchParams.MatchStart == IntPtr.Zero)
           break;
 
+        // Add result
         if (result == null)
           result = new List<FilePositionSpan>();
-
         result.Add(new FilePositionSpan {
           // TODO(rpaquay): We are limited to 2GB for now.
           Position = Pointers.Offset32(textPtr, searchParams.MatchStart),
           Length = searchParams.MatchLength
         });
+
+        // Check it is time to end processing early.
         progressTracker.AddResults(1);
+        if (progressTracker.ShouldEndProcessing) {
+          CancelSearch(ref searchParams);
+          break;
+        }
       }
       return result ?? NoResult;
     }

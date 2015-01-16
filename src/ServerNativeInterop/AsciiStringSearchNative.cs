@@ -58,6 +58,10 @@ namespace VsChromium.Server.NativeInterop {
       NativeMethods.AsciiSearchAlgorithm_Search(_handle, ref searchParams);
     }
 
+    public override void CancelSearch(ref NativeMethods.SearchParams searchParams) {
+      NativeMethods.AsciiSearchAlgorithm_CancelSearch(_handle, ref searchParams);
+    }
+
     public override void Dispose() {
       _handle.Dispose();
       _patternHandle.Dispose();

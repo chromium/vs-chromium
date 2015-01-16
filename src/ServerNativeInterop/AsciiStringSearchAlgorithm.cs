@@ -4,8 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {
   public abstract class AsciiStringSearchAlgorithm : IDisposable {
@@ -18,34 +19,49 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     private static readonly List<FilePositionSpan> NoResult = new List<FilePositionSpan>();
+
     /// <summary>
     /// Find all occurrences of the pattern in the text block starting at
-    /// |<paramref name="textPtr"/>| and containing |<paramref name="textLen"/>|
+    /// |<paramref name="textPtr"/>| and containing |<paramref name="textLength"/>|
     /// characters.
     /// </summary>
-    public unsafe IEnumerable<FilePositionSpan> SearchAll(IntPtr textPtr, int textLen) {
+    public IEnumerable<FilePositionSpan> SearchAll(
+      IntPtr textPtr,
+      int textLength,
+      IOperationProgressTracker progressTracker) {
+      return SearchAllWorker(textPtr, textLength, progressTracker);
+    }
+
+    private unsafe IEnumerable<FilePositionSpan> SearchAllWorker(
+      IntPtr textPtr,
+      int textLength,
+      IOperationProgressTracker progressTracker) {
       List<FilePositionSpan> result = null;
       // Note: From C# spec: If E is zero, then no allocation is made, and
       // the pointer returned is implementation-defined. 
       byte* searchBuffer = stackalloc byte[this.SearchBufferSize];
       var searchParams = new NativeMethods.SearchParams {
         TextStart = textPtr,
-        TextLength = textLen,
+        TextLength = textLength,
         SearchBuffer = new IntPtr(searchBuffer),
       };
       while (true) {
+        if (progressTracker.ShouldEndProcessing)
+          break;
+
         Search(ref searchParams);
         if (searchParams.MatchStart == IntPtr.Zero)
           break;
 
         if (result == null)
           result = new List<FilePositionSpan>();
-        // TODO(rpaquay): We are limited to 2GB for now.
-        var offset = Pointers.Offset32(textPtr, searchParams.MatchStart);
+
         result.Add(new FilePositionSpan {
-          Position = offset,
+          // TODO(rpaquay): We are limited to 2GB for now.
+          Position = Pointers.Offset32(textPtr, searchParams.MatchStart),
           Length = searchParams.MatchLength
         });
+        progressTracker.AddResults(1);
       }
       return result ?? NoResult;
     }

@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromium.Server.Search {
+using System.Threading;
+
+namespace VsChromium.Core.Utility {
   /// <summary>
   /// Note: Instances of this class are technically not thread safe, but it is
   /// nonetheless ok to call them from multiple thread concurrently, as the
@@ -22,11 +24,7 @@ namespace VsChromium.Server.Search {
     public int Count { get { return _count; } }
 
     public void Add(int count) {
-      _count += count;
-    }
-
-    public void Increment() {
-      Add(1);
+      Interlocked.Add(ref _count, count);
     }
   }
 }

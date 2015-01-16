@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {
   public abstract class UTF16StringSearchAlgorithm : IDisposable {
@@ -13,7 +14,11 @@ namespace VsChromium.Server.NativeInterop {
     public virtual void Dispose() {
     }
 
-    public IEnumerable<FilePositionSpan> SearchAll(IntPtr text, int textLen) {
+    public IEnumerable<FilePositionSpan> SearchAll(
+      IntPtr text,
+      int textLen,
+      IOperationProgressTracker progressTracker) {
+
       var currentPtr = text;
       var remainingLength = textLen;
       while (true) {
@@ -21,11 +26,17 @@ namespace VsChromium.Server.NativeInterop {
         if (currentPtr == IntPtr.Zero)
           break;
 
-        // TODO(rpaquay): We are limited to 2GB for now.
-        var offset = Pointers.Offset32(text, currentPtr);
-        yield return new FilePositionSpan { Position = offset, Length = PatternLength };
+        progressTracker.AddResults(1);
+        if (progressTracker.ShouldEndProcessing)
+          yield break;
+
+        yield return new FilePositionSpan {
+          // TODO(rpaquay): We are limited to 2GB for now.
+          Position = Pointers.Offset32(text, currentPtr), 
+          Length = PatternLength
+        };
         currentPtr += PatternLength * sizeof(char);
-        remainingLength = textLen - offset - (PatternLength * sizeof(char));
+        remainingLength = textLen - Pointers.Offset32(text, currentPtr) - (PatternLength * sizeof(char));
       }
     }
 

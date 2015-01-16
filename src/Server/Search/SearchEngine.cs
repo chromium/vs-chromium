@@ -14,6 +14,7 @@ using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
@@ -186,20 +187,20 @@ namespace VsChromium.Server.Search {
     }
 
     private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
-      var taskResults = new TaskResultCounter(maxResults);
+      var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
       var searchedFileCount = 0;
       var matches = _currentFileDatabase.FilesWithContents
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .WithCancellation(cancellationToken)
-        .Where(x => !taskResults.Done)
+        .Where(x => !progressTracker.ShouldEndProcessing)
         .Select(item => {
           if (!includeSymLinks) {
             if (_currentFileDatabase.IsContainedInSymLink(item.FileName.Parent))
               return null;
           }
           Interlocked.Increment(ref searchedFileCount);
-          return MatchFileContents(item, searchContentsData, taskResults);
+          return MatchFileContents(item, searchContentsData, progressTracker);
         })
         .Where(r => r != null)
         .ToList();
@@ -208,7 +209,7 @@ namespace VsChromium.Server.Search {
         Entries = matches,
         SearchedFileCount = searchedFileCount,
         TotalFileCount = _currentFileDatabase.FilesWithContents.Count,
-        HitCount = taskResults.Count,
+        HitCount = progressTracker.ResultCount,
       };
     }
 
@@ -356,12 +357,13 @@ namespace VsChromium.Server.Search {
       return matcher.MatchDirectoryName(directoryName.RelativePath, comparer);
     }
 
-    private static FileSearchResult MatchFileContents(FileData fileData, SearchContentsData searchContentsData, TaskResultCounter taskResultCounter) {
-      var spans = fileData.Contents.Search(searchContentsData);
+    private static FileSearchResult MatchFileContents(
+      FileData fileData,
+      SearchContentsData searchContentsData,
+      IOperationProgressTracker progressTracker) {
+      var spans = fileData.Contents.Search(searchContentsData, progressTracker);
       if (spans.Count == 0)
         return null;
-
-      taskResultCounter.Add(spans.Count);
 
       return new FileSearchResult {
         FileName = fileData.FileName,

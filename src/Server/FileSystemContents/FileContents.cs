@@ -5,7 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
@@ -27,7 +29,9 @@ namespace VsChromium.Server.FileSystemContents {
 
     public abstract bool HasSameContents(FileContents other);
 
-    public virtual List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
+    public virtual List<FilePositionSpan> Search(
+      SearchContentsData searchContentsData,
+      IOperationProgressTracker progressTracker) {
       return NoSpans;
     }
 

@@ -4,7 +4,9 @@
 
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
@@ -124,7 +126,7 @@ namespace VsChromium.Tests {
     private static int PerformSearch(SafeHeapBlockHandle textBlock, AsciiStringSearchAlgorithm algo, int repeat) {
       int matchCount = 0;
       for (var i = 0; i < repeat; i++) {
-        matchCount = algo.SearchAll(textBlock.Pointer, (int)textBlock.ByteLength).Count();
+        matchCount = algo.SearchAll(textBlock.Pointer, (int)textBlock.ByteLength, OperationProgressTracker.None).Count();
       }
       return matchCount;
     }

@@ -167,10 +167,13 @@
     <Compile Include="Threads\DateTimeProvider.cs" />
     <Compile Include="Threads\IDateTimeProvider.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
+    <Compile Include="Utility\IOperationProgressTracker.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\HashCode.cs" />
     <Compile Include="Utility\MarshalUtility.cs" />
     <Compile Include="Logging\MultiStepStopWatch.cs" />
+    <Compile Include="Utility\OperationProgressTracker.cs" />
+    <Compile Include="Utility\TaskResultCounter.cs" />
     <Compile Include="VsChromiumVersion.cs" />
     <Compile Include="Win32\ComPtr.cs" />
     <Compile Include="Win32\Contants.cs" />

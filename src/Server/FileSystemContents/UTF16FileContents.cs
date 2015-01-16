@@ -5,7 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
 
@@ -34,13 +36,15 @@ namespace VsChromium.Server.FileSystemContents {
       return new StrStrWStringSearchAlgorithm(pattern, searchOptions);
     }
 
-    public override List<FilePositionSpan> Search(SearchContentsData searchContentsData) {
+    public override List<FilePositionSpan> Search(
+      SearchContentsData searchContentsData,
+      IOperationProgressTracker progressTracker) {
       if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
         return NoSpans;
 
       var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).UTF16StringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
-      var result = algo.SearchAll(_heap.Pointer, checked((int)_heap.ByteLength));
+      var result = algo.SearchAll(_heap.Pointer, checked((int)_heap.ByteLength), progressTracker);
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
           searchContentsData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return result.ToList();

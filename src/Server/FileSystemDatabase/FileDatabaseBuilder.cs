@@ -36,35 +36,28 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabase BuildWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
-      Logger.Log("BuildWithChangedFiles.");
-      var sw = Stopwatch.StartNew();
+      using (new TimeElapsedLogger("Update file database with changed files")) {
+        var fileDatabase = (FileDatabase) previousFileDatabase;
 
-      var fileDatabase = (FileDatabase)previousFileDatabase;
+        // Update file contents of file data entries of changed files.
+        var contentsUpdated = false;
+        changedFiles.ForAll(x => {
+          if (x.Item1.IsFileSearchable(x.Item2) && fileDatabase.Files.ContainsKey(x.Item2)) {
+            var newContents = _fileContentsFactory.GetFileContents(x.Item2.FullPath);
+            fileDatabase.Files[x.Item2].UpdateContents(newContents);
+            contentsUpdated = true;
+          }
+        });
 
-      // Update file contents of file data entries of changed files.
-      var contentsUpdated = false;
-      changedFiles.ForAll(x => {
-        if (x.Item1.IsFileSearchable(x.Item2) && fileDatabase.Files.ContainsKey(x.Item2)) {
-          var newContents = _fileContentsFactory.GetFileContents(x.Item2.FullPath);
-          fileDatabase.Files[x.Item2].UpdateContents(newContents);
-          contentsUpdated = true;
-        }
-      });
+        if (!contentsUpdated)
+          return previousFileDatabase;
 
-      if (!contentsUpdated)
-        return previousFileDatabase;
-
-      // Return new file database with updated file contents.
-      var result = new FileDatabase(
+        // Return new file database with updated file contents.
+        return new FileDatabase(
           fileDatabase.Files,
           fileDatabase.Directories,
           CreateSearchableContentsCollection(fileDatabase.Files.Values));
-
-      sw.Stop();
-      Logger.Log("Done BuildWithChangedFiles in {0:n0} msec.", sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
-
-      return result;
+      }
     }
 
     /// <summary>
@@ -96,18 +89,12 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     private FileDatabase CreateFileDatabse() {
-      Logger.Log("Freezing FileDatabase state.");
-      var sw = Stopwatch.StartNew();
-
-      var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
-      var directories = _directories;
-      var searchableContentsCollection = CreateSearchableContentsCollection(files.Values);
-
-      sw.Stop();
-      Logger.Log("Done freezing FileDatabase state in {0:n0} msec.", sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
-
-      return new FileDatabase(files, directories, searchableContentsCollection);
+      using (new TimeElapsedLogger("Freezing FileDatabase state")) {
+        var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
+        var directories = _directories;
+        var searchableContentsCollection = CreateSearchableContentsCollection(files.Values);
+        return new FileDatabase(files, directories, searchableContentsCollection);
+      }
     }
 
     private static IList<ISearchableContents> CreateSearchableContentsCollection(IEnumerable<FileData> files) {

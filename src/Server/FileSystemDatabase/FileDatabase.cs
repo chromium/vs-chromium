@@ -21,48 +21,18 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// and file contents for a given <see cref="FileSystemTreeSnapshot"/> snapshot.
   /// </summary>
   public class FileDatabase : IFileDatabase {
-    private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IDictionary<FileName, FileData> _files;
     private readonly IDictionary<DirectoryName, DirectoryData> _directories;
-    private readonly ICollection<FileData> _filesWithContents;
-    private ICollection<ISearchableContents> _searchableContentsCollection;
+    private readonly ICollection<ISearchableContents> _searchableContentsCollection;
+    private readonly long _searchableFileCount;
 
-    public FileDatabase(IFileContentsFactory fileContentsFactory,
-                        IDictionary<FileName, FileData> files,
+    public FileDatabase(IDictionary<FileName, FileData> files,
                         IDictionary<DirectoryName, DirectoryData> directories,
-                        ICollection<FileData> filesWithContents) {
-      _fileContentsFactory = fileContentsFactory;
+                        ICollection<ISearchableContents> searchableContentsCollection) {
       _files = files;
       _directories = directories;
-      _filesWithContents = filesWithContents;
-      _searchableContentsCollection = CreateSearableContents(filesWithContents);
-    }
-
-    private ICollection<ISearchableContents> CreateSearableContents(ICollection<FileData> filesWithContents) {
-      return filesWithContents
-        .Select((fileData, index) => new SearchableContents(fileData, index))
-        .Cast<ISearchableContents>()
-        .ToList();
-    }
-
-    private class SearchableContents : ISearchableContents {
-      private readonly FileData _fileData;
-      private readonly int _index;
-
-      public SearchableContents(FileData fileData, int index) {
-        _fileData = fileData;
-        _index = index;
-      }
-
-      public FileName FileName {
-        get { return _fileData.FileName; }
-      }
-      public int Id {
-        get { return _index; }
-      }
-      public List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker) {
-        return _fileData.Contents.Search(_fileData.FileName, searchContentsData, progressTracker);
-      }
+      _searchableContentsCollection = searchableContentsCollection;
+      _searchableFileCount = searchableContentsCollection.GroupBy(x => x.Id).Count();
     }
 
     /// <summary>
@@ -86,13 +56,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       get { return _searchableContentsCollection; }
     }
 
-    /// <summary>
-    /// Retunrs the list of files with text contents suitable for text search.
-    /// </summary>
-    public ICollection<FileData> FilesWithContents { get { return _filesWithContents; } }
-
     public long SearchableFileCount {
-      get { return _filesWithContents.Count; }
+      get { return _searchableFileCount; }
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans) {
@@ -105,23 +70,6 @@ namespace VsChromium.Server.FileSystemDatabase {
         return Enumerable.Empty<FileExtract>();
 
       return contents.GetFileExtracts(spans);
-    }
-
-    public IFileDatabase UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> changedFiles) {
-      changedFiles.ForAll(changedFile => {
-        // Concurrency: We may update the FileContents value of some entries, but
-        // we ensure we do not update collections and so on. So, all in all, it is
-        // safe to make this change "lock free".
-        var fileData = GetFileData(changedFile.Item2);
-        if (fileData == null)
-          return;
-
-        if (!changedFile.Item1.IsFileSearchable(changedFile.Item2))
-          return;
-
-        fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPath));
-      });
-      return this;
     }
 
     public bool IsContainedInSymLink(DirectoryName name) {

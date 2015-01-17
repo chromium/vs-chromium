@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using VsChromium.Core.Files;
+using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -16,6 +17,8 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
+using VsChromium.Server.Projects;
+using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
@@ -38,6 +41,25 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase Build(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
       return ComputeFileDatabase((FileDatabase)previousFileDatabase, newSnapshot);
+    }
+
+    public IFileDatabase BuildWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
+#if false
+      changedFiles.ForAll(changedFile => {
+        // Concurrency: We may update the FileContents value of some entries, but
+        // we ensure we do not update collections and so on. So, all in all, it is
+        // safe to make this change "lock free".
+        var fileData = previousFileDatabase. GetFileData(changedFile.Item2);
+        if (fileData == null)
+          return;
+
+        if (!changedFile.Item1.IsFileSearchable(changedFile.Item2))
+          return;
+
+        fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPath));
+      });
+#endif
+      return previousFileDatabase;
     }
 
     /// <summary>
@@ -86,6 +108,10 @@ namespace VsChromium.Server.FileSystemDatabase {
         .SelectMany(x => x)
         .ToArray();
 
+      var searchableContentsCollection = filesWithContents
+        .Select((fileData, index) => new SearchableContents(fileData, index))
+        .Cast<ISearchableContents>()
+        .ToList();
 
       sw.Stop();
       Logger.Log("Done freezing FileDatabase state in {0:n0} msec.", sw.ElapsedMilliseconds);
@@ -107,8 +133,31 @@ namespace VsChromium.Server.FileSystemDatabase {
             Logger.Log("{0} \"{1}\": {2:n0} files totalling {3:n0} bytes.", g.Key.Type, g.Key.Value, g.Count(), byteLength);
           });
       }
-      return new FileDatabase(_fileContentsFactory, files, directories, filesWithContents);
+
+
+      return new FileDatabase(files, directories, searchableContentsCollection);
     }
+
+    private class SearchableContents : ISearchableContents {
+      private readonly FileData _fileData;
+      private readonly int _index;
+
+      public SearchableContents(FileData fileData, int index) {
+        _fileData = fileData;
+        _index = index;
+      }
+
+      public FileName FileName {
+        get { return _fileData.FileName; }
+      }
+      public int Id {
+        get { return _index; }
+      }
+      public List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker) {
+        return _fileData.Contents.Search(_fileData.FileName, searchContentsData, progressTracker);
+      }
+    }
+
 
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");

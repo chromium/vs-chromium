@@ -39,14 +39,6 @@ namespace VsChromium.Server.FileSystemDatabase {
     IEnumerable<FileExtract> GetFileExtracts(FileName fileName, IEnumerable<FilePositionSpan> spans);
 
     /// <summary>
-    /// Atomically updates the file contents of <paramref name="changedFiles"/>
-    /// with the new file contents on disk. This method violates the "pure
-    /// snapshot" semantics but enables efficient updates for the most common
-    /// type of file change events.
-    /// </summary>
-    IFileDatabase UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> changedFiles);
-
-    /// <summary>
     /// Returns true if <paramref name="name"/> or any of its parent is a symlink directory.
     /// </summary>
     bool IsContainedInSymLink(DirectoryName name);

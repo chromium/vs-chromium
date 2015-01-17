@@ -257,7 +257,7 @@ namespace VsChromium.Server.Search {
         OnBeforeExecute = info => OnFilesLoading(info),
         OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
         Execute = info => {
-          _currentFileDatabase = _currentFileDatabase.UpdateFileContents(files);
+          _currentFileDatabase = _fileDatabaseFactory.CreateWithChangedFiles(_currentFileDatabase, files);
           OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });
         }
       });

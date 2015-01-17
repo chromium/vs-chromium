@@ -2,13 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
+using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
@@ -33,11 +36,22 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabase CreateEmpty() {
-      return new FileDatabase(_fileContentsFactory, new Dictionary<FileName, FileData>(), new Dictionary<DirectoryName, DirectoryData>(), new List<FileData>());
+      return new FileDatabase(new Dictionary<FileName, FileData>(), new Dictionary<DirectoryName, DirectoryData>(), new List<ISearchableContents>());
     }
 
     public IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory).Build(previousFileDatabase, newSnapshot);
+    }
+
+    /// <summary>
+    /// Atomically updates the file contents of <paramref name="changedFiles"/>
+    /// with the new file contents on disk. This method violates the "pure
+    /// snapshot" semantics but enables efficient updates for the most common
+    /// type of file change events.
+    /// </summary>
+    public IFileDatabase CreateWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
+      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
+        .BuildWithChangedFiles(previousFileDatabase, changedFiles);
     }
   }
 }

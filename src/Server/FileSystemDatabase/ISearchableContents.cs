@@ -11,6 +11,7 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// there may be more than one if the file is large enough.
   /// </summary>
   public interface ISearchableContents {
+    FileData FileData { get; }
     FileName FileName { get; }
     int FileId { get; }
     List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker);

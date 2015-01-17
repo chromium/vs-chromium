@@ -42,6 +42,8 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// </summary>
     public IDictionary<FileName, FileData> Files { get { return _files; } }
 
+    public IDictionary<DirectoryName, DirectoryData> Directories { get { return _directories; } }
+
     /// <summary>
     /// Returns the list of filenames suitable for file name search.
     /// </summary>

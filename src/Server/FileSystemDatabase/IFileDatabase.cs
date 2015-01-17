@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Collections.Generic;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabase {

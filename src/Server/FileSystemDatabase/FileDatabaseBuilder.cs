@@ -5,10 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -18,15 +16,9 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
-using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
-    /// <summary>
-    /// Note: For debugging purposes only.
-    /// </summary>
-    private bool OutputDiagnostics = false;
-
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
@@ -44,22 +36,35 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabase BuildWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
-#if false
-      changedFiles.ForAll(changedFile => {
-        // Concurrency: We may update the FileContents value of some entries, but
-        // we ensure we do not update collections and so on. So, all in all, it is
-        // safe to make this change "lock free".
-        var fileData = previousFileDatabase. GetFileData(changedFile.Item2);
-        if (fileData == null)
-          return;
+      Logger.Log("BuildWithChangedFiles.");
+      var sw = Stopwatch.StartNew();
 
-        if (!changedFile.Item1.IsFileSearchable(changedFile.Item2))
-          return;
+      var fileDatabase = (FileDatabase)previousFileDatabase;
 
-        fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPath));
+      // Update file contents of file data entries of changed files.
+      var contentsUpdated = false;
+      changedFiles.ForAll(x => {
+        if (x.Item1.IsFileSearchable(x.Item2) && fileDatabase.Files.ContainsKey(x.Item2)) {
+          var newContents = _fileContentsFactory.GetFileContents(x.Item2.FullPath);
+          fileDatabase.Files[x.Item2].UpdateContents(newContents);
+          contentsUpdated = true;
+        }
       });
-#endif
-      return previousFileDatabase;
+
+      if (!contentsUpdated)
+        return previousFileDatabase;
+
+      // Return new file database with updated file contents.
+      var result = new FileDatabase(
+          fileDatabase.Files,
+          fileDatabase.Directories,
+          CreateSearchableContentsCollection(fileDatabase.Files.Values));
+
+      sw.Stop();
+      Logger.Log("Done BuildWithChangedFiles in {0:n0} msec.", sw.ElapsedMilliseconds);
+      Logger.LogMemoryStats();
+
+      return result;
     }
 
     /// <summary>
@@ -96,56 +101,43 @@ namespace VsChromium.Server.FileSystemDatabase {
 
       var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
       var directories = _directories;
-
-      int id = 0;
-      Func<int> idFactory = () => id++;
-      // Note: Partitioning evenly ensures that each processor used by PLinq will deal with 
-      // a partition of equal "weight". In this case, we make sure each partition contains
-      // not only the same amount of files, but also (as close to as possible) the same
-      // amount of "bytes". For example, if we have 100 files totaling 32MB and 4 processors,
-      // we will end up with 4 partitions of (exactly) 25 files totalling (approximately) 8MB each.
-      var searchableContentsCollection = files.Values
-        .Where(x => x.Contents != null)
-        .SelectMany(x => SplitFileContents(x, idFactory))
-        .ToList()
-        .PartitionEvenly(x => x.ByteLength)
-        .SelectMany(x => x)
-        .Cast<ISearchableContents>()
-        .ToArray();
-
-      //var searchableContentsCollection = filesWithContents
-      //  .Select((fileData, index) => new SearchableContents(fileData, index))
-        //.Cast<ISearchableContents>()
-        //.ToList();
+      var searchableContentsCollection = CreateSearchableContentsCollection(files.Values);
 
       sw.Stop();
       Logger.Log("Done freezing FileDatabase state in {0:n0} msec.", sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
-      if (OutputDiagnostics) {
-#if false
-        // Note: For diagnostic only as this can be quite slow.
-        filesWithContents
-          .GroupBy(x => {
-            var ext = Path.GetExtension(x.FileName.RelativePath.FileName);
-            if (string.IsNullOrEmpty(ext))
-              return new { Type = "Filename", Value = x.FileName.RelativePath.FileName };
-            else
-              return new { Type = "Extension", Value = ext };
-          })
-          .OrderByDescending(x => x.Aggregate(0L, (s, f) => s + f.Contents.ByteLength))
-          .ForAll(g => {
-            var byteLength = g.Aggregate(0L, (s, f) => s + f.Contents.ByteLength);
-            Logger.Log("{0} \"{1}\": {2:n0} files totalling {3:n0} bytes.", g.Key.Type, g.Key.Value, g.Count(), byteLength);
-          });
-#endif
-      }
-
       return new FileDatabase(files, directories, searchableContentsCollection);
     }
 
-    private IEnumerable<SearchableContents> SplitFileContents(FileData fileData, Func<int> idFactory) {
-      int fileId = idFactory();
+    private static IList<ISearchableContents> CreateSearchableContentsCollection(IEnumerable<FileData> files) {
+      int id = 0;
+      Func<int> fileIdFactory = () => id++;
+      // Note: Partitioning evenly ensures that each processor used by PLinq
+      // will deal with a partition of equal "weight". In this case, we make
+      // sure each partition contains not only the same amount of files, but
+      // also (as close to as possible) the same amount of "bytes". For example,
+      // if we have 100 files totaling 32MB and 4 processors, we will end up
+      // with 4 partitions of (exactly) 25 files totalling (approximately) 8MB
+      // each.
+      var searchableContentsCollection = files
+        .Where(x => x.Contents != null)
+        .SelectMany(x => SplitFileContents(x, fileIdFactory()))
+        .ToList()
+        .PartitionEvenly(x => x.ByteLength)
+        // Sort to that smaller entries are at the beginnig of the partitions so
+        // that regex searches hitting more than max. results don't spend most
+        // of their time searching in large file chunks which have little chance
+        // of containing hits -- because large files tend to contain useless
+        // data from a search perspective.
+        .Select(x => x.OrderBy(y => y.ByteLength))
+        .SelectMany(x => x)
+        .Cast<ISearchableContents>()
+        .ToArray();
+      return searchableContentsCollection;
+    }
+
+    private static IEnumerable<SearchableContents> SplitFileContents(FileData fileData, int fileId) {
       var chunkOffset = 0L;
       var totalLength = fileData.Contents.ByteLength;
       while (totalLength > 0) {
@@ -156,41 +148,6 @@ namespace VsChromium.Server.FileSystemDatabase {
         chunkOffset += chunkLength;
       }
     }
-
-    private class SearchableContents : ISearchableContents {
-      private readonly FileData _fileData;
-      private readonly int _fileId;
-      private readonly long _offset;
-      private readonly long _length;
-
-      public SearchableContents(FileData fileData, int fileId, long offset, long length) {
-        _fileData = fileData;
-        _fileId = fileId;
-        _offset = offset;
-        _length = length;
-      }
-
-      public FileName FileName {
-        get { return _fileData.FileName; }
-      }
-      public int FileId {
-        get { return _fileId; }
-      }
-
-      public long ByteLength { get { return _length; } }
-
-      public List<FilePositionSpan> Search(
-          SearchContentsData searchContentsData,
-          IOperationProgressTracker progressTracker) {
-        return _fileData.Contents.Search(
-          _fileData.FileName,
-          _offset,
-          _length,
-          searchContentsData,
-          progressTracker);
-      }
-    }
-
 
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       Logger.Log("Computing list of searchable files from FileSystemTree.");

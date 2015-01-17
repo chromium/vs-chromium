@@ -86,11 +86,20 @@ namespace VsChromium.Server.FileSystemContents {
       GetLineExtentFunction getLineExtent = position => {
         int lineStart;
         int lineLength;
-        NativeMethods.Ascii_GetLineExtentFromPosition(this.Pointer, (int)this.CharacterCount, position, out lineStart, out lineLength);
-        return new FilePositionSpan { Position = lineStart, Length = lineLength };
+        NativeMethods.Ascii_GetLineExtentFromPosition(
+            this.Pointer,
+            (int)this.CharacterCount,
+            position,
+            MaxLineExtentOffset,
+            out lineStart,
+            out lineLength);
+        return new FilePositionSpan {
+          Position = lineStart, Length = lineLength
+        };
       };
 
-      return new TextSourceTextSearch(getLineExtent, findEntry).FilterOnOtherEntries(searchContentsData.ParsedSearchString, matches);
+      return new TextSourceTextSearch(getLineExtent, findEntry)
+          .FilterOnOtherEntries(searchContentsData.ParsedSearchString, matches);
     }
 
     public override IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {

@@ -19,33 +19,41 @@
 #define EXPORT __declspec(dllexport)
 
 template<class CharType>
-bool GetLineExtentFromPosition(const CharType* text, int textLen, int position, int* lineStartPosition, int* lineLen) {
+bool GetLineExtentFromPosition(
+    const CharType* text,
+    int textLen,
+    int position,
+    int maxOffset,
+    int* lineStartPosition,
+    int* lineLen) {
   const CharType nl = '\n';
-  const CharType* min = text;
-  const CharType* max = text + textLen;
+  const CharType* low = max(text, text + position - maxOffset);
+  const CharType* high = min(text + textLen, text + position + maxOffset);
   const CharType* current = text + position;
 
+  // Search backward up to "min"
   const CharType* start = current;
-  for (; start > min; start--) {
+  for (; start > low; start--) {
     if (*start == nl) {
       break;
     }
   }
 
+  // Search forward up to "max"
   const CharType* end = current;
-  for (; end < max; end++) {
+  for (; end < high; end++) {
     if (*end == nl) {
       break;
     }
   }
 
-  assert(min <= start);
-  assert(start <= max);
-  assert(min <= end);
-  assert(end <= max);
+  assert(low <= start);
+  assert(start <= high);
+  assert(low <= end);
+  assert(end <= high);
 
   // TODO(rpaquay): We are limited to 2GB for now.
-  *lineStartPosition = static_cast<int>(start - min);
+  *lineStartPosition = static_cast<int>(start - text);
   *lineLen = static_cast<int>(end - start);
   return true;
 }
@@ -180,12 +188,26 @@ EXPORT bool __stdcall Ascii_Compare(const char *text1, size_t text1Length, const
   return memcmp(text1, text2, text1Length) == 0;
 }
 
-EXPORT bool __stdcall Ascii_GetLineExtentFromPosition(const char* text, int textLen, int position, int* lineStartPosition, int* lineLen) {
-  return GetLineExtentFromPosition(text, textLen, position, lineStartPosition, lineLen);
+EXPORT bool __stdcall Ascii_GetLineExtentFromPosition(
+    const char* text,
+    int textLen,
+    int position,
+    int maxOffset,
+    int* lineStartPosition,
+    int* lineLen) {
+  return GetLineExtentFromPosition(
+      text, textLen, position, maxOffset, lineStartPosition, lineLen);
 }
 
-EXPORT bool __stdcall UTF16_GetLineExtentFromPosition(const wchar_t* text, int textLen, int position, int* lineStartPosition, int* lineLen) {
-  return GetLineExtentFromPosition(text, textLen, position, lineStartPosition, lineLen);
+EXPORT bool __stdcall UTF16_GetLineExtentFromPosition(
+    const wchar_t* text,
+    int textLen,
+    int position,
+    int maxOffset,
+    int* lineStartPosition,
+    int* lineLen) {
+  return GetLineExtentFromPosition(
+      text, textLen, position, maxOffset, lineStartPosition, lineLen);
 }
 
 }  // extern "C"

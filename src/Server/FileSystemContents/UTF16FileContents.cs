@@ -71,8 +71,16 @@ namespace VsChromium.Server.FileSystemContents {
       GetLineExtentFunction getLineExtent = position => {
         int lineStart;
         int lineLength;
-        NativeMethods.UTF16_GetLineExtentFromPosition(Pointer, (int)CharacterCount, position, out lineStart, out lineLength);
-        return new FilePositionSpan { Position = lineStart, Length = lineLength };
+        NativeMethods.UTF16_GetLineExtentFromPosition(
+            Pointer, 
+            (int)CharacterCount,
+            position,
+            MaxLineExtentOffset,
+            out lineStart,
+            out lineLength);
+        return new FilePositionSpan {
+          Position = lineStart, Length = lineLength
+        };
       };
 
       return new TextSourceTextSearch(getLineExtent, findEntry)

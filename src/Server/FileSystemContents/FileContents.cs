@@ -15,6 +15,8 @@ namespace VsChromium.Server.FileSystemContents {
   /// Abstraction over a file contents
   /// </summary>
   public abstract class FileContents {
+    protected const int MaxLineExtentOffset = 1024;
+
     protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
     private readonly DateTime _utcLastModified;

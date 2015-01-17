@@ -127,6 +127,7 @@ namespace VsChromium.Server.NativeInterop {
       IntPtr text,
       int textLen,
       int position,
+      int maxOffset,
       out int lineStartPosition,
       out int lineLength);
 
@@ -141,6 +142,7 @@ namespace VsChromium.Server.NativeInterop {
       IntPtr text,
       int textLen,
       int position,
+      int maxOffset,
       out int lineStartPosition,
       out int lineLength);
   }

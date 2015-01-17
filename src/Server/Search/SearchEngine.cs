@@ -361,7 +361,7 @@ namespace VsChromium.Server.Search {
       FileData fileData,
       SearchContentsData searchContentsData,
       IOperationProgressTracker progressTracker) {
-      var spans = fileData.Contents.Search(searchContentsData, progressTracker);
+      var spans = fileData.Contents.Search(fileData.FileName, searchContentsData, progressTracker);
       if (spans.Count == 0)
         return null;
 

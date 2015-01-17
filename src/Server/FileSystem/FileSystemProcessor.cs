@@ -124,7 +124,7 @@ namespace VsChromium.Server.FileSystem {
           ChangedFiles = validationResult.ChangedFiles.ToReadOnlyCollection()
         });
       }
-    }
+    } 
 
     private void FlushFileRegistrationQueueTask() {
       var entries = _fileRegistrationQueue.DequeueAll();

@@ -4,14 +4,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {
   public abstract class AsciiStringSearchAlgorithm : IDisposable {
+
     public abstract int PatternLength { get; }
     public abstract int SearchBufferSize { get; }
 
@@ -33,35 +31,47 @@ namespace VsChromium.Server.NativeInterop {
         IntPtr textPtr,
         int textLength,
         IOperationProgressTracker progressTracker) {
-      Stopwatch sw = null;
-      if (textLength >= 3*1024*1024) {
-        sw = Stopwatch.StartNew();
-      }
-      var result = SearchAllWorker(textPtr, textLength, progressTracker);
-      if (textLength >= 3*1024*1024) {
-        sw.Stop();
-        Logger.Log("Search time took {0:n0} msec in file \"{1}\" of size {2:n0} bytes", sw.ElapsedMilliseconds, path, textLength);
-      }
-      return result;
+      return SearchAllWorker(textPtr, textLength, progressTracker);
     }
 
-    private unsafe IEnumerable<FilePositionSpan> SearchAllWorker(
-      IntPtr textPtr,
-      int textLength,
-      IOperationProgressTracker progressTracker) {
+    private IEnumerable<FilePositionSpan> SearchAllWorker(
+        IntPtr textPtr,
+        int textLength,
+        IOperationProgressTracker progressTracker) {
+      const int chunkSize = 100 * 1024; // 100KB chunks
+      List<FilePositionSpan> result = null;
+      var chunkOffset = 0;
+      while (textLength > 0) {
+        var chunkLength = Math.Min(chunkSize, textLength);
+
+        SearchChunk(textPtr, chunkLength, chunkOffset, progressTracker, ref result);
+
+        textLength -= chunkLength;
+        textPtr = Pointers.AddPtr(textPtr, chunkLength);
+        chunkOffset += chunkLength;
+      }
+      return result ?? NoResult;
+    }
+
+    private unsafe void SearchChunk(
+        IntPtr chunkPtr,
+        int chunkLength,
+        int chunkOffsetFromTextStart,
+        IOperationProgressTracker progressTracker,
+        ref List<FilePositionSpan> result) {
       if (progressTracker.ShouldEndProcessing) {
-        return NoResult;
+        return;
       }
 
-      List<FilePositionSpan> result = null;
       // Note: From C# spec: If E is zero, then no allocation is made, and
       // the pointer returned is implementation-defined. 
       byte* searchBuffer = stackalloc byte[this.SearchBufferSize];
       var searchParams = new NativeMethods.SearchParams {
-        TextStart = textPtr,
-        TextLength = textLength,
+        TextStart = chunkPtr,
+        TextLength = chunkLength,
         SearchBuffer = new IntPtr(searchBuffer),
       };
+
       while (true) {
         // Perform next search
         Search(ref searchParams);
@@ -73,7 +83,7 @@ namespace VsChromium.Server.NativeInterop {
           result = new List<FilePositionSpan>();
         result.Add(new FilePositionSpan {
           // TODO(rpaquay): We are limited to 2GB for now.
-          Position = Pointers.Offset32(textPtr, searchParams.MatchStart),
+          Position = chunkOffsetFromTextStart + Pointers.Offset32(chunkPtr, searchParams.MatchStart),
           Length = searchParams.MatchLength
         });
 
@@ -84,7 +94,6 @@ namespace VsChromium.Server.NativeInterop {
           break;
         }
       }
-      return result ?? NoResult;
     }
   }
 }

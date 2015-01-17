@@ -252,12 +252,12 @@ namespace VsChromium.Server.Search {
       _taskQueue.Enqueue(new TaskId("FileSystemProcessorOnFilesChanged"), () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
     }
 
-    private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> paths) {
+    private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> files) {
       _operationProcessor.Execute(new OperationHandlers {
         OnBeforeExecute = info => OnFilesLoading(info),
         OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
         Execute = info => {
-          paths.ForAll(x => _currentFileDatabase.UpdateFileContents(x));
+          _currentFileDatabase = _currentFileDatabase.UpdateFileContents(files);
           OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });
         }
       });

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
@@ -106,18 +107,21 @@ namespace VsChromium.Server.FileSystemDatabase {
       return contents.GetFileExtracts(spans);
     }
 
-    public void UpdateFileContents(Tuple<IProject, FileName> changedFile) {
-      // Concurrency: We may update the FileContents value of some entries, but
-      // we ensure we do not update collections and so on. So, all in all, it is
-      // safe to make this change "lock free".
-      var fileData = GetFileData(changedFile.Item2);
-      if (fileData == null)
-        return;
+    public IFileDatabase UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> changedFiles) {
+      changedFiles.ForAll(changedFile => {
+        // Concurrency: We may update the FileContents value of some entries, but
+        // we ensure we do not update collections and so on. So, all in all, it is
+        // safe to make this change "lock free".
+        var fileData = GetFileData(changedFile.Item2);
+        if (fileData == null)
+          return;
 
-      if (!changedFile.Item1.IsFileSearchable(changedFile.Item2))
-        return;
+        if (!changedFile.Item1.IsFileSearchable(changedFile.Item2))
+          return;
 
-      fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPath));
+        fileData.UpdateContents(_fileContentsFactory.GetFileContents(changedFile.Item2.FullPath));
+      });
+      return this;
     }
 
     public bool IsContainedInSymLink(DirectoryName name) {

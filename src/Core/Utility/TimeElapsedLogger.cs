@@ -13,23 +13,28 @@ namespace VsChromium.Core.Utility {
   /// </summary>
   public struct TimeElapsedLogger : IDisposable {
     [ThreadStatic]
-    private static int _indent;
+    private static int _currentThreadIndent;
 
     private readonly string _description;
     private readonly Stopwatch _stopwatch;
+    private readonly string _indent;
 
     public TimeElapsedLogger(string description) {
+      _currentThreadIndent++;
       _description = description;
       _stopwatch = Stopwatch.StartNew();
-      Logger.Log("{0}{1}.", GetIndent(_indent), _description);
-      _indent++;
+      _indent = GetIndent(_currentThreadIndent);
+      Logger.Log("{0}{1}.", _indent, _description);
     }
 
     public void Dispose() {
-      _indent--;
+      _currentThreadIndent--;
       _stopwatch.Stop();
-      Logger.Log("{0}{1} performed in {2:n0} msec.", GetIndent(_indent), _description, _stopwatch.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
+      Logger.Log("{0}{1} performed in {2:n0} msec.", _indent, _description, _stopwatch.ElapsedMilliseconds);
+    }
+
+    public string Indent {
+      get { return _indent; }
     }
 
     public static string GetIndent(int indent) {

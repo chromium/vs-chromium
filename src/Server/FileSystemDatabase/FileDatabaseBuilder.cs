@@ -19,6 +19,7 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
+    private const int ChunkSize = 100 * 1024;
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
@@ -32,11 +33,29 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabase Build(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
-      return ComputeFileDatabase((FileDatabase)previousFileDatabase, newSnapshot);
+      using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
+        var fileDatabase = (FileDatabase) previousFileDatabase;
+        // Compute list of files from tree
+        ComputeFileCollection(newSnapshot);
+
+        // Merge old state in new state
+        var fileContentsMemoization = new FileContentsMemoization();
+        TransferUnchangedFileContents(fileDatabase, fileContentsMemoization);
+
+        // Load file contents into newState
+        ReadMissingFileContents(fileContentsMemoization);
+
+        Logger.Log("{0}{1:n0} unique file contents remaining in memory after memoization of {2:n0} files.",
+            logger.Indent,
+            fileContentsMemoization.Count,
+            _files.Values.Count(x => x.FileData.Contents != null));
+
+        return CreateFileDatabse();
+      }
     }
 
     public IFileDatabase BuildWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
-      using (new TimeElapsedLogger("Update file database with changed files")) {
+      using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
         var fileDatabase = (FileDatabase) previousFileDatabase;
 
         // Update file contents of file data entries of changed files.
@@ -53,53 +72,127 @@ namespace VsChromium.Server.FileSystemDatabase {
           return previousFileDatabase;
 
         // Return new file database with updated file contents.
+        var filesWithContents = GetFilesWithContents(fileDatabase.Files.Values);
         return new FileDatabase(
           fileDatabase.Files,
           fileDatabase.Directories,
-          CreateSearchableContentsCollection(fileDatabase.Files.Values));
+          CreateSearchableContentsCollection(filesWithContents),
+          filesWithContents.Count);
       }
-    }
-
-    /// <summary>
-    /// Prepares this instance for searches by computing various snapshots from
-    /// the previous <see cref="FileDatabase"/> snapshot and the new current
-    /// <see cref="FileSystemTreeSnapshot"/> instance.
-    /// </summary>
-    private FileDatabase ComputeFileDatabase(FileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
-      if (previousFileDatabase == null)
-        throw new ArgumentNullException("previousFileDatabase");
-
-      if (newSnapshot == null)
-        throw new ArgumentNullException("newSnapshot");
-
-      // Compute list of files from tree
-      ComputeFileCollection(newSnapshot);
-
-      // Merge old state in new state
-      var fileContentsMemoization = new FileContentsMemoization();
-      TransferUnchangedFileContents(previousFileDatabase, fileContentsMemoization);
-
-      // Load file contents into newState
-      ReadMissingFileContents(fileContentsMemoization);
-
-      Logger.Log("{0:n0} unique file contents remaining in memory after memoization of {1:n0} files.", 
-        fileContentsMemoization.Count, _files.Values.Count(x => x.FileData.Contents != null));
-
-      return CreateFileDatabse();
     }
 
     private FileDatabase CreateFileDatabse() {
       using (new TimeElapsedLogger("Freezing FileDatabase state")) {
         var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
         var directories = _directories;
-        var searchableContentsCollection = CreateSearchableContentsCollection(files.Values);
-        return new FileDatabase(files, directories, searchableContentsCollection);
+        var filesWithContents = GetFilesWithContents(files.Values);
+        var searchableContentsCollection = CreateSearchableContentsCollection(filesWithContents);
+        return new FileDatabase(files, directories, searchableContentsCollection, filesWithContents.Count);
       }
     }
 
-    private static IList<ISearchableContents> CreateSearchableContentsCollection(IEnumerable<FileData> files) {
+    private static IList<ISearchableContents> CreateSearchableContentsCollection(ICollection<FileData> filesWithContents) {
+      // Factory for file identifiers
+      int currentFileId = 0;
+      Func<int> fileIdFactory = () => currentFileId++;
+
+      // Predicate to figure out if a file is "small"
+      Func<FileData, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
+
+
+      // Count the total # of searchable file contents
+      int searchableContentsCount = 0;
+      foreach (var fileData in filesWithContents) {
+        var chunkCount = (fileData.Contents.ByteLength + ChunkSize - 1)/ChunkSize;
+        searchableContentsCount += (int)chunkCount;
+      }
+      // # of partitions = # of logical processors
+      var partitionCount = Environment.ProcessorCount;
+      var partitionSize = (searchableContentsCount + partitionCount - 1) / partitionCount;
+      var lastPartitionSize = searchableContentsCount - (partitionSize * (partitionCount - 1));
+
+      // Create SearchableContents instances form small files and large files.
+      var fileContents = new SearchableContents[searchableContentsCount];
+      var partitionIndices = new int[partitionCount];
+      var largeFilePartitionIndex = 0;
+      var smallFilePartitionIndex = 0;
+      Func<int, int> incrementPartitionIndex = partitionIndex => {
+        partitionIndex++;
+        return (partitionIndex == partitionCount ? 0 : partitionIndex);
+      };
+      Func<int, SearchableContents, int> storeInPartition = (partitionIndex, x) => {
+        if ((partitionIndices[partitionIndex] == partitionSize) ||
+            (partitionIndex == partitionCount - 1 && partitionIndices[partitionIndex] == lastPartitionSize)) {
+          // Find first non full paritition
+          for (partitionIndex = 0; partitionIndex < partitionCount; partitionIndex++) {
+            if (partitionIndices[partitionIndex] < partitionSize)
+              break;
+          }
+          Debug.Assert(partitionIndex < partitionCount);
+        }
+        var partitionBase = partitionIndex * partitionSize;
+
+        fileContents[partitionBase + partitionIndices[partitionIndex]] = x;
+
+        partitionIndices[partitionIndex]++;
+        return incrementPartitionIndex(partitionIndex);
+      };
+
+
+      // Store small files
+      foreach (var fileData in filesWithContents) {
+        if (isSmallFile(fileData)) {
+          var x = new SearchableContents(fileData, fileIdFactory(), 0, fileData.Contents.ByteLength);
+          smallFilePartitionIndex = storeInPartition(smallFilePartitionIndex, x);
+        }
+      }
+      // Store large files
+      foreach (var fileData in filesWithContents) {
+        if (!isSmallFile(fileData)) {
+          foreach (var x in SplitFileContents(fileData, fileIdFactory())) {
+            largeFilePartitionIndex = storeInPartition(largeFilePartitionIndex, x);
+          }
+        }
+      }
+
+#if false
+      for (var p = 0; p < partitionCount; p++) {
+        long weight = 0;
+        for (var i = 0; i < partitionSize; i++) {
+          var index = (p * partitionSize) + i;
+          if (index >= fileContents.Length)
+            break;
+          weight += fileContents[index].ByteLength;
+        }
+        Logger.Log("Partition {0} has a weigth of {1:n0}", p, weight);
+      }
+#endif
+      return fileContents;
+    }
+
+    private static List<FileData> GetFilesWithContents(ICollection<FileData> files) {
+      // Create filesWithContents with minimum memory allocations and copying.
+      var filesWithContents = new List<FileData>(files.Count);
+      filesWithContents.AddRange(files.Where(x => x.Contents != null && x.Contents.ByteLength > 0));
+      return filesWithContents;
+    }
+
+    private static IList<ISearchableContents> CreateSearchableContentsCollectionSlow(ICollection<FileData> files) {
       int id = 0;
       Func<int> fileIdFactory = () => id++;
+
+      // Create SearchableContents instances form small files and large files.
+      var fileContents = new List<SearchableContents>(files.Count);
+      files.ForAll(x => {
+        if (x.Contents == null)
+          return;
+        if (x.Contents.ByteLength <= ChunkSize) {
+          fileContents.Add(new SearchableContents(x, fileIdFactory(), 0, x.Contents.ByteLength));
+        } else {
+          fileContents.AddRange(SplitFileContents(x, fileIdFactory()));
+        }
+      });
+
       // Note: Partitioning evenly ensures that each processor used by PLinq
       // will deal with a partition of equal "weight". In this case, we make
       // sure each partition contains not only the same amount of files, but
@@ -107,28 +200,28 @@ namespace VsChromium.Server.FileSystemDatabase {
       // if we have 100 files totaling 32MB and 4 processors, we will end up
       // with 4 partitions of (exactly) 25 files totalling (approximately) 8MB
       // each.
-      var searchableContentsCollection = files
-        .Where(x => x.Contents != null)
-        .SelectMany(x => SplitFileContents(x, fileIdFactory()))
-        .ToList()
-        .PartitionEvenly(x => x.ByteLength)
+      var searchableContentsCollection = fileContents
+        .PartitionEvenly(x => x.ByteLength, Environment.ProcessorCount)
         // Sort to that smaller entries are at the beginnig of the partitions so
         // that regex searches hitting more than max. results don't spend most
         // of their time searching in large file chunks which have little chance
         // of containing hits -- because large files tend to contain useless
         // data from a search perspective.
-        .Select(x => x.OrderBy(y => y.ByteLength))
+        //.Select(x => x.OrderBy(y => y.ByteLength))
         .SelectMany(x => x)
         .Cast<ISearchableContents>()
         .ToArray();
       return searchableContentsCollection;
     }
-
+    /// <summary>
+    ///  Create chunks of 100KB for files larger than 100KB.
+    /// </summary>
     private static IEnumerable<SearchableContents> SplitFileContents(FileData fileData, int fileId) {
       var chunkOffset = 0L;
       var totalLength = fileData.Contents.ByteLength;
       while (totalLength > 0) {
-        var chunkLength = Math.Min(totalLength, 100 * 1024);
+        // TODO(rpaquay): Be smarter and split around new lines characters.
+        var chunkLength = Math.Min(totalLength, ChunkSize);
         yield return new SearchableContents(fileData, fileId, chunkOffset, chunkLength);
 
         totalLength -= chunkLength;
@@ -137,85 +230,73 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
-      Logger.Log("Computing list of searchable files from FileSystemTree.");
-      var ssw = new MultiStepStopWatch();
+      using (new TimeElapsedLogger("Computing list of searchable files from FileSystemTree")) {
+        var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot).ToList();
+        
+        var directoryNames = directories
+          .ToDictionary(x => x.Value.DirectoryName, x => x.Value.DirectoryData);
+        
+        var searchableFiles = directories
+          .AsParallel()
+          .SelectMany(x => x.Value.ChildFiles.Select(y => KeyValuePair.Create(x.Key, y)))
+          .Select(x => new FileInfo(new FileData(x.Value, null), x.Key.IsFileSearchable(x.Value)))
+          .ToList();
+        
+        var files = searchableFiles
+          .ToDictionary(x => x.FileData.FileName, x => x);
 
-      var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot).ToList();
-      ssw.Step(sw => Logger.Log("Done flattening file system tree snapshot in {0:n0} msec.", sw.ElapsedMilliseconds));
-
-      var directoryNames = directories
-        .ToDictionary(x => x.Value.DirectoryName, x => x.Value.DirectoryData);
-      ssw.Step(sw => Logger.Log("Done creating array of directory names in {0:n0} msec.", sw.ElapsedMilliseconds));
-
-      var searchableFiles = directories
-        .AsParallel()
-        .SelectMany(x => x.Value.ChildFiles.Select(y => KeyValuePair.Create(x.Key, y)))
-        .Select(x => new FileInfo(new FileData(x.Value, null), x.Key.IsFileSearchable(x.Value)))
-        .ToList();
-      ssw.Step(sw => Logger.Log("Done creating list of files in {0:n0} msec.", sw.ElapsedMilliseconds));
-
-      var files = searchableFiles
-        .ToDictionary(x => x.FileData.FileName, x => x);
-      ssw.Step(sw => Logger.Log("Done creating dictionary of files in {0:n0} msec.", sw.ElapsedMilliseconds));
-
-      Logger.Log("Done computing list of searchable files from FileSystemTree.");
-      Logger.LogMemoryStats();
-
-      _files = new FileNameDictionary<FileInfo>(files);
-      _directories = directoryNames;
+        _files = new FileNameDictionary<FileInfo>(files);
+        _directories = directoryNames;
+        //Logger.LogMemoryStats();
+      }
     }
 
     private void TransferUnchangedFileContents(FileDatabase oldState, IFileContentsMemoization fileContentsMemoization) {
-      Logger.Log("Checking for out of date files.");
-      var sw = Stopwatch.StartNew();
-
-      IList<FileData> commonOldFiles = GetCommonFiles(oldState).ToArray();
-      using (var progress = _progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
-        commonOldFiles
-          .AsParallel()
-          .Where(oldFileData => {
-            if (progress.Step()) {
-              progress.DisplayProgress((i, n) => string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPath));
-            }
-            return IsFileContentsUpToDate(oldFileData);
-          })
-          .ForAll(oldFileData => {
-            var contents = fileContentsMemoization.Get(oldFileData.FileName, oldFileData.Contents);
-            _files[oldFileData.FileName].FileData.UpdateContents(contents);
-          });
+      using (new TimeElapsedLogger("Checking for out of date files")) {
+        IList<FileData> commonOldFiles = GetCommonFiles(oldState).ToArray();
+        using (var progress = _progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
+          commonOldFiles
+            .AsParallel()
+            .Where(oldFileData => {
+              if (progress.Step()) {
+                progress.DisplayProgress(
+                  (i, n) =>
+                    string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPath));
+              }
+              return IsFileContentsUpToDate(oldFileData);
+            })
+            .ForAll(oldFileData => {
+              var contents = fileContentsMemoization.Get(oldFileData.FileName, oldFileData.Contents);
+              _files[oldFileData.FileName].FileData.UpdateContents(contents);
+            });
+        }
       }
-
-      Logger.Log("Done checking for {0:n0} out of date files in {1:n0} msec.", commonOldFiles.Count,
-                 sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
     }
 
     /// <summary>
     /// Reads the content of all file entries that have no content (yet). Returns the # of files read from disk.
     /// </summary>
     private void ReadMissingFileContents(IFileContentsMemoization fileContentsMemoization) {
-      Logger.Log("Loading file contents from disk.");
-      var sw = Stopwatch.StartNew();
+      using (var logger = new TimeElapsedLogger("Loading file contents from disk")) {
+        using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
+          _files.Values
+            .AsParallel()
+            .ForAll(fileInfo => {
+              if (progress.Step()) {
+                progress.DisplayProgress(
+                  (i, n) =>
+                    string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileInfo.FileData.FileName.FullPath));
+              }
+              if (fileInfo.IsSearchable && fileInfo.FileData.Contents == null) {
+                var fileContents = _fileContentsFactory.GetFileContents(fileInfo.FileData.FileName.FullPath);
+                fileInfo.FileData.UpdateContents(fileContentsMemoization.Get(fileInfo.FileData.FileName, fileContents));
+              }
+            });
+        }
 
-      using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
-        _files.Values
-          .AsParallel()
-          .ForAll(fileInfo => {
-            if (progress.Step()) {
-              progress.DisplayProgress((i, n) => string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileInfo.FileData.FileName.FullPath));
-            }
-            if (fileInfo.IsSearchable && fileInfo.FileData.Contents == null) {
-              var fileContents = _fileContentsFactory.GetFileContents(fileInfo.FileData.FileName.FullPath);
-              fileInfo.FileData.UpdateContents(fileContentsMemoization.Get(fileInfo.FileData.FileName, fileContents));
-            }
-          });
+        Logger.Log("{0}Loaded {1:n0} files", logger.Indent, _files.Count);
+        Logger.LogMemoryStats(logger.Indent);
       }
-
-      sw.Stop();
-      Logger.Log("Done loading file contents from disk: loaded {0:n0} files in {1:n0} msec.",
-        _files.Count,
-        sw.ElapsedMilliseconds);
-      Logger.LogMemoryStats();
     }
 
     private bool IsFileContentsUpToDate(FileData oldFileData) {

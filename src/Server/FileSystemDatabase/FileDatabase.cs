@@ -28,11 +28,12 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public FileDatabase(IDictionary<FileName, FileData> files,
                         IDictionary<DirectoryName, DirectoryData> directories,
-                        ICollection<ISearchableContents> searchableContentsCollection) {
+                        ICollection<ISearchableContents> searchableContentsCollection,
+                        long searchableFileCount) {
       _files = files;
       _directories = directories;
       _searchableContentsCollection = searchableContentsCollection;
-      _searchableFileCount = searchableContentsCollection.GroupBy(x => x.FileId).Count();
+      _searchableFileCount = searchableFileCount;
     }
 
     /// <summary>

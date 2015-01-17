@@ -38,9 +38,9 @@ namespace VsChromium.Core.Logging {
       }
     }
 
-    public static void LogMemoryStats() {
+    public static void LogMemoryStats(string indent = "") {
       var msg = "";
-      msg += string.Format("GC Memory: {0:n0} bytes.", GC.GetTotalMemory(false));
+      msg += string.Format("{0}GC Memory: {1:n0} bytes.", indent, GC.GetTotalMemory(false));
       for (var i = 0; i <= GC.MaxGeneration; i++) {
         msg += string.Format(" Gen{0}: {1:n0}.", i, GC.CollectionCount(i));
       }

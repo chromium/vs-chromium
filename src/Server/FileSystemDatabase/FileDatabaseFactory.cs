@@ -36,11 +36,16 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabase CreateEmpty() {
-      return new FileDatabase(new Dictionary<FileName, FileData>(), new Dictionary<DirectoryName, DirectoryData>(), new List<ISearchableContents>());
+      return new FileDatabase(
+          new Dictionary<FileName, FileData>(),
+          new Dictionary<DirectoryName, DirectoryData>(),
+          new List<ISearchableContents>(),
+          0);
     }
 
     public IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
-      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory).Build(previousFileDatabase, newSnapshot);
+      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
+          .Build(previousFileDatabase, newSnapshot);
     }
 
     /// <summary>

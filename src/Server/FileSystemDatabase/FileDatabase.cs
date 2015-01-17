@@ -6,11 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.Projects;
+using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
@@ -22,6 +24,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IDictionary<FileName, FileData> _files;
     private readonly IDictionary<DirectoryName, DirectoryData> _directories;
     private readonly ICollection<FileData> _filesWithContents;
+    private ICollection<ISearchableContents> _searchableContentsCollection;
 
     public FileDatabase(IFileContentsFactory fileContentsFactory,
                         IDictionary<FileName, FileData> files,
@@ -31,6 +34,34 @@ namespace VsChromium.Server.FileSystemDatabase {
       _files = files;
       _directories = directories;
       _filesWithContents = filesWithContents;
+      _searchableContentsCollection = CreateSearableContents(filesWithContents);
+    }
+
+    private ICollection<ISearchableContents> CreateSearableContents(ICollection<FileData> filesWithContents) {
+      return filesWithContents
+        .Select((fileData, index) => new SearchableContents(fileData, index))
+        .Cast<ISearchableContents>()
+        .ToList();
+    }
+
+    private class SearchableContents : ISearchableContents {
+      private readonly FileData _fileData;
+      private readonly int _index;
+
+      public SearchableContents(FileData fileData, int index) {
+        _fileData = fileData;
+        _index = index;
+      }
+
+      public FileName FileName {
+        get { return _fileData.FileName; }
+      }
+      public int Id {
+        get { return _index; }
+      }
+      public List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker) {
+        return _fileData.Contents.Search(_fileData.FileName, searchContentsData, progressTracker);
+      }
     }
 
     /// <summary>
@@ -50,10 +81,18 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// </summary>
     public ICollection<DirectoryName> DirectoryNames { get { return _directories.Keys; } }
 
+    public ICollection<ISearchableContents> SearchableContentsCollection {
+      get { return _searchableContentsCollection; }
+    }
+
     /// <summary>
     /// Retunrs the list of files with text contents suitable for text search.
     /// </summary>
     public ICollection<FileData> FilesWithContents { get { return _filesWithContents; } }
+
+    public long SearchableFileCount {
+      get { return _filesWithContents.Count; }
+    }
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans) {
       var fileData = GetFileData(filename);

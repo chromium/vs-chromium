@@ -21,9 +21,16 @@ namespace VsChromium.Server.FileSystemDatabase {
     ICollection<DirectoryName> DirectoryNames { get; }
 
     /// <summary>
-    /// Returns the list of files with text contents suitable for text search.
+    /// Returns the list of entities with text contents suitable for text search.
+    /// For large files, there is more than one <see cref="ISearchableContents"/>
+    /// entry per file.
     /// </summary>
-    ICollection<FileData> FilesWithContents { get; }
+    ICollection<ISearchableContents> SearchableContentsCollection { get; }
+
+    /// <summary>
+    /// The total number of file which can be searched for contents.
+    /// </summary>
+    long SearchableFileCount { get; }
 
     /// <summary>
     /// Returns the list of text extracts for a given <paramref

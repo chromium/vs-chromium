@@ -26,6 +26,7 @@
     <Compile Include="FileSystemDatabase\IFileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />
+    <Compile Include="FileSystemDatabase\ISearchableContents.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
     <Compile Include="FileSystemSnapshot\DirectoryData.cs" />

@@ -189,7 +189,7 @@ namespace VsChromium.Server.Search {
     private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
       var searchedFileCount = 0;
-      var matches = _currentFileDatabase.FilesWithContents
+      var matches = _currentFileDatabase.SearchableContentsCollection
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .WithCancellation(cancellationToken)
@@ -197,20 +197,33 @@ namespace VsChromium.Server.Search {
         .Select(item => {
           if (!includeSymLinks) {
             if (_currentFileDatabase.IsContainedInSymLink(item.FileName.Parent))
-              return null;
+              return new SearchableContentsResult();
           }
           Interlocked.Increment(ref searchedFileCount);
-          return MatchFileContents(item, searchContentsData, progressTracker);
+          return new SearchableContentsResult {
+            SearchableContents = item,
+            Spans = item.Search(searchContentsData, progressTracker),
+          };
         })
-        .Where(r => r != null)
+        .Where(r => r.Spans != null && r.Spans.Count > 0)
+        .GroupBy(r => r.SearchableContents.Id)
+        .Select(g => new FileSearchResult {
+          FileName = g.First().SearchableContents.FileName,
+          Spans = g.OrderBy(x => x.Spans.First().Position).SelectMany(x => x.Spans).ToList()
+        })
         .ToList();
 
       return new SearchFileContentsResult {
         Entries = matches,
         SearchedFileCount = searchedFileCount,
-        TotalFileCount = _currentFileDatabase.FilesWithContents.Count,
+        TotalFileCount = _currentFileDatabase.SearchableFileCount,
         HitCount = progressTracker.ResultCount,
       };
+    }
+
+    private struct SearchableContentsResult {
+      public ISearchableContents SearchableContents { get; set; }
+      public List<FilePositionSpan> Spans { get; set; }
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans) {
@@ -355,20 +368,6 @@ namespace VsChromium.Server.Search {
         return false;
 
       return matcher.MatchDirectoryName(directoryName.RelativePath, comparer);
-    }
-
-    private static FileSearchResult MatchFileContents(
-      FileData fileData,
-      SearchContentsData searchContentsData,
-      IOperationProgressTracker progressTracker) {
-      var spans = fileData.Contents.Search(fileData.FileName, searchContentsData, progressTracker);
-      if (spans.Count == 0)
-        return null;
-
-      return new FileSearchResult {
-        FileName = fileData.FileName,
-        Spans = spans
-      };
     }
   }
 }

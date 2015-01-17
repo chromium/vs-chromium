@@ -12,7 +12,7 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// </summary>
   public interface ISearchableContents {
     FileName FileName { get; }
-    int Id { get; }
+    int FileId { get; }
     List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker);
   }
 }

@@ -96,28 +96,34 @@ namespace VsChromium.Server.FileSystemDatabase {
 
       var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
       var directories = _directories;
+
+      int id = 0;
+      Func<int> idFactory = () => id++;
       // Note: Partitioning evenly ensures that each processor used by PLinq will deal with 
       // a partition of equal "weight". In this case, we make sure each partition contains
       // not only the same amount of files, but also (as close to as possible) the same
       // amount of "bytes". For example, if we have 100 files totaling 32MB and 4 processors,
       // we will end up with 4 partitions of (exactly) 25 files totalling (approximately) 8MB each.
-      var filesWithContents = files.Values
+      var searchableContentsCollection = files.Values
         .Where(x => x.Contents != null)
+        .SelectMany(x => SplitFileContents(x, idFactory))
         .ToList()
-        .PartitionEvenly(fileData => fileData.Contents.ByteLength)
+        .PartitionEvenly(x => x.ByteLength)
         .SelectMany(x => x)
+        .Cast<ISearchableContents>()
         .ToArray();
 
-      var searchableContentsCollection = filesWithContents
-        .Select((fileData, index) => new SearchableContents(fileData, index))
-        .Cast<ISearchableContents>()
-        .ToList();
+      //var searchableContentsCollection = filesWithContents
+      //  .Select((fileData, index) => new SearchableContents(fileData, index))
+        //.Cast<ISearchableContents>()
+        //.ToList();
 
       sw.Stop();
       Logger.Log("Done freezing FileDatabase state in {0:n0} msec.", sw.ElapsedMilliseconds);
       Logger.LogMemoryStats();
 
       if (OutputDiagnostics) {
+#if false
         // Note: For diagnostic only as this can be quite slow.
         filesWithContents
           .GroupBy(x => {
@@ -132,29 +138,56 @@ namespace VsChromium.Server.FileSystemDatabase {
             var byteLength = g.Aggregate(0L, (s, f) => s + f.Contents.ByteLength);
             Logger.Log("{0} \"{1}\": {2:n0} files totalling {3:n0} bytes.", g.Key.Type, g.Key.Value, g.Count(), byteLength);
           });
+#endif
       }
-
 
       return new FileDatabase(files, directories, searchableContentsCollection);
     }
 
+    private IEnumerable<SearchableContents> SplitFileContents(FileData fileData, Func<int> idFactory) {
+      int fileId = idFactory();
+      var chunkOffset = 0L;
+      var totalLength = fileData.Contents.ByteLength;
+      while (totalLength > 0) {
+        var chunkLength = Math.Min(totalLength, 100 * 1024);
+        yield return new SearchableContents(fileData, fileId, chunkOffset, chunkLength);
+
+        totalLength -= chunkLength;
+        chunkOffset += chunkLength;
+      }
+    }
+
     private class SearchableContents : ISearchableContents {
       private readonly FileData _fileData;
-      private readonly int _index;
+      private readonly int _fileId;
+      private readonly long _offset;
+      private readonly long _length;
 
-      public SearchableContents(FileData fileData, int index) {
+      public SearchableContents(FileData fileData, int fileId, long offset, long length) {
         _fileData = fileData;
-        _index = index;
+        _fileId = fileId;
+        _offset = offset;
+        _length = length;
       }
 
       public FileName FileName {
         get { return _fileData.FileName; }
       }
-      public int Id {
-        get { return _index; }
+      public int FileId {
+        get { return _fileId; }
       }
-      public List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker) {
-        return _fileData.Contents.Search(_fileData.FileName, searchContentsData, progressTracker);
+
+      public long ByteLength { get { return _length; } }
+
+      public List<FilePositionSpan> Search(
+          SearchContentsData searchContentsData,
+          IOperationProgressTracker progressTracker) {
+        return _fileData.Contents.Search(
+          _fileData.FileName,
+          _offset,
+          _length,
+          searchContentsData,
+          progressTracker);
       }
     }
 

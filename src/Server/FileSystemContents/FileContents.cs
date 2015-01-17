@@ -33,6 +33,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     public virtual List<FilePositionSpan> Search(
         FileName fileName,
+        long offset,
+        long length,
         SearchContentsData searchContentsData,
         IOperationProgressTracker progressTracker) {
       return NoSpans;

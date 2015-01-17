@@ -206,7 +206,7 @@ namespace VsChromium.Server.Search {
           };
         })
         .Where(r => r.Spans != null && r.Spans.Count > 0)
-        .GroupBy(r => r.SearchableContents.Id)
+        .GroupBy(r => r.SearchableContents.FileId)
         .Select(g => new FileSearchResult {
           FileName = g.First().SearchableContents.FileName,
           Spans = g.OrderBy(x => x.Spans.First().Position).SelectMany(x => x.Spans).ToList()

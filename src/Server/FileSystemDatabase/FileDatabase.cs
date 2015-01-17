@@ -32,7 +32,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       _files = files;
       _directories = directories;
       _searchableContentsCollection = searchableContentsCollection;
-      _searchableFileCount = searchableContentsCollection.GroupBy(x => x.Id).Count();
+      _searchableFileCount = searchableContentsCollection.GroupBy(x => x.FileId).Count();
     }
 
     /// <summary>

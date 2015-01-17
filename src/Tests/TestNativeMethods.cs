@@ -131,6 +131,7 @@ namespace VsChromium.Tests {
         matchCount = algo.SearchAll(
             "test.txt",
             textBlock.Pointer,
+            0,
             // TODO(rpaquay): 2GB limit.
             (int)textBlock.ByteLength,
             OperationProgressTracker.None).Count();

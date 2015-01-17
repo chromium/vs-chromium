@@ -50,6 +50,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     public override List<FilePositionSpan> Search(
         FileName fileName,
+        long offset,
+        long length,
         SearchContentsData searchContentsData,
         IOperationProgressTracker progressTracker) {
       if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
@@ -57,7 +59,7 @@ namespace VsChromium.Server.FileSystemContents {
 
       var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).AsciiStringSearchAlgo;
       // TODO(rpaquay): We are limited to 2GB for now.
-      var result = algo.SearchAll(fileName.RelativePath.Value, Pointer, (int)ByteLength, progressTracker);
+      var result = algo.SearchAll(fileName.RelativePath.Value, Pointer, offset, (int)length, progressTracker);
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
           searchContentsData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return result.ToList();

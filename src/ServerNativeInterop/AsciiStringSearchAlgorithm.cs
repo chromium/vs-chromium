@@ -29,34 +29,26 @@ namespace VsChromium.Server.NativeInterop {
     public IEnumerable<FilePositionSpan> SearchAll(
         string path,
         IntPtr textPtr,
-        int textLength,
+        long offset,
+        int length,
         IOperationProgressTracker progressTracker) {
-      return SearchAllWorker(textPtr, textLength, progressTracker);
+      return SearchAllWorker(textPtr, offset, length, progressTracker);
     }
 
     private IEnumerable<FilePositionSpan> SearchAllWorker(
         IntPtr textPtr,
-        int textLength,
+        long offset,
+        int length,
         IOperationProgressTracker progressTracker) {
-      const int chunkSize = 100 * 1024; // 100KB chunks
       List<FilePositionSpan> result = null;
-      var chunkOffset = 0;
-      while (textLength > 0) {
-        var chunkLength = Math.Min(chunkSize, textLength);
-
-        SearchChunk(textPtr, chunkLength, chunkOffset, progressTracker, ref result);
-
-        textLength -= chunkLength;
-        textPtr = Pointers.AddPtr(textPtr, chunkLength);
-        chunkOffset += chunkLength;
-      }
+      SearchChunk(textPtr, length, offset, progressTracker, ref result);
       return result ?? NoResult;
     }
 
     private unsafe void SearchChunk(
         IntPtr chunkPtr,
         int chunkLength,
-        int chunkOffsetFromTextStart,
+        long chunkOffsetFromTextStart,
         IOperationProgressTracker progressTracker,
         ref List<FilePositionSpan> result) {
       if (progressTracker.ShouldEndProcessing) {
@@ -83,7 +75,7 @@ namespace VsChromium.Server.NativeInterop {
           result = new List<FilePositionSpan>();
         result.Add(new FilePositionSpan {
           // TODO(rpaquay): We are limited to 2GB for now.
-          Position = chunkOffsetFromTextStart + Pointers.Offset32(chunkPtr, searchParams.MatchStart),
+          Position =(int) chunkOffsetFromTextStart + Pointers.Offset32(chunkPtr, searchParams.MatchStart),
           Length = searchParams.MatchLength
         });
 

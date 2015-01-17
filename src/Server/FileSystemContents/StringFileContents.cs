@@ -32,6 +32,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     public override List<FilePositionSpan> Search(
         FileName fileName,
+        long offset,
+        long length,
         SearchContentsData searchContentsData,
         IOperationProgressTracker progressTracker) {
       if (ReferenceEquals(this, _empty))

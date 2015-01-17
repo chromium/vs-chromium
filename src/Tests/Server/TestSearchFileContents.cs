@@ -193,10 +193,10 @@ namespace VsChromium.Tests.Server {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 1);
+          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 9);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 1);
+          VerifySearchFileContentsResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 9);
         }
       }
     }

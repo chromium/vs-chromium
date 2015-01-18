@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -43,7 +44,8 @@ namespace VsChromium.Tests {
         15
       };
 
-      var partitions = list.PartitionEvenly(i => i * 2, 3).ToList();
+      Func<int, long> weight = i => i * 2;
+      var partitions = list.PartitionEvenly(weight, 3).ToList();
 
       Assert.AreEqual(3, partitions.Count);
 

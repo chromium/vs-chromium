@@ -71,7 +71,7 @@ namespace VsChromium.Core.Linq {
           // Sort so that elements with highest weight are first, so that we have a better chance
           // of ending with partitions of same total weight - it is easier to adjust with elements of
           // low weight than with elements of high weight.
-          //.OrderByDescending(x => weight(x))
+          .OrderByDescending(x => weight(x))
           .ForAll(item => {
             var min = minHeap.Remove();
             min.Items.Add(item);

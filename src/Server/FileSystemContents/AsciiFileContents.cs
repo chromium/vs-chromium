@@ -54,7 +54,13 @@ namespace VsChromium.Server.FileSystemContents {
         long length,
         SearchContentsData searchContentsData,
         IOperationProgressTracker progressTracker) {
-      if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > ByteLength)
+      // Note: In some case, offset and length may be outside of our bounds.
+      // This is because FileContents and SearchContents may be out of date wrt
+      // to each other, see FileData.UpdateContents method.
+      offset = Math.Min(offset, this.ByteLength);
+      length = Math.Min(length, this.ByteLength - offset);
+
+      if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > length)
         return NoSpans;
 
       var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).AsciiStringSearchAlgo;

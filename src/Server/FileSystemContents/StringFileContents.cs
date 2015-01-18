@@ -38,6 +38,12 @@ namespace VsChromium.Server.FileSystemContents {
         IOperationProgressTracker progressTracker) {
       if (ReferenceEquals(this, _empty))
         return NoSpans;
+      // Note: In some case, offset and length may be outside of our bounds.
+      // This is because FileContents and SearchContents may be out of date wrt
+      // to each other, see FileData.UpdateContents method.
+      offset = Math.Min(offset, this.ByteLength);
+      length = Math.Min(length, this.ByteLength - offset);
+
       // TODO(rpaquay): Maybe we will need this someday. For now, we use this
       // class only for empty file content placeholder.
       throw new NotImplementedException();

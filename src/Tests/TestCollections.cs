@@ -63,5 +63,34 @@ namespace VsChromium.Tests {
       // All the elements of the initial list must be present in the union of the partitions.
       Assert.IsTrue(list.OrderBy(x => x).SequenceEqual(partitions.SelectMany(x => x).OrderBy(x => x)));
     }
+
+    [TestMethod]
+    public void PartitionByChunksWorks() {
+      var list = new List<int> {
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        13,
+        14,
+        15
+      };
+
+      var partitions = list.PartitionByChunks(3);
+
+      Assert.AreEqual(3, partitions.Count);
+
+      // Partition size are well-defined if the # of elements is not exactly a factor of the partition count.
+      Assert.AreEqual(4, partitions[0].Count);
+      Assert.AreEqual(4, partitions[1].Count);
+      Assert.AreEqual(3, partitions[2].Count);
+
+      // All the elements of the initial list must be present in the union of the partitions.
+      Assert.IsTrue(list.OrderBy(x => x).SequenceEqual(partitions.SelectMany(x => x).OrderBy(x => x)));
+    }
   }
 }

@@ -14,14 +14,14 @@ namespace VsChromium.Core.Linq {
     /// <summary>
     /// Partition a list into chunks (as lists) of fixed size.
     /// </summary>
-    public static IEnumerable<IList<TSource>> PartitionByChunks<TSource>(
+    public static IList<IList<TSource>> PartitionByChunks<TSource>(
         this IList<TSource> source,
         int partitionCount) {
       var description = string.Format("Creating {0} partition(s) for {1} element(s)", partitionCount, source.Count);
       using (new TimeElapsedLogger(description)) {
         var partitionSize = (source.Count + partitionCount - 1) / partitionCount;
         // Create partitions
-        var partitions = new List<List<TSource>>(partitionCount);
+        var partitions = new List<IList<TSource>>(partitionCount);
         for (var i = 0; i < partitionCount; i++) {
           partitions.Add(new List<TSource>(partitionSize));
         }

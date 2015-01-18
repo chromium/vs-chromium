@@ -99,7 +99,6 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Predicate to figure out if a file is "small"
       Func<FileData, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
 
-
       // Count the total # of searchable file contents
       int searchableContentsCount = 0;
       foreach (var fileData in filesWithContents) {
@@ -138,7 +137,6 @@ namespace VsChromium.Server.FileSystemDatabase {
         return incrementPartitionIndex(partitionIndex);
       };
 
-
       // Store small files
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
@@ -155,7 +153,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         }
       }
 
-#if false
+#if true
       for (var p = 0; p < partitionCount; p++) {
         long weight = 0;
         for (var i = 0; i < partitionSize; i++) {
@@ -177,21 +175,24 @@ namespace VsChromium.Server.FileSystemDatabase {
       return filesWithContents;
     }
 
-    private static IList<ISearchableContents> CreateSearchableContentsCollectionSlow(ICollection<FileData> files) {
-      int id = 0;
-      Func<int> fileIdFactory = () => id++;
+    private static IList<ISearchableContents> CreateSearchableContentsCollection2(ICollection<FileData> filesWithContents) {
+      int currentFileId = 0;
+      Func<int> fileIdFactory = () => currentFileId++;
 
-      // Create SearchableContents instances form small files and large files.
-      var fileContents = new List<SearchableContents>(files.Count);
-      files.ForAll(x => {
-        if (x.Contents == null)
-          return;
-        if (x.Contents.ByteLength <= ChunkSize) {
-          fileContents.Add(new SearchableContents(x, fileIdFactory(), 0, x.Contents.ByteLength));
-        } else {
-          fileContents.AddRange(SplitFileContents(x, fileIdFactory()));
-        }
-      });
+      // Predicate to figure out if a file is "small"
+      Func<FileData, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
+
+      var smallFiles = filesWithContents
+        .Where(isSmallFile)
+        .Select(x => new SearchableContents(x, fileIdFactory(), 0, x.Contents.ByteLength))
+        .ToArray();
+      var largeFiles =
+        filesWithContents.Where(x => !isSmallFile(x))
+        .SelectMany(x => SplitFileContents(x, fileIdFactory()))
+        .ToArray();
+      var allFiles = new List<SearchableContents>();
+      allFiles.AddRange(smallFiles);
+      allFiles.AddRange(largeFiles);
 
       // Note: Partitioning evenly ensures that each processor used by PLinq
       // will deal with a partition of equal "weight". In this case, we make
@@ -200,18 +201,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       // if we have 100 files totaling 32MB and 4 processors, we will end up
       // with 4 partitions of (exactly) 25 files totalling (approximately) 8MB
       // each.
-      var searchableContentsCollection = fileContents
-        .PartitionEvenly(x => x.ByteLength, Environment.ProcessorCount)
-        // Sort to that smaller entries are at the beginnig of the partitions so
-        // that regex searches hitting more than max. results don't spend most
-        // of their time searching in large file chunks which have little chance
-        // of containing hits -- because large files tend to contain useless
-        // data from a search perspective.
-        //.Select(x => x.OrderBy(y => y.ByteLength))
-        .SelectMany(x => x)
-        .Cast<ISearchableContents>()
-        .ToArray();
-      return searchableContentsCollection;
+      var partitions = allFiles
+        .PartitionByChunks(Environment.ProcessorCount);
+      var result = new List<ISearchableContents>(allFiles.Count);
+      partitions.ForAll(result.AddRange);
+      return result;
     }
     /// <summary>
     ///  Create chunks of 100KB for files larger than 100KB.

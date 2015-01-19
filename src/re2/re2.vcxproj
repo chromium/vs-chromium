@@ -147,15 +147,11 @@
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\hash.cc" />
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\pcre.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\rune.cc" />
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_array_test.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringpiece.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringprintf.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\strutil.cc" />
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\test.cc" />
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\thread.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

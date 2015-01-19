@@ -104,16 +104,10 @@
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\hash.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\pcre.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\rune.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_array_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringpiece.cc">
@@ -123,12 +117,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\strutil.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\thread.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.cc">

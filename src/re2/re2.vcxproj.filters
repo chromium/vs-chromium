@@ -21,9 +21,6 @@
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\atomicops.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\benchmark.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\flags.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -60,12 +57,48 @@
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\filtered_re2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter_tree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\re2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\regexp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\set.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\stringpiece.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_casefold.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\variadic_function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\walker-inl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\mswin\stdint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\benchmark.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\hash.cc">
@@ -99,6 +132,63 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\bitstate.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\compile.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\dfa.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\filtered_re2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\mimics_pcre.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\nfa.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\onepass.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\parse.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\perl_groups.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter_tree.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prog.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\re2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\regexp.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\set.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\simplify.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\tostring.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_casefold.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

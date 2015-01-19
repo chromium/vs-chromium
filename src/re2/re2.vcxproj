@@ -47,20 +47,20 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(BuildRoot)Binaries\Debug\</OutDir>
     <TargetName>RE2</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\..\third_party\re2-2011-09-30-src-win32\re2;..\..\third_party\re2-2011-09-30-src-win32\re2\mswin;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(BuildRoot)Binaries\Release\</OutDir>
     <TargetName>RE2</TargetName>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\..\third_party\re2-2011-09-30-src-win32\re2;..\..\third_party\re2-2011-09-30-src-win32\re2\mswin;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;NOPCH;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>false</OmitFramePointers>
@@ -97,9 +97,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\mswin\stdint.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\filtered_re2.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter_tree.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prog.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\re2.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\regexp.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\set.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\stringpiece.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_casefold.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\variadic_function.h" />
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\walker-inl.h" />
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.h" />
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\atomicops.h" />
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\benchmark.h" />
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\flags.h" />
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\logging.h" />
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\mutex.h" />
@@ -114,8 +126,26 @@
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\bitstate.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\compile.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\dfa.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\filtered_re2.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\mimics_pcre.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\nfa.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\onepass.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\parse.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\perl_groups.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter_tree.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prog.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\re2.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\regexp.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\set.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\simplify.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\tostring.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_casefold.cc" />
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.cc" />
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\benchmark.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\hash.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\pcre.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.cc" />

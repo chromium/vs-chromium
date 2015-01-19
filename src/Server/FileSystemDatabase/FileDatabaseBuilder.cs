@@ -76,7 +76,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         return new FileDatabase(
           fileDatabase.Files,
           fileDatabase.Directories,
-          CreateSearchableContentsCollection(filesWithContents),
+          CreateFilePieces(filesWithContents),
           filesWithContents.Count);
       }
     }
@@ -86,7 +86,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
         var directories = _directories;
         var filesWithContents = GetFilesWithContents(files.Values);
-        var searchableContentsCollection = CreateSearchableContentsCollection(filesWithContents);
+        var searchableContentsCollection = CreateFilePieces(filesWithContents);
         return new FileDatabase(files, directories, searchableContentsCollection, filesWithContents.Count);
       }
     }
@@ -102,7 +102,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// Note: This code inside this method is not the cleanest, but it is
     /// written in a way that tries to minimiz the # of large array allocations.
     /// </summary>
-    private static IList<ISearchableContents> CreateSearchableContentsCollection(ICollection<FileData> filesWithContents) {
+    private static IList<IFileContentsPiece> CreateFilePieces(ICollection<FileData> filesWithContents) {
       // Factory for file identifiers
       int currentFileId = 0;
       Func<int> fileIdFactory = () => currentFileId++;
@@ -113,7 +113,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Count the total # of small and large files, while splitting large files
       // into their fragments.
       var smallFilesCount = 0;
-      var largeFiles = new List<SearchableContents>(filesWithContents.Count / 100);
+      var largeFiles = new List<FileContentsPiece>(filesWithContents.Count / 100);
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
           smallFilesCount++;
@@ -126,7 +126,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
       // Store elements in their partitions
       // # of partitions = # of logical processors
-      var fileContents = new SearchableContents[totalFileCount];
+      var fileContents = new FileContentsPiece[totalFileCount];
       var partitionCount = Environment.ProcessorCount;
       var generator = new PartitionIndicesGenerator(
         totalFileCount,
@@ -135,7 +135,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Store small files
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
-          var item = new SearchableContents(
+          var item = new FileContentsPiece(
             fileData,
             fileIdFactory(),
             0,
@@ -212,13 +212,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// <summary>
     ///  Create chunks of 100KB for files larger than 100KB.
     /// </summary>
-    private static IEnumerable<SearchableContents> SplitFileContents(FileData fileData, int fileId) {
+    private static IEnumerable<FileContentsPiece> SplitFileContents(FileData fileData, int fileId) {
       var chunkOffset = 0L;
       var totalLength = fileData.Contents.ByteLength;
       while (totalLength > 0) {
         // TODO(rpaquay): Be smarter and split around new lines characters.
         var chunkLength = Math.Min(totalLength, ChunkSize);
-        yield return new SearchableContents(fileData, fileId, chunkOffset, chunkLength);
+        yield return new FileContentsPiece(fileData, fileId, chunkOffset, chunkLength);
 
         totalLength -= chunkLength;
         chunkOffset += chunkLength;

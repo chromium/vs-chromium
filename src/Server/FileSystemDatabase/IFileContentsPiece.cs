@@ -10,7 +10,7 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// There is at least one instance per searchable file, and
   /// there may be more than one if the file is large enough.
   /// </summary>
-  public interface ISearchableContents {
+  public interface IFileContentsPiece {
     FileData FileData { get; }
     FileName FileName { get; }
     int FileId { get; }

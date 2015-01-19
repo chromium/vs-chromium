@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       return new FileDatabase(
           new Dictionary<FileName, FileData>(),
           new Dictionary<DirectoryName, DirectoryData>(),
-          new List<ISearchableContents>(),
+          new List<IFileContentsPiece>(),
           0);
     }
 

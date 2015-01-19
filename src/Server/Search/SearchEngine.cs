@@ -189,7 +189,7 @@ namespace VsChromium.Server.Search {
     private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
       var searchedFileCount = 0;
-      var matches = _currentFileDatabase.SearchableContentsCollection
+      var matches = _currentFileDatabase.FileContentsPieces
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .WithCancellation(cancellationToken)
@@ -201,14 +201,14 @@ namespace VsChromium.Server.Search {
           }
           Interlocked.Increment(ref searchedFileCount);
           return new SearchableContentsResult {
-            SearchableContents = item,
+            FileContentsPiece = item,
             Spans = item.Search(searchContentsData, progressTracker),
           };
         })
         .Where(r => r.Spans != null && r.Spans.Count > 0)
-        .GroupBy(r => r.SearchableContents.FileId)
+        .GroupBy(r => r.FileContentsPiece.FileId)
         .Select(g => new FileSearchResult {
-          FileName = g.First().SearchableContents.FileName,
+          FileName = g.First().FileContentsPiece.FileName,
           Spans = g.OrderBy(x => x.Spans.First().Position).SelectMany(x => x.Spans).ToList()
         })
         .ToList();
@@ -222,7 +222,7 @@ namespace VsChromium.Server.Search {
     }
 
     private struct SearchableContentsResult {
-      public ISearchableContents SearchableContents { get; set; }
+      public IFileContentsPiece FileContentsPiece { get; set; }
       public List<FilePositionSpan> Spans { get; set; }
     }
 

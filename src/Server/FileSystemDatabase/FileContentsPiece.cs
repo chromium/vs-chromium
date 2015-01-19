@@ -9,13 +9,13 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemDatabase {
-  public class SearchableContents : ISearchableContents {
+  public class FileContentsPiece : IFileContentsPiece {
     private readonly FileData _fileData;
     private readonly int _fileId;
     private readonly long _offset;
     private readonly long _length;
 
-    public SearchableContents(FileData fileData, int fileId, long offset, long length) {
+    public FileContentsPiece(FileData fileData, int fileId, long offset, long length) {
       _fileData = fileData;
       _fileId = fileId;
       _offset = offset;

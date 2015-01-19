@@ -140,8 +140,10 @@ namespace VsChromium.Server.FileSystemDatabase {
         fileContents[generator.Next()] = item;
       }
 
-#if false
       Debug.Assert(fileContents.All(x => x != null));
+      Debug.Assert(fileContents.Aggregate(0L, (c, x) => c + x.ByteLength) ==
+        filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
+#if false
       for (var p = 0; p < partitionCount; p++) {
         long weight = 0;
         for (var i = 0; i < partitionSize; i++) {

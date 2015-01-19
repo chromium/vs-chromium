@@ -122,7 +122,6 @@
     <Compile Include="Collections\MaxHeap.cs" />
     <Compile Include="Collections\MinHeap.cs" />
     <Compile Include="Caching\IVolatileToken.cs" />
-    <Compile Include="Linq\PLinqExtensions.cs" />
     <Compile Include="Linq\EnumerableExtensions.cs" />
     <Compile Include="Ipc\IIpcStream.cs" />
     <Compile Include="Ipc\ErrorResponse.cs" />

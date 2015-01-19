@@ -34,7 +34,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase Build(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
       using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
-        var fileDatabase = (FileDatabase) previousFileDatabase;
+        var fileDatabase = (FileDatabase)previousFileDatabase;
         // Compute list of files from tree
         ComputeFileCollection(newSnapshot);
 
@@ -56,7 +56,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase BuildWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
-        var fileDatabase = (FileDatabase) previousFileDatabase;
+        var fileDatabase = (FileDatabase)previousFileDatabase;
 
         // Update file contents of file data entries of changed files.
         var contentsUpdated = false;
@@ -91,6 +91,10 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
+    /// <summary>
+    /// Note: This code inside this method is not the cleanest, but it is
+    /// written in a way that tries to minimiz the # of large array allocations.
+    /// </summary>
     private static IList<ISearchableContents> CreateSearchableContentsCollection(ICollection<FileData> filesWithContents) {
       // Factory for file identifiers
       int currentFileId = 0;
@@ -99,61 +103,45 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Predicate to figure out if a file is "small"
       Func<FileData, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
 
-      // Count the total # of searchable file contents
-      int searchableContentsCount = 0;
+      // Count the total # of small and large files, while splitting large files
+      // into their fragments.
+      var smallFilesCount = 0;
+      var largeFiles = new List<SearchableContents>(filesWithContents.Count / 100);
       foreach (var fileData in filesWithContents) {
-        var chunkCount = (fileData.Contents.ByteLength + ChunkSize - 1)/ChunkSize;
-        searchableContentsCount += (int)chunkCount;
-      }
-      // # of partitions = # of logical processors
-      var partitionCount = Environment.ProcessorCount;
-      var partitionSize = (searchableContentsCount + partitionCount - 1) / partitionCount;
-      var lastPartitionSize = searchableContentsCount - (partitionSize * (partitionCount - 1));
-
-      // Create SearchableContents instances form small files and large files.
-      var fileContents = new SearchableContents[searchableContentsCount];
-      var partitionIndices = new int[partitionCount];
-      var largeFilePartitionIndex = 0;
-      var smallFilePartitionIndex = 0;
-      Func<int, int> incrementPartitionIndex = partitionIndex => {
-        partitionIndex++;
-        return (partitionIndex == partitionCount ? 0 : partitionIndex);
-      };
-      Func<int, SearchableContents, int> storeInPartition = (partitionIndex, x) => {
-        if ((partitionIndices[partitionIndex] == partitionSize) ||
-            (partitionIndex == partitionCount - 1 && partitionIndices[partitionIndex] == lastPartitionSize)) {
-          // Find first non full paritition
-          for (partitionIndex = 0; partitionIndex < partitionCount; partitionIndex++) {
-            if (partitionIndices[partitionIndex] < partitionSize)
-              break;
-          }
-          Debug.Assert(partitionIndex < partitionCount);
+        if (isSmallFile(fileData)) {
+          smallFilesCount++;
+        } else {
+          var splitFileContents = SplitFileContents(fileData, fileIdFactory());
+          largeFiles.AddRange(splitFileContents);
         }
-        var partitionBase = partitionIndex * partitionSize;
+      }
+      var totalFileCount = smallFilesCount + largeFiles.Count;
 
-        fileContents[partitionBase + partitionIndices[partitionIndex]] = x;
-
-        partitionIndices[partitionIndex]++;
-        return incrementPartitionIndex(partitionIndex);
-      };
+      // Store elements in their partitions
+      // # of partitions = # of logical processors
+      var fileContents = new SearchableContents[totalFileCount];
+      var generator = new PartitionIndicesGenerator(
+        totalFileCount,
+        Environment.ProcessorCount);
 
       // Store small files
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
-          var x = new SearchableContents(fileData, fileIdFactory(), 0, fileData.Contents.ByteLength);
-          smallFilePartitionIndex = storeInPartition(smallFilePartitionIndex, x);
+          var item = new SearchableContents(
+            fileData,
+            fileIdFactory(),
+            0,
+            fileData.Contents.ByteLength);
+          fileContents[generator.Next()] = item;
         }
       }
       // Store large files
-      foreach (var fileData in filesWithContents) {
-        if (!isSmallFile(fileData)) {
-          foreach (var x in SplitFileContents(fileData, fileIdFactory())) {
-            largeFilePartitionIndex = storeInPartition(largeFilePartitionIndex, x);
-          }
-        }
+      foreach (var item in largeFiles) {
+        fileContents[generator.Next()] = item;
       }
 
-#if true
+#if false
+      Debug.Assert(fileContents.All(x => x != null));
       for (var p = 0; p < partitionCount; p++) {
         long weight = 0;
         for (var i = 0; i < partitionSize; i++) {
@@ -166,6 +154,43 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
 #endif
       return fileContents;
+    }
+
+    class PartitionIndicesGenerator {
+      private readonly int _count;
+      // Size of paritions (rounded up)
+      private readonly int _partitionSize;
+      // Last index of partitions that are of filled up to partition size
+      private readonly int _fullPartitionsEndIndex;
+      private int _currentIndex;
+
+      public PartitionIndicesGenerator(int count, int partitionCount) {
+        _count = count;
+        _partitionSize = (count + partitionCount - 1) / partitionCount;
+        int fullPartitionCount = (_partitionSize == 1 ? count : count % (_partitionSize - 1));
+        _fullPartitionsEndIndex = fullPartitionCount * _partitionSize;
+      }
+
+      public int Next() {
+        var result = _currentIndex;
+        _currentIndex = NextIndex(_currentIndex);
+        return result;
+      }
+
+      private int NextIndex(int index) {
+        // Move to the next partition
+        if (index < _fullPartitionsEndIndex)
+          index += _partitionSize;
+        else
+          index += _partitionSize - 1;
+
+        // If we reach past limit, we move "up" to the next row in partitions
+        if (index >= _count) {
+          index -= _count;
+          index++;
+        }
+        return index;
+      }
     }
 
     private static List<FileData> GetFilesWithContents(ICollection<FileData> files) {
@@ -226,16 +251,16 @@ namespace VsChromium.Server.FileSystemDatabase {
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       using (new TimeElapsedLogger("Computing list of searchable files from FileSystemTree")) {
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot).ToList();
-        
+
         var directoryNames = directories
           .ToDictionary(x => x.Value.DirectoryName, x => x.Value.DirectoryData);
-        
+
         var searchableFiles = directories
           .AsParallel()
           .SelectMany(x => x.Value.ChildFiles.Select(y => KeyValuePair.Create(x.Key, y)))
           .Select(x => new FileInfo(new FileData(x.Value, null), x.Key.IsFileSearchable(x.Value)))
           .ToList();
-        
+
         var files = searchableFiles
           .ToDictionary(x => x.FileData.FileName, x => x);
 

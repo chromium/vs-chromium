@@ -113,3 +113,7 @@ UpgradeLog*.XML
 /VsChromiumPackage/VsChromiumNative.lib
 
 *.DotSettings
+
+# Mercurial
+.hg
+

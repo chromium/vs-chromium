@@ -27,6 +27,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Native", "Native\Native.vcxproj", "{C0710B1A-5DFB-4BE2-B6C6-F02382BC15F0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B55D20C2-DF82-4487-8AAB-44EBC5D87B19} = {B55D20C2-DF82-4487-8AAB-44EBC5D87B19}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerNativeInterop", "ServerNativeInterop\ServerNativeInterop.csproj", "{A38DC74B-820C-49A5-A732-23170D953632}"
 EndProject

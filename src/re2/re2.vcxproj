@@ -124,6 +124,7 @@
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\utf.h" />
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\util.h" />
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.h" />
+    <ClInclude Include="re2_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\bitstate.cc" />
@@ -153,6 +154,7 @@
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringprintf.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\strutil.cc" />
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.cc" />
+    <ClCompile Include="re2_wrapper.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,170 +13,179 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="re2_lib">
+      <UniqueIdentifier>{fdf54042-45aa-4a01-9acc-97ae2dfec641}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\atomicops.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\flags.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\logging.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\mutex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\pcre.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_array.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_set.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\test.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\thread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\utf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\filtered_re2.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\flags.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\logging.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\mutex.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\pcre.h">
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter_tree.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prog.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.h">
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\re2.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\regexp.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\set.h">
-      <Filter>Header Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\stringpiece.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_array.h">
+      <Filter>re2_lib</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_casefold.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\variadic_function.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\walker-inl.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_set.h">
+      <Filter>re2_lib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\mswin\stdint.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\stringpiece.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\test.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\thread.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_casefold.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\utf.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\util.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\variadic_function.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\walker-inl.h">
+      <Filter>re2_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="re2_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\hash.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\rune.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringpiece.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringprintf.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\strutil.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\bitstate.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\compile.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\dfa.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\filtered_re2.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\hash.cc">
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\mimics_pcre.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\nfa.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\onepass.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\parse.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\perl_groups.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prefilter_tree.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\prog.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.cc">
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\re2.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\regexp.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\rune.cc">
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\set.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\simplify.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringpiece.cc">
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringprintf.cc">
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\strutil.cc">
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\tostring.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_casefold.cc">
-      <Filter>Source Files</Filter>
+      <Filter>re2_lib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\re2\unicode_groups.cc">
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.cc">
+      <Filter>re2_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="re2_wrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

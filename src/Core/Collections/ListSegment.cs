@@ -8,9 +8,9 @@ using System.Collections.Generic;
 
 namespace VsChromium.Core.Collections {
   public struct ListSegment<T> : IList<T> {
-    private readonly int _count;
     private readonly IList<T> _list;
     private readonly int _offset;
+    private readonly int _count;
 
     public ListSegment(IList<T> list, int offset, int count) {
       _list = list;

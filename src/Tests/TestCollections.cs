@@ -13,6 +13,29 @@ namespace VsChromium.Tests {
   [TestClass]
   public class TestCollections {
     [TestMethod]
+    public void BitArrayWorks() {
+      var bits = new ConcurrentBitArray(10);
+
+      Assert.AreEqual(false, bits.Get(0));
+      Assert.AreEqual(false, bits.Get(10000));
+      Assert.AreEqual(0, bits.Count);
+
+      bits.Set(100, false);
+      Assert.AreEqual(false, bits.Get(100));
+      Assert.AreEqual(0, bits.Count);
+
+      bits.Set(100, true);
+      Assert.AreEqual(true, bits.Get(100));
+      Assert.AreEqual(1, bits.Count);
+
+      bits.Set(100, false);
+      Assert.AreEqual(false, bits.Get(100));
+      Assert.AreEqual(0, bits.Count);
+
+      bits.Set(63, true);
+    }
+
+    [TestMethod]
     public void HeapWorks() {
       var heap = new MaxHeap<int>();
       heap.Add(5);

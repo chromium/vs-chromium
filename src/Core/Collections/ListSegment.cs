@@ -7,7 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace VsChromium.Core.Collections {
-  public struct ListSegment<T> : IList<T> {
+  public class ListSegment<T> : IList<T> {
     private readonly IList<T> _list;
     private readonly int _offset;
     private readonly int _count;

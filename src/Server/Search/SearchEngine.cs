@@ -9,10 +9,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
@@ -188,7 +188,7 @@ namespace VsChromium.Server.Search {
 
     private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
-      var searchedFileCount = 0;
+      var searchedFileIds = new ConcurrentBitArray(_currentFileDatabase.FileContentsPieces.Count);
       var matches = _currentFileDatabase.FileContentsPieces
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
@@ -199,7 +199,7 @@ namespace VsChromium.Server.Search {
             if (_currentFileDatabase.IsContainedInSymLink(item.FileName.Parent))
               return new SearchableContentsResult();
           }
-          Interlocked.Increment(ref searchedFileCount);
+          searchedFileIds.Set(item.FileId, true);
           return new SearchableContentsResult {
             FileContentsPiece = item,
             Spans = item.Search(searchContentsData, progressTracker),
@@ -215,7 +215,7 @@ namespace VsChromium.Server.Search {
 
       return new SearchFileContentsResult {
         Entries = matches,
-        SearchedFileCount = searchedFileCount,
+        SearchedFileCount = searchedFileIds.Count,
         TotalFileCount = _currentFileDatabase.SearchableFileCount,
         HitCount = progressTracker.ResultCount,
       };

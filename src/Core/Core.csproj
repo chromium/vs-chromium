@@ -37,6 +37,8 @@
     <Compile Include="Chromium\InstallationEnumerator.cs" />
     <Compile Include="Chromium\InstallationLevel.cs" />
     <Compile Include="Chromium\ProcessCategory.cs" />
+    <Compile Include="Collections\ConcurrentBitArray.cs" />
+    <Compile Include="Collections\IBitArray.cs" />
     <Compile Include="Collections\SimpleConcurrentQueue.cs" />
     <Compile Include="Collections\SortedArray.cs" />
     <Compile Include="Collections\SortedArrayHelpers.cs" />

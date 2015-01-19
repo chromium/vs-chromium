@@ -36,8 +36,9 @@ void RE2Search::PreProcess(
     SearchOptions options,
     SearchCreateResult& result) {
   RE2Wrapper* re2_wrapper = new RE2Wrapper();
+  bool caseSensitive = (options & kMatchCase);
   std::string error;
-  re2_wrapper->Compile(pattern, patternLen, &error);
+  re2_wrapper->Compile(pattern, patternLen, caseSensitive, &error);
   if (!error.empty()) {
     result.HResult = E_FAIL;
     strcpy_s(result.ErrorMessage, error.c_str());

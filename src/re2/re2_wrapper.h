@@ -13,7 +13,7 @@ class RE2Wrapper {
   RE2Wrapper();
   ~RE2Wrapper();
 
-  void Compile(const char *pattern, int patternLen, std::string* error);
+  void Compile(const char *pattern, int patternLen, bool caseSensitive, std::string* error);
   void Match(const char* textStart, int textLength, const char** matchStart, int* matchLength);
 
  private:

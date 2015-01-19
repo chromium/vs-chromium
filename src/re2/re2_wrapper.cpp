@@ -29,12 +29,15 @@ RE2Wrapper::~RE2Wrapper() {
 void RE2Wrapper::Compile(
     const char *pattern,
     int patternLen,
+    bool caseSensitive,
     std::string* error) {
   pattern_ = pattern;
   patternLen_ = patternLen;
 
+  re2::RE2::Options options;
+  options.set_case_sensitive(caseSensitive);
   re2::StringPiece patternPiece(pattern, patternLen);
-  RE2* re2 = new re2::RE2(patternPiece);
+  RE2* re2 = new re2::RE2(patternPiece, options);
   if (re2 == nullptr) {
     *error = "Out of memory";
     return;

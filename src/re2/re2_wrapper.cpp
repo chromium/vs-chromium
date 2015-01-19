@@ -32,7 +32,37 @@ void RE2Wrapper::Compile(
     std::string* error) {
   pattern_ = pattern;
   patternLen_ = patternLen;
+
+  re2::StringPiece patternPiece(pattern, patternLen);
+  RE2* re2 = new re2::RE2(patternPiece);
+  if (re2 == nullptr) {
+    *error = "Out of memory";
+    return;
+  }
+
+  if (!re2->ok()) {
+    *error = re2->error();
+    delete re2;
+    return;
+  }
+
+  impl_->regex_ = re2;
+  *error = "";
 }
 
-void RE2Wrapper::Match() {
+void RE2Wrapper::Match(
+    const char* textStart,
+    int textLength,
+    const char** matchStart,
+    int* matchLength) {
+  re2::StringPiece text(textStart, textLength);
+  re2::StringPiece match;
+  bool found = impl_->regex_->Match(text, 0, textLength, RE2::UNANCHORED, &match, 1);
+  if (!found) {
+    (*matchStart) = nullptr;
+    (*matchLength) = 0;
+    return;
+  }
+  (*matchStart) = match.data();
+  (*matchLength) = match.length();
 }

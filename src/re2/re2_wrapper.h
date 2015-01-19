@@ -13,8 +13,8 @@ class RE2Wrapper {
   RE2Wrapper();
   ~RE2Wrapper();
 
-  virtual void Compile(const char *pattern, int patternLen, std::string* error);
-  virtual void Match();
+  void Compile(const char *pattern, int patternLen, std::string* error);
+  void Match(const char* textStart, int textLength, const char** matchStart, int* matchLength);
 
  private:
   const char *pattern_;

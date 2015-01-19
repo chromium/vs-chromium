@@ -14,6 +14,7 @@ namespace VsChromium.Server.NativeInterop {
       kBndm64 = 3,
       kBoyerMoore = 4,
       kRegex = 5,
+      kRe2 = 6,
     }
 
     [Flags]

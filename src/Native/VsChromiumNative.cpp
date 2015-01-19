@@ -15,6 +15,7 @@
 #include "search_boyer_moore.h"
 #include "search_strstr.h"
 #include "search_regex.h"
+#include "search_re2.h"
 
 #define EXPORT __declspec(dllexport)
 
@@ -65,7 +66,8 @@ enum SearchAlgorithmKind {
   kBndm32 = 2,
   kBndm64 =3,
   kBoyerMoore = 4,
-  kRegex,
+  kRegex = 5,
+  kRe2 = 6,
 };
 
 EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
@@ -98,6 +100,9 @@ EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
       break;
     case kRegex:
       result = new RegexSearch();
+      break;
+    case kRe2:
+      result = new RE2Search();
       break;
   }
 

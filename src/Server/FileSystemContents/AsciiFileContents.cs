@@ -39,8 +39,10 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     public static AsciiStringSearchAlgorithm CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
-      if (searchOptions.HasFlag(NativeMethods.SearchOptions.kRegex))
-        return new AsciiStringSearchRegex(pattern, searchOptions);
+      if (searchOptions.HasFlag(NativeMethods.SearchOptions.kRegex)) {
+        //return new AsciiStringSearchRegex(pattern, searchOptions);
+        return new AsciiStringSearchRe2(pattern, searchOptions);
+      }
 
       if (pattern.Length <= 64)
         return new AsciiStringSearchBndm64(pattern, searchOptions);

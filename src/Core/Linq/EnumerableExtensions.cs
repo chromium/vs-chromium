@@ -13,43 +13,11 @@ using VsChromium.Core.Utility;
 namespace VsChromium.Core.Linq {
   public static class EnumerableExtensions {
     /// <summary>
-    /// Partition a list into chunks (as lists) of fixed size.
-    /// </summary>
-    public static IList<IList<TSource>> PartitionByChunks<TSource>(
-      this IList<TSource> source,
-      int partitionCount) {
-      var description = string.Format("Creating {0} partition(s) for {1} element(s)", partitionCount, source.Count);
-      using (new TimeElapsedLogger(description)) {
-        var partitionSize = (source.Count + partitionCount - 1) / partitionCount;
-        // Create partitions
-        var partitions = new List<IList<TSource>>(partitionCount);
-        for (var i = 0; i < partitionCount; i++) {
-          partitions.Add(new List<TSource>(partitionSize));
-        }
-
-        // Process items to each partitions
-        source.ForAll((index, x) => {
-          var p = index % partitionCount;
-          partitions[p].Add(x);
-        });
-
-#if false
-      Logger.Log("Created {0} partitions for a total ot {1:n0} elements and weight of {2:n0}.",
-        partitions.Count,
-        partitions.Aggregate(0L, (c, x) => c + x.Count),
-        partitions.Aggregate(0L, (c, x) => c + x.Aggregate(0L, (a, y) => a + weight(y))));
-      partitions.ForAll(x => Logger.Log("  Partition count is {0:n0}, total weight is {1:n0}.", x.Count, x.Aggregate(0L, (a, y) => a + weight(y))));
-#endif
-        return partitions;
-      }
-    }
-
-    /// <summary>
     /// Partition a list of elements of <paramref name="weight"/> into <paramref
     /// name="partitionCount"/> lists having identical total weight (as best as
     /// possible).
     /// </summary>
-    public static IEnumerable<IList<TSource>> PartitionEvenly<TSource>(
+    public static IEnumerable<IList<TSource>> PartitionWithWeight<TSource>(
       this IList<TSource> source,
       Func<TSource, long> weight,
       int partitionCount) {
@@ -69,10 +37,11 @@ namespace VsChromium.Core.Linq {
 
         // Distribute items using MinHeap.
         source
-          // Sort so that elements with highest weight are first, so that we have a better chance
-          // of ending with partitions of same total weight - it is easier to adjust with elements of
-          // low weight than with elements of high weight.
-          .OrderByDescending(x => weight(x))
+          // Sort so that elements with highest weight are first, so that we
+          // have a better chance of ending with partitions of same total weight
+          // - it is easier to adjust with elements of low weight than with
+          // elements of high weight.
+          .OrderByDescending(weight)
           .ForAll(item => {
             var min = minHeap.Remove();
             min.Items.Add(item);
@@ -106,6 +75,16 @@ namespace VsChromium.Core.Linq {
       }
     }
 
+    public static IEnumerable<KeyValuePair<int,int>> GetPartitionRanges<TSource>(
+      this IList<TSource> source,
+      int partitionCount) {
+      var index = 0;
+      foreach (var size in source.GetPartitionSizes(partitionCount)) {
+        yield return KeyValuePair.Create(index, size);
+        index += size;
+      }
+    }
+
     public static IEnumerable<int> GetPartitionSizes<TSource>(this IList<TSource> source, int partitionCount) {
       if (partitionCount <= 0)
         throw new ArgumentException("Invalid count", "partitionCount");
@@ -125,14 +104,13 @@ namespace VsChromium.Core.Linq {
         });
     }
 
-    public static IList<IList<TSource>> CreatePartitions<TSource>(this IList<TSource> source, int partitionCount) {
+    public static IList<IList<TSource>> PartitionByChunks<TSource>(this IList<TSource> source, int partitionCount) {
       var sourceIndex = 0;
-      return Enumerable.Select<int, IList<TSource>>(GetPartitionSizes(source, partitionCount),
-          size => {
-          IList<TSource> result = new ListSegment<TSource>(source, sourceIndex, size);
-          sourceIndex += size;
-          return result;
-        }).ToList();
+      return GetPartitionSizes(source, partitionCount).Select(size => {
+        IList<TSource> result = new ListSegment<TSource>(source, sourceIndex, size);
+        sourceIndex += size;
+        return result;
+      }).ToList();
     }
 
     public static void ForAll<TSource>(this IEnumerable<TSource> source, Action<TSource> action) {

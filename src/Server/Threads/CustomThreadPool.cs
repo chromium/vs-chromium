@@ -43,7 +43,7 @@ namespace VsChromium.Server.Threads {
       Func<TSource, TDest> selector,
       CancellationToken token) {
       var partitions = source
-        .CreatePartitions(_threadPool.Capacity)
+        .PartitionByChunks(_threadPool.Capacity)
         .Select(items => new Partition<TSource, TDest> {
           Items = items,
           ThreadObject = null,

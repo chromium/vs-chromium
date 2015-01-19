@@ -45,7 +45,7 @@ namespace VsChromium.Tests {
       };
 
       Func<int, long> weight = i => i * 2;
-      var partitions = list.PartitionEvenly(weight, 3).ToList();
+      var partitions = list.PartitionWithWeight(weight, 3).ToList();
 
       Assert.AreEqual(3, partitions.Count);
 

@@ -92,6 +92,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     /// <summary>
+    /// Partitioning evenly ensures that each processor used by PLinq will deal
+    /// with a partition of equal "weight". In this case, we make sure each
+    /// partition contains not only the same amount of files, but also (as close
+    /// to as possible) the same amount of "bytes". For example, if we have 100
+    /// files totaling 32MB and 4 processors, we will end up with 4 partitions
+    /// of (exactly) 25 files totalling (approximately) 8MB each.
+    /// 
     /// Note: This code inside this method is not the cleanest, but it is
     /// written in a way that tries to minimiz the # of large array allocations.
     /// </summary>
@@ -120,9 +127,10 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Store elements in their partitions
       // # of partitions = # of logical processors
       var fileContents = new SearchableContents[totalFileCount];
+      var partitionCount = Environment.ProcessorCount;
       var generator = new PartitionIndicesGenerator(
         totalFileCount,
-        Environment.ProcessorCount);
+        partitionCount);
 
       // Store small files
       foreach (var fileData in filesWithContents) {
@@ -140,20 +148,19 @@ namespace VsChromium.Server.FileSystemDatabase {
         fileContents[generator.Next()] = item;
       }
 
+#if false
       Debug.Assert(fileContents.All(x => x != null));
       Debug.Assert(fileContents.Aggregate(0L, (c, x) => c + x.ByteLength) ==
         filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
-#if false
-      for (var p = 0; p < partitionCount; p++) {
-        long weight = 0;
-        for (var i = 0; i < partitionSize; i++) {
-          var index = (p * partitionSize) + i;
-          if (index >= fileContents.Length)
-            break;
-          weight += fileContents[index].ByteLength;
-        }
-        Logger.Log("Partition {0} has a weigth of {1:n0}", p, weight);
-      }
+      fileContents.GetPartitionRanges(partitionCount).ForAll(
+        (index, range) => {
+          Logger.Log("Partition {0} has a weight of {1:n0}",
+            index,
+            fileContents
+              .Skip(range.Key)
+              .Take(range.Value)
+              .Aggregate(0L, (c, x) => c + x.ByteLength));
+        });
 #endif
       return fileContents;
     }
@@ -202,38 +209,6 @@ namespace VsChromium.Server.FileSystemDatabase {
       return filesWithContents;
     }
 
-    private static IList<ISearchableContents> CreateSearchableContentsCollection2(ICollection<FileData> filesWithContents) {
-      int currentFileId = 0;
-      Func<int> fileIdFactory = () => currentFileId++;
-
-      // Predicate to figure out if a file is "small"
-      Func<FileData, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
-
-      var smallFiles = filesWithContents
-        .Where(isSmallFile)
-        .Select(x => new SearchableContents(x, fileIdFactory(), 0, x.Contents.ByteLength))
-        .ToArray();
-      var largeFiles =
-        filesWithContents.Where(x => !isSmallFile(x))
-        .SelectMany(x => SplitFileContents(x, fileIdFactory()))
-        .ToArray();
-      var allFiles = new List<SearchableContents>();
-      allFiles.AddRange(smallFiles);
-      allFiles.AddRange(largeFiles);
-
-      // Note: Partitioning evenly ensures that each processor used by PLinq
-      // will deal with a partition of equal "weight". In this case, we make
-      // sure each partition contains not only the same amount of files, but
-      // also (as close to as possible) the same amount of "bytes". For example,
-      // if we have 100 files totaling 32MB and 4 processors, we will end up
-      // with 4 partitions of (exactly) 25 files totalling (approximately) 8MB
-      // each.
-      var partitions = allFiles
-        .PartitionByChunks(Environment.ProcessorCount);
-      var result = new List<ISearchableContents>(allFiles.Count);
-      partitions.ForAll(result.AddRange);
-      return result;
-    }
     /// <summary>
     ///  Create chunks of 100KB for files larger than 100KB.
     /// </summary>

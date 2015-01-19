@@ -13,9 +13,16 @@ namespace VsChromium.Tests {
   [TestClass]
   public class TestCollections {
     [TestMethod]
-    public void BitArrayWorks() {
-      var bits = new ConcurrentBitArray(10);
+    public void ConcurrentBitArrayWorks() {
+      TestBitArray(new ConcurrentBitArray(10));
+    }
 
+    [TestMethod]
+    public void PartitionedBitArrayWorks() {
+      TestBitArray(new PartitionedBitArray(12000, 35));
+    }
+
+    private static void TestBitArray(IBitArray bits) {
       Assert.AreEqual(false, bits.Get(0));
       Assert.AreEqual(false, bits.Get(10000));
       Assert.AreEqual(0, bits.Count);
@@ -33,6 +40,8 @@ namespace VsChromium.Tests {
       Assert.AreEqual(0, bits.Count);
 
       bits.Set(63, true);
+      Assert.AreEqual(true, bits.Get(63));
+      Assert.AreEqual(1, bits.Count);
     }
 
     [TestMethod]

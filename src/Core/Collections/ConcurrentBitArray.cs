@@ -5,24 +5,31 @@
 using System;
 
 namespace VsChromium.Core.Collections {
+  /// <summary>
+  /// Thread safe implementation of <see cref="IBitArray"/> , grows dynamically
+  /// from an optional initial capacity. The array never shrinks, usages are
+  /// intended for "fire-and-forget" or immutable scenarios.
+  /// </summary>
   public class ConcurrentBitArray : IBitArray {
+    private static readonly long[] EmptyBits = new long[0];
     private const int BitsPerItem = 64;
     private long[] _bits;
     private int _count;
     private readonly object _lock = new object();
-    private static readonly long[] EmptyBits = new long[0];
 
     public ConcurrentBitArray() {
       _bits = EmptyBits;
     }
 
-    public ConcurrentBitArray(int capacity) {
+    public ConcurrentBitArray(long capacity) {
       _bits = ResizeBits(EmptyBits, capacity);
     }
 
-    private static long[] ResizeBits(long[] bits, int capacity) {
+    private static long[] ResizeBits(long[] bits, long capacity) {
+      if (capacity < 0)
+        throw new ArgumentOutOfRangeException();
       var slots = (capacity + BitsPerItem - 1) / BitsPerItem;
-      var delta =slots - bits.Length;
+      var delta = slots - bits.Length;
       if (delta <= 0)
         return bits;
 
@@ -31,11 +38,11 @@ namespace VsChromium.Core.Collections {
       return newBits;
     }
 
-    public int Count { get { return _count; } }
+    public long Count { get { return _count; } }
 
-    public void Set(int index, bool value) {
-      int slot = index / BitsPerItem;
-      long mask = 1L << (index % BitsPerItem);
+    public void Set(long index, bool value) {
+      long slot = index / BitsPerItem;
+      long mask = 1L << (int)(index % BitsPerItem);
       lock (_lock) {
         if (slot >= _bits.Length) {
           _bits = ResizeBits(_bits, index);
@@ -51,9 +58,9 @@ namespace VsChromium.Core.Collections {
       }
     }
 
-    public bool Get(int index) {
-      int slot = index / BitsPerItem;
-      long mask = 1L << (index % BitsPerItem);
+    public bool Get(long index) {
+      long slot = index / BitsPerItem;
+      long mask = 1L << (int)(index % BitsPerItem);
       lock (_lock) {
         if (slot >= _bits.Length)
           return false;

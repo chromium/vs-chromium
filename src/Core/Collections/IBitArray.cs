@@ -1,7 +1,11 @@
-﻿namespace VsChromium.Core.Collections {
+﻿// Copyright 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+namespace VsChromium.Core.Collections {
   public interface IBitArray {
-    int Count { get; }
-    void Set(int index, bool value);
-    bool Get(int index);
+    long Count { get; }
+    void Set(long index, bool value);
+    bool Get(long index);
   }
 }

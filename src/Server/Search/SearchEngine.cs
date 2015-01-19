@@ -188,7 +188,9 @@ namespace VsChromium.Server.Search {
 
     private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
-      var searchedFileIds = new ConcurrentBitArray(_currentFileDatabase.FileContentsPieces.Count);
+      var searchedFileIds = new PartitionedBitArray(
+        _currentFileDatabase.SearchableFileCount,
+        Environment.ProcessorCount * 2);
       var matches = _currentFileDatabase.FileContentsPieces
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)

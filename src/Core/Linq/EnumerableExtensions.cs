@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using VsChromium.Core.Collections;
-using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Linq {
@@ -75,22 +74,16 @@ namespace VsChromium.Core.Linq {
       }
     }
 
-    public static IEnumerable<KeyValuePair<int,int>> GetPartitionRanges<TSource>(
-      this IList<TSource> source,
-      int partitionCount) {
-      var index = 0;
-      foreach (var size in source.GetPartitionSizes(partitionCount)) {
-        yield return KeyValuePair.Create(index, size);
-        index += size;
-      }
+    public static IEnumerable<int> GetPartitionSizes<TSource>(this IList<TSource> source, int partitionCount) {
+      return GetPartitionSizes(source.Count, partitionCount);
     }
 
-    public static IEnumerable<int> GetPartitionSizes<TSource>(this IList<TSource> source, int partitionCount) {
+    public static IEnumerable<int> GetPartitionSizes(int count, int partitionCount) {
       if (partitionCount <= 0)
         throw new ArgumentException("Invalid count", "partitionCount");
 
-      var baseSize = source.Count / partitionCount;
-      var additionalItems = source.Count % partitionCount;
+      var baseSize = count / partitionCount;
+      var additionalItems = count % partitionCount;
 
       return Enumerable
         .Range(0, partitionCount)
@@ -102,6 +95,20 @@ namespace VsChromium.Core.Linq {
           }
           return actualSize;
         });
+    }
+
+    public static IEnumerable<KeyValuePair<int, int>> GetPartitionRanges<TSource>(
+      this IList<TSource> source,
+      int partitionCount) {
+      return GetPartitionRanges(source.Count, partitionCount);
+    }
+
+    public static IEnumerable<KeyValuePair<int,int>> GetPartitionRanges(int count, int partitionCount) {
+      var index = 0;
+      foreach (var size in GetPartitionSizes(count, partitionCount)) {
+        yield return KeyValuePair.Create(index, size);
+        index += size;
+      }
     }
 
     public static IList<IList<TSource>> PartitionByChunks<TSource>(this IList<TSource> source, int partitionCount) {

@@ -15,60 +15,91 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\atomicops.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="search_base.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\benchmark.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="search_boyer_moore.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\flags.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="search_bndm32.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="search_bndm64.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\mutex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="search_regex.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\pcre.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="search_strstr.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="targetver.h">
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_set.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\thread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\utf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\arena.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="search_base.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\benchmark.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="search_boyer_moore.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\hash.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="search_bndm32.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\pcre.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="search_bndm64.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\random.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="search_regex.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\rune.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="search_strstr.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\sparse_array_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VsChromiumNative.cpp">
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringpiece.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\stringprintf.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\strutil.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\thread.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\re2-2011-09-30-src-win32\re2\util\valgrind.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

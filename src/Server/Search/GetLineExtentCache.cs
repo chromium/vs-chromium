@@ -2,26 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemContents;
 
 namespace VsChromium.Server.Search {
   public class GetLineExtentCache {
-    private readonly GetLineExtentFunction _getLineExtent;
-    private FilePositionSpan? _previousSpan;
+    private readonly GetLineRangeFunction _getLineRange;
+    private TextRange? _previousSpan;
 
-    public GetLineExtentCache(GetLineExtentFunction getLineExtent) {
-      _getLineExtent = getLineExtent;
+    public GetLineExtentCache(GetLineRangeFunction getLineRange) {
+      _getLineRange = getLineRange;
     }
 
-    public FilePositionSpan GetLineExtent(int position) {
+    public TextRange GetLineExtent(int position) {
       if (_previousSpan.HasValue) {
-        if (position >= _previousSpan.Value.Position &&
-            position < _previousSpan.Value.Position + _previousSpan.Value.Length) {
+        if (position >= _previousSpan.Value.CharacterOffset &&
+            position < _previousSpan.Value.CharacterOffset + _previousSpan.Value.CharacterCount) {
           return _previousSpan.Value;
         }
       }
 
-      _previousSpan = _getLineExtent(position);
+      _previousSpan = _getLineRange(position);
       return _previousSpan.Value;
     }
   }

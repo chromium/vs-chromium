@@ -3,19 +3,19 @@ using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Server.NativeInterop {
-  public class StrStrWStringSearchAlgorithm : UTF16StringSearchAlgorithm {
-    private readonly SafeHGlobalHandle _searchTextUniPtr;
-    private readonly NativeMethods.SearchOptions _searchOptions;
+  public class StrStrWCompiledTextSearch : Utf16CompiledTextSearch {
+    private readonly SafeHGlobalHandle _patternPtr;
     private readonly int _patternLength;
+    private readonly NativeMethods.SearchOptions _searchOptions;
 
-    public StrStrWStringSearchAlgorithm(string pattern, NativeMethods.SearchOptions searchOptions) {
-      _searchTextUniPtr = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(pattern));
-      _searchOptions = searchOptions;
+    public StrStrWCompiledTextSearch(string pattern, NativeMethods.SearchOptions searchOptions) {
+      _patternPtr = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(pattern));
       _patternLength = pattern.Length;
+      _searchOptions = searchOptions;
     }
 
     public override void Dispose() {
-      _searchTextUniPtr.Dispose();
+      _patternPtr.Dispose();
       base.Dispose();
     }
 
@@ -31,11 +31,13 @@ namespace VsChromium.Server.NativeInterop {
     [DllImport("Shlwapi.dll", CharSet = CharSet.Unicode, SetLastError = false)]
     public static extern IntPtr StrStrW(IntPtr pszFirst, IntPtr pszSrch);
 
-    public override IntPtr Search(IntPtr text, int textLen) {
-      if (MatchCase)
-        return StrStrW(text, _searchTextUniPtr.Pointer);
-      else
-        return StrStrIW(text, _searchTextUniPtr.Pointer);
+    public override TextFragment Search(TextFragment textFragment) {
+      var searchHitPtr = MatchCase
+        ? StrStrW(textFragment.FragmentStart, _patternPtr.Pointer)
+        : StrStrIW(textFragment.FragmentStart, _patternPtr.Pointer);
+      if (searchHitPtr == IntPtr.Zero)
+        return TextFragment.Null;
+      return textFragment.Sub(searchHitPtr, _patternLength);
     }
 
     public override int PatternLength {

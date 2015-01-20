@@ -33,14 +33,26 @@ namespace VsChromium.Server.NativeInterop {
     /// <summary>
     /// Returns the # of bytes between "start" end "end" (excluded).
     /// </summary>
-    public static int Offset32(byte* start, byte* end) {
+    public static long Offset64(byte* start, byte* end) {
       if (start > end)
         throw new ArgumentException();
 
-      var diff = (long)(end - start);
-      if (diff > Int32.MaxValue)
-        throw new ArgumentException();
-      return (int)diff;
+      return end - start;
+    }
+
+    /// <summary>
+    /// Returns the # of bytes between "start" end "end" (excluded).
+    /// </summary>
+    public static long Offset64(IntPtr start, IntPtr end) {
+      return Offset64((byte*)start.ToPointer(), (byte*)end.ToPointer());
+    }
+
+    /// <summary>
+    /// Returns the # of bytes between "start" end "end" (excluded).
+    /// </summary>
+    public static int Offset32(byte* start, byte* end) {
+      var offset = Offset64(start, end);
+      return checked((int)offset);
     }
 
     /// <summary>

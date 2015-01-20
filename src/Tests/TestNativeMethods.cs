@@ -77,7 +77,7 @@ namespace VsChromium.Tests {
 
         SetSearchMatches(textBlock, pattern, patternOccurrenceCount);
 
-        using (var search = new AsciiStringSearchStrStr(pattern, searchOptions)) {
+        using (var search = new AsciiCompiledTextSearchStrStr(pattern, searchOptions)) {
           var sw = Stopwatch.StartNew();
           var matchCount = PerformSearch(textBlock, search, iterationCount);
           sw.Stop();
@@ -86,7 +86,7 @@ namespace VsChromium.Tests {
                                         matchCount, iterationCount, sw.Elapsed.TotalSeconds,
                                         ComputeThroughput(sw, blockByteLength, iterationCount)));
         }
-        using (var search = new AsciiStringSearchBoyerMoore(pattern, searchOptions)) {
+        using (var search = new AsciiCompiledTextSearchBoyerMoore(pattern, searchOptions)) {
           var sw = Stopwatch.StartNew();
           var matchCount = PerformSearch(textBlock, search, iterationCount);
           sw.Stop();
@@ -95,7 +95,7 @@ namespace VsChromium.Tests {
                                         matchCount, iterationCount, sw.Elapsed.TotalSeconds,
                                         ComputeThroughput(sw, blockByteLength, iterationCount)));
         }
-        using (var search = new AsciiStringSearchBndm32(pattern, searchOptions)) {
+        using (var search = new AsciiCompiledTextSearchBndm32(pattern, searchOptions)) {
           var sw = Stopwatch.StartNew();
           var matchCount = PerformSearch(textBlock, search, iterationCount);
           sw.Stop();
@@ -104,7 +104,7 @@ namespace VsChromium.Tests {
                                         matchCount, iterationCount, sw.Elapsed.TotalSeconds,
                                         ComputeThroughput(sw, blockByteLength, iterationCount)));
         }
-        using (var search = new AsciiStringSearchBndm64(pattern, searchOptions)) {
+        using (var search = new AsciiCompiledTextSearchBndm64(pattern, searchOptions)) {
           var sw = Stopwatch.StartNew();
           var matchCount = PerformSearch(textBlock, search, iterationCount);
           sw.Stop();
@@ -124,17 +124,13 @@ namespace VsChromium.Tests {
 
     private static int PerformSearch(
         SafeHeapBlockHandle textBlock,
-        AsciiStringSearchAlgorithm algo,
+        AsciiCompiledTextSearch algo,
         int repeat) {
       int matchCount = 0;
       for (var i = 0; i < repeat; i++) {
         matchCount = algo.SearchAll(
-            "test.txt",
-            textBlock.Pointer,
-            0,
-            // TODO(rpaquay): 2GB limit.
-            (int)textBlock.ByteLength,
-            OperationProgressTracker.None).Count();
+          new TextFragment(textBlock.Pointer, 0, (int) textBlock.ByteLength, sizeof (byte)),
+          OperationProgressTracker.None).Count();
       }
       return matchCount;
     }

@@ -28,6 +28,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private List<TreeViewItemViewModel> _fileSystemNodes = new List<TreeViewItemViewModel>();
     private ISourceExplorerViewModelHost _sourceExplorerViewModelHost;
     private UpdateInfo _updateInfo;
+    private bool _useStdRegex;
+    private bool _useRe2Regex;
 
     public enum DisplayKind {
       FileSystem,
@@ -72,17 +74,50 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool UseRegex { get; set; }
+    public bool UseRe2Regex {
+      get { return _useRe2Regex; }
+      set {
+        _useRe2Regex = value;
+        if (value)
+          UseStdRegex = false;
+        OnPropertyChanged("UseRe2Regex");
+      }
+    }
 
     /// <summary>
     /// Databound!
     /// </summary>
-    public string UseRegexToolTip {
+    public string UseRe2RegexToolTip {
       get { 
         return string.Format(
-          "Toggle usage of regular expressions for file searches. " +
+          "Toggle usage of regular expressions using the Re2 library for file searches. " +
           "Use Regular expression is currently {0}.",
-          UseRegex ? "enabled" : "disabled");
+          UseRe2Regex ? "enabled" : "disabled");
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool UseStdRegex {
+      get { return _useStdRegex; }
+      set {
+        _useStdRegex = value;
+        if (value)
+          UseRe2Regex = false;
+        OnPropertyChanged("UseStdRegex");
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string UseStdRegexToolTip {
+      get {
+        return string.Format(
+          "Toggle usage of regular expressions using the standard c++ library for file searches. " +
+          "Use Regular expression is currently {0}.",
+          UseRe2Regex ? "enabled" : "disabled");
       }
     }
 

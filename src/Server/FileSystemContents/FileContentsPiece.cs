@@ -5,46 +5,37 @@
 using System.Collections.Generic;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
+using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Search;
 
-namespace VsChromium.Server.FileSystemDatabase {
+namespace VsChromium.Server.FileSystemContents {
   public class FileContentsPiece : IFileContentsPiece {
-    private readonly FileData _fileData;
+    private readonly FileName _fileName;
+    private readonly FileContents _fileContents;
     private readonly int _fileId;
-    private readonly long _offset;
-    private readonly long _length;
+    private readonly TextRange _textRange;
 
-    public FileContentsPiece(FileData fileData, int fileId, long offset, long length) {
-      _fileData = fileData;
+    public FileContentsPiece(FileName fileName, FileContents fileContents,int fileId, TextRange textRange) {
+      _fileName = fileName;
+      _fileContents = fileContents;
       _fileId = fileId;
-      _offset = offset;
-      _length = length;
-    }
-
-    public FileData FileData {
-      get { return _fileData; }
+      _textRange = textRange;
     }
 
     public FileName FileName {
-      get { return FileData.FileName; }
+      get { return _fileName; }
     }
 
     public int FileId {
       get { return _fileId; }
     }
 
-    public long ByteLength {
-      get { return _length; }
-    }
-
     public List<FilePositionSpan> Search(
       SearchContentsData searchContentsData,
       IOperationProgressTracker progressTracker) {
-      return FileData.Contents.Search(
-        FileData.FileName,
-        _offset,
-        _length,
+      return _fileContents.Search(
+        _textRange,
         searchContentsData,
         progressTracker);
     }

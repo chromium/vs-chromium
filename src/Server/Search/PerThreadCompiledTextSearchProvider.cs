@@ -9,26 +9,26 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
-  public class PerThreadSearchContentsAlgorithms : ISearchContentsAlgorithms {
+  public class PerThreadCompiledTextSearchProvider : ICompiledTextSearchProvider {
     private readonly string _pattern;
     private readonly NativeMethods.SearchOptions _searchOptions;
-    private readonly ConcurrentDictionary<int, AsciiStringSearchAlgorithm> _asciiAlgorithms = new ConcurrentDictionary<int, AsciiStringSearchAlgorithm>();
-    private readonly Func<int, AsciiStringSearchAlgorithm> _asciiAlgorithmFactory;
-    private readonly UTF16StringSearchAlgorithm _unicodeStringSearchAlgo;
+    private readonly ConcurrentDictionary<int, AsciiCompiledTextSearch> _asciiAlgorithms = new ConcurrentDictionary<int, AsciiCompiledTextSearch>();
+    private readonly Func<int, AsciiCompiledTextSearch> _asciiAlgorithmFactory;
+    private readonly Utf16CompiledTextSearch _unicodeCompiledTextSearchAlgo;
 
-    public PerThreadSearchContentsAlgorithms(string pattern, NativeMethods.SearchOptions searchOptions) {
+    public PerThreadCompiledTextSearchProvider(string pattern, NativeMethods.SearchOptions searchOptions) {
       _pattern = pattern;
       _searchOptions = searchOptions;
       _asciiAlgorithmFactory = x => AsciiFileContents.CreateSearchAlgo(_pattern, _searchOptions);
-      _unicodeStringSearchAlgo = UTF16FileContents.CreateSearchAlgo(_pattern, _searchOptions);
+      _unicodeCompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(_pattern, _searchOptions);
     }
 
-    public AsciiStringSearchAlgorithm GetAsciiStringSearchAlgo() {
+    public ICompiledTextSearch GetAsciiSearch() {
       return _asciiAlgorithms.GetOrAdd(Thread.CurrentThread.ManagedThreadId, _asciiAlgorithmFactory);
     }
 
-    public UTF16StringSearchAlgorithm GetUnicodeStringSearchAlgo() {
-      return _unicodeStringSearchAlgo;
+    public ICompiledTextSearch GetUtf16Search() {
+      return _unicodeCompiledTextSearchAlgo;
     }
 
     public void Dispose() {
@@ -36,7 +36,7 @@ namespace VsChromium.Server.Search {
         algo.Dispose();
       }
       _asciiAlgorithms.Clear();
-      _unicodeStringSearchAlgo.Dispose();
+      _unicodeCompiledTextSearchAlgo.Dispose();
     }
   }
 }

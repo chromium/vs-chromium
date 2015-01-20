@@ -5,9 +5,9 @@
 using System;
 
 namespace VsChromium.Server.NativeInterop {
-  public class AsciiStringSearchBndm32 : AsciiStringSearchNative
+  public class AsciiCompiledTextSearchBndm32 : AsciiCompiledTextSearchNative
   {
-    public AsciiStringSearchBndm32(string pattern, NativeMethods.SearchOptions searchOptions)
+    public AsciiCompiledTextSearchBndm32(string pattern, NativeMethods.SearchOptions searchOptions)
       : base(NativeMethods.SearchAlgorithmKind.kBndm32, pattern, searchOptions) {
       if (pattern.Length > 32)
         throw new ArgumentException("Bndm32 algorithm is limited to patterns of 32 characters maximum.", "pattern");

@@ -66,16 +66,23 @@
           <TextBlock Text="{Binding MatchCaseToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <ToggleButton Content="Regex" IsChecked="{Binding UseRegex}" IsTabStop="False">
+      <ToggleButton Content="Regex" IsChecked="{Binding UseStdRegex}" IsTabStop="False">
         <ToggleButton.ToolTip>
-          <TextBlock Text="{Binding UseRegexToolTip}"/>
+          <TextBlock Text="{Binding UseStdRegexToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <ToggleButton Content="lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False">
+      <ToggleButton Content="Re2" IsChecked="{Binding UseRe2Regex}" IsTabStop="False">
+        <ToggleButton.ToolTip>
+          <TextBlock Text="{Binding UseRe2RegexToolTip}"/>
+        </ToggleButton.ToolTip>
+      </ToggleButton>
+      <Separator Width="3"></Separator>
+      <ToggleButton Content="Symlinks" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
+      <Separator Width="3"></Separator>
       <ToggleButton IsChecked="{Binding EnableChildDebugging}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="Enable child-process debugging for launch/attach scenarios other than those available through the Attach to Chrome dialog."/>
@@ -103,20 +110,20 @@
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="70" />
+            <ColumnDefinition Width="80" />
             <ColumnDefinition MinWidth="100" />
             <ColumnDefinition Width="22"/>
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Files:" />
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" />
           <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="FileNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}" ToolTip="Type file names to search for, including wildcards and directory names, e.g. &quot;bar&quot;, &quot;bar.*&quot;, &quot;foo/bar*&quot;, &quot;foo/**/bar.*&quot;"/>
           <Button Grid.Row="0" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False">x</Button>
           <!-- Row 1 -->
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Directories:"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Folder name:" VerticalAlignment="Center"/>
           <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectoryNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}" ToolTip="Type directory name to search for, including wildcards, e.g. &quot;foo&quot;, &quot;foo/bar*&quot;, &quot;foo/**/bar&quot;, &quot;/bar&quot;"/>
           <Button Grid.Row="1" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False">x</Button>
           <!-- Row 2 -->
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Contents:" Height="22" VerticalAlignment="Bottom" />
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Find in Files:" VerticalAlignment="Center" />
           <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="FileContentsSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}" ToolTip="Type text to search for, including the &quot;*&quot; wildcard and the &quot;\&quot; escape character, e.g. &quot;sometext&quot;, &quot;some*text&quot;, &quot;some\*text&quot;, &quot;some*other*text&quot;"/>
           <Button Grid.Row="2" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False" Height="22" Margin="1,0" VerticalAlignment="Bottom">x</Button>
           <!-- Row 4 -->

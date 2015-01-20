@@ -25,5 +25,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(5)]
     public bool Regex { get; set; }
+
+    [ProtoMember(6)]
+    public bool Re2 { get; set; }
   }
 }

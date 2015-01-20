@@ -23,11 +23,12 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileSystemContents\TextRange.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsPiece.cs" />
-    <Compile Include="FileSystemDatabase\FileContentsPiece.cs" />
+    <Compile Include="FileSystemContents\FileContentsPiece.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
     <Compile Include="FileSystemSnapshot\DirectoryData.cs" />
@@ -105,11 +106,12 @@
     <Compile Include="FileSystemDatabase\FileDatabaseFactory.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabase.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabaseFactory.cs" />
-    <Compile Include="Search\ISearchContentsAlgorithms.cs" />
+    <Compile Include="Search\ICompiledTextSearchProvider.cs" />
+    <Compile Include="Search\ICompiledTextSearchProviderFactory.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
     <Compile Include="Search\GetLineExtentCache.cs" />
-    <Compile Include="Search\PerThreadSearchContentsAlgorithms.cs" />
-    <Compile Include="Search\SearchContentsAlgorithms.cs" />
+    <Compile Include="Search\PerThreadCompiledTextSearchProvider.cs" />
+    <Compile Include="Search\CompiledTextSearchProvider.cs" />
     <Compile Include="Search\SearchDirectoryNamesResult.cs" />
     <Compile Include="Search\SearchFileContentsResult.cs" />
     <Compile Include="Search\SearchFileNamesResult.cs" />

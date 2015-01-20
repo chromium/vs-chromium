@@ -47,7 +47,7 @@ namespace VsChromium.Server.FileSystemContents {
         case NativeMethods.TextKind.Utf8WithBom:
           var utf16Block = Conversion.UTF8ToUnicode(block);
           block.Dispose();
-          return new UTF16FileContents(new FileContentsMemory(utf16Block, 0, utf16Block.ByteLength), fileInfo.LastWriteTimeUtc);
+          return new Utf16FileContents(new FileContentsMemory(utf16Block, 0, utf16Block.ByteLength), fileInfo.LastWriteTimeUtc);
 
         case NativeMethods.TextKind.Unknown:
         default:

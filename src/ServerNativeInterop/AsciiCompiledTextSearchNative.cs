@@ -8,13 +8,13 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Server.NativeInterop {
-  public class AsciiStringSearchNative : AsciiStringSearchAlgorithm {
+  public class AsciiCompiledTextSearchNative : AsciiCompiledTextSearch {
     private readonly SafeSearchHandle _handle;
     private readonly SafeHGlobalHandle _patternHandle;
     private readonly int _patternLength;
     private readonly int _searchBufferSize;
 
-    public AsciiStringSearchNative(
+    public AsciiCompiledTextSearchNative(
         NativeMethods.SearchAlgorithmKind kind,
         string pattern,
         NativeMethods.SearchOptions searchOptions) {

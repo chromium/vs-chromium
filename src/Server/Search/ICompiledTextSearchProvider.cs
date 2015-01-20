@@ -6,8 +6,8 @@ using System;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
-  public interface ISearchContentsAlgorithms : IDisposable {
-    AsciiStringSearchAlgorithm GetAsciiStringSearchAlgo();
-    UTF16StringSearchAlgorithm GetUnicodeStringSearchAlgo();
+  public interface ICompiledTextSearchProvider : IDisposable {
+    ICompiledTextSearch GetAsciiSearch();
+    ICompiledTextSearch GetUtf16Search();
   }
 }

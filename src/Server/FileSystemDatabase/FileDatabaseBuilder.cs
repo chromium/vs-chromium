@@ -135,11 +135,10 @@ namespace VsChromium.Server.FileSystemDatabase {
       // Store small files
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
-          var item = new FileContentsPiece(
-            fileData,
+          var item = fileData.Contents.CreatePiece(
+            fileData.FileName,
             fileIdFactory(),
-            0,
-            fileData.Contents.ByteLength);
+            fileData.Contents.TextRange);
           fileContents[generator.Next()] = item;
         }
       }
@@ -213,15 +212,14 @@ namespace VsChromium.Server.FileSystemDatabase {
     ///  Create chunks of 100KB for files larger than 100KB.
     /// </summary>
     private static IEnumerable<FileContentsPiece> SplitFileContents(FileData fileData, int fileId) {
-      var chunkOffset = 0L;
-      var totalLength = fileData.Contents.ByteLength;
-      while (totalLength > 0) {
+      var range = fileData.Contents.TextRange;
+      while (range.CharacterCount > 0) {
         // TODO(rpaquay): Be smarter and split around new lines characters.
-        var chunkLength = Math.Min(totalLength, ChunkSize);
-        yield return new FileContentsPiece(fileData, fileId, chunkOffset, chunkLength);
+        var chunkLength = Math.Min(range.CharacterCount, ChunkSize);
+        var chunk = new TextRange(range.CharacterOffset, chunkLength);
+        yield return fileData.Contents.CreatePiece(fileData.FileName, fileId, chunk);
 
-        totalLength -= chunkLength;
-        chunkOffset += chunkLength;
+        range = new TextRange(chunk.CharacterEndOffset, range.CharacterEndOffset - chunk.CharacterEndOffset);
       }
     }
 

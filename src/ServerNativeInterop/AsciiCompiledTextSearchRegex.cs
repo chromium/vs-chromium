@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Server.NativeInterop {
-  public class AsciiStringSearchRegex : AsciiStringSearchNative {
-    public AsciiStringSearchRegex(string pattern, NativeMethods.SearchOptions searchOptions)
+  public class AsciiCompiledTextSearchRegex : AsciiCompiledTextSearchNative {
+    public AsciiCompiledTextSearchRegex(string pattern, NativeMethods.SearchOptions searchOptions)
       : base(NativeMethods.SearchAlgorithmKind.kRegex, pattern, searchOptions) {
     }
   }

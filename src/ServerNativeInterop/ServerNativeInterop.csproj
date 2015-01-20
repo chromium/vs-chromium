@@ -22,20 +22,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsciiStringSearchAlgorithm.cs" />
-    <Compile Include="AsciiStringSearchBndm32.cs" />
-    <Compile Include="AsciiStringSearchBndm64.cs" />
-    <Compile Include="AsciiStringSearchBoyerMoore.cs" />
-    <Compile Include="AsciiStringSearchNative.cs" />
-    <Compile Include="AsciiStringSearchRe2.cs" />
-    <Compile Include="AsciiStringSearchRegex.cs" />
-    <Compile Include="AsciiStringSearchStrStr.cs" />
+    <Compile Include="AsciiCompiledTextSearch.cs" />
+    <Compile Include="AsciiCompiledTextSearchBndm32.cs" />
+    <Compile Include="AsciiCompiledTextSearchBndm64.cs" />
+    <Compile Include="AsciiCompiledTextSearchBoyerMoore.cs" />
+    <Compile Include="AsciiCompiledTextSearchNative.cs" />
+    <Compile Include="AsciiCompiledTextSearchRe2.cs" />
+    <Compile Include="AsciiCompiledTextSearchRegex.cs" />
+    <Compile Include="AsciiCompiledTextSearchStrStr.cs" />
+    <Compile Include="ICompiledTextSearch.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Pointers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SafeSearchHandle.cs" />
-    <Compile Include="StrStrWStringSearchAlgorithm.cs" />
-    <Compile Include="UTF16StringSearchAlgorithm.cs" />
+    <Compile Include="StrStrWCompiledTextSearch.cs" />
+    <Compile Include="Utf16CompiledTextSearch.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">

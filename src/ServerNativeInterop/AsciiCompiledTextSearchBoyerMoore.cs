@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Server.NativeInterop {
-  public class AsciiStringSearchBoyerMoore : AsciiStringSearchNative {
-    public AsciiStringSearchBoyerMoore(string pattern, NativeMethods.SearchOptions searchOptions)
+  public class AsciiCompiledTextSearchBoyerMoore : AsciiCompiledTextSearchNative {
+    public AsciiCompiledTextSearchBoyerMoore(string pattern, NativeMethods.SearchOptions searchOptions)
       : base(NativeMethods.SearchAlgorithmKind.kBoyerMoore, pattern, searchOptions) {
     }
   }

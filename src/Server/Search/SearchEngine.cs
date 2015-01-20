@@ -155,7 +155,7 @@ namespace VsChromium.Server.Search {
         }
       }
 
-      var searchContentsAlgorithms = CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase, searchParams.Regex);
+      var searchContentsAlgorithms = CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase, searchParams.Regex, searchParams.Re2);
       using (var searchContentsData = new SearchContentsData(parsedSearchString, searchContentsAlgorithms)) {
         // taskCancellation is used to make sure we cancel previous tasks as
         // fast as possible to avoid using too many CPU resources if the caller
@@ -168,18 +168,24 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private static List<ISearchContentsAlgorithms> CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase, bool regex) {
+    private static List<ICompiledTextSearchProvider> CreateSearchAlgorithms(
+      ParsedSearchString parsedSearchString,
+      bool matchCase,
+      bool regex,
+      bool re2) {
       var searchOptions = NativeMethods.SearchOptions.kNone;
       if (matchCase)
         searchOptions |= NativeMethods.SearchOptions.kMatchCase;
       if (regex)
         searchOptions |= NativeMethods.SearchOptions.kRegex;
+      if (re2)
+        searchOptions |= NativeMethods.SearchOptions.kRe2Regex;
       return parsedSearchString.EntriesBeforeMainEntry
         .Concat(new[] { parsedSearchString.MainEntry })
         .Concat(parsedSearchString.EntriesAfterMainEntry)
         .OrderBy(x => x.Index)
-        .Select(entry => new PerThreadSearchContentsAlgorithms(entry.Text, searchOptions))
-        .Cast<ISearchContentsAlgorithms>()
+        .Select(entry => new PerThreadCompiledTextSearchProvider(entry.Text, searchOptions))
+        .Cast<ICompiledTextSearchProvider>()
         .ToList();
     }
 

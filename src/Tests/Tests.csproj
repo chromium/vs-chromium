@@ -28,7 +28,7 @@
   <ItemGroup>
     <Compile Include="ServerProcess\TestUnregisterFile.cs" />
     <Compile Include="ServerProcess\TestFileSystemTree.cs" />
-    <Compile Include="Server\TestAsciiSearch.cs" />
+    <Compile Include="Server\TestFileContentsSearch.cs" />
     <Compile Include="Server\TestSearchStringParser.cs" />
     <Compile Include="Features\TestBuildOutputAnalyzer.cs" />
     <Compile Include="Mocks\TextEditMock.cs" />
@@ -43,7 +43,7 @@
     <Compile Include="ServerProcess\TestSearchFileNames.cs" />
     <Compile Include="Core\TestFileNameMatching.cs" />
     <Compile Include="Core\TestCollections.cs" />
-    <Compile Include="NativeInterop\TestNativeMethods.cs" />
+    <Compile Include="NativeInterop\TestAsciiSearch.cs" />
     <Compile Include="Core\TestTcpSerialization.cs" />
     <Compile Include="Core\TestProtoBufSerialization.cs" />
     <Compile Include="MefBaseTest.cs" />

@@ -77,6 +77,8 @@
     <Compile Include="Operations\OperationIdFactory.cs" />
     <Compile Include="Operations\OperationHandlers.cs" />
     <Compile Include="Operations\OperationProcessor.cs" />
+    <Compile Include="Search\CompiledTextSearchDataFactory.cs" />
+    <Compile Include="Search\CompiledTextSearchProviderFactory.cs" />
     <Compile Include="Search\FilesLoadedResult.cs" />
     <Compile Include="ProgressTracking\EnvironmentTickCountProvider.cs" />
     <Compile Include="ProgressTracking\IndeterminateProgressTracker.cs" />
@@ -106,6 +108,7 @@
     <Compile Include="FileSystemDatabase\FileDatabaseFactory.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabase.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabaseFactory.cs" />
+    <Compile Include="Search\ICompiledTextSearchDataFactory.cs" />
     <Compile Include="Search\ICompiledTextSearchProvider.cs" />
     <Compile Include="Search\ICompiledTextSearchProviderFactory.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
@@ -127,7 +130,7 @@
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotVisitor.cs" />
     <Compile Include="FileSystemContents\IFileContentsFactory.cs" />
     <Compile Include="Search\ISearchEngine.cs" />
-    <Compile Include="Search\SearchContentsData.cs" />
+    <Compile Include="Search\CompiledTextSearchData.cs" />
     <Compile Include="FileSystemContents\UTF16FileContents.cs" />
     <Compile Include="FileSystemContents\AsciiFileContents.cs" />
     <Compile Include="FileSystemContents\StringFileContents.cs" />

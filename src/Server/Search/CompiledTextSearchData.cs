@@ -10,11 +10,11 @@ namespace VsChromium.Server.Search {
   /// Container for various pieces of data needed by all text search components.
   /// TODO(rpaquay): It would be nicer to make this a little bit more OO and decouple.
   /// </summary>
-  public class SearchContentsData : IDisposable {
+  public class CompiledTextSearchData : IDisposable {
     private readonly ParsedSearchString _parsedSearchString;
     private readonly IList<ICompiledTextSearchProvider> _searchAlgorithms;
 
-    public SearchContentsData(ParsedSearchString parsedSearchString, IList<ICompiledTextSearchProvider> searchAlgorithms) {
+    public CompiledTextSearchData(ParsedSearchString parsedSearchString, IList<ICompiledTextSearchProvider> searchAlgorithms) {
       _parsedSearchString = parsedSearchString;
       _searchAlgorithms = searchAlgorithms;
     }

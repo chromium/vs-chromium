@@ -1,7 +1,11 @@
-﻿using VsChromium.Server.NativeInterop;
+﻿// Copyright 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   public interface ICompiledTextSearchProviderFactory {
-    ICompiledTextSearchProvider CreateSearchAlgorithmProvider(string pattern, NativeMethods.SearchOptions searchOptions);
+    ICompiledTextSearchProvider CreateProvider(string pattern, NativeMethods.SearchOptions searchOptions);
   }
 }

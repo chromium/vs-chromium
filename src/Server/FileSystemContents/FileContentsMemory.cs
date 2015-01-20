@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
@@ -12,16 +13,21 @@ namespace VsChromium.Server.FileSystemContents {
   /// skipping a fixed numbers of bytes in prefix and suffix.
   /// </summary>
   public struct FileContentsMemory {
-    private readonly SafeHeapBlockHandle _block;
+    private readonly SafeHandle _block;
     private readonly long _contentsOffset;
     private readonly long _contentsLength;
 
-    public FileContentsMemory(SafeHeapBlockHandle block, long contentsOffset, long contentsLength) {
+    public FileContentsMemory(SafeHeapBlockHandle block, long contentsOffset, long contentsLength) :
+      this(block, block.ByteLength, contentsOffset, contentsLength) {
+      
+    }
+
+    public FileContentsMemory(SafeHandle block, long size, long contentsOffset, long contentsLength) {
       if (contentsOffset < 0)
         throw new ArgumentException("Contents offset must be positive", "contentsOffset");
       if (contentsOffset < 0)
         throw new ArgumentException("Contents length must be positive.", "contentsLength");
-      if (checked(contentsOffset + contentsLength) >= block.ByteLength)
+      if (checked(contentsOffset + contentsLength) > size)
         throw new ArgumentException("Contents range must be within the bounds of the memory block.", "contentsOffset");
       _block = block;
       _contentsOffset = contentsOffset;
@@ -32,7 +38,7 @@ namespace VsChromium.Server.FileSystemContents {
     /// Returns the pointer to the usable memory of this block, i.e. the block
     /// offset added to the start pointer.
     /// </summary>
-    public IntPtr Pointer { get { return Pointers.AddPtr(_block.Pointer, _contentsOffset); } }
+    public IntPtr Pointer { get { return Pointers.AddPtr(_block.DangerousGetHandle(), _contentsOffset); } }
     /// <summary>
     /// Return the number of bytes of the usable memory of this block.
     /// </summary>

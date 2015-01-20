@@ -32,11 +32,11 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     public List<FilePositionSpan> Search(
-      SearchContentsData searchContentsData,
+      CompiledTextSearchData compiledTextSearchData,
       IOperationProgressTracker progressTracker) {
       return _fileContents.Search(
         _textRange,
-        searchContentsData,
+        compiledTextSearchData,
         progressTracker);
     }
   }

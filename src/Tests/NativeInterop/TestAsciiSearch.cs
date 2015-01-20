@@ -10,11 +10,8 @@ using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Tests.NativeInterop {
-  /// <summary>
-  /// Summary description for UnitTest1
-  /// </summary>
   [TestClass]
-  public class TestNativeMethods {
+  public class TestAsciiSearch {
     [TestMethod]
     public void HeapAllocWorks() {
       var block = HeapAllocStatic.Alloc(1024);
@@ -22,7 +19,7 @@ namespace VsChromium.Tests.NativeInterop {
     }
 
     [TestMethod]
-    public unsafe void AsciiSearchForVariousPatternsWorks() {
+    public void AsciiSearchForVariousPatternsWorks() {
       const long oneKB = 1024L;
       const long oneMB = 1024 * oneKB;
       const long tenMB = 10 * oneMB;

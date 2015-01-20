@@ -13,6 +13,6 @@ namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileContentsPiece {
     FileName FileName { get; }
     int FileId { get; }
-    List<FilePositionSpan> Search(SearchContentsData searchContentsData, IOperationProgressTracker progressTracker);
+    List<FilePositionSpan> Search(CompiledTextSearchData compiledTextSearchData, IOperationProgressTracker progressTracker);
   }
 }

@@ -16,11 +16,9 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
-using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
@@ -30,11 +28,10 @@ namespace VsChromium.Server.Search {
   public class SearchEngine : ISearchEngine {
     private static readonly TaskId ComputeNewStatedId = new TaskId("ComputeNewStateId");
     private static readonly TaskId GarbageCollectId = new TaskId("GarbageCollectId");
-    private const int MinimumSearchPatternLength = 2;
     private readonly IFileDatabaseFactory _fileDatabaseFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly IProjectDiscovery _projectDiscovery;
-    private readonly ISearchStringParser _searchStringParser;
+    private readonly ICompiledTextSearchDataFactory _compiledTextSearchDataFactory;
     private readonly IOperationProcessor _operationProcessor;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
     /// <summary>
@@ -53,13 +50,13 @@ namespace VsChromium.Server.Search {
       ITaskQueueFactory taskQueueFactory,
       IFileDatabaseFactory fileDatabaseFactory,
       IProjectDiscovery projectDiscovery,
-      ISearchStringParser searchStringParser,
+      ICompiledTextSearchDataFactory compiledTextSearchDataFactory,
       IOperationProcessor operationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _taskQueue = taskQueueFactory.CreateQueue("SearchEngine Task Queue");
       _fileDatabaseFactory = fileDatabaseFactory;
       _projectDiscovery = projectDiscovery;
-      _searchStringParser = searchStringParser;
+      _compiledTextSearchDataFactory = compiledTextSearchDataFactory;
       _operationProcessor = operationProcessor;
 
       // Create a "Null" state
@@ -140,23 +137,7 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
-      ParsedSearchString parsedSearchString;
-      if (searchParams.Regex) {
-        parsedSearchString = new ParsedSearchString(
-          new ParsedSearchString.Entry { Text = searchParams.SearchString },
-          Enumerable.Empty<ParsedSearchString.Entry>(),
-          Enumerable.Empty<ParsedSearchString.Entry>());
-      } else {
-        parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
-        // Don't search empty or very small strings -- no significant results.
-        if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
-            (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
-          return SearchFileContentsResult.Empty;
-        }
-      }
-
-      var searchContentsAlgorithms = CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase, searchParams.Regex, searchParams.Re2);
-      using (var searchContentsData = new SearchContentsData(parsedSearchString, searchContentsAlgorithms)) {
+      using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams)) {
         // taskCancellation is used to make sure we cancel previous tasks as
         // fast as possible to avoid using too many CPU resources if the caller
         // keeps asking us to search for things. Note that this assumes the
@@ -168,28 +149,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private static List<ICompiledTextSearchProvider> CreateSearchAlgorithms(
-      ParsedSearchString parsedSearchString,
-      bool matchCase,
-      bool regex,
-      bool re2) {
-      var searchOptions = NativeMethods.SearchOptions.kNone;
-      if (matchCase)
-        searchOptions |= NativeMethods.SearchOptions.kMatchCase;
-      if (regex)
-        searchOptions |= NativeMethods.SearchOptions.kRegex;
-      if (re2)
-        searchOptions |= NativeMethods.SearchOptions.kRe2Regex;
-      return parsedSearchString.EntriesBeforeMainEntry
-        .Concat(new[] { parsedSearchString.MainEntry })
-        .Concat(parsedSearchString.EntriesAfterMainEntry)
-        .OrderBy(x => x.Index)
-        .Select(entry => new PerThreadCompiledTextSearchProvider(entry.Text, searchOptions))
-        .Cast<ICompiledTextSearchProvider>()
-        .ToList();
-    }
-
-    private SearchFileContentsResult DoSearchFileContents(SearchContentsData searchContentsData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
+    private SearchFileContentsResult DoSearchFileContents(CompiledTextSearchData compiledTextSearchData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
       var searchedFileIds = new PartitionedBitArray(
         _currentFileDatabase.SearchableFileCount,
@@ -207,7 +167,7 @@ namespace VsChromium.Server.Search {
           searchedFileIds.Set(item.FileId, true);
           return new SearchableContentsResult {
             FileContentsPiece = item,
-            Spans = item.Search(searchContentsData, progressTracker),
+            Spans = item.Search(compiledTextSearchData, progressTracker),
           };
         })
         .Where(r => r.Spans != null && r.Spans.Count > 0)

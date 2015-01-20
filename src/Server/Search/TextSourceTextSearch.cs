@@ -66,7 +66,7 @@ namespace VsChromium.Server.Search {
         if (result == null) {
           result = entryRange;
         } else {
-          result = new TextRange(result.Value.CharacterOffset, newOffset);
+          result = new TextRange(result.Value.CharacterOffset, newOffset - result.Value.CharacterOffset);
         }
       }
       return result;

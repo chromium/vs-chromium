@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     public List<FilePositionSpan> Search(
       TextRange textRange,
-      SearchContentsData searchContentsData,
+      CompiledTextSearchData compiledTextSearchData,
       IOperationProgressTracker progressTracker) {
 
       // Note: In some case, textRange may be outside of our bounds. This is
@@ -61,17 +61,16 @@ namespace VsChromium.Server.FileSystemContents {
       // each other, see FileData.UpdateContents method.
       var textFragment = CreateFragmentFromRange(textRange);
 
-      var algo = searchContentsData
-        .GetSearchAlgorithmProvider(searchContentsData.ParsedSearchString.MainEntry)
-        .GetUtf16Search();
+      var providerForMainEntry = compiledTextSearchData.GetSearchAlgorithmProvider(compiledTextSearchData.ParsedSearchString.MainEntry);
+      var algo = this.GetCompiledTextSearch(providerForMainEntry);
       // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(textFragment, progressTracker);
-      if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
-          searchContentsData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
+      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
+          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return result.ToList();
       }
 
-      return FilterOnOtherEntries(searchContentsData, result).ToList();
+      return FilterOnOtherEntries(compiledTextSearchData, result).ToList();
     }
 
     private TextFragment CreateFragmentFromRange(TextRange textRange) {
@@ -82,9 +81,9 @@ namespace VsChromium.Server.FileSystemContents {
       return textFragment;
     }
 
-    private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(SearchContentsData searchContentsData, IEnumerable<FilePositionSpan> matches) {
+    private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(CompiledTextSearchData compiledTextSearchData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (textRange, entry) => {
-        var algo = this.GetCompiledTextSearch(searchContentsData.GetSearchAlgorithmProvider(entry));
+        var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchAlgorithmProvider(entry));
         var position = algo.SearchOne(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
         if (!position.HasValue)
           return null;
@@ -93,7 +92,7 @@ namespace VsChromium.Server.FileSystemContents {
       GetLineRangeFunction getLineRange = position => this.GetLineTextRangeFromPosition(position, MaxLineExtentOffset);
 
       return new TextSourceTextSearch(getLineRange, findEntry)
-          .FilterOnOtherEntries(searchContentsData.ParsedSearchString, matches);
+          .FilterOnOtherEntries(compiledTextSearchData.ParsedSearchString, matches);
     }
 
     public virtual IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {

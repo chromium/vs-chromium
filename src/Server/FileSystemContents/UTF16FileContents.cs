@@ -54,8 +54,7 @@ namespace VsChromium.Server.FileSystemContents {
         return NoSpans;
 
       var algo = searchContentsData
-        .GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry)
-        .UTF16StringSearchAlgo;
+        .GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).GetUnicodeStringSearchAlgo();
       // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(_heap.Pointer, checked((int)_heap.ByteLength), progressTracker);
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
@@ -68,7 +67,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     private IEnumerable<FilePositionSpan> FilterOnOtherEntries(SearchContentsData searchContentsData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (position, length, entry) => {
-        var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).UTF16StringSearchAlgo;
+        var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).GetUnicodeStringSearchAlgo();
         // TODO(rpaquay): Do we need to take into account sizeof(char) == 2?
         var start = Pointers.AddPtr(this.Pointer, position);
         var result = algo.Search(start, length);

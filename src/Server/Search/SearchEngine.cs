@@ -168,7 +168,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private static List<SearchContentsAlgorithms> CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase, bool regex) {
+    private static List<ISearchContentsAlgorithms> CreateSearchAlgorithms(ParsedSearchString parsedSearchString, bool matchCase, bool regex) {
       var searchOptions = NativeMethods.SearchOptions.kNone;
       if (matchCase)
         searchOptions |= NativeMethods.SearchOptions.kMatchCase;
@@ -178,7 +178,8 @@ namespace VsChromium.Server.Search {
         .Concat(new[] { parsedSearchString.MainEntry })
         .Concat(parsedSearchString.EntriesAfterMainEntry)
         .OrderBy(x => x.Index)
-        .Select(entry => new SearchContentsAlgorithms(entry.Text, searchOptions))
+        .Select(entry => new PerThreadSearchContentsAlgorithms(entry.Text, searchOptions))
+        .Cast<ISearchContentsAlgorithms>()
         .ToList();
     }
 

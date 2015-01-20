@@ -65,7 +65,7 @@ namespace VsChromium.Server.FileSystemContents {
       if (searchContentsData.ParsedSearchString.MainEntry.Text.Length > length)
         return NoSpans;
 
-      var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).AsciiStringSearchAlgo;
+      var algo = searchContentsData.GetSearchAlgorithms(searchContentsData.ParsedSearchString.MainEntry).GetAsciiStringSearchAlgo();
       // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(fileName.RelativePath.Value, Pointer, offset, (int)length, progressTracker);
       if (searchContentsData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
@@ -78,7 +78,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(SearchContentsData searchContentsData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (position, length, entry) => {
-        var algo = searchContentsData.GetSearchAlgorithms(entry).AsciiStringSearchAlgo;
+        var algo = searchContentsData.GetSearchAlgorithms(entry).GetAsciiStringSearchAlgo();
         var start = Pointers.AddPtr(this.Pointer, position);
         // Note: From C# spec: If E is zero, then no allocation is made, and
         // the pointer returned is implementation-defined. 

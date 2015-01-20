@@ -12,9 +12,9 @@ namespace VsChromium.Server.Search {
   /// </summary>
   public class SearchContentsData : IDisposable {
     private readonly ParsedSearchString _parsedSearchString;
-    private readonly IList<SearchContentsAlgorithms> _searchAlgorithms;
+    private readonly IList<ISearchContentsAlgorithms> _searchAlgorithms;
 
-    public SearchContentsData(ParsedSearchString parsedSearchString, IList<SearchContentsAlgorithms> searchAlgorithms) {
+    public SearchContentsData(ParsedSearchString parsedSearchString, IList<ISearchContentsAlgorithms> searchAlgorithms) {
       _parsedSearchString = parsedSearchString;
       _searchAlgorithms = searchAlgorithms;
     }
@@ -29,7 +29,7 @@ namespace VsChromium.Server.Search {
     /// </summary>
     //public IList<SearchContentsAlgorithms> SearchAlgorithms { get { return _searchAlgorithms; } }
 
-    public SearchContentsAlgorithms GetSearchAlgorithms(ParsedSearchString.Entry entry) {
+    public ISearchContentsAlgorithms GetSearchAlgorithms(ParsedSearchString.Entry entry) {
       return _searchAlgorithms[entry.Index];
     }
 

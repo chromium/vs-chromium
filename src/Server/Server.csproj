@@ -105,8 +105,10 @@
     <Compile Include="FileSystemDatabase\FileDatabaseFactory.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabase.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabaseFactory.cs" />
+    <Compile Include="Search\ISearchContentsAlgorithms.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
     <Compile Include="Search\GetLineExtentCache.cs" />
+    <Compile Include="Search\PerThreadSearchContentsAlgorithms.cs" />
     <Compile Include="Search\SearchContentsAlgorithms.cs" />
     <Compile Include="Search\SearchDirectoryNamesResult.cs" />
     <Compile Include="Search\SearchFileContentsResult.cs" />

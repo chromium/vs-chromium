@@ -10,61 +10,58 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.ServerProxy;
 
-namespace VsChromium.Tests.Server {
+namespace VsChromium.Tests.ServerProcess {
   [TestClass]
-  public class TestSearchDirectoryNames : TestServerBase {
+  public class TestSearchFileNames : TestServerBase {
     [TestMethod]
     public void SingleOccurrenceWorks() {
-      const string searchPattern = "base";
-      const string directoryName = searchPattern;
-
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchDirectoryNamesResponse(server, searchPattern, testFile.Directory, directoryName, 1);
+          VerifySearchFileNamesResponse(server, testFile.Name, testFile.Directory, testFile.Name, 1);
         }
       }
     }
 
     [TestMethod]
     public void MultipleOccurrenceWorks() {
-      const string searchPattern = "test_directory";
-      const string directoryName = searchPattern;
+      const string fileName = "file_present_three_times.txt";
+      const string searchPattern = "file_present_three_times.txt";
 
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchDirectoryNamesResponse(server, searchPattern, testFile.Directory, directoryName, 3);
+          VerifySearchFileNamesResponse(server, searchPattern, testFile.Directory, fileName, 3);
         }
       }
     }
 
     [TestMethod]
     public void WildcardWorks() {
-      const string searchPattern = "*est_*ectory*";
-      const string directoryName = "test_directory";
+      const string fileName = "file_present_three_times.txt";
+      const string searchPattern = "file_present_*_times.*";
 
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchDirectoryNamesResponse(server, searchPattern, testFile.Directory, directoryName, 3);
+          VerifySearchFileNamesResponse(server, searchPattern, testFile.Directory, fileName, 3);
         }
       }
     }
 
-    private static void VerifySearchDirectoryNamesResponse(
+    private static void VerifySearchFileNamesResponse(
       ITypedRequestProcessProxy server,
       string searchPattern,
       DirectoryInfo chromiumDirectory,
-      string directoryName,
+      string fileName,
       int occurrenceCount) {
-      var response = SendRequest<SearchDirectoryNamesResponse>(server, new SearchDirectoryNamesRequest {
+      var response = SendRequest<SearchFileNamesResponse>(server, new SearchFileNamesRequest {
         SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,
@@ -79,9 +76,9 @@ namespace VsChromium.Tests.Server {
       Assert.IsNotNull(chromiumEntry);
       Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.Name);
 
-      chromiumEntry.Entries.ForAll(x => Debug.WriteLine(string.Format("Directory name: \"{0}\"", x.Name)));
+      chromiumEntry.Entries.ForAll(x => Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name)));
       Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
-      Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count(x => x.Name.Contains(directoryName)));
+      Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count(x => Path.GetFileName(x.Name) == fileName));
     }
   }
 }

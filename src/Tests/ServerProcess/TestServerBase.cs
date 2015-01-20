@@ -13,7 +13,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.ServerProxy;
 
-namespace VsChromium.Tests.Server {
+namespace VsChromium.Tests.ServerProcess {
   public abstract class TestServerBase : MefBaseTest {
     // When using interactive debugger:
     //protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5000.0);

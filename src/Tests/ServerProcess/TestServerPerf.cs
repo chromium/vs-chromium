@@ -14,7 +14,7 @@ using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.ServerProxy;
 
-namespace VsChromium.Tests.Server {
+namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestServerPerf : TestServerBase {
     [TestMethod]

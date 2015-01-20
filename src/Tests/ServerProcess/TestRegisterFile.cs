@@ -5,7 +5,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.ServerProxy;
 
-namespace VsChromium.Tests.Server {
+namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestRegisterFile : TestServerBase {
     [TestMethod]

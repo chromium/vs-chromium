@@ -11,7 +11,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.ServerProxy;
 
-namespace VsChromium.Tests.Server {
+namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestSearchFileContents : TestServerBase {
     [TestMethod]

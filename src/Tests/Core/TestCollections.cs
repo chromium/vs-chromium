@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Linq;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestCollections {
     [TestMethod]

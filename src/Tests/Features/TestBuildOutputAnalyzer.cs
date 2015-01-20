@@ -5,7 +5,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Features.BuildOutputAnalyzer;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.Features {
   [TestClass]
   public class TestBuildOutputAnalyzer {
     [TestMethod]

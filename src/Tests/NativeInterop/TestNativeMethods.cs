@@ -9,7 +9,7 @@ using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.NativeInterop {
   /// <summary>
   /// Summary description for UnitTest1
   /// </summary>

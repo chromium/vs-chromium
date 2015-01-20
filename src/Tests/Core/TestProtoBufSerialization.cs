@@ -12,7 +12,7 @@ using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestProtoBufSerialization : MefBaseTest {
     [TestMethod]

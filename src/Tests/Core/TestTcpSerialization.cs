@@ -4,7 +4,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestTcpSerialization : MefBaseTest {
     [TestMethod]

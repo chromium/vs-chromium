@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestFileNameMatching {
     [TestMethod]

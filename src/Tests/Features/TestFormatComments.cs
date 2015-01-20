@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromium.Features.FormatComment;
 using VsChromium.Tests.Mocks;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.Features {
   [TestClass]
   public class TestFormatComments {
     [TestMethod]

@@ -5,7 +5,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Files;
 
-namespace VsChromium.Tests {
+namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestPathComponent {
     [TestMethod]

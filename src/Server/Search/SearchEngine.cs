@@ -178,11 +178,7 @@ namespace VsChromium.Server.Search {
         .Concat(new[] { parsedSearchString.MainEntry })
         .Concat(parsedSearchString.EntriesAfterMainEntry)
         .OrderBy(x => x.Index)
-        .Select(entry => {
-          var a1 = AsciiFileContents.CreateSearchAlgo(entry.Text, searchOptions);
-          var a2 = UTF16FileContents.CreateSearchAlgo(entry.Text, searchOptions);
-          return new SearchContentsAlgorithms(a1, a2);
-        })
+        .Select(entry => new SearchContentsAlgorithms(entry.Text, searchOptions))
         .ToList();
     }
 

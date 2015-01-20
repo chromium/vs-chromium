@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
@@ -10,14 +11,9 @@ namespace VsChromium.Server.Search {
     private readonly AsciiStringSearchAlgorithm _asciiStringSearchAlgo;
     private readonly UTF16StringSearchAlgorithm _utf16StringSearchAlgo;
 
-    public SearchContentsAlgorithms(AsciiStringSearchAlgorithm asciiStringSearchAlgo, UTF16StringSearchAlgorithm utf16StringSearchAlgo) {
-      if (asciiStringSearchAlgo == null)
-        throw new ArgumentNullException("asciiStringSearchAlgo");
-      if (utf16StringSearchAlgo == null)
-        throw new ArgumentNullException("utf16StringSearchAlgo");
-
-      _asciiStringSearchAlgo = asciiStringSearchAlgo;
-      _utf16StringSearchAlgo = utf16StringSearchAlgo;
+    public SearchContentsAlgorithms(string pattern, NativeMethods.SearchOptions searchOptions) {
+      _asciiStringSearchAlgo = AsciiFileContents.CreateSearchAlgo(pattern, searchOptions);
+      _utf16StringSearchAlgo = UTF16FileContents.CreateSearchAlgo(pattern, searchOptions);
     }
 
     public AsciiStringSearchAlgorithm AsciiStringSearchAlgo { get { return _asciiStringSearchAlgo; } }

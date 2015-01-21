@@ -71,7 +71,7 @@
           <TextBlock Text="{Binding UseRegexToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <Separator Width="2"></Separator>
+      <Separator Width="2" />
       <ToggleButton Content="Lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>
@@ -82,7 +82,7 @@
           <TextBlock Text="{Binding UseRe2RegexToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <Separator Width="2"></Separator>
+      <Separator Width="2" />
       <ToggleButton IsChecked="{Binding EnableChildDebugging}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="Enable child-process debugging for launch/attach scenarios other than those available through the Attach to Chrome dialog."/>

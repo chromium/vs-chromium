@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemContents;

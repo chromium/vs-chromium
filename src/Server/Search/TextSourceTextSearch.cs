@@ -4,7 +4,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {

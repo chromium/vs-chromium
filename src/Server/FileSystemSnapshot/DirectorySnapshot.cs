@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.ObjectModel;
-using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemSnapshot {

@@ -3,14 +3,13 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   [Export(typeof(ICompiledTextSearchProviderFactory))]
   public class CompiledTextSearchProviderFactory : ICompiledTextSearchProviderFactory {
     public ICompiledTextSearchProvider CreateProvider(
       string pattern,
-      NativeMethods.SearchOptions searchOptions) {
+      SearchProviderOptions searchOptions) {
       return new PerThreadCompiledTextSearchProvider(pattern, searchOptions);
     }
   }

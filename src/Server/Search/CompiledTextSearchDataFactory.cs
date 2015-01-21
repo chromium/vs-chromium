@@ -39,27 +39,23 @@ namespace VsChromium.Server.Search {
         //}
       }
 
-      var searchContentsAlgorithms = CreateSearchAlgorithms(parsedSearchString, searchParams.MatchCase, searchParams.Regex, searchParams.Re2);
+      var searchContentsAlgorithms = CreateSearchAlgorithms(
+        parsedSearchString,
+        new SearchProviderOptions {
+          MatchCase = searchParams.MatchCase,
+          UseRegex = searchParams.Regex,
+          UseRe2RegexEngine = searchParams.Re2
+        });
       return new CompiledTextSearchData(parsedSearchString, searchContentsAlgorithms);
     }
 
     private List<ICompiledTextSearchProvider> CreateSearchAlgorithms(
-      ParsedSearchString parsedSearchString,
-      bool matchCase,
-      bool regex,
-      bool re2) {
-      var searchOptions = NativeMethods.SearchOptions.kNone;
-      if (matchCase)
-        searchOptions |= NativeMethods.SearchOptions.kMatchCase;
-      if (regex)
-        searchOptions |= NativeMethods.SearchOptions.kRegex;
-      if (re2)
-        searchOptions |= NativeMethods.SearchOptions.kRe2Regex;
+      ParsedSearchString parsedSearchString, SearchProviderOptions options) {
       return parsedSearchString.EntriesBeforeMainEntry
         .Concat(new[] { parsedSearchString.MainEntry })
         .Concat(parsedSearchString.EntriesAfterMainEntry)
         .OrderBy(x => x.Index)
-        .Select(entry => _compiledTextSearchProviderFactory.CreateProvider(entry.Text, searchOptions))
+        .Select(entry => _compiledTextSearchProviderFactory.CreateProvider(entry.Text, options))
         .ToList();
     }  
   }

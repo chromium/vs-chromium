@@ -24,7 +24,7 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     public override int CharacterSize {
-      get { return sizeof (byte); }
+      get { return sizeof(byte); }
     }
 
     public override long ByteLength { get { return _heap.ByteLength; } }
@@ -63,16 +63,22 @@ namespace VsChromium.Server.FileSystemContents {
       return new TextRange(lineStart, lineLength);
     }
 
-    public static AsciiCompiledTextSearch CreateSearchAlgo(string pattern, NativeMethods.SearchOptions searchOptions) {
-      if (searchOptions.HasFlag(NativeMethods.SearchOptions.kRegex)) {
-        //return new AsciiStringSearchRegex(pattern, searchOptions);
-        return new AsciiCompiledTextSearchRe2(pattern, searchOptions);
+    public static AsciiCompiledTextSearch CreateSearchAlgo(string pattern, SearchProviderOptions searchOptions) {
+      var options = NativeMethods.SearchOptions.kNone;
+      if (searchOptions.MatchCase) {
+        options |= NativeMethods.SearchOptions.kMatchCase;
       }
 
-      if (pattern.Length <= 64)
-        return new AsciiCompiledTextSearchBndm64(pattern, searchOptions);
+      if (searchOptions.UseRegex && searchOptions.UseRe2RegexEngine)
+        return new AsciiCompiledTextSearchRe2(pattern, options);
 
-      return new AsciiCompiledTextSearchBoyerMoore(pattern, searchOptions);
+      if (searchOptions.UseRegex)
+        return new AsciiCompiledTextSearchRegex(pattern, options);
+
+      if (pattern.Length <= 64)
+        return new AsciiCompiledTextSearchBndm64(pattern, options);
+
+      return new AsciiCompiledTextSearchBoyerMoore(pattern, options);
     }
 
     public override IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {

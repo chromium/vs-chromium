@@ -57,7 +57,7 @@ namespace VsChromium.Tests.NativeInterop {
       AsciiSearchForVariousPatternsWorks(one100MB, longPattern, NativeMethods.SearchOptions.kNone, noMatchCount, iterationCount);
     }
 
-    public unsafe void AsciiSearchForVariousPatternsWorks(
+    public void AsciiSearchForVariousPatternsWorks(
       long blockByteLength,
       string pattern,
       NativeMethods.SearchOptions searchOptions,

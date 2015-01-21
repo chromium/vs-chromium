@@ -10,7 +10,7 @@ namespace VsChromium.Server.Search {
     private readonly AsciiCompiledTextSearch _asciiCompiledTextSearchAlgo;
     private readonly Utf16CompiledTextSearch _unicodeCompiledTextSearchAlgo;
 
-    public CompiledTextSearchProvider(string pattern, NativeMethods.SearchOptions searchOptions) {
+    public CompiledTextSearchProvider(string pattern, SearchProviderOptions searchOptions) {
       _asciiCompiledTextSearchAlgo = AsciiFileContents.CreateSearchAlgo(pattern, searchOptions);
       _unicodeCompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(pattern, searchOptions);
     }

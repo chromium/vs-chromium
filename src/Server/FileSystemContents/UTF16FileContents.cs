@@ -56,8 +56,12 @@ namespace VsChromium.Server.FileSystemContents {
 
     public static Utf16CompiledTextSearch CreateSearchAlgo(
         string pattern,
-        NativeMethods.SearchOptions searchOptions) {
-      return new StrStrWCompiledTextSearch(pattern, searchOptions);
+        SearchProviderOptions searchOptions) {
+      var options = NativeMethods.SearchOptions.kNone;
+      if (searchOptions.MatchCase) {
+        options |= NativeMethods.SearchOptions.kMatchCase;
+      }
+      return new StrStrWCompiledTextSearch(pattern, options);
     }
   }
 }

@@ -11,12 +11,12 @@ using VsChromium.Server.NativeInterop;
 namespace VsChromium.Server.Search {
   public class PerThreadCompiledTextSearchProvider : ICompiledTextSearchProvider {
     private readonly string _pattern;
-    private readonly NativeMethods.SearchOptions _searchOptions;
+    private readonly SearchProviderOptions _searchOptions;
     private readonly ConcurrentDictionary<int, AsciiCompiledTextSearch> _asciiAlgorithms = new ConcurrentDictionary<int, AsciiCompiledTextSearch>();
     private readonly Func<int, AsciiCompiledTextSearch> _asciiAlgorithmFactory;
     private readonly Utf16CompiledTextSearch _unicodeCompiledTextSearchAlgo;
 
-    public PerThreadCompiledTextSearchProvider(string pattern, NativeMethods.SearchOptions searchOptions) {
+    public PerThreadCompiledTextSearchProvider(string pattern, SearchProviderOptions searchOptions) {
       _pattern = pattern;
       _searchOptions = searchOptions;
       _asciiAlgorithmFactory = x => AsciiFileContents.CreateSearchAlgo(_pattern, _searchOptions);

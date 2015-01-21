@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
@@ -32,11 +31,13 @@ namespace VsChromium.Server.FileSystemContents {
       get { return _fileId; }
     }
 
-    public List<FilePositionSpan> Search(
+    public IList<TextRange> FindAll(
       CompiledTextSearchData compiledTextSearchData,
       IOperationProgressTracker progressTracker) {
-      return _fileContents.FindAll(compiledTextSearchData,
-        _textRange, progressTracker);
+      return _fileContents.FindAll(
+        compiledTextSearchData,
+        _textRange,
+        progressTracker);
     }
   }
 }

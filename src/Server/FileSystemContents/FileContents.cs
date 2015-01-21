@@ -43,7 +43,7 @@ namespace VsChromium.Server.FileSystemContents {
     /// name="compiledTextSearchData"/> within the passed in <paramref
     /// name="textRange"/>
     /// </summary>
-    public List<FilePositionSpan> FindAll(
+    public IList<TextRange> FindAll(
       CompiledTextSearchData compiledTextSearchData,
       TextRange textRange,
       IOperationProgressTracker progressTracker) {
@@ -86,15 +86,15 @@ namespace VsChromium.Server.FileSystemContents {
       return textFragment;
     }
 
-    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(CompiledTextSearchData compiledTextSearchData, IEnumerable<FilePositionSpan> matches) {
+    private IEnumerable<TextRange> FilterOnOtherEntries(
+      CompiledTextSearchData compiledTextSearchData,
+      IEnumerable<TextRange> matches) {
       FindEntryFunction findEntry = (textRange, entry) => {
         var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchAlgorithmProvider(entry));
-        var position = algo.FindFirst(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
-        if (!position.HasValue)
-          return null;
-        return new TextRange(position.Value.Position, position.Value.Length);
+        return algo.FindFirst(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
       };
-      GetLineRangeFunction getLineRange = position => this.GetLineTextRangeFromPosition(position, MaxLineExtentOffset);
+      GetLineRangeFunction getLineRange = position => 
+        this.GetLineTextRangeFromPosition(position, MaxLineExtentOffset);
 
       return new TextSourceTextSearch(getLineRange, findEntry)
           .FilterOnOtherEntries(compiledTextSearchData.ParsedSearchString, matches);

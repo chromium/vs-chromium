@@ -167,7 +167,13 @@ namespace VsChromium.Server.Search {
           searchedFileIds.Set(item.FileId, true);
           return new SearchableContentsResult {
             FileContentsPiece = item,
-            Spans = item.Search(compiledTextSearchData, progressTracker),
+            Spans = item
+              .FindAll(compiledTextSearchData, progressTracker)
+              .Select(x => new FilePositionSpan {
+                Position = (int)x.CharacterOffset,
+                Length = (int)x.CharacterCount,
+              }).
+              ToList(),
           };
         })
         .Where(r => r.Spans != null && r.Spans.Count > 0)

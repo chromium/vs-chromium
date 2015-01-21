@@ -5,12 +5,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   public delegate TextRange? FindEntryFunction(TextRange textRange, ParsedSearchString.Entry entry);
-  public delegate TextRange GetLineRangeFunction(int position);
+  public delegate TextRange GetLineRangeFunction(long position);
 
   public class TextSourceTextSearch {
     private readonly GetLineRangeFunction _getLineRange;
@@ -21,39 +20,47 @@ namespace VsChromium.Server.Search {
       _findEntry = findEntry;
     }
 
-    public IEnumerable<FilePositionSpan> FilterOnOtherEntries(ParsedSearchString parsedSearchString, IEnumerable<FilePositionSpan> matches) {
+    public IEnumerable<TextRange> FilterOnOtherEntries(
+      ParsedSearchString parsedSearchString,
+      IEnumerable<TextRange> matches) {
       var getLineExtentCache = new GetLineExtentCache(_getLineRange);
       return matches
-        .Select(match => {
-          var lineExtent = getLineExtentCache.GetLineExtent(match.Position);
+        .Select<TextRange, TextRange?>(match => {
+          var lineExtent = getLineExtentCache.GetLineExtent(match.CharacterOffset);
           // We got the line extent, the offset at which we found the MainEntry.
           // Now we need to check that "OtherEntries" are present (in order) and
           // in appropriate intervals.
-          var range1 = new TextRange(lineExtent.CharacterOffset, match.Position - lineExtent.CharacterOffset);
+          var range1 = new TextRange(
+            lineExtent.CharacterOffset,
+            match.CharacterOffset - lineExtent.CharacterOffset);
           var entriesInterval1 = parsedSearchString.EntriesBeforeMainEntry;
           var foundRange1 = entriesInterval1.Any()
             ? CheckEntriesInRange(range1, entriesInterval1)
-            : new TextRange(match.Position, match.Length);
+            : match;
 
-          var range2 = new TextRange(match.Position + match.Length, (lineExtent.CharacterOffset + lineExtent.CharacterCount) - (match.Position + match.Length));
+          var range2 = new TextRange(
+            match.CharacterEndOffset,
+            lineExtent.CharacterEndOffset-  match.CharacterEndOffset);
           var entriesInterval2 = parsedSearchString.EntriesAfterMainEntry;
           var foundRange2 = entriesInterval2.Any()
             ? CheckEntriesInRange(range2, entriesInterval2)
-            : new TextRange(match.Position, match.Length);
+            : match;
 
           if (foundRange1.HasValue && foundRange2.HasValue) {
-            return new FilePositionSpan {
-              Position = (int)foundRange1.Value.CharacterOffset,
-              Length = (int)(foundRange2.Value.CharacterEndOffset - foundRange1.Value.CharacterOffset)
-            };
+            return new TextRange(
+              foundRange1.Value.CharacterOffset,
+              foundRange2.Value.CharacterEndOffset - foundRange1.Value.CharacterOffset);
           }
-          return new FilePositionSpan();
+          return null;
         })
-        .Where(x => x.Length != default(FilePositionSpan).Length)
+        .Where(x => x != null)
+        .Select(x => x.Value)
         .ToList();
     }
 
-    private TextRange? CheckEntriesInRange(TextRange textRange, IEnumerable<ParsedSearchString.Entry> entries) {
+    private TextRange? CheckEntriesInRange(
+      TextRange textRange,
+      IEnumerable<ParsedSearchString.Entry> entries) {
       TextRange? result = null;
       foreach (var entry in entries) {
         var entryRange = _findEntry(textRange, entry);

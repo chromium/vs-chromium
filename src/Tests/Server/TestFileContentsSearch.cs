@@ -12,6 +12,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Tests.Server {
@@ -37,8 +38,8 @@ namespace VsChromium.Tests.Server {
       const string pattern = "piece";
       var result = PerformSearch(text, pattern);
       Assert.AreEqual(1, result.Count);
-      Assert.AreEqual(10, result[0].Position);
-      Assert.AreEqual(5, result[0].Length);
+      Assert.AreEqual(10, result[0].CharacterOffset);
+      Assert.AreEqual(5, result[0].CharacterCount);
     }
 
     [TestMethod]
@@ -47,8 +48,8 @@ namespace VsChromium.Tests.Server {
       const string pattern = "piece*text";
       var result = PerformSearch(text, pattern);
       Assert.AreEqual(1, result.Count);
-      Assert.AreEqual(10, result[0].Position);
-      Assert.AreEqual(13, result[0].Length);
+      Assert.AreEqual(10, result[0].CharacterOffset);
+      Assert.AreEqual(13, result[0].CharacterCount);
     }
 
     [TestMethod]
@@ -57,18 +58,18 @@ namespace VsChromium.Tests.Server {
       const string searchPattern = "Test*directory*looking*like";
       var result = PerformSearch(text, searchPattern);
       Assert.AreEqual(1, result.Count);
-      Assert.AreEqual(0, result[0].Position);
-      Assert.AreEqual(27, result[0].Length);
+      Assert.AreEqual(0, result[0].CharacterOffset);
+      Assert.AreEqual(27, result[0].CharacterCount);
     }
 
-    private List<FilePositionSpan> PerformSearch(string text, string searchPattern) {
+    private IList<TextRange> PerformSearch(string text, string searchPattern) {
       var result1 = PerformSearch(() => CreateAsciiFileContents(text), searchPattern);
       var result2 = PerformSearch(() => CreateUtf16FileContents(text), searchPattern);
       Assert.IsTrue(result1.SequenceEqual(result2));
       return result1;
     }
 
-    private List<FilePositionSpan> PerformSearch(
+    private IList<TextRange> PerformSearch(
       Func<FileContents> fileContentsFactory,
       string searchPattern) {
       var searchParams = new SearchParams {

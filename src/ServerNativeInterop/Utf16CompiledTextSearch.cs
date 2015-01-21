@@ -2,43 +2,56 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {
   public abstract class Utf16CompiledTextSearch : ICompiledTextSearch {
+    private static readonly List<TextRange> NoResult = new List<TextRange>();
+
     public abstract int PatternLength { get; }
 
     public virtual void Dispose() {
     }
 
-    public IEnumerable<FilePositionSpan> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+    public IEnumerable<TextRange> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+      return FindWorker(textFragment, progressTracker, int.MaxValue);
+    }
+
+    public TextRange? FindFirst(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+      var result = FindWorker(textFragment, progressTracker, 1);
+      if (result.Count == 0)
+        return null;
+      return result[0];
+    }
+
+    private List<TextRange> FindWorker(
+      TextFragment textFragment,
+      IOperationProgressTracker progressTracker,
+      int maxResultSize) {
+      List<TextRange> result = null;
       while (!textFragment.IsEmpty) {
         var searchHit = Search(textFragment);
         if (searchHit.IsNull)
           break;
 
-        progressTracker.AddResults(1);
-        if (progressTracker.ShouldEndProcessing)
-          yield break;
+        var range = new TextRange(searchHit.CharacterOffset, searchHit.CharacterCount);
 
-        yield return new FilePositionSpan {
-          // TODO(rpaquay): We are limited to 2GB for now.
-          Position = (int)searchHit.CharacterOffset, 
-          Length = (int)searchHit.CharacterCount
-        };
+        // Add to result collection
+        if (result == null)
+          result = new List<TextRange>();
+        result.Add(range);
+
         textFragment = textFragment.Suffix(searchHit.FragmentEnd);
-      }
-    }
 
-    public FilePositionSpan? FindFirst(TextFragment textFragment, IOperationProgressTracker progressTracker) {
-      var result = FindAll(textFragment, progressTracker).ToList();
-      if (result.Count == 0)
-        return null;
-      return result[0];
+        maxResultSize--;
+        progressTracker.AddResults(1);
+        if (progressTracker.ShouldEndProcessing || maxResultSize <= 0)
+          break;
+      }
+
+      return result ?? NoResult;
     }
 
     public abstract TextFragment Search(TextFragment textFragment);

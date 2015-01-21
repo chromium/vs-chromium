@@ -1,7 +1,11 @@
+// Copyright 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System.Collections.Generic;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemDatabase {
@@ -13,6 +17,9 @@ namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileContentsPiece {
     FileName FileName { get; }
     int FileId { get; }
-    List<FilePositionSpan> Search(CompiledTextSearchData compiledTextSearchData, IOperationProgressTracker progressTracker);
+
+    IList<TextRange> FindAll(
+      CompiledTextSearchData compiledTextSearchData,
+      IOperationProgressTracker progressTracker);
   }
 }

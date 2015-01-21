@@ -5,11 +5,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {
   public abstract class AsciiCompiledTextSearch : ICompiledTextSearch {
+    private static readonly List<TextRange> NoResult = new List<TextRange>();
 
     public abstract int PatternLength { get; }
     public abstract int SearchBufferSize { get; }
@@ -20,23 +20,24 @@ namespace VsChromium.Server.NativeInterop {
     public virtual void Dispose() {
     }
 
-    private static readonly List<FilePositionSpan> NoResult = new List<FilePositionSpan>();
-
-    public IEnumerable<FilePositionSpan> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+    public IEnumerable<TextRange> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
       if (progressTracker.ShouldEndProcessing)
         return NoResult;
-      return SearchAllWorker(textFragment, progressTracker, int.MaxValue);
+      return FindWorker(textFragment, progressTracker, int.MaxValue);
     }
 
-    public FilePositionSpan? FindFirst(TextFragment textFragment, IOperationProgressTracker progressTracker) {
-      var result = SearchAllWorker(textFragment, progressTracker, 1);
+    public TextRange? FindFirst(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+      var result = FindWorker(textFragment, progressTracker, 1);
       if (result.Count == 0)
         return null;
       return result.First();
     }
 
-    private unsafe List<FilePositionSpan> SearchAllWorker(TextFragment textFragment, IOperationProgressTracker progressTracker, int maxResultSize) {
-      List<FilePositionSpan> result = null;
+    private unsafe List<TextRange> FindWorker(
+      TextFragment textFragment,
+      IOperationProgressTracker progressTracker,
+      int maxResultSize) {
+        List<TextRange> result = null;
 
       // Note: From C# spec: If E is zero, then no allocation is made, and
       // the pointer returned is implementation-defined. 
@@ -55,16 +56,12 @@ namespace VsChromium.Server.NativeInterop {
           break;
 
         var searchHit = textFragment.Sub(searchParams.MatchStart, searchParams.MatchLength);
-        var filePositionSpan = new FilePositionSpan {
-          // TODO(rpaquay): We are limited to 2GB for now.
-          Position = (int)searchHit.CharacterOffset,
-          Length = (int)searchHit.CharacterCount,
-        };
+        var range = new TextRange(searchHit.CharacterOffset, searchHit.CharacterCount);
 
         // Add to result collection
         if (result == null)
-          result = new List<FilePositionSpan>();
-        result.Add(filePositionSpan);
+          result = new List<TextRange>();
+        result.Add(range);
 
         // Check it is time to end processing early.
         maxResultSize--;

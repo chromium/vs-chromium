@@ -16,7 +16,7 @@ namespace VsChromium.Server.NativeInterop {
     /// Find all occurrences of the stored prepared search pattern in the given
     /// text fragment.
     /// </summary>
-    IEnumerable<FilePositionSpan> FindAll(
+    IEnumerable<TextRange> FindAll(
       TextFragment textFragment,
       IOperationProgressTracker progressTracker);
 
@@ -24,7 +24,7 @@ namespace VsChromium.Server.NativeInterop {
     /// Find the first occurrence of the stored search pattern in the given text
     /// fragment.
     /// </summary>
-    FilePositionSpan? FindFirst(
+    TextRange? FindFirst(
       TextFragment textFragment,
       IOperationProgressTracker progressTracker);
   }

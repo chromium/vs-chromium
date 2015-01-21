@@ -79,9 +79,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public string UseRe2RegexToolTip {
       get { 
         return string.Format(
-          "Use the RE2 regex engine instead of the standard C++ one for improved performance. " +
+          "Use the RE2 regex engine instead of the standard C++ library engine for improved performance. " +
+          "RE2 support is experimental. " +
           "RE2 is currently {0}.",
-          UseRe2Regex ? "enabled" : "disabled");
+          UseRe2Regex ? "active" : "disabled");
       }
     }
 
@@ -97,7 +98,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get {
         return string.Format(
           "Toggle usage of regular expressions for text searches. " +
-          "Regular expression are currently {0}.",
+          "Regular expressions are currently {0}.",
           UseRegex ? "enabled" : "disabled");
       }
     }

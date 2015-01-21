@@ -8,11 +8,9 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
   public class Utf16FileContents : FileContents {
-    private readonly FileContentsMemory _heap;
 
     public Utf16FileContents(FileContentsMemory heap, DateTime utcLastModified)
-      : base(utcLastModified) {
-      _heap = heap;
+      : base(heap, utcLastModified) {
     }
 
     public override long ByteLength { get { return _heap.ByteLength; } }

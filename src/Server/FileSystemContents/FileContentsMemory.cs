@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
@@ -19,7 +20,6 @@ namespace VsChromium.Server.FileSystemContents {
 
     public FileContentsMemory(SafeHeapBlockHandle block, long contentsOffset, long contentsLength) :
       this(block, block.ByteLength, contentsOffset, contentsLength) {
-      
     }
 
     public FileContentsMemory(SafeHandle block, long size, long contentsOffset, long contentsLength) {
@@ -43,5 +43,14 @@ namespace VsChromium.Server.FileSystemContents {
     /// Return the number of bytes of the usable memory of this block.
     /// </summary>
     public long ByteLength { get { return _contentsLength; } }
+
+    /// <summary>
+    /// Create a stream over the underlying memory content.
+    /// </summary>
+    public unsafe Stream CreateSteam() {
+      return new UnmanagedMemoryStream(
+        Pointers.Add(_block.DangerousGetHandle(), _contentsOffset),
+        _contentsLength);
+    }
   }
 }

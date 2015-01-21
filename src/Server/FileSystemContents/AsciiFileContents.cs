@@ -18,11 +18,8 @@ namespace VsChromium.Server.FileSystemContents {
   /// </summary>
   public class AsciiFileContents : FileContents {
     private const int MaxTextExtractLength = 50;
-    private readonly FileContentsMemory _heap;
-
     public AsciiFileContents(FileContentsMemory heap, DateTime utcLastModified)
-      : base(utcLastModified) {
-      _heap = heap;
+      : base(heap, utcLastModified) {
     }
 
     public static AsciiFileContents Empty = CreateEmpty();

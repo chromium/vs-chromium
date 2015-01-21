@@ -23,6 +23,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileSystemContents\FileContentsHash.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />

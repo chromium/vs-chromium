@@ -13,24 +13,37 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
   /// <summary>
-  /// Abstraction over a file contents
+  /// Abstraction over a file contents stored in (native) memory. Note that we
+  /// don't store the path because the same FileContents can be shared for
+  /// multiple identical files. This class and derived classes are guaranteed to
+  /// be thread safe and immutable.
   /// </summary>
   public abstract class FileContents {
     protected const int MaxLineExtentOffset = 1024;
 
     protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
+    protected readonly FileContentsMemory _heap;
     private readonly DateTime _utcLastModified;
+    private readonly Lazy<FileContentsHash> _hash;
 
-    protected FileContents(DateTime utcLastModified) {
+    protected FileContents(FileContentsMemory heap, DateTime utcLastModified) {
+      _heap = heap;
       _utcLastModified = utcLastModified;
+      _hash = new Lazy<FileContentsHash>(CreateHash);
+    }
+
+    private FileContentsHash CreateHash() {
+      return new FileContentsHash(_heap);
     }
 
     public DateTime UtcLastModified { get { return _utcLastModified; } }
 
-    public abstract long ByteLength { get; }
-
     public TextRange TextRange { get { return new TextRange(0, CharacterCount); } }
+
+    public FileContentsHash Hash { get { return _hash.Value; } }
+
+    public abstract long ByteLength { get; }
 
     public abstract bool HasSameContents(FileContents other);
 

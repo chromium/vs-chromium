@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Search {
@@ -34,7 +35,9 @@ namespace VsChromium.Server.Search {
         // Don't search empty or very small strings -- no significant results.
         if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
             (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
-          return null;
+          throw new RecoverableErrorException(
+            string.Format("Search pattern must contain at least {0} characters",
+              MinimumSearchPatternLength));
         }
       }
 

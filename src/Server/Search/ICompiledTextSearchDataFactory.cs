@@ -11,8 +11,6 @@ namespace VsChromium.Server.Search {
   /// </summary>
   public interface ICompiledTextSearchDataFactory {
     /// <summary>
-    /// Note: Returns null if the <paramref name="searchParams"/> query would
-    /// not produce any result.
     /// Note: Throws an exception if the <paramref name="searchParams"/> query is
     /// invalid.
     /// </summary>

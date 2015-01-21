@@ -146,11 +146,7 @@ namespace VsChromium.Server.Search {
       // the previous queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams);
-      if (searchContentsData == null)
-        return SearchFileContentsResult.Empty;
-
-      using (searchContentsData) {
+      using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams)) {
         var cancellationToken = _taskCancellation.GetNewToken();
         return DoSearchFileContents(searchContentsData, searchParams.MaxResults, searchParams.IncludeSymLinks, cancellationToken);
       }

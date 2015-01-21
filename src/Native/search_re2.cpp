@@ -62,12 +62,15 @@ void RE2Search::Search(SearchParams* searchParams) {
     textLength = searchParams->TextLength;
   } else {
     text = searchParams->MatchStart + searchParams->MatchLength;
-    textLength = searchParams->TextStart + searchParams->TextLength - text;
+    // TODO (rpaquay): 2GB limit
+    textLength = static_cast<int>(searchParams->TextStart + searchParams->TextLength - text);
   }
 
   const char* match;
   int matchLength;
   impl_->re2_wrapper->Match(text, textLength, &match, &matchLength);
+  if (matchLength == 0)
+    matchLength++;
   searchParams->MatchStart = match;
   searchParams->MatchLength = matchLength;
 }

@@ -9,6 +9,11 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
+  /// <summary>
+  /// Implementation of <see cref="ICompiledTextSearchProvider"/> that
+  /// instantiates search algorithms per thread instance to avoid lock
+  /// contention.
+  /// </summary>
   public class PerThreadCompiledTextSearchProvider : ICompiledTextSearchProvider {
     private readonly string _pattern;
     private readonly SearchProviderOptions _searchOptions;

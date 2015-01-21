@@ -133,7 +133,6 @@
     <Compile Include="Search\CompiledTextSearchData.cs" />
     <Compile Include="FileSystemContents\UTF16FileContents.cs" />
     <Compile Include="FileSystemContents\AsciiFileContents.cs" />
-    <Compile Include="FileSystemContents\StringFileContents.cs" />
     <Compile Include="FileSystemContents\FileContents.cs" />
     <Compile Include="FileSystemDatabase\FileDatabase.cs" />
     <Compile Include="FileSystemDatabase\FileData.cs" />

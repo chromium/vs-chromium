@@ -15,14 +15,7 @@ namespace VsChromium.Server.FileSystemContents {
       _heap = heap;
     }
 
-    public override int CharacterSize {
-      get { return sizeof (char); }
-    }
-
     public override long ByteLength { get { return _heap.ByteLength; } }
-
-    private IntPtr Pointer { get { return _heap.Pointer; } }
-    protected override long CharacterCount { get { return _heap.ByteLength / 2; } }
 
     public override bool HasSameContents(FileContents other) {
       var other2 = other as Utf16FileContents;
@@ -30,6 +23,14 @@ namespace VsChromium.Server.FileSystemContents {
         return false;
       return NativeMethods.Ascii_Compare(this.Pointer, this.ByteLength, other2.Pointer, other2.ByteLength);
     }
+
+    private IntPtr Pointer { get { return _heap.Pointer; } }
+
+    protected override int CharacterSize {
+      get { return sizeof (char); }
+    }
+
+    protected override long CharacterCount { get { return _heap.ByteLength / 2; } }
 
     protected override TextFragment TextFragment {
       get { return new TextFragment(this.Pointer, 0, this.CharacterCount, this.CharacterSize); }

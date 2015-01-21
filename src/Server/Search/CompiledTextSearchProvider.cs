@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+﻿// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,13 +6,17 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
+  /// <summary>
+  /// Implementation of <see cref="ICompiledTextSearchProvider"/> that
+  /// instantiates single instances of search algorithms.
+  /// </summary>
   public class CompiledTextSearchProvider : ICompiledTextSearchProvider {
-    private readonly AsciiCompiledTextSearch _asciiCompiledTextSearchAlgo;
-    private readonly Utf16CompiledTextSearch _unicodeCompiledTextSearchAlgo;
+    private readonly ICompiledTextSearch _asciiCompiledTextSearchAlgo;
+    private readonly ICompiledTextSearch _utf16CompiledTextSearchAlgo;
 
     public CompiledTextSearchProvider(string pattern, SearchProviderOptions searchOptions) {
       _asciiCompiledTextSearchAlgo = AsciiFileContents.CreateSearchAlgo(pattern, searchOptions);
-      _unicodeCompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(pattern, searchOptions);
+      _utf16CompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(pattern, searchOptions);
     }
 
     public ICompiledTextSearch GetAsciiSearch() {
@@ -20,12 +24,12 @@ namespace VsChromium.Server.Search {
     }
 
     public ICompiledTextSearch GetUtf16Search() {
-      return _unicodeCompiledTextSearchAlgo;
+      return _utf16CompiledTextSearchAlgo;
     }
 
     public void Dispose() {
       _asciiCompiledTextSearchAlgo.Dispose();
-      _unicodeCompiledTextSearchAlgo.Dispose();
+      _utf16CompiledTextSearchAlgo.Dispose();
     }
   }
 }

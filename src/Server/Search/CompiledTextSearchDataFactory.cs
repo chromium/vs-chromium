@@ -57,6 +57,6 @@ namespace VsChromium.Server.Search {
         .OrderBy(x => x.Index)
         .Select(entry => _compiledTextSearchProviderFactory.CreateProvider(entry.Text, options))
         .ToList();
-    }  
+    }
   }
 }

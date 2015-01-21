@@ -36,6 +36,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SafeSearchHandle.cs" />
     <Compile Include="StrStrWCompiledTextSearch.cs" />
+    <Compile Include="TextFragment.cs" />
     <Compile Include="Utf16CompiledTextSearch.cs" />
   </ItemGroup>
   <ItemGroup>

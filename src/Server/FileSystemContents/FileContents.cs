@@ -28,24 +28,11 @@ namespace VsChromium.Server.FileSystemContents {
 
     public DateTime UtcLastModified { get { return _utcLastModified; } }
 
-    public abstract int CharacterSize { get; }
-
     public abstract long ByteLength { get; }
 
-    protected abstract long CharacterCount { get; }
+    public TextRange TextRange { get { return new TextRange(0, CharacterCount); } }
 
     public abstract bool HasSameContents(FileContents other);
-
-    protected abstract TextFragment TextFragment { get; }
-
-    public TextRange TextRange {
-      get {
-        return new TextRange(0, CharacterCount);
-      }
-    }
-
-    protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider);
-    protected abstract TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength);
 
     public FileContentsPiece CreatePiece(FileName fileName, int fileId, TextRange range) {
       return new FileContentsPiece(fileName, this, fileId, range);
@@ -63,7 +50,6 @@ namespace VsChromium.Server.FileSystemContents {
 
       var providerForMainEntry = compiledTextSearchData.GetSearchAlgorithmProvider(compiledTextSearchData.ParsedSearchString.MainEntry);
       var algo = this.GetCompiledTextSearch(providerForMainEntry);
-      // TODO(rpaquay): We are limited to 2GB for now.
       var result = algo.SearchAll(textFragment, progressTracker);
       if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
           compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
@@ -73,7 +59,24 @@ namespace VsChromium.Server.FileSystemContents {
       return FilterOnOtherEntries(compiledTextSearchData, result).ToList();
     }
 
+    public virtual IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
+      return NoFileExtracts;
+    }
+
+    protected abstract long CharacterCount { get; }
+
+    protected abstract int CharacterSize { get; }
+
+    protected abstract TextFragment TextFragment { get; }
+
+    protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider);
+
+    protected abstract TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength);
+
     private TextFragment CreateFragmentFromRange(TextRange textRange) {
+      // Note: In some case, textRange may be outside of our bounds. This is
+      // because FileContents and FileContentsPiece may be out of date wrt to
+      // each other, see FileData.UpdateContents method.
       var fullFragment = this.TextFragment;
       var offset = Math.Min(textRange.CharacterOffset, fullFragment.CharacterCount);
       var count = Math.Min(textRange.CharacterCount, fullFragment.CharacterCount - offset);
@@ -93,10 +96,6 @@ namespace VsChromium.Server.FileSystemContents {
 
       return new TextSourceTextSearch(getLineRange, findEntry)
           .FilterOnOtherEntries(compiledTextSearchData.ParsedSearchString, matches);
-    }
-
-    public virtual IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
-      return NoFileExtracts;
     }
   }
 }

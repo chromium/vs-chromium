@@ -10,7 +10,13 @@ namespace VsChromium.Server.Search {
     public ICompiledTextSearchProvider CreateProvider(
       string pattern,
       SearchProviderOptions searchOptions) {
-      return new PerThreadCompiledTextSearchProvider(pattern, searchOptions);
+      // RE2 engine requires a per-thread provider, as the current C++
+      // implementation suffers from serious lock contention if a RE2 regex
+      // instance is shared accross threads.
+      if (searchOptions.UseRegex && searchOptions.UseRe2RegexEngine)
+        return new PerThreadCompiledTextSearchProvider(pattern, searchOptions);
+
+      return new CompiledTextSearchProvider(pattern, searchOptions);
     }
   }
 }

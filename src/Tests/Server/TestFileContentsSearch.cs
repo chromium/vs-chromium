@@ -62,9 +62,17 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(27, result[0].CharacterCount);
     }
 
+    [TestMethod]
+    public void NoOccurenceWithWildcardsWorks() {
+      const string text = "This is a piece of text";
+      const string searchPattern = "piece*text2";
+      var result = PerformSearch(text, searchPattern);
+      Assert.AreEqual(0, result.Count);
+    }
+
     private IList<TextRange> PerformSearch(string text, string searchPattern) {
-      var result1 = PerformSearch(() => CreateAsciiFileContents(text), searchPattern);
-      var result2 = PerformSearch(() => CreateUtf16FileContents(text), searchPattern);
+      var result1 = PerformSearch(() => Utils.CreateAsciiFileContents(text), searchPattern);
+      var result2 = PerformSearch(() => Utils.CreateUtf16FileContents(text), searchPattern);
       Assert.IsTrue(result1.SequenceEqual(result2));
       return result1;
     }
@@ -85,49 +93,6 @@ namespace VsChromium.Tests.Server {
           contents.TextRange, OperationProgressTracker.None);
         return result;
       }
-    }
-
-    [TestMethod]
-    public void NoOccurenceWithWildcardsWorks() {
-      using (var container = SetupServerMefContainer()) {
-        var factory = container.GetExportedValue<ICompiledTextSearchDataFactory>();
-
-        var contents = CreateAsciiFileContents("This is a piece of text");
-        var searchParams = new SearchParams {
-          SearchString = "piece*text2",
-          MatchCase = true,
-          MaxResults = 1000,
-          Regex = false,
-          Re2 = false,
-        };
-        var searchData = factory.Create(searchParams);
-        var result = contents.FindAll(searchData, contents.TextRange, OperationProgressTracker.None);
-        Assert.AreEqual(0, result.Count);
-      }
-    }
-
-    private AsciiFileContents CreateAsciiFileContents(string text) {
-      var memory = CreateAsciiMemory(text);
-      var contents = new AsciiFileContents(memory, DateTime.Now);
-      return contents;
-    }
-
-    private Utf16FileContents CreateUtf16FileContents(string text) {
-      var memory = CreateUtf16Memory(text);
-      var contents = new Utf16FileContents(memory, DateTime.Now);
-      return contents;
-    }
-
-    private FileContentsMemory CreateAsciiMemory(string text) {
-      var size = text.Length + 1;
-      var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(text));
-      return new FileContentsMemory(handle, size, 0, size);
-    }
-
-    private FileContentsMemory CreateUtf16Memory(string text) {
-      var size = (text.Length + 1) * sizeof(char);
-      var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(text));
-      return new FileContentsMemory(handle, size, 0, size);
     }
   }
 }

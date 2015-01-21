@@ -33,15 +33,9 @@ namespace VsChromium.Server.FileSystemContents {
       _hash = new Lazy<FileContentsHash>(CreateHash);
     }
 
-    private FileContentsHash CreateHash() {
-      return new FileContentsHash(_heap);
-    }
-
     public DateTime UtcLastModified { get { return _utcLastModified; } }
 
     public TextRange TextRange { get { return new TextRange(0, CharacterCount); } }
-
-    public FileContentsHash Hash { get { return _hash.Value; } }
 
     public abstract long ByteLength { get; }
 
@@ -88,6 +82,39 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected abstract TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength);
 
+    protected FileContentsHash Hash { get { return _hash.Value; } }
+
+    protected static bool CompareBinaryContents(
+      FileContents item1,
+      IntPtr ptr1,
+      long byteSize1,
+      FileContents item2,
+      IntPtr ptr2,
+      long byteSize2) {
+
+      if (byteSize1 != byteSize2)
+        return false;
+
+      const int smallPrefixSize = 256;
+      if (byteSize1 < smallPrefixSize) {
+        return NativeMethods.Ascii_Compare(
+          ptr1,
+          byteSize1,
+          ptr2,
+          byteSize2);
+      }
+
+      if (!NativeMethods.Ascii_Compare(ptr1, smallPrefixSize, ptr2, smallPrefixSize)) {
+        return false;
+      }
+
+      return item1.Hash.Equals(item2.Hash);
+    }
+
+    private FileContentsHash CreateHash() {
+      return new FileContentsHash(_heap);
+    }
+
     private TextFragment CreateFragmentFromRange(TextRange textRange) {
       // Note: In some case, textRange may be outside of our bounds. This is
       // because FileContents and FileContentsPiece may be out of date wrt to
@@ -106,7 +133,7 @@ namespace VsChromium.Server.FileSystemContents {
         var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchAlgorithmProvider(entry));
         return algo.FindFirst(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
       };
-      GetLineRangeFunction getLineRange = position => 
+      GetLineRangeFunction getLineRange = position =>
         this.GetLineTextRangeFromPosition(position, MaxLineExtentOffset);
 
       return new TextSourceTextSearch(getLineRange, findEntry)

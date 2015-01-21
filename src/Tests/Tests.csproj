@@ -28,6 +28,8 @@
   <ItemGroup>
     <Compile Include="ServerProcess\TestUnregisterFile.cs" />
     <Compile Include="ServerProcess\TestFileSystemTree.cs" />
+    <Compile Include="Server\GetTextKind.cs" />
+    <Compile Include="Server\Utils.cs" />
     <Compile Include="Server\TestFileContentsHash.cs" />
     <Compile Include="Server\TestFileContentsSearch.cs" />
     <Compile Include="Server\TestSearchStringParser.cs" />

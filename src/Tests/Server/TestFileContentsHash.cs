@@ -26,7 +26,7 @@ namespace VsChromium.Tests.Server {
     [TestMethod]
     public void HashForEmptyContentsWorks() {
       const string text = "";
-      var hash = CreateHash(text);
+      var hash = Utils.CreateFileContentsHash(text);
       Assert.IsNotNull(hash.Value);
       Assert.IsTrue(hash.Value.Length >= 10);
     }
@@ -34,7 +34,7 @@ namespace VsChromium.Tests.Server {
     [TestMethod]
     public void HashForLongContentsWorks() {
       var text = new string('a', 1024 * 1024);
-      var hash = CreateHash(text);
+      var hash = Utils.CreateFileContentsHash(text);
       Assert.IsNotNull(hash.Value);
       Assert.IsTrue(hash.Value.Length >= 10);
     }
@@ -42,8 +42,8 @@ namespace VsChromium.Tests.Server {
     [TestMethod]
     public void HashForSameContentsIsEqual() {
       const string text = "";
-      var hash1 = CreateHash(text);
-      var hash2 = CreateHash(text);
+      var hash1 = Utils.CreateFileContentsHash(text);
+      var hash2 = Utils.CreateFileContentsHash(text);
       Assert.IsFalse(object.ReferenceEquals(hash1, hash2));
       Assert.AreEqual(hash1.Value, hash2.Value);
       Assert.AreEqual(hash1.GetHashCode(), hash2.GetHashCode());
@@ -55,24 +55,12 @@ namespace VsChromium.Tests.Server {
     public void HashForDifferentContentsIsNotEqual() {
       const string text1 = "abc";
       const string text2 = "cba";
-      var hash1 = CreateHash(text1);
-      var hash2 = CreateHash(text2);
+      var hash1 = Utils.CreateFileContentsHash(text1);
+      var hash2 = Utils.CreateFileContentsHash(text2);
       Assert.IsFalse(object.ReferenceEquals(hash1, hash2));
       Assert.AreNotEqual(hash1.Value, hash2.Value);
       Assert.AreNotEqual(hash1, hash2);
       Assert.IsFalse(hash1.Equals(hash2));
-    }
-
-    private FileContentsHash CreateHash(string text) {
-      var mem = CreateAsciiMemory(text);
-      var hash = new FileContentsHash(mem);
-      return hash;
-    }
-
-    private FileContentsMemory CreateAsciiMemory(string text) {
-      var size = text.Length + 1;
-      var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(text));
-      return new FileContentsMemory(handle, size, 0, size - 1);
     }
   }
 }

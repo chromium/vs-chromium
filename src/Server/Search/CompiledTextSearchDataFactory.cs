@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   [Export(typeof(ICompiledTextSearchDataFactory))]
@@ -33,10 +32,10 @@ namespace VsChromium.Server.Search {
       } else {
         parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
         // Don't search empty or very small strings -- no significant results.
-        //if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
-        //    (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
-        //  return SearchFileContentsResult.Empty;
-        //}
+        if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
+            (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
+          return null;
+        }
       }
 
       var searchContentsAlgorithms = CreateSearchAlgorithms(

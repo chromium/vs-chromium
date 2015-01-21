@@ -68,16 +68,17 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchFileNamesResult SearchFileNames(SearchParams searchParams) {
-      var matchFunction = SearchPreProcessParams<FileName>(searchParams, MatchFileName, MatchFileRelativePath);
-      if (matchFunction == null)
-        return SearchFileNamesResult.Empty;
-
       // taskCancellation is used to make sure we cancel previous tasks as fast
       // as possible to avoid using too many CPU resources if the caller keeps
       // asking us to search for things. Note that this assumes the caller is
       // only interested in the result of the *last* query, while the previous
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
+
+      var matchFunction = SearchPreProcessParams<FileName>(searchParams, MatchFileName, MatchFileRelativePath);
+      if (matchFunction == null)
+        return SearchFileNamesResult.Empty;
+
       var searchedFileCount = 0;
       var matches = _currentFileDatabase.FileNames
         .AsParallel()
@@ -102,17 +103,18 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams) {
-      var matchFunction = SearchPreProcessParams<DirectoryName>(searchParams, MatchDirectoryName,
-                                                                MatchDirectoryRelativePath);
-      if (matchFunction == null)
-        return SearchDirectoryNamesResult.Empty;
-
       // taskCancellation is used to make sure we cancel previous tasks as fast
       // as possible to avoid using too many CPU resources if the caller keeps
       // asking us to search for things. Note that this assumes the caller is
       // only interested in the result of the *last* query, while the previous
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
+
+      var matchFunction = SearchPreProcessParams<DirectoryName>(searchParams, MatchDirectoryName,
+                                                                MatchDirectoryRelativePath);
+      if (matchFunction == null)
+        return SearchDirectoryNamesResult.Empty;
+
       var searchedFileCount = 0;
       var matches = _currentFileDatabase.DirectoryNames
         .AsParallel()
@@ -137,13 +139,18 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
-      using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams)) {
-        // taskCancellation is used to make sure we cancel previous tasks as
-        // fast as possible to avoid using too many CPU resources if the caller
-        // keeps asking us to search for things. Note that this assumes the
-        // caller is only interested in the result of the *last* query, while
-        // the previous queries will throw an OperationCanceled exception.
-        _taskCancellation.CancelAll();
+      // taskCancellation is used to make sure we cancel previous tasks as
+      // fast as possible to avoid using too many CPU resources if the caller
+      // keeps asking us to search for things. Note that this assumes the
+      // caller is only interested in the result of the *last* query, while
+      // the previous queries will throw an OperationCanceled exception.
+      _taskCancellation.CancelAll();
+
+      var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams);
+      if (searchContentsData == null)
+        return SearchFileContentsResult.Empty;
+
+      using (searchContentsData) {
         var cancellationToken = _taskCancellation.GetNewToken();
         return DoSearchFileContents(searchContentsData, searchParams.MaxResults, searchParams.IncludeSymLinks, cancellationToken);
       }

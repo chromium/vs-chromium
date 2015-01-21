@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {

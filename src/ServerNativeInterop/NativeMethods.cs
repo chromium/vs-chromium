@@ -138,12 +138,25 @@ namespace VsChromium.Server.NativeInterop {
       CharSet = CharSet.Ansi,
       SetLastError = false)]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static extern bool UTF16_GetLineExtentFromPosition(
+    public static extern bool Utf16_GetLineExtentFromPosition(
       IntPtr text,
       int textLen,
       int position,
       int maxOffset,
       out int lineStartPosition,
       out int lineLength);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport(
+      "VsChromium.Native.dll",
+      CallingConvention = CallingConvention.StdCall,
+      CharSet = CharSet.Ansi,
+      SetLastError = false)]
+    public static extern IntPtr Utf16_Search(
+      IntPtr text,
+      long textLength,
+      IntPtr pattern,
+      long patternLength,
+      SearchOptions options);
   }
 }

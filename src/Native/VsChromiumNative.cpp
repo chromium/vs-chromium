@@ -10,6 +10,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <algorithm>
+#include <locale>
+
 #include "search_bndm32.h"
 #include "search_bndm64.h"
 #include "search_boyer_moore.h"
@@ -58,6 +61,25 @@ bool GetLineExtentFromPosition(
   *lineLen = static_cast<int>(end - start);
   return true;
 }
+
+template<typename charT>
+struct char_equal_icase {
+  char_equal_icase()
+    : loc_(std::locale()) {
+  }
+  bool operator()(charT ch1, charT ch2) {
+    return std::toupper(ch1, loc_) == std::toupper(ch2, loc_);
+  }
+private:
+  const std::locale loc_;
+};
+
+template<typename charT>
+struct char_equal {
+  bool operator()(charT ch1, charT ch2) {
+    return ch1 == ch2;
+  }
+};
 
 extern "C" {
 
@@ -186,7 +208,11 @@ EXPORT TextKind __stdcall Text_GetKind(const char* text, int textLen) {
   }
 }
 
-EXPORT bool __stdcall Ascii_Compare(const char *text1, size_t text1Length, const char* text2, size_t text2Length) {
+EXPORT bool __stdcall Ascii_Compare(
+    const char *text1,
+    size_t text1Length,
+    const char* text2,
+    size_t text2Length) {
   if (text1Length != text2Length)
     return false;
 
@@ -204,7 +230,23 @@ EXPORT bool __stdcall Ascii_GetLineExtentFromPosition(
       text, textLen, position, maxOffset, lineStartPosition, lineLen);
 }
 
-EXPORT bool __stdcall UTF16_GetLineExtentFromPosition(
+EXPORT const wchar_t* __stdcall Utf16_Search(
+    const wchar_t *text,
+    size_t textLength,
+    const wchar_t* pattern,
+    size_t patternLength,
+    AsciiSearchBase::SearchOptions options) {
+  const wchar_t* textEnd = text + textLength;
+  const wchar_t* patternEnd = pattern + patternLength;
+  auto result = (options & AsciiSearchBase::kMatchCase)
+    ? std::search(text, textEnd, pattern, patternEnd, char_equal<wchar_t>())
+    : std::search(text, textEnd, pattern, patternEnd, char_equal_icase<wchar_t>());
+  if (result == textEnd)
+    return nullptr;
+  return result;
+}
+
+EXPORT bool __stdcall Utf16_GetLineExtentFromPosition(
     const wchar_t* text,
     int textLen,
     int position,

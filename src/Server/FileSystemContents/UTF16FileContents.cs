@@ -43,7 +43,7 @@ namespace VsChromium.Server.FileSystemContents {
     protected override TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength) {
       int lineStart;
       int lineLength;
-      NativeMethods.UTF16_GetLineExtentFromPosition(
+      NativeMethods.Utf16_GetLineExtentFromPosition(
           this.Pointer,
           // TODO(rpaquay): We are limited to 2GB for now.
           (int)this.CharacterCount,
@@ -62,7 +62,7 @@ namespace VsChromium.Server.FileSystemContents {
       if (searchOptions.MatchCase) {
         options |= NativeMethods.SearchOptions.kMatchCase;
       }
-      return new StrStrWCompiledTextSearch(pattern, options);
+      return new Utf16CompiledTextSearchStdSearch(pattern, options);
     }
   }
 }

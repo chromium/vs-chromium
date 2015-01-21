@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.Linq;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {

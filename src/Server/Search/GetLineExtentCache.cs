@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   public class GetLineExtentCache {

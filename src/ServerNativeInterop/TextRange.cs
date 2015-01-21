@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromium.Server.FileSystemContents {
+namespace VsChromium.Server.NativeInterop {
+  /// <summary>
+  /// Abstraction over a range of text, in terms of character offset and range
+  /// length.
+  /// </summary>
   public struct TextRange {
     private readonly long _characterOffset;
     private readonly long _characterCount;

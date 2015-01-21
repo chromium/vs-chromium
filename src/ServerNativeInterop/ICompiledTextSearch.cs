@@ -13,16 +13,18 @@ namespace VsChromium.Server.NativeInterop {
   /// </summary>
   public interface ICompiledTextSearch : IDisposable {
     /// <summary>
-    /// Find all occurrences of the search pattern in the given text fragment.
+    /// Find all occurrences of the stored prepared search pattern in the given
+    /// text fragment.
     /// </summary>
-    IEnumerable<FilePositionSpan> SearchAll(
+    IEnumerable<FilePositionSpan> FindAll(
       TextFragment textFragment,
       IOperationProgressTracker progressTracker);
 
     /// <summary>
-    /// Find the first occurrence of the search pattern in the given text fragment.
+    /// Find the first occurrence of the stored search pattern in the given text
+    /// fragment.
     /// </summary>
-    FilePositionSpan? SearchOne(
+    FilePositionSpan? FindFirst(
       TextFragment textFragment,
       IOperationProgressTracker progressTracker);
   }

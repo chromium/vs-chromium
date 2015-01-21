@@ -38,19 +38,21 @@ namespace VsChromium.Server.FileSystemContents {
       return new FileContentsPiece(fileName, this, fileId, range);
     }
 
-    public List<FilePositionSpan> Search(
-      TextRange textRange,
+    /// <summary>
+    /// Find all instances of the search pattern stored in <paramref
+    /// name="compiledTextSearchData"/> within the passed in <paramref
+    /// name="textRange"/>
+    /// </summary>
+    public List<FilePositionSpan> FindAll(
       CompiledTextSearchData compiledTextSearchData,
+      TextRange textRange,
       IOperationProgressTracker progressTracker) {
 
-      // Note: In some case, textRange may be outside of our bounds. This is
-      // because FileContents and FileContentsPiece may be out of date wrt to
-      // each other, see FileData.UpdateContents method.
       var textFragment = CreateFragmentFromRange(textRange);
-
-      var providerForMainEntry = compiledTextSearchData.GetSearchAlgorithmProvider(compiledTextSearchData.ParsedSearchString.MainEntry);
-      var algo = this.GetCompiledTextSearch(providerForMainEntry);
-      var result = algo.SearchAll(textFragment, progressTracker);
+      var providerForMainEntry = compiledTextSearchData
+        .GetSearchAlgorithmProvider(compiledTextSearchData.ParsedSearchString.MainEntry);
+      var textSearch = this.GetCompiledTextSearch(providerForMainEntry);
+      var result = textSearch.FindAll(textFragment, progressTracker);
       if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
           compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return result.ToList();
@@ -87,7 +89,7 @@ namespace VsChromium.Server.FileSystemContents {
     private IEnumerable<FilePositionSpan> FilterOnOtherEntries(CompiledTextSearchData compiledTextSearchData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (textRange, entry) => {
         var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchAlgorithmProvider(entry));
-        var position = algo.SearchOne(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
+        var position = algo.FindFirst(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
         if (!position.HasValue)
           return null;
         return new TextRange(position.Value.Position, position.Value.Length);

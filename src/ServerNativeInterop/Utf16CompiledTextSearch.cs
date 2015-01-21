@@ -15,7 +15,7 @@ namespace VsChromium.Server.NativeInterop {
     public virtual void Dispose() {
     }
 
-    public IEnumerable<FilePositionSpan> SearchAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+    public IEnumerable<FilePositionSpan> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
       while (!textFragment.IsEmpty) {
         var searchHit = Search(textFragment);
         if (searchHit.IsNull)
@@ -34,8 +34,8 @@ namespace VsChromium.Server.NativeInterop {
       }
     }
 
-    public FilePositionSpan? SearchOne(TextFragment textFragment, IOperationProgressTracker progressTracker) {
-      var result = SearchAll(textFragment, progressTracker).ToList();
+    public FilePositionSpan? FindFirst(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+      var result = FindAll(textFragment, progressTracker).ToList();
       if (result.Count == 0)
         return null;
       return result[0];

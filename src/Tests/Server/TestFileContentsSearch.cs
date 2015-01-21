@@ -80,10 +80,8 @@ namespace VsChromium.Tests.Server {
       };
       using (var searchData = _factory.Create(searchParams)) {
         var contents = fileContentsFactory();
-        var result = contents.Search(
-          contents.TextRange,
-          searchData,
-          OperationProgressTracker.None);
+        var result = contents.FindAll(searchData,
+          contents.TextRange, OperationProgressTracker.None);
         return result;
       }
     }
@@ -102,7 +100,7 @@ namespace VsChromium.Tests.Server {
           Re2 = false,
         };
         var searchData = factory.Create(searchParams);
-        var result = contents.Search(contents.TextRange, searchData, OperationProgressTracker.None);
+        var result = contents.FindAll(searchData, contents.TextRange, OperationProgressTracker.None);
         Assert.AreEqual(0, result.Count);
       }
     }

@@ -14,6 +14,7 @@ using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.NativeInterop;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
@@ -26,7 +27,10 @@ namespace VsChromium.Server.FileSystemDatabase {
     private FileNameDictionary<FileInfo> _files;
     private Dictionary<DirectoryName, DirectoryData> _directories;
 
-    public FileDatabaseBuilder(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
+    public FileDatabaseBuilder(
+      IFileSystem fileSystem,
+      IFileContentsFactory fileContentsFactory,
+      IProgressTrackerFactory progressTrackerFactory) {
       _fileSystem = fileSystem;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;

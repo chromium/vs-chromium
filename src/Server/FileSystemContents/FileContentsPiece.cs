@@ -7,6 +7,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
@@ -34,10 +35,8 @@ namespace VsChromium.Server.FileSystemContents {
     public List<FilePositionSpan> Search(
       CompiledTextSearchData compiledTextSearchData,
       IOperationProgressTracker progressTracker) {
-      return _fileContents.Search(
-        _textRange,
-        compiledTextSearchData,
-        progressTracker);
+      return _fileContents.FindAll(compiledTextSearchData,
+        _textRange, progressTracker);
     }
   }
 }

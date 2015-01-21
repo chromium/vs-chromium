@@ -22,13 +22,13 @@ namespace VsChromium.Server.NativeInterop {
 
     private static readonly List<FilePositionSpan> NoResult = new List<FilePositionSpan>();
 
-    public IEnumerable<FilePositionSpan> SearchAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+    public IEnumerable<FilePositionSpan> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
       if (progressTracker.ShouldEndProcessing)
         return NoResult;
       return SearchAllWorker(textFragment, progressTracker, int.MaxValue);
     }
 
-    public FilePositionSpan? SearchOne(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+    public FilePositionSpan? FindFirst(TextFragment textFragment, IOperationProgressTracker progressTracker) {
       var result = SearchAllWorker(textFragment, progressTracker, 1);
       if (result.Count == 0)
         return null;

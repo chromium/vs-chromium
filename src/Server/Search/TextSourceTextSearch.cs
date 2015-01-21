@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   public delegate TextRange? FindEntryFunction(TextRange textRange, ParsedSearchString.Entry entry);

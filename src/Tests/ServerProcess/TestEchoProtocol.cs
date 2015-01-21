@@ -10,7 +10,7 @@ using VsChromium.ServerProxy;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
-  public class TestEchoProtocol : MefBaseTest {
+  public class TestEchoProtocol : MefTestBase {
     [TestMethod]
     public void ServerResponds() {
       using (var container = SetupMefContainer()) {

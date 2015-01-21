@@ -81,7 +81,7 @@ namespace VsChromium.Server.FileSystemContents {
       return textFragment;
     }
 
-    private unsafe IEnumerable<FilePositionSpan> FilterOnOtherEntries(CompiledTextSearchData compiledTextSearchData, IEnumerable<FilePositionSpan> matches) {
+    private IEnumerable<FilePositionSpan> FilterOnOtherEntries(CompiledTextSearchData compiledTextSearchData, IEnumerable<FilePositionSpan> matches) {
       FindEntryFunction findEntry = (textRange, entry) => {
         var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchAlgorithmProvider(entry));
         var position = algo.SearchOne(CreateFragmentFromRange(textRange), OperationProgressTracker.None);

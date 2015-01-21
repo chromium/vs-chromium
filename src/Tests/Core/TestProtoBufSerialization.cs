@@ -14,7 +14,7 @@ using VsChromium.Core.Logging;
 
 namespace VsChromium.Tests.Core {
   [TestClass]
-  public class TestProtoBufSerialization : MefBaseTest {
+  public class TestProtoBufSerialization : MefTestBase {
     [TestMethod]
     public void ProtoBufSerializationWorksForStringData() {
       using (var container = SetupMefContainer()) {

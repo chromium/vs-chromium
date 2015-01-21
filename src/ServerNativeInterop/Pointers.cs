@@ -37,7 +37,7 @@ namespace VsChromium.Server.NativeInterop {
       if (start > end)
         throw new ArgumentException();
 
-      return end - start;
+      return Diff64(end, start);
     }
 
     /// <summary>
@@ -45,6 +45,20 @@ namespace VsChromium.Server.NativeInterop {
     /// </summary>
     public static long Offset64(IntPtr start, IntPtr end) {
       return Offset64((byte*)start.ToPointer(), (byte*)end.ToPointer());
+    }
+
+    /// <summary>
+    /// Returns the # of bytes between "start" end "end" (excluded).
+    /// </summary>
+    public static long Diff64(byte* start, byte* end) {
+      return start - end;
+    }
+
+    /// <summary>
+    /// Returns the # of bytes between "start" end "end" (excluded).
+    /// </summary>
+    public static long Diff64(IntPtr start, IntPtr end) {
+      return Diff64((byte*)start.ToPointer(), (byte*)end.ToPointer());
     }
 
     /// <summary>

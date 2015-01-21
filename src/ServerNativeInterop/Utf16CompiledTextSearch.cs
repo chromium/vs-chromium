@@ -35,7 +35,10 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     public FilePositionSpan? SearchOne(TextFragment textFragment, IOperationProgressTracker progressTracker) {
-      return SearchAll(textFragment, progressTracker).FirstOrDefault();
+      var result = SearchAll(textFragment, progressTracker).ToList();
+      if (result.Count == 0)
+        return null;
+      return result[0];
     }
 
     public abstract TextFragment Search(TextFragment textFragment);

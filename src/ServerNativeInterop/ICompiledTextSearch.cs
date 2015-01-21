@@ -83,14 +83,14 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     public TextFragment Suffix(IntPtr fragmentStart) {
-      return Suffix(Pointers.Offset64(fragmentStart, _textPtr));
+      return Suffix(Pointers.Offset64(_textPtr, fragmentStart));
     }
 
     public TextFragment Sub(IntPtr characterPtr, long characterCount) {
-      var offset = Pointers.Offset64(_textPtr, characterPtr);
-      if (offset < 0)
+      var byteOffset = Pointers.Offset64(_textPtr, characterPtr);
+      if (byteOffset < 0 || (byteOffset % _characterSize) != 0)
         throw new ArgumentException();
-      return Sub(offset, characterCount);
+      return Sub(byteOffset / _characterSize, characterCount);
     }
 
     public TextFragment Sub(long characterOffset, long characterCount) {

@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace VsChromium.Tests.Core {
   [TestClass]
-  public class TestTcpSerialization : MefBaseTest {
+  public class TestTcpSerialization : MefTestBase {
     [TestMethod]
     public void TcpSerializationWorks() {
       // TODO(rpaquay): Not implemented yet...

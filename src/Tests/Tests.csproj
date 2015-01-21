@@ -46,7 +46,7 @@
     <Compile Include="NativeInterop\TestAsciiSearch.cs" />
     <Compile Include="Core\TestTcpSerialization.cs" />
     <Compile Include="Core\TestProtoBufSerialization.cs" />
-    <Compile Include="MefBaseTest.cs" />
+    <Compile Include="MefTestBase.cs" />
     <Compile Include="ServerProcess\TestEchoProtocol.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerProcess\TestRegisterFile.cs" />

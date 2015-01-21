@@ -35,8 +35,10 @@ namespace VsChromium.Server.NativeInterop {
       var searchHitPtr = MatchCase
         ? StrStrW(textFragment.FragmentStart, _patternPtr.Pointer)
         : StrStrIW(textFragment.FragmentStart, _patternPtr.Pointer);
-      if (searchHitPtr == IntPtr.Zero)
+      // TODO(rpaquay): This is inefficient as we search past the end of the fragment.
+      if (searchHitPtr == IntPtr.Zero || Pointers.Diff64(searchHitPtr + _patternLength * sizeof(char), textFragment.FragmentEnd) > 0) {
         return TextFragment.Null;
+      }
       return textFragment.Sub(searchHitPtr, _patternLength);
     }
 

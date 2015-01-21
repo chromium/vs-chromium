@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.CodeDom;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Files {

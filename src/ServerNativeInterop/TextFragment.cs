@@ -56,6 +56,10 @@ namespace VsChromium.Server.NativeInterop {
       }
     }
 
+    /// <summary>
+    /// Return a new fragment starting at <paramref name="characterOffset"/> up
+    /// to the end of this text fragment.
+    /// </summary>
     public TextFragment Suffix(long characterOffset) {
       if (characterOffset < _characterOffset)
         throw new ArgumentException();
@@ -64,17 +68,27 @@ namespace VsChromium.Server.NativeInterop {
       return new TextFragment(_textPtr, characterOffset, count, _characterSize);
     }
 
-    public TextFragment Suffix(IntPtr fragmentStart) {
-      return Suffix(Pointers.Offset64(_textPtr, fragmentStart));
+    /// <summary>
+    /// Return a new fragment starting at <paramref name="characterStart"/>
+    /// up to the end of this text fragment.
+    /// </summary>
+    public TextFragment Suffix(IntPtr characterStart) {
+      return Suffix(Pointers.Offset64(_textPtr, characterStart));
     }
 
-    public TextFragment Sub(IntPtr characterPtr, long characterCount) {
-      var byteOffset = Pointers.Offset64(_textPtr, characterPtr);
+    /// <summary>
+    /// Return a new fragment starting at <paramref name="characterStart"/>
+    /// and containing <paramref name="characterCount"/> characters.
+    /// </summary>
+    public TextFragment Sub(IntPtr characterStart, long characterCount) {
+      var byteOffset = Pointers.Offset64(_textPtr, characterStart);
       if (byteOffset < 0 || (byteOffset % _characterSize) != 0)
         throw new ArgumentException();
       return Sub(byteOffset / _characterSize, characterCount);
     }
 
+    /// Return a new fragment starting at <paramref name="characterOffset"/>
+    /// and containing <paramref name="characterCount"/> characters.
     public TextFragment Sub(long characterOffset, long characterCount) {
       if (characterOffset < 0 || characterCount < 0)
         throw new ArgumentException();

@@ -220,7 +220,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             Re2 = ViewModel.UseRe2Regex,
-            Regex = ViewModel.UseStdRegex,
+            Regex = ViewModel.UseRegex,
           }
         },
         ProcessResponse = (typedResponse, stopwatch) => {
@@ -247,7 +247,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             Re2 = ViewModel.UseRe2Regex,
-            Regex = ViewModel.UseStdRegex,
+            Regex = ViewModel.UseRegex,
           }
         },
         ProcessResponse = (typedResponse, stopwatch) => {
@@ -274,7 +274,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             Re2 = ViewModel.UseRe2Regex,
-            Regex = ViewModel.UseStdRegex,
+            Regex = ViewModel.UseRegex,
           }
         },
         ProcessResponse = (typedResponse, stopwatch) => {

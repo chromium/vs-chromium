@@ -4,14 +4,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -28,8 +26,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private List<TreeViewItemViewModel> _fileSystemNodes = new List<TreeViewItemViewModel>();
     private ISourceExplorerViewModelHost _sourceExplorerViewModelHost;
     private UpdateInfo _updateInfo;
-    private bool _useStdRegex;
-    private bool _useRe2Regex;
 
     public enum DisplayKind {
       FileSystem,
@@ -40,6 +36,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public SourceExplorerViewModel() {
       this.IncludeSymLinks = true;
+      this.UseRe2Regex = true;
     }
 
     public DisplayKind ActiveDisplay {
@@ -74,15 +71,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool UseRe2Regex {
-      get { return _useRe2Regex; }
-      set {
-        _useRe2Regex = value;
-        if (value)
-          UseStdRegex = false;
-        OnPropertyChanged("UseRe2Regex");
-      }
-    }
+    public bool UseRe2Regex { get; set; }
 
     /// <summary>
     /// Databound!
@@ -90,8 +79,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public string UseRe2RegexToolTip {
       get { 
         return string.Format(
-          "Toggle usage of regular expressions using the Re2 library for file searches. " +
-          "Use Regular expression is currently {0}.",
+          "Use the RE2 regex engine instead of the standard C++ one for improved performance. " +
+          "RE2 is currently {0}.",
           UseRe2Regex ? "enabled" : "disabled");
       }
     }
@@ -99,25 +88,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool UseStdRegex {
-      get { return _useStdRegex; }
-      set {
-        _useStdRegex = value;
-        if (value)
-          UseRe2Regex = false;
-        OnPropertyChanged("UseStdRegex");
-      }
-    }
+    public bool UseRegex { get; set; }
 
     /// <summary>
     /// Databound!
     /// </summary>
-    public string UseStdRegexToolTip {
+    public string UseRegexToolTip {
       get {
         return string.Format(
-          "Toggle usage of regular expressions using the standard c++ library for file searches. " +
-          "Use Regular expression is currently {0}.",
-          UseRe2Regex ? "enabled" : "disabled");
+          "Toggle usage of regular expressions for text searches. " +
+          "Regular expression are currently {0}.",
+          UseRegex ? "enabled" : "disabled");
       }
     }
 

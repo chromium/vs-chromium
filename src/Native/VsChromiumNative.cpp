@@ -173,9 +173,9 @@ namespace {
 
 bool Text_HasUtf8Bom(const char *text, int textLen) {
   return textLen >= 3 &&
-    text[0] == 0xEF &&
-    text[1] == 0xBB &&
-    text[2] == 0xBF;
+    static_cast<uint8_t>(text[0]) == static_cast<uint8_t>(0xEF) &&
+    static_cast<uint8_t>(text[1]) == static_cast<uint8_t>(0xBB) &&
+    static_cast<uint8_t>(text[2]) == static_cast<uint8_t>(0xBF);
 }
 
 bool Text_IsAscii(const char* text, int textLen) {

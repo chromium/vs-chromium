@@ -71,24 +71,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool UseRe2Regex { get; set; }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public string UseRe2RegexToolTip {
-      get { 
-        return string.Format(
-          "Use the RE2 regex engine instead of the standard C++ library engine for improved performance. " +
-          "RE2 support is experimental. " +
-          "RE2 is currently {0}.",
-          UseRe2Regex ? "active" : "disabled");
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
     public bool UseRegex { get; set; }
 
     /// <summary>
@@ -97,7 +79,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public string UseRegexToolTip {
       get {
         return string.Format(
-          "Toggle usage of regular expressions for text searches. " +
+          "Toggle usage of regular expressions for all searches. " +
           "Regular expressions are currently {0}.",
           UseRegex ? "enabled" : "disabled");
       }
@@ -114,9 +96,26 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public string IncludeSymLinksToolTip {
       get {
         return string.Format(
-          "Toggle searching inside symbolic link directories. " +
-          "Files and directories inside symbolic links are currently {0} in search results.",
+          "Toggle searching inside symbolic links for all searches. " +
+          "Symbolic links are currently {0} in search results.",
           IncludeSymLinks ? "included" : "excluded");
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool UseRe2Regex { get; set; }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string UseRe2RegexToolTip {
+      get {
+        return string.Format(
+          "Toggle usage of the RE2 regular expression engine as a replacement of the standard C++ library for improved performance. " +
+          "The RE2 engine is currently {0}.",
+          UseRe2Regex ? "enabled" : "disabled");
       }
     }
 

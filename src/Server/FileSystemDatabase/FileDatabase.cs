@@ -16,40 +16,49 @@ namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabase : IFileDatabase {
     private readonly IDictionary<FileName, FileData> _files;
     private readonly IDictionary<DirectoryName, DirectoryData> _directories;
-    private readonly ICollection<IFileContentsPiece> _fileContentsPieces;
+    private readonly IList<IFileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
+    private FileName[] _filesArray;
+    private DirectoryName[] _directoriesArray;
 
     public FileDatabase(IDictionary<FileName, FileData> files,
                         IDictionary<DirectoryName, DirectoryData> directories,
-                        ICollection<IFileContentsPiece> fileContentsPieces,
+                        IList<IFileContentsPiece> fileContentsPieces,
                         long searchableFileCount) {
       _files = files;
+      _filesArray = files.Keys.ToArray();
       _directories = directories;
+      _directoriesArray = directories.Keys.ToArray();
       _fileContentsPieces = fileContentsPieces;
       _searchableFileCount = searchableFileCount;
     }
 
-    /// <summary>
-    /// Returns the list of files with their associated <see cref="FileData"/>.
-    /// Note that some instances of <see cref="FileData"/> may have their <see
-    /// cref="FileData.Contents"/> property set to null.
-    /// </summary>
-    public IDictionary<FileName, FileData> Files { get { return _files; } }
+    public IDictionary<FileName, FileData> Files {
+      get {
+        return _files;
+      }
+    }
 
-    public IDictionary<DirectoryName, DirectoryData> Directories { get { return _directories; } }
+    public IDictionary<DirectoryName, DirectoryData> Directories {
+      get {
+        return _directories;
+      }
+    }
 
-    /// <summary>
-    /// Returns the list of filenames suitable for file name search.
-    /// </summary>
-    public ICollection<FileName> FileNames { get { return _files.Keys; } }
+    public IList<FileName> FileNames {
+      get {
+        return _filesArray;
+      }
+    }
 
-    /// <summary>
-    /// Returns the list of directory names suitable for directory name search.
-    /// </summary>
-    public ICollection<DirectoryName> DirectoryNames { get { return _directories.Keys; } }
+    public IList<DirectoryName> DirectoryNames {
+      get {
+        return _directoriesArray;
+      }
+    }
 
-    public ICollection<IFileContentsPiece> FileContentsPieces {
-      get { return _fileContentsPieces; }
+    public IList<IFileContentsPiece> FileContentsPieces {
+      get { return _fileContentsPieces.ToArray(); }
     }
 
     public long SearchableFileCount {

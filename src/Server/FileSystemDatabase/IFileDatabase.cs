@@ -10,20 +10,26 @@ namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabase {
     /// <summary>
     /// Returns the list of filenames suitable for file name search.
+    /// Note: Return type is IList to allow efficient partitioning with
+    /// ".AsParallel()".
     /// </summary>
-    ICollection<FileName> FileNames { get; }
+    IList<FileName> FileNames { get; }
 
     /// <summary>
-    /// Returns the list of directory names suitable for directory name search.
+    /// The list of directory names suitable for directory name search.
+    /// Note: Return type is IList to allow efficient partitioning with
+    /// ".AsParallel()".
     /// </summary>
-    ICollection<DirectoryName> DirectoryNames { get; }
+    IList<DirectoryName> DirectoryNames { get; }
 
     /// <summary>
     /// Returns the list of entities with text contents suitable for text search.
     /// For large files, there is more than one <see cref="IFileContentsPiece"/>
     /// entry per file.
+    /// Note: Return type is IList to allow efficient partitioning with
+    /// ".AsParallel()".
     /// </summary>
-    ICollection<IFileContentsPiece> FileContentsPieces { get; }
+    IList<IFileContentsPiece> FileContentsPieces { get; }
 
     /// <summary>
     /// The total number of file which can be searched for contents.

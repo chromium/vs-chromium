@@ -58,7 +58,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IList<IFileContentsPiece> FileContentsPieces {
-      get { return _fileContentsPieces.ToArray(); }
+      get { return _fileContentsPieces; }
     }
 
     public long SearchableFileCount {

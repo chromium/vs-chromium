@@ -89,7 +89,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           info.SearchFunction();
       };
       comboBox.PrePreviewKeyDown += (s, e) => {
-        if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Down) {
+        if (e.KeyboardDevice.Modifiers == ModifierKeys.None &&
+            e.Key == Key.Down &&
+            !comboBox.IsDropDownOpen) {
           FileTreeView.Focus();
           e.Handled = true;
         }

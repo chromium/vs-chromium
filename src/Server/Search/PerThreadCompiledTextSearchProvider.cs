@@ -26,6 +26,10 @@ namespace VsChromium.Server.Search {
       _searchOptions = searchOptions;
       _asciiAlgorithmFactory = x => AsciiFileContents.CreateSearchAlgo(_pattern, _searchOptions);
       _unicodeCompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(_pattern, _searchOptions);
+
+      // Force execution on the current thread so that we get an exception if
+      // the search engine finds "pattern" is invalid.
+      this.GetAsciiSearch();
     }
 
     public ICompiledTextSearch GetAsciiSearch() {

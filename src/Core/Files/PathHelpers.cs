@@ -7,6 +7,7 @@ using System.IO;
 
 namespace VsChromium.Core.Files {
   public static class PathHelpers {
+    private const int MaxPath = 260;
     private static readonly string DirectorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
     private static readonly char[] DirectorySeparatorArray = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
 
@@ -70,6 +71,38 @@ namespace VsChromium.Core.Files {
     /// </summary>
     public static string ToPosix(string path) {
       return path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    /// <summary>
+    /// Returns the parent directory of <paramref name="path"/>, or null if
+    /// <paramref name="path"/> is a top level directory.
+    /// </summary>
+    public static string GetParent(string path) {
+      return Path.GetDirectoryName(path);
+    }
+
+    /// <summary>
+    /// Returns <code>true</code> if <paramref name="path"/> is too long.
+    /// </summary>
+    public static bool IsPathTooLong(string path) {
+      path = path ?? "";
+      return path.Length >= MaxPath;
+    }
+
+    /// <summary>
+    /// Returns <code>true</code> if <paramref name="path"/> is too long.
+    /// </summary>
+    public static bool IsValidBclPath(string path) {
+      if (IsPathTooLong(path))
+        return false;
+
+      try {
+        // This call checks path contains valid characters only, etc.
+        Path.GetDirectoryName(path);
+        return true;
+      } catch (Exception) {
+        return false;
+      }
     }
   }
 }

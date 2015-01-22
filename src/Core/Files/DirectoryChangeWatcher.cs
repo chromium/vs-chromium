@@ -254,27 +254,60 @@ namespace VsChromium.Core.Files {
       }
     }
 
+    /// <summary>
+    ///  Skip paths BCL can't process (e.g. path too long)
+    /// </summary>
+    private bool SkipPath(string path) {
+      if (PathHelpers.IsPathTooLong(path)) {
+        Logger.Log("Skipping changed event because path is too long: \"{0}\"", path);
+        return true;
+      }
+      if (!PathHelpers.IsValidBclPath(path)) {
+        Logger.Log("Skipping changed event because path is invalid: \"{0}\"", path);
+        return true;
+      }
+      return false;
+    }
+
     private void WatcherOnRenamed(object sender, RenamedEventArgs renamedEventArgs) {
+      if (SkipPath(renamedEventArgs.OldFullPath))
+        return;
+      if (SkipPath(renamedEventArgs.FullPath))
+        return;
+
       EnqueueChangeEvent(new FullPath(renamedEventArgs.OldFullPath), PathChangeKind.Deleted);
       EnqueueChangeEvent(new FullPath(renamedEventArgs.FullPath), PathChangeKind.Created);
       _eventReceived.Set();
     }
 
     private void WatcherOnDeleted(object sender, FileSystemEventArgs fileSystemEventArgs) {
+      if (SkipPath(fileSystemEventArgs.FullPath))
+        return;
+
       EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Deleted);
       _eventReceived.Set();
     }
 
     private void WatcherOnCreated(object sender, FileSystemEventArgs fileSystemEventArgs) {
+      if (SkipPath(fileSystemEventArgs.FullPath))
+        return;
+
       EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Created);
       _eventReceived.Set();
     }
 
     private void WatcherOnChanged(object sender, FileSystemEventArgs fileSystemEventArgs) {
+      if (SkipPath(fileSystemEventArgs.FullPath))
+        return;
+
       EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Changed);
       _eventReceived.Set();
     }
 
+    /// <summary>
+    /// Executed on the background thread when changes need to be notified to
+    /// our listeners.
+    /// </summary>
     protected virtual void OnPathsChanged(IList<PathChangeEntry> changes) {
       if (changes.Count == 0)
         return;

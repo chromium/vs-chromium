@@ -28,8 +28,8 @@ namespace VsChromium.Core.Files {
     /// </summary>
     public FullPath Parent {
       get {
-        var parent = Directory.GetParent(_path);
-        return parent == null ? default(FullPath) : new FullPath(parent.FullName);
+        var parent = PathHelpers.GetParent(_path);
+        return parent == null ? default(FullPath) : new FullPath(parent);
       }
     }
 

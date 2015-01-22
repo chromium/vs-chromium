@@ -259,11 +259,11 @@ namespace VsChromium.Core.Files {
     /// </summary>
     private bool SkipPath(string path) {
       if (PathHelpers.IsPathTooLong(path)) {
-        Logger.Log("Skipping changed event because path is too long: \"{0}\"", path);
+        Logger.Log("Skipping file change event because path is too long: \"{0}\"", path);
         return true;
       }
       if (!PathHelpers.IsValidBclPath(path)) {
-        Logger.Log("Skipping changed event because path is invalid: \"{0}\"", path);
+        Logger.Log("Skipping file change event because path is invalid: \"{0}\"", path);
         return true;
       }
       return false;

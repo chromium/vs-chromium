@@ -8,17 +8,24 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Core.Win32;
+using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
@@ -265,6 +272,9 @@ namespace VsChromium.Server.Search {
       if (pattern == null)
         return null;
 
+      if (searchParams.Regex) {
+        return SearchPreProcessRegularExpression<T>(searchParams, matchName, matchRelativeName);
+      }
       var matcher = FileNameMatching.ParsePattern(pattern);
 
       var comparer = searchParams.MatchCase ?
@@ -274,6 +284,78 @@ namespace VsChromium.Server.Search {
         return (item) => matchRelativeName(matcher, item, comparer);
       else
         return (item) => matchName(matcher, item, comparer);
+    }
+
+    private Func<T, bool> SearchPreProcessRegularExpression<T>(
+      SearchParams searchParams,
+      Func<IPathMatcher, T, IPathComparer, bool> matchName,
+      Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
+
+      var pattern = searchParams.SearchString ?? "";
+      pattern = pattern.Trim();
+      if (string.IsNullOrWhiteSpace(pattern))
+        return null;
+
+      var data = _compiledTextSearchDataFactory.Create(searchParams);
+      var provider = data.GetSearchAlgorithmProvider(data.ParsedSearchString.MainEntry);
+      var matcher = new CompiledTextSearchProviderPathMatcher(provider);
+      var comparer = searchParams.MatchCase ?
+                       PathComparerRegistry.CaseSensitive :
+                       PathComparerRegistry.CaseInsensitive;
+      if (pattern.Contains('/') || pattern.Contains("\\\\"))
+        return (item) => matchRelativeName(matcher, item, comparer);
+      else
+        return (item) => matchName(matcher, item, comparer);
+    }
+
+    public class CompiledTextSearchProviderPathMatcher : IPathMatcher {
+      private readonly ICompiledTextSearchProvider _searchProvider;
+
+      public CompiledTextSearchProviderPathMatcher(ICompiledTextSearchProvider searchProvider) {
+        _searchProvider = searchProvider;
+      }
+
+      public bool MatchDirectoryName(RelativePath path, IPathComparer comparer) {
+        return MatchRelativePath(path);
+      }
+
+      public bool MatchFileName(RelativePath path, IPathComparer comparer) {
+        return MatchRelativePath(path);
+      }
+
+      private unsafe bool MatchRelativePath(RelativePath path) {
+        var value = path.Value;
+        var hasDirectorySeparators = value.IndexOf(Path.DirectorySeparatorChar) >= 0;
+        var ptr = Marshal.StringToHGlobalAnsi(value);
+        try {
+          var range = new TextFragment(ptr, 0, value.Length, sizeof(byte));
+
+          var hit = _searchProvider.GetAsciiSearch()
+            .FindFirst(range, OperationProgressTracker.None);
+          if (hit.HasValue)
+            return true;
+
+          if (!hasDirectorySeparators)
+            return false;
+
+          // Replace '\' with '/' and try again
+          var first = (byte *)ptr.ToPointer();
+          var last = first + value.Length;
+          for (; first != last; first++) {
+            if ((char)(*first) == Path.DirectorySeparatorChar) {
+              *first = (byte)Path.AltDirectorySeparatorChar;
+            }
+          }
+
+          // Search again
+          hit = _searchProvider.GetAsciiSearch()
+                      .FindFirst(range, OperationProgressTracker.None);
+          return hit.HasValue;
+        }
+        finally {
+          Marshal.FreeHGlobal(ptr);
+        }
+      }
     }
 
     private static string ConvertUserSearchStringToSearchPattern(SearchParams searchParams) {

@@ -62,24 +62,10 @@ bool GetLineExtentFromPosition(
   return true;
 }
 
-template<typename charT>
-struct char_equal_icase {
-  char_equal_icase()
-    : loc_(std::locale()) {
-  }
-  bool operator()(charT ch1, charT ch2) {
-    return std::toupper(ch1, loc_) == std::toupper(ch2, loc_);
-  }
-private:
-  const std::locale loc_;
-};
-
-template<typename charT>
-struct char_equal {
-  bool operator()(charT ch1, charT ch2) {
-    return ch1 == ch2;
-  }
-};
+bool char_equal_icase(wchar_t x , wchar_t y) {
+  static const std::locale& loc(std::locale::classic());
+  return std::tolower(x, loc) == std::tolower(y, loc);
+}
 
 extern "C" {
 
@@ -239,8 +225,8 @@ EXPORT const wchar_t* __stdcall Utf16_Search(
   const wchar_t* textEnd = text + textLength;
   const wchar_t* patternEnd = pattern + patternLength;
   auto result = (options & AsciiSearchBase::kMatchCase)
-    ? std::search(text, textEnd, pattern, patternEnd, char_equal<wchar_t>())
-    : std::search(text, textEnd, pattern, patternEnd, char_equal_icase<wchar_t>());
+    ? std::search(text, textEnd, pattern, patternEnd)
+    : std::search(text, textEnd, pattern, patternEnd, char_equal_icase);
   if (result == textEnd)
     return nullptr;
   return result;

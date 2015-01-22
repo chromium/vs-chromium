@@ -40,15 +40,18 @@ namespace VsChromium.Server.FileSystemContents {
         case NativeMethods.TextKind.Ascii:
           return new AsciiFileContents(new FileContentsMemory(block, 0, contentsByteCount), fileInfo.LastWriteTimeUtc);
 
+        // Note: Since we don't support UTF16 regex, just load all utf8 files as ascii.
+        case NativeMethods.TextKind.Utf8WithBom:
         case NativeMethods.TextKind.AsciiWithUtf8Bom:
           const int utf8BomSize = 3;
           return new AsciiFileContents(new FileContentsMemory(block, utf8BomSize, contentsByteCount - utf8BomSize), fileInfo.LastWriteTimeUtc);
 
+#if false
         case NativeMethods.TextKind.Utf8WithBom:
           var utf16Block = Conversion.UTF8ToUnicode(block);
           block.Dispose();
           return new Utf16FileContents(new FileContentsMemory(utf16Block, 0, utf16Block.ByteLength), fileInfo.LastWriteTimeUtc);
-
+#endif
         case NativeMethods.TextKind.Unknown:
         default:
           // TODO(rpaquay): Figure out a better way to detect encoding.

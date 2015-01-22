@@ -1,11 +1,14 @@
 [ChromiumExplorer.ignore]
-/.git/
+.git/
 
 [SearchableFiles.ignore]
-/Binaries/
+Binaries/
+Debug/
+Release/
 obj/
 *.png
 *.ico
+*.ipch
 
 [SearchableFiles.include]
 *

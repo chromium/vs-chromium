@@ -9,19 +9,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
-using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
-using VsChromium.Core.Win32;
-using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
@@ -82,31 +77,37 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var matchFunction = SearchPreProcessParams<FileName>(searchParams, MatchFileName, MatchFileRelativePath);
-      if (matchFunction == null)
+      var preProcessResult = SearchPreProcessParams<FileName>(
+        searchParams,
+        MatchFileName,
+        MatchFileRelativePath);
+      if (preProcessResult == null)
         return SearchFileNamesResult.Empty;
 
-      var searchedFileCount = 0;
-      var matches = _currentFileDatabase.FileNames
-        .AsParallel()
-        // We need the line below because of "Take" (.net 4.0 PLinq limitation)
-        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        .WithCancellation(_taskCancellation.GetNewToken())
-        .Where(item => {
-          if (!searchParams.IncludeSymLinks) {
-            if (_currentFileDatabase.IsContainedInSymLink(item.Parent))
-              return false;
-          }
-          Interlocked.Increment(ref searchedFileCount);
-          return matchFunction(item);
-        })
-        .Take(searchParams.MaxResults)
-        .ToList();
+      using (preProcessResult) {
+        var searchedFileCount = 0;
+        var matches = _currentFileDatabase.FileNames
+          .AsParallel()
+          // We need the line below because of "Take" (.net 4.0 PLinq limitation)
+          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+          .WithCancellation(_taskCancellation.GetNewToken())
+          .Where(
+            item => {
+              if (!searchParams.IncludeSymLinks) {
+                if (_currentFileDatabase.IsContainedInSymLink(item.Parent))
+                  return false;
+              }
+              Interlocked.Increment(ref searchedFileCount);
+              return preProcessResult.Matcher(item);
+            })
+          .Take(searchParams.MaxResults)
+          .ToList();
 
-      return new SearchFileNamesResult {
-        FileNames = matches,
-        TotalCount = searchedFileCount
-      };
+        return new SearchFileNamesResult {
+          FileNames = matches,
+          TotalCount = searchedFileCount
+        };
+      }
     }
 
     public SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams) {
@@ -117,32 +118,37 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var matchFunction = SearchPreProcessParams<DirectoryName>(searchParams, MatchDirectoryName,
-                                                                MatchDirectoryRelativePath);
-      if (matchFunction == null)
+      var preProcessResult = SearchPreProcessParams<DirectoryName>(
+        searchParams,
+        MatchDirectoryName,
+        MatchDirectoryRelativePath);
+      if (preProcessResult == null)
         return SearchDirectoryNamesResult.Empty;
 
-      var searchedFileCount = 0;
-      var matches = _currentFileDatabase.DirectoryNames
-        .AsParallel()
-        // We need the line below because of "Take" (.net 4.0 PLinq limitation)
-        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        .WithCancellation(_taskCancellation.GetNewToken())
-        .Where(item => {
-          if (!searchParams.IncludeSymLinks) {
-            if (_currentFileDatabase.IsContainedInSymLink(item))
-              return false;
-          }
-          Interlocked.Increment(ref searchedFileCount);
-          return matchFunction(item);
-        })
-        .Take(searchParams.MaxResults)
-        .ToList();
+      using (preProcessResult) {
+        var searchedFileCount = 0;
+        var matches = _currentFileDatabase.DirectoryNames
+          .AsParallel()
+          // We need the line below because of "Take" (.net 4.0 PLinq limitation)
+          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+          .WithCancellation(_taskCancellation.GetNewToken())
+          .Where(
+            item => {
+              if (!searchParams.IncludeSymLinks) {
+                if (_currentFileDatabase.IsContainedInSymLink(item))
+                  return false;
+              }
+              Interlocked.Increment(ref searchedFileCount);
+              return preProcessResult.Matcher(item);
+            })
+          .Take(searchParams.MaxResults)
+          .ToList();
 
-      return new SearchDirectoryNamesResult {
-        DirectoryNames = matches,
-        TotalCount = searchedFileCount
-      };
+        return new SearchDirectoryNamesResult {
+          DirectoryNames = matches,
+          TotalCount = searchedFileCount
+        };
+      }
     }
 
     public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
@@ -264,7 +270,18 @@ namespace VsChromium.Server.Search {
       });
     }
 
-    private Func<T, bool> SearchPreProcessParams<T>(
+    private class SearchPreProcessResult<T> : IDisposable {
+      public Func<T, bool> Matcher { get; set; }
+      public CompiledTextSearchData SearchData { get; set; }
+      public void Dispose() {
+        if (SearchData != null) {
+          SearchData.Dispose();
+          SearchData = null;
+        }
+      }
+    }
+
+    private SearchPreProcessResult<T> SearchPreProcessParams<T>(
       SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
@@ -280,13 +297,18 @@ namespace VsChromium.Server.Search {
       var comparer = searchParams.MatchCase ?
                        PathComparerRegistry.CaseSensitive :
                        PathComparerRegistry.CaseInsensitive;
-      if (pattern.Contains(Path.DirectorySeparatorChar))
-        return (item) => matchRelativeName(matcher, item, comparer);
-      else
-        return (item) => matchName(matcher, item, comparer);
+      if (pattern.Contains(Path.DirectorySeparatorChar)) {
+        return new SearchPreProcessResult<T> {
+          Matcher = (item) => matchRelativeName(matcher, item, comparer)
+        };
+      } else {
+        return new SearchPreProcessResult<T> {
+          Matcher = (item) => matchName(matcher, item, comparer)
+        };
+      }
     }
 
-    private Func<T, bool> SearchPreProcessRegularExpression<T>(
+    private SearchPreProcessResult<T> SearchPreProcessRegularExpression<T>(
       SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
@@ -302,10 +324,17 @@ namespace VsChromium.Server.Search {
       var comparer = searchParams.MatchCase ?
                        PathComparerRegistry.CaseSensitive :
                        PathComparerRegistry.CaseInsensitive;
-      if (pattern.Contains('/') || pattern.Contains("\\\\"))
-        return (item) => matchRelativeName(matcher, item, comparer);
-      else
-        return (item) => matchName(matcher, item, comparer);
+      if (pattern.Contains('/') || pattern.Contains("\\\\")) {
+        return new SearchPreProcessResult<T> {
+          Matcher = (item) => matchRelativeName(matcher, item, comparer),
+          SearchData = data,
+        };
+      } else {
+        return new SearchPreProcessResult<T> {
+          Matcher = (item) => matchName(matcher, item, comparer),
+          SearchData = data,
+        };
+      }
     }
 
     public class CompiledTextSearchProviderPathMatcher : IPathMatcher {

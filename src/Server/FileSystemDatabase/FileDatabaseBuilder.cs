@@ -78,7 +78,9 @@ namespace VsChromium.Server.FileSystemDatabase {
         var filesWithContents = GetFilesWithContents(fileDatabase.Files.Values);
         return new FileDatabase(
           fileDatabase.Files,
+          fileDatabase.FileNames,
           fileDatabase.Directories,
+          fileDatabase.DirectoryNames,
           CreateFilePieces(filesWithContents),
           filesWithContents.Count);
       }
@@ -90,7 +92,13 @@ namespace VsChromium.Server.FileSystemDatabase {
         var directories = _directories;
         var filesWithContents = GetFilesWithContents(files.Values);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
-        return new FileDatabase(files, directories, searchableContentsCollection, filesWithContents.Count);
+        return new FileDatabase(
+          files, 
+          files.Keys.ToArray(),
+          directories, 
+          directories.Keys.ToArray(),
+          searchableContentsCollection,
+          filesWithContents.Count);
       }
     }
 

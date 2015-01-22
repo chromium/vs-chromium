@@ -4,29 +4,46 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Threads;
 
 namespace VsChromium.Core.Files {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
     private readonly IFileSystem _fileSystem;
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
-    private readonly TimeSpan _eventReceivedTimeout = TimeSpan.FromSeconds(10.0);
-    private readonly TimeSpan _pathsChangedDelay = TimeSpan.FromSeconds(10.0);
-    private readonly TimeSpan _simplePathsChangedDelay = TimeSpan.FromSeconds(1.0);
+    private readonly PollingHelper _pathChangesPolling;
+    private readonly PollingHelper _simplePathChangesPolling;
+    private readonly PollingHelper _checkRootsPolling;
 
+    /// <summary>
+    /// Dictionary of watchers, one per root directory path.
+    /// </summary>
     private readonly Dictionary<FullPath, FileSystemWatcher> _watchers = new Dictionary<FullPath, FileSystemWatcher>();
     private readonly object _watchersLock = new object();
 
+    /// <summary>
+    /// Dictionary of file change events, per path.
+    /// </summary>
     private Dictionary<FullPath, PathChangeKind> _changedPaths = new Dictionary<FullPath, PathChangeKind>();
     private readonly object _changedPathsLock = new object();
-    private Thread _thread;
 
-    public DirectoryChangeWatcher(IFileSystem fileSystem) {
+    /// <summary>
+    /// The polling and event posting thread.
+    /// </summary>
+    private readonly TimeSpan _pollingThreadTimeout = TimeSpan.FromSeconds(1.0);
+    private Thread _pollingThread;
+
+    public DirectoryChangeWatcher(IFileSystem fileSystem, IDateTimeProvider dateTimeProvider) {
       _fileSystem = fileSystem;
+      _simplePathChangesPolling = new PollingHelper(dateTimeProvider, TimeSpan.FromSeconds(1.0));
+      _pathChangesPolling = new PollingHelper(dateTimeProvider, TimeSpan.FromSeconds(10.0));
+      _checkRootsPolling = new PollingHelper(dateTimeProvider, TimeSpan.FromSeconds(15.0));
     }
 
     public void WatchDirectories(IEnumerable<FullPath> directories) {
@@ -40,8 +57,8 @@ namespace VsChromium.Core.Files {
         var added = new HashSet<FullPath>(newSet);
         added.ExceptWith(oldSet);
 
-        removed.ForAll(x => RemoveDirectory(x));
-        added.ForAll(x => AddDirectory(x));
+        removed.ForAll(RemoveDirectory);
+        added.ForAll(AddDirectory);
       }
     }
 
@@ -50,9 +67,9 @@ namespace VsChromium.Core.Files {
     private void AddDirectory(FullPath directory) {
       FileSystemWatcher watcher;
       lock (_watchersLock) {
-        if (_thread == null) {
-          _thread = new Thread(ThreadLoop) {IsBackground = true};
-          _thread.Start();
+        if (_pollingThread == null) {
+          _pollingThread = new Thread(ThreadLoop) { IsBackground = true };
+          _pollingThread.Start();
         }
         if (_watchers.TryGetValue(directory, out watcher))
           return;
@@ -87,11 +104,16 @@ namespace VsChromium.Core.Files {
 
     private void ThreadLoop() {
       Logger.Log("Starting directory change notification monitoring thread.");
-      while (true) {
-        _eventReceived.WaitOne(_eventReceivedTimeout);
+      try {
+        while (true) {
+          _eventReceived.WaitOne(_pollingThreadTimeout);
 
-        CheckDeletedRoots();
-        PostPathsChangedEvents();
+          CheckDeletedRoots();
+          PostPathsChangedEvents();
+        }
+      }
+      catch (Exception e) {
+        Logger.LogException(e, "Error in DirectoryChangeWatcher.");
       }
     }
 
@@ -101,6 +123,11 @@ namespace VsChromium.Core.Files {
     /// this kind of changes.
     /// </summary>
     private void CheckDeletedRoots() {
+      Debug.Assert(_pollingThread == Thread.CurrentThread);
+      if (!_checkRootsPolling.WaitTimeExpired())
+        return;
+      _checkRootsPolling.Restart();
+
       lock (_watchersLock) {
         var deletedWatchers = _watchers
           .Where(item => !_fileSystem.DirectoryExists(item.Key))
@@ -115,75 +142,101 @@ namespace VsChromium.Core.Files {
     }
 
     private void PostPathsChangedEvents() {
+      Debug.Assert(_pollingThread == Thread.CurrentThread);
       var paths = DequeueEvents();
-      if (paths.Count == 0)
-        return;
 
-      // Dequeue events as long as there are new ones within a 10 seconds delay.
+      // Dequeue events as long as there are new ones showing up as we wait for
+      // our polling delays to expire.
       // The goal is to delay generating events as long as there is disk
       // activity within a 10 seconds window. It also allows "merging"
       // consecutive events into more meaningful ones.
-      while (true) {
-        Thread.Sleep(_simplePathsChangedDelay);
-        var morePathsChanged = DequeueEvents();
-        // Merge changes
-        morePathsChanged.ForAll(change => MergePathChange(paths, change.Key, change.Value));
-        PostSimplePathsChangedEvents(paths);
+      while (paths.Count > 0) {
 
-        Thread.Sleep(_pathsChangedDelay);
-        morePathsChanged = DequeueEvents();
-        if (morePathsChanged.Count == 0)
+        // Post changes that belong to an expired polling interval.
+        if (_simplePathChangesPolling.WaitTimeExpired()) {
+          PostPathsChangedEvents(paths, x => x == PathChangeKind.Changed);
+        }
+        if (_pathChangesPolling.WaitTimeExpired()) {
+          PostPathsChangedEvents(paths, x => true);
+        }
+
+        // If we are done, exit to waiting thread
+        if (paths.Count == 0)
           break;
 
-        // Merge changes
+        // If there are leftover paths, this means some polling interval(s) have
+        // not expired. Go back to sleeping for a little bit or until we receive
+        // a new change event.
+        _eventReceived.WaitOne(_pollingThreadTimeout);
+
+        // See if we got new events, and merge them.
+        var morePathsChanged = DequeueEvents();
         morePathsChanged.ForAll(change => MergePathChange(paths, change.Key, change.Value));
+
+        // If we got more changes, reset the polling interval for the non-simple
+        // path changed. The goal is to avoid processing those too frequently if
+        // there is activity on disk (e.g. a build happening), because
+        // processing add/delete changes is currently much more expensive in the
+        // search engine file database.
+        // Note we don't update the simple "file change" events, as those as cheaper
+        // to process.
+        if (morePathsChanged.Count > 0) {
+          _pathChangesPolling.Restart();
+        }
       }
 
-      //
-      var entries = paths
-        .Select(x => new PathChangeEntry(x.Key, x.Value))
-        .Where(item => IncludeChange(item))
-        .ToList();
-      OnPathsChanged(entries);
+      // We are done processing all changes, make sure we wait at least some
+      // amount of time before processing anything more.
+      _simplePathChangesPolling.Restart();
+      _pathChangesPolling.Restart();
+
+      Debug.Assert(paths.Count == 0);
     }
 
-    private void PostSimplePathsChangedEvents(Dictionary<FullPath, PathChangeKind> paths) {
-      var simpleChanges = paths
-        .Where(x => x.Value == PathChangeKind.Changed)
+    /// <summary>
+    /// Filter, remove and post events for all changes in <paramref
+    /// name="paths"/> that match <paramref name="predicate"/>
+    /// </summary>
+    private void PostPathsChangedEvents(IDictionary<FullPath, PathChangeKind> paths, Func<PathChangeKind, bool> predicate) {
+      FilterEvents(paths);
+
+      var changes = paths
+        .Where(x => predicate(x.Value))
         .Select(x => new PathChangeEntry(x.Key, x.Value))
-        .Where(item => IncludeChange(item))
         .ToList();
-      if (simpleChanges.Count == 0)
+      if (changes.Count == 0)
         return;
 
-      simpleChanges.ForAll(x => paths.Remove(x.Path));
-      OnPathsChanged(simpleChanges);
+      changes.ForAll(x => paths.Remove(x.Path));
+      OnPathsChanged(changes);
     }
 
-    private bool IncludeChange(PathChangeEntry change) {
-      var path = change.Path;
-      var changeType = change.Kind;
-
+    private bool IncludeChange(FullPath path, PathChangeKind changeKind) {
       // Ignore changes for files that have been created then deleted
-      if (changeType == PathChangeKind.None)
+      if (changeKind == PathChangeKind.None)
         return false;
 
       // Creation/changes to a directory entry are irrelevant (we will get notifications
       // for files inside the directory is anything relevant occured.)
       if (_fileSystem.DirectoryExists(path)) {
-        if (changeType == PathChangeKind.Changed || changeType == PathChangeKind.Created)
+        if (changeKind == PathChangeKind.Changed || changeKind == PathChangeKind.Created)
           return false;
       }
 
       return true;
     }
 
-    private Dictionary<FullPath, PathChangeKind> DequeueEvents() {
+    private IDictionary<FullPath, PathChangeKind> DequeueEvents() {
+      // Copy current changes into temp and reset to empty collection.
       lock (_changedPathsLock) {
         var temp = _changedPaths;
         _changedPaths = new Dictionary<FullPath, PathChangeKind>();
         return temp;
       }
+    }
+
+    private void FilterEvents(IDictionary<FullPath, PathChangeKind> temp) {
+      temp.RemoveWhere(x => !IncludeChange(x.Key, x.Value));
     }
 
     private void WatcherOnError(object sender, ErrorEventArgs errorEventArgs) {
@@ -193,12 +246,13 @@ namespace VsChromium.Core.Files {
     }
 
     private void EnqueueChangeEvent(FullPath path, PathChangeKind changeKind) {
+      //Logger.Log("Enqueue change event: {0}, {1}", path, changeKind);
       lock (_changedPathsLock) {
         MergePathChange(_changedPaths, path, changeKind);
       }
     }
 
-    private static void MergePathChange(Dictionary<FullPath, PathChangeKind> changes, FullPath path, PathChangeKind kind) {
+    private static void MergePathChange(IDictionary<FullPath, PathChangeKind> changes, FullPath path, PathChangeKind kind) {
       PathChangeKind currentChangeKind;
       if (!changes.TryGetValue(path, out currentChangeKind)) {
         currentChangeKind = PathChangeKind.None;
@@ -312,12 +366,32 @@ namespace VsChromium.Core.Files {
       if (changes.Count == 0)
         return;
 
-      Logger.Log("OnPathsChanged: {0} items.", changes.Count);
-      // Too verbose
-      //changes.ForAll(change => Logger.Log("OnPathsChanged({0}).", change));
+      //Logger.Log("DirectoryChangedWatcher.OnPathsChanged: {0} items (logging max 5 below).", changes.Count);
+      //changes.Take(5).ForAll(x => 
+      //  Logger.Log("  Path changed: \"{0}\", {1}.", x.Path, x.Kind));
       var handler = PathsChanged;
       if (handler != null)
         handler(changes);
+    }
+
+    private class PollingHelper {
+      private readonly IDateTimeProvider _dateTimeProvider;
+      private readonly TimeSpan _delay;
+      private DateTime _lastPollUtc;
+      public PollingHelper(IDateTimeProvider dateTimeProvider, TimeSpan delay) {
+        _dateTimeProvider = dateTimeProvider;
+        // Initialize as if the last time we posted events is "now".
+        _lastPollUtc = dateTimeProvider.UtcNow;
+        _delay = delay;
+      }
+
+      public void Restart() {
+        _lastPollUtc = _dateTimeProvider.UtcNow;
+      }
+
+      public bool WaitTimeExpired() {
+        return _lastPollUtc + _delay < _dateTimeProvider.UtcNow;
+      }
     }
   }
 }

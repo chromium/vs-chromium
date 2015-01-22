@@ -31,15 +31,10 @@ namespace VsChromium.Server.FileSystem {
         .Where(x => !PathIsExcluded(x.Path))
         .ToList();
 
-      Logger.Log("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering.",
+      Logger.Log("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering (showing max 5 below).",
                  filteredChanges.Count, changes.Count);
-      {
-        var count = Math.Min(10, filteredChanges.Count);
-        Enumerable.Range(0, count).ForAll(index =>
-          Logger.Log("ProcessPathsChangedEvent({0}).", filteredChanges[index]));
-      }
-      // Too verbose
-      //unfilteredChanges.ForAll(change => Logger.Log("DirectoryChangeWatcherOnPathsChanged({0}).", change));
+      filteredChanges.Take(5).ForAll(x => 
+        Logger.Log("  Path changed: \"{0}\", kind={1}", x.Path, x.Kind));
 
       if (filteredChanges.Any()) {
         // If the only changes we see are file modification, don't recompute the graph, just 

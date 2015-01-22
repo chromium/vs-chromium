@@ -103,7 +103,7 @@ namespace VsChromium.Core.Linq {
       return GetPartitionRanges(source.Count, partitionCount);
     }
 
-    public static IEnumerable<KeyValuePair<int,int>> GetPartitionRanges(int count, int partitionCount) {
+    public static IEnumerable<KeyValuePair<int, int>> GetPartitionRanges(int count, int partitionCount) {
       var index = 0;
       foreach (var size in GetPartitionSizes(count, partitionCount)) {
         yield return KeyValuePair.Create(index, size);
@@ -139,6 +139,15 @@ namespace VsChromium.Core.Linq {
       if (list != null)
         return new ReadOnlyCollection<TSource>(list);
       return new ReadOnlyCollection<TSource>(source.ToArray());
+    }
+
+    public static void RemoveWhere<TKey, TValue>(
+      this IDictionary<TKey, TValue> source,
+      Func<KeyValuePair<TKey, TValue>, bool> predicate) {
+      var toRemove = source.Where(predicate).ToList();
+      foreach (var x in toRemove) {
+        source.Remove(x.Key);
+      }
     }
   }
 }

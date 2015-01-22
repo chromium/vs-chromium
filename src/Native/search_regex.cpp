@@ -69,7 +69,6 @@ void RegexSearch::PreProcess(
     if (index != std::string::npos) {
       errorMessage = errorMessage.substr(index + 2);
     }
-    errorMessage = std::string("Invalid Regular expression: ") + errorMessage;
     strcpy_s(result.ErrorMessage, errorMessage.c_str());
   }
   pattern_ = pattern;

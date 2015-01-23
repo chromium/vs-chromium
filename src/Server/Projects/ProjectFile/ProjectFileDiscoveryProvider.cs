@@ -78,8 +78,14 @@ namespace VsChromium.Server.Projects.ProjectFile {
       return null;
     }
 
+    /// <summary>
+    /// Create a project instance corresponding to the vschromium project file
+    /// on disk at <paramref name="rootPath"/>.
+    /// </summary>
     private Project CreateProject(FullPath rootPath) {
-      var fileWithSections = new FileWithSections(_fileSystem, rootPath.Combine(new RelativePath(ConfigurationFilenames.ProjectFileNameDetection)));
+      var fileWithSections = new FileWithSections(
+        _fileSystem,
+        rootPath.Combine(new RelativePath(ConfigurationFilenames.ProjectFileNameDetection)));
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
       return new Project(configurationProvider, rootPath);
     }

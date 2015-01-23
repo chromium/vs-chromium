@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
@@ -93,9 +94,9 @@ namespace VsChromium.Server.FileSystemDatabase {
         var filesWithContents = GetFilesWithContents(files.Values);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
         return new FileDatabase(
-          files, 
+          files,
           files.Keys.ToArray(),
-          directories, 
+          directories,
           directories.Keys.ToArray(),
           searchableContentsCollection,
           filesWithContents.Count);
@@ -260,7 +261,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       using (new TimeElapsedLogger("Checking for out of date files")) {
         IList<FileData> commonOldFiles = GetCommonFiles(oldState).ToArray();
         using (var progress = _progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
-          commonOldFiles
+          var commonSearchableFiles = commonOldFiles
             .AsParallel()
             .Where(oldFileData => {
               if (progress.Step()) {
@@ -268,12 +269,19 @@ namespace VsChromium.Server.FileSystemDatabase {
                   (i, n) =>
                     string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPath));
               }
-              return IsFileContentsUpToDate(oldFileData);
-            })
-            .ForAll(oldFileData => {
-              var contents = fileContentsMemoization.Get(oldFileData.FileName, oldFileData.Contents);
-              _files[oldFileData.FileName].FileData.UpdateContents(contents);
+              return
+                (oldFileData.Contents != null) &&
+                _files[oldFileData.FileName].IsSearchable &&
+                IsFileContentsUpToDate(oldFileData);
             });
+          commonSearchableFiles.ForAll(oldFileData => {
+            Debug.Assert(oldFileData.Contents != null);
+            var contents = fileContentsMemoization.Get(oldFileData.FileName, oldFileData.Contents);
+            Debug.Assert(contents != null);
+            var fileData = _files[oldFileData.FileName].FileData;
+            Debug.Assert(fileData.Contents == null);
+            fileData.UpdateContents(contents);
+          });
         }
       }
     }
@@ -305,18 +313,14 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     private bool IsFileContentsUpToDate(FileData oldFileData) {
+      Debug.Assert(oldFileData.Contents != null);
       // TODO(rpaquay): The following File.Exists and File.GetLastWriteTimUtc are expensive operations.
       //  Given we have FileSystemChanged events when files change on disk, we could be smarter here
       // and avoid 99% of these checks in common cases.
       var fi = _fileSystem.GetFileInfoSnapshot(oldFileData.FileName.FullPath);
-      if (fi.Exists) {
-        var contents = oldFileData.Contents;
-        if (contents != null) {
-          if (fi.LastWriteTimeUtc == contents.UtcLastModified)
-            return true;
-        }
-      }
-      return false;
+      return
+        (fi.Exists) &&
+        (fi.LastWriteTimeUtc == oldFileData.Contents.UtcLastModified);
     }
 
     private IEnumerable<FileData> GetCommonFiles(FileDatabase oldState) {

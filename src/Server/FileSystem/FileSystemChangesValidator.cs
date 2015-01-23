@@ -41,7 +41,7 @@ namespace VsChromium.Server.FileSystem {
         // raise a "files changes event". Note that we also watch for any "special" filename.
         bool isLowImpactChange =
           filteredChanges.All(change => change.Kind == PathChangeKind.Changed) &&
-          filteredChanges.All(change => change.Path.FileName != ConfigurationFilenames.ProjectFileNameDetection);
+          filteredChanges.All(change => !SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFilenames.ProjectFileNameDetection));
         if (isLowImpactChange) {
           Logger.Log(
             "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");

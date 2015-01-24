@@ -57,7 +57,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void SelectTreeViewItem(TreeViewItemViewModel item, Action callback) {
-      _control.ViewModel.SelectTreeViewItem(item, _control.FileTreeView,
+      _control.ViewModel.SelectTreeViewItem(
+        item,
+        _control.FileTreeView,
         () => _control.SwallowsRequestBringIntoView(true),
         () => {
           _control.SwallowsRequestBringIntoView(true);

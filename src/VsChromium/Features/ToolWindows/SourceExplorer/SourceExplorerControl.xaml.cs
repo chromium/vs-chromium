@@ -292,7 +292,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public bool NavigateFromSelectedItem(TreeViewItemViewModel tvi) {
+    public bool ExecutedOpenCommandForItem(TreeViewItemViewModel tvi) {
       if (tvi == null)
         return false;
 
@@ -350,7 +350,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _swallowsRequestBringIntoView = value;
     }
 
-
     #region WPF Event handlers
 
     private void CancelSearchButton_Click(object sender, RoutedEventArgs e) {
@@ -365,16 +364,41 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (!tvi.IsSelected)
         return;
 
-      if (NavigateFromSelectedItem(tvi.DataContext as TreeViewItemViewModel))
+      if (ExecutedOpenCommandForItem(tvi.DataContext as TreeViewItemViewModel))
         e.Handled = true;
     }
 
+    private double treeViewHorizScrollPos = 0.0;
+    private bool treeViewResetHorizScroll = false;
+    private ScrollViewer treeViewScrollViewer = null;
+
     private void TreeViewItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e) {
+#if false
+      if (this.treeViewScrollViewer == null) {
+        this.treeViewScrollViewer = this.FileTreeView.Template.FindName("_tv_scrollviewer_", this.FileTreeView) as ScrollViewer;
+        if (this.treeViewScrollViewer != null)
+          this.treeViewScrollViewer.ScrollChanged += new ScrollChangedEventHandler(this.TreeViewScrollViewerScrollChanged);
+      }
+      this.treeViewResetHorizScroll = true;
+      this.treeViewHorizScrollPos = this.treeViewScrollViewer.HorizontalOffset;
+
       // This prevents the tree view for scrolling horizontally to make the
       // selected item as visibile as possible. This is useful for
       // "SearchFileContents", as text extracts are usually wide enough to make
       // tree view navigation annoying when they are selected.
+      e.Handled = false;
+      ;//_swallowsRequestBringIntoView;
+#endif
+      Logger.Log("RequestBringIntoView: {0}, {1}", e.TargetObject.GetType().FullName, e.TargetRect);
       e.Handled = _swallowsRequestBringIntoView;
+      //e.Handled = false;
+    }
+
+    private void TreeViewScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e) {
+      if (this.treeViewResetHorizScroll)
+        this.treeViewScrollViewer.ScrollToHorizontalOffset(this.treeViewHorizScrollPos);
+
+      this.treeViewResetHorizScroll = false;
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e) {
@@ -385,7 +409,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void FileTreeView_OnPreviewKeyDown(object sender, KeyEventArgs e) {
       if (e.Key == Key.Return) {
-        e.Handled = NavigateFromSelectedItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
+        e.Handled = ExecutedOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
       }
     }
 

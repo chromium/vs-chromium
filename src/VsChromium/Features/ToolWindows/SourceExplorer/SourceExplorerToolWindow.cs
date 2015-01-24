@@ -125,18 +125,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var nextItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Next);
       if (nextItem == null)
         return;
-      ExplorerControl.ViewModel.Host.SelectTreeViewItem(nextItem, () => {
-        ExplorerControl.NavigateFromSelectedItem(nextItem); 
-      });
+      ExplorerControl.ViewModel.Host.SelectTreeViewItem(
+        nextItem, 
+        () => ExplorerControl.ExecutedOpenCommandForItem(nextItem));
     }
 
     public void NavigateToPreviousLocation() {
       var previousItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Previous);
       if (previousItem == null)
         return;
-      ExplorerControl.ViewModel.Host.SelectTreeViewItem(previousItem, () => {
-        ExplorerControl.NavigateFromSelectedItem(previousItem); 
-      });
+      ExplorerControl.ViewModel.Host.SelectTreeViewItem(
+        previousItem,
+        () => ExplorerControl.ExecutedOpenCommandForItem(previousItem));
     }
 
     public void NotifyPackageUpdate(UpdateInfo updateInfo) {

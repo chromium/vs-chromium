@@ -112,7 +112,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var request = new GetFileExtractsRequest {
         FileName = Path,
         Positions = positions
-          .Select(x => new FilePositionSpan { Position = x.Position, Length = x.Length })
+          .Select(x => new FilePositionSpan {
+            Position = x.Position,
+            Length = x.Length
+          })
           .ToList()
       };
 
@@ -123,7 +126,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         OnSuccess = (typedResponse) => {
           var response = (GetFileExtractsResponse)typedResponse;
           positions
-            .Zip(response.FileExtracts, (x, y) => new { FilePositionViewModel = x, FileExtract = y })
+            .Zip(response.FileExtracts, (x, y) => new {
+              FilePositionViewModel = x,
+              FileExtract = y
+            })
             .Where(x => x.FileExtract != null)
             .ForAll(x => x.FilePositionViewModel.SetTextExtract(x.FileExtract));
         }

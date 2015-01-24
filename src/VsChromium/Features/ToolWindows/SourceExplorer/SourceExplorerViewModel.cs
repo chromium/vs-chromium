@@ -292,18 +292,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SelectTreeViewItem(entryViewModel, treeView, beforeSelectItem, afterSelectItem);
     }
 
-    public void SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
-      // We need to expand the item so that the WPF UI knows about all the TreeViewItem nodes up to |item|.
-      item.IsExpanded = true;
+    public TreeViewItem SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
+      TreeViewItem result = null;
       Logger.WrapActionInvocation(() => {
         beforeSelectItem();
         try {
-          WpfUtilities.SelectTreeViewItem(treeView, item);
+          result = WpfUtilities.SelectTreeViewItem(treeView, item);
         }
         finally {
           afterSelectItem();
         }
       });
+      return result;
     }
 
     private DirectoryEntryViewModel GetChromiumRoot(DirectoryEntryViewModel directoryEntry) {

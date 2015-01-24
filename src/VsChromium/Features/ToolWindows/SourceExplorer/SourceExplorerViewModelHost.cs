@@ -66,12 +66,26 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           callback();
         });
     }
+
     public void BringTreeViewItemToView(TreeViewItemViewModel item) {
-      _control.ViewModel.SelectTreeViewItem(
+      // We look for the tree view item corresponding to "item", swallowing
+      // the "BringIntoView" request to avoid flickering as we descend into
+      // the virtual tree and realize the sub-panels at each level.
+      var treeViewItem = _control.ViewModel.SelectTreeViewItem(
         item,
         _control.FileTreeView,
-        () => _control.SwallowsRequestBringIntoView(false),
+        () => _control.SwallowsRequestBringIntoView(true),
         () => _control.SwallowsRequestBringIntoView(true));
+
+      // If we found it, allow the "BringIntoView" requests to be handled
+      // and ask the tree view item to bring itself into view.
+      // Note: The "BrinIntoView" call is a no-op if the tree view item
+      // is already visible.
+      if (treeViewItem != null) {
+        _control.SwallowsRequestBringIntoView(false);
+        treeViewItem.BringIntoView();
+        _control.SwallowsRequestBringIntoView(true);
+      }
     }
   }
 }

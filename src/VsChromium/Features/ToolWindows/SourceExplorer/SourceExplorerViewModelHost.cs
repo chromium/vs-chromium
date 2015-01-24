@@ -66,5 +66,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           callback();
         });
     }
+    public void BringTreeViewItemToView(TreeViewItemViewModel item) {
+      _control.ViewModel.SelectTreeViewItem(
+        item,
+        _control.FileTreeView,
+        () => _control.SwallowsRequestBringIntoView(false),
+        () => _control.SwallowsRequestBringIntoView(true));
+    }
   }
 }

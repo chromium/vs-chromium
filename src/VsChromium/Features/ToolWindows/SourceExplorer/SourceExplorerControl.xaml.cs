@@ -32,6 +32,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IStatusBar _statusBar;
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
+    private IUIDelayedOperationProcessor _uiDelayeOperationProcessor;
     private bool _swallowsRequestBringIntoView = true;
     private int _operationSequenceId;
 
@@ -64,6 +65,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
+      _uiDelayeOperationProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIDelayedOperationProcessor>();
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
@@ -443,6 +445,16 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         source = VisualTreeHelper.GetParent(source);
       }
       return null;
+    }
+
+    public void EnqueueBringTreeViewItemToView(TreeViewItemViewModel item) {
+      _uiDelayeOperationProcessor.Post(new DelayedOperation {
+        Id = "BringTreeViewItemToView",
+        Delay = TimeSpan.FromSeconds(0.5),
+        Action = () => {
+          this.ViewModel.Host.BringTreeViewItemToView(item);
+        }
+      });
     }
   }
 }

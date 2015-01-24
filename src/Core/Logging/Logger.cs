@@ -53,7 +53,7 @@ namespace VsChromium.Core.Logging {
         action();
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error calling action in DelayedOperationProcessor");
+        Logger.LogException(e, "Error during callback execution");
       }
     }
   }

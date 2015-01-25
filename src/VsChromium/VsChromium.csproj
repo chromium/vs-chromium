@@ -238,7 +238,7 @@
     <Compile Include="Views\ITextDocumentService.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\TextDocumentFactoryObserver.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SearchDirectoryNamesCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SearchFileContentsCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SearchTextCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SearchFileNamesCommandHandler.cs" />
     <Compile Include="Views\TextDocumentService.cs" />
     <Compile Include="Features\FormatComment\CommentType.cs" />

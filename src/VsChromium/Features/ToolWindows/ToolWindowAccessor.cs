@@ -35,6 +35,15 @@ namespace VsChromium.Features.ToolWindows {
         return docView as ToolWindow;
     }
 
+    public IVsWindowFrame FindToolWindow(Guid guid) {
+      var uiShell = _visualStudioPackageProvider.Package.VsUIShell;
+      IVsWindowFrame windowFrame;
+      uiShell.FindToolWindow(
+          (uint)(__VSFINDTOOLWIN.FTW_fFindFirst),
+          guid, out windowFrame);
+      return windowFrame;
+    }
+
     public SourceExplorerToolWindow SourceExplorer {
       get {
         return GetToolWindow<SourceExplorerToolWindow>(GuidList.GuidSourceExplorerToolWindow);

@@ -10,11 +10,11 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   [Export(typeof(IPackageCommandHandler))]
-  public class SearchFileContentsCommandHandler : PackageCommandHandlerBase {
+  public class SearchTextCommandHandler : PackageCommandHandlerBase {
     private readonly IToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public SearchFileContentsCommandHandler(IToolWindowAccessor toolWindowAccessor) {
+    public SearchTextCommandHandler(IToolWindowAccessor toolWindowAccessor) {
       _toolWindowAccessor = toolWindowAccessor;
     }
 

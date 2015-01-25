@@ -141,7 +141,7 @@
     <Compile Include="Ipc\TypedMessages\SearchDirectoryNamesResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemVersionRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemVersionResponse.cs" />
-    <Compile Include="Ipc\TypedMessages\SearchFileContentsResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchTextResponse.cs" />
     <Compile Include="Ipc\TypedMessages\SearchFileNamesResponse.cs" />
     <Compile Include="Collections\ListSegment.cs" />
     <Compile Include="Collections\ReverseComparer.cs" />
@@ -156,7 +156,7 @@
     <Compile Include="Ipc\TypedMessages\TypedMessage.cs" />
     <Compile Include="Ipc\IpcResponse.cs" />
     <Compile Include="Ipc\TypedMessages\RegisterFileRequest.cs" />
-    <Compile Include="Ipc\TypedMessages\SearchFileContentsRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchTextRequest.cs" />
     <Compile Include="Ipc\TypedMessages\SearchFileNamesRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemRequest.cs" />
     <Compile Include="Logging\Logger.cs" />

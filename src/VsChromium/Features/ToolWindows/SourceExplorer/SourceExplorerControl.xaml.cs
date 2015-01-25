@@ -8,12 +8,12 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
+using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -24,9 +24,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// Interaction logic for SourceExplorerControl.xaml
   /// </summary>
   public partial class SourceExplorerControl : UserControl {
-    private const int _searchDirectoryNamesMaxResults = 2000;
-    private const int _searchFileNamesMaxResults = 2000;
-    private const int _searchFileContentsMaxResults = 10000;
+    private const int SearchFileNamesMaxResults = 2000;
+    private const int SearchDirectoryNamesMaxResults = 2000;
+    private const int SearchTextMaxResults = 10000;
+    private const int SearchTextExpandMaxResults = 25;
 
     // For controlling scrolling inside tree view.
     private double _treeViewHorizScrollPos;
@@ -40,6 +41,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private bool _swallowsRequestBringIntoView = true;
     private int _operationSequenceId;
     private SourceExplorerController _controller;
+    private IToolWindowAccessor _toolWindowAccessor;
+    private IVisualStudioPackageProvider _visualStudioPackageProvider;
+    private IServiceProvider _serviceProvider;
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -55,16 +59,20 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         SearchFunction = SearchDirectoryNames
       });
       InitComboBox(FileContentsSearch, new ComboBoxInfo {
-        SearchFunction = SearchFileContents
+        SearchFunction = SearchText
       });
     }
 
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
+      _serviceProvider = serviceProvider;
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
+      _toolWindowAccessor = componentModel.DefaultExportProvider.GetExportedValue<IToolWindowAccessor>();
+      _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
+      
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
@@ -232,7 +240,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = FileNamesSearch.Text,
-            MaxResults = _searchFileNamesMaxResults,
+            MaxResults = SearchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             Re2 = ViewModel.UseRe2Regex,
@@ -259,7 +267,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = DirectoryNamesSearch.Text,
-            MaxResults = _searchDirectoryNamesMaxResults,
+            MaxResults = SearchDirectoryNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             Re2 = ViewModel.UseRe2Regex,
@@ -278,15 +286,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    private void SearchFileContents() {
+    private void SearchText() {
       MetaSearch(new SearchMetadata {
         Delay = TimeSpan.FromSeconds(0.02),
         HintText = "Searching for matching text in files...",
         OperationId = OperationsIds.FileContentsSearch,
-        TypedRequest = new SearchFileContentsRequest {
+        TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = FileContentsSearch.Text,
-            MaxResults = _searchFileContentsMaxResults,
+            MaxResults = SearchTextMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             Re2 = ViewModel.UseRe2Regex,
@@ -294,16 +302,64 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           }
         },
         ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchFileContentsResponse)typedResponse);
+          var response = ((SearchTextResponse)typedResponse);
           var msg = string.Format("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
             response.HitCount,
             response.SearchedFileCount,
             stopwatch.Elapsed.TotalSeconds,
             FileContentsSearch.Text);
-          bool expandAll = response.HitCount < 25;
-          ViewModel.SetFileContentsSearchResult(response.SearchResults, msg, expandAll);
+          bool expandAll = response.HitCount < SearchTextExpandMaxResults;
+          ViewModel.SetTextSearchResult(response.SearchResults, msg, expandAll);
+          DisplayFindResuls(response, stopwatch);
         }
       });
+    }
+
+    private void DisplayFindResuls(SearchTextResponse response, Stopwatch stopwatch) {
+#if false
+      var componentModel = (IComponentModel)_serviceProvider.GetService(typeof(SComponentModel));
+      var svc = componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>();
+      var window = _toolWindowAccessor.FindToolWindow(new Guid("0F887920-C2B6-11D2-9375-0080C747D9A0"));
+      //_toolWindowAccessor.BuildExplorer
+      var view = VsShellUtilities.GetTextView(window);
+      var textView = svc.GetWpfTextView(view);
+      var textBuffer = textView.TextBuffer;
+
+      var writer = new StringWriter();
+      writer.WriteLine("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
+            response.HitCount,
+            response.SearchedFileCount,
+            stopwatch.Elapsed.TotalSeconds,
+            FileContentsSearch.Text);
+
+      foreach (var root in response.SearchResults.Entries.OfType<DirectoryEntry>()) {
+        var rootPath = root.Name;
+        foreach (var file in root.Entries.OfType<FileEntry>()) {
+          var path = PathHelpers.CombinePaths(rootPath, file.Name);
+          foreach (var filePos in ((FilePositionsData) file.Data).Positions) {
+            //writer.WriteLine("  {0}({1},{2}): ...", path, filePos.Position, filePos.Length);
+            writer.WriteLine("  {0}(1): zzz", path);
+          }
+        }
+      }
+
+      // Make buffer non readonly
+      var vsBuffer = svc.GetBufferAdapter(textBuffer);
+      uint flags;
+      vsBuffer.GetStateFlags(out flags);
+      flags = flags & ~(uint)BUFFERSTATEFLAGS.BSF_USER_READONLY;
+      vsBuffer.SetStateFlags(flags);
+
+      // Clear buffer and insert text
+      var edit = textBuffer.CreateEdit();
+      edit.Delete(0, edit.Snapshot.Length);
+      edit.Insert(0, writer.ToString());
+      edit.Apply();
+
+      // Make buffer readonly again
+      flags = flags | (uint)BUFFERSTATEFLAGS.BSF_USER_READONLY;
+      vsBuffer.SetStateFlags(flags);
+#endif
     }
 
     private class ComboBoxInfo {

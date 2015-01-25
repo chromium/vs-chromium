@@ -65,7 +65,7 @@ namespace VsChromium.Tests.ServerProcess {
       }
 
       while (true) {
-        var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+        var response = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
           SearchParams = {
             SearchString = "histogram"
           }
@@ -77,32 +77,32 @@ namespace VsChromium.Tests.ServerProcess {
         Trace.WriteLine("It looks like the file indexer has not yet finished computing the new state.");
         Thread.Sleep(500);
       }
-      var response4 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+      var response4 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response5 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+      var response5 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response6 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+      var response6 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response7 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+      var response7 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response8 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+      var response8 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response9 = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+      var response9 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
         SearchParams = {
           SearchString = "histogram"
         }

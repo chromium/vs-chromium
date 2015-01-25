@@ -66,7 +66,7 @@
     <Compile Include="Ipc\TypedMessageHandlers\SearchDirectoryNamesRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileSystemVersionRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\ITypedMessageRequestHandler.cs" />
-    <Compile Include="Ipc\TypedMessageHandlers\SearchFileContentsRequestHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\SearchTextRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\SearchFileNamesRequestHandler.cs" />
     <Compile Include="Ipc\IIpcRequestDispatcher.cs" />
     <Compile Include="Ipc\IIpcResponseQueue.cs" />

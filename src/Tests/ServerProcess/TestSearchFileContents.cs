@@ -215,7 +215,7 @@ namespace VsChromium.Tests.ServerProcess {
         DirectoryInfo chromiumDirectory,
         int occurrenceCount,
         params int[] positionsAndLengths) {
-      var response = SendRequest<SearchFileContentsResponse>(server, new SearchFileContentsRequest {
+      var response = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
         SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,

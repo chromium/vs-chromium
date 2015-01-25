@@ -6,7 +6,7 @@ using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
-  public class SearchFileContentsRequest : TypedRequest {
+  public class SearchTextRequest : TypedRequest {
     [ProtoMember(1)]
     public SearchParams SearchParams { get; set; }
   }

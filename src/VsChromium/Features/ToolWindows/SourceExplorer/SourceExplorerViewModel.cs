@@ -250,7 +250,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SwitchToDirectoryNamesSearchResult();
     }
 
-    public void SetFileContentsSearchResult(DirectoryEntry searchResults, string description, bool expandAll) {
+    public void SetTextSearchResult(DirectoryEntry searchResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
       _textSearchResultNodes =
         new List<TreeViewItemViewModel> {

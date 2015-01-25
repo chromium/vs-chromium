@@ -86,6 +86,24 @@
           <LocCanonicalName>VsChromium.FindInFiles</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Goto Next Location</ButtonText>
+          <CommandName>VsChromium - Goto Next Location</CommandName>
+          <LocCanonicalName>VsChromium.GotoNextLocation</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Goto Previous Location</ButtonText>
+          <CommandName>VsChromium - Goto Previous Location</CommandName>
+          <LocCanonicalName>VsChromium.GotoPreviousLocation</LocCanonicalName>
+        </Strings>
+      </Button>
       <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeDialog" priority="0x0002" type="Button">
         <Parent guid="guidChromeDebugCmdSet" id="ChromeDebugMenuGroup" />
         <Icon guid="guidPackageChromeDebugImages" id="bmpAttachChoose" />
@@ -121,6 +139,8 @@
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchText" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c" />
   </KeyBindings>
   <Symbols>
@@ -134,7 +154,9 @@
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
       <IDSymbol name="cmdidSearchDirectoryNames" value="0x0103" />
       <IDSymbol name="cmdidSearchText" value="0x0104" />
-      <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0105" />
+      <IDSymbol name="cmdidGotoNextLocation" value="0x0105" />
+      <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />
+      <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0110" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">
       <IDSymbol name="ChromeDebugTopLevelMenu" value="0x0100" />

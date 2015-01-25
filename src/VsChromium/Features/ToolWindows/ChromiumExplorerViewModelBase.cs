@@ -29,8 +29,11 @@ namespace VsChromium.Features.ToolWindows {
     }
 
 
-    protected void SetRootNodes(List<TreeViewItemViewModel> source, string defaultText = "") {
-      _activeRootNodes = source;
+    protected void SetRootNodes(List<TreeViewItemViewModel> newRootNodes, string defaultText = "") {
+      if (object.ReferenceEquals(_activeRootNodes, newRootNodes))
+        return;
+
+      _activeRootNodes = newRootNodes;
       if (_activeRootNodes.Count == 0 && !string.IsNullOrEmpty(defaultText)) {
         _activeRootNodes.Add(new TextItemViewModel(_imageSourceFactory, null, defaultText));
       }

@@ -1,14 +1,19 @@
 [ChromiumExplorer.ignore]
 .git/
+*.sdf
+*.opensdf
+*.suo
 
 [SearchableFiles.ignore]
 Binaries/
-Debug/
-Release/
 obj/
+Debug/
+x64/
 *.png
 *.ico
 *.ipch
+*.pch
+*.dll
 
 [SearchableFiles.include]
 *

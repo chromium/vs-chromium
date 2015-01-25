@@ -2,52 +2,47 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
-using VsChromium.Core.Files;
+using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
-using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
-using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class SourceExplorerViewModel : ChromiumExplorerViewModelBase {
+    private List<TreeViewItemViewModel> _fileSystemTreeNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _directoryNameSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
-    private List<TreeViewItemViewModel> _fileSystemNodes = new List<TreeViewItemViewModel>();
     private ISourceExplorerViewModelHost _sourceExplorerViewModelHost;
     private UpdateInfo _updateInfo;
 
     public enum DisplayKind {
-      FileSystem,
+      FileSystemTree,
       FileNameSearchResult,
       DirectoryNameSearchResult,
       TextSearchResult,
     }
 
     public SourceExplorerViewModel() {
+      // Default values for options in toolbar.
       this.IncludeSymLinks = true;
       this.UseRe2Regex = true;
     }
 
     public DisplayKind ActiveDisplay {
       get {
-        if (ReferenceEquals(CurrentRootNodesViewModel, _textSearchResultNodes))
+        if (ReferenceEquals(ActiveRootNodes, _textSearchResultNodes))
           return DisplayKind.TextSearchResult;
-        if (ReferenceEquals(CurrentRootNodesViewModel, _fileNameSearchResultNodes))
+        if (ReferenceEquals(ActiveRootNodes, _fileNameSearchResultNodes))
           return DisplayKind.FileNameSearchResult;
-        if (ReferenceEquals(CurrentRootNodesViewModel, _directoryNameSearchResultNodes))
+        if (ReferenceEquals(ActiveRootNodes, _directoryNameSearchResultNodes))
           return DisplayKind.DirectoryNameSearchResult;
-        return DisplayKind.FileSystem;
+        return DisplayKind.FileSystemTree;
       }
     }
 
@@ -186,8 +181,19 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ISourceExplorerViewModelHost Host { get { return _sourceExplorerViewModelHost; } }
 
+    /// <summary>
+    /// The root nodes representing the file system tree from the server.
+    /// </summary>
+    public List<TreeViewItemViewModel> FileSystemTreeNodes {
+      get { return _fileSystemTreeNodes; }
+    }
+
     public void SwitchToFileSystemTree() {
-      SetRootNodes(_fileSystemNodes, "Open a source file from a local Chromium enlistment.");
+      var defaultMessage = string.Format(
+        "Open a source file from a local Chromium enlistment " + 
+        "or a directory containing a \"{0}\" file.",
+        ConfigurationFilenames.ProjectFileNameDetection);
+      SetRootNodes(FileSystemTreeNodes, defaultMessage);
     }
 
     private void SwitchToFileNamesSearchResult() {
@@ -198,17 +204,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SetRootNodes(_directoryNameSearchResultNodes);
     }
 
-    private void SwitchToFileContentsSearchResult() {
+    private void SwitchToTextSearchResult() {
       SetRootNodes(_textSearchResultNodes);
     }
 
     public void SetFileSystemTree(FileSystemTree tree) {
       var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      _fileSystemNodes = new List<TreeViewItemViewModel>(tree.Root
+      _fileSystemTreeNodes = new List<TreeViewItemViewModel>(tree.Root
         .Entries
         .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)));
-      _fileSystemNodes.ForAll(x => rootNode.AddChild(x));
-      ExpandNodes(_fileSystemNodes, false);
+      FileSystemTreeNodes.ForAll(x => rootNode.AddChild(x));
+      ExpandNodes(FileSystemTreeNodes, false);
       SwitchToFileSystemTree();
     }
 
@@ -254,68 +260,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           .ToList();
       _textSearchResultNodes.ForAll(x => rootNode.AddChild(x));
       ExpandNodes(_textSearchResultNodes, expandAll);
-      SwitchToFileContentsSearchResult();
-    }
-
-    public TreeViewItem SelectDirectory(DirectoryEntryViewModel directoryEntry, TreeView treeView) {
-      if (ReferenceEquals(CurrentRootNodesViewModel, _fileSystemNodes))
-        return null;
-
-      var chromiumRoot = GetChromiumRoot(directoryEntry);
-      Debug.Assert(chromiumRoot != null);
-
-      var entryViewModel =
-        _fileSystemNodes.OfType<DirectoryEntryViewModel>()
-          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, chromiumRoot.Name));
-      if (entryViewModel == null)
-        return null;
-
-      foreach (var childName in directoryEntry.Name.Split(Path.DirectorySeparatorChar)) {
-        var childViewModel = entryViewModel
-          .Children
-          .OfType<DirectoryEntryViewModel>()
-          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
-        if (childViewModel == null) {
-          entryViewModel.EnsureAllChildrenLoaded();
-          childViewModel = entryViewModel
-            .Children
-            .OfType<DirectoryEntryViewModel>()
-            .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
-          if (childViewModel == null)
-            return null;
-        }
-
-        entryViewModel = childViewModel;
-      }
-
-      SwitchToFileSystemTree();
-      return SelectTreeViewItem(entryViewModel, treeView);
-    }
-
-    public TreeViewItem SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView) {
-      TreeViewItem result = null;
-      Logger.WrapActionInvocation(() => {
-          result = WpfUtilities.SelectTreeViewItem(treeView, item);
-      });
-      return result;
-    }
-
-    private DirectoryEntryViewModel GetChromiumRoot(DirectoryEntryViewModel directoryEntry) {
-      for (TreeViewItemViewModel current = directoryEntry; current != null; current = current.ParentViewModel) {
-        if (current.ParentViewModel is RootTreeViewItemViewModel) {
-          var model = current as DirectoryEntryViewModel;
-          if (model != null)
-            return model;
-          break;
-        }
-      }
-
-      return null;
+      SwitchToTextSearchResult();
     }
 
     public void FileSystemTreeComputing() {
-      if (!_fileSystemNodes.Any()) {
-        SetRootNodes(_fileSystemNodes, "(Loading files from Chromium enlistment...)");
+      if (!FileSystemTreeNodes.Any()) {
+        SetRootNodes(FileSystemTreeNodes, "(Loading files from Chromium enlistment...)");
       }
     }
 

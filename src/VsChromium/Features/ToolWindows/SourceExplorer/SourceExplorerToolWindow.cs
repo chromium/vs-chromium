@@ -94,13 +94,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       var item = ExplorerControl.FileTreeView.SelectedItem;
       if (item == null) {
-        if (ExplorerControl.ViewModel.CurrentRootNodesViewModel == null)
+        if (ExplorerControl.ViewModel.ActiveRootNodes == null)
           return null;
 
-        if (ExplorerControl.ViewModel.CurrentRootNodesViewModel.Count == 0)
+        if (ExplorerControl.ViewModel.ActiveRootNodes.Count == 0)
           return null;
 
-        item = ExplorerControl.ViewModel.CurrentRootNodesViewModel[0].ParentViewModel;
+        item = ExplorerControl.ViewModel.ActiveRootNodes[0].ParentViewModel;
         if (item == null)
           return null;
       }
@@ -133,7 +133,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void NavigateToTreeViewItem(TreeViewItemViewModel item) {
       if (item == null)
         return;
-      ExplorerControl.ViewModel.Host.BringViewModelToView(item);
+      ExplorerControl.ViewModel.Host.BringItemViewModelToView(item);
       ExplorerControl.ExecutedOpenCommandForItem(item);
     }
 

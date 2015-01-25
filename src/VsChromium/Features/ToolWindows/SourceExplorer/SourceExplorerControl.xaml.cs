@@ -35,6 +35,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private bool _swallowsRequestBringIntoView = true;
     private int _operationSequenceId;
 
+    // For controlling scrolling inside tree view.
+    private double _treeViewHorizScrollPos;
+    private bool _treeViewResetHorizScroll;
+    private ScrollViewer _treeViewScrollViewer;
+
     public SourceExplorerControl() {
       InitializeComponent();
 
@@ -109,15 +114,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void DispatchProgressReport(TypedEvent typedEvent) {
       var @event = typedEvent as ProgressReportEvent;
       if (@event != null) {
-        Wpf.WpfUtilities.Post(this,
-                              () => _statusBar.ReportProgress(@event.DisplayText, @event.Completed, @event.Total));
+        WpfUtilities.Post(this, () =>
+          _statusBar.ReportProgress(@event.DisplayText, @event.Completed, @event.Total));
       }
     }
 
     private void DispatchFileSystemTreeComputing(TypedEvent typedEvent) {
       var @event = typedEvent as FileSystemTreeComputing;
       if (@event != null) {
-        Wpf.WpfUtilities.Post(this, () => {
+        WpfUtilities.Post(this, () => {
           Logger.Log("FileSystemTree is being computed on server.");
           _progressBarTracker.Start(OperationsIds.FileSystemTreeComputing,
                                     "Loading files and directory names from file system.");
@@ -129,7 +134,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void DispatchFileSystemTreeComputed(TypedEvent typedEvent) {
       var @event = typedEvent as FileSystemTreeComputed;
       if (@event != null) {
-        Wpf.WpfUtilities.Post(this, () => {
+        WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FileSystemTreeComputing);
           if (@event.Error != null) {
             ViewModel.SetErrorResponse(@event.Error);
@@ -154,7 +159,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void DispatchSearchEngineFilesLoaded(TypedEvent typedEvent) {
       var @event = typedEvent as SearchEngineFilesLoaded;
       if (@event != null) {
-        Wpf.WpfUtilities.Post(this, () => {
+        WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
           if (@event.Error != null) {
             ViewModel.SetErrorResponse(@event.Error);
@@ -368,10 +373,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         e.Handled = true;
     }
 
-    private double treeViewHorizScrollPos = 0.0;
-    private bool treeViewResetHorizScroll = false;
-    private ScrollViewer treeViewScrollViewer = null;
-
     private void TreeViewItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e) {
       if (_swallowsRequestBringIntoView) {
         // This prevents the tree view for scrolling horizontally to make the
@@ -381,31 +382,30 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         e.Handled = true;
         return;
       }
-#if true
+
       // Find the scroll viewer and hook up scroll changed event handler.
-      if (this.treeViewScrollViewer == null) {
-        this.treeViewScrollViewer = this.FileTreeView.Template.FindName("_tv_scrollviewer_", this.FileTreeView) as ScrollViewer;
-        if (treeViewScrollViewer != null) {
-          this.treeViewScrollViewer.ScrollChanged += this.TreeViewScrollViewerScrollChanged;
+      if (this._treeViewScrollViewer == null) {
+        this._treeViewScrollViewer = this.FileTreeView.Template.FindName("_tv_scrollviewer_", this.FileTreeView) as ScrollViewer;
+        if (_treeViewScrollViewer != null) {
+          this._treeViewScrollViewer.ScrollChanged += this.TreeViewScrollViewerScrollChanged;
         }
       }
 
       // If we got a scroll viewer, remember the horizontal offset so we can
       // restore it in the scroll changed event.
-      if (treeViewScrollViewer != null) {
-        this.treeViewResetHorizScroll = true;
-        this.treeViewHorizScrollPos = this.treeViewScrollViewer.HorizontalOffset;
+      if (_treeViewScrollViewer != null) {
+        this._treeViewResetHorizScroll = true;
+        this._treeViewHorizScrollPos = this._treeViewScrollViewer.HorizontalOffset;
       }
       e.Handled = false;
-#endif
     }
 
     private void TreeViewScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e) {
-      Debug.Assert(this.treeViewScrollViewer != null);
+      Debug.Assert(this._treeViewScrollViewer != null);
 
-      if (this.treeViewResetHorizScroll) {
-        this.treeViewScrollViewer.ScrollToHorizontalOffset(this.treeViewHorizScrollPos);
-        this.treeViewResetHorizScroll = false;
+      if (this._treeViewResetHorizScroll) {
+        this._treeViewScrollViewer.ScrollToHorizontalOffset(this._treeViewHorizScrollPos);
+        this._treeViewResetHorizScroll = false;
       }
     }
 

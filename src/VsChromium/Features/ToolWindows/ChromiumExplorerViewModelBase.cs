@@ -9,7 +9,7 @@ namespace VsChromium.Features.ToolWindows {
   public class ChromiumExplorerViewModelBase : INotifyPropertyChanged {
     private readonly TreeViewRootNodes<TreeViewItemViewModel> _rootNodes = new TreeViewRootNodes<TreeViewItemViewModel>();
     private IComponentModel _componentModel;
-    private List<TreeViewItemViewModel> _currentRootNodesViewModel;
+    private List<TreeViewItemViewModel> _activeRootNodes;
     private IStandarImageSourceFactory _imageSourceFactory;
 
     /// <summary>
@@ -17,7 +17,7 @@ namespace VsChromium.Features.ToolWindows {
     /// </summary>
     public TreeViewRootNodes<TreeViewItemViewModel> RootNodes { get { return _rootNodes; } }
 
-    public List<TreeViewItemViewModel> CurrentRootNodesViewModel { get { return _currentRootNodesViewModel; } }
+    public List<TreeViewItemViewModel> ActiveRootNodes { get { return _activeRootNodes; } }
     public IComponentModel ComponentModel { get { return _componentModel; } }
     public IStandarImageSourceFactory ImageSourceFactory { get { return _imageSourceFactory; } }
 
@@ -30,12 +30,12 @@ namespace VsChromium.Features.ToolWindows {
 
 
     protected void SetRootNodes(List<TreeViewItemViewModel> source, string defaultText = "") {
-      _currentRootNodesViewModel = source;
-      if (_currentRootNodesViewModel.Count == 0 && !string.IsNullOrEmpty(defaultText)) {
-        _currentRootNodesViewModel.Add(new TextItemViewModel(_imageSourceFactory, null, defaultText));
+      _activeRootNodes = source;
+      if (_activeRootNodes.Count == 0 && !string.IsNullOrEmpty(defaultText)) {
+        _activeRootNodes.Add(new TextItemViewModel(_imageSourceFactory, null, defaultText));
       }
       _rootNodes.Clear();
-      _currentRootNodesViewModel.ForAll(x => _rootNodes.Add(x));
+      _activeRootNodes.ForAll(x => _rootNodes.Add(x));
     }
 
     protected void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {

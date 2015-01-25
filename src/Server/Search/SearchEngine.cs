@@ -151,7 +151,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    public SearchFileContentsResult SearchFileContents(SearchParams searchParams) {
+    public SearchTextResult SearchText(SearchParams searchParams) {
       // taskCancellation is used to make sure we cancel previous tasks as
       // fast as possible to avoid using too many CPU resources if the caller
       // keeps asking us to search for things. Note that this assumes the
@@ -161,11 +161,19 @@ namespace VsChromium.Server.Search {
 
       using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams)) {
         var cancellationToken = _taskCancellation.GetNewToken();
-        return DoSearchFileContents(searchContentsData, searchParams.MaxResults, searchParams.IncludeSymLinks, cancellationToken);
+        return SearchTextWorker(
+          searchContentsData,
+          searchParams.MaxResults,
+          searchParams.IncludeSymLinks,
+          cancellationToken);
       }
     }
 
-    private SearchFileContentsResult DoSearchFileContents(CompiledTextSearchData compiledTextSearchData, int maxResults, bool includeSymLinks, CancellationToken cancellationToken) {
+    private SearchTextResult SearchTextWorker(
+      CompiledTextSearchData compiledTextSearchData,
+      int maxResults,
+      bool includeSymLinks,
+      CancellationToken cancellationToken) {
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
       var searchedFileIds = new PartitionedBitArray(
         _currentFileDatabase.SearchableFileCount,
@@ -200,7 +208,7 @@ namespace VsChromium.Server.Search {
         })
         .ToList();
 
-      return new SearchFileContentsResult {
+      return new SearchTextResult {
         Entries = matches,
         SearchedFileCount = searchedFileIds.Count,
         TotalFileCount = _currentFileDatabase.SearchableFileCount,

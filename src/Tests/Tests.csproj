@@ -39,7 +39,7 @@
     <Compile Include="Core\TestPathComponentEnumerator.cs" />
     <Compile Include="Core\TestPathComponent.cs" />
     <Compile Include="Features\TestFormatComments.cs" />
-    <Compile Include="ServerProcess\TestSearchFileContents.cs" />
+    <Compile Include="ServerProcess\TestSearchText.cs" />
     <Compile Include="ServerProcess\TestSearchDirectoryNames.cs" />
     <Compile Include="ServerProcess\TestServerPerf.cs" />
     <Compile Include="ServerProcess\TestServerBase.cs" />

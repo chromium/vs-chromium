@@ -77,7 +77,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         case PkgCmdIdList.CmdidSearchDirectoryNames:
           ExplorerControl.DirectoryNamesSearch.Focus();
           break;
-        case PkgCmdIdList.CmdidSearchFileContents:
+        case PkgCmdIdList.CmdidSearchText:
           ExplorerControl.FileContentsSearch.Focus();
           break;
       }

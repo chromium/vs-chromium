@@ -22,7 +22,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (SearchTextRequest)typedRequest;
-      var result = _searchEngine.SearchFileContents(request.SearchParams);
+      var result = _searchEngine.SearchText(request.SearchParams);
       var searchResults = FileSystemNameFactoryExtensions.ToFlatSearchResult(
         _fileSystemNameFactory,
         result.Entries,

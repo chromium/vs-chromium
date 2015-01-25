@@ -59,24 +59,31 @@
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
-          <CommandName>cmdidSearch</CommandName>
-          <ButtonText>Chromium find file names</ButtonText>
+          <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
+              and is used as a default value for other entries if they are not specified-->
+          <ButtonText>VsChromium Find File Names</ButtonText>
+          <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
+          <CommandName>VsChromium - Find File Names</CommandName>
+          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <LocCanonicalName>VsChromium.FindFileNames</LocCanonicalName>
         </Strings>
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
-          <CommandName>cmdidSearch</CommandName>
-          <ButtonText>Chromium find directory names</ButtonText>
+          <ButtonText>VsChromium Find Directory Names</ButtonText>
+          <CommandName>VsChromium - Find Directory Names</CommandName>
+          <LocCanonicalName>VsChromium.FindDirectoryNames</LocCanonicalName>
         </Strings>
       </Button>
-      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchFileContents" priority="0x0100" type="Button">
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchText" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
-          <CommandName>cmdidSearch</CommandName>
-          <ButtonText>Chromium find in files</ButtonText>
+          <ButtonText>VsChromium Find In Files</ButtonText>
+          <CommandName>VsChromium - Find in files</CommandName>
+          <LocCanonicalName>VsChromium.FindInFiles</LocCanonicalName>
         </Strings>
       </Button>
       <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeDialog" priority="0x0002" type="Button">
@@ -113,7 +120,7 @@
     <!-- Note: VK_OEM_1 is the semicolon character on US keyboards. -->
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt Shift" />
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileContents" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchText" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c" />
   </KeyBindings>
   <Symbols>
@@ -126,7 +133,7 @@
       <IDSymbol name="cmdidSourceExplorerToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
       <IDSymbol name="cmdidSearchDirectoryNames" value="0x0103" />
-      <IDSymbol name="cmdidSearchFileContents" value="0x0104" />
+      <IDSymbol name="cmdidSearchText" value="0x0104" />
       <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0105" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">

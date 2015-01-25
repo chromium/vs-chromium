@@ -116,7 +116,7 @@
     <Compile Include="Search\PerThreadCompiledTextSearchProvider.cs" />
     <Compile Include="Search\CompiledTextSearchProvider.cs" />
     <Compile Include="Search\SearchDirectoryNamesResult.cs" />
-    <Compile Include="Search\SearchFileContentsResult.cs" />
+    <Compile Include="Search\SearchTextResult.cs" />
     <Compile Include="Search\SearchFileNamesResult.cs" />
     <Compile Include="Search\TextSourceTextSearch.cs" />
     <Compile Include="Search\ParsedSearchString.cs" />

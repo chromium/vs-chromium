@@ -12,7 +12,7 @@ namespace VsChromium.Server.Search {
   public interface ISearchEngine {
     SearchFileNamesResult SearchFileNames(SearchParams searchParams);
     SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams);
-    SearchFileContentsResult SearchFileContents(SearchParams searchParams);
+    SearchTextResult SearchText(SearchParams searchParams);
     IEnumerable<FileExtract> GetFileExtracts(FullPath filename, IEnumerable<FilePositionSpan> spans);
 
     event EventHandler<OperationInfo> FilesLoading;

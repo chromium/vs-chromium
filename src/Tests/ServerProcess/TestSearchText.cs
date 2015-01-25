@@ -13,7 +13,7 @@ using VsChromium.ServerProxy;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
-  public class TestSearchFileContents : TestServerBase {
+  public class TestSearchText : TestServerBase {
     [TestMethod]
     public void SingleOccurrenceWorks() {
       const string searchPattern = "Test directory looking like";
@@ -23,10 +23,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1);
         }
       }
     }
@@ -40,10 +40,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 3);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 3);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 3);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 3);
         }
       }
     }
@@ -57,10 +57,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 22);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 22);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 22);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 22);
         }
       }
     }
@@ -74,10 +74,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 15, 12);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 15, 12);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 15, 12);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 15, 12);
         }
       }
     }
@@ -91,10 +91,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
         }
       }
     }
@@ -108,10 +108,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
         }
       }
     }
@@ -125,10 +125,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 5, 22);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 5, 22);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 5, 22);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 5, 22);
         }
       }
     }
@@ -142,10 +142,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 7 ,8);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 7 ,8);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 7, 8);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 7, 8);
         }
       }
     }
@@ -159,10 +159,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 39, 8);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 39, 8);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 39, 8);
+          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 39, 8);
         }
       }
     }
@@ -176,10 +176,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 1);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 1);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 1);
+          VerifySearchTextResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 1);
         }
       }
     }
@@ -193,10 +193,10 @@ namespace VsChromium.Tests.ServerProcess {
           var testFile = GetChromiumEnlistmentFile();
           GetFileSystemFromServer(server, testFile);
 
-          VerifySearchFileContentsResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 9);
+          VerifySearchTextResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 9);
 
           var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchFileContentsResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 9);
+          VerifySearchTextResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 9);
         }
       }
     }
@@ -208,7 +208,7 @@ namespace VsChromium.Tests.ServerProcess {
       Regex = 0x02,
     }
 
-    private static void VerifySearchFileContentsResponse(
+    private static void VerifySearchTextResponse(
         ITypedRequestProcessProxy server,
         string searchPattern,
         Options options,

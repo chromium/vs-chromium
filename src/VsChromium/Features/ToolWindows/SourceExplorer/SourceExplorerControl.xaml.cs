@@ -408,8 +408,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (_swallowsRequestBringIntoView) {
         // This prevents the tree view for scrolling horizontally to make the
         // selected item as visibile as possible. This is useful for
-        // "SearchFileContents", as text extracts are usually wide enough to
-        // make tree view navigation annoying when they are selected.
+        // "SearchText", as text extracts are usually wide enough to make tree
+        // view navigation annoying when they are selected.
         e.Handled = true;
         return;
       }

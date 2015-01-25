@@ -57,10 +57,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         () => _control.SwallowsRequestBringIntoView(true));
     }
 
+#if false
     public void SelectTreeViewItem(TreeViewItemViewModel item, Action callback) {
       _control.ViewModel.SelectTreeViewItem(
         item,
-        true,
         _control.FileTreeView,
         () => _control.SwallowsRequestBringIntoView(true),
         () => {
@@ -68,6 +68,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           callback();
         });
     }
+#endif
 
     public void BringTreeViewItemToView(TreeViewItemViewModel item) {
       // We look for the tree view item corresponding to "item", swallowing
@@ -75,16 +76,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // the virtual tree and realize the sub-panels at each level.
       var treeViewItem = _control.ViewModel.SelectTreeViewItem(
         item,
-        true,
         _control.FileTreeView,
-        () => _control.SwallowsRequestBringIntoView(true),
-        () => _control.SwallowsRequestBringIntoView(true));
-
-      //Logger.Log("TreeViewItem for \"{0}\" {1} found \"{2}\" ({3})",
-      //  item,
-      //  item.GetHashCode(),
-      //  (treeViewItem == null ? "" : treeViewItem.DataContext),
-      //  (treeViewItem == null ? 0 : treeViewItem.DataContext.GetHashCode()));
+        () => { },
+        () => { });
 
       // If we found it, allow the "BringIntoView" requests to be handled
       // and ask the tree view item to bring itself into view.
@@ -94,7 +88,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         _control.SwallowsRequestBringIntoView(false);
         treeViewItem.BringIntoView();
         _control.SwallowsRequestBringIntoView(true);
-        //item.IsSelected = true;
       }
     }
   }

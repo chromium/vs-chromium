@@ -383,7 +383,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         e.Handled = true;
         return;
       }
-#if false
+#if true
       // Find the scroll viewer and hook up scroll changed event handler.
       if (this.treeViewScrollViewer == null) {
         this.treeViewScrollViewer = this.FileTreeView.Template.FindName("_tv_scrollviewer_", this.FileTreeView) as ScrollViewer;
@@ -398,6 +398,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         this.treeViewResetHorizScroll = true;
         this.treeViewHorizScrollPos = this.treeViewScrollViewer.HorizontalOffset;
       }
+      e.Handled = false;
 #endif
     }
 

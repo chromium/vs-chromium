@@ -89,48 +89,46 @@ namespace VsChromium.Wpf {
     }
 
     /// <summary>
-    /// Select the visual TreeViewItem corresponding to the ViewModel |item|
-    /// object. Note: This method is synchronous (i.e. does not post any message
-    /// to the UI thread queue).
+    /// Select the visual TreeViewItem corresponding to the view model <paramref
+    /// name="hierarchyObject"/>.
+    /// 
+    /// Note: This method is synchronous (i.e. does not post any message to the
+    /// UI thread queue) and works only with a virtualizing stack panel.
     /// </summary>
-    public static TreeViewItem SelectTreeViewItem(TreeView treeView, IHierarchyObject dataObject, bool select = true) {
-      // Build child->parent->ancestor(s) sequenc as a stack so we can go
+    public static TreeViewItem SelectTreeViewItem(TreeView treeView, IHierarchyObject hierarchyObject) {
+      // Build child->parent->ancestor(s) sequence as a stack so we can go
       // top-down in the tree during next phase.
-      var dataObjectStack = new Stack<IHierarchyObject>();
-      while (dataObject != null) {
-        dataObjectStack.Push(dataObject);
-        dataObject = dataObject.GetParent();
+      var objectStack = new Stack<IHierarchyObject>();
+      while (hierarchyObject != null) {
+        objectStack.Push(hierarchyObject);
+        hierarchyObject = hierarchyObject.GetParent();
       }
 
-      // For each visual element in the stack, expand and bring to view the
-      // corresponding TreeViewItem
+      // Call "BringObjectToView" on each hierarchy object in the stack, keeping
+      // track of the parent "ItemsControl" ("TreeView" or "TreeViewItem") to
+      // expand and dive into.
       ItemsControl parentItemsControl = treeView;
-      IHierarchyObject parentDataObject = null;
-      while (dataObjectStack.Count > 0) {
-        var childDataObject = dataObjectStack.Pop();
-
-        if (childDataObject.IsVisual) {
-          var childItemsControl = BringDataObjectToView(parentItemsControl, parentDataObject, childDataObject);
-          if (childItemsControl == null)
+      IHierarchyObject parentObject = null;
+      while (objectStack.Count > 0) {
+        var childObject = objectStack.Pop();
+        if (childObject.IsVisual) {
+          var childItemsControl = BringObjectToView(parentItemsControl, parentObject, childObject);
+          if (childItemsControl == null) {
+            Logger.Log("Tree view item corresponding to hierarchy object was not found.");
+            parentItemsControl = null;
             break;
+          }
           parentItemsControl = childItemsControl;
         }
-
-        parentDataObject = childDataObject;
+        parentObject = childObject;
       }
 
-      // If the desired selection is found, select it
-      var desiredSelection = parentItemsControl as TreeViewItem;
-      if (select) {
-        if (desiredSelection != null) {
-          //var model = (TreeViewItemViewModel) parentDataObject;
-          //if (model != null) {
-          //  model.IsSelected = true;
-          //}
-          SetSelectedItem(treeView, desiredSelection);
-        }
+      // If the desired tree view item has been, select it
+      var desiredTreeViewItem = parentItemsControl as TreeViewItem;
+      if (desiredTreeViewItem != null) {
+        SetSelectedItem(treeView, desiredTreeViewItem);
       }
-      return desiredSelection;
+      return desiredTreeViewItem;
     }
 
     /// <summary>
@@ -139,22 +137,15 @@ namespace VsChromium.Wpf {
     /// </summary>
     public static void SetSelectedItem(TreeView treeView, TreeViewItem item) {
       Logger.WrapActionInvocation(() => {
-        //Logger.Log("Select TV item: before: tv.Select=\"{0}\"-{1}",
-        //  treeView.SelectedItem ?? "null",
-        //  treeView.SelectedItem == null ? -1 : treeView.SelectedItem.GetHashCode());
         MethodInfo selectMethod =
-          typeof (TreeViewItem).GetMethod("Select",
+          typeof(TreeViewItem).GetMethod("Select",
             BindingFlags.NonPublic | BindingFlags.Instance);
 
-        selectMethod.Invoke(item, new object[] {true});
-        //item.IsSelected = true;
-        //Logger.Log("Select TV item: after: tv.Select=\"{0}\"-{1}",
-        //  treeView.SelectedItem ?? "null",
-        //  treeView.SelectedItem == null ? -1 : treeView.SelectedItem.GetHashCode());
+        selectMethod.Invoke(item, new object[] { true });
       });
     }
 
-    private static ItemsControl BringDataObjectToView(
+    private static ItemsControl BringObjectToView(
       ItemsControl parentItemsControl,
       IHierarchyObject parentDataObject,
       IHierarchyObject dataObject) {
@@ -162,9 +153,13 @@ namespace VsChromium.Wpf {
       Debug.Assert(parentDataObject != null);
       Debug.Assert(dataObject != null);
 
-      // Expand the current container
-      if (parentItemsControl is TreeViewItem && !((TreeViewItem)parentItemsControl).IsExpanded) {
-        parentItemsControl.SetValue(TreeViewItem.IsExpandedProperty, true);
+      // Expand the the tree view item if necessary.
+      var parentTreeViewItem = parentItemsControl as TreeViewItem;
+      if (parentTreeViewItem != null) {
+        if (!parentTreeViewItem.IsExpanded) {
+          // TODO(rpaquay): Use ".IsExpanded = true"?
+          parentTreeViewItem.SetValue(TreeViewItem.IsExpandedProperty, true);
+        }
       }
 
       // Try to generate the ItemsPresenter and the ItemsPanel. by calling
@@ -172,8 +167,7 @@ namespace VsChromium.Wpf {
       // marked expanded we still need to do this step in order to regenerate
       // the visuals because they may have been virtualized away.
       parentItemsControl.ApplyTemplate();
-      var itemsPresenter =
-          (ItemsPresenter)parentItemsControl.Template.FindName("ItemsHost", parentItemsControl);
+      var itemsPresenter = (ItemsPresenter)parentItemsControl.Template.FindName("ItemsHost", parentItemsControl);
       if (itemsPresenter != null) {
         itemsPresenter.ApplyTemplate();
       } else {
@@ -182,18 +176,16 @@ namespace VsChromium.Wpf {
         itemsPresenter = FindVisualChild<ItemsPresenter>(parentItemsControl);
         if (itemsPresenter == null) {
           parentItemsControl.UpdateLayout();
-
           itemsPresenter = FindVisualChild<ItemsPresenter>(parentItemsControl);
+          if (itemsPresenter == null) {
+            Logger.LogError("Can't find items presenter.");
+            return null;
+          }
         }
       }
 
-      if (itemsPresenter == null) {
-        Logger.LogError("Can't find items presenter.");
-        return null;
-      }
-
       // Access the custom VSP that exposes BringIntoView 
-      var virtualizingStackPanel = VisualTreeHelper.GetChild(itemsPresenter, 0) as MyVirtualizingStackPanel;
+      var virtualizingStackPanel = VisualTreeHelper.GetChild(itemsPresenter, 0) as VirtualizingStackPanel;
       if (virtualizingStackPanel == null) {
         Logger.LogError("Can't find virtual stack panel for parentItemsControl.");
         return null;
@@ -205,142 +197,13 @@ namespace VsChromium.Wpf {
         return null;
       }
 
-      virtualizingStackPanel.BringIntoView(dataObjetIndex);
-      var treeViewItem =
-        (ItemsControl) parentItemsControl.ItemContainerGenerator.ContainerFromIndex(dataObjetIndex);
+      virtualizingStackPanel.BringIndexIntoViewPublic(dataObjetIndex);
+      var treeViewItem =(ItemsControl)parentItemsControl.ItemContainerGenerator.ContainerFromIndex(dataObjetIndex);
       if (treeViewItem.DataContext != dataObject) {
         Logger.LogError("TreeView item data context is not the right data object.");
         return null;
       }
       return treeViewItem;
-    }
-
-    private static ItemsControl BringViewItemToViewOld(DispatcherObject dispatcher, ItemsControl parentItemsControl, IHierarchyObject parentViewItem, IHierarchyObject viewItem) {
-      Debug.Assert(parentViewItem != null);
-      // Access the custom VSP that exposes BringIntoView 
-      var itemsHost = FindVisualChild<MyVirtualizingStackPanel>(parentItemsControl);
-      if (itemsHost == null) {
-        Logger.LogError("Can't find itemsHost for parentItemsControl.");
-        return null;
-      }
-
-      var viewItemIndex = parentViewItem.GetAllChildren().IndexOf(viewItem);
-      if (viewItemIndex >= parentItemsControl.Items.Count) {
-        Logger.LogError("Can't find child of itemsHost.");
-        return null;
-      }
-
-      // Due to virtualization, BringIntoView may not predict the offset correctly the first time. 
-      return TryAction(
-        dispatcher,
-        () => itemsHost.BringIntoView(viewItemIndex),
-        () => (ItemsControl)parentItemsControl.ItemContainerGenerator.ContainerFromIndex(viewItemIndex),
-        10);
-    }
-
-    private static T TryAction<T>(DispatcherObject dispatcher, Action action, Func<T> func, int maxLoops)
-      where T : class {
-      for (var i = 0; i < maxLoops; i++) {
-        action();
-        var result = WpfUtilities.Invoke(dispatcher, DispatcherPriority.Background, func);
-        if (result == null) {
-          Logger.Log("Trying action again.");
-        }
-        if (result != null)
-          return result;
-      }
-      return null;
-    }
-
-    /// <summary>
-    /// Recursively search for an item in this subtree.
-    /// </summary>
-    /// <param name="container">
-    /// The parent ItemsControl. This can be a TreeView or a TreeViewItem.
-    /// </param>
-    /// <param name="item">
-    /// The item to search for.
-    /// </param>
-    /// <returns>
-    /// The TreeViewItem that contains the specified item.
-    /// </returns>
-    public static TreeViewItem GetTreeViewItem(ItemsControl container, object item) {
-      if (container != null) {
-        if (container.DataContext == item) {
-          return container as TreeViewItem;
-        }
-
-        // Expand the current container
-        if (container is TreeViewItem && !((TreeViewItem)container).IsExpanded) {
-          container.SetValue(TreeViewItem.IsExpandedProperty, true);
-        }
-
-        // Try to generate the ItemsPresenter and the ItemsPanel.
-        // by calling ApplyTemplate.  Note that in the 
-        // virtualizing case even if the item is marked 
-        // expanded we still need to do this step in order to 
-        // regenerate the visuals because they may have been virtualized away.
-
-        container.ApplyTemplate();
-        ItemsPresenter itemsPresenter =
-            (ItemsPresenter)container.Template.FindName("ItemsHost", container);
-        if (itemsPresenter != null) {
-          itemsPresenter.ApplyTemplate();
-        } else {
-          // The Tree template has not named the ItemsPresenter, 
-          // so walk the descendents and find the child.
-          itemsPresenter = FindVisualChild<ItemsPresenter>(container);
-          if (itemsPresenter == null) {
-            container.UpdateLayout();
-
-            itemsPresenter = FindVisualChild<ItemsPresenter>(container);
-          }
-        }
-
-        Panel itemsHostPanel = (Panel)VisualTreeHelper.GetChild(itemsPresenter, 0);
-
-
-        // Ensure that the generator for this panel has been created.
-        UIElementCollection children = itemsHostPanel.Children;
-
-        MyVirtualizingStackPanel virtualizingPanel =
-            itemsHostPanel as MyVirtualizingStackPanel;
-
-        for (int i = 0, count = container.Items.Count; i < count; i++) {
-          TreeViewItem subContainer;
-          if (virtualizingPanel != null) {
-            // Bring the item into view so 
-            // that the container will be generated.
-            virtualizingPanel.BringIntoView(i);
-
-            subContainer =
-                (TreeViewItem)container.ItemContainerGenerator.
-                ContainerFromIndex(i);
-          } else {
-            subContainer =
-                (TreeViewItem)container.ItemContainerGenerator.
-                ContainerFromIndex(i);
-
-            // Bring the item into view to maintain the 
-            // same behavior as with a virtualizing panel.
-            subContainer.BringIntoView();
-          }
-
-          if (subContainer != null) {
-            // Search the next level for the object.
-            TreeViewItem resultContainer = GetTreeViewItem(subContainer, item);
-            if (resultContainer != null) {
-              return resultContainer;
-            } else {
-              // The object is not under this TreeViewItem
-              // so collapse it.
-              subContainer.IsExpanded = false;
-            }
-          }
-        }
-      }
-
-      return null;
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public string DisplayText {
+    public override string DisplayText {
       get {
         if (_fileExtract != null) {
           return string.Format("{0} ({1}, {2})", _fileExtract.Text.Trim(), _fileExtract.LineNumber + 1, _fileExtract.ColumnNumber + 1);

@@ -93,7 +93,7 @@ namespace VsChromium.Wpf {
     /// object. Note: This method is synchronous (i.e. does not post any message
     /// to the UI thread queue).
     /// </summary>
-    public static TreeViewItem SelectTreeViewItem(TreeView treeView, IHierarchyObject dataObject) {
+    public static TreeViewItem SelectTreeViewItem(TreeView treeView, IHierarchyObject dataObject, bool select = true) {
       // Build child->parent->ancestor(s) sequenc as a stack so we can go
       // top-down in the tree during next phase.
       var dataObjectStack = new Stack<IHierarchyObject>();
@@ -110,7 +110,7 @@ namespace VsChromium.Wpf {
         var childDataObject = dataObjectStack.Pop();
 
         if (childDataObject.IsVisual) {
-          var childItemsControl = BringDataObjectToView(treeView, parentItemsControl, parentDataObject, childDataObject);
+          var childItemsControl = BringDataObjectToView(parentItemsControl, parentDataObject, childDataObject);
           if (childItemsControl == null)
             break;
           parentItemsControl = childItemsControl;
@@ -119,10 +119,16 @@ namespace VsChromium.Wpf {
         parentDataObject = childDataObject;
       }
 
-      // If the desired selection is found, select it 
+      // If the desired selection is found, select it
       var desiredSelection = parentItemsControl as TreeViewItem;
-      if (desiredSelection != null) {
-        SetSelectedItem(treeView, desiredSelection);
+      if (select) {
+        if (desiredSelection != null) {
+          //var model = (TreeViewItemViewModel) parentDataObject;
+          //if (model != null) {
+          //  model.IsSelected = true;
+          //}
+          SetSelectedItem(treeView, desiredSelection);
+        }
       }
       return desiredSelection;
     }
@@ -133,21 +139,33 @@ namespace VsChromium.Wpf {
     /// </summary>
     public static void SetSelectedItem(TreeView treeView, TreeViewItem item) {
       Logger.WrapActionInvocation(() => {
+        //Logger.Log("Select TV item: before: tv.Select=\"{0}\"-{1}",
+        //  treeView.SelectedItem ?? "null",
+        //  treeView.SelectedItem == null ? -1 : treeView.SelectedItem.GetHashCode());
         MethodInfo selectMethod =
           typeof (TreeViewItem).GetMethod("Select",
             BindingFlags.NonPublic | BindingFlags.Instance);
 
         selectMethod.Invoke(item, new object[] {true});
+        //item.IsSelected = true;
+        //Logger.Log("Select TV item: after: tv.Select=\"{0}\"-{1}",
+        //  treeView.SelectedItem ?? "null",
+        //  treeView.SelectedItem == null ? -1 : treeView.SelectedItem.GetHashCode());
       });
     }
 
     private static ItemsControl BringDataObjectToView(
-      DispatcherObject dispatcher,
       ItemsControl parentItemsControl,
       IHierarchyObject parentDataObject,
       IHierarchyObject dataObject) {
-      Debug.Assert(dispatcher != null);
+      Debug.Assert(parentItemsControl != null);
       Debug.Assert(parentDataObject != null);
+      Debug.Assert(dataObject != null);
+
+      // Expand the current container
+      if (parentItemsControl is TreeViewItem && !((TreeViewItem)parentItemsControl).IsExpanded) {
+        parentItemsControl.SetValue(TreeViewItem.IsExpandedProperty, true);
+      }
 
       // Try to generate the ItemsPresenter and the ItemsPanel. by calling
       // ApplyTemplate.  Note that in the virtualizing case even if the item is

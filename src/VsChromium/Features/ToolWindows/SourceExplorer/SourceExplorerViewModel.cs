@@ -289,15 +289,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
 
       SwitchToFileSystemTree();
-      SelectTreeViewItem(entryViewModel, treeView, beforeSelectItem, afterSelectItem);
+      SelectTreeViewItem(entryViewModel, true, treeView, beforeSelectItem, afterSelectItem);
     }
 
-    public TreeViewItem SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
+    public TreeViewItem SelectTreeViewItem(TreeViewItemViewModel item, bool select, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
       TreeViewItem result = null;
       Logger.WrapActionInvocation(() => {
         beforeSelectItem();
         try {
-          result = WpfUtilities.SelectTreeViewItem(treeView, item);
+          result = WpfUtilities.SelectTreeViewItem(treeView, item, select);
         }
         finally {
           afterSelectItem();

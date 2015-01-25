@@ -375,32 +375,39 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private ScrollViewer treeViewScrollViewer = null;
 
     private void TreeViewItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e) {
+      if (_swallowsRequestBringIntoView) {
+        // This prevents the tree view for scrolling horizontally to make the
+        // selected item as visibile as possible. This is useful for
+        // "SearchFileContents", as text extracts are usually wide enough to
+        // make tree view navigation annoying when they are selected.
+        e.Handled = true;
+        return;
+      }
 #if false
+      // Find the scroll viewer and hook up scroll changed event handler.
       if (this.treeViewScrollViewer == null) {
         this.treeViewScrollViewer = this.FileTreeView.Template.FindName("_tv_scrollviewer_", this.FileTreeView) as ScrollViewer;
-        if (this.treeViewScrollViewer != null)
-          this.treeViewScrollViewer.ScrollChanged += new ScrollChangedEventHandler(this.TreeViewScrollViewerScrollChanged);
+        if (treeViewScrollViewer != null) {
+          this.treeViewScrollViewer.ScrollChanged += this.TreeViewScrollViewerScrollChanged;
+        }
       }
-      this.treeViewResetHorizScroll = true;
-      this.treeViewHorizScrollPos = this.treeViewScrollViewer.HorizontalOffset;
 
-      // This prevents the tree view for scrolling horizontally to make the
-      // selected item as visibile as possible. This is useful for
-      // "SearchFileContents", as text extracts are usually wide enough to make
-      // tree view navigation annoying when they are selected.
-      e.Handled = false;
-      ;//_swallowsRequestBringIntoView;
+      // If we got a scroll viewer, remember the horizontal offset so we can
+      // restore it in the scroll changed event.
+      if (treeViewScrollViewer != null) {
+        this.treeViewResetHorizScroll = true;
+        this.treeViewHorizScrollPos = this.treeViewScrollViewer.HorizontalOffset;
+      }
 #endif
-      Logger.Log("RequestBringIntoView: {0}, {1}", e.TargetObject.GetType().FullName, e.TargetRect);
-      e.Handled = _swallowsRequestBringIntoView;
-      //e.Handled = false;
     }
 
     private void TreeViewScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e) {
-      if (this.treeViewResetHorizScroll)
-        this.treeViewScrollViewer.ScrollToHorizontalOffset(this.treeViewHorizScrollPos);
+      Debug.Assert(this.treeViewScrollViewer != null);
 
-      this.treeViewResetHorizScroll = false;
+      if (this.treeViewResetHorizScroll) {
+        this.treeViewScrollViewer.ScrollToHorizontalOffset(this.treeViewHorizScrollPos);
+        this.treeViewResetHorizScroll = false;
+      }
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e) {
@@ -450,9 +457,19 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void EnqueueBringTreeViewItemToView(TreeViewItemViewModel item) {
       _uiDelayeOperationProcessor.Post(new DelayedOperation {
         Id = "BringTreeViewItemToView",
-        Delay = TimeSpan.FromSeconds(0.5),
+        Delay = TimeSpan.FromSeconds(5.0),
         Action = () => {
           this.ViewModel.Host.BringTreeViewItemToView(item);
+          _uiDelayeOperationProcessor.Post(new DelayedOperation {
+            Id = "DisplayTreeViewState",
+            Delay = TimeSpan.FromSeconds(5.0),
+            Action = () => {
+              Logger.Log("TV State: selected item=\"{0}\" ({1}), Item.IsSelected={2}",
+                this.FileTreeView.SelectedItem ?? "null",
+                this.FileTreeView.SelectedItem == null ? 0 : this.FileTreeView.SelectedItem.GetHashCode(),
+                (this.FileTreeView.SelectedItem as TreeViewItemViewModel) == null ? "null" : (this.FileTreeView.SelectedItem as TreeViewItemViewModel).IsSelected.ToString());
+          }
+          });
         }
       });
     }

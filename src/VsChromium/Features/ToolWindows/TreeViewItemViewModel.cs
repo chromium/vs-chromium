@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
@@ -43,6 +46,14 @@ namespace VsChromium.Features.ToolWindows {
     }
 
     public IStandarImageSourceFactory StandarImageSourceFactory { get { return _imageSourceFactory; } }
+
+    public override string ToString() {
+      return DisplayText;
+    }
+
+    public virtual string DisplayText {
+      get { return GetType().FullName; }
+    }
 
     public virtual int ChildrenCount { get { return 0; } }
 
@@ -100,9 +111,13 @@ namespace VsChromium.Features.ToolWindows {
     public bool IsSelected {
       get { return _isSelected; }
       set {
+        //Logger.Log("tvivm \"{0}\": old value={1}, new value={2}", this, _isSelected, value);
         if (value != _isSelected) {
+          //if (!value) {
+          //  Logger.Log("{0}", new StackTrace());
+          //}
           _isSelected = value;
-          OnPropertyChanged("IsSelected");
+          //OnPropertyChanged("IsSelected");
         }
       }
     }

@@ -18,7 +18,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public string Name { get { return FileSystemEntry.Name; } }
 
-    public virtual string DisplayText {
+    public override string DisplayText {
       get {
         return this.Name;
       }

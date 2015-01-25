@@ -82,8 +82,8 @@ namespace VsChromium.Features.ToolWindows {
     public bool HasDummyChild { get { return _children.Count == 1 && _children[0] == _dummyChild; } }
 
     /// <summary>
-    /// Gets/sets whether the TreeViewItem 
-    /// associated with this object is expanded.
+    /// Gets/sets whether the TreeViewItem associated with this object is
+    /// expanded.
     /// </summary>
     public bool IsExpanded {
       get { return _isExpanded; }
@@ -105,18 +105,16 @@ namespace VsChromium.Features.ToolWindows {
     }
 
     /// <summary>
-    /// Gets/sets whether the TreeViewItem 
-    /// associated with this object is selected.
+    /// Gets/sets whether the TreeViewItem associated with this object is
+    /// selected.
     /// </summary>
     public bool IsSelected {
       get { return _isSelected; }
       set {
-        //Logger.Log("tvivm \"{0}\": old value={1}, new value={2}", this, _isSelected, value);
         if (value != _isSelected) {
-          //if (!value) {
-          //  Logger.Log("{0}", new StackTrace());
-          //}
           _isSelected = value;
+          // Don't notify of a change because it interferes with the tree view
+          // programmatic selection, making selection behave erratically.
           //OnPropertyChanged("IsSelected");
         }
       }

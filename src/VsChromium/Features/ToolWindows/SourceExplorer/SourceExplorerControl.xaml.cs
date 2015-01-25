@@ -32,7 +32,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IStatusBar _statusBar;
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
-    private IUIDelayedOperationProcessor _uiDelayeOperationProcessor;
     private bool _swallowsRequestBringIntoView = true;
     private int _operationSequenceId;
 
@@ -65,7 +64,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
-      _uiDelayeOperationProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIDelayedOperationProcessor>();
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
@@ -453,26 +451,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         source = VisualTreeHelper.GetParent(source);
       }
       return null;
-    }
-
-    public void EnqueueBringTreeViewItemToView(TreeViewItemViewModel item) {
-      _uiDelayeOperationProcessor.Post(new DelayedOperation {
-        Id = "BringTreeViewItemToView",
-        Delay = TimeSpan.FromSeconds(5.0),
-        Action = () => {
-          this.ViewModel.Host.BringTreeViewItemToView(item);
-          _uiDelayeOperationProcessor.Post(new DelayedOperation {
-            Id = "DisplayTreeViewState",
-            Delay = TimeSpan.FromSeconds(5.0),
-            Action = () => {
-              Logger.Log("TV State: selected item=\"{0}\" ({1}), Item.IsSelected={2}",
-                this.FileTreeView.SelectedItem ?? "null",
-                this.FileTreeView.SelectedItem == null ? 0 : this.FileTreeView.SelectedItem.GetHashCode(),
-                (this.FileTreeView.SelectedItem as TreeViewItemViewModel) == null ? "null" : (this.FileTreeView.SelectedItem as TreeViewItemViewModel).IsSelected.ToString());
-          }
-          });
-        }
-      });
     }
   }
 }

@@ -133,16 +133,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void NavigateToTreeViewItem(TreeViewItemViewModel item) {
       if (item == null)
         return;
-#if true
-      ExplorerControl.ViewModel.Host.BringTreeViewItemToView(item);
-#else
-      ExplorerControl.ViewModel.Host.SelectTreeViewItem(
-        item,
-        () => {
-          ExplorerControl.ExecutedOpenCommandForItem(item);
-          ExplorerControl.EnqueueBringTreeViewItemToView(item);
-        });
-#endif
+      ExplorerControl.ViewModel.Host.BringViewModelToView(item);
+      ExplorerControl.ExecutedOpenCommandForItem(item);
     }
 
     public void NotifyPackageUpdate(UpdateInfo updateInfo) {

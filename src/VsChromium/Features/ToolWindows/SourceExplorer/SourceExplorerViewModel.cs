@@ -257,9 +257,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SwitchToFileContentsSearchResult();
     }
 
-    public void SelectDirectory(DirectoryEntryViewModel directoryEntry, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
+    public TreeViewItem SelectDirectory(DirectoryEntryViewModel directoryEntry, TreeView treeView) {
       if (ReferenceEquals(CurrentRootNodesViewModel, _fileSystemNodes))
-        return;
+        return null;
 
       var chromiumRoot = GetChromiumRoot(directoryEntry);
       Debug.Assert(chromiumRoot != null);
@@ -268,7 +268,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         _fileSystemNodes.OfType<DirectoryEntryViewModel>()
           .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, chromiumRoot.Name));
       if (entryViewModel == null)
-        return;
+        return null;
 
       foreach (var childName in directoryEntry.Name.Split(Path.DirectorySeparatorChar)) {
         var childViewModel = entryViewModel
@@ -282,26 +282,20 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             .OfType<DirectoryEntryViewModel>()
             .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
           if (childViewModel == null)
-            return;
+            return null;
         }
 
         entryViewModel = childViewModel;
       }
 
       SwitchToFileSystemTree();
-      SelectTreeViewItem(entryViewModel, treeView, beforeSelectItem, afterSelectItem);
+      return SelectTreeViewItem(entryViewModel, treeView);
     }
 
-    public TreeViewItem SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView, Action beforeSelectItem, Action afterSelectItem) {
+    public TreeViewItem SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView) {
       TreeViewItem result = null;
       Logger.WrapActionInvocation(() => {
-        beforeSelectItem();
-        try {
           result = WpfUtilities.SelectTreeViewItem(treeView, item);
-        }
-        finally {
-          afterSelectItem();
-        }
       });
       return result;
     }

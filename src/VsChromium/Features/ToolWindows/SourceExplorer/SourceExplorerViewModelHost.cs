@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
+using System.Windows.Controls;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Logging;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -51,35 +50,22 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void NavigateToDirectory(DirectoryEntryViewModel directoryEntry) {
-      _control.ViewModel.SelectDirectory(directoryEntry,
-        _control.FileTreeView,
-        () => _control.SwallowsRequestBringIntoView(false),
-        () => _control.SwallowsRequestBringIntoView(true));
-    }
-
-#if false
-    public void SelectTreeViewItem(TreeViewItemViewModel item, Action callback) {
-      _control.ViewModel.SelectTreeViewItem(
-        item,
-        _control.FileTreeView,
-        () => _control.SwallowsRequestBringIntoView(true),
-        () => {
-          _control.SwallowsRequestBringIntoView(true);
-          callback();
-        });
-    }
-#endif
-
-    public void BringTreeViewItemToView(TreeViewItemViewModel item) {
       // We look for the tree view item corresponding to "item", swallowing
       // the "BringIntoView" request to avoid flickering as we descend into
       // the virtual tree and realize the sub-panels at each level.
-      var treeViewItem = _control.ViewModel.SelectTreeViewItem(
-        item,
-        _control.FileTreeView,
-        () => { },
-        () => { });
+      var treeViewItem = _control.ViewModel.SelectDirectory(directoryEntry, _control.FileTreeView);
+      BindTreeViewItemIntoView(treeViewItem);
+    }
 
+    public void BringViewModelToView(TreeViewItemViewModel item) {
+      // We look for the tree view item corresponding to "item", swallowing
+      // the "BringIntoView" request to avoid flickering as we descend into
+      // the virtual tree and realize the sub-panels at each level.
+      var treeViewItem = _control.ViewModel.SelectTreeViewItem(item, _control.FileTreeView);
+      BindTreeViewItemIntoView(treeViewItem);
+    }
+
+    private void BindTreeViewItemIntoView(TreeViewItem treeViewItem) {
       // If we found it, allow the "BringIntoView" requests to be handled
       // and ask the tree view item to bring itself into view.
       // Note: The "BrinIntoView" call is a no-op if the tree view item

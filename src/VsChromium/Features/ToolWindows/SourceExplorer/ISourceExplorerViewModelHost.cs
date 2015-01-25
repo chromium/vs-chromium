@@ -20,7 +20,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     void NavigateToFile(FileEntryViewModel fileEntry, Span? span);
     void NavigateToDirectory(DirectoryEntryViewModel directoryEntry);
-    //void SelectTreeViewItem(TreeViewItemViewModel item, Action callback);
-    void BringTreeViewItemToView(TreeViewItemViewModel item);
+    void BringViewModelToView(TreeViewItemViewModel item);
   }
 }

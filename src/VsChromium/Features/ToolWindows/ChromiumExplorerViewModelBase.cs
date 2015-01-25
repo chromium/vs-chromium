@@ -28,17 +28,22 @@ namespace VsChromium.Features.ToolWindows {
       _imageSourceFactory = _componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
     }
 
-
     protected void SetRootNodes(List<TreeViewItemViewModel> newRootNodes, string defaultText = "") {
+      // Don't update if we are passed in the already active collection.
       if (object.ReferenceEquals(_activeRootNodes, newRootNodes))
         return;
-
       _activeRootNodes = newRootNodes;
-      if (_activeRootNodes.Count == 0 && !string.IsNullOrEmpty(defaultText)) {
-        _activeRootNodes.Add(new TextItemViewModel(_imageSourceFactory, null, defaultText));
-      }
+
+      // Move the active root nodes into the observable collection so that
+      // the TreeView is refreshed.
       _rootNodes.Clear();
-      _activeRootNodes.ForAll(x => _rootNodes.Add(x));
+      if (_activeRootNodes.Count == 0) {
+        if (!string.IsNullOrEmpty(defaultText)) {
+          _rootNodes.Add(new TextItemViewModel(_imageSourceFactory, null, defaultText));
+        }
+      } else {
+        _activeRootNodes.ForAll(x => _rootNodes.Add(x));
+      }
     }
 
     protected void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {

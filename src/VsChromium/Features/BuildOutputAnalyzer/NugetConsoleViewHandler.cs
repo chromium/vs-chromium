@@ -44,7 +44,11 @@ namespace VsChromium.Features.BuildOutputAnalyzer {
       _textViewAdapter = textViewAdapter;
       _textView = _adaptersFactoryService.GetWpfTextView(textViewAdapter);
 
-      var target = new SimpleCommandTarget(new CommandID(VSConstants.VSStd2K, (int)VSConstants.VSStd2KCmdID.ECMD_LEFTCLICK), Execute, HandlesCommand);
+      var target = new SimpleCommandTarget(
+        new CommandID(VSConstants.VSStd2K, (int)VSConstants.VSStd2KCmdID.ECMD_LEFTCLICK),
+        Execute,
+        HandlesCommand,
+        () => true);
       var targetWrapper = new OleCommandTarget(target);
       _textViewAdapter.AddCommandFilter(targetWrapper, out targetWrapper.NextCommandTarget);
     }

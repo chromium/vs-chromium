@@ -10,27 +10,28 @@ namespace VsChromium.Commands {
     private readonly CommandID _commandId;
     private readonly Action _action;
     private readonly Func<bool> _handlesCommand;
+    private readonly Func<bool> _enabled;
 
     public SimpleCommandTarget(CommandID commandId, Action action) {
       _commandId = commandId;
       _action = action;
+      _handlesCommand = () => true;
+      _enabled = () => true;
     }
 
-    public SimpleCommandTarget(CommandID commandId, Action action, Func<bool> handlesCommand) {
+    public SimpleCommandTarget(CommandID commandId, Action action, Func<bool> handlesCommand, Func<bool> enabled) {
       _commandId = commandId;
       _action = action;
       _handlesCommand = handlesCommand;
+      _enabled = enabled;
     }
 
     public bool HandlesCommand(CommandID commandId) {
-      bool result = _commandId.Equals(commandId);
-      if (result && _handlesCommand != null)
-        result = _handlesCommand();
-      return result;
+      return _commandId.Equals(commandId) && _handlesCommand();
     }
 
     public bool IsEnabled(CommandID commandId) {
-      return true;
+      return _enabled();
     }
 
     public void Execute(CommandID commandId) {

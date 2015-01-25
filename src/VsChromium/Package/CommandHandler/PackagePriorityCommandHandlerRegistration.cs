@@ -24,7 +24,8 @@ namespace VsChromium.Package.CommandHandler {
         .Select(c => new SimpleCommandTarget(
           c.CommandId,
           () => c.Execute(this, new EventArgs()),
-          () => c.Supported));
+          () => c.Supported,
+          () => c.Enabled));
       var aggregate = new AggregateCommandTarget(commandTargets);
       var oleCommandTarget = new OleCommandTarget(aggregate);
 

@@ -14,7 +14,7 @@ using VsChromium.Views;
 using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
-  public class SourceExplorerViewModelHost : ISourceExplorerViewModelHost {
+  public class SourceExplorerController : ISourceExplorerController {
     private readonly SourceExplorerControl _control;
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IStandarImageSourceFactory _standarImageSourceFactory;
@@ -23,7 +23,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IOpenDocumentHelper _openDocumentHelper;
 
-    public SourceExplorerViewModelHost(
+    public SourceExplorerController(
       SourceExplorerControl control,
       IUIRequestProcessor uiRequestProcessor,
       IStandarImageSourceFactory standarImageSourceFactory,
@@ -147,6 +147,40 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         result = WpfUtilities.SelectTreeViewItem(treeView, item);
       });
       return result;
+    }
+
+    public bool ExecutedOpenCommandForItem(TreeViewItemViewModel tvi) {
+      if (tvi == null)
+        return false;
+
+      if (!tvi.IsSelected)
+        return false;
+
+      {
+        var filePosition = tvi as FilePositionViewModel;
+        if (filePosition != null) {
+          filePosition.OpenCommand.Execute(filePosition);
+          return true;
+        }
+      }
+
+      {
+        var fileEntry = tvi as FileEntryViewModel;
+        if (fileEntry != null) {
+          fileEntry.OpenCommand.Execute(fileEntry);
+          return true;
+        }
+      }
+
+      {
+        var directoryEntry = tvi as DirectoryEntryViewModel;
+        if (directoryEntry != null) {
+          directoryEntry.OpenCommand.Execute(directoryEntry);
+          return true;
+        }
+      }
+
+      return false;
     }
   }
 }

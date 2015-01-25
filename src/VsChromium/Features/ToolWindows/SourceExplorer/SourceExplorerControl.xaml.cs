@@ -28,17 +28,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private const int _searchFileNamesMaxResults = 2000;
     private const int _searchFileContentsMaxResults = 10000;
 
+    // For controlling scrolling inside tree view.
+    private double _treeViewHorizScrollPos;
+    private bool _treeViewResetHorizScroll;
+    private ScrollViewer _treeViewScrollViewer;
+
     private readonly IProgressBarTracker _progressBarTracker;
     private IStatusBar _statusBar;
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
     private int _operationSequenceId;
-
-    // For controlling scrolling inside tree view.
-    private double _treeViewHorizScrollPos;
-    private bool _treeViewResetHorizScroll;
-    private ScrollViewer _treeViewScrollViewer;
+    private SourceExplorerController _controller;
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -58,13 +59,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public SourceExplorerViewModel ViewModel { get { return (SourceExplorerViewModel)DataContext; } }
-
-    public UpdateInfo UpdateInfo {
-      get { return ViewModel.UpdateInfo; }
-      set { ViewModel.UpdateInfo = value; }
-    }
-
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
@@ -78,12 +72,27 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var windowsExplorer = componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>();
       var openDocumentHelper = componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
       var synchronizationContextProvider = componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
-      var host = new SourceExplorerViewModelHost(this, _uiRequestProcessor, standarImageSourceFactory, windowsExplorer, clipboard, synchronizationContextProvider, openDocumentHelper);
-      ViewModel.SetHost(host);
+      _controller = new SourceExplorerController(this, _uiRequestProcessor, standarImageSourceFactory, windowsExplorer, clipboard, synchronizationContextProvider, openDocumentHelper);
+      ViewModel.SetController(Controller);
 
       ViewModel.OnToolWindowCreated(serviceProvider);
 
       FetchFilesystemTree();
+    }
+
+    public SourceExplorerViewModel ViewModel {
+      get {
+        return (SourceExplorerViewModel) DataContext;
+      }
+    }
+
+    public UpdateInfo UpdateInfo {
+      get { return ViewModel.UpdateInfo; }
+      set { ViewModel.UpdateInfo = value; }
+    }
+
+    public ISourceExplorerController Controller {
+      get { return _controller; }
     }
 
     private void InitComboBox(EditableComboBox comboBox, ComboBoxInfo info) {
@@ -297,40 +306,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public bool ExecutedOpenCommandForItem(TreeViewItemViewModel tvi) {
-      if (tvi == null)
-        return false;
-
-      if (!tvi.IsSelected)
-        return false;
-
-      {
-        var filePosition = tvi as FilePositionViewModel;
-        if (filePosition != null) {
-          filePosition.OpenCommand.Execute(filePosition);
-          return true;
-        }
-      }
-
-      {
-        var fileEntry = tvi as FileEntryViewModel;
-        if (fileEntry != null) {
-          fileEntry.OpenCommand.Execute(fileEntry);
-          return true;
-        }
-      }
-
-      {
-        var directoryEntry = tvi as DirectoryEntryViewModel;
-        if (directoryEntry != null) {
-          directoryEntry.OpenCommand.Execute(directoryEntry);
-          return true;
-        }
-      }
-
-      return false;
-    }
-
     private class ComboBoxInfo {
       public Action SearchFunction { get; set; }
     }
@@ -369,7 +344,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (!tvi.IsSelected)
         return;
 
-      if (ExecutedOpenCommandForItem(tvi.DataContext as TreeViewItemViewModel))
+      if (Controller.ExecutedOpenCommandForItem(tvi.DataContext as TreeViewItemViewModel))
         e.Handled = true;
     }
 
@@ -417,7 +392,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void FileTreeView_OnPreviewKeyDown(object sender, KeyEventArgs e) {
       if (e.Key == Key.Return) {
-        e.Handled = ExecutedOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
+        e.Handled = Controller.ExecutedOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
       }
     }
 
@@ -430,7 +405,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (source == null)
         return;
 
-      var treeViewItem = VisualTreeGetParentOfType<TreeViewItem>(source);
+      var treeViewItem = WpfUtilities.VisualTreeGetParentOfType<TreeViewItem>(source);
       if (treeViewItem == null)
         return;
 
@@ -439,18 +414,5 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     #endregion
-
-    /// <summary>
-    /// Returns the first parent of <paramref name="source"/> of type
-    /// <typeparamref name="T"/>.
-    /// </summary>
-    static T VisualTreeGetParentOfType<T>(DependencyObject source) where T : DependencyObject {
-      while (source != null) {
-        if (source is T)
-          return (T)source;
-        source = VisualTreeHelper.GetParent(source);
-      }
-      return null;
-    }
   }
 }

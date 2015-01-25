@@ -18,7 +18,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private List<TreeViewItemViewModel> _directoryNameSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
-    private ISourceExplorerViewModelHost _sourceExplorerViewModelHost;
+    private ISourceExplorerController _controller;
     private UpdateInfo _updateInfo;
 
     public enum DisplayKind {
@@ -32,6 +32,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // Default values for options in toolbar.
       this.IncludeSymLinks = true;
       this.UseRe2Regex = true;
+    }
+
+    /// <summary>
+    /// Assign the controller associated to this ViewModel. This cannot be done in the constructor
+    /// due to the way WPF DataContext objects are instantiated.
+    /// </summary>
+    public void SetController(ISourceExplorerController controller) {
+      _controller = controller;
     }
 
     public DisplayKind ActiveDisplay {
@@ -124,9 +132,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// </summary>
     public ImageSource LightningBoltImage {
       get {
-        if (_sourceExplorerViewModelHost == null)
+        if (_controller == null)
           return null;
-        return _sourceExplorerViewModelHost.StandarImageSourceFactory.LightningBolt;
+        return _controller.StandarImageSourceFactory.LightningBolt;
       }
     }
 
@@ -175,12 +183,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public void SetHost(ISourceExplorerViewModelHost sourceExplorerViewModelHost) {
-      _sourceExplorerViewModelHost = sourceExplorerViewModelHost;
-    }
-
-    public ISourceExplorerViewModelHost Host { get { return _sourceExplorerViewModelHost; } }
-
     /// <summary>
     /// The root nodes representing the file system tree from the server.
     /// </summary>
@@ -212,7 +214,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
       _fileSystemTreeNodes = new List<TreeViewItemViewModel>(tree.Root
         .Entries
-        .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)));
+        .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)));
       FileSystemTreeNodes.ForAll(x => rootNode.AddChild(x));
       ExpandNodes(FileSystemTreeNodes, false);
       SwitchToFileSystemTree();
@@ -222,11 +224,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
       _fileNameSearchResultNodes =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(_sourceExplorerViewModelHost.StandarImageSourceFactory, rootNode, description)
+          new TextItemViewModel(_controller.StandarImageSourceFactory, rootNode, description)
         }.Concat(
           fileResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
           .ToList();
       _fileNameSearchResultNodes.ForAll(x => rootNode.AddChild(x));
       ExpandNodes(_fileNameSearchResultNodes, expandAll);
@@ -241,7 +243,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         }.Concat(
           directoryResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
           .ToList();
       _directoryNameSearchResultNodes.ForAll(x => rootNode.AddChild(x));
       ExpandNodes(_directoryNameSearchResultNodes, expandAll);
@@ -256,7 +258,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         }.Concat(
           searchResults
             .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_sourceExplorerViewModelHost, rootNode, x)))
+            .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
           .ToList();
       _textSearchResultNodes.ForAll(x => rootNode.AddChild(x));
       ExpandNodes(_textSearchResultNodes, expandAll);

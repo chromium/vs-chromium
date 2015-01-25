@@ -16,10 +16,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
 
     public DirectoryEntryViewModel(
-        ISourceExplorerViewModelHost host,
+        ISourceExplorerController controller,
         TreeViewItemViewModel parentViewModel,
         DirectoryEntry directoryEntry)
-      : base(host, parentViewModel, directoryEntry.Entries.Count > 0) {
+      : base(controller, parentViewModel, directoryEntry.Entries.Count > 0) {
       _directoryEntry = directoryEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
@@ -27,7 +27,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IList<TreeViewItemViewModel> CreateChildren() {
       return _directoryEntry.Entries
         .Select(x => (TreeViewItemViewModel)FileSystemEntryViewModel.Create(
-            this.Host,
+            this.Controller,
             this, 
             x))
         .ToList();
@@ -47,37 +47,37 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Host.NavigateToDirectory(this));
+        return CommandDelegate.Create(sender => Controller.NavigateToDirectory(this));
       }
     }
 
     public ICommand CopyFullPathCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(GetFullPath()));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(GetFullPath()));
       }
     }
 
     public ICommand CopyRelativePathCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(GetRelativePath()));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(GetRelativePath()));
       }
     }
 
     public ICommand CopyFullPathPosixCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(GetFullPath())));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(PathHelpers.ToPosix(GetFullPath())));
       }
     }
 
     public ICommand CopyRelativePathPosixCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(GetRelativePath())));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(PathHelpers.ToPosix(GetRelativePath())));
       }
     }
 
     public ICommand OpenContainingFolderCommand {
       get {
-        return CommandDelegate.Create(sender => Host.WindowsExplorer.OpenContainingFolder(this.GetFullPath()));
+        return CommandDelegate.Create(sender => Controller.WindowsExplorer.OpenContainingFolder(this.GetFullPath()));
       }
     }
 

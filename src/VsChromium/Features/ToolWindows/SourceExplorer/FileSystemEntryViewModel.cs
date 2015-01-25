@@ -8,10 +8,10 @@ using VsChromium.Core.Ipc.TypedMessages;
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public abstract class FileSystemEntryViewModel : SourceExplorerItemViewModelBase {
     protected FileSystemEntryViewModel(
-        ISourceExplorerViewModelHost host,
+        ISourceExplorerController controller,
         TreeViewItemViewModel parentViewModel,
         bool lazyLoadChildren)
-      : base(host, parentViewModel, lazyLoadChildren) {
+      : base(controller, parentViewModel, lazyLoadChildren) {
     }
 
     public abstract FileSystemEntry FileSystemEntry { get; }
@@ -24,7 +24,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public static FileSystemEntryViewModel Create(ISourceExplorerViewModelHost host, TreeViewItemViewModel parentViewModel, FileSystemEntry fileSystemEntry) {
+    public static FileSystemEntryViewModel Create(ISourceExplorerController host, TreeViewItemViewModel parentViewModel, FileSystemEntry fileSystemEntry) {
       var fileEntry = fileSystemEntry as FileEntry;
       if (fileEntry != null)
         return new FileEntryViewModel(host, parentViewModel, fileEntry);

@@ -12,7 +12,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
   /// Exposes services required by <see cref="SourceExplorerItemViewModelBase"/> instances.
   /// </summary>
-  public interface ISourceExplorerViewModelHost {
+  public interface ISourceExplorerController {
     IUIRequestProcessor UIRequestProcessor { get; }
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IClipboard Clipboard { get; }
@@ -21,5 +21,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     void NavigateToFile(FileEntryViewModel fileEntry, Span? span);
     void NavigateToDirectory(DirectoryEntryViewModel directoryEntry);
     void BringItemViewModelToView(TreeViewItemViewModel item);
+    bool ExecutedOpenCommandForItem(TreeViewItemViewModel item);
   }
 }

@@ -18,14 +18,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
     private bool _hasExpanded;
 
-    public FileEntryViewModel(ISourceExplorerViewModelHost host, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
-      : base(host, parentViewModel, fileEntry.Data != null) {
+    public FileEntryViewModel(ISourceExplorerController controller, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
+      : base(controller, parentViewModel, fileEntry.Data != null) {
       _fileEntry = fileEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
 
     private IList<TreeViewItemViewModel> CreateChildren() {
-      return FileSystemEntryDataViewModelFactory.CreateViewModels(Host, this, _fileEntry.Data).ToList();
+      return FileSystemEntryDataViewModelFactory.CreateViewModels(Controller, this, _fileEntry.Data).ToList();
     }
 
     public override FileSystemEntry FileSystemEntry { get { return _fileEntry; } }
@@ -56,37 +56,37 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Host.NavigateToFile(this, null));
+        return CommandDelegate.Create(sender => Controller.NavigateToFile(this, null));
       }
     }
 
     public ICommand CopyFullPathCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(GetFullPath()));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(GetFullPath()));
       }
     }
 
     public ICommand CopyRelativePathCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(GetRelativePath()));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(GetRelativePath()));
       }
     }
 
     public ICommand CopyFullPathPosixCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(GetFullPath())));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(PathHelpers.ToPosix(GetFullPath())));
       }
     }
 
     public ICommand CopyRelativePathPosixCommand {
       get {
-        return CommandDelegate.Create(sender => Host.Clipboard.SetText(PathHelpers.ToPosix(GetRelativePath())));
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(PathHelpers.ToPosix(GetRelativePath())));
       }
     }
 
     public ICommand OpenContainingFolderCommand {
       get {
-        return CommandDelegate.Create(sender => Host.WindowsExplorer.OpenContainingFolder(this.GetFullPath()));
+        return CommandDelegate.Create(sender => Controller.WindowsExplorer.OpenContainingFolder(this.GetFullPath()));
       }
     }
 
@@ -135,7 +135,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         }
       };
 
-      this.Host.UIRequestProcessor.Post(uiRequest);
+      this.Controller.UIRequestProcessor.Post(uiRequest);
     }
 
     protected override IEnumerable<TreeViewItemViewModel> GetChildren() {

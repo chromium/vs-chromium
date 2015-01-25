@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -228,6 +229,19 @@ namespace VsChromium.Wpf {
         }
       }
 
+      return null;
+    }
+
+    /// <summary>
+    /// Returns the first parent of <paramref name="source"/> of type
+    /// <typeparamref name="T"/>.
+    /// </summary>
+    public static T VisualTreeGetParentOfType<T>(DependencyObject source) where T : DependencyObject {
+      while (source != null) {
+        if (source is T)
+          return (T)source;
+        source = VisualTreeHelper.GetParent(source);
+      }
       return null;
     }
   }

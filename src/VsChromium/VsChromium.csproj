@@ -225,10 +225,10 @@
     <Compile Include="Wpf\IWindowsExplorer.cs" />
     <Compile Include="Wpf\Clipboard.cs" />
     <Compile Include="Wpf\IClipboard.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerViewModelHost.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerController.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\CommandDelegate.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerViewModelHost.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerController.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />

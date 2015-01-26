@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Threads;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -36,6 +37,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly IClipboard _clipboard;
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IOpenDocumentHelper _openDocumentHelper;
+    private readonly TaskCancellation _taskCancellation;
 
     /// <summary>
     /// For generating unique id n progress bar tracker.
@@ -59,6 +61,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _clipboard = clipboard;
       _synchronizationContextProvider = synchronizationContextProvider;
       _openDocumentHelper = openDocumentHelper;
+      _taskCancellation = new TaskCancellation();
     }
 
     public SourceExplorerViewModel ViewModel { get { return _control.ViewModel; } }
@@ -230,6 +233,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchWorker(SearchWorkerParams workerParams) {
+      // Cancel all previously running tasks
+      _taskCancellation.CancelAll();
+      var cancellationToken = _taskCancellation.GetNewToken();
+
       var id = Interlocked.Increment(ref _operationSequenceId);
       var progressId = string.Format("{0}-{1}", workerParams.OperationName, id);
       var sw = new Stopwatch();
@@ -248,9 +255,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           _progressBarTracker.Stop(progressId);
         },
         OnSuccess = typedResponse => {
+          if (cancellationToken.IsCancellationRequested)
+            return;
           workerParams.ProcessResponse(typedResponse, sw);
         },
         OnError = errorResponse => {
+          if (cancellationToken.IsCancellationRequested)
+            return;
           ViewModel.SetErrorResponse(errorResponse);
         }
       };

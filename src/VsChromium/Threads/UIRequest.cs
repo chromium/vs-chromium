@@ -30,15 +30,15 @@ namespace VsChromium.Threads {
     public TypedRequest Request { get; set; }
 
     /// <summary>
-    /// (Optional) Action executed on a background thread just before the
-    /// request is sent to the server.
+    /// (Optional) Action executed on a background thread when the request delay
+    /// has expired, just before the request is sent to the server.
     /// </summary>
     public Action OnSend { get; set; }
 
     /// <summary>
-    /// (Optional) Action executed on a brackground thread when a response is
-    /// received from the server, just before calling |SuccessCallback| or
-    /// |ErrorCallback|.
+    /// (Optional) Action executed on a brackground thread when a response
+    /// (either sucess, error or cancellation) is received from the server, just
+    /// before calling <see cref="OnSuccess"/> or <see cref="OnError"/>.
     /// </summary>
     public Action OnReceive { get; set; }
 

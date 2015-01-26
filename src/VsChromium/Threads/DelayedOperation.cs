@@ -21,7 +21,8 @@ namespace VsChromium.Threads {
     public TimeSpan Delay { get; set; }
 
     /// <summary>
-    /// (Required) Action executed just before the request is sent to the server.
+    /// (Required) Action executed on a background thread just before the
+    /// request is sent to the server.
     /// </summary>
     public Action Action { get; set; }
   }

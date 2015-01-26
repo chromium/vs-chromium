@@ -171,6 +171,7 @@
     <Compile Include="Processes\ProcessUtility.cs" />
     <Compile Include="Threads\DateTimeProvider.cs" />
     <Compile Include="Threads\IDateTimeProvider.cs" />
+    <Compile Include="Threads\TaskCancellation.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
     <Compile Include="Utility\IOperationProgressTracker.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />

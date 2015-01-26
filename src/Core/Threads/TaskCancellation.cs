@@ -6,9 +6,10 @@ using System.Collections.Generic;
 using System.Threading;
 using VsChromium.Core.Linq;
 
-namespace VsChromium.Server.Threads {
+namespace VsChromium.Core.Threads {
   /// <summary>
-  /// Keeps track of cancellation tokensof multiple independent tasks. Tread safe.
+  /// Keeps track of cancellation tokens of multiple independent tasks. Tread
+  /// safe.
   /// </summary>
   public class TaskCancellation {
     private readonly object _lock = new object();

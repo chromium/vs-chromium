@@ -151,7 +151,6 @@
     <Compile Include="Threads\ICustomThreadPool.cs" />
     <Compile Include="Threads\IReceiveRequestsThread.cs" />
     <Compile Include="Threads\ISendResponsesThread.cs" />
-    <Compile Include="Threads\TaskCancellation.cs" />
     <Compile Include="Threads\SendResponsesThread.cs" />
     <Compile Include="Threads\ReceiveRequestsThread.cs" />
     <Compile Include="Program.cs" />

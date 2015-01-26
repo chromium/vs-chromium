@@ -203,26 +203,26 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _uiRequestProcessor.Post(request);
     }
 
-    private void MetaSearch(SearchMetadata metadata) {
+    private void SearchWorker(SearchWorkerParams workerParams) {
       var id = Interlocked.Increment(ref _operationSequenceId);
-      var progressId = string.Format("{0}-{1}", metadata.OperationName, id);
+      var progressId = string.Format("{0}-{1}", workerParams.OperationName, id);
       var sw = new Stopwatch();
       var request = new UIRequest {
         // Note: Having a single ID for all searches ensures previous search
         // requests are superseeded.
         Id = "MetaSearch",
-        Request = metadata.TypedRequest,
-        Delay = metadata.Delay,
+        Request = workerParams.TypedRequest,
+        Delay = workerParams.Delay,
         OnSend = () => {
           sw.Start();
-          _progressBarTracker.Start(progressId, metadata.HintText);
+          _progressBarTracker.Start(progressId, workerParams.HintText);
         },
         OnReceive = () => {
           sw.Stop();
           _progressBarTracker.Stop(progressId);
         },
         OnSuccess = typedResponse => {
-          metadata.ProcessResponse(typedResponse, sw);
+          workerParams.ProcessResponse(typedResponse, sw);
         },
         OnError = errorResponse => {
           ViewModel.SetErrorResponse(errorResponse);
@@ -233,10 +233,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchFilesNames() {
-      MetaSearch(new SearchMetadata {
-        Delay = TimeSpan.FromSeconds(0.02),
-        HintText = "Searching for matching file names...",
+      SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,
+        HintText = "Searching for matching file names...",
+        Delay = TimeSpan.FromSeconds(0.02),
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = FileNamesSearch.Text,
@@ -260,10 +260,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchDirectoryNames() {
-      MetaSearch(new SearchMetadata {
-        Delay = TimeSpan.FromSeconds(0.02),
-        HintText = "Searching for matching directory names...",
+      SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.DirectoryNamesSearch,
+        HintText = "Searching for matching directory names...",
+        Delay = TimeSpan.FromSeconds(0.02),
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = DirectoryNamesSearch.Text,
@@ -287,10 +287,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchText() {
-      MetaSearch(new SearchMetadata {
-        Delay = TimeSpan.FromSeconds(0.02),
-        HintText = "Searching for matching text in files...",
+      SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
+        HintText = "Searching for matching text in files...",
+        Delay = TimeSpan.FromSeconds(0.02),
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = FileContentsSearch.Text,
@@ -374,7 +374,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       public const string FileNamesSearch = "file-names-search";
     }
 
-    private class SearchMetadata {
+    private class SearchWorkerParams {
       /// <summary>
       /// Simple short name of the operation (for debugging only).
       /// </summary>

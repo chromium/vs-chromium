@@ -2,7 +2,8 @@
 # This file is used to determine which files should be ignored by the "Search File Contents"
 # feature.
 #
-# Note that the list of files considered is already pre-filtered by ChromiumTree.ignore file.
+# Note that the list of files considered is already pre-filtered by the
+# contents of "ChromiumExplorer.ignore" file.
 #
 # Note also that even if a file is not ignored here, it still has to match an inclusion
 # rule in "SearchableFiles.include".
@@ -13,11 +14,12 @@
 # The supported syntax is currently a subset of .gitignore syntax.
 #
 # * Empty lines (or lines starting with "#") are ignored
-# * Support "/" at end of name to indicate directory name matching only.
-# * Support "/" at the beginning to indicate path relative to "root" ("root" being the 
+# * "/" at end of name to indicate directory name matching only.
+# * "/" at the beginning to indicate path relative to "root" ("root" being the 
 #   Chromium root enlistment in this case).
-# * Support "*" and "**" wildcards
-# * NO support for "!"
+# * "*" wildcard to indicate any pattern inside a directory/file name.
+# * "/**/" and "**/" wildcards to indicate any set of directory between prefix and suffix.
+# * "!" is not supported.
 # ==========================================================================================
 
 # This directory contains big (10MB+) json files

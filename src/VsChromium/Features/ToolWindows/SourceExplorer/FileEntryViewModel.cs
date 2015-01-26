@@ -119,7 +119,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           .ToList()
       };
 
-      var uiRequest = new UIRequest() {
+      var uiRequest = new UIRequest {
         Request = request,
         Id = "FileEntryViewModel-" + Path,
         Delay = TimeSpan.FromSeconds(0.0),

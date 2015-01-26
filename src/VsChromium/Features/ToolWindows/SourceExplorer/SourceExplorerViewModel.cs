@@ -215,14 +215,29 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _fileSystemTreeNodes = new List<TreeViewItemViewModel>(tree.Root
         .Entries
         .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)));
-      FileSystemTreeNodes.ForAll(x => rootNode.AddChild(x));
+      FileSystemTreeNodes.ForAll(rootNode.AddChild);
       ExpandNodes(FileSystemTreeNodes, false);
       SwitchToFileSystemTree();
     }
 
     public void SetFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
+      _fileNameSearchResultNodes = CreateFileNamesSearchResult(fileResults, description, expandAll);
+      SwitchToFileNamesSearchResult();
+    }
+
+    public void SetDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
+      _directoryNameSearchResultNodes = CreateDirectoryNamesSearchResult(directoryResults, description, expandAll);
+      SwitchToDirectoryNamesSearchResult();
+    }
+
+    public void SetTextSearchResult(DirectoryEntry searchResults, string description, bool expandAll) {
+      _textSearchResultNodes = CreateTextSearchResultViewModel(searchResults, description, expandAll);
+      SwitchToTextSearchResult();
+    }
+
+    public List<TreeViewItemViewModel> CreateFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      _fileNameSearchResultNodes =
+      var result =
         new List<TreeViewItemViewModel> {
           new TextItemViewModel(_controller.StandarImageSourceFactory, rootNode, description)
         }.Concat(
@@ -230,14 +245,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             .Entries
             .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
           .ToList();
-      _fileNameSearchResultNodes.ForAll(x => rootNode.AddChild(x));
-      ExpandNodes(_fileNameSearchResultNodes, expandAll);
-      SwitchToFileNamesSearchResult();
+      result.ForAll(rootNode.AddChild);
+      ExpandNodes(result, expandAll);
+      return result;
     }
 
-    public void SetDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
+    public List<TreeViewItemViewModel> CreateDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      _directoryNameSearchResultNodes =
+      var result =
         new List<TreeViewItemViewModel> {
           new TextItemViewModel(ImageSourceFactory, rootNode, description)
         }.Concat(
@@ -245,14 +260,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             .Entries
             .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
           .ToList();
-      _directoryNameSearchResultNodes.ForAll(x => rootNode.AddChild(x));
-      ExpandNodes(_directoryNameSearchResultNodes, expandAll);
-      SwitchToDirectoryNamesSearchResult();
+      result.ForAll(rootNode.AddChild);
+      ExpandNodes(result, expandAll);
+      return result;
     }
 
-    public void SetTextSearchResult(DirectoryEntry searchResults, string description, bool expandAll) {
+    public List<TreeViewItemViewModel> CreateTextSearchResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      _textSearchResultNodes =
+      var result =
         new List<TreeViewItemViewModel> {
           new TextItemViewModel(ImageSourceFactory, rootNode, description)
         }.Concat(
@@ -260,9 +275,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             .Entries
             .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
           .ToList();
-      _textSearchResultNodes.ForAll(x => rootNode.AddChild(x));
-      ExpandNodes(_textSearchResultNodes, expandAll);
-      SwitchToTextSearchResult();
+      result.ForAll(rootNode.AddChild);
+      ExpandNodes(result, expandAll);
+      return result;
     }
 
     public void FileSystemTreeComputing() {

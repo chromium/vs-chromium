@@ -36,6 +36,7 @@ namespace VsChromium.Threads {
       var operation = new DelayedOperation {
         Id = request.Id,
         Delay = request.Delay,
+        // Action executed on a background thread
         Action = () => {
           if (request.OnSend != null)
             Logger.WrapActionInvocation(request.OnSend);
@@ -66,8 +67,8 @@ namespace VsChromium.Threads {
           if (request.OnReceive != null)
             request.OnReceive();
           if (request.OnError != null)
-            if (errorResponse.IsOperationCanceled()) { // UIRequest are cancelable at any point.
-
+            if (errorResponse.IsOperationCanceled()) {
+              // UIRequest are cancelable at any point.
             } else {
               request.OnError(errorResponse);
             }

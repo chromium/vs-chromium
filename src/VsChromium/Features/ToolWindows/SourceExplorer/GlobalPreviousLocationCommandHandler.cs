@@ -11,17 +11,17 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   [Export(typeof(IPackagePriorityCommandHandler))]
-  public class GotoNextLocationPriorityCommandHandler : PackagePriorityCommandHandlerBase {
+  public class GlobalPreviousLocationCommandHandler : PackagePriorityCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
-    public GotoNextLocationPriorityCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public GlobalPreviousLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.NextLocation);
+        return new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.PreviousLocation);
       }
     }
 
@@ -32,7 +32,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           return false;
         if (!window.IsVisible)
           return false;
-        return window.HasNextLocation();
+        return window.HasPreviousLocation();
       }
     }
 
@@ -40,7 +40,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(SourceExplorerToolWindow), 0, false) as SourceExplorerToolWindow;
       if (window == null)
         return;
-      window.NavigateToNextLocation();
+      window.NavigateToPreviousLocation();
     }
   }
 }

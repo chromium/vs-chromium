@@ -2,13 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
+using System.Windows.Documents;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
+using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Wpf;
+using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
@@ -21,8 +27,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// implementation of the IVsUIElementPane interface.
   /// </summary>
   [Guid(GuidList.GuidSourceExplorerToolWindowString)]
-  public class SourceExplorerToolWindow : ToolWindowPane {
+  public class SourceExplorerToolWindow : ToolWindowPane, IOleCommandTarget {
     private VsWindowFrameNotifyHandler _frameNotify;
+    private OleCommandTarget _oleCommandTarget;
 
     /// <summary>
     /// Standard constructor for the tool window.
@@ -55,6 +62,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         _frameNotify = new VsWindowFrameNotifyHandler(frame);
         _frameNotify.Advise();
       }
+
+      // Hookup command handlers
+      var commands = new AggregateCommandTarget(new List<ICommandTarget>  {
+        new PreviousLocationCommandHandler(this),
+        new NextLocationCommandHandler(this),
+        // Add more here...
+      });
+
+      _oleCommandTarget = new OleCommandTarget(commands);
     }
 
     public SourceExplorerControl ExplorerControl {
@@ -141,6 +157,22 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       WpfUtilities.Post(ExplorerControl, () => {
         ExplorerControl.UpdateInfo = updateInfo;
       });
+    }
+
+    int IOleCommandTarget.QueryStatus(ref System.Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, System.IntPtr pCmdText) {
+      var hr = (int) Constants.OLECMDERR_E_NOTSUPPORTED;
+      if (_oleCommandTarget != null) {
+        hr = _oleCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+      }
+      return hr;
+    }
+
+    int IOleCommandTarget.Exec(ref System.Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, System.IntPtr pvaIn, System.IntPtr pvaOut) {
+      var hr = (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+      if (_oleCommandTarget != null) {
+        hr = _oleCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+      }
+      return hr;
     }
   }
 }

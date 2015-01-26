@@ -10,8 +10,8 @@ using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
-  [Export(typeof(IPackagePriorityCommandHandler))]
-  public class GotoNextLocationCommandHandler : PackagePriorityCommandHandlerBase {
+  [Export(typeof(IPackageCommandHandler))]
+  public class GotoNextLocationCommandHandler : PackageCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]

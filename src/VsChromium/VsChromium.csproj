@@ -208,11 +208,13 @@
     <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoNextLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationPriorityCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\GlobalPreviousLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\NextLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\PreviousLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\VsWindowFrameNotifyHandler.cs" />
     <Compile Include="Features\ToolWindows\TextErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\GotoNextLocationPriorityCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\GlobalNextLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
     <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />

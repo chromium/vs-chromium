@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -17,6 +16,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IClipboard Clipboard { get; }
     IWindowsExplorer WindowsExplorer { get; }
+
+    void SearchFilesNames(string searchPattern);
+    void SearchDirectoryNames(string searchPattern);
+    void SearchText(string searchPattern);
 
     void NavigateToFile(FileEntryViewModel fileEntry, Span? span);
     void NavigateToDirectory(DirectoryEntryViewModel directoryEntry);

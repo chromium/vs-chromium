@@ -4,7 +4,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -24,11 +23,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// Interaction logic for SourceExplorerControl.xaml
   /// </summary>
   public partial class SourceExplorerControl : UserControl {
-    private const int SearchFileNamesMaxResults = 2000;
-    private const int SearchDirectoryNamesMaxResults = 2000;
-    private const int SearchTextMaxResults = 10000;
-    private const int SearchTextExpandMaxResults = 25;
-
     // For controlling scrolling inside tree view.
     private double _treeViewHorizScrollPos;
     private bool _treeViewResetHorizScroll;
@@ -39,11 +33,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
-    private int _operationSequenceId;
     private SourceExplorerController _controller;
-    private IToolWindowAccessor _toolWindowAccessor;
-    private IVisualStudioPackageProvider _visualStudioPackageProvider;
-    private IServiceProvider _serviceProvider;
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -64,14 +54,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void OnToolWindowCreated(IServiceProvider serviceProvider) {
-      _serviceProvider = serviceProvider;
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
-      _toolWindowAccessor = componentModel.DefaultExportProvider.GetExportedValue<IToolWindowAccessor>();
-      _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
       
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
@@ -80,9 +67,19 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var windowsExplorer = componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>();
       var openDocumentHelper = componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
       var synchronizationContextProvider = componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
-      _controller = new SourceExplorerController(this, _uiRequestProcessor, standarImageSourceFactory, windowsExplorer, clipboard, synchronizationContextProvider, openDocumentHelper);
-      ViewModel.SetController(Controller);
+      _controller = new SourceExplorerController(
+        this,
+        _uiRequestProcessor,
+        _progressBarTracker,
+        standarImageSourceFactory,
+        windowsExplorer,
+        clipboard,
+        synchronizationContextProvider,
+        openDocumentHelper);
 
+      // TODO(rpaquay): leaky abstraction
+      ViewModel.SetController(Controller);
+      // TODO(rpaquay): leaky abstraction
       ViewModel.OnToolWindowCreated(serviceProvider);
 
       FetchFilesystemTree();
@@ -118,6 +115,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           e.Handled = true;
         }
       };
+    }
+
+    private void SearchFilesNames() {
+      Controller.SearchFilesNames(FileNamesSearch.Text);
+    }
+
+    private void SearchDirectoryNames() {
+      Controller.SearchDirectoryNames(DirectoryNamesSearch.Text);
+    }
+
+    private void SearchText() {
+      Controller.SearchText(FileContentsSearch.Text);
     }
 
     private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
@@ -203,165 +212,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _uiRequestProcessor.Post(request);
     }
 
-    private void SearchWorker(SearchWorkerParams workerParams) {
-      var id = Interlocked.Increment(ref _operationSequenceId);
-      var progressId = string.Format("{0}-{1}", workerParams.OperationName, id);
-      var sw = new Stopwatch();
-      var request = new UIRequest {
-        // Note: Having a single ID for all searches ensures previous search
-        // requests are superseeded.
-        Id = "MetaSearch",
-        Request = workerParams.TypedRequest,
-        Delay = workerParams.Delay,
-        OnSend = () => {
-          sw.Start();
-          _progressBarTracker.Start(progressId, workerParams.HintText);
-        },
-        OnReceive = () => {
-          sw.Stop();
-          _progressBarTracker.Stop(progressId);
-        },
-        OnSuccess = typedResponse => {
-          workerParams.ProcessResponse(typedResponse, sw);
-        },
-        OnError = errorResponse => {
-          ViewModel.SetErrorResponse(errorResponse);
-        }
-      };
-
-      _uiRequestProcessor.Post(request);
-    }
-
-    private void SearchFilesNames() {
-      SearchWorker(new SearchWorkerParams {
-        OperationName = OperationsIds.FileNamesSearch,
-        HintText = "Searching for matching file names...",
-        Delay = TimeSpan.FromSeconds(0.02),
-        TypedRequest = new SearchFileNamesRequest {
-          SearchParams = new SearchParams {
-            SearchString = FileNamesSearch.Text,
-            MaxResults = SearchFileNamesMaxResults,
-            MatchCase = ViewModel.MatchCase,
-            IncludeSymLinks = ViewModel.IncludeSymLinks,
-            Re2 = ViewModel.UseRe2Regex,
-            Regex = ViewModel.UseRegex,
-          }
-        },
-        ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchFileNamesResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} file names among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
-            response.HitCount,
-            response.TotalCount,
-            stopwatch.Elapsed.TotalSeconds,
-            FileNamesSearch.Text);
-          ViewModel.SetFileNamesSearchResult(response.SearchResult, msg, true);
-        }
-      });
-    }
-
-    private void SearchDirectoryNames() {
-      SearchWorker(new SearchWorkerParams {
-        OperationName = OperationsIds.DirectoryNamesSearch,
-        HintText = "Searching for matching directory names...",
-        Delay = TimeSpan.FromSeconds(0.02),
-        TypedRequest = new SearchDirectoryNamesRequest {
-          SearchParams = new SearchParams {
-            SearchString = DirectoryNamesSearch.Text,
-            MaxResults = SearchDirectoryNamesMaxResults,
-            MatchCase = ViewModel.MatchCase,
-            IncludeSymLinks = ViewModel.IncludeSymLinks,
-            Re2 = ViewModel.UseRe2Regex,
-            Regex = ViewModel.UseRegex,
-          }
-        },
-        ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchDirectoryNamesResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} folder names among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
-            response.HitCount,
-            response.TotalCount,
-            stopwatch.Elapsed.TotalSeconds,
-            DirectoryNamesSearch.Text);
-          ViewModel.SetDirectoryNamesSearchResult(response.SearchResult, msg, true);
-        }
-      });
-    }
-
-    private void SearchText() {
-      SearchWorker(new SearchWorkerParams {
-        OperationName = OperationsIds.FileContentsSearch,
-        HintText = "Searching for matching text in files...",
-        Delay = TimeSpan.FromSeconds(0.02),
-        TypedRequest = new SearchTextRequest {
-          SearchParams = new SearchParams {
-            SearchString = FileContentsSearch.Text,
-            MaxResults = SearchTextMaxResults,
-            MatchCase = ViewModel.MatchCase,
-            IncludeSymLinks = ViewModel.IncludeSymLinks,
-            Re2 = ViewModel.UseRe2Regex,
-            Regex = ViewModel.UseRegex,
-          }
-        },
-        ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchTextResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
-            response.HitCount,
-            response.SearchedFileCount,
-            stopwatch.Elapsed.TotalSeconds,
-            FileContentsSearch.Text);
-          bool expandAll = response.HitCount < SearchTextExpandMaxResults;
-          ViewModel.SetTextSearchResult(response.SearchResults, msg, expandAll);
-          DisplayFindResuls(response, stopwatch);
-        }
-      });
-    }
-
-    private void DisplayFindResuls(SearchTextResponse response, Stopwatch stopwatch) {
-#if false
-      var componentModel = (IComponentModel)_serviceProvider.GetService(typeof(SComponentModel));
-      var svc = componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>();
-      var window = _toolWindowAccessor.FindToolWindow(new Guid("0F887920-C2B6-11D2-9375-0080C747D9A0"));
-      //_toolWindowAccessor.BuildExplorer
-      var view = VsShellUtilities.GetTextView(window);
-      var textView = svc.GetWpfTextView(view);
-      var textBuffer = textView.TextBuffer;
-
-      var writer = new StringWriter();
-      writer.WriteLine("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
-            response.HitCount,
-            response.SearchedFileCount,
-            stopwatch.Elapsed.TotalSeconds,
-            FileContentsSearch.Text);
-
-      foreach (var root in response.SearchResults.Entries.OfType<DirectoryEntry>()) {
-        var rootPath = root.Name;
-        foreach (var file in root.Entries.OfType<FileEntry>()) {
-          var path = PathHelpers.CombinePaths(rootPath, file.Name);
-          foreach (var filePos in ((FilePositionsData) file.Data).Positions) {
-            //writer.WriteLine("  {0}({1},{2}): ...", path, filePos.Position, filePos.Length);
-            writer.WriteLine("  {0}(1): zzz", path);
-          }
-        }
-      }
-
-      // Make buffer non readonly
-      var vsBuffer = svc.GetBufferAdapter(textBuffer);
-      uint flags;
-      vsBuffer.GetStateFlags(out flags);
-      flags = flags & ~(uint)BUFFERSTATEFLAGS.BSF_USER_READONLY;
-      vsBuffer.SetStateFlags(flags);
-
-      // Clear buffer and insert text
-      var edit = textBuffer.CreateEdit();
-      edit.Delete(0, edit.Snapshot.Length);
-      edit.Insert(0, writer.ToString());
-      edit.Apply();
-
-      // Make buffer readonly again
-      flags = flags | (uint)BUFFERSTATEFLAGS.BSF_USER_READONLY;
-      vsBuffer.SetStateFlags(flags);
-#endif
-    }
-
     private class ComboBoxInfo {
       public Action SearchFunction { get; set; }
     }
@@ -369,34 +219,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private static class OperationsIds {
       public const string FileSystemTreeComputing = "file-system-collecting";
       public const string FilesLoading = "files-loading";
-      public const string FileContentsSearch = "files-contents-search";
-      public const string DirectoryNamesSearch = "directory-names-search";
-      public const string FileNamesSearch = "file-names-search";
-    }
-
-    private class SearchWorkerParams {
-      /// <summary>
-      /// Simple short name of the operation (for debugging only).
-      /// </summary>
-      public string OperationName { get; set; }
-      /// <summary>
-      /// Short description of the operation (for display in status bar
-      /// progress)
-      /// </summary>
-      public string HintText { get; set; }
-      /// <summary>
-      /// The request to sent to the server
-      /// </summary>
-      public TypedRequest TypedRequest { get; set; }
-      /// <summary>
-      /// Amount of time to wait before sending the request to the server.
-      /// </summary>
-      public TimeSpan Delay { get; set; }
-      /// <summary>
-      /// Lambda invoked when the response to the request has been successfully
-      /// received from the server.
-      /// </summary>
-      public Action<TypedResponse, Stopwatch> ProcessResponse { get; set; }
     }
 
     public void SwallowsRequestBringIntoView(bool value) {

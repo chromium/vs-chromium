@@ -18,7 +18,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _toolWindowAccessor = toolWindowAccessor;
     }
 
-    public override CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchText); } }
+    public override CommandID CommandId {
+      get {
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, PkgCmdIdList.CmdidSearchText);
+      }
+    }
 
     public override void Execute(object sender, EventArgs e) {
       _toolWindowAccessor.SourceExplorer.FocusSearchTextBox(CommandId);

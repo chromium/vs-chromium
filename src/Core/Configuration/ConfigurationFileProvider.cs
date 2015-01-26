@@ -13,8 +13,6 @@ using VsChromium.Core.Files;
 namespace VsChromium.Core.Configuration {
   [Export(typeof(IConfigurationFileProvider))]
   public class ConfigurationFileProvider : IConfigurationFileProvider {
-    private const string ConfigurationDirectoryName = "Configuration";
-    private const string LocalConfigurationDirectoryName = ".VsChromium";
     private readonly IFileSystem _fileSystem;
 
     [ImportingConstructor]
@@ -35,8 +33,11 @@ namespace VsChromium.Core.Configuration {
     }
 
     private IEnumerable<FullPath> PossibleDirectoryNames() {
-      yield return new FullPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)).Combine(new RelativePath(LocalConfigurationDirectoryName));
-      yield return new FullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)).Combine(new RelativePath(ConfigurationDirectoryName));
+      yield return new FullPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile))
+        .Combine(new RelativePath(ConfigurationDirectoryNames.LocalUserConfigurationDirectoryName));
+
+      yield return new FullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
+        .Combine(new RelativePath(ConfigurationDirectoryNames.LocalInstallConfigurationDirectoryName));
     }
   }
 }

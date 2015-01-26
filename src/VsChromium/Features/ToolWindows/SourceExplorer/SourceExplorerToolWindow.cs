@@ -54,7 +54,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (frame != null) {
         _frameNotify = new VsWindowFrameNotifyHandler(frame);
         _frameNotify.Advise();
-      } 
+      }
     }
 
     public SourceExplorerControl ExplorerControl {
@@ -88,7 +88,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       Previous
     }
 
-    private T GetNextLocationEntry<T>(Direction direction) where T:class, IHierarchyObject {
+    private T GetNextLocationEntry<T>(Direction direction) where T : class, IHierarchyObject {
       if (ExplorerControl.ViewModel.ActiveDisplay != SourceExplorerViewModel.DisplayKind.TextSearchResult)
         return null;
 

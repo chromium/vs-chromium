@@ -85,7 +85,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
     private Project CreateProject(FullPath rootPath) {
       var fileWithSections = new FileWithSections(
         _fileSystem,
-        rootPath.Combine(new RelativePath(ConfigurationFilenames.ProjectFileNameDetection)));
+        rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameDetection)));
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
       return new Project(configurationProvider, rootPath);
     }
@@ -98,7 +98,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
     }
 
     public bool ContainsProjectFile(FullPath path) {
-      return _fileSystem.FileExists(path.Combine(new RelativePath(ConfigurationFilenames.ProjectFileNameDetection)));
+      return _fileSystem.FileExists(path.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameDetection)));
     }
   }
 }

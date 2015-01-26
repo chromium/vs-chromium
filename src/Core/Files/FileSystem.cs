@@ -28,7 +28,7 @@ namespace VsChromium.Core.Files {
       return File.GetLastWriteTimeUtc(path.Value);
     }
 
-    public string[] ReadAllLines(FullPath path) {
+    public IList<string> ReadAllLines(FullPath path) {
       return File.ReadAllLines(path.Value);
     }
 
@@ -36,7 +36,7 @@ namespace VsChromium.Core.Files {
       return NativeFile.ReadFileNulTerminated(((FileInfoSnapshot)fileInfo).SlimFileInfo, trailingByteCount);
     }
 
-    public List<DirectoryEntry> GetDirectoryEntries(FullPath path) {
+    public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {
       return NativeFile.GetDirectoryEntries(path.Value);
     }
   }

@@ -9,14 +9,16 @@ using VsChromium.Core.Win32.Memory;
 namespace VsChromium.Core.Files {
   public interface IFileSystem {
     /// <summary>
-    /// Returns attributes of a file or directory in the file system.
+    /// Returns an instance of <see cref="IFileInfoSnapshot"/> of a file or
+    /// directory located t <paramref name="path"/>. No exception is thrown
+    /// until <see cref="IFileInfoSnapshot"/> member functions are called.
     /// </summary>
     IFileInfoSnapshot GetFileInfoSnapshot(FullPath path);
 
     /// <summary>
     /// Reads the full contents of a text file into a list of strings.
     /// </summary>
-    string[] ReadAllLines(FullPath path);
+    IList<string> ReadAllLines(FullPath path);
 
     /// <summary>
     /// Reads the full contents of a file in memory, with <paramref
@@ -24,6 +26,10 @@ namespace VsChromium.Core.Files {
     /// </summary>
     SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount);
 
-    List<DirectoryEntry> GetDirectoryEntries(FullPath path);
+    /// <summary>
+    /// Return the list of directory entries contained in the directory
+    /// <paramref name="path"/>.
+    /// </summary>
+    IList<DirectoryEntry> GetDirectoryEntries(FullPath path);
   }
 }

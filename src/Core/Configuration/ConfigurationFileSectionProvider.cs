@@ -8,6 +8,10 @@ using VsChromium.Core.Caching;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
+  /// <summary>
+  /// Implementation of <see cref="IConfigurationSectionProvider"/> using a file
+  /// fo each named section.
+  /// </summary>
   public class ConfigurationFileSectionProvider : IConfigurationSectionProvider {
     private readonly IConfigurationFileProvider _configurationFileProvider;
     private readonly ConfigurationFileSectionProviderVolatileToken _volatileToken;

@@ -5,23 +5,23 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using VsChromium.Commands;
+using Microsoft.VisualStudio;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   [Export(typeof(IPackagePriorityCommandHandler))]
-  public class GotoNextLocationCommandHandler : PackagePriorityCommandHandlerBase {
+  public class GotoNextLocationPriorityCommandHandler : PackagePriorityCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
-    public GotoNextLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public GotoNextLocationPriorityCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(GuidList.GuidVsChromiumCmdSet, PkgCmdIdList.CmdidGotoNextLocation);
+        return new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.NextLocation);
       }
     }
 
@@ -29,6 +29,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get {
         var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(SourceExplorerToolWindow), 0, false) as SourceExplorerToolWindow;
         if (window == null)
+          return false;
+        if (!window.IsVisible)
           return false;
         return window.HasNextLocation();
       }

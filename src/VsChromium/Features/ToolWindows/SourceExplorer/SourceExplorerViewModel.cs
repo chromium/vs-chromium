@@ -194,7 +194,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var defaultMessage = string.Format(
         "Open a source file from a local Chromium enlistment " + 
         "or a directory containing a \"{0}\" file.",
-        ConfigurationFilenames.ProjectFileNameDetection);
+        ConfigurationFileNames.ProjectFileNameDetection);
       SetRootNodes(FileSystemTreeNodes, defaultMessage);
     }
 

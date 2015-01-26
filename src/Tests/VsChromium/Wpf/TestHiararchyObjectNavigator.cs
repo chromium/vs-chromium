@@ -31,7 +31,7 @@ namespace VsChromium.Tests.VsChromium.Wpf {
       Assert.AreEqual("child1-2-2", GetNextItem(navigator, tree, "child1-2-1"));
       Assert.AreEqual("child1-3", GetNextItem(navigator, tree, "child1-2-2-1"));
       Assert.AreEqual("child1-4", GetNextItem(navigator, tree, "child1-3-1"));
-      Assert.AreEqual(null, GetNextItem(navigator, tree, "child1-4"));
+      Assert.AreEqual("root", GetNextItem(navigator, tree, "child1-4"));
     }
 
     [TestMethod]
@@ -48,7 +48,7 @@ namespace VsChromium.Tests.VsChromium.Wpf {
           new HierarchyObjectMock("child1-4")));
 
       var navigator = new HierarchyObjectNavigator();
-      Assert.AreEqual(null, GetPreviousItem(navigator, tree, "root"));
+      Assert.AreEqual("child1-4", GetPreviousItem(navigator, tree, "root"));
       Assert.AreEqual("root", GetPreviousItem(navigator, tree, "child1"));
       Assert.AreEqual("child1", GetPreviousItem(navigator, tree, "child1-1"));
       Assert.AreEqual("child1-1", GetPreviousItem(navigator, tree, "child1-2"));
@@ -59,6 +59,14 @@ namespace VsChromium.Tests.VsChromium.Wpf {
       Assert.AreEqual("child1-3-1", GetPreviousItem(navigator, tree, "child1-4"));
     }
 
+    [TestMethod]
+    public void GetPreviousEntryForSingleEntryWorks() {
+      var tree = new HierarchyObjectMock("root");
+
+      var navigator = new HierarchyObjectNavigator();
+      Assert.AreEqual("root", GetPreviousItem(navigator, tree, "root"));
+      Assert.AreEqual("root", GetNextItem(navigator, tree, "root"));
+    }
     private HierarchyObjectMock FindNode(HierarchyObjectMock root, string value) {
       if (root == null)
         return null;

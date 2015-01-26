@@ -64,13 +64,27 @@ namespace VsChromium.Wpf {
       if (result != null)
         return result;
 
-      while (item != null) {
+      // a
+      //   b
+      //     c
+      //     d
+      // e
+      //
+      // Return "b" is we are on "a"
+      // Return "d" if we are on "c"
+      // Return "e" if we are on "d"
+      // Return "a" if we are on "e"
+      //
+      while (true) {
+        Debug.Assert(item != null);
         result = NextSibling(item);
         if (result != null)
           return result;
-        item = item.GetParent();
+        var parent = item.GetParent();
+        if (parent == null)
+          return item;
+        item = parent;
       }
-      return null;
     }
 
     /// <summary>
@@ -81,11 +95,34 @@ namespace VsChromium.Wpf {
       if (item == null)
         return null;
 
+      // a
+      //   b
+      //     c
+      //     d
+      // e
+      //
+      // Return "b" is we are on "c"
+      // Return "d" if we are on "e"
+      // Return "e" if we are on "a"
+      // Return "a" if we are on "b"
+      //
       var result = PreviousSibling(item);
-      if (result == null)
-        return item.GetParent();
+      if (result == null) {
+        var parent = item.GetParent();
+        if (parent != null)
+          return parent;
+        // "a" case: get the very last child at the bottom of the tree
+        while (true) {
+          Debug.Assert(item != null);
+          var last = LastChild(item);
+          if (last == null)
+            return item;
+          item = last;
+        }
+       }
 
       while (true) {
+        Debug.Assert(result != null);
         var last = LastChild(result);
         if (last == null)
           return result;
@@ -112,13 +149,15 @@ namespace VsChromium.Wpf {
     }
 
     public T GetItemOfType<T>(Func<IHierarchyObject, IHierarchyObject> apply, IHierarchyObject item) where T : class, IHierarchyObject {
+      var initialItem = item;
       while (item != null) {
         item = apply(item);
+        if (object.ReferenceEquals(item, initialItem))
+          break;
         var result = item as T;
         if (result != null)
           return result;
       }
-
       return null;
     }
   }

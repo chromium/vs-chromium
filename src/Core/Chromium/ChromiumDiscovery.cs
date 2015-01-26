@@ -16,7 +16,7 @@ namespace VsChromium.Core.Chromium {
 
     public ChromiumDiscovery(IConfigurationSectionProvider configurationSectionProvider, IFileSystem fileSystem) {
       _fileSystem = fileSystem;
-      _chromiumEnlistmentPatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationFilenames.ChromiumEnlistmentDetectionPatterns);
+      _chromiumEnlistmentPatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationFileNames.ChromiumEnlistmentDetectionPatterns);
     }
 
     public void ValidateCache() {

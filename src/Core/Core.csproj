@@ -43,9 +43,12 @@
     <Compile Include="Collections\SimpleConcurrentQueue.cs" />
     <Compile Include="Collections\SortedArray.cs" />
     <Compile Include="Collections\SortedArrayHelpers.cs" />
-    <Compile Include="Configuration\ConfigurationFilenames.cs" />
+    <Compile Include="Configuration\ConfigurationDirectoryNames.cs" />
+    <Compile Include="Configuration\ConfigurationFileNames.cs" />
     <Compile Include="Configuration\ConfigurationFileSectionProvider.cs" />
     <Compile Include="Configuration\ConfigurationFileSectionProviderVolatileToken.cs" />
+    <Compile Include="Configuration\ConfigurationSectionNames.cs" />
+    <Compile Include="Configuration\ConfigurationStyleFilenames.cs" />
     <Compile Include="Configuration\FileUpdateVolatileToken.cs" />
     <Compile Include="Configuration\FileWithSectionConfigurationProvider.cs" />
     <Compile Include="Configuration\IConfigurationSectionProvider.cs" />

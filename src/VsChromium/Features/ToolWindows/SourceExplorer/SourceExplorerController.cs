@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ using System.Windows.Controls;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Threads;
@@ -77,6 +79,61 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // receive the focus.
       SynchronizationContextProvider.UIContext.Post(() =>
         OpenDocumentHelper.OpenDocument(fileEntry.Path, _ => span));
+    }
+
+    public List<TreeViewItemViewModel> CreateFileSystemTreeViewModel(FileSystemTree tree) {
+      var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
+      var result = new List<TreeViewItemViewModel>(tree.Root
+        .Entries
+        .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)));
+      result.ForAll(rootNode.AddChild);
+      ChromiumExplorerViewModelBase.ExpandNodes(result, false);
+      return result;
+    }
+
+    public List<TreeViewItemViewModel> CreateFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
+      var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
+      var result =
+        new List<TreeViewItemViewModel> {
+          new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
+        }.Concat(
+          fileResults
+            .Entries
+            .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
+          .ToList();
+      result.ForAll(rootNode.AddChild);
+      ChromiumExplorerViewModelBase.ExpandNodes(result, expandAll);
+      return result;
+    }
+
+    public List<TreeViewItemViewModel> CreateDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
+      var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
+      var result =
+        new List<TreeViewItemViewModel> {
+          new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
+        }.Concat(
+          directoryResults
+            .Entries
+            .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
+          .ToList();
+      result.ForAll(rootNode.AddChild);
+      ChromiumExplorerViewModelBase.ExpandNodes(result, expandAll);
+      return result;
+    }
+
+    public List<TreeViewItemViewModel> CreateTextSearchResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
+      var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
+      var result =
+        new List<TreeViewItemViewModel> {
+          new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
+        }.Concat(
+          searchResults
+            .Entries
+            .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
+          .ToList();
+      result.ForAll(rootNode.AddChild);
+      ChromiumExplorerViewModelBase.ExpandNodes(result, expandAll);
+      return result;
     }
 
     /// <summary>
@@ -269,6 +326,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _uiRequestProcessor.Post(request);
     }
 
+    public void SetFileSystemTree(FileSystemTree tree) {
+      var viewModel = CreateFileSystemTreeViewModel(tree);
+      ViewModel.SetFileSystemTree(viewModel);
+    }
+
     public void SearchFilesNames(string searchPattern) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,
@@ -291,7 +353,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
-          ViewModel.SetFileNamesSearchResult(response.SearchResult, msg, true);
+          var viewModel = CreateFileNamesSearchResult(response.SearchResult, msg, true);
+          ViewModel.SetFileNamesSearchResult(viewModel);
         }
       });
     }
@@ -318,7 +381,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
-          ViewModel.SetDirectoryNamesSearchResult(response.SearchResult, msg, true);
+          var viewModel = CreateDirectoryNamesSearchResult(response.SearchResult, msg, true);
+          ViewModel.SetDirectoryNamesSearchResult(viewModel);
         }
       });
     }
@@ -346,57 +410,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
           bool expandAll = response.HitCount < SearchTextExpandMaxResults;
-          ViewModel.SetTextSearchResult(response.SearchResults, msg, expandAll);
-          DisplayFindResuls(response, stopwatch);
+          var viewModel = CreateTextSearchResultViewModel(response.SearchResults, msg, expandAll);
+          ViewModel.SetTextSearchResult(viewModel);
         }
       });
-    }
-
-    private void DisplayFindResuls(SearchTextResponse response, Stopwatch stopwatch) {
-#if false
-      var componentModel = (IComponentModel)_serviceProvider.GetService(typeof(SComponentModel));
-      var svc = componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>();
-      var window = _toolWindowAccessor.FindToolWindow(new Guid("0F887920-C2B6-11D2-9375-0080C747D9A0"));
-      //_toolWindowAccessor.BuildExplorer
-      var view = VsShellUtilities.GetTextView(window);
-      var textView = svc.GetWpfTextView(view);
-      var textBuffer = textView.TextBuffer;
-
-      var writer = new StringWriter();
-      writer.WriteLine("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
-            response.HitCount,
-            response.SearchedFileCount,
-            stopwatch.Elapsed.TotalSeconds,
-            FileContentsSearch.Text);
-
-      foreach (var root in response.SearchResults.Entries.OfType<DirectoryEntry>()) {
-        var rootPath = root.Name;
-        foreach (var file in root.Entries.OfType<FileEntry>()) {
-          var path = PathHelpers.CombinePaths(rootPath, file.Name);
-          foreach (var filePos in ((FilePositionsData) file.Data).Positions) {
-            //writer.WriteLine("  {0}({1},{2}): ...", path, filePos.Position, filePos.Length);
-            writer.WriteLine("  {0}(1): zzz", path);
-          }
-        }
-      }
-
-      // Make buffer non readonly
-      var vsBuffer = svc.GetBufferAdapter(textBuffer);
-      uint flags;
-      vsBuffer.GetStateFlags(out flags);
-      flags = flags & ~(uint)BUFFERSTATEFLAGS.BSF_USER_READONLY;
-      vsBuffer.SetStateFlags(flags);
-
-      // Clear buffer and insert text
-      var edit = textBuffer.CreateEdit();
-      edit.Delete(0, edit.Snapshot.Length);
-      edit.Insert(0, writer.ToString());
-      edit.Apply();
-
-      // Make buffer readonly again
-      flags = flags | (uint)BUFFERSTATEFLAGS.BSF_USER_READONLY;
-      vsBuffer.SetStateFlags(flags);
-#endif
     }
   }
 }

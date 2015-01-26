@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.Text;
+using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -17,6 +18,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     IClipboard Clipboard { get; }
     IWindowsExplorer WindowsExplorer { get; }
 
+    void SetFileSystemTree(FileSystemTree tree);
     void SearchFilesNames(string searchPattern);
     void SearchDirectoryNames(string searchPattern);
     void SearchText(string searchPattern);

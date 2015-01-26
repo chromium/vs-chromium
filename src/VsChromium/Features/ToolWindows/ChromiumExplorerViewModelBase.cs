@@ -46,7 +46,7 @@ namespace VsChromium.Features.ToolWindows {
       }
     }
 
-    protected void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {
+    public static void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {
       source.ForAll(x => {
         if (expandAll)
           ExpandAll(x);
@@ -55,9 +55,9 @@ namespace VsChromium.Features.ToolWindows {
       });
     }
 
-    protected void ExpandAll(TreeViewItemViewModel item) {
+    public static void ExpandAll(TreeViewItemViewModel item) {
       item.IsExpanded = true;
-      item.Children.ForAll(x => ExpandAll(x));
+      item.Children.ForAll(ExpandAll);
     }
 
     protected virtual void OnPropertyChanged(string propertyName) {

@@ -202,7 +202,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         Request = new GetFileSystemRequest(),
         OnSuccess = (typedResponse) => {
           var response = (GetFileSystemResponse)typedResponse;
-          ViewModel.SetFileSystemTree(response.Tree);
+          Controller.SetFileSystemTree(response.Tree);
         },
         OnError = (errorResponse) => {
           ViewModel.SetErrorResponse(errorResponse);

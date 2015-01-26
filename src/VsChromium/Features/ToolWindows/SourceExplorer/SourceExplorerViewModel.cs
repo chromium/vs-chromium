@@ -210,74 +210,24 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SetRootNodes(_textSearchResultNodes);
     }
 
-    public void SetFileSystemTree(FileSystemTree tree) {
-      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      _fileSystemTreeNodes = new List<TreeViewItemViewModel>(tree.Root
-        .Entries
-        .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)));
-      FileSystemTreeNodes.ForAll(rootNode.AddChild);
-      ExpandNodes(FileSystemTreeNodes, false);
+    public void SetFileSystemTree(List<TreeViewItemViewModel> viewModel) {
+      _fileSystemTreeNodes = viewModel;
       SwitchToFileSystemTree();
     }
 
-    public void SetFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
-      _fileNameSearchResultNodes = CreateFileNamesSearchResult(fileResults, description, expandAll);
+    public void SetFileNamesSearchResult(List<TreeViewItemViewModel> viewModel) {
+      _fileNameSearchResultNodes = viewModel;
       SwitchToFileNamesSearchResult();
     }
 
-    public void SetDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
-      _directoryNameSearchResultNodes = CreateDirectoryNamesSearchResult(directoryResults, description, expandAll);
+    public void SetDirectoryNamesSearchResult(List<TreeViewItemViewModel> viewModel) {
+      _directoryNameSearchResultNodes = viewModel;
       SwitchToDirectoryNamesSearchResult();
     }
 
-    public void SetTextSearchResult(DirectoryEntry searchResults, string description, bool expandAll) {
-      _textSearchResultNodes = CreateTextSearchResultViewModel(searchResults, description, expandAll);
+    public void SetTextSearchResult(List<TreeViewItemViewModel> viewModel) {
+      _textSearchResultNodes = viewModel;
       SwitchToTextSearchResult();
-    }
-
-    public List<TreeViewItemViewModel> CreateFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
-      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      var result =
-        new List<TreeViewItemViewModel> {
-          new TextItemViewModel(_controller.StandarImageSourceFactory, rootNode, description)
-        }.Concat(
-          fileResults
-            .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
-          .ToList();
-      result.ForAll(rootNode.AddChild);
-      ExpandNodes(result, expandAll);
-      return result;
-    }
-
-    public List<TreeViewItemViewModel> CreateDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
-      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      var result =
-        new List<TreeViewItemViewModel> {
-          new TextItemViewModel(ImageSourceFactory, rootNode, description)
-        }.Concat(
-          directoryResults
-            .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
-          .ToList();
-      result.ForAll(rootNode.AddChild);
-      ExpandNodes(result, expandAll);
-      return result;
-    }
-
-    public List<TreeViewItemViewModel> CreateTextSearchResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
-      var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-      var result =
-        new List<TreeViewItemViewModel> {
-          new TextItemViewModel(ImageSourceFactory, rootNode, description)
-        }.Concat(
-          searchResults
-            .Entries
-            .Select(x => FileSystemEntryViewModel.Create(_controller, rootNode, x)))
-          .ToList();
-      result.ForAll(rootNode.AddChild);
-      ExpandNodes(result, expandAll);
-      return result;
     }
 
     public void FileSystemTreeComputing() {

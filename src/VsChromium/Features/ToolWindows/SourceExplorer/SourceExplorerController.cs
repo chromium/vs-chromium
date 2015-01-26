@@ -140,17 +140,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// Find the directory entry in the FileSystemTree corresponding to a directory
     /// entry containing a relative path.
     /// </summary>
-    private DirectoryEntryViewModel FindDirectoryEntry(DirectoryEntryViewModel relativePath) {
-      // If the view model is displaying the file system tree, don't do anything.
-      if (ReferenceEquals(ViewModel.ActiveRootNodes, ViewModel.FileSystemTreeNodes))
-        return null;
-
+    private static DirectoryEntryViewModel FindDirectoryEntryForRelativePath(
+      List<TreeViewItemViewModel> fileSystemTreeNodes,
+      DirectoryEntryViewModel relativePath) {
       // Find the top level entry of the relative path
       var topLevelEntry = GetChromiumRoot(relativePath);
       Debug.Assert(topLevelEntry != null);
 
       // Find the corresponding top level entry in the FileSystemTree nodes.
-      var fileSystemTreeEntry = ViewModel.FileSystemTreeNodes
+      var fileSystemTreeEntry = fileSystemTreeNodes
         .OfType<DirectoryEntryViewModel>()
         .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, topLevelEntry.Name));
       if (fileSystemTreeEntry == null)
@@ -181,10 +179,105 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     /// <summary>
-    /// Return the top level entry parent of <paramref name="directoryEntry"/>
+    /// Returns the node contained in <paramref name="fileSystemTreeNodes"/>
+    /// that has the exact same set of parents as <paramref name="node"/>. This
+    /// method is used to find equivalent nodes between different versions of
+    /// the file system tree.
     /// </summary>
-    private DirectoryEntryViewModel GetChromiumRoot(DirectoryEntryViewModel directoryEntry) {
-      for (TreeViewItemViewModel current = directoryEntry; current != null; current = current.ParentViewModel) {
+    private static TreeViewItemViewModel FindSameNode(List<TreeViewItemViewModel> fileSystemTreeNodes, TreeViewItemViewModel node) {
+      var root = GetChromiumRoot(node);
+      if (root == null)
+        return null;
+
+      var newRoot = fileSystemTreeNodes.FirstOrDefault(x => x.DisplayText == root.DisplayText);
+      if (newRoot == null)
+        return null;
+
+      // Create stack of parent -> child for DFS search
+      var stack = new Stack<TreeViewItemViewModel>();
+      var item = node;
+      while (item != root) {
+        stack.Push(item);
+        item = item.ParentViewModel;
+      }
+
+      // Process all stack elements, looking for their equivalent in
+      // "fileSystemTreeEntry"
+      var fileSystemTreeEntry = newRoot;
+      while (stack.Count > 0) {
+        var child = stack.Pop();
+
+        // First try without forcing loading the lazy loaded entries.
+        var childViewModel = fileSystemTreeEntry
+          .Children
+          .FirstOrDefault(x => x.DisplayText == child.DisplayText);
+
+        // Try again by forcing loading the lazy loaded entries.
+        if (childViewModel == null) {
+          fileSystemTreeEntry.EnsureAllChildrenLoaded();
+          childViewModel = fileSystemTreeEntry
+            .Children
+            .FirstOrDefault(x => x.DisplayText == child.DisplayText);
+          if (childViewModel == null)
+            return null;
+        }
+
+        fileSystemTreeEntry = childViewModel;
+      }
+      return fileSystemTreeEntry;
+    }
+
+    /// <summary>
+    /// Transfer the "IsExpanded" and "IsSelected" state of the nodes from an
+    /// old file system tree to a new one.
+    /// </summary>
+    private static void TransferFileSystemTreeState(
+      List<TreeViewItemViewModel> oldFileSystemTree,
+      List<TreeViewItemViewModel> newFileSystemTree) {
+      var state = new FileSystemTreeState();
+      oldFileSystemTree.ForEach(state.ProcessNodes);
+      state.ExpandedNodes.ForAll(
+        x => {
+          var y = FindSameNode(newFileSystemTree, x);
+          if (y != null)
+            y.IsExpanded = true;
+        });
+      state.SelectedNodes.ForAll(
+        x => {
+          var y = FindSameNode(newFileSystemTree, x);
+          if (y != null)
+            y.IsSelected = true;
+        });
+    }
+
+    public class FileSystemTreeState {
+      private readonly List<TreeViewItemViewModel> _expandedNodes = new List<TreeViewItemViewModel>();
+      private readonly List<TreeViewItemViewModel> _selectedNodes = new List<TreeViewItemViewModel>();
+
+      public List<TreeViewItemViewModel> ExpandedNodes {
+        get { return _expandedNodes; }
+      }
+
+      public List<TreeViewItemViewModel> SelectedNodes {
+        get { return _selectedNodes; }
+      }
+
+      public void ProcessNodes(TreeViewItemViewModel x) {
+        if (x.IsExpanded) {
+          _expandedNodes.Add(x);
+        }
+        if (x.IsSelected) {
+          SelectedNodes.Add(x);
+        }
+        x.Children.ForAll(ProcessNodes);
+      }
+    }
+
+    /// <summary>
+    /// Return the top level entry parent of <paramref name="item"/>
+    /// </summary>
+    private static DirectoryEntryViewModel GetChromiumRoot(TreeViewItemViewModel item) {
+      for (TreeViewItemViewModel current = item; current != null; current = current.ParentViewModel) {
         if (current.ParentViewModel is RootTreeViewItemViewModel) {
           // Maybe "null" if top level node is not a directory.
           return current as DirectoryEntryViewModel;
@@ -199,7 +292,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// is already the currently active ViewModel.
     /// </summary>
     public void NavigateToDirectory(DirectoryEntryViewModel directoryEntry) {
-      var entry = FindDirectoryEntry(directoryEntry);
+      // If the view model is displaying the file system tree, don't do anything.
+      if (ViewModel.ActiveDisplay == SourceExplorerViewModel.DisplayKind.FileSystemTree)
+        return;
+
+      var entry = FindDirectoryEntryForRelativePath(ViewModel.FileSystemTreeNodes, directoryEntry);
       ViewModel.SwitchToFileSystemTree();
       BringItemViewModelToView(entry);
     }
@@ -328,6 +425,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public void SetFileSystemTree(FileSystemTree tree) {
       var viewModel = CreateFileSystemTreeViewModel(tree);
+
+      // Transfer expanded and selected nodes from the old tree to the new one.
+      TransferFileSystemTreeState(ViewModel.FileSystemTreeNodes, viewModel);
+
+      // Set tree as the new active tree.
       ViewModel.SetFileSystemTree(viewModel);
     }
 

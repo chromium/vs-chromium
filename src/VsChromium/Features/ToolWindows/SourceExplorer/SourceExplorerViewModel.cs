@@ -8,8 +8,6 @@ using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Linq;
 using VsChromium.Features.AutoUpdate;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {

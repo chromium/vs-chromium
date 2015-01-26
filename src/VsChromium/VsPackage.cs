@@ -7,6 +7,7 @@ using System.ComponentModel.Design;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
@@ -14,6 +15,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Features.ToolWindows.BuildExplorer;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
+using IServiceProvider = System.IServiceProvider;
 
 namespace VsChromium {
   [PackageRegistration(UseManagedResourcesOnly = true)]
@@ -25,7 +27,7 @@ namespace VsChromium {
   [ProvideToolWindow(typeof(SourceExplorerToolWindow))]
   [ProvideToolWindow(typeof(BuildExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
-  public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage {
+  public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage, IOleCommandTarget {
     private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
 
     public VsPackage() {
@@ -113,6 +115,16 @@ namespace VsChromium {
 
       //var serviceContainer = this as IServiceContainer;
       //serviceContainer.AddService(typeof(IOleCommandTarget), new OleCommandTarget(new PackageCommandTarget()));
+    }
+
+    int IOleCommandTarget.QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
+      var impl = this.GetService(typeof(IMenuCommandService)) as IOleCommandTarget;
+      return OleCommandTargetSpy.WrapQueryStatus(this, impl, ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+    }
+
+    int IOleCommandTarget.Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
+      var impl = this.GetService(typeof(IMenuCommandService)) as IOleCommandTarget;
+      return OleCommandTargetSpy.WrapExec(this, impl, ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
     }
   }
 }

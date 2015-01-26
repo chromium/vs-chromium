@@ -5,7 +5,6 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using EnvDTE;
 using Microsoft.VisualStudio;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;

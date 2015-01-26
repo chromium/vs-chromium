@@ -14,12 +14,9 @@ namespace VsChromium.Commands {
   /// Implements IOleCommandTarget from an instance of ICommandTarget.
   /// </summary>
   public class OleCommandTarget : IOleCommandTarget {
+    private readonly string _description;
     private readonly ICommandTarget _commandTarget;
-
-    public OleCommandTarget(ICommandTarget commandTarget) {
-      _commandTarget = commandTarget;
-    }
-
+    private readonly Impl _impl;
     /// <summary>
     /// The next command target in the chain. The caller is responsible for initializing.
     /// This has to be a public field, because it may have to be assigned from an "out" parameter.
@@ -28,51 +25,81 @@ namespace VsChromium.Commands {
     /// </summary>
     public IOleCommandTarget NextCommandTarget;
 
+    public OleCommandTarget(string description, ICommandTarget commandTarget) {
+      _description = description;
+      _commandTarget = commandTarget;
+      _impl = new Impl(this);
+    }
+
+    public override string ToString() {
+      return string.Format("{0}-{1}", this.GetType().Name, this._description);
+    }
+
     public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
-      var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[0].cmdID);
-
-      bool isSupported = false;
-      try {
-        isSupported = _commandTarget.HandlesCommand(commandId);
-      }
-      catch (Exception e) {
-        Logger.LogException(e, "Error in {0}.HandlesCommand.", _commandTarget.GetType().FullName);
-      }
-      if (!isSupported) {
-        if (NextCommandTarget == null) {
-          return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
-        } else {
-          return NextCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
-        }
-      }
-
-      bool isEnabled = _commandTarget.IsEnabled(commandId);
-
-      prgCmds[0].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED);
-      if (isEnabled)
-        prgCmds[0].cmdf |= (uint)(OLECMDF.OLECMDF_ENABLED);
-      return VSConstants.S_OK;
+      return OleCommandTargetSpy.WrapQueryStatus(this, _impl, ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
     }
 
     public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
-      var commandId = new CommandID(pguidCmdGroup, (int)nCmdID);
+      return OleCommandTargetSpy.WrapExec(this, _impl, ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+    }
 
-      bool isSupported = _commandTarget.HandlesCommand(commandId);
-      if (!isSupported) {
-        if (NextCommandTarget == null) {
-          return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
-        } else {
-          return NextCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
-        }
+    private class Impl : IOleCommandTarget {
+      private readonly OleCommandTarget _owner;
+
+      public Impl(OleCommandTarget owner) {
+        _owner = owner;
       }
 
-      try {
-        _commandTarget.Execute(commandId);
+      public override string ToString() {
+        return string.Format("Impl({0})", _owner.ToString());
+      }
+
+      public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
+        var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[0].cmdID);
+
+        bool isSupported = false;
+        try {
+          isSupported = _owner._commandTarget.HandlesCommand(commandId);
+        }
+        catch (Exception e) {
+          Logger.LogException(e, "Error in {0}.HandlesCommand.", _owner._commandTarget.GetType().FullName);
+        }
+        if (!isSupported) {
+          if (_owner.NextCommandTarget == null) {
+            return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+          } else {
+            return OleCommandTargetSpy.WrapQueryStatus(_owner, _owner.NextCommandTarget, ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
+          }
+        }
+
+        bool isEnabled = _owner._commandTarget.IsEnabled(commandId);
+
+        prgCmds[0].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED);
+        if (isEnabled)
+          prgCmds[0].cmdf |= (uint)(OLECMDF.OLECMDF_ENABLED);
         return VSConstants.S_OK;
       }
-      catch (Exception e) {
-        Logger.LogException(e, "Error executing editor command.");
-        return Marshal.GetHRForException(e);
+
+      public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
+        var commandId = new CommandID(pguidCmdGroup, (int)nCmdID);
+
+        bool isSupported = _owner._commandTarget.HandlesCommand(commandId);
+        if (!isSupported) {
+          if (_owner.NextCommandTarget == null) {
+            return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+          } else {
+            return OleCommandTargetSpy.WrapExec(_owner, _owner.NextCommandTarget, ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+          }
+        }
+
+        try {
+          _owner._commandTarget.Execute(commandId);
+          return VSConstants.S_OK;
+        }
+        catch (Exception e) {
+          Logger.LogException(e, "Error executing editor command.");
+          return Marshal.GetHRForException(e);
+        }
       }
     }
   }

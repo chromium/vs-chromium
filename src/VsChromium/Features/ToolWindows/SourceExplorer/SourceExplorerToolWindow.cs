@@ -5,16 +5,14 @@
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
-using System.Windows.Documents;
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
+using VsChromium.Package.CommandHandler;
 using VsChromium.Wpf;
-using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
@@ -29,7 +27,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   [Guid(GuidList.GuidSourceExplorerToolWindowString)]
   public class SourceExplorerToolWindow : ToolWindowPane, IOleCommandTarget {
     private VsWindowFrameNotifyHandler _frameNotify;
-    private OleCommandTarget _oleCommandTarget;
 
     /// <summary>
     /// Standard constructor for the tool window.
@@ -64,13 +61,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
 
       // Hookup command handlers
-      var commands = new AggregateCommandTarget(new List<ICommandTarget>  {
+      var commands = new List<IPackageCommandHandler> {
         new PreviousLocationCommandHandler(this),
         new NextLocationCommandHandler(this),
         // Add more here...
-      });
+      };
 
-      _oleCommandTarget = new OleCommandTarget(commands);
+      var commandService = (IMenuCommandService)this.GetService(typeof(IMenuCommandService));
+      commands.ForEach(handler =>
+          commandService.AddCommand(handler.ToOleMenuCommand()));
     }
 
     public SourceExplorerControl ExplorerControl {
@@ -160,19 +159,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     int IOleCommandTarget.QueryStatus(ref System.Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, System.IntPtr pCmdText) {
-      var hr = (int) Constants.OLECMDERR_E_NOTSUPPORTED;
-      if (_oleCommandTarget != null) {
-        hr = _oleCommandTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
-      }
-      return hr;
+      var impl = this.GetService(typeof(IMenuCommandService)) as IOleCommandTarget;
+      return OleCommandTargetSpy.WrapQueryStatus(this, impl, ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
     }
 
     int IOleCommandTarget.Exec(ref System.Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, System.IntPtr pvaIn, System.IntPtr pvaOut) {
-      var hr = (int)Constants.OLECMDERR_E_NOTSUPPORTED;
-      if (_oleCommandTarget != null) {
-        hr = _oleCommandTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
-      }
-      return hr;
+      var impl = this.GetService(typeof (IMenuCommandService)) as IOleCommandTarget;
+      return OleCommandTargetSpy.WrapExec(this, impl, ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
     }
   }
 }

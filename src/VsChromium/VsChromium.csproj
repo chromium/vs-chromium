@@ -153,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands\AggregateCommandTarget.cs" />
+    <Compile Include="Commands\OleCommandTargetSpy.cs" />
     <Compile Include="Features\AttachToChrome\ColumnSorter.cs" />
     <Compile Include="Features\AttachToChrome\DebugAttach.cs" />
     <Compile Include="Features\AttachToChrome\DkmComponentMessageInitializer.cs" />
@@ -219,6 +220,7 @@
     <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
     <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerBase.cs" />
+    <Compile Include="Package\CommandHandler\PackageCommandHandlerExtensions.cs" />
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerBase.cs" />
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerRegistration.cs" />
     <Compile Include="Package\DisposeContainer.cs" />

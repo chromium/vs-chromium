@@ -49,7 +49,7 @@ namespace VsChromium.Features.BuildOutputAnalyzer {
         Execute,
         HandlesCommand,
         () => true);
-      var targetWrapper = new OleCommandTarget(target);
+      var targetWrapper = new OleCommandTarget("NugetConsoleViewHandler", target);
       _textViewAdapter.AddCommandFilter(targetWrapper, out targetWrapper.NextCommandTarget);
     }
 

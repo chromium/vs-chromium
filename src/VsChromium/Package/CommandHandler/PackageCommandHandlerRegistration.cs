@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using Microsoft.VisualStudio.Shell;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Package.CommandHandler {
@@ -26,18 +26,8 @@ namespace VsChromium.Package.CommandHandler {
         return;
       }
 
-      foreach (var handler in _commandHandlers) {
-        // Create the command for the tool window
-        var capturedHandler = handler;
-        var command = new OleMenuCommand(handler.Execute, handler.CommandId);
-        command.BeforeQueryStatus += (sender, args) => {
-          command.Supported = capturedHandler.Supported;
-          command.Checked = capturedHandler.Checked;
-          command.Enabled = capturedHandler.Enabled;
-          command.Visible = capturedHandler.Visible;
-        };
-        mcs.AddCommand(command);
-      }
+      _commandHandlers.ForAll(handler =>
+        mcs.AddCommand(handler.ToOleMenuCommand()));
     }
   }
 }

@@ -27,7 +27,7 @@ namespace VsChromium.Package.CommandHandler {
           () => c.Supported,
           () => c.Enabled));
       var aggregate = new AggregateCommandTarget(commandTargets);
-      var oleCommandTarget = new OleCommandTarget(aggregate);
+      var oleCommandTarget = new OleCommandTarget("PackagePriority", aggregate);
 
       // Register the ole command target as a VS priority command target
       var registerPriorityCommandTarget = package.VsRegisterPriorityCommandTarget;

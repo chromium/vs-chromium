@@ -190,8 +190,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void FetchFilesystemTree() {
       var request = new UIRequest() {
         Id = "GetFileSystemRequest",
-        Request = new GetFileSystemRequest {
-        },
+        Request = new GetFileSystemRequest(),
         OnSuccess = (typedResponse) => {
           var response = (GetFileSystemResponse)typedResponse;
           ViewModel.SetFileSystemTree(response.Tree);
@@ -206,20 +205,21 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void MetaSearch(SearchMetadata metadata) {
       var id = Interlocked.Increment(ref _operationSequenceId);
-      metadata.OperationId = string.Format("{0}-{1}", metadata.OperationId, id);
-
+      var progressId = string.Format("{0}-{1}", metadata.OperationName, id);
       var sw = new Stopwatch();
       var request = new UIRequest {
+        // Note: Having a single ID for all searches ensures previous search
+        // requests are superseeded.
         Id = "MetaSearch",
         Request = metadata.TypedRequest,
         Delay = metadata.Delay,
         OnSend = () => {
           sw.Start();
-          _progressBarTracker.Start(metadata.OperationId, metadata.HintText);
+          _progressBarTracker.Start(progressId, metadata.HintText);
         },
         OnReceive = () => {
           sw.Stop();
-          _progressBarTracker.Stop(metadata.OperationId);
+          _progressBarTracker.Stop(progressId);
         },
         OnSuccess = typedResponse => {
           metadata.ProcessResponse(typedResponse, sw);
@@ -236,7 +236,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       MetaSearch(new SearchMetadata {
         Delay = TimeSpan.FromSeconds(0.02),
         HintText = "Searching for matching file names...",
-        OperationId = OperationsIds.FileNamesSearch,
+        OperationName = OperationsIds.FileNamesSearch,
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = FileNamesSearch.Text,
@@ -263,7 +263,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       MetaSearch(new SearchMetadata {
         Delay = TimeSpan.FromSeconds(0.02),
         HintText = "Searching for matching directory names...",
-        OperationId = OperationsIds.DirectoryNamesSearch,
+        OperationName = OperationsIds.DirectoryNamesSearch,
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = DirectoryNamesSearch.Text,
@@ -290,7 +290,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       MetaSearch(new SearchMetadata {
         Delay = TimeSpan.FromSeconds(0.02),
         HintText = "Searching for matching text in files...",
-        OperationId = OperationsIds.FileContentsSearch,
+        OperationName = OperationsIds.FileContentsSearch,
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = FileContentsSearch.Text,
@@ -375,11 +375,28 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private class SearchMetadata {
-      public TypedRequest TypedRequest { get; set; }
-      public Action<TypedResponse, Stopwatch> ProcessResponse { get; set; }
-      public TimeSpan Delay { get; set; }
-      public string OperationId { get; set; }
+      /// <summary>
+      /// Simple short name of the operation (for debugging only).
+      /// </summary>
+      public string OperationName { get; set; }
+      /// <summary>
+      /// Short description of the operation (for display in status bar
+      /// progress)
+      /// </summary>
       public string HintText { get; set; }
+      /// <summary>
+      /// The request to sent to the server
+      /// </summary>
+      public TypedRequest TypedRequest { get; set; }
+      /// <summary>
+      /// Amount of time to wait before sending the request to the server.
+      /// </summary>
+      public TimeSpan Delay { get; set; }
+      /// <summary>
+      /// Lambda invoked when the response to the request has been successfully
+      /// received from the server.
+      /// </summary>
+      public Action<TypedResponse, Stopwatch> ProcessResponse { get; set; }
     }
 
     public void SwallowsRequestBringIntoView(bool value) {

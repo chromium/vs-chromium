@@ -21,10 +21,14 @@ namespace VsChromium.Features.ToolWindows {
         handler();
     }
 
-    protected override void OnPropertyChanged(string propertyName) {
-      base.OnPropertyChanged(propertyName);
-      if (propertyName == "IsSelected" && IsSelected) {
-        OnSelected();
+    public override bool IsSelected {
+      get { return base.IsSelected; }
+      set {
+        var current = base.IsSelected;
+        base.IsSelected = value;
+        if (current != value && value) {
+          OnSelected();
+        }
       }
     }
   }

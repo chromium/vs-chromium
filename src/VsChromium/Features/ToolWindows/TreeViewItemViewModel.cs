@@ -108,7 +108,7 @@ namespace VsChromium.Features.ToolWindows {
     /// Gets/sets whether the TreeViewItem associated with this object is
     /// selected.
     /// </summary>
-    public bool IsSelected {
+    public virtual bool IsSelected {
       get { return _isSelected; }
       set {
         if (value != _isSelected) {

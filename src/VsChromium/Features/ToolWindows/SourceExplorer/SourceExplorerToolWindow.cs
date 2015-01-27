@@ -9,7 +9,6 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
-using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Package.CommandHandler;
 using VsChromium.Wpf;
@@ -64,6 +63,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var commands = new List<IPackageCommandHandler> {
         new PreviousLocationCommandHandler(this),
         new NextLocationCommandHandler(this),
+        new CancelSearchCommandHandler(this),
+        new CancelSearchToolWindowCommandHandler(this),
         // Add more here...
       };
 
@@ -81,6 +82,19 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get {
         return _frameNotify != null &&
                _frameNotify.IsVisible;
+      }
+    }
+
+    public bool IsCancelSearchEnabled {
+      get {
+        switch (ExplorerControl.ViewModel.ActiveDisplay) {
+          case SourceExplorerViewModel.DisplayKind.FileNameSearchResult:
+          case SourceExplorerViewModel.DisplayKind.DirectoryNameSearchResult:
+          case SourceExplorerViewModel.DisplayKind.TextSearchResult:
+            return true;
+          default:
+            return false;
+        }
       }
     }
 
@@ -127,6 +141,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     int IOleCommandTarget.Exec(ref System.Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, System.IntPtr pvaIn, System.IntPtr pvaOut) {
       var impl = this.GetService(typeof (IMenuCommandService)) as IOleCommandTarget;
       return OleCommandTargetSpy.WrapExec(this, impl, ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+    }
+
+    public void CancelSearch() {
+      ExplorerControl.Controller.CancelSearch();
     }
   }
 }

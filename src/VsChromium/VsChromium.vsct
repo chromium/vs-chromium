@@ -141,6 +141,7 @@
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchText" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidCancelSearch" editor="guidVSStd97" key1="VK_ESCAPE" mod1="" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c" />
   </KeyBindings>
   <Symbols>
@@ -156,6 +157,7 @@
       <IDSymbol name="cmdidSearchText" value="0x0104" />
       <IDSymbol name="cmdidGotoNextLocation" value="0x0105" />
       <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />
+      <IDSymbol name="cmdidCancelSearch" value="0x0107" />
       <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0110" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">

@@ -213,6 +213,8 @@
     <Compile Include="Features\ToolWindows\IToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\CancelSearchToolWindowCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\SourceExplorer\CancelSearchCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoNextLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GlobalPreviousLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\NextLocationCommandHandler.cs" />

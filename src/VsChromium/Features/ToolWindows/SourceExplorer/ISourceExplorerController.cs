@@ -25,6 +25,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);
+    void ShowInSourceExplorer(string path);
     void BringItemViewModelToView(TreeViewItemViewModel item);
     bool ExecuteOpenCommandForItem(TreeViewItemViewModel item);
   }

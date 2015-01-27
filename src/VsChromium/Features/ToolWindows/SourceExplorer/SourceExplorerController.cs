@@ -185,6 +185,51 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     /// <summary>
+    /// Find the directory entry in the FileSystemTree corresponding to a directory
+    /// entry containing a relative path or a project root path.
+    /// </summary>
+    private static FileSystemEntryViewModel FindFileSystemEntryForPath(
+      List<TreeViewItemViewModel> fileSystemTreeNodes,
+      string path) {
+      // Find the corresponding top level entry in the FileSystemTree nodes.
+      var fileSystemTreeEntry = fileSystemTreeNodes
+        .OfType<FileSystemEntryViewModel>()
+        .FirstOrDefault(x => PathHelpers.IsPrefix(path, x.Name));
+      if (fileSystemTreeEntry == null)
+        return null;
+
+      var pair = PathHelpers.SplitPath(path, fileSystemTreeEntry.Name);
+
+      // Special case: "path" is actually a Root entry.
+      if (pair.Value == "") {
+        return fileSystemTreeEntry;
+      }
+
+      // Descend the FileSystemTree nodes hierarchy as we split the directory name.
+      foreach (var childName in pair.Value.Split(Path.DirectorySeparatorChar)) {
+        // First try without forcing loading the lazy loaded entries.
+        var childViewModel = fileSystemTreeEntry
+          .Children
+          .OfType<FileSystemEntryViewModel>()
+          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
+
+        // Try again by forcing loading the lazy loaded entries.
+        if (childViewModel == null) {
+          fileSystemTreeEntry.EnsureAllChildrenLoaded();
+          childViewModel = fileSystemTreeEntry
+            .Children
+            .OfType<FileSystemEntryViewModel>()
+            .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
+          if (childViewModel == null)
+            return null;
+        }
+
+        fileSystemTreeEntry = childViewModel;
+      }
+      return fileSystemTreeEntry;
+    }
+
+    /// <summary>
     /// Returns the node contained in <paramref name="fileSystemTreeNodes"/>
     /// that has the exact same path as <paramref name="node"/>. This method is
     /// used to find equivalent nodes between different versions of the file
@@ -305,6 +350,27 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         return;
 
       var entry = FindFileSystemEntryForRelativePath(ViewModel.FileSystemTreeNodes, relativePathEntry);
+      if (entry != null) {
+        // Ensure no node is selected before displaying file system tree.
+        ViewModel.FileSystemTreeNodes.ForAll(RemoveSelection);
+
+        // Switch to file system tree ViewModel and select the entry we found.
+        ViewModel.SwitchToFileSystemTree();
+        BringItemViewModelToView(entry);
+      }
+    }
+
+    /// <summary>
+    /// Navigate to the FileSystemTree directory entry corresponding to
+    /// <paramref name="path"/>. This is a no-op if the FileSystemTree
+    /// is already the currently active ViewModel.
+    /// </summary>
+    public void ShowInSourceExplorer(string path) {
+      // If the view model is displaying the file system tree, don't do anything.
+      //if (ViewModel.ActiveDisplay == SourceExplorerViewModel.DisplayKind.FileSystemTree)
+      //  return;
+
+      var entry = FindFileSystemEntryForPath(ViewModel.FileSystemTreeNodes, path);
       if (entry != null) {
         // Ensure no node is selected before displaying file system tree.
         ViewModel.FileSystemTreeNodes.ForAll(RemoveSelection);

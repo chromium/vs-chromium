@@ -72,6 +72,12 @@
         </ToggleButton.ToolTip>
       </ToggleButton>
       <Separator Width="2" />
+      <Button Content="&lt;=&gt;" IsTabStop="False" Click="SyncButton_Click">
+        <Button.ToolTip>
+          <TextBlock Text="Sync with Active Document"/>
+        </Button.ToolTip>
+      </Button>
+      <Separator Width="2" />
       <ToggleButton Content="Lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>

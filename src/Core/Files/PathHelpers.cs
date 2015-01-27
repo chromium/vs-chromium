@@ -3,7 +3,11 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Files {
   public static class PathHelpers {
@@ -33,6 +37,35 @@ namespace VsChromium.Core.Files {
         return path1 + DirectorySeparatorString + path2;
       }
       return path1 + path2;
+    }
+
+    public static bool IsPrefix(string path, string prefix) {
+      return SystemPathComparer.Instance.IndexOf(path, prefix, 0, path.Length) == 0;
+    }
+
+    public static KeyValuePair<string, string> SplitPath(string path, string prefix) {
+      if (string.IsNullOrEmpty(path))
+        throw new ArgumentException();
+      if (string.IsNullOrEmpty(prefix))
+        throw new ArgumentException();
+
+      var prefixEnd = prefix.Length - 1;
+      while (prefixEnd >= 0) {
+        if (path[prefixEnd] != Path.DirectorySeparatorChar)
+          break;
+        prefixEnd--;
+      }
+
+      var suffixStart = prefix.Length;
+      while (suffixStart < path.Length) {
+        if (path[suffixStart] != Path.DirectorySeparatorChar)
+          break;
+        suffixStart++;
+      }
+
+      var root = path.Substring(0, prefixEnd + 1);
+      var relativePath = path.Substring(suffixStart);
+      return KeyValuePair.Create(root, relativePath);
     }
 
     /// <summary>
@@ -100,7 +133,8 @@ namespace VsChromium.Core.Files {
         // This call checks path contains valid characters only, etc.
         Path.GetDirectoryName(path);
         return true;
-      } catch (Exception) {
+      }
+      catch (Exception) {
         return false;
       }
     }

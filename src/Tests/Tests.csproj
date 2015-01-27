@@ -26,6 +26,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\TestPathHelpers.cs" />
     <Compile Include="ServerProcess\TestUnregisterFile.cs" />
     <Compile Include="ServerProcess\TestFileSystemTree.cs" />
     <Compile Include="Server\TestGetTextKind.cs" />

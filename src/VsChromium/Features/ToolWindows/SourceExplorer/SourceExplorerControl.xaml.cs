@@ -8,14 +8,17 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
+using EnvDTE;
 using Microsoft.VisualStudio.ComponentModelHost;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
+using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
+using Process = System.Diagnostics.Process;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
@@ -33,6 +36,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
     private SourceExplorerController _controller;
+    private IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -58,6 +62,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
+      _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
       
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
@@ -308,5 +313,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     #endregion
+
+    private void SyncButton_Click(object sender, RoutedEventArgs e) {
+      Logger.WrapActionInvocation(
+        () => {
+          var dte = _visualStudioPackageProvider.Package.DTE;
+          var document = dte.ActiveDocument;
+          if (document == null)
+            return;
+          var path = document.FullName;
+          Controller.ShowInSourceExplorer(path);
+        });
+    }
   }
 }

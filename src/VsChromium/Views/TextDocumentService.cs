@@ -15,19 +15,37 @@ namespace VsChromium.Views {
     private readonly IFileSystem _fileSystem;
 
     [ImportingConstructor]
-    public TextDocumentService(IUIRequestProcessor uiRequestProcessor, IFileSystem fileSystem) {
+    public TextDocumentService(
+      IUIRequestProcessor uiRequestProcessor,
+      IFileSystem fileSystem) {
       _uiRequestProcessor = uiRequestProcessor;
       _fileSystem = fileSystem;
     }
 
     public void OnDocumentOpen(ITextDocument document) {
       var path = document.FilePath;
+      SendRegisterFileRequest(path);
+    }
 
+    public void OnDocumentClose(ITextDocument document) {
+      var path = document.FilePath;
+      SentUnregisterFileRequest(path);
+    }
+
+    public void RegisterFile(FullPath path) {
+      SendRegisterFileRequest(path.Value);
+    }
+
+    public void UnregisterFile(FullPath path) {
+      SentUnregisterFileRequest(path.Value);
+    }
+
+    private void SendRegisterFileRequest(string path) {
       if (!IsPhysicalFile(path))
         return;
 
       var request = new UIRequest {
-        Id = "AddFileNameRequest-" + path,
+        Id = "RegisterFileRequest-" + path,
         Request = new RegisterFileRequest {
           FileName = path
         }
@@ -36,14 +54,12 @@ namespace VsChromium.Views {
       _uiRequestProcessor.Post(request);
     }
 
-    public void OnDocumentClose(ITextDocument document) {
-      var path = document.FilePath;
-
-      if (!IsPhysicalFile(path))
+    private void SentUnregisterFileRequest(string path) {
+      if (!IsValidPath(path))
         return;
 
       var request = new UIRequest {
-        Id = "RemoveFileNameRequest-" + path,
+        Id = "UnregisterFileRequest-" + path,
         Request = new UnregisterFileRequest {
           FileName = path
         }
@@ -52,12 +68,20 @@ namespace VsChromium.Views {
       _uiRequestProcessor.Post(request);
     }
 
-    private bool IsPhysicalFile(string path) {
+    private bool IsValidPath(string path) {
       // This can happen with "Find in files" for example, as it uses a fake filename.
       if (!PathHelpers.IsAbsolutePath(path))
         return false;
 
-      return _fileSystem.FileExists(new FullPath(path));
+      if (!PathHelpers.IsValidBclPath(path))
+        return false;
+
+      return true;
+    }
+
+    private bool IsPhysicalFile(string path) {
+      // This can happen with "Find in files" for example, as it uses a fake filename.
+      return IsValidPath(path) && _fileSystem.FileExists(new FullPath(path));
     }
   }
 }

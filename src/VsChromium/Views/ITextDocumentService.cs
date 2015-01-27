@@ -3,10 +3,14 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.Text;
+using VsChromium.Core.Files;
 
 namespace VsChromium.Views {
   public interface ITextDocumentService {
     void OnDocumentOpen(ITextDocument document);
     void OnDocumentClose(ITextDocument document);
+
+    void RegisterFile(FullPath path);
+    void UnregisterFile(FullPath path);
   }
 }

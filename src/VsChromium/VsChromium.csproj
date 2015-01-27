@@ -225,6 +225,7 @@
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerRegistration.cs" />
     <Compile Include="Package\DisposeContainer.cs" />
     <Compile Include="Package\IDisposeContainer.cs" />
+    <Compile Include="Package\VsSolutionEventsHandler.cs" />
     <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
     <Compile Include="Wpf\HierarchyObjectNavigator.cs" />

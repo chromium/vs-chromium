@@ -263,6 +263,38 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get { return ActiveDisplay != DisplayKind.FileSystemTree; }
     }
 
+    public ImageSource GotoPreviousButtonImage {
+      get {
+        if (_controller == null)
+          return null;
+        return _controller.StandarImageSourceFactory.GetImage("ArrowLeft");
+      }
+    }
+
+    public ImageSource GotoNextButtonImage {
+      get {
+        if (_controller == null)
+          return null;
+        return _controller.StandarImageSourceFactory.GetImage("ArrowRight");
+      }
+    }
+
+    public ImageSource CancelSearchButtonImage {
+      get {
+        if (_controller == null)
+          return null;
+        return _controller.StandarImageSourceFactory.GetImage("CancelSearch");
+      }
+    }
+
+    public ImageSource SyncButtonImage {
+      get {
+        if (_controller == null)
+          return null;
+        return _controller.StandarImageSourceFactory.GetImage("SyncActiveDocument");
+      }
+    }
+
     protected override void OnRootNodesChanged() {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));

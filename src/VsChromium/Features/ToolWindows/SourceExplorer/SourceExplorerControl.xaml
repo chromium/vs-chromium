@@ -61,6 +61,13 @@
     </Border>
 
     <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
+      <Button IsTabStop="False" Click="SyncButton_Click">
+        <Button.ToolTip>
+          <TextBlock Text="Sync with Active Document"/>
+        </Button.ToolTip>
+        <Image Source="{Binding SyncButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
+      </Button>
+      <Separator Width="2" />
       <ToggleButton Content="Aa" IsChecked="{Binding MatchCase}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding MatchCaseToolTip}"/>
@@ -82,26 +89,53 @@
         </ToggleButton.ToolTip>
       </ToggleButton>
       <Separator Width="2" />
-      <Button Content="&lt;-" IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click">
+      <Button IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click">
         <Button.ToolTip>
           <TextBlock Text="Go to previous search result (Shift-F8 or Ctrl-Shift-F8)"/>
         </Button.ToolTip>
+        <Image Source="{Binding GotoPreviousButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          <Image.Style>
+            <Style TargetType="Image">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Image.Style>
+        </Image>
       </Button>
-      <Button Content="-&gt;" IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}" Click="GotoNext_Click">
+      <Button IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}" Click="GotoNext_Click">
         <Button.ToolTip>
           <TextBlock Text="Go to next search result (F8 or Ctrl-F8)"/>
         </Button.ToolTip>
+        <Image Source="{Binding GotoNextButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          <Image.Style>
+            <Style TargetType="Image">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Image.Style>
+        </Image>
       </Button>
-      <Button Content="x" IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click">
+      <Button IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click">
         <Button.ToolTip>
           <TextBlock Text="Clear current search and revert to File System view"/>
         </Button.ToolTip>
-      </Button>
-      <Separator Width="2" />
-      <Button Content="&lt;=&gt;" IsTabStop="False" Click="SyncButton_Click">
-        <Button.ToolTip>
-          <TextBlock Text="Sync with Active Document"/>
-        </Button.ToolTip>
+        <Image Source="{Binding CancelSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          <Image.Style>
+            <Style TargetType="Image">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Image.Style>
+        </Image>
       </Button>
       <Separator Width="2" />
       <ToggleButton IsChecked="{Binding EnableChildDebugging}" IsTabStop="False">

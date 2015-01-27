@@ -21,12 +21,15 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public bool MatchCase { get; set; }
 
     [ProtoMember(4)]
-    public bool IncludeSymLinks { get; set; }
+    public bool WholeWord { get; set; }
 
     [ProtoMember(5)]
-    public bool Regex { get; set; }
+    public bool IncludeSymLinks { get; set; }
 
     [ProtoMember(6)]
-    public bool Re2 { get; set; }
+    public bool Regex { get; set; }
+
+    [ProtoMember(7)]
+    public bool UseRe2Engine { get; set; }
   }
 }

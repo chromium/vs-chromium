@@ -7,14 +7,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.AccessControl;
 using System.Threading;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
-using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -126,8 +124,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
       var result =
         new List<TreeViewItemViewModel> {
-          new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
-        }.Concat(
+            new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
+          }.Concat(
           searchResults
             .Entries
             .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
@@ -525,7 +523,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MaxResults = SearchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            Re2 = ViewModel.UseRe2Regex,
+            UseRe2Engine = ViewModel.UseRe2Regex,
             Regex = ViewModel.UseRegex,
           }
         },
@@ -553,7 +551,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MaxResults = SearchDirectoryNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            Re2 = ViewModel.UseRe2Regex,
+            UseRe2Engine = ViewModel.UseRe2Regex,
             Regex = ViewModel.UseRegex,
           }
         },
@@ -581,7 +579,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MaxResults = SearchTextMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            Re2 = ViewModel.UseRe2Regex,
+            UseRe2Engine = ViewModel.UseRe2Regex,
             Regex = ViewModel.UseRegex,
           }
         },

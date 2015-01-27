@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
@@ -99,7 +100,7 @@ namespace VsChromium.Features.ToolWindows {
 
         if (value != _isExpanded) {
           _isExpanded = value;
-          OnPropertyChanged("IsExpanded");
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IsExpanded));
         }
       }
     }
@@ -115,7 +116,7 @@ namespace VsChromium.Features.ToolWindows {
           _isSelected = value;
           // Don't notify of a change because it interferes with the tree view
           // programmatic selection, making selection behave erratically.
-          //OnPropertyChanged("IsSelected");
+          //OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IsSelected));
         }
       }
     }

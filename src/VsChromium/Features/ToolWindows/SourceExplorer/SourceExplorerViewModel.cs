@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
+using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
@@ -175,9 +176,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
       set {
         _updateInfo = value;
-        OnPropertyChanged("UpdateInfoText");
-        OnPropertyChanged("UpdateInfoUrl");
-        OnPropertyChanged("UpdateInfoVisibility");
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UpdateInfoText));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UpdateInfoUrl));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UpdateInfoVisibility));
       }
     }
 
@@ -187,6 +188,25 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public List<TreeViewItemViewModel> FileSystemTreeNodes {
       get { return _fileSystemTreeNodes; }
     }
+
+    public bool GotoPreviousEnabled {
+      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+    }
+
+    public bool GotoNextEnabled {
+      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+    }
+
+    public bool CancelSearchEnabled {
+      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+    }
+
+    protected override void OnRootNodesChanged() {
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));
+    }
+
 
     public void SwitchToFileSystemTree() {
       var defaultMessage = string.Format(

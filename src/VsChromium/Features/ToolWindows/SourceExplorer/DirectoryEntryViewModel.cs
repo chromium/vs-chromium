@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class DirectoryEntryViewModel : FileSystemEntryViewModel {
@@ -86,8 +87,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     protected override void OnPropertyChanged(string propertyName) {
       base.OnPropertyChanged(propertyName);
-      if (propertyName == "IsExpanded") {
-        OnPropertyChanged("ImageSourcePath");
+      if (propertyName == ReflectionUtils.GetPropertyName(this, x => x.IsExpanded)) {
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.ImageSourcePath));
       }
     }
   }

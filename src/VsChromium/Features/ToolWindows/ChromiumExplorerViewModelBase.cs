@@ -44,6 +44,10 @@ namespace VsChromium.Features.ToolWindows {
       } else {
         _activeRootNodes.ForAll(x => _rootNodes.Add(x));
       }
+      this.OnRootNodesChanged();
+    }
+
+    protected virtual void OnRootNodesChanged() {
     }
 
     public static void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {

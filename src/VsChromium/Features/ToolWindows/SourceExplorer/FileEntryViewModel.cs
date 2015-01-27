@@ -10,6 +10,7 @@ using System.Windows.Media;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Utility;
 using VsChromium.Threads;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
@@ -99,7 +100,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     #endregion
 
     protected override void OnPropertyChanged(string propertyName) {
-      if (propertyName == "IsExpanded") {
+      if (propertyName == ReflectionUtils.GetPropertyName(this, x => x.IsExpanded)) {
         if (IsExpanded && !_hasExpanded) {
           _hasExpanded = true;
           LoadFileExtracts();

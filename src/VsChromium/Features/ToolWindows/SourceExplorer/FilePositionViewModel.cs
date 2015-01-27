@@ -7,6 +7,7 @@ using System.Windows.Media;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FilePositionViewModel : SourceExplorerItemViewModelBase {
@@ -46,7 +47,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public void SetTextExtract(FileExtract value) {
       _fileExtract = value;
-      OnPropertyChanged("DisplayText");
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.DisplayText));
     }
 
     #region Command Handlers

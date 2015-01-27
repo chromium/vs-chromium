@@ -173,6 +173,7 @@
     <Compile Include="Threads\IDateTimeProvider.cs" />
     <Compile Include="Threads\TaskCancellation.cs" />
     <Compile Include="Utility\ChromeUtility.cs" />
+    <Compile Include="Utility\ReflectionUtils.cs" />
     <Compile Include="Utility\IOperationProgressTracker.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\HashCode.cs" />

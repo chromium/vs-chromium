@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Wpf {
   public class StringListViewModel : INotifyPropertyChanged {
@@ -20,7 +21,7 @@ namespace VsChromium.Wpf {
           return;
 
         _selectedItem = value;
-        OnPropertyChanged("SelectedItem");
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SelectedItem));
       }
     }
 

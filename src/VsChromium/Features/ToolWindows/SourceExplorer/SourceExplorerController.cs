@@ -139,7 +139,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     /// <summary>
     /// Find the directory entry in the FileSystemTree corresponding to a directory
-    /// entry containing a relative path.
+    /// entry containing a relative path or a project root path.
     /// </summary>
     private static FileSystemEntryViewModel FindFileSystemEntryForRelativePath(
       List<TreeViewItemViewModel> fileSystemTreeNodes,
@@ -186,11 +186,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     /// <summary>
     /// Returns the node contained in <paramref name="fileSystemTreeNodes"/>
-    /// that has the exact same set of parents as <paramref name="node"/>. This
-    /// method is used to find equivalent nodes between different versions of
-    /// the file system tree.
+    /// that has the exact same path as <paramref name="node"/>. This method is
+    /// used to find equivalent nodes between different versions of the file
+    /// system tree.
     /// </summary>
-    private static TreeViewItemViewModel FindSameNode(List<TreeViewItemViewModel> fileSystemTreeNodes, TreeViewItemViewModel node) {
+    private static TreeViewItemViewModel FindSameNode(
+      List<TreeViewItemViewModel> fileSystemTreeNodes,
+      TreeViewItemViewModel node) {
       var root = GetChromiumRoot(node);
       if (root == null)
         return null;

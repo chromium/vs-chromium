@@ -19,6 +19,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
     private ISourceExplorerController _controller;
     private UpdateInfo _updateInfo;
+    private bool _matchCase;
+    private bool _matchWholeWord;
+    private bool _useRegex;
+    private bool _includeSymLinks;
+    private bool _useRe2Regex;
 
     public enum DisplayKind {
       FileSystemTree,
@@ -56,7 +61,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool MatchCase { get; set; }
+    public bool MatchCase {
+      get { return _matchCase; }
+      set {
+        if (_matchCase != value) {
+          _matchCase = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.MatchCase));
+        }
+      }
+    }
 
     /// <summary>
     /// Databound!
@@ -73,7 +86,40 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool UseRegex { get; set; }
+    public bool MatchWholeWord {
+      get { return _matchWholeWord; }
+      set {
+        if (_matchWholeWord != value) {
+          _matchWholeWord = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.MatchWholeWord));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string MatchWholeWordToolTip {
+      get {
+        return string.Format(
+          "Toggle matching whole words only for all searches. " +
+          "Match whole word is currently {0}.",
+          MatchWholeWord ? "enabled" : "disabled");
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool UseRegex {
+      get { return _useRegex; }
+      set {
+        if (_useRegex != value) {
+          _useRegex = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UseRegex));
+        }
+      }
+    }
 
     /// <summary>
     /// Databound!
@@ -90,7 +136,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool IncludeSymLinks { get; set; }
+    public bool IncludeSymLinks {
+      get { return _includeSymLinks; }
+      set {
+        if (_includeSymLinks != value) {
+          _includeSymLinks = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IncludeSymLinks));
+        }
+      }
+    }
 
     /// <summary>
     /// Databound!
@@ -107,7 +161,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool UseRe2Regex { get; set; }
+    public bool UseRe2Regex {
+      get { return _useRe2Regex; }
+      set {
+        if (_useRe2Regex != value) {
+          _useRe2Regex = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UseRe2Regex));
+        }
+      }
+    }
 
     /// <summary>
     /// Databound!
@@ -206,7 +268,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));
     }
-
 
     public void SwitchToFileSystemTree() {
       var defaultMessage = string.Format(

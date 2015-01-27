@@ -13,13 +13,13 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
-using Process = System.Diagnostics.Process;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   /// <summary>
@@ -237,6 +237,24 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e) {
       // Handle property change for the ViewModel.
+      if (e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchCase) ||
+          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchWholeWord) ||
+          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UseRegex) ||
+          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UseRe2Regex) ||
+          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.IncludeSymLinks)) {
+        // Redo search
+        switch (ViewModel.ActiveDisplay) {
+          case SourceExplorerViewModel.DisplayKind.FileNameSearchResult:
+            SearchFilesNames();
+            break;
+          case SourceExplorerViewModel.DisplayKind.DirectoryNameSearchResult:
+            SearchDirectoryNames();
+            break;
+          case SourceExplorerViewModel.DisplayKind.TextSearchResult:
+            SearchText();
+            break;
+        }
+      }
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {

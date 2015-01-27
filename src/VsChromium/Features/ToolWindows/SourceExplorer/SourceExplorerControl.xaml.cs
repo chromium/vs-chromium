@@ -3,13 +3,14 @@
 // found in the LICENSE file.
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
-using EnvDTE;
 using Microsoft.VisualStudio.ComponentModelHost;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Features.AutoUpdate;
@@ -87,6 +88,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       ViewModel.OnToolWindowCreated(serviceProvider);
 
       FetchFilesystemTree();
+
+      // Hookup property changed notifier
+      ViewModel.PropertyChanged += ViewModel_PropertyChanged;
     }
 
     public SourceExplorerViewModel ViewModel {
@@ -231,8 +235,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     #region WPF Event handlers
 
-    private void CancelSearchButton_Click(object sender, RoutedEventArgs e) {
-      ViewModel.SwitchToFileSystemTree();
+    void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+      // Handle property change for the ViewModel.
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -261,7 +265,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (this._treeViewScrollViewer == null) {
         this._treeViewScrollViewer = this.FileTreeView.Template.FindName("_tv_scrollviewer_", this.FileTreeView) as ScrollViewer;
         if (_treeViewScrollViewer != null) {
-          this._treeViewScrollViewer.ScrollChanged += this.TreeViewScrollViewerScrollChanged;
+          this._treeViewScrollViewer.ScrollChanged += this.TreeViewScrollViewer_ScrollChanged;
         }
       }
 
@@ -274,7 +278,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       e.Handled = false;
     }
 
-    private void TreeViewScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e) {
+    private void TreeViewScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) {
       Debug.Assert(this._treeViewScrollViewer != null);
 
       if (this._treeViewResetHorizScroll) {
@@ -312,8 +316,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       e.Handled = true;
     }
 
-    #endregion
-
     private void SyncButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(
         () => {
@@ -322,8 +324,26 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           if (document == null)
             return;
           var path = document.FullName;
-          Controller.ShowInSourceExplorer(path);
+          if (!PathHelpers.IsAbsolutePath(path))
+            return;
+          if (!PathHelpers.IsValidBclPath(path))
+            return;
+          Controller.ShowInSourceExplorer(new FullPath(path));
         });
     }
+
+    private void GotoPrevious_Click(object sender, RoutedEventArgs e) {
+      Controller.NavigateToPreviousLocation();
+    }
+
+    private void GotoNext_Click(object sender, RoutedEventArgs e) {
+      Controller.NavigateToNextLocation();
+    }
+
+    private void Cancel_Click(object sender, RoutedEventArgs e) {
+      Controller.CancelSearch();
+    }
+
+    #endregion
   }
 }

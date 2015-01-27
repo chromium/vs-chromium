@@ -98,60 +98,21 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    enum Direction {
-      Next,
-      Previous
-    }
-
-    private T GetNextLocationEntry<T>(Direction direction) where T : class, IHierarchyObject {
-      if (ExplorerControl.ViewModel.ActiveDisplay != SourceExplorerViewModel.DisplayKind.TextSearchResult)
-        return null;
-
-      var item = ExplorerControl.FileTreeView.SelectedItem;
-      if (item == null) {
-        if (ExplorerControl.ViewModel.ActiveRootNodes == null)
-          return null;
-
-        if (ExplorerControl.ViewModel.ActiveRootNodes.Count == 0)
-          return null;
-
-        item = ExplorerControl.ViewModel.ActiveRootNodes[0].ParentViewModel;
-        if (item == null)
-          return null;
-      }
-
-      var nextItem = (direction == Direction.Next)
-        ? new HierarchyObjectNavigator().GetNextItemOfType<T>(item as IHierarchyObject)
-        : new HierarchyObjectNavigator().GetPreviousItemOfType<T>(item as IHierarchyObject);
-
-      return nextItem;
-    }
-
     public bool HasNextLocation() {
-      return GetNextLocationEntry<FilePositionViewModel>(Direction.Next) != null;
+      return ExplorerControl.Controller.HasNextLocation();
     }
 
     public bool HasPreviousLocation() {
-      return GetNextLocationEntry<FilePositionViewModel>(Direction.Previous) != null;
+      return ExplorerControl.Controller.HasPreviousLocation();
     }
 
     public void NavigateToNextLocation() {
-      var nextItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Next);
-      NavigateToTreeViewItem(nextItem);
+      ExplorerControl.Controller.NavigateToNextLocation();
     }
 
     public void NavigateToPreviousLocation() {
-      var previousItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Previous);
-      NavigateToTreeViewItem(previousItem);
+      ExplorerControl.Controller.NavigateToPreviousLocation();
     }
-
-    private void NavigateToTreeViewItem(TreeViewItemViewModel item) {
-      if (item == null)
-        return;
-      ExplorerControl.Controller.BringItemViewModelToView(item);
-      ExplorerControl.Controller.ExecuteOpenCommandForItem(item);
-    }
-
     public void NotifyPackageUpdate(UpdateInfo updateInfo) {
       WpfUtilities.Post(ExplorerControl, () => {
         ExplorerControl.UpdateInfo = updateInfo;

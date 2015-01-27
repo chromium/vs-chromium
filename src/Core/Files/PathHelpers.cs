@@ -43,7 +43,7 @@ namespace VsChromium.Core.Files {
       return SystemPathComparer.Instance.IndexOf(path, prefix, 0, path.Length) == 0;
     }
 
-    public static KeyValuePair<string, string> SplitPath(string path, string prefix) {
+    public static KeyValuePair<string, string> SplitPrefix(string path, string prefix) {
       if (string.IsNullOrEmpty(path))
         throw new ArgumentException();
       if (string.IsNullOrEmpty(prefix))

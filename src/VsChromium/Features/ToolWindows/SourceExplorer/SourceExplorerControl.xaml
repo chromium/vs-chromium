@@ -71,13 +71,6 @@
           <TextBlock Text="{Binding UseRegexToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <Separator Width="2" />
-      <Button Content="&lt;=&gt;" IsTabStop="False" Click="SyncButton_Click">
-        <Button.ToolTip>
-          <TextBlock Text="Sync with Active Document"/>
-        </Button.ToolTip>
-      </Button>
-      <Separator Width="2" />
       <ToggleButton Content="Lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>
@@ -88,6 +81,28 @@
           <TextBlock Text="{Binding UseRe2RegexToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
+      <Separator Width="2" />
+      <Button Content="&lt;-" IsTabStop="False" Click="GotoPrevious_Click">
+        <Button.ToolTip>
+          <TextBlock Text="Go to previous search result (Shift-F8 or Ctrl-Shift-F8)"/>
+        </Button.ToolTip>
+      </Button>
+      <Button Content="-&gt;" IsTabStop="False" Click="GotoNext_Click">
+        <Button.ToolTip>
+          <TextBlock Text="Go to next search result (F8 or Ctrl-F8)"/>
+        </Button.ToolTip>
+      </Button>
+      <Button Content="x" IsTabStop="False" Click="Cancel_Click">
+        <Button.ToolTip>
+          <TextBlock Text="Clear current search and revert to File System view"/>
+        </Button.ToolTip>
+      </Button>
+      <Separator Width="2" />
+      <Button Content="&lt;=&gt;" IsTabStop="False" Click="SyncButton_Click">
+        <Button.ToolTip>
+          <TextBlock Text="Sync with Active Document"/>
+        </Button.ToolTip>
+      </Button>
       <Separator Width="2" />
       <ToggleButton IsChecked="{Binding EnableChildDebugging}" IsTabStop="False">
         <ToggleButton.ToolTip>
@@ -118,7 +133,6 @@
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="80" />
             <ColumnDefinition MinWidth="100" />
-            <ColumnDefinition Width="22"/>
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" />
@@ -134,7 +148,6 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="0" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False">x</Button>
           <!-- Row 1 -->
           <TextBlock Grid.Row="1" Grid.Column="0" Text="Folder name:" VerticalAlignment="Center"/>
           <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectoryNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}">
@@ -149,7 +162,6 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="1" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False">x</Button>
           <!-- Row 2 -->
           <TextBlock Grid.Row="2" Grid.Column="0" Text="Text search:" VerticalAlignment="Center" />
           <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="FileContentsSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}">
@@ -164,7 +176,6 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="2" Grid.Column="2" Width="20" Click="CancelSearchButton_Click" IsTabStop="False" Height="22" Margin="1,0" VerticalAlignment="Bottom">x</Button>
           <!-- Row 4 -->
           <ProgressBar Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" IsIndeterminate="False" Height="8" Name="ProgressBar" BorderThickness="0" Visibility="Hidden" IsTabStop="False" />
         </Grid>

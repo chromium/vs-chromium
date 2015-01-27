@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+﻿// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,16 +9,30 @@ namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestPathHelpers {
     [TestMethod]
-    public void PathHelpersWorks() {
-      var result = PathHelpers.SplitPath(@"d:\ooo\bar.txt", @"d:\");
+    public void SplitPrefixRemovesSeparators() {
+      var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:");
+      Assert.AreEqual(@"d:", result.Key);
+      Assert.AreEqual(@"ooo\bar.txt", result.Value);
+    }
+
+    [TestMethod]
+    public void SplitPrefixRemovesSeparators2() {
+      var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:\ooo");
+      Assert.AreEqual(@"d:\ooo", result.Key);
+      Assert.AreEqual(@"bar.txt", result.Value);
+    }
+
+    [TestMethod]
+    public void SplitPrefixRemovesTrailingSeparators() {
+      var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:\");
       Assert.AreEqual(@"d:", result.Key);
       Assert.AreEqual(@"ooo\bar.txt", result.Value);
     }
     [TestMethod]
-    public void PathHelpersWorks2() {
-      var result = PathHelpers.SplitPath(@"d:\ooo\bar.txt", @"d:");
-      Assert.AreEqual(@"d:", result.Key);
-      Assert.AreEqual(@"ooo\bar.txt", result.Value);
+    public void SplitPrefixRemovesTrailingSeparators2() {
+      var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:\ooo\");
+      Assert.AreEqual(@"d:\ooo", result.Key);
+      Assert.AreEqual(@"bar.txt", result.Value);
     }
   }
 }

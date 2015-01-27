@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.Text;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -25,8 +26,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);
-    void ShowInSourceExplorer(string path);
+    void ShowInSourceExplorer(FullPath path);
     void BringItemViewModelToView(TreeViewItemViewModel item);
     bool ExecuteOpenCommandForItem(TreeViewItemViewModel item);
+
+    // Search result navigation
+    bool HasNextLocation();
+    bool HasPreviousLocation();
+    void NavigateToNextLocation();
+    void NavigateToPreviousLocation();
+    void CancelSearch();
   }
 }

@@ -188,15 +188,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// </summary>
     private static FileSystemEntryViewModel FindFileSystemEntryForPath(
       List<TreeViewItemViewModel> fileSystemTreeNodes,
-      string path) {
+      FullPath path) {
       // Find the corresponding top level entry in the FileSystemTree nodes.
       var fileSystemTreeEntry = fileSystemTreeNodes
         .OfType<FileSystemEntryViewModel>()
-        .FirstOrDefault(x => PathHelpers.IsPrefix(path, x.Name));
+        .FirstOrDefault(x => PathHelpers.IsPrefix(path.Value, x.Name));
       if (fileSystemTreeEntry == null)
         return null;
 
-      var pair = PathHelpers.SplitPath(path, fileSystemTreeEntry.Name);
+      var pair = PathHelpers.SplitPrefix(path.Value, fileSystemTreeEntry.Name);
 
       // Special case: "path" is actually a Root entry.
       if (pair.Value == "") {
@@ -363,7 +363,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <paramref name="path"/>. This is a no-op if the FileSystemTree
     /// is already the currently active ViewModel.
     /// </summary>
-    public void ShowInSourceExplorer(string path) {
+    public void ShowInSourceExplorer(FullPath path) {
       // If the view model is displaying the file system tree, don't do anything.
       //if (ViewModel.ActiveDisplay == SourceExplorerViewModel.DisplayKind.FileSystemTree)
       //  return;
@@ -595,6 +595,64 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           ViewModel.SetTextSearchResult(viewModel);
         }
       });
+    }
+
+    enum Direction {
+      Next,
+      Previous
+    }
+
+    private T GetNextLocationEntry<T>(Direction direction) where T : class, IHierarchyObject {
+      if (ViewModel.ActiveDisplay != SourceExplorerViewModel.DisplayKind.TextSearchResult)
+        return null;
+
+      var item = _control.FileTreeView.SelectedItem;
+      if (item == null) {
+        if (ViewModel.ActiveRootNodes == null)
+          return null;
+
+        if (ViewModel.ActiveRootNodes.Count == 0)
+          return null;
+
+        item = ViewModel.ActiveRootNodes[0].ParentViewModel;
+        if (item == null)
+          return null;
+      }
+
+      var nextItem = (direction == Direction.Next)
+        ? new HierarchyObjectNavigator().GetNextItemOfType<T>(item as IHierarchyObject)
+        : new HierarchyObjectNavigator().GetPreviousItemOfType<T>(item as IHierarchyObject);
+
+      return nextItem;
+    }
+
+    public bool HasNextLocation() {
+      return GetNextLocationEntry<FilePositionViewModel>(Direction.Next) != null;
+    }
+
+    public bool HasPreviousLocation() {
+      return GetNextLocationEntry<FilePositionViewModel>(Direction.Previous) != null;
+    }
+
+    public void NavigateToNextLocation() {
+      var nextItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Next);
+      NavigateToTreeViewItem(nextItem);
+    }
+
+    public void NavigateToPreviousLocation() {
+      var previousItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Previous);
+      NavigateToTreeViewItem(previousItem);
+    }
+
+    public void CancelSearch() {
+      ViewModel.SwitchToFileSystemTree();
+    }
+
+    private void NavigateToTreeViewItem(TreeViewItemViewModel item) {
+      if (item == null)
+        return;
+      BringItemViewModelToView(item);
+      ExecuteOpenCommandForItem(item);
     }
   }
 }

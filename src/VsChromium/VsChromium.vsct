@@ -139,8 +139,8 @@
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchText" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="" />
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Shift" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c" />
   </KeyBindings>
   <Symbols>

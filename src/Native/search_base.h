@@ -11,6 +11,7 @@ class AsciiSearchBase {
   enum SearchOptions {
     // Search is case sensitive
     kMatchCase = 0x0001,
+    kMatchWholeWord = 0x0002,
   };
 
   struct SearchParams {

@@ -21,7 +21,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public bool MatchCase { get; set; }
 
     [ProtoMember(4)]
-    public bool WholeWord { get; set; }
+    public bool MatchWholeWord { get; set; }
 
     [ProtoMember(5)]
     public bool IncludeSymLinks { get; set; }

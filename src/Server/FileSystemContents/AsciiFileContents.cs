@@ -56,8 +56,11 @@ namespace VsChromium.Server.FileSystemContents {
       if (searchOptions.MatchCase) {
         options |= NativeMethods.SearchOptions.kMatchCase;
       }
+      if (searchOptions.MatchWholeWord) {
+        options |= NativeMethods.SearchOptions.kMatchWholeWord;
+      }
 
-      if (searchOptions.UseRegex && searchOptions.UseRe2RegexEngine)
+      if (searchOptions.UseRegex && searchOptions.UseRe2Engine)
         return new AsciiCompiledTextSearchRe2(pattern, options);
 
       if (searchOptions.UseRegex)

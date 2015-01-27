@@ -9,7 +9,8 @@ namespace VsChromium.Server.Search {
 
   public class SearchProviderOptions {
     public bool MatchCase { get; set; }
+    public bool MatchWholeWord { get; set; }
     public bool UseRegex { get; set; }
-    public bool UseRe2RegexEngine { get; set; }
+    public bool UseRe2Engine { get; set; }
   }
 }

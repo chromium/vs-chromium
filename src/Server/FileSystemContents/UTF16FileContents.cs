@@ -61,6 +61,9 @@ namespace VsChromium.Server.FileSystemContents {
       if (searchOptions.MatchCase) {
         options |= NativeMethods.SearchOptions.kMatchCase;
       }
+      if (searchOptions.MatchWholeWord) {
+        options |= NativeMethods.SearchOptions.kMatchWholeWord;
+      }
       return new Utf16CompiledTextSearchStdSearch(pattern, options);
     }
   }

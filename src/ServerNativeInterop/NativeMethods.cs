@@ -21,6 +21,7 @@ namespace VsChromium.Server.NativeInterop {
     public enum SearchOptions {
       kNone = 0x0000,
       kMatchCase = 0x0001,
+      kMatchWholeWord = 0x0002,
     }
 
     public enum TextKind {

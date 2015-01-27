@@ -45,8 +45,9 @@ namespace VsChromium.Server.Search {
         parsedSearchString,
         new SearchProviderOptions {
           MatchCase = searchParams.MatchCase,
+          MatchWholeWord = searchParams.MatchWholeWord,
           UseRegex = searchParams.Regex,
-          UseRe2RegexEngine = searchParams.UseRe2Engine
+          UseRe2Engine = searchParams.UseRe2Engine
         });
       return new CompiledTextSearchData(parsedSearchString, searchContentsAlgorithms);
     }

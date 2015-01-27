@@ -56,7 +56,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.NavigateToFile(this, null));
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(this, null));
       }
     }
 
@@ -87,6 +87,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public ICommand OpenContainingFolderCommand {
       get {
         return CommandDelegate.Create(sender => Controller.WindowsExplorer.OpenContainingFolder(this.GetFullPath()));
+      }
+    }
+
+    public ICommand ShowInSourceExplorer {
+      get {
+        return CommandDelegate.Create(sender => Controller.ShowInSourceExplorer(this));
       }
     }
 

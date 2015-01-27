@@ -199,7 +199,7 @@ namespace VsChromium.Wpf {
       }
 
       virtualizingStackPanel.BringIndexIntoViewPublic(dataObjetIndex);
-      var treeViewItem =(ItemsControl)parentItemsControl.ItemContainerGenerator.ContainerFromIndex(dataObjetIndex);
+      var treeViewItem = (ItemsControl)parentItemsControl.ItemContainerGenerator.ContainerFromIndex(dataObjetIndex);
       if (treeViewItem.DataContext != dataObject) {
         Logger.LogError("TreeView item data context is not the right data object.");
         return null;

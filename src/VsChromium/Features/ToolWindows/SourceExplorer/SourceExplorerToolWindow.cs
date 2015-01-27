@@ -149,7 +149,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (item == null)
         return;
       ExplorerControl.Controller.BringItemViewModelToView(item);
-      ExplorerControl.Controller.ExecutedOpenCommandForItem(item);
+      ExplorerControl.Controller.ExecuteOpenCommandForItem(item);
     }
 
     public void NotifyPackageUpdate(UpdateInfo updateInfo) {

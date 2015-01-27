@@ -238,7 +238,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (!tvi.IsSelected)
         return;
 
-      if (Controller.ExecutedOpenCommandForItem(tvi.DataContext as TreeViewItemViewModel))
+      if (Controller.ExecuteOpenCommandForItem(tvi.DataContext as TreeViewItemViewModel))
         e.Handled = true;
     }
 
@@ -286,7 +286,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void FileTreeView_OnPreviewKeyDown(object sender, KeyEventArgs e) {
       if (e.Key == Key.Return) {
-        e.Handled = Controller.ExecutedOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
+        e.Handled = Controller.ExecuteOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
       }
     }
 

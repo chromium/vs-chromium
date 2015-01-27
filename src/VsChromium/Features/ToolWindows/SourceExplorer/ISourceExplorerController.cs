@@ -23,9 +23,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     void SearchDirectoryNames(string searchPattern);
     void SearchText(string searchPattern);
 
-    void NavigateToFile(FileEntryViewModel fileEntry, Span? span);
-    void NavigateToDirectory(DirectoryEntryViewModel directoryEntry);
+    void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
+    void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);
     void BringItemViewModelToView(TreeViewItemViewModel item);
-    bool ExecutedOpenCommandForItem(TreeViewItemViewModel item);
+    bool ExecuteOpenCommandForItem(TreeViewItemViewModel item);
   }
 }

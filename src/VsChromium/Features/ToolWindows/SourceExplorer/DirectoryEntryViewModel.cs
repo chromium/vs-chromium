@@ -47,7 +47,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.NavigateToDirectory(this));
+        return CommandDelegate.Create(sender => Controller.ShowInSourceExplorer(this));
       }
     }
 

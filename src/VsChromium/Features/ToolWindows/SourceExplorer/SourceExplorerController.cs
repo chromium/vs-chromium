@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Threading;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.Text;
@@ -74,7 +75,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
-    public void NavigateToFile(FileEntryViewModel fileEntry, Span? span) {
+    public void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
       SynchronizationContextProvider.UIContext.Post(() =>
@@ -140,26 +141,31 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// Find the directory entry in the FileSystemTree corresponding to a directory
     /// entry containing a relative path.
     /// </summary>
-    private static DirectoryEntryViewModel FindDirectoryEntryForRelativePath(
+    private static FileSystemEntryViewModel FindFileSystemEntryForRelativePath(
       List<TreeViewItemViewModel> fileSystemTreeNodes,
-      DirectoryEntryViewModel relativePath) {
+      FileSystemEntryViewModel relativePathEntry) {
       // Find the top level entry of the relative path
-      var topLevelEntry = GetChromiumRoot(relativePath);
+      var topLevelEntry = GetChromiumRoot(relativePathEntry);
       Debug.Assert(topLevelEntry != null);
 
       // Find the corresponding top level entry in the FileSystemTree nodes.
       var fileSystemTreeEntry = fileSystemTreeNodes
-        .OfType<DirectoryEntryViewModel>()
+        .OfType<FileSystemEntryViewModel>()
         .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, topLevelEntry.Name));
       if (fileSystemTreeEntry == null)
         return null;
 
+      // Special case: "relativePath" is actually a Root entry.
+      if (topLevelEntry == relativePathEntry) {
+        return fileSystemTreeEntry;
+      }
+
       // Descend the FileSystemTree nodes hierarchy as we split the directory name.
-      foreach (var childName in relativePath.Name.Split(Path.DirectorySeparatorChar)) {
+      foreach (var childName in relativePathEntry.Name.Split(Path.DirectorySeparatorChar)) {
         // First try without forcing loading the lazy loaded entries.
         var childViewModel = fileSystemTreeEntry
           .Children
-          .OfType<DirectoryEntryViewModel>()
+          .OfType<FileSystemEntryViewModel>()
           .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
 
         // Try again by forcing loading the lazy loaded entries.
@@ -167,7 +173,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           fileSystemTreeEntry.EnsureAllChildrenLoaded();
           childViewModel = fileSystemTreeEntry
             .Children
-            .OfType<DirectoryEntryViewModel>()
+            .OfType<FileSystemEntryViewModel>()
             .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
           if (childViewModel == null)
             return null;
@@ -288,17 +294,28 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     /// <summary>
     /// Navigate to the FileSystemTree directory entry corresponding to
-    /// <paramref name="directoryEntry"/>. This is a no-op if the FileSystemTree
+    /// <paramref name="relativePathEntry"/>. This is a no-op if the FileSystemTree
     /// is already the currently active ViewModel.
     /// </summary>
-    public void NavigateToDirectory(DirectoryEntryViewModel directoryEntry) {
+    public void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry) {
       // If the view model is displaying the file system tree, don't do anything.
       if (ViewModel.ActiveDisplay == SourceExplorerViewModel.DisplayKind.FileSystemTree)
         return;
 
-      var entry = FindDirectoryEntryForRelativePath(ViewModel.FileSystemTreeNodes, directoryEntry);
-      ViewModel.SwitchToFileSystemTree();
-      BringItemViewModelToView(entry);
+      var entry = FindFileSystemEntryForRelativePath(ViewModel.FileSystemTreeNodes, relativePathEntry);
+      if (entry != null) {
+        // Ensure no node is selected before displaying file system tree.
+        ViewModel.FileSystemTreeNodes.ForAll(RemoveSelection);
+
+        // Switch to file system tree ViewModel and select the entry we found.
+        ViewModel.SwitchToFileSystemTree();
+        BringItemViewModelToView(entry);
+      }
+    }
+
+    private void RemoveSelection(TreeViewItemViewModel item) {
+      item.IsSelected = false;
+      item.Children.ForAll(RemoveSelection);
     }
 
     public void BringItemViewModelToView(TreeViewItemViewModel item) {
@@ -306,7 +323,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // the "BringIntoView" request to avoid flickering as we descend into
       // the virtual tree and realize the sub-panels at each level.
       _control.SwallowsRequestBringIntoView(true);
-      var treeViewItem = SelectTreeViewItem(item, _control.FileTreeView);
+      var treeViewItem = SelectTreeViewItem(_control.FileTreeView, item);
 
       // If we found it, allow the "BringIntoView" requests to be handled
       // and ask the tree view item to bring itself into view.
@@ -319,15 +336,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    public TreeViewItem SelectTreeViewItem(TreeViewItemViewModel item, TreeView treeView) {
-      TreeViewItem result = null;
-      Logger.WrapActionInvocation(() => {
-        result = WpfUtilities.SelectTreeViewItem(treeView, item);
-      });
-      return result;
+    public TreeViewItem SelectTreeViewItem(TreeView treeView, TreeViewItemViewModel item) {
+      return WpfUtilities.SelectTreeViewItem(treeView, item);
     }
 
-    public bool ExecutedOpenCommandForItem(TreeViewItemViewModel tvi) {
+    public bool ExecuteOpenCommandForItem(TreeViewItemViewModel tvi) {
       if (tvi == null)
         return false;
 

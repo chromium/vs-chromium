@@ -53,7 +53,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.NavigateToFile(ParentFile, new Span(Position, Length)));
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(ParentFile, new Span(Position, Length)));
       }
     }
 

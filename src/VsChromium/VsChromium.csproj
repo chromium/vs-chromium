@@ -251,7 +251,7 @@
     <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />
     <Compile Include="Features\FormatComment\FormatLinesResult.cs" />
     <Compile Include="Features\FormatComment\ICommentFormatter.cs" />
-    <Compile Include="PackageInitializerViewHandler.cs" />
+    <Compile Include="Package\PackageInitializerViewHandler.cs" />
     <Compile Include="Package\IPackagePostInitializer.cs" />
     <Compile Include="Package\IPackagePreInitializer.cs" />
     <Compile Include="Package\IVisualStudioPackageProvider.cs" />

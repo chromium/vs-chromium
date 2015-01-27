@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
+using Microsoft.VisualStudio.PlatformUI;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Utility;
@@ -263,35 +264,34 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get { return ActiveDisplay != DisplayKind.FileSystemTree; }
     }
 
+    private ImageSource GetImageFromResource(string name) {
+      if (_controller == null) {
+        return Views.ImageSourceFactory.Instance.GetImage(name);
+      }
+      return _controller.StandarImageSourceFactory.GetImage(name);
+    }
+
     public ImageSource GotoPreviousButtonImage {
       get {
-        if (_controller == null)
-          return null;
-        return _controller.StandarImageSourceFactory.GetImage("ArrowLeft");
+        return GetImageFromResource("ArrowLeft");
       }
     }
 
     public ImageSource GotoNextButtonImage {
       get {
-        if (_controller == null)
-          return null;
-        return _controller.StandarImageSourceFactory.GetImage("ArrowRight");
+        return GetImageFromResource("ArrowRight");
       }
     }
 
     public ImageSource CancelSearchButtonImage {
       get {
-        if (_controller == null)
-          return null;
-        return _controller.StandarImageSourceFactory.GetImage("CancelSearch");
+        return GetImageFromResource("CancelSearch");
       }
     }
 
     public ImageSource SyncButtonImage {
       get {
-        if (_controller == null)
-          return null;
-        return _controller.StandarImageSourceFactory.GetImage("SyncActiveDocument");
+        return GetImageFromResource("SyncActiveDocument");
       }
     }
 

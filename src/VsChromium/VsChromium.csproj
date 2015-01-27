@@ -235,6 +235,8 @@
     <Compile Include="Package\VsSolutionEventsHandler.cs" />
     <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
+    <Compile Include="Views\IImageSourceFactory.cs" />
+    <Compile Include="Views\ImageSourceFactory.cs" />
     <Compile Include="Wpf\HierarchyObjectNavigator.cs" />
     <Compile Include="Wpf\IWindowsExplorer.cs" />
     <Compile Include="Wpf\Clipboard.cs" />

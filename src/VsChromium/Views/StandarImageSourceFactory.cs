@@ -2,26 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
-using System.Collections.Concurrent;
 using System.ComponentModel.Composition;
-using System.Reflection;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Language.Intellisense;
-using VsChromium.Core.Files;
 
 namespace VsChromium.Views {
   [Export(typeof(IStandarImageSourceFactory))]
   public class StandarImageSourceFactory : IStandarImageSourceFactory {
     private readonly IGlyphService _glyphService;
-
-    private readonly ConcurrentDictionary<string, BitmapImage> _images =
-      new ConcurrentDictionary<string, BitmapImage>(SystemPathComparer.Instance.StringComparer);
+    private readonly IImageSourceFactory _imageSourceFactory;
 
     [ImportingConstructor]
-    public StandarImageSourceFactory(IGlyphService glyphService) {
+    public StandarImageSourceFactory(IGlyphService glyphService, IImageSourceFactory imageSourceFactory) {
       _glyphService = glyphService;
+      _imageSourceFactory = imageSourceFactory;
     }
 
     public ImageSource OpenFolder { 
@@ -53,19 +47,7 @@ namespace VsChromium.Views {
     }
 
     public ImageSource GetImage(string resourceName) {
-      return _images.GetOrAdd(resourceName, s => {
-        var bitmapImage = new BitmapImage();
-        bitmapImage.BeginInit();
-        bitmapImage.UriSource = GetUri(string.Format("Views/Images/{0}.png", resourceName));
-        bitmapImage.EndInit();
-        return bitmapImage;
-      });
-    }
-
-    private static Uri GetUri(string filePath) {
-      var uriString = string.Format("/{0};component/{1}",
-                                    Assembly.GetExecutingAssembly().GetName().Name, filePath);
-      return new Uri(uriString, UriKind.Relative);
+      return _imageSourceFactory.GetImage(resourceName);
     }
   }
 }

@@ -9,6 +9,7 @@ using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.FileSystem {
   public interface IFileSystemProcessor {
+    void Refresh();
     void RegisterFile(FullPath path);
     void UnregisterFile(FullPath path);
     FileSystemTreeSnapshot GetCurrentSnapshot();

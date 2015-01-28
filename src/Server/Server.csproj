@@ -55,6 +55,7 @@
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotComputedResult.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDirectoryStatisticsRequestHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\RefreshFileSystemTreeRequestHandler.cs" />
     <Compile Include="Operations\IOperationIdFactory.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventForwarder.cs" />
     <Compile Include="Ipc\TypedEvents\ITypedEventSender.cs" />

@@ -23,6 +23,7 @@ namespace VsChromium.Server.FileSystem {
   public class FileSystemProcessor : IFileSystemProcessor {
     private static readonly TaskId FlushFileRegistrationQueueTaskId = new TaskId("FlushFileRegistrationQueueTaskId");
     private static readonly TaskId FlushPathsChangedQueueTaskId = new TaskId("FlushPathsChangedQueueTaskId");
+    private static readonly TaskId RefreshTaskId = new TaskId("RefreshTaskId");
     /// <summary>
     /// Performance optimization flag: when building a new file system tree
     /// snapshot, this flag enables code to try to re-use filename instances
@@ -75,6 +76,10 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
+    public void Refresh() {
+      _taskQueue.Enqueue(RefreshTaskId, RefreshTask);
+    }
+
     public void RegisterFile(FullPath path) {
       _fileRegistrationQueue.Enqueue(FileRegistrationKind.Register, path);
       _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
@@ -107,6 +112,11 @@ namespace VsChromium.Server.FileSystem {
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       _pathsChangedQueue.Enqueue(changes);
       _taskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
+    }
+
+    private void RefreshTask() {
+      ValidateKnownFiles();
+      RecomputeGraph();
     }
 
     private void FlushPathsChangedQueueTask() {

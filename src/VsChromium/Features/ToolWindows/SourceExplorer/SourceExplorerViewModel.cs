@@ -295,6 +295,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
+    public ImageSource RefreshFileSystemTreeButtonImage {
+      get {
+        return GetImageFromResource("RefreshFileSystemTree");
+      }
+    }
+
     protected override void OnRootNodesChanged() {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));

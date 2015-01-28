@@ -29,7 +29,6 @@ namespace VsChromium.Views {
         var bitmapImage = new BitmapImage();
         bitmapImage.BeginInit();
         bitmapImage.UriSource = GetUri(string.Format("Views/Images/{0}.png", resourceName));
-        //bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
         bitmapImage.EndInit();
         return bitmapImage;
       });

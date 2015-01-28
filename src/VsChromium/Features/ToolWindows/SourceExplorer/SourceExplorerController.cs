@@ -502,6 +502,16 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _uiRequestProcessor.Post(request);
     }
 
+    public void RefreshFileSystemTree() {
+      var uiRequest = new UIRequest {
+        Request = new RefreshFileSystemTreeRequest(),
+        Id = "RefreshFileSystemTreeRequest",
+        Delay = TimeSpan.FromSeconds(0.0),
+      };
+
+      _uiRequestProcessor.Post(uiRequest);
+    }
+
     public void SetFileSystemTree(FileSystemTree tree) {
       var viewModel = CreateFileSystemTreeViewModel(tree);
 

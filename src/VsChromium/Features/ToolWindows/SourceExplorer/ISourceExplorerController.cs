@@ -19,6 +19,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     IClipboard Clipboard { get; }
     IWindowsExplorer WindowsExplorer { get; }
 
+    void RefreshFileSystemTree();
     void SetFileSystemTree(FileSystemTree tree);
     void SearchFilesNames(string searchPattern);
     void SearchDirectoryNames(string searchPattern);

@@ -135,15 +135,14 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Views\Images\RefreshFileSystemTree.png" />
     <Resource Include="Views\Images\CancelSearch.png" />
     <Resource Include="Views\Images\ArrowLeft.png" />
     <Resource Include="Views\Images\ArrowRight.png" />
-    <Resource Include="Views\Images\RefreshSearch.png" />
     <Resource Include="Views\Images\SyncActiveDocument.png" />
     <Resource Include="Views\Images\Error.png" />
     <Resource Include="Views\Images\Warning.png" />
     <Resource Include="Views\Images\TextDocument.png" />
-    <Resource Include="Views\Images\Refresh.png" />
     <Resource Include="Views\Images\ProcessWorking.png" />
     <Resource Include="Views\Images\FileGo.png" />
     <Resource Include="Views\Images\TextEntry.png" />

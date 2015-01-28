@@ -186,6 +186,9 @@ namespace VsChromium.Tests.Core {
         {"foo/**bar", "foo/blahbar", true},
         {"foo/**bar", "foo/blah/blahbar", false},
         {"foo/**/bar", "bar/test/foo", false},
+        {"foo/**/foo", "bar/foo", false},
+        {"foo/**/foo", "bar/foo/blah/foo", true},
+        {"foo/**/foo", "bar/foo/foo", true},
 
         // "*" rules
         // http://git-scm.com/docs/gitignore

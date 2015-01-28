@@ -36,10 +36,20 @@ namespace VsChromium.Views {
     }
 
     private static Uri GetUri(string filePath) {
+      // Note: The VS WPF designer requires an absolute URL for the images
+      // to load properly.
+#if true
+      var uriString = string.Format(
+        "pack://application:,,,/{0};component/{1}",
+        Assembly.GetExecutingAssembly().GetName().Name,
+        filePath);
+      //Logger.Log("GetImage: {0}", uriString);
+      return new Uri(uriString, UriKind.Absolute);
+#else
       var uriString = string.Format("/{0};component/{1}",
         Assembly.GetExecutingAssembly().GetName().Name, filePath);
-      //Logger.Log("GetImage: {0}", uriString);
       return new Uri(uriString, UriKind.Relative);
+#endif
     }
   }
 }

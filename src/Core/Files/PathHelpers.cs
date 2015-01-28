@@ -39,8 +39,21 @@ namespace VsChromium.Core.Files {
       return path1 + path2;
     }
 
+    /// <summary>
+    /// Return <code>true</code> if <paramref name="prefix"/> is a path prefix
+    /// of <paramref name="path"/>
+    /// </summary>
     public static bool IsPrefix(string path, string prefix) {
-      return SystemPathComparer.Instance.IndexOf(path, prefix, 0, path.Length) == 0;
+      var result = SystemPathComparer.Instance.IndexOf(path, prefix, 0, path.Length);
+      if (result < 0)
+        return false;
+
+      // Check that "path" contains a directory separator
+      if (prefix.Last() == Path.DirectorySeparatorChar)
+        return true;
+      if (path.Length <= prefix.Length)
+        return true;
+      return path[prefix.Length] == Path.DirectorySeparatorChar;
     }
 
     public static KeyValuePair<string, string> SplitPrefix(string path, string prefix) {

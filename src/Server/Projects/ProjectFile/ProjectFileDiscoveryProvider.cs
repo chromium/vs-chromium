@@ -23,12 +23,11 @@ namespace VsChromium.Server.Projects.ProjectFile {
     public ProjectFileDiscoveryProvider(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }
-    public IProject GetProject(FullPath filename) {
-      var name = filename;
+    public IProject GetProjectFromAnyPath(FullPath path) {
       lock (_lock) {
         // Cache hit?
         var root = _knownProjectRootDirectories
-          .Where(x => name.StartsWith(x.Key))
+          .Where(x => PathHelpers.IsPrefix(path.Value, x.Key.Value))
           .OrderByDescending(x => x.Key.Value.Length)
           .FirstOrDefault();
         if (root.Key != default(FullPath)) {
@@ -36,12 +35,12 @@ namespace VsChromium.Server.Projects.ProjectFile {
         }
 
         // Negative cache hit?
-        if (_knownNonProjectDirectories.Contains(name.Parent)) {
+        if (_knownNonProjectDirectories.Contains(path.Parent)) {
           return null;
         }
 
         // Nope: compute all the way...
-        return GetProjectWorker(name);
+        return GetProjectWorker(path);
       }
     }
 

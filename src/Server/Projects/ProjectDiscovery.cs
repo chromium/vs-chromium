@@ -19,7 +19,7 @@ namespace VsChromium.Server.Projects {
 
     public IProject GetProject(FullPath filename) {
       return _providers
-        .Select(t => t.GetProject(filename))
+        .Select(t => t.GetProjectFromAnyPath(filename))
         .Where(project => project != null)
         .OrderByDescending(p => p.RootPath.Value.Length)
         .FirstOrDefault();

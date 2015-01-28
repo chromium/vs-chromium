@@ -12,19 +12,23 @@ namespace VsChromium.Server.Projects {
     int Priority { get; }
 
     /// <summary>
-    /// Returns the |IProject| corresponding to the project containing |filename|.
-    /// Returns |null| if |filename| is not known to this project provider.
+    /// Returns the <see cref="IProject"/> corresponding to the project
+    /// containing <paramref name="path"/>. Returns <code>null</code> if
+    /// <paramref name="path"/> is not known to this project provider.
     /// </summary>
-    IProject GetProject(FullPath filename);
+    IProject GetProjectFromAnyPath(FullPath path);
 
     /// <summary>
-    /// Returns the |IProject| corresponding to the project root path |projectRootPath|.
-    /// Returns |null| if |projectRootPath| is not known to this project provider.
+    /// Returns the <see cref="IProject"/> corresponding to the project root
+    /// path <paramref name="projectRootPath"/>. Returns <code>null</code> if
+    /// <paramref name="projectRootPath"/> is not known to this project
+    /// provider.
     /// </summary>
     IProject GetProjectFromRootPath(FullPath projectRootPath);
 
     /// <summary>
-    /// Reset internal cache, usually called when something drastic happened on the file system.
+    /// Reset internal cache, usually called when something drastic happened on
+    /// the file system.
     /// </summary>
     void ValidateCache();
   }

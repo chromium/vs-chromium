@@ -9,6 +9,24 @@ namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestPathHelpers {
     [TestMethod]
+    public void IsPrefixWorks() {
+      var result = PathHelpers.IsPrefix(@"d:\ooo\bar.txt", @"d:");
+      Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public void IsPrefixWithPartialPrefixFails() {
+      var result = PathHelpers.IsPrefix(@"d:\foo\foo.bar", @"d:\foo\foo");
+      Assert.IsFalse(result);
+    }
+
+    [TestMethod]
+    public void IsPrefixWithPartialPrefixFails2() {
+      var result = PathHelpers.IsPrefix(@"d:\foo\foo.bar", @"d:\foo\foo\");
+      Assert.IsFalse(result);
+    }
+
+    [TestMethod]
     public void SplitPrefixRemovesSeparators() {
       var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:");
       Assert.AreEqual(@"d:", result.Key);

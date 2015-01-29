@@ -347,6 +347,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           if (!PathHelpers.IsValidBclPath(path))
             return;
           Controller.ShowInSourceExplorer(new FullPath(path));
+          FileTreeView.Focus();
         });
     }
 

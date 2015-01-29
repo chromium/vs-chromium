@@ -247,13 +247,6 @@
           </Setter>
           <EventSetter Event="PreviewMouseDoubleClick" Handler="TreeViewItem_PreviewMouseDoubleClick"/>
           <EventSetter Event="RequestBringIntoView" Handler="TreeViewItem_RequestBringIntoView"/>
-          <!--<EventSetter Event="Selected" Handler="TreeViewSelectedItemChanged" />-->
-          <Style.Triggers>
-            <Trigger Property="IsSelected" Value="True">
-              <!--<Setter Property="FontWeight" Value="Bold" />-->
-              <Setter Property="Background" Value="{DynamicResource VsBrush.Highlight}" />
-            </Trigger>
-          </Style.Triggers>
         </Style>
       </TreeView.ItemContainerStyle>
 

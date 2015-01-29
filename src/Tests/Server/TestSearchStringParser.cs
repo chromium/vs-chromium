@@ -16,6 +16,8 @@ namespace VsChromium.Tests.Server {
       Assert.IsNotNull(result.MainEntry);
       Assert.AreEqual("foo", result.MainEntry.Text);
       Assert.AreEqual(0, result.MainEntry.Index);
+      Assert.AreEqual(0, result.EntriesBeforeMainEntry.Count);
+      Assert.AreEqual(0, result.EntriesAfterMainEntry.Count);
     }
     [TestMethod]
     public void ParseSimpleStringWorks2() {
@@ -25,6 +27,8 @@ namespace VsChromium.Tests.Server {
       Assert.IsNotNull(result.MainEntry);
       Assert.AreEqual("foo", result.MainEntry.Text);
       Assert.AreEqual(0, result.MainEntry.Index);
+      Assert.AreEqual(0, result.EntriesBeforeMainEntry.Count);
+      Assert.AreEqual(0, result.EntriesAfterMainEntry.Count);
     }
     [TestMethod]
     public void ParseInvalidStringWorks() {
@@ -33,6 +37,8 @@ namespace VsChromium.Tests.Server {
       Assert.IsNotNull(result);
       Assert.IsNotNull(result.MainEntry);
       Assert.AreEqual("", result.MainEntry.Text);
+      Assert.AreEqual(0, result.EntriesBeforeMainEntry.Count);
+      Assert.AreEqual(0, result.EntriesAfterMainEntry.Count);
     }
     [TestMethod]
     public void ParseInvalidStringWorks2() {
@@ -42,6 +48,8 @@ namespace VsChromium.Tests.Server {
       Assert.IsNotNull(result.MainEntry);
       Assert.AreEqual("bar2", result.MainEntry.Text);
       Assert.AreEqual(1, result.MainEntry.Index);
+      Assert.AreEqual(1, result.EntriesBeforeMainEntry.Count);
+      Assert.AreEqual(0, result.EntriesAfterMainEntry.Count);
     }
   }
 }

@@ -78,7 +78,7 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var preProcessResult = SearchPreProcessParams<FileName>(
+      var preProcessResult = PreProcessSearch<FileName>(
         searchParams,
         MatchFileName,
         MatchFileRelativePath);
@@ -119,7 +119,7 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var preProcessResult = SearchPreProcessParams<DirectoryName>(
+      var preProcessResult = PreProcessSearch<DirectoryName>(
         searchParams,
         MatchDirectoryName,
         MatchDirectoryRelativePath);
@@ -290,7 +290,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private SearchPreProcessResult<T> SearchPreProcessParams<T>(
+    private SearchPreProcessResult<T> PreProcessSearch<T>(
       SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
@@ -299,7 +299,7 @@ namespace VsChromium.Server.Search {
         return null;
 
       if (searchParams.Regex) {
-        return SearchPreProcessRegularExpression<T>(searchParams, matchName, matchRelativeName);
+        return PreProcessRegularExpressionSearch(searchParams, matchName, matchRelativeName);
       }
       var matcher = FileNameMatching.ParsePattern(pattern);
 
@@ -317,7 +317,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private SearchPreProcessResult<T> SearchPreProcessRegularExpression<T>(
+    private SearchPreProcessResult<T> PreProcessRegularExpressionSearch<T>(
       SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
@@ -411,7 +411,9 @@ namespace VsChromium.Server.Search {
       // TODO(rpaquay): What about "."? Special or not?
       if (pattern.IndexOf(Path.DirectorySeparatorChar) < 0 &&
           pattern.IndexOf('*') < 0) {
-        pattern = "*" + pattern + "*";
+        if (!searchParams.MatchWholeWord) {
+          pattern = "*" + pattern + "*";
+        }
       }
 
       return pattern;

@@ -522,7 +522,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,
         HintText = "Searching for matching file names...",
-        Delay = TimeSpan.FromSeconds(0.02),
+        Delay = GlobalSettings.SearchFileNamesDelay,
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
@@ -551,7 +551,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.DirectoryNamesSearch,
         HintText = "Searching for matching directory names...",
-        Delay = TimeSpan.FromSeconds(0.02),
+        Delay = GlobalSettings.SearchDirectoryNamesDelay,
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
@@ -580,7 +580,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
         HintText = "Searching for matching text in files...",
-        Delay = TimeSpan.FromSeconds(0.02),
+        Delay = GlobalSettings.SearchTextDelay,
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,

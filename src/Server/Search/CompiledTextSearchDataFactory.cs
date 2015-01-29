@@ -31,14 +31,14 @@ namespace VsChromium.Server.Search {
           Enumerable.Empty<ParsedSearchString.Entry>(),
           Enumerable.Empty<ParsedSearchString.Entry>());
       } else {
-        parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
-        // Don't search empty or very small strings -- no significant results.
-        if (string.IsNullOrWhiteSpace(parsedSearchString.MainEntry.Text) ||
-            (parsedSearchString.MainEntry.Text.Length < MinimumSearchPatternLength)) {
+        var str = searchParams.SearchString ?? "";
+        if (str.Length < MinimumSearchPatternLength) {
           throw new RecoverableErrorException(
-            string.Format("Search pattern must contain at least {0} characters",
+            string.Format(
+              "Search pattern must contain at least {0} characters",
               MinimumSearchPatternLength));
         }
+        parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
       }
 
       var searchContentsAlgorithms = CreateSearchAlgorithms(

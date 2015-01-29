@@ -67,7 +67,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       get { return _searchableFileCount; }
     }
 
-    public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans) {
+    public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans, int maxLength) {
       var fileData = GetFileData(filename);
       if (fileData == null)
         return Enumerable.Empty<FileExtract>();
@@ -76,7 +76,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       if (contents == null)
         return Enumerable.Empty<FileExtract>();
 
-      return contents.GetFileExtracts(spans);
+      return contents.GetFileExtracts(maxLength, spans);
     }
 
     public bool IsContainedInSymLink(DirectoryName name) {

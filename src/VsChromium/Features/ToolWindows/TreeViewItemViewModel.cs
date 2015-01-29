@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Linq;
-using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -21,8 +18,7 @@ namespace VsChromium.Features.ToolWindows {
   /// This acts as an adapter between a raw data object and a TreeViewItem.
   /// </summary>
   public class TreeViewItemViewModel : INotifyPropertyChanged, IHierarchyObject {
-    private const int _initialItemCountLimit = 100;
-    private static readonly TreeViewItemViewModel _dummyChild = new TreeViewItemViewModel();
+    private static readonly TreeViewItemViewModel DummyChild = new TreeViewItemViewModel();
 
     private readonly LazyObservableCollection<TreeViewItemViewModel> _children;
     private readonly IStandarImageSourceFactory _imageSourceFactory;
@@ -40,10 +36,10 @@ namespace VsChromium.Features.ToolWindows {
         bool lazyLoadChildren) {
       _imageSourceFactory = imageSourceFactory;
       _parentViewModel = parentViewModel;
-      _children = new LazyObservableCollection<TreeViewItemViewModel>(_initialItemCountLimit,
+      _children = new LazyObservableCollection<TreeViewItemViewModel>(GlobalSettings.MaxExpandedTreeViewItemCount,
                                                                       CreateLazyItemViewModel);
       if (lazyLoadChildren)
-        _children.Add(_dummyChild);
+        _children.Add(DummyChild);
     }
 
     public IStandarImageSourceFactory StandarImageSourceFactory { get { return _imageSourceFactory; } }
@@ -80,7 +76,7 @@ namespace VsChromium.Features.ToolWindows {
     /// <summary>
     /// Returns true if this object's Children have not yet been populated.
     /// </summary>
-    public bool HasDummyChild { get { return _children.Count == 1 && _children[0] == _dummyChild; } }
+    public bool HasDummyChild { get { return _children.Count == 1 && _children[0] == DummyChild; } }
 
     /// <summary>
     /// Gets/sets whether the TreeViewItem associated with this object is
@@ -145,7 +141,7 @@ namespace VsChromium.Features.ToolWindows {
       var result = new LazyItemViewModel(_imageSourceFactory, this);
       if (ChildrenCount != 0)
         result.Text = string.Format("(Click to expand {0:n0} additional items...)",
-                                    ChildrenCount - _initialItemCountLimit);
+                                    ChildrenCount - GlobalSettings.MaxExpandedTreeViewItemCount);
       result.Selected += () => {
         var node = _children.ExpandLazyNode();
         node.IsSelected = true;
@@ -161,7 +157,7 @@ namespace VsChromium.Features.ToolWindows {
     private void LoadChildren() {
       // Lazy load the child items, if necessary.
       if (HasDummyChild) {
-        _children.Remove(_dummyChild);
+        _children.Remove(DummyChild);
         GetChildren().ForAll(x => _children.Add(x));
       }
     }

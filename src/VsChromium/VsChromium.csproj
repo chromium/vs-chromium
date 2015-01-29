@@ -224,6 +224,7 @@
     <Compile Include="Features\ToolWindows\SourceExplorer\GlobalNextLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
+    <Compile Include="GlobalSettings.cs" />
     <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerBase.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerExtensions.cs" />

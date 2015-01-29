@@ -222,12 +222,12 @@ namespace VsChromium.Server.Search {
       public List<FilePositionSpan> Spans { get; set; }
     }
 
-    public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans) {
+    public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans, int maxLength) {
       var filename = FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
       if (filename == null)
         return Enumerable.Empty<FileExtract>();
 
-      return _currentFileDatabase.GetFileExtracts(filename.Item2, spans);
+      return _currentFileDatabase.GetFileExtracts(filename.Item2, spans, maxLength);
     }
 
     public event EventHandler<OperationInfo> FilesLoading;

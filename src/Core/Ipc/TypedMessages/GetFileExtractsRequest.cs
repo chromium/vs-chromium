@@ -17,5 +17,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(2)]
     public List<FilePositionSpan> Positions { get; set; }
+
+    [ProtoMember(3)]
+    public int MaxExtractLength { get; set; }
   }
 }

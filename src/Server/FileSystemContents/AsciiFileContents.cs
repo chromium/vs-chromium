@@ -17,7 +17,6 @@ namespace VsChromium.Server.FileSystemContents {
   /// values are less than 127).
   /// </summary>
   public class AsciiFileContents : FileContents {
-    private const int MaxTextExtractLength = 50;
     public AsciiFileContents(FileContentsMemory heap, DateTime utcLastModified)
       : base(heap, utcLastModified) {
     }
@@ -41,12 +40,12 @@ namespace VsChromium.Server.FileSystemContents {
       return CompareBinaryContents(this, Pointer, ByteLength, other2, other2.Pointer, other2.ByteLength);
     }
 
-    public override IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
+    public override IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
       var offsets = new AsciiTextLineOffsets(_heap);
       offsets.CollectLineOffsets();
 
       return spans
-        .Select(x => offsets.FilePositionSpanToFileExtract(x, MaxTextExtractLength))
+        .Select(x => offsets.FilePositionSpanToFileExtract(x, maxLength))
         .Where(x => x != null)
         .ToList();
     }

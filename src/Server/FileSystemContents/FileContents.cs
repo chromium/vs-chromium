@@ -68,7 +68,7 @@ namespace VsChromium.Server.FileSystemContents {
       return FilterOnOtherEntries(compiledTextSearchData, result).ToList();
     }
 
-    public virtual IEnumerable<FileExtract> GetFileExtracts(IEnumerable<FilePositionSpan> spans) {
+    public virtual IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
       return NoFileExtracts;
     }
 

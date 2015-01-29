@@ -20,7 +20,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (GetFileExtractsRequest)typedRequest;
-      var result = _searchEngine.GetFileExtracts(new FullPath(request.FileName), request.Positions);
+      var result = _searchEngine.GetFileExtracts(new FullPath(request.FileName), request.Positions, request.MaxExtractLength);
       return new GetFileExtractsResponse {
         FileName = request.FileName,
         FileExtracts = result.ToList()

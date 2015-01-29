@@ -20,10 +20,6 @@ using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class SourceExplorerController : ISourceExplorerController {
-    private const int SearchFileNamesMaxResults = 2000;
-    private const int SearchDirectoryNamesMaxResults = 2000;
-    private const int SearchTextMaxResults = 10000;
-    private const int SearchTextExpandMaxResults = 25;
     private static class OperationsIds {
       public const string FileContentsSearch = "files-contents-search";
       public const string DirectoryNamesSearch = "directory-names-search";
@@ -530,7 +526,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = SearchFileNamesMaxResults,
+            MaxResults = GlobalSettings.SearchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             UseRe2Engine = ViewModel.UseRe2Regex,
@@ -558,7 +554,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = SearchDirectoryNamesMaxResults,
+            MaxResults = GlobalSettings.SearchDirectoryNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             UseRe2Engine = ViewModel.UseRe2Regex,
@@ -586,7 +582,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = SearchTextMaxResults,
+            MaxResults = GlobalSettings.SearchTextMaxResults,
             MatchCase = ViewModel.MatchCase,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             UseRe2Engine = ViewModel.UseRe2Regex,
@@ -600,7 +596,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             response.SearchedFileCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
-          bool expandAll = response.HitCount < SearchTextExpandMaxResults;
+          bool expandAll = response.HitCount < GlobalSettings.SearchTextExpandMaxResults;
           var viewModel = CreateTextSearchResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetTextSearchResult(viewModel);
         }

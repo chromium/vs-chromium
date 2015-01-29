@@ -40,7 +40,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// Returns the list of text extracts for a given <paramref
     /// name="fileName"/> and list of <paramref name="spans"/>.
     /// </summary>
-    IEnumerable<FileExtract> GetFileExtracts(FileName fileName, IEnumerable<FilePositionSpan> spans);
+    IEnumerable<FileExtract> GetFileExtracts(FileName fileName, IEnumerable<FilePositionSpan> spans, int maxLength);
 
     /// <summary>
     /// Returns true if <paramref name="name"/> or any of its parent is a symlink directory.

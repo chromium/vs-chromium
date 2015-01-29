@@ -232,30 +232,15 @@
       VirtualizingStackPanel.VirtualizationMode="Recycling" PreviewMouseRightButtonDown="FileTreeView_PreviewMouseRightButtonDown">
 
       <TreeView.ItemContainerStyle>
-        <!-- This Style binds a TreeViewItem to a TreeViewItemViewModel. -->
         <Style TargetType="{x:Type TreeViewItem}">
           <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
           <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
           <Setter Property="FontWeight" Value="Normal" />
           <Setter Property="Foreground" Value="{DynamicResource VsBrush.WindowText}" />
-          <Setter Property="ItemsPanel">
-            <Setter.Value>
-              <ItemsPanelTemplate>
-                <wpf:MyVirtualizingStackPanel />
-              </ItemsPanelTemplate>
-            </Setter.Value>
-          </Setter>
           <EventSetter Event="PreviewMouseDoubleClick" Handler="TreeViewItem_PreviewMouseDoubleClick"/>
           <EventSetter Event="RequestBringIntoView" Handler="TreeViewItem_RequestBringIntoView"/>
         </Style>
       </TreeView.ItemContainerStyle>
-
-      <TreeView.ItemsPanel>
-        <ItemsPanelTemplate>
-          <!-- This custom VSP exposes BringIntoView -->
-          <wpf:MyVirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </TreeView.ItemsPanel>
 
       <TreeView.Resources>
 

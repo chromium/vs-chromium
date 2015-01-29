@@ -296,7 +296,6 @@
     <Compile Include="Features\ToolWindows\SourceExplorer\DirectoryEntryViewModel.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\FileEntryViewModel.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\FileSystemEntryViewModel.cs" />
-    <Compile Include="Wpf\MyVirtualizingStackPanel.cs" />
     <Compile Include="Wpf\ProgressBarTracker.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerViewModel.cs" />
     <Compile Include="Features\ToolWindows\TextItemViewModel.cs" />

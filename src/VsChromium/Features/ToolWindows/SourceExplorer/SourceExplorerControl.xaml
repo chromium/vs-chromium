@@ -343,8 +343,7 @@
                       <Condition Property="TreeViewItem.IsSelected" Value="True" />
                       <Condition Property="Selector.IsSelectionActive" Value="False" />
                     </MultiTrigger.Conditions>
-                    <!--<Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static vsui:EnvironmentColors.Highlight}}" />-->
-                    <Setter TargetName="Bd" Property="Panel.Background" Value="#FFCCCEDB" />
+                    <Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipBorderBrushKey}}" />
                     <Setter Property="TextElement.Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" />
                   </MultiTrigger>
                   <Trigger Property="UIElement.IsEnabled" Value="False">

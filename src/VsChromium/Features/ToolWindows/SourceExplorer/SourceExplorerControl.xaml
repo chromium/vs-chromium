@@ -80,6 +80,11 @@
           <TextBlock Text="{Binding MatchCaseToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
+      <ToggleButton Content="Word" IsChecked="{Binding MatchWholeWord}" IsTabStop="False">
+        <ToggleButton.ToolTip>
+          <TextBlock Text="{Binding MatchWholeWordToolTip}"/>
+        </ToggleButton.ToolTip>
+      </ToggleButton>
       <ToggleButton Content="Regex" IsChecked="{Binding UseRegex}" IsTabStop="False">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding UseRegexToolTip}"/>

@@ -37,8 +37,8 @@ class AsciiSearchBase {
   AsciiSearchBase();
   virtual ~AsciiSearchBase();
 
-  virtual void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) = 0;
-  virtual void Search(SearchParams* searchParams) = 0;
+  virtual void StartSearch(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result);
+  virtual void FindNext(SearchParams* searchParams);
   virtual void CancelSearch(SearchParams* searchParams) {}
   virtual int GetSearchBufferSize() { return 0; }
 
@@ -53,7 +53,13 @@ class AsciiSearchBase {
   }
 
  protected:
+  virtual void StartSearchWorker(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) = 0;
+  virtual void FindNextWorker(SearchParams* searchParams) = 0;
+
   enum { kAlphabetLen = 256 };
+
+private:
+  SearchOptions options_;
 };
 
 template <typename T>

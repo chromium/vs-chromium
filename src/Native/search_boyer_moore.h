@@ -11,8 +11,9 @@ class BoyerMooreSearch : public AsciiSearchBase {
   BoyerMooreSearch();
   virtual ~BoyerMooreSearch();
 
-  virtual void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE;
-  virtual void Search(SearchParams* searchParams) OVERRIDE;
+ protected:
+  virtual void StartSearchWorker(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE;
+  virtual void FindNextWorker(SearchParams* searchParams) OVERRIDE;
 
  private:
   const char *pattern_;

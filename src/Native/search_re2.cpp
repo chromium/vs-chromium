@@ -30,7 +30,7 @@ RE2Search::~RE2Search() {
   delete impl_;
 }
 
-void RE2Search::PreProcess(
+void RE2Search::StartSearchWorker(
     const char *pattern,
     int patternLen,
     SearchOptions options,
@@ -54,7 +54,7 @@ int RE2Search::GetSearchBufferSize() {
   return 0;
 }
 
-void RE2Search::Search(SearchParams* searchParams) {
+void RE2Search::FindNextWorker(SearchParams* searchParams) {
   const char* text;
   int textLength;
   if (searchParams->MatchStart == nullptr) {

@@ -47,7 +47,7 @@ RegexSearch::~RegexSearch() {
   delete impl_;
 }
 
-void RegexSearch::PreProcess(
+void RegexSearch::StartSearchWorker(
     const char *pattern,
     int patternLen,
     SearchOptions options,
@@ -79,7 +79,7 @@ int RegexSearch::GetSearchBufferSize() {
   return sizeof(std::cregex_iterator);
 }
 
-void RegexSearch::Search(SearchParams* searchParams) {
+void RegexSearch::FindNextWorker(SearchParams* searchParams) {
   regex_iterator_t* pit =
       reinterpret_cast<regex_iterator_t*>(searchParams->SearchBuffer);
   // Placement new for the iterator on the 1st call

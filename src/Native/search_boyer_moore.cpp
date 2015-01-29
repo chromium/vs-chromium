@@ -146,7 +146,7 @@ BoyerMooreSearch::~BoyerMooreSearch() {
     free(delta2_);
 }
 
-void BoyerMooreSearch::PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
+void BoyerMooreSearch::StartSearchWorker(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) {
   pattern_ = pattern;
   patternLen_ = patternLen;
   matchCase_ = (options & kMatchCase);
@@ -161,7 +161,7 @@ void BoyerMooreSearch::PreProcess(const char *pattern, int patternLen, SearchOpt
 
 #include "stdio.h"
 
-void BoyerMooreSearch::Search(SearchParams* searchParams) {
+void BoyerMooreSearch::FindNextWorker(SearchParams* searchParams) {
   const char* text = searchParams->TextStart;
   int textLen = searchParams->TextLength;
   if (searchParams->MatchStart != nullptr) {

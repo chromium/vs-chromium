@@ -119,7 +119,7 @@ EXPORT AsciiSearchBase* __stdcall AsciiSearchAlgorithm_Create(
     return result;
   }
 
-  result->PreProcess(pattern, patternLen, options, *searchCreateResult);
+  result->StartSearch(pattern, patternLen, options, *searchCreateResult);
   if (FAILED(searchCreateResult->HResult)) {
     delete result;
     return NULL;
@@ -135,7 +135,7 @@ EXPORT int __stdcall AsciiSearchAlgorithm_GetSearchBufferSize(AsciiSearchBase* s
 EXPORT void __stdcall AsciiSearchAlgorithm_Search(
     AsciiSearchBase* search,
     AsciiSearchBase::SearchParams* searchParams) {
-  search->Search(searchParams);
+  search->FindNext(searchParams);
 }
 
 EXPORT void __stdcall AsciiSearchAlgorithm_CancelSearch(

@@ -19,7 +19,7 @@ class Bndm32Search : public AsciiSearchBaseTemplate<T> {
     memset(maskv_, 0, sizeof(maskv_));
   }
 
-  void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE {
+  void StartSearchWorker(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE {
     assert(patternLen <= 32);
 
     pattern_ = pattern;
@@ -29,7 +29,7 @@ class Bndm32Search : public AsciiSearchBaseTemplate<T> {
       setbit32(&maskv_[Traits::FetchByte(pat, i)], patternLen - 1 - i);
   }
 
-  virtual void Search(SearchParams* searchParams) OVERRIDE {
+  virtual void FindNextWorker(SearchParams* searchParams) OVERRIDE {
     const char* text = searchParams->TextStart;
     int textLen = searchParams->TextLength;
     if (searchParams->MatchStart != nullptr) {
@@ -39,6 +39,7 @@ class Bndm32Search : public AsciiSearchBaseTemplate<T> {
     }
 
     searchParams->MatchStart = bndm32_algo(text, textLen, pattern_, patternLen_, maskv_);
+
     if (searchParams->MatchStart != nullptr) {
       searchParams->MatchLength = patternLen_;
     }

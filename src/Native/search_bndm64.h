@@ -19,62 +19,29 @@ class Bndm64Search : public AsciiSearchBaseTemplate<T> {
     memset(maskv_, 0, sizeof(maskv_));
   }
 
-  void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE {
+  void StartSearchWorker(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE {
     assert(patternLen <= 64);
 
     pattern_ = pattern;
     patternLen_ = patternLen;
-    options_ = options;
     uint8_t *pat = (uint8_t*)pattern;
     for (int i = 0; i < patternLen; ++i)
       setbit64(&maskv_[Traits::FetchByte(pat, i)], patternLen - 1 - i);
   }
 
-  bool IsWordCharacter(char ch) {
-    return 
-      (ch >= 'a' && ch <= 'z') ||
-      (ch >= 'A' && ch <= 'Z');
-  }
-
-  bool IsWholeWordMatch(SearchParams* searchParams) {
-    const char* start = searchParams->MatchStart - 1;
-    char startCh = 0;
-    if (start >= searchParams->TextStart) {
-      startCh = *(searchParams->MatchStart -1);
-    }
-    if (IsWordCharacter(startCh))
-      return false;
-
-    const char* end = searchParams->MatchStart + searchParams->MatchLength;
-    char endCh = 0;
-    if (end < searchParams->TextStart + searchParams->TextLength) {
-      endCh = *end;
-    }
-    if (IsWordCharacter(endCh))
-      return false;
-
-    return true;
-  }
-
-  virtual void Search(SearchParams* searchParams) OVERRIDE {
+  virtual void FindNextWorker(SearchParams* searchParams) OVERRIDE {
     const char* text = searchParams->TextStart;
     int textLen = searchParams->TextLength;
-    while (true) {
-      if (searchParams->MatchStart != nullptr) {
-        text = searchParams->MatchStart + searchParams->MatchLength;
-        // TODO(rpaquay): 2GB Limit
-        textLen = (int)(searchParams->TextStart + searchParams->TextLength - text);
-      }
+    if (searchParams->MatchStart != nullptr) {
+      text = searchParams->MatchStart + searchParams->MatchLength;
+      // TODO(rpaquay): 2GB Limit
+      textLen = (int)(searchParams->TextStart + searchParams->TextLength - text);
+    }
 
-      searchParams->MatchStart = bndm64_algo(text, textLen, pattern_, patternLen_, maskv_);
-      if (searchParams->MatchStart == nullptr)
-        break;
+    searchParams->MatchStart = bndm64_algo(text, textLen, pattern_, patternLen_, maskv_);
+
+    if (searchParams->MatchStart != nullptr) {
       searchParams->MatchLength = patternLen_;
-      if ((options_ & kMatchWholeWord) == 0)
-        break;
-
-      if (IsWholeWordMatch(searchParams))
-        break;
     }
   }
 
@@ -107,6 +74,5 @@ class Bndm64Search : public AsciiSearchBaseTemplate<T> {
 
   const char *pattern_;
   int patternLen_;
-  SearchOptions options_;
   uint64_t maskv_[kAlphabetLen];
 };

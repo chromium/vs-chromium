@@ -13,7 +13,7 @@ StrStrSearch::StrStrSearch()
       patternLen_(0) {
 }
 
-void StrStrSearch::PreProcess(
+void StrStrSearch::StartSearchWorker(
     const char *pattern,
     int patternLen,
     SearchOptions options,
@@ -22,7 +22,7 @@ void StrStrSearch::PreProcess(
   patternLen_ = patternLen;
 }
 
-void StrStrSearch::Search(SearchParams* searchParams) {
+void StrStrSearch::FindNextWorker(SearchParams* searchParams) {
   const char* start = searchParams->TextStart;
   const char* last = searchParams->TextStart + searchParams->TextLength;
   if (searchParams->MatchStart) {

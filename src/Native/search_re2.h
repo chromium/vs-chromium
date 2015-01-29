@@ -13,10 +13,12 @@ class RE2Search : public AsciiSearchBase {
   RE2Search();
   virtual ~RE2Search() OVERRIDE;
 
-  virtual void PreProcess(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE;
   virtual int GetSearchBufferSize() OVERRIDE;
-  virtual void Search(SearchParams* searchParams) OVERRIDE;
   virtual void CancelSearch(SearchParams* searchParams) OVERRIDE;
+
+ protected:
+  virtual void StartSearchWorker(const char *pattern, int patternLen, SearchOptions options, SearchCreateResult& result) OVERRIDE;
+  virtual void FindNextWorker(SearchParams* searchParams) OVERRIDE;
 
  private:
   const char *pattern_;

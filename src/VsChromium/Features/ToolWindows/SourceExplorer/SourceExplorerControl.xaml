@@ -401,6 +401,7 @@
             <StackPanel.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Open" Command="{Binding OpenCommand}" FontWeight="Bold" />
+                <MenuItem Header="Copy" Command="{Binding CopyCommand}"/>
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>

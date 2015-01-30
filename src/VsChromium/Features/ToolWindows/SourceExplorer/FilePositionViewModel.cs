@@ -58,6 +58,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
+    public ICommand CopyCommand {
+      get {
+        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(DisplayText));
+      }
+    }
+
     public ICommand CopyFullPathCommand {
       get {
         return CommandDelegate.Create(sender => Controller.Clipboard.SetText(ParentFile.GetFullPath()));

@@ -95,11 +95,6 @@
           <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <ToggleButton Content="RE2" IsChecked="{Binding UseRe2Regex}" IsTabStop="False">
-        <ToggleButton.ToolTip>
-          <TextBlock Text="{Binding UseRe2RegexToolTip}"/>
-        </ToggleButton.ToolTip>
-      </ToggleButton>
       <Separator Width="2" />
       <Button IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click">
         <Button.ToolTip>

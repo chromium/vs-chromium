@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
-using Microsoft.VisualStudio.PlatformUI;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Utility;
@@ -308,11 +307,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void SwitchToFileSystemTree() {
-      var defaultMessage = string.Format(
-        "Open a source file from a local Chromium enlistment " + 
-        "or a directory containing a \"{0}\" file.",
-        ConfigurationFileNames.ProjectFileNameDetection);
-      SetRootNodes(FileSystemTreeNodes, defaultMessage);
+      var msg1 = string.Format("Open a source file from a local Chromium enlistment");
+      var msg3 = string.Format("or a directory containing a \"{0}\" file.", ConfigurationFileNames.ProjectFileNameDetection); ;
+      SetRootNodes(_fileSystemTreeNodes, msg1, msg3);
     }
 
     private void SwitchToFileNamesSearchResult() {

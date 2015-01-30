@@ -40,11 +40,14 @@
           <ButtonText>Format Comment</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidVsChromiumCmdSet" id="cmdidSourceExplorerToolWindow" priority="0x0100" type="Button">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSourceExplorerToolWindow" priority="0xF100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_VIEW_ORG_WINDOWS" />
+        <Icon guid="guidSourceExplorerImages" id="Icon" />
         <Strings>
           <CommandName>cmdidSourceExplorerToolWindow</CommandName>
-          <ButtonText>Chromium Source Explorer</ButtonText>
+          <ButtonText>Source Explorer</ButtonText>
+          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <LocCanonicalName>VsChromium.SourceExplorer</LocCanonicalName>
         </Strings>
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidBuildExplorerToolWindow" priority="0x0100" type="Button">
@@ -132,6 +135,7 @@
     <Bitmaps>
       <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows" />
       <Bitmap guid="guidPackageChromeDebugImages" href="Resources\ChromeDebugIcons.png" />
+      <Bitmap guid="guidSourceExplorerImages" href="Resources\VsChromiumIcon.png" />
     </Bitmaps>
   </Commands>
   <KeyBindings>
@@ -181,6 +185,9 @@
       <IDSymbol name="bmpAttachAll" value="2" />
       <IDSymbol name="bmpAttachDescendants" value="3" />
       <IDSymbol name="bmpAttachChoose" value="4" />
+    </GuidSymbol>
+    <GuidSymbol name="guidSourceExplorerImages" value="{29eec5ec-3d88-4bf4-ae57-c38a635ea373}">
+      <IDSymbol name="Icon" value="1" />
     </GuidSymbol>
   </Symbols>
   <UsedCommands>

@@ -135,6 +135,10 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\VsChromiumIcon.png" />
+    <Resource Include="Resources\VsChromium.png" />
+    <Resource Include="Resources\VsChromium.ico" />
+    <Resource Include="Resources\ChromeDebugIcons.png" />
     <Resource Include="Views\Images\RefreshFileSystemTree.png" />
     <Resource Include="Views\Images\CancelSearch.png" />
     <Resource Include="Views\Images\ArrowLeft.png" />
@@ -390,7 +394,6 @@
     </Content>
     <Resource Include="Views\Images\FileEntry.png" />
     <None Include="Resources\Images_32bit.bmp" />
-    <Content Include="Resources\Package.ico" />
     <VSCTCompile Include="VsChromium.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
       <SubType>Designer</SubType>

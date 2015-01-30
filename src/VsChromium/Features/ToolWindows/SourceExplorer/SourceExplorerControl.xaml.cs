@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -47,13 +48,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
       InitComboBox(FileNamesSearch, new ComboBoxInfo {
-        SearchFunction = SearchFilesNames
+        SearchFunction = SearchFilesNames,
+        NextElement = DirectoryNamesSearch,
       });
       InitComboBox(DirectoryNamesSearch, new ComboBoxInfo {
-        SearchFunction = SearchDirectoryNames
+        SearchFunction = SearchDirectoryNames,
+        PreviousElement = FileNamesSearch,
+        NextElement = FileContentsSearch,
       });
       InitComboBox(FileContentsSearch, new ComboBoxInfo {
-        SearchFunction = SearchText
+        SearchFunction = SearchText,
+        PreviousElement = DirectoryNamesSearch,
+        NextElement = FileTreeView,
       });
     }
 
@@ -115,12 +121,24 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         if (e.Key == Key.Return || e.Key == Key.Enter)
           info.SearchFunction();
       };
+      comboBox.PrePreviewKeyUp += (s, e) => {
+        if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
+          if (!comboBox.IsDropDownOpen) {
+            if (info.PreviousElement != null) {
+              info.PreviousElement.Focus();
+              e.Handled = true;
+            }
+          }
+        }
+      };
       comboBox.PrePreviewKeyDown += (s, e) => {
-        if (e.KeyboardDevice.Modifiers == ModifierKeys.None &&
-            e.Key == Key.Down &&
-            !comboBox.IsDropDownOpen) {
-          FileTreeView.Focus();
-          e.Handled = true;
+        if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Down) {
+          if (!comboBox.IsDropDownOpen) {
+            if (info.NextElement != null) {
+              info.NextElement.Focus();
+              e.Handled = true;
+            }
+          }
         }
       };
     }
@@ -222,6 +240,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private class ComboBoxInfo {
       public Action SearchFunction { get; set; }
+      public UIElement PreviousElement { get; set; }
+      public UIElement NextElement { get; set; }
     }
 
     private static class OperationsIds {
@@ -314,6 +334,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private void FileTreeView_OnPreviewKeyDown(object sender, KeyEventArgs e) {
       if (e.Key == Key.Return) {
         e.Handled = Controller.ExecuteOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
+      } else if (e.Key == Key.Up && e.KeyboardDevice.Modifiers == ModifierKeys.None) {
+        // If topmost item is selected, move selection to bottom combo box
+        var item = FileTreeView.SelectedItem as TreeViewItemViewModel;
+        if (item != null) {
+          var parent = item.ParentViewModel as RootTreeViewItemViewModel;
+          if (parent != null) {
+            if (item == parent.Children.FirstOrDefault()) {
+              FileContentsSearch.Focus();
+              e.Handled = true;
+            }
+          }
+        }
       }
     }
 

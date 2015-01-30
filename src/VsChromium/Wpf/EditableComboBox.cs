@@ -85,11 +85,17 @@ namespace VsChromium.Wpf {
 
     #region PreviewKeyDown
 
-    // Note: We need this event because 
     public event KeyEventHandler PrePreviewKeyDown;
+    public event KeyEventHandler PrePreviewKeyUp;
 
     protected virtual void OnPrePreviewKeyDown(KeyEventArgs e) {
       KeyEventHandler handler = PrePreviewKeyDown;
+      if (handler != null)
+        handler(this, e);
+    }
+
+    protected virtual void OnPrePreviewKeyUp(KeyEventArgs e) {
+      KeyEventHandler handler = PrePreviewKeyUp;
       if (handler != null)
         handler(this, e);
     }
@@ -108,6 +114,14 @@ namespace VsChromium.Wpf {
       // Call our base behavior is not handled
       if (!e.Handled)
         base.OnPreviewKeyDown(e);
+    }
+
+    protected override void OnPreviewKeyUp(KeyEventArgs e) {
+      OnPrePreviewKeyUp(e);
+
+      // Call our base behavior is not handled
+      if (!e.Handled)
+        base.OnPreviewKeyUp(e);
     }
 
     #endregion

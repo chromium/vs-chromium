@@ -307,8 +307,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void SwitchToFileSystemTree() {
-      var msg1 = string.Format("Open a source file from a local Chromium enlistment");
-      var msg3 = string.Format("or a directory containing a \"{0}\" file.", ConfigurationFileNames.ProjectFileNameDetection); ;
+      var msg1 = string.Format("Open a source file from a local Chromium enlistment or");
+      var msg3 = string.Format("from a directory containing a \"{0}\" file.", ConfigurationFileNames.ProjectFileNameDetection); ;
       SetRootNodes(_fileSystemTreeNodes, msg1, msg3);
     }
 

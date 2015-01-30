@@ -33,10 +33,27 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     public FileExtract FilePositionSpanToFileExtract(FilePositionSpan filePositionSpan, int maxTextExtent) {
-      var lineStart = GetLineStart(filePositionSpan.Position, maxTextExtent);
-      var lineEnd = GetLineEnd(filePositionSpan.Position + filePositionSpan.Length, maxTextExtent);
+      maxTextExtent = Math.Max(maxTextExtent, filePositionSpan.Length);
+
+      var spanStart = filePositionSpan.Position;
+      var spanEnd = spanStart + filePositionSpan.Length;
+
+      var lineStart = GetLineStart(spanStart, maxTextExtent);
+      var lineEnd = GetLineEnd(spanEnd, maxTextExtent);
+
+      // prefix - span - suffix
+      var extractLength = lineEnd - lineStart;
+      var spanLength = filePositionSpan.Length;
+      Debug.Assert(spanLength <= extractLength);
+      var prefixLength = Math.Min(spanStart - lineStart, maxTextExtent - spanLength);
+      Debug.Assert(prefixLength >= 0);
+      var suffixLength = Math.Min(lineEnd - spanEnd ,maxTextExtent - spanLength - prefixLength);
+      Debug.Assert(suffixLength >= 0);
+
+      lineStart = spanStart - prefixLength;
+      lineEnd = spanEnd + suffixLength;
       var text = GetText(lineStart, lineEnd - lineStart);
-      var lineCol = GetLineColumn(filePositionSpan.Position);
+      var lineCol = GetLineColumn(spanStart);
 
       return new FileExtract {
         Text = text,

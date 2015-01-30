@@ -405,7 +405,9 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
-            <TextBlock Text="{Binding DisplayText}" FontFamily="Consolas" FontSize="12" />
+            <TextBlock Text="{Binding TextBeforeMatch}" FontFamily="Consolas" FontSize="13"/>
+            <TextBlock Text="{Binding MatchText}" FontFamily="Consolas" FontSize="13" FontWeight="Bold" />
+            <TextBlock Text="{Binding TextAfterMatch}" FontFamily="Consolas" FontSize="13"/>
           </StackPanel>
         </DataTemplate>
 
@@ -423,6 +425,7 @@
           </StackPanel>
         </HierarchicalDataTemplate>
 
+        <!-- Placeholder item used to show "Click here for more results" -->
         <DataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
@@ -430,6 +433,7 @@
           </StackPanel>
         </DataTemplate>
 
+        <!-- Simple text string item -->
         <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />

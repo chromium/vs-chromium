@@ -5,27 +5,26 @@
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class FilePositionViewModel : SourceExplorerItemViewModelBase {
     private readonly FileEntryViewModel _parentFile;
-    private readonly FilePositionSpan _position;
-    private FileExtract _fileExtract;
+    private readonly FilePositionSpan _matchPosition;
+    private FileExtract _extractPosition;
 
-    public FilePositionViewModel(ISourceExplorerController controller, FileEntryViewModel parentFile, FilePositionSpan position)
+    public FilePositionViewModel(ISourceExplorerController controller, FileEntryViewModel parentFile, FilePositionSpan matchPosition)
       : base(controller, parentFile, false) {
       _parentFile = parentFile;
-      _position = position;
+      _matchPosition = matchPosition;
     }
 
     public FileEntryViewModel ParentFile { get { return _parentFile; } }
 
-    public int Position { get { return _position.Position; } }
+    public int Position { get { return _matchPosition.Position; } }
 
-    public int Length { get { return _position.Length; } }
+    public int Length { get { return _matchPosition.Length; } }
 
     public string Path {
       get {
@@ -35,19 +34,61 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public override string DisplayText {
       get {
-        if (_fileExtract != null) {
-          return string.Format("{0} ({1}, {2})", _fileExtract.Text.Trim(), _fileExtract.LineNumber + 1, _fileExtract.ColumnNumber + 1);
+        if (_extractPosition != null) {
+          return string.Format("{0} ({1}, {2})", _extractPosition.Text.Trim(), _extractPosition.LineNumber + 1, _extractPosition.ColumnNumber + 1);
         } else {
           return string.Format("File offset {0}", Position);
         }
       }
     }
 
-    public override ImageSource ImageSourcePath { get { return StandarImageSourceFactory.GetImage("FileGo"); } }
+    public string TextBeforeMatch {
+      get {
+        if (_extractPosition == null)
+          return "";
+
+        // [extract - match - extract]
+        var offset = 0;
+        var length = _matchPosition.Position - _extractPosition.Offset;
+        return _extractPosition.Text.Substring(offset, length).TrimStart();
+      }
+    }
+
+    public string MatchText {
+      get {
+        if (_extractPosition == null)
+          return DisplayText;
+        // [extract - match - extract]
+        var offset = _matchPosition.Position - _extractPosition.Offset;
+        var length = _matchPosition.Length;
+        return _extractPosition.Text.Substring(offset, length);
+      }
+    }
+
+    public string TextAfterMatch {
+      get {
+        if (_extractPosition == null)
+          return "";
+        // [extract - match - extract]
+        var offset = _matchPosition.Position + _matchPosition.Length - _extractPosition.Offset;
+        var length = _extractPosition.Length - offset;
+        return _extractPosition.Text.Substring(offset, length).TrimEnd();
+      }
+    }
+
+
+    public override ImageSource ImageSourcePath {
+      get {
+        return StandarImageSourceFactory.GetImage("FileGo");
+      }
+    }
 
     public void SetTextExtract(FileExtract value) {
-      _fileExtract = value;
+      _extractPosition = value;
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.DisplayText));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextBeforeMatch));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.MatchText));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextAfterMatch));
     }
 
     #region Command Handlers
@@ -61,36 +102,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public ICommand CopyCommand {
       get {
         return CommandDelegate.Create(sender => Controller.Clipboard.SetText(DisplayText));
-      }
-    }
-
-    public ICommand CopyFullPathCommand {
-      get {
-        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(ParentFile.GetFullPath()));
-      }
-    }
-
-    public ICommand CopyRelativePathCommand {
-      get {
-        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(ParentFile.GetRelativePath()));
-      }
-    }
-
-    public ICommand CopyFullPathPosixCommand {
-      get {
-        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(PathHelpers.ToPosix(ParentFile.GetFullPath())));
-      }
-    }
-
-    public ICommand CopyRelativePathPosixCommand {
-      get {
-        return CommandDelegate.Create(sender => Controller.Clipboard.SetText(PathHelpers.ToPosix(ParentFile.GetRelativePath())));
-      }
-    }
-
-    public ICommand OpenContainingFolderCommand {
-      get {
-        return CommandDelegate.Create(sender => Controller.WindowsExplorer.OpenContainingFolder(ParentFile.GetFullPath()));
       }
     }
 

@@ -6,7 +6,7 @@ using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Server.NativeInterop;
 
-namespace VsChromium.Tests.Server {
+namespace VsChromium.Tests.NativeInterop {
   [TestClass]
   public class TestGetTextKind {
     [TestMethod]

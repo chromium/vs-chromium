@@ -35,18 +35,23 @@ bool GetLineExtentFromPosition(
   const CharType* high = min(text + textLen, text + position + maxOffset);
   const CharType* current = text + position;
 
-  // Search backward up to "min"
+  // Search backward up to "low" included
   const CharType* start = current;
-  for (; start > low; start--) {
-    if (*start == nl) {
-      break;
+  if (start > low) {
+    start--;
+    for (; start >= low; start--) {
+      if (*start == nl) {
+        break;
+      }
     }
+    start++;
   }
 
-  // Search forward up to "max"
+  // Search forward up to "high" excluded
   const CharType* end = current;
   for (; end < high; end++) {
     if (*end == nl) {
+      end++;
       break;
     }
   }

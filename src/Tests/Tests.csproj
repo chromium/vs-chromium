@@ -27,9 +27,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\TestPathHelpers.cs" />
+    <Compile Include="NativeInterop\TestGetLineExtent.cs" />
     <Compile Include="ServerProcess\TestUnregisterFile.cs" />
     <Compile Include="ServerProcess\TestFileSystemTree.cs" />
-    <Compile Include="Server\TestGetTextKind.cs" />
+    <Compile Include="NativeInterop\TestGetTextKind.cs" />
     <Compile Include="Server\Utils.cs" />
     <Compile Include="Server\TestFileContentsHash.cs" />
     <Compile Include="Server\TestFileContentsSearch.cs" />

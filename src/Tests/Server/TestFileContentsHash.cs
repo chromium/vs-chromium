@@ -3,10 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition.Hosting;
-using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Win32.Memory;
-using VsChromium.Server.FileSystemContents;
 
 namespace VsChromium.Tests.Server {
   [TestClass]

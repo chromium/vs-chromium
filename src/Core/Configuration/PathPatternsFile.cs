@@ -37,7 +37,7 @@ namespace VsChromium.Core.Configuration {
     }
 
     private IPathMatcher CreateMatcher() {
-      return new AggregatePathMatcher(_matcherLines.Value);
+      return new AnyPathMatcher(_matcherLines.Value);
     }
 
     private IEnumerable<string> FilterDirectories(IEnumerable<string> arg) {

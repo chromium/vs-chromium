@@ -78,7 +78,7 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var preProcessResult = PreProcessSearch<FileName>(
+      var preProcessResult = PreProcessFileSystemNameSearch<FileName>(
         searchParams,
         MatchFileName,
         MatchFileRelativePath);
@@ -119,7 +119,7 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var preProcessResult = PreProcessSearch<DirectoryName>(
+      var preProcessResult = PreProcessFileSystemNameSearch<DirectoryName>(
         searchParams,
         MatchDirectoryName,
         MatchDirectoryRelativePath);
@@ -290,7 +290,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private SearchPreProcessResult<T> PreProcessSearch<T>(
+    private SearchPreProcessResult<T> PreProcessFileSystemNameSearch<T>(
       SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {

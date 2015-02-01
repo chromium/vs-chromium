@@ -8,11 +8,16 @@ using System.IO;
 using System.Linq;
 
 namespace VsChromium.Core.Files.PatternMatching {
-  public class AggregatePathMatcher : IPathMatcher {
+  /// <summary>
+  /// Implementation of <see cref="IPathMatcher"/> over an enumeration of
+  /// existing  <see cref="IPathMatcher"/>, where the matching operation
+  /// succeeds when at least one of the passed in matcher succeeds.
+  /// </summary>
+  public class AnyPathMatcher : IPathMatcher {
     private HashSet<string> _fileExtensions;
     private IPathMatcher[] _pathMatchers;
 
-    public AggregatePathMatcher(IEnumerable<PathMatcher> pathMatchers) {
+    public AnyPathMatcher(IEnumerable<PathMatcher> pathMatchers) {
       Optimize(pathMatchers.ToArray());
     }
 

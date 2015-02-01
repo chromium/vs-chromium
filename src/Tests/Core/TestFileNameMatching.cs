@@ -230,7 +230,7 @@ namespace VsChromium.Tests.Core {
 
         IPathMatcher matcher;
         if (optimize) {
-          matcher = new AggregatePathMatcher(Enumerable.Repeat(PatternParser.ParsePattern(pattern), 1));
+          matcher = new AnyPathMatcher(Enumerable.Repeat(PatternParser.ParsePattern(pattern), 1));
         } else {
           matcher = PatternParser.ParsePattern(pattern);
         }

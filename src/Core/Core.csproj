@@ -85,7 +85,7 @@
     <Compile Include="Files\FullPathDictionary.cs" />
     <Compile Include="Files\IPathComparer.cs" />
     <Compile Include="Files\PatternMatching\IPathMatcher.cs" />
-    <Compile Include="Files\PatternMatching\AggregatePathMatcher.cs" />
+    <Compile Include="Files\PatternMatching\AnyPathMatcher.cs" />
     <Compile Include="Files\PatternMatching\PatternParser.cs" />
     <Compile Include="Files\PatternMatching\IPrePassWontMatch.cs" />
     <Compile Include="Files\PatternMatching\OpIsRelativeDirectory.cs" />

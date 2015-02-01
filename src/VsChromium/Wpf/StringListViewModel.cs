@@ -5,12 +5,17 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Wpf {
   public class StringListViewModel : INotifyPropertyChanged {
     private readonly ObservableCollection<string> _items = new ObservableCollection<string>();
     private string _selectedItem;
+
+    public StringListViewModel(IEnumerable<string> initialItems) {
+      initialItems.ForAll(_items.Add);
+    }
 
     public IEnumerable<string> Items { get { return _items; } }
 

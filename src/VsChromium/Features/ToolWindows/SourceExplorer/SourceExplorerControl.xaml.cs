@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -50,6 +52,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       InitComboBox(FileNamesSearch, new ComboBoxInfo {
         SearchFunction = SearchFilesNames,
         NextElement = DirectoryNamesSearch,
+        InitialItems = {
+          "*.c;*.cpp;*.cxx;*.cc;*.tli;*.tlh;*.h;*.hh;*.hpp;*.hxx;*.hh;*.inl;*.rc;*.resx;*.idl;*.asm;*.inc",
+          "*.htm;*.html;*.xml;*.gif;*.jpg;*.png;*.css;*.disco;*.js;*.srf",
+          "*.xml;*.xsl;*.xslt;*.xsd;*.dtd",
+          "*.txt",
+          "*.cs;*.resx;*.resw;*.xsd;*.wsdl;*.xaml;*.xml;*.htm;*.html;*.css",
+          "*.vb;*.resx;*.resw;*.xsd;*.wsdl;*.xaml;*.xml;*.htm;*.html;*.css",
+          "*.*",
+        }
       });
       InitComboBox(DirectoryNamesSearch, new ComboBoxInfo {
         SearchFunction = SearchDirectoryNames,
@@ -115,7 +126,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void InitComboBox(EditableComboBox comboBox, ComboBoxInfo info) {
-      comboBox.DataContext = new StringListViewModel();
+      comboBox.DataContext = new StringListViewModel(info.InitialItems);
       comboBox.TextChanged += (s, e) => info.SearchFunction();
       comboBox.KeyDown += (s, e) => {
         if (e.Key == Key.Return || e.Key == Key.Enter)
@@ -239,9 +250,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private class ComboBoxInfo {
+      public ComboBoxInfo() {
+        this.InitialItems = new List<string>();
+      }
+
       public Action SearchFunction { get; set; }
       public UIElement PreviousElement { get; set; }
       public UIElement NextElement { get; set; }
+      public List<string> InitialItems { get; set; }
     }
 
     private static class OperationsIds {

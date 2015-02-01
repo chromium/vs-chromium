@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.ComponentModel.Composition.Hosting;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -14,191 +15,132 @@ using VsChromium.ServerProxy;
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestSearchText : TestServerBase {
+    private static CompositionContainer _container;
+    private static ITypedRequestProcessProxy _server;
+    private static FileInfo _testFile;
+
+    [ClassInitialize]
+    public static void Initialize(TestContext context) {
+      _container = SetupMefContainer();
+      _server = _container.GetExportedValue<ITypedRequestProcessProxy>();
+      _testFile = GetChromiumEnlistmentFile();
+      GetFileSystemFromServer(_server, _testFile);
+    }
+
+    [ClassCleanup]
+    public static void Cleanup() {
+      _server.Dispose();
+      _container.Dispose();
+    }
+
     [TestMethod]
     public void SingleOccurrenceWorks() {
       const string searchPattern = "Test directory looking like";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1);
     }
 
     [TestMethod]
     public void MultipleOccurrenceWorks() {
       const string searchPattern = "Nothing here. Just making sure the directory exists.";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 3);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 3);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 3);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 3);
     }
 
     [TestMethod]
     public void SingleWildcardWorks() {
       const string searchPattern = "Test*looking";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 0, 22);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 22);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 22);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 0, 22);
     }
 
     [TestMethod]
     public void SingleWildcardWorks2() {
       const string searchPattern = "looking*like";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 15, 12);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 15, 12);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 15, 12);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 15, 12);
     }
 
     [TestMethod]
     public void MultipleWildcardsWorks() {
       const string searchPattern = "Test*looking*like";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 0, 27);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 0, 27);
     }
 
     [TestMethod]
     public void MultipleWildcardsWorks2() {
       const string searchPattern = "Test*directory*looking*like";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 0, 27);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 0, 27);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 0, 27);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 0, 27);
     }
 
     [TestMethod]
     public void MultipleWildcardsWorks3() {
       const string searchPattern = "directory*looking*like";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 5, 22);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 5, 22);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 5, 22);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 5, 22);
     }
 
     [TestMethod]
     public void EscapeWildcardWorks() {
       const string searchPattern = @"foo\* bar";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 7, 8);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 7 ,8);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 7, 8);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 7, 8);
     }
 
     [TestMethod]
     public void EscapeWildcardWorks2() {
       const string searchPattern = @"foo\*\\bar";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 39, 8);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase, testFile.Directory, 1, 39, 8);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.None, testFile.Directory, 1, 39, 8);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 39, 8);
     }
 
     [TestMethod]
     public void RegexWorks() {
       const string searchPattern = "Test directory looking like";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase | Options.Regex, _testFile.Directory, 1);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 1);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 1);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.Regex, _testFile.Directory, 1);
     }
 
     [TestMethod]
     public void RegexWorks2() {
       const string searchPattern = "[a-z]+";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
+      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase | Options.Regex, _testFile.Directory, 9);
 
-          VerifySearchTextResponse(server, searchPattern, Options.MatchCase | Options.Regex, testFile.Directory, 9);
-
-          var searchPatternLower = searchPattern.ToLowerInvariant();
-          VerifySearchTextResponse(server, searchPatternLower, Options.Regex, testFile.Directory, 9);
-        }
-      }
+      var searchPatternLower = searchPattern.ToLowerInvariant();
+      VerifySearchTextResponse(_server, searchPatternLower, Options.Regex, _testFile.Directory, 9);
     }
 
     [Flags]

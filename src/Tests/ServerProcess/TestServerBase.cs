@@ -19,7 +19,7 @@ namespace VsChromium.Tests.ServerProcess {
     //protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5000.0);
     protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5.0);
 
-    protected DirectoryInfo GetChromiumEnlistmentDirectory() {
+    protected static DirectoryInfo GetChromiumEnlistmentDirectory() {
       var assemblyFileInfo = new FileInfo(Assembly.GetExecutingAssembly().Location);
       var testDataPath = Path.Combine(assemblyFileInfo.Directory.Parent.Parent.FullName, "src", "Tests", "TestData", "src");
       var result = new DirectoryInfo(testDataPath);
@@ -27,7 +27,7 @@ namespace VsChromium.Tests.ServerProcess {
       return result;
     }
 
-    protected FileInfo GetChromiumEnlistmentFile() {
+    protected static FileInfo GetChromiumEnlistmentFile() {
 #if REAL_ENLISTMENT_TEST
       var filePath = @"D:\src\chromium\head\src\PRESUBMIT.py";
 #else
@@ -38,7 +38,7 @@ namespace VsChromium.Tests.ServerProcess {
 #endif
     }
 
-    protected FileSystemTree GetFileSystemFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
+    protected static FileSystemTree GetFileSystemFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
       SendFileSystemRequest(server, testFile, SendRegisterFileRequest);
       var tree = SendGetFileSystemRequest(server);
 
@@ -51,7 +51,7 @@ namespace VsChromium.Tests.ServerProcess {
       return tree;
     }
 
-    protected FileSystemTree SendGetFileSystemRequest(ITypedRequestProcessProxy server) {
+    protected static FileSystemTree SendGetFileSystemRequest(ITypedRequestProcessProxy server) {
       var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {
         KnownVersion = -1
       }, ServerResponseTimeout)();
@@ -65,7 +65,7 @@ namespace VsChromium.Tests.ServerProcess {
 
     protected delegate Func<DoneResponse> RequestProcessor(ITypedRequestProcessProxy server, FileInfo filename, TimeSpan timeout);
 
-    protected void SendFileSystemRequest(ITypedRequestProcessProxy server, FileInfo testFile, RequestProcessor requestProcessor) {
+    protected static void SendFileSystemRequest(ITypedRequestProcessProxy server, FileInfo testFile, RequestProcessor requestProcessor) {
       // Handle used to wait for "SearchEngineFilesLoaded" event.
       var filesLoadedEvent = new ManualResetEvent(false);
       Action<TypedEvent> eventHandler = @event => {

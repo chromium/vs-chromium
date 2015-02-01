@@ -10,7 +10,7 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Tests {
   public class MefTestBase {
-    protected CompositionContainer SetupMefContainer() {
+    protected static CompositionContainer SetupMefContainer() {
       var catalog = new AggregateCatalog();
       catalog.Catalogs.Add(new AssemblyCatalog(Assembly.GetExecutingAssembly()));
       catalog.Catalogs.Add(new AssemblyCatalog(typeof(ITextLineChecker).Assembly));
@@ -18,7 +18,7 @@ namespace VsChromium.Tests {
       var container = new CompositionContainer(catalog);
       return container;
     }
-    protected CompositionContainer SetupServerMefContainer() {
+    protected static CompositionContainer SetupServerMefContainer() {
       var catalog = new AggregateCatalog();
       catalog.Catalogs.Add(new AssemblyCatalog(Assembly.GetExecutingAssembly()));
       catalog.Catalogs.Add(new AssemblyCatalog(typeof(IpcRequest).Assembly));

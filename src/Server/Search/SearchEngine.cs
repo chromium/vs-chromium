@@ -95,7 +95,7 @@ namespace VsChromium.Server.Search {
           .Where(
             item => {
               if (!searchParams.IncludeSymLinks) {
-                if (_currentFileDatabase.IsContainedInSymLink(item.Parent))
+                if (_currentFileDatabase.IsContainedInSymLink(item))
                   return false;
               }
               Interlocked.Increment(ref searchedFileCount);
@@ -186,7 +186,7 @@ namespace VsChromium.Server.Search {
         .Where(x => !progressTracker.ShouldEndProcessing)
         .Select(item => {
           if (!includeSymLinks) {
-            if (_currentFileDatabase.IsContainedInSymLink(item.FileName.Parent))
+            if (_currentFileDatabase.IsContainedInSymLink(item.FileName))
               return new SearchableContentsResult();
           }
           searchedFileIds.Set(item.FileId, true);

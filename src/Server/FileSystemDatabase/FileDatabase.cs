@@ -79,15 +79,19 @@ namespace VsChromium.Server.FileSystemDatabase {
       return contents.GetFileExtracts(maxLength, spans);
     }
 
-    public bool IsContainedInSymLink(DirectoryName name) {
-      DirectoryData entry;
-      if (!_directories.TryGetValue(name, out entry))
+    public bool IsContainedInSymLink(FileSystemName name) {
+      var directoryName = (name as DirectoryName) ?? name.Parent;
+      if (directoryName == null)
         return false;
 
-      if (entry.DirectoryEntry.IsSymLink)
+      DirectoryData directoryData;
+      if (!_directories.TryGetValue(directoryName, out directoryData))
+        return false;
+
+      if (directoryData.DirectoryEntry.IsSymLink)
         return true;
 
-      var parent = entry.DirectoryName.Parent;
+      var parent = directoryName.Parent;
       if (parent == null)
         return false;
 

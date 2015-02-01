@@ -256,12 +256,12 @@
     <Compile Include="Threads\IpcRequestException.cs" />
     <Compile Include="Threads\ISynchronizationContext.cs" />
     <Compile Include="Threads\SynchronizationContextDelegate.cs" />
-    <Compile Include="Views\ITextDocumentService.cs" />
+    <Compile Include="Views\IFileRegistrationRequestService.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\TextDocumentFactoryObserver.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SearchDirectoryNamesCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SearchTextCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SearchFileNamesCommandHandler.cs" />
-    <Compile Include="Views\TextDocumentService.cs" />
+    <Compile Include="Views\FileRegistrationRequestService.cs" />
     <Compile Include="Features\FormatComment\CommentType.cs" />
     <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />
     <Compile Include="Features\FormatComment\FormatLinesResult.cs" />

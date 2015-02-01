@@ -23,7 +23,7 @@ namespace VsChromium {
   public class PackageInitializerViewHandler : IViewHandler {
     private readonly IServiceProvider _serviceProvider;
     private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
-    private readonly ITextDocumentService _textDocumentService;
+    private readonly IFileRegistrationRequestService _fileRegistrationRequestService;
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;
 
     private bool _loaded;
@@ -32,11 +32,11 @@ namespace VsChromium {
     public PackageInitializerViewHandler(
       [Import(typeof(SVsServiceProvider))]IServiceProvider serviceProvider,
       IVsEditorAdaptersFactoryService adaptersFactoryService,
-      ITextDocumentService textDocumentService,
+      IFileRegistrationRequestService fileRegistrationRequestService,
       ITextDocumentFactoryService textDocumentFactoryService) {
       _serviceProvider = serviceProvider;
       _adaptersFactoryService = adaptersFactoryService;
-      _textDocumentService = textDocumentService;
+      _fileRegistrationRequestService = fileRegistrationRequestService;
       _textDocumentFactoryService = textDocumentFactoryService;
     }
 
@@ -64,7 +64,7 @@ namespace VsChromium {
         foreach (var buffer in textView.BufferGraph.GetTextBuffers(x => true)) {
           ITextDocument textDocument;
           if (_textDocumentFactoryService.TryGetTextDocument(buffer, out textDocument)) {
-            _textDocumentService.OnDocumentOpen(textDocument);
+            _fileRegistrationRequestService.RegisterFile(textDocument.FilePath);
           }
         }
       }

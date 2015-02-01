@@ -9,35 +9,25 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Threads;
 
 namespace VsChromium.Views {
-  [Export(typeof(ITextDocumentService))]
-  public class TextDocumentService : ITextDocumentService {
+  [Export(typeof(IFileRegistrationRequestService))]
+  public class FileRegistrationRequestService : IFileRegistrationRequestService {
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IFileSystem _fileSystem;
 
     [ImportingConstructor]
-    public TextDocumentService(
+    public FileRegistrationRequestService(
       IUIRequestProcessor uiRequestProcessor,
       IFileSystem fileSystem) {
       _uiRequestProcessor = uiRequestProcessor;
       _fileSystem = fileSystem;
     }
 
-    public void OnDocumentOpen(ITextDocument document) {
-      var path = document.FilePath;
+    public void RegisterFile(string path) {
       SendRegisterFileRequest(path);
     }
 
-    public void OnDocumentClose(ITextDocument document) {
-      var path = document.FilePath;
+    public void UnregisterFile(string path) {
       SentUnregisterFileRequest(path);
-    }
-
-    public void RegisterFile(FullPath path) {
-      SendRegisterFileRequest(path.Value);
-    }
-
-    public void UnregisterFile(FullPath path) {
-      SentUnregisterFileRequest(path.Value);
     }
 
     private void SendRegisterFileRequest(string path) {

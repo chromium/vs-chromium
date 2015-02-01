@@ -11,12 +11,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   [Export(typeof(IPackagePostInitializer))]
   public class TextDocumentFactoryObserver : IPackagePostInitializer {
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;
-    private readonly ITextDocumentService _textDocumentService;
+    private readonly IFileRegistrationRequestService _fileRegistrationRequestService;
 
     [ImportingConstructor]
-    public TextDocumentFactoryObserver(ITextDocumentFactoryService textDocumentFactoryService, ITextDocumentService textDocumentService) {
+    public TextDocumentFactoryObserver(ITextDocumentFactoryService textDocumentFactoryService, IFileRegistrationRequestService fileRegistrationRequestService) {
       _textDocumentFactoryService = textDocumentFactoryService;
-      _textDocumentService = textDocumentService;
+      _fileRegistrationRequestService = fileRegistrationRequestService;
     }
 
     public int Priority { get { return 0; } }
@@ -27,11 +27,22 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, TextDocumentEventArgs textDocumentEventArgs) {
-      _textDocumentService.OnDocumentOpen(textDocumentEventArgs.TextDocument);
+      if (textDocumentEventArgs.TextDocument != null) {
+        _fileRegistrationRequestService.RegisterFile(textDocumentEventArgs.TextDocument.FilePath);
+        textDocumentEventArgs.TextDocument.FileActionOccurred += (o, args) => {
+          if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
+            var document = (ITextDocument)o;
+            _fileRegistrationRequestService.RegisterFile(args.FilePath);
+            _fileRegistrationRequestService.UnregisterFile(document.FilePath);
+          }
+        };
+      }
     }
 
     private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, TextDocumentEventArgs textDocumentEventArgs) {
-      _textDocumentService.OnDocumentClose(textDocumentEventArgs.TextDocument);
+      if (textDocumentEventArgs.TextDocument != null) {
+        _fileRegistrationRequestService.UnregisterFile(textDocumentEventArgs.TextDocument.FilePath);
+      }
     }
   }
 }

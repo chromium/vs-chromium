@@ -14,16 +14,16 @@ namespace VsChromium.Package {
   public class VsSolutionEventsHandler : IPackagePostInitializer {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
     private readonly IFileSystem _fileSystem;
-    private readonly ITextDocumentService _textDocumentService;
+    private readonly IFileRegistrationRequestService _fileRegistrationRequestService;
 
     [ImportingConstructor]
     public VsSolutionEventsHandler(
       IVisualStudioPackageProvider visualStudioPackageProvider,
       IFileSystem fileSystem,
-      ITextDocumentService textDocumentService) {
+      IFileRegistrationRequestService fileRegistrationRequestService) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _fileSystem = fileSystem;
-      _textDocumentService = textDocumentService;
+      _fileRegistrationRequestService = fileRegistrationRequestService;
     }
 
     public int Priority { get { return 0; } }
@@ -56,7 +56,7 @@ namespace VsChromium.Package {
       if (path == null)
         return;
 
-      _textDocumentService.RegisterFile(path.Value);
+      _fileRegistrationRequestService.RegisterFile(path.Value.Value);
     }
 
     private void UnregisterCurrentSolution() {
@@ -68,7 +68,7 @@ namespace VsChromium.Package {
       if (path == null)
         return;
 
-      _textDocumentService.UnregisterFile(path.Value);
+      _fileRegistrationRequestService.UnregisterFile(path.Value.Value);
     }
 
     private void ListeToSolutionEvents() {

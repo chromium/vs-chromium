@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.ComponentModel.Composition.Hosting;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,16 +14,27 @@ using VsChromium.ServerProxy;
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestSearchFileNames : TestServerBase {
+    private static CompositionContainer _container;
+    private static ITypedRequestProcessProxy _server;
+    private static FileInfo _testFile;
+
+    [ClassInitialize]
+    public static void Initialize(TestContext context) {
+      _container = SetupMefContainer();
+      _server = _container.GetExportedValue<ITypedRequestProcessProxy>();
+      _testFile = GetChromiumEnlistmentFile();
+      GetFileSystemFromServer(_server, _testFile);
+    }
+
+    [ClassCleanup]
+    public static void Cleanup() {
+      _server.Dispose();
+      _container.Dispose();
+    }
+
     [TestMethod]
     public void SingleOccurrenceWorks() {
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
-
-          VerifySearchFileNamesResponse(server, testFile.Name, testFile.Directory, testFile.Name, 1);
-        }
-      }
+      VerifySearchFileNamesResponse(_server, _testFile.Name, _testFile.Directory, _testFile.Name, 1);
     }
 
     [TestMethod]
@@ -30,14 +42,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string fileName = "file_present_three_times.txt";
       const string searchPattern = "file_present_three_times.txt";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
-
-          VerifySearchFileNamesResponse(server, searchPattern, testFile.Directory, fileName, 3);
-        }
-      }
+      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 3);
     }
 
     [TestMethod]
@@ -45,14 +50,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string fileName = "file_present_three_times.txt";
       const string searchPattern = "file_present_*_times.*";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
-
-          VerifySearchFileNamesResponse(server, searchPattern, testFile.Directory, fileName, 3);
-        }
-      }
+      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 3);
     }
 
     private static void VerifySearchFileNamesResponse(

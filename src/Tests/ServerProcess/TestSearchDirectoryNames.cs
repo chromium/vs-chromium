@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.ComponentModel.Composition.Hosting;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,19 +14,30 @@ using VsChromium.ServerProxy;
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestSearchDirectoryNames : TestServerBase {
+    private static CompositionContainer _container;
+    private static ITypedRequestProcessProxy _server;
+    private static FileInfo _testFile;
+
+    [ClassInitialize]
+    public static void Initialize(TestContext context) {
+      _container = SetupMefContainer();
+      _server = _container.GetExportedValue<ITypedRequestProcessProxy>();
+      _testFile = GetChromiumEnlistmentFile();
+      GetFileSystemFromServer(_server, _testFile);
+    }
+
+    [ClassCleanup]
+    public static void Cleanup() {
+      _server.Dispose();
+      _container.Dispose();
+    }
+
     [TestMethod]
     public void SingleOccurrenceWorks() {
       const string searchPattern = "base";
       const string directoryName = searchPattern;
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
-
-          VerifySearchDirectoryNamesResponse(server, searchPattern, testFile.Directory, directoryName, 1);
-        }
-      }
+      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 1);
     }
 
     [TestMethod]
@@ -33,14 +45,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string searchPattern = "test_directory";
       const string directoryName = searchPattern;
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
-
-          VerifySearchDirectoryNamesResponse(server, searchPattern, testFile.Directory, directoryName, 3);
-        }
-      }
+      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 3);
     }
 
     [TestMethod]
@@ -48,14 +53,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string searchPattern = "*est_*ectory*";
       const string directoryName = "test_directory";
 
-      using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
-          GetFileSystemFromServer(server, testFile);
-
-          VerifySearchDirectoryNamesResponse(server, searchPattern, testFile.Directory, directoryName, 3);
-        }
-      }
+      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 3);
     }
 
     private static void VerifySearchDirectoryNamesResponse(

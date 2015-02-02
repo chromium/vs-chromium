@@ -74,6 +74,7 @@
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationFramework.Aero2" />
     <Reference Include="protobuf-net">
       <HintPath>$(BuildRoot)src\packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
@@ -241,6 +242,7 @@
     <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
     <Compile Include="Views\IImageSourceFactory.cs" />
+    <Compile Include="Views\VsColors.cs" />
     <Compile Include="Views\ImageSourceFactory.cs" />
     <Compile Include="Wpf\HierarchyObjectNavigator.cs" />
     <Compile Include="Wpf\IWindowsExplorer.cs" />

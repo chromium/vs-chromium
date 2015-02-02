@@ -6,6 +6,7 @@
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.12.0"
              xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.12.0"
              xmlns:wpf="clr-namespace:VsChromium.Wpf"
+             xmlns:theme="clr-namespace:VsChromium.Views"
              xmlns:toolWindows="clr-namespace:VsChromium.Features.ToolWindows"
              xmlns:sourceExplorer="clr-namespace:VsChromium.Features.ToolWindows.SourceExplorer"
              mc:Ignorable="d" 
@@ -227,10 +228,12 @@
     <TreeView
       ItemsSource="{Binding RootNodes}"
       Name="FileTreeView" Height="Auto"
-      Background="{DynamicResource VsBrush.ToolWindowBackground}"
-      Foreground="{DynamicResource VsBrush.WindowText}" PreviewKeyDown="FileTreeView_OnPreviewKeyDown"
       VirtualizingStackPanel.IsVirtualizing="True"
-      VirtualizingStackPanel.VirtualizationMode="Recycling" PreviewMouseRightButtonDown="FileTreeView_PreviewMouseRightButtonDown">
+      VirtualizingStackPanel.VirtualizationMode="Recycling"
+      Background="{DynamicResource VsBrush.ToolWindowBackground}"
+      Foreground="{DynamicResource VsBrush.WindowText}"
+      PreviewKeyDown="FileTreeView_OnPreviewKeyDown"
+      PreviewMouseRightButtonDown="FileTreeView_PreviewMouseRightButtonDown">
 
       <TreeView.ItemContainerStyle>
 
@@ -244,6 +247,7 @@
           <EventSetter Event="RequestBringIntoView" Handler="TreeViewItem_RequestBringIntoView"/>
           <!-- End: This part is the behavior we customize for VsChromium -->
 
+          <!-- Start: TreeView custom template -->
           <!-- See http://goo.gl/CzQnBG -->
           <Setter Property="HorizontalContentAlignment" Value="Left" />
           <Setter Property="Template">
@@ -343,7 +347,7 @@
                       <Condition Property="TreeViewItem.IsSelected" Value="True" />
                       <Condition Property="Selector.IsSelectionActive" Value="False" />
                     </MultiTrigger.Conditions>
-                    <Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipBorderBrushKey}}" />
+                    <Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static theme:VsColors.SelectedTreeViewItem}}" />
                     <Setter Property="TextElement.Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" />
                   </MultiTrigger>
                   <Trigger Property="UIElement.IsEnabled" Value="False">
@@ -353,8 +357,10 @@
               </ControlTemplate>
             </Setter.Value>
           </Setter>
+          <!-- See http://goo.gl/CzQnBG -->
+          <!-- End: TreeView custom template -->
         </Style>
-        
+
       </TreeView.ItemContainerStyle>
 
       <TreeView.Resources>
@@ -406,7 +412,11 @@
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
             <TextBlock Text="{Binding TextBeforeMatch}" FontFamily="Consolas" FontSize="13"/>
-            <TextBlock Text="{Binding MatchText}" FontFamily="Consolas" FontSize="13" FontWeight="Bold" />
+            <TextBlock Text="{Binding MatchText}"
+                       FontFamily="Consolas"
+                       FontSize="13"
+                       Foreground="{DynamicResource {x:Static theme:VsColors.SearchMatchHighlightForeground}}"
+                       Background="{DynamicResource {x:Static theme:VsColors.SearchMatchHighlightBackground}}" />
             <TextBlock Text="{Binding TextAfterMatch}" FontFamily="Consolas" FontSize="13"/>
           </StackPanel>
         </DataTemplate>

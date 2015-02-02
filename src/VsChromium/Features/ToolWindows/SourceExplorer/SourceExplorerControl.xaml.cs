@@ -44,7 +44,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public SourceExplorerControl() {
       InitializeComponent();
-
+      this.Resources.MergedDictionaries.Add(VsColors.BuildResourceDictionary());
       base.DataContext = new SourceExplorerViewModel();
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);

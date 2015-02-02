@@ -24,9 +24,8 @@ namespace VsChromium.Core.Files.PatternMatching {
     public bool MatchDirectoryName(RelativePath relativePath, IPathComparer comparer) {
       if (relativePath.IsEmpty)
         throw new ArgumentNullException("relativePath");
-      var path = relativePath.Value;
 
-      if (_fileExtensions.Contains(Path.GetExtension(path)))
+      if (_fileExtensions.Contains(relativePath.Extension))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"
@@ -40,9 +39,8 @@ namespace VsChromium.Core.Files.PatternMatching {
     public bool MatchFileName(RelativePath relativePath, IPathComparer comparer) {
       if (relativePath.IsEmpty)
         throw new ArgumentNullException("relativePath");
-      var path = relativePath.Value;
 
-      if (_fileExtensions.Contains(Path.GetExtension(path)))
+      if (_fileExtensions.Contains(relativePath.Extension))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"

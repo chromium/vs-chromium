@@ -79,6 +79,18 @@ namespace VsChromium.Core.Files {
     /// </summary>
     public string FileName { get { return _filename ?? ""; } }
 
+    /// <summary>
+    /// Return the file extension (including the dot).
+    /// </summary>
+    public string Extension {
+      get {
+        var name = _filename ?? "";
+        var index = name.LastIndexOf('.');
+        if (index < 0)
+          return "";
+        return name.Substring(index);
+      }
+    }
     public override string ToString() {
       return this.Value;
     }

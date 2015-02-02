@@ -347,7 +347,7 @@
                       <Condition Property="TreeViewItem.IsSelected" Value="True" />
                       <Condition Property="Selector.IsSelectionActive" Value="False" />
                     </MultiTrigger.Conditions>
-                    <Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static theme:VsColors.SelectedTreeViewItem}}" />
+                    <Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static theme:VsResources.SelectedTreeViewItem}}" />
                     <Setter Property="TextElement.Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" />
                   </MultiTrigger>
                   <Trigger Property="UIElement.IsEnabled" Value="False">
@@ -415,8 +415,8 @@
             <TextBlock Text="{Binding MatchText}"
                        FontFamily="Consolas"
                        FontSize="13"
-                       Foreground="{DynamicResource {x:Static theme:VsColors.SearchMatchHighlightForeground}}"
-                       Background="{DynamicResource {x:Static theme:VsColors.SearchMatchHighlightBackground}}" />
+                       Foreground="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightForeground}}"
+                       Background="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightBackground}}" />
             <TextBlock Text="{Binding TextAfterMatch}" FontFamily="Consolas" FontSize="13"/>
           </StackPanel>
         </DataTemplate>

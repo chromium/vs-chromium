@@ -46,7 +46,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       InitializeComponent();
       // Add the "VsColors" brushes to the WPF resources of the control, so that the
       // resource keys used on the XAML file can be resolved dynamically.
-      this.Resources.MergedDictionaries.Add(VsColors.BuildResourceDictionary());
+      this.Resources.MergedDictionaries.Add(VsResources.BuildResourceDictionary());
       base.DataContext = new SourceExplorerViewModel();
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);

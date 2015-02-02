@@ -15,14 +15,14 @@ namespace VsChromium.Views {
   /// <summary>
   /// Expose VS Themed colors as static properties
   /// </summary>
-  public class VsColors {
+  public class VsResources {
 
     private static VsBrushKey _searchMatchHighlightForeground;
     public static VsBrushKey SearchMatchHighlightForeground {
       get {
         return _searchMatchHighlightForeground ?? 
           (_searchMatchHighlightForeground = new VsBrushKey(
-            ReflectionUtils.GetPropertyName(() => VsColors.SearchMatchHighlightForeground),
+            ReflectionUtils.GetPropertyName(() => VsResources.SearchMatchHighlightForeground),
             new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x00))));
       }
     }
@@ -32,7 +32,7 @@ namespace VsChromium.Views {
       get {
         return _searchMatchHighlightBackground ?? 
           (_searchMatchHighlightBackground = new VsBrushKey(
-            ReflectionUtils.GetPropertyName(() => VsColors.SearchMatchHighlightBackground),
+            ReflectionUtils.GetPropertyName(() => VsResources.SearchMatchHighlightBackground),
             new SolidColorBrush(Color.FromRgb(0xfd, 0xfb, 0xac))));
       }
     }
@@ -42,7 +42,7 @@ namespace VsChromium.Views {
     }
 
     public static ResourceDictionary BuildResourceDictionary() {
-      var infos = typeof (VsColors)
+      var infos = typeof (VsResources)
         .GetProperties(BindingFlags.Public | BindingFlags.Static)
         .Where(x => x.PropertyType == typeof(VsBrushKey));
       var result = new ResourceDictionary();

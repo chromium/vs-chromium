@@ -45,6 +45,8 @@ namespace VsChromium.Wpf {
       this.EditableTextBox.Background = this.CursorBrush;
       if (this.ArrowPath != null)
         this.ArrowPath.Fill = this.ArrowBrush;
+      if (this.ArrowBorder != null)
+        this.ArrowBorder.Background = this.DropDownBackgroundBrush;
     }
 
     #region TextChanged
@@ -254,6 +256,15 @@ namespace VsChromium.Wpf {
         if (button == null)
           return null;
         return button.Template.FindName("Arrow", button) as Path;
+      }
+    }
+
+    protected Border ArrowBorder {
+      get {
+        var button = ToggleButton;
+        if (button == null)
+          return null;
+        return button.Template.FindName("templateRoot", button) as Border;
       }
     }
 

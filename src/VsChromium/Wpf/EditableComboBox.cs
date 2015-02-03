@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -10,6 +11,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Wpf {
   public class EditableComboBox : ComboBox {
@@ -17,6 +19,32 @@ namespace VsChromium.Wpf {
       IsEditable = true;
       IsTextSearchEnabled = false;
       AddHandler(TextBoxBase.TextChangedEvent, (TextChangedEventHandler)TextBoxOnTextChanged);
+      this.Loaded += OnLoaded;
+    }
+
+    /// <summary>
+    /// OnLoaded is called after OnApplyTemplate for this controls and all its
+    /// children.
+    /// </summary>
+    private void OnLoaded(object sender, RoutedEventArgs routedEventArgs) {
+      ApplyCustomBrushes();
+    }
+
+    /// <summary>
+    /// OnApplyTemplate is called after the control template has been applied to
+    /// the control, but not all children may have had their template applied.
+    /// </summary>
+    public override void OnApplyTemplate() {
+      base.OnApplyTemplate();
+      ApplyCustomBrushes();
+    }
+
+    private void ApplyCustomBrushes() {
+      this.Border.Background = this.BorderBackgroundBrush;
+      this.DropDownBorder.Background = DropDownBackgroundBrush;
+      this.EditableTextBox.Background = this.CursorBrush;
+      if (this.ArrowPath != null)
+        this.ArrowPath.Fill = this.ArrowBrush;
     }
 
     #region TextChanged
@@ -35,14 +63,26 @@ namespace VsChromium.Wpf {
 
     #endregion
 
-    #region CursorBrush
+    #region CursorBrush: Controls the brush of the cursor in the editable text box.
 
-    public static readonly DependencyProperty CursorBrushProperty = DependencyProperty.Register("CursorBrush",
-                                                                                                typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnCursorBrushPropertyChanged));
+    public static readonly DependencyProperty CursorBrushProperty =
+      DependencyProperty.Register("CursorBrush",
+                                  typeof(Brush),
+                                  typeof(EditableComboBox),
+                                  new FrameworkPropertyMetadata(OnCursorBrushPropertyChanged));
 
-    public Brush CursorBrush { get { return GetValue(CursorBrushProperty) as Brush; } set { SetValue(CursorBrushProperty, value); } }
+    public Brush CursorBrush {
+      get {
+        return GetValue(CursorBrushProperty) as Brush;
+      }
+      set {
+        SetValue(CursorBrushProperty, value);
+      }
+    }
 
-    private static void OnCursorBrushPropertyChanged(DependencyObject source, DependencyPropertyChangedEventArgs e) {
+    private static void OnCursorBrushPropertyChanged(
+      DependencyObject source,
+      DependencyPropertyChangedEventArgs e) {
       var control = (EditableComboBox)source;
       var value = (Brush)e.NewValue;
       if (control.EditableTextBox != null)
@@ -51,14 +91,26 @@ namespace VsChromium.Wpf {
 
     #endregion
 
-    #region ArrowBrush
+    #region ArrowBrush: Controls the brush of the down arrow to expand to the dropdown.
 
-    public static readonly DependencyProperty ArrowBrushProperty = DependencyProperty.Register("ArrowBrush",
-                                                                                               typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnArrowBrushPropertyChanged));
+    public static readonly DependencyProperty ArrowBrushProperty =
+      DependencyProperty.Register("ArrowBrush",
+                                  typeof(Brush),
+                                  typeof(EditableComboBox),
+                                  new FrameworkPropertyMetadata(OnArrowBrushPropertyChanged));
 
-    public Brush ArrowBrush { get { return GetValue(ArrowBrushProperty) as Brush; } set { SetValue(ArrowBrushProperty, value); } }
+    public Brush ArrowBrush {
+      get {
+        return GetValue(ArrowBrushProperty) as Brush;
+      }
+      set {
+        SetValue(ArrowBrushProperty, value);
+      }
+    }
 
-    private static void OnArrowBrushPropertyChanged(DependencyObject source, DependencyPropertyChangedEventArgs e) {
+    private static void OnArrowBrushPropertyChanged(
+      DependencyObject source,
+      DependencyPropertyChangedEventArgs e) {
       var control = (EditableComboBox)source;
       var value = (Brush)e.NewValue;
       if (control.ArrowPath != null)
@@ -67,14 +119,26 @@ namespace VsChromium.Wpf {
 
     #endregion
 
-    #region DropDownBrush
+    #region DropDownBackgroundBrush: Controls the background brush of the dropdown.
 
-    public static readonly DependencyProperty DropDownBrushProperty = DependencyProperty.Register("DropDownBrush",
-                                                                                                  typeof(Brush), typeof(EditableComboBox), new FrameworkPropertyMetadata(OnDropDownBrushPropertyChanged));
+    public static readonly DependencyProperty DropDownBackgroundBrushProperty =
+      DependencyProperty.Register("DropDownBackgroundBrush",
+                                  typeof(Brush),
+                                  typeof(EditableComboBox),
+                                  new FrameworkPropertyMetadata(OnDropDownBrushPropertyChanged));
 
-    public Brush DropDownBrush { get { return GetValue(DropDownBrushProperty) as Brush; } set { SetValue(DropDownBrushProperty, value); } }
+    public Brush DropDownBackgroundBrush {
+      get {
+        return GetValue(DropDownBackgroundBrushProperty) as Brush;
+      }
+      set {
+        SetValue(DropDownBackgroundBrushProperty, value);
+      }
+    }
 
-    private static void OnDropDownBrushPropertyChanged(DependencyObject source, DependencyPropertyChangedEventArgs e) {
+    private static void OnDropDownBrushPropertyChanged(
+      DependencyObject source,
+      DependencyPropertyChangedEventArgs e) {
       var control = (EditableComboBox)source;
       var value = (Brush)e.NewValue;
       if (control.DropDownBorder != null)
@@ -83,7 +147,35 @@ namespace VsChromium.Wpf {
 
     #endregion
 
-    #region PreviewKeyDown
+    #region BorderBackgroundBrush: Controls the background brush of the editable text box.
+
+    public static readonly DependencyProperty BorderBackgroundBrushProperty =
+      DependencyProperty.Register("BorderBackgroundBrush",
+                                  typeof(Brush),
+                                  typeof(EditableComboBox),
+                                  new FrameworkPropertyMetadata(OnBorderBackgroundBrushPropertyChanged));
+
+    public Brush BorderBackgroundBrush {
+      get {
+        return GetValue(BorderBackgroundBrushProperty) as Brush;
+      }
+      set {
+        SetValue(BorderBackgroundBrushProperty, value);
+      }
+    }
+
+    private static void OnBorderBackgroundBrushPropertyChanged(
+      DependencyObject source,
+      DependencyPropertyChangedEventArgs e) {
+      var control = (EditableComboBox)source;
+      var value = (Brush)e.NewValue;
+      if (control.Border != null)
+        control.Border.Background = value;
+    }
+
+    #endregion
+
+    #region PreviewKeyUp/Down
 
     public event KeyEventHandler PrePreviewKeyDown;
     public event KeyEventHandler PrePreviewKeyUp;
@@ -126,13 +218,35 @@ namespace VsChromium.Wpf {
 
     #endregion
 
-    protected TextBox EditableTextBox { get { return GetTemplateChild("PART_EditableTextBox") as TextBox; } }
+    protected Border Border {
+      get {
+        return GetTemplateChild("Border") as Border;
+      }
+    }
 
-    protected ToggleButton ToggleButton { get { return GetTemplateChild("5_T") as ToggleButton; } }
+    protected TextBox EditableTextBox {
+      get {
+        return GetTemplateChild("PART_EditableTextBox") as TextBox;
+      }
+    }
 
-    protected Popup DropDownPopup { get { return GetTemplateChild("PART_Popup") as Popup; } }
+    protected ToggleButton ToggleButton {
+      get {
+        return GetTemplateChild("toggleButton") as ToggleButton;
+      }
+    }
 
-    protected Border DropDownBorder { get { return GetTemplateChild("DropDownBorder") as Border; } }
+    protected Popup DropDownPopup {
+      get {
+        return GetTemplateChild("PART_Popup") as Popup;
+      }
+    }
+
+    protected Border DropDownBorder {
+      get {
+        return GetTemplateChild("DropDownBorder") as Border;
+      }
+    }
 
     protected Path ArrowPath {
       get {
@@ -153,27 +267,15 @@ namespace VsChromium.Wpf {
       UpdateDataSource();
     }
 
+    /// <summary>
+    /// Ensure the text of the editable textbox is present in the combo box
+    /// items.
+    /// </summary>
     private void UpdateDataSource() {
       BindingExpression expression = GetBindingExpression(ComboBox.TextProperty);
       if (expression != null) {
         expression.UpdateSource();
       }
-    }
-
-    public override void EndInit() {
-      base.EndInit();
-      Loaded += OnLoaded;
-    }
-
-    private void OnLoaded(object sender, RoutedEventArgs routedEventArgs) {
-      if (CursorBrush != null)
-        OnCursorBrushPropertyChanged(this,
-                                     new DependencyPropertyChangedEventArgs(CursorBrushProperty, null, CursorBrush));
-      if (ArrowBrush != null)
-        OnArrowBrushPropertyChanged(this, new DependencyPropertyChangedEventArgs(ArrowBrushProperty, null, ArrowBrush));
-      if (DropDownBrush != null)
-        OnDropDownBrushPropertyChanged(this,
-                                       new DependencyPropertyChangedEventArgs(DropDownBrushProperty, null, DropDownBrush));
     }
   }
 }

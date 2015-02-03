@@ -4,6 +4,7 @@
 
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
@@ -16,38 +17,45 @@ namespace VsChromium.Views {
   /// Expose VS Themed colors as static properties
   /// </summary>
   public class VsResources {
+    private static VsResourceKey CreateKey(
+      Expression<Func<VsResourceKey>> property,
+      Color color) {
+      return new VsResourceKey(
+        ReflectionUtils.GetPropertyName(property),
+        new SolidColorBrush(color));
+    }
 
-    private static VsBrushKey _searchMatchHighlightForeground;
-    public static VsBrushKey SearchMatchHighlightForeground {
+    private static VsResourceKey _searchMatchHighlightForeground;
+    public static VsResourceKey SearchMatchHighlightForeground {
       get {
-        return _searchMatchHighlightForeground ?? 
-          (_searchMatchHighlightForeground = new VsBrushKey(
-            ReflectionUtils.GetPropertyName(() => VsResources.SearchMatchHighlightForeground),
-            new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x00))));
+        return _searchMatchHighlightForeground ??
+          (_searchMatchHighlightForeground = CreateKey(
+            () => SearchMatchHighlightForeground,
+            Color.FromRgb(0x00, 0x00, 0x00)));
       }
     }
 
-    private static VsBrushKey _searchMatchHighlightBackground;
-    public static VsBrushKey SearchMatchHighlightBackground {
+    private static VsResourceKey _searchMatchHighlightBackground;
+    public static VsResourceKey SearchMatchHighlightBackground {
       get {
-        return _searchMatchHighlightBackground ?? 
-          (_searchMatchHighlightBackground = new VsBrushKey(
-            ReflectionUtils.GetPropertyName(() => VsResources.SearchMatchHighlightBackground),
-            new SolidColorBrush(Color.FromRgb(0xfd, 0xfb, 0xac))));
+        return _searchMatchHighlightBackground ??
+          (_searchMatchHighlightBackground = CreateKey(
+            () => SearchMatchHighlightBackground,
+            Color.FromRgb(0xfd, 0xfb, 0xac)));
       }
     }
 
-    public static ThemeResourceKey SelectedTreeViewItem {
+    public static ThemeResourceKey SelectedItemBackground {
       get { return EnvironmentColors.ToolTipBorderBrushKey; }
     }
 
     public static ResourceDictionary BuildResourceDictionary() {
-      var infos = typeof (VsResources)
+      var infos = typeof(VsResources)
         .GetProperties(BindingFlags.Public | BindingFlags.Static)
-        .Where(x => x.PropertyType == typeof(VsBrushKey));
+        .Where(x => x.PropertyType == typeof(VsResourceKey));
       var result = new ResourceDictionary();
       foreach (var info in infos) {
-        var key = info.GetValue(null) as VsBrushKey;
+        var key = info.GetValue(null) as VsResourceKey;
         if (key != null) {
           result.Add(key, key.Brush);
         }
@@ -55,11 +63,14 @@ namespace VsChromium.Views {
       return result;
     }
 
-    public class VsBrushKey : IEquatable<VsBrushKey> {
+    /// <summary>
+    /// WPF resource key, as well as associated value.
+    /// </summary>
+    public class VsResourceKey : IEquatable<VsResourceKey> {
       private readonly string _name;
       private readonly Brush _brush;
 
-      public VsBrushKey(string name, Brush brush) {
+      public VsResourceKey(string name, Brush brush) {
         _name = name;
         _brush = brush;
       }
@@ -68,14 +79,14 @@ namespace VsChromium.Views {
         get { return _brush; }
       }
 
-      public bool Equals(VsBrushKey other) {
+      public bool Equals(VsResourceKey other) {
         if (other == null)
           return false;
         return this._name == other._name;
       }
 
       public override bool Equals(object obj) {
-        return this.Equals(obj as VsBrushKey);
+        return this.Equals(obj as VsResourceKey);
       }
 
       public override int GetHashCode() {

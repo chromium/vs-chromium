@@ -35,13 +35,19 @@
       </Style.Triggers>
     </Style>
     <Style TargetType="wpf:EditableComboBox">
-      <!-- Note: The "Foreground" property somehow gets overriden in VS2012+ themes,
-           so we have to repeat it in the controls themselves even though the value here is correct. -->
+      <Style.Triggers>
+        <!-- Override default template behavior which is hard-coded to set Foregroud
+             color to "White" on "IsKeyboardFocusWithin" -->
+        <Trigger Property="IsKeyboardFocusWithin" Value="true">
+          <Setter Property="Foreground" Value="{DynamicResource VsBrush.ToolWindowText}"/>
+        </Trigger>
+      </Style.Triggers>
       <Setter Property="Foreground" Value="{DynamicResource VsBrush.ToolWindowText}"/>
       <Setter Property="Background" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
-      <Setter Property="DropDownBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
+      <Setter Property="DropDownBackgroundBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
       <Setter Property="ArrowBrush" Value="{DynamicResource VsBrush.ComboBoxGlyph}"/>
       <Setter Property="CursorBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
+      <Setter Property="BorderBackgroundBrush" Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxBorderBrushKey}}"/>
       <Setter Property="Margin" Value="6,0"/>
       <Setter Property="IsEditable" Value="True"/>
       <Setter Property="ItemsSource" Value="{Binding Items}"/>
@@ -178,7 +184,7 @@
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" />
-          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="FileNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}">
+          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="FileNamesSearch">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type file name pattern to search for. 
@@ -192,7 +198,7 @@
           </wpf:EditableComboBox>
           <!-- Row 1 -->
           <TextBlock Grid.Row="1" Grid.Column="0" Text="Folder name:" VerticalAlignment="Center"/>
-          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectoryNamesSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}">
+          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectoryNamesSearch">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type directory name pattern to search for.
@@ -206,7 +212,7 @@
           </wpf:EditableComboBox>
           <!-- Row 2 -->
           <TextBlock Grid.Row="2" Grid.Column="0" Text="Text search:" VerticalAlignment="Center" />
-          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="FileContentsSearch" Foreground="{DynamicResource VsBrush.ToolWindowText}">
+          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="FileContentsSearch">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type text pattern to search for.
@@ -347,7 +353,7 @@
                       <Condition Property="TreeViewItem.IsSelected" Value="True" />
                       <Condition Property="Selector.IsSelectionActive" Value="False" />
                     </MultiTrigger.Conditions>
-                    <Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static theme:VsResources.SelectedTreeViewItem}}" />
+                    <Setter TargetName="Bd" Property="Panel.Background" Value="{DynamicResource {x:Static theme:VsResources.SelectedItemBackground}}" />
                     <Setter Property="TextElement.Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" />
                   </MultiTrigger>
                   <Trigger Property="UIElement.IsEnabled" Value="False">

@@ -39,20 +39,15 @@ namespace VsChromium.Server.FileSystem {
       if (filteredChanges.Any()) {
         // If the only changes we see are file modification, don't recompute the graph, just 
         // raise a "files changes event". Note that we also watch for any "special" filename.
-        bool isLowImpactChange =
-          filteredChanges.All(change => change.Kind == PathChangeKind.Changed) &&
-          filteredChanges.All(change => !SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileNameDetection));
-        if (isLowImpactChange) {
-          Logger.Log(
-            "All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
+        if (filteredChanges.All(IsIncrementalChange)) {
+          Logger.Log("All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
           var fileNames = filteredChanges.Select(change => GetProjectFileName(change.Path)).Where(name => name != null);
           return new FileSystemValidationResult {
             ChangedFiles = fileNames.ToList()
           };
         } else {
           // TODO(rpaquay): Could we be smarter here?
-          Logger.Log(
-            "Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
+          Logger.Log("Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
           return new FileSystemValidationResult {
             RecomputeGraph = true
           };
@@ -60,6 +55,12 @@ namespace VsChromium.Server.FileSystem {
       }
 
       return new FileSystemValidationResult();
+    }
+
+    private static bool IsIncrementalChange(PathChangeEntry change) {
+      return (change.Kind == PathChangeKind.Changed) &&
+            (!SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileNameObsolete)) &&
+            (!SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileName));
     }
 
     private bool PathIsExcluded(FullPath path) {

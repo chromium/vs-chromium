@@ -120,7 +120,7 @@ namespace VsChromium.Core.Files {
     /// Returns the enumeration of the parent full path of this full path.
     /// </summary>
     public IEnumerable<FullPath> EnumerateParents() {
-      for (var parent = Parent; parent != default(FullPath); parent = parent.Parent) {
+      for (var parent = this.Parent; parent != default(FullPath); parent = parent.Parent) {
         yield return parent;
       }
     }

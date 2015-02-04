@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Configuration;
@@ -10,6 +9,10 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 
 namespace VsChromium.Server.Projects.ProjectFile {
+  /// <summary>
+  /// Implementation of <see cref="IProjectDiscoveryProvider"/> looking for
+  /// project file in the file system.
+  /// </summary>
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ProjectFileDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly IFileSystem _fileSystem;
@@ -23,6 +26,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
     public ProjectFileDiscoveryProvider(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }
+
     public IProject GetProjectFromAnyPath(FullPath path) {
       lock (_lock) {
         // Cache hit?
@@ -55,25 +59,22 @@ namespace VsChromium.Server.Projects.ProjectFile {
       lock (_lock) {
         _knownProjectRootDirectories.Clear();
         _knownNonProjectDirectories.Clear();
-        //_knownProjectRootDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
-        //_knownProjectRootDirectories.RemoveWhere(x => x.Value.IsOutdated);
-        //_knownNonProjectDirectories.RemoveWhere(x => !_fileSystem.DirectoryExists(x.Key));
+
       }
     }
 
     private IProject GetProjectWorker(FullPath filepath) {
       var directory = filepath.Parent;
       if (_fileSystem.DirectoryExists(directory)) {
-        var projectPath = EnumerateParents(filepath).FirstOrDefault(x => ContainsProjectFile(x));
-        if (projectPath != default(FullPath)) {
-          var project = CreateProject(projectPath);
-          _knownProjectRootDirectories.Add(projectPath, project);
+        var project = filepath.EnumerateParents().Select(CreateProject).FirstOrDefault();
+        if (project != null) {
+          _knownProjectRootDirectories.Add(project.RootPath, project);
           return project;
         }
       }
 
       // No one in the parent chain is a Chromium directory.
-      EnumerateParents(filepath).ForAll(x => _knownNonProjectDirectories.Add(x, null));
+      filepath.EnumerateParents().ForAll(x => _knownNonProjectDirectories.Add(x, null));
       return null;
     }
 
@@ -82,22 +83,17 @@ namespace VsChromium.Server.Projects.ProjectFile {
     /// on disk at <paramref name="rootPath"/>.
     /// </summary>
     private Project CreateProject(FullPath rootPath) {
-      var fileWithSections = new FileWithSections(
-        _fileSystem,
-        rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameDetection)));
+      var path = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileName));
+      if (!_fileSystem.FileExists(path)) {
+        path = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameObsolete));
+        if (!_fileSystem.FileExists(path)) {
+          return null;
+        }
+      }
+
+      var fileWithSections = new FileWithSections(_fileSystem, path);
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
       return new Project(configurationProvider, rootPath);
-    }
-
-    private static IEnumerable<FullPath> EnumerateParents(FullPath path) {
-      var directory = path.Parent;
-      for (var parent = directory; parent != default(FullPath); parent = parent.Parent) {
-        yield return parent;
-      }
-    }
-
-    public bool ContainsProjectFile(FullPath path) {
-      return _fileSystem.FileExists(path.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameDetection)));
     }
   }
 }

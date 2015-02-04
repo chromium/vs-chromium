@@ -11,6 +11,10 @@ namespace VsChromium.Core.Configuration {
     /// <summary>
     /// Name of the file used to define custom (i.e. non-Chromium) enlistements.
     /// </summary>
-    public static readonly string ProjectFileNameDetection = "project.vs-chromium-project";
+    public static readonly string ProjectFileNameObsolete = "project.vs-chromium-project";
+    /// <summary>
+    /// Name of the file used to define custom (i.e. non-Chromium) enlistements.
+    /// </summary>
+    public static readonly string ProjectFileName = "vs-chromium-project.txt";
   }
 }

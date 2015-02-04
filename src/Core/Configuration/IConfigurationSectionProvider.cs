@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.Caching;
 
 namespace VsChromium.Core.Configuration {
   /// <summary>
@@ -13,6 +12,5 @@ namespace VsChromium.Core.Configuration {
   /// </summary>
   public interface IConfigurationSectionProvider {
     IEnumerable<string> GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing);
-    IVolatileToken WhenUpdated();
   }
 }

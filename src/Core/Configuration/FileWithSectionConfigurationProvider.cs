@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.Caching;
 
 namespace VsChromium.Core.Configuration {
   public class FileWithSectionConfigurationProvider : IConfigurationSectionProvider {
@@ -16,10 +15,6 @@ namespace VsChromium.Core.Configuration {
 
     public IEnumerable<string> GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
       return _fileWithSections.ReadSection(sectionName, postProcessing);
-    }
-
-    public IVolatileToken WhenUpdated() {
-      return _fileWithSections.WhenFileUpdated();
     }
   }
 }

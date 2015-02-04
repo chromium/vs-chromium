@@ -46,10 +46,8 @@
     <Compile Include="Configuration\ConfigurationDirectoryNames.cs" />
     <Compile Include="Configuration\ConfigurationFileNames.cs" />
     <Compile Include="Configuration\ConfigurationFileSectionProvider.cs" />
-    <Compile Include="Configuration\ConfigurationFileSectionProviderVolatileToken.cs" />
     <Compile Include="Configuration\ConfigurationSectionNames.cs" />
     <Compile Include="Configuration\ConfigurationStyleFilenames.cs" />
-    <Compile Include="Configuration\FileUpdateVolatileToken.cs" />
     <Compile Include="Configuration\FileWithSectionConfigurationProvider.cs" />
     <Compile Include="Configuration\IConfigurationSectionProvider.cs" />
     <Compile Include="Configuration\IFileWithSections.cs" />
@@ -129,7 +127,6 @@
     <Compile Include="Collections\IHeap.cs" />
     <Compile Include="Collections\MaxHeap.cs" />
     <Compile Include="Collections\MinHeap.cs" />
-    <Compile Include="Caching\IVolatileToken.cs" />
     <Compile Include="Linq\EnumerableExtensions.cs" />
     <Compile Include="Ipc\IIpcStream.cs" />
     <Compile Include="Ipc\ErrorResponse.cs" />

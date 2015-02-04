@@ -5,21 +5,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VsChromium.Core.Caching;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
   public class FileWithSections : IFileWithSections {
     private readonly IFileSystem _fileSystem;
     private readonly FullPath _filename;
-    private readonly IVolatileToken _fileUpdateVolatileToken;
     private readonly Lazy<Dictionary<string, List<string>>> _sections;
     private Func<IEnumerable<string>, IEnumerable<string>> _postProcessing;
 
     public FileWithSections(IFileSystem fileSystem, FullPath filename) {
       _fileSystem = fileSystem;
       _filename = filename;
-      _fileUpdateVolatileToken = new FileUpdateVolatileToken(_fileSystem, filename);
       _sections = new Lazy<Dictionary<string, List<string>>>(ReadFile);
     }
 
@@ -66,10 +63,6 @@ namespace VsChromium.Core.Configuration {
       finally {
         _postProcessing = null;
       }
-    }
-
-    public IVolatileToken WhenFileUpdated() {
-      return _fileUpdateVolatileToken;
     }
   }
 }

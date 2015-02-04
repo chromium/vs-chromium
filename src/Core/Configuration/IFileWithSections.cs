@@ -4,11 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using VsChromium.Core.Caching;
 
 namespace VsChromium.Core.Configuration {
   public interface IFileWithSections {
     IEnumerable<string> ReadSection(string name, Func<IEnumerable<string>, IEnumerable<string>> postProcessing);
-    IVolatileToken WhenFileUpdated();
   }
 }

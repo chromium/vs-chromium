@@ -48,7 +48,7 @@
       <Setter Property="ArrowBrush" Value="{DynamicResource VsBrush.ComboBoxGlyph}"/>
       <Setter Property="CursorBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
       <Setter Property="BorderBackgroundBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
-      <Setter Property="Margin" Value="6,0"/>
+      <Setter Property="Margin" Value="0,0,0,0"/>
       <Setter Property="IsEditable" Value="True"/>
       <Setter Property="ItemsSource" Value="{Binding Items}"/>
       <Setter Property="SelectedItem" Value="{Binding SelectedItem}"/>
@@ -169,7 +169,7 @@
         </LinearGradientBrush>
       </Border.Background>
 
-      <StackPanel HorizontalAlignment="Stretch" Margin="2,2,2,0" Orientation="Vertical" Background="{DynamicResource VsBrush.ToolWindowBackground}">
+      <StackPanel HorizontalAlignment="Stretch" Margin="4,4,4,0" Orientation="Vertical">
         <Grid HorizontalAlignment="Stretch" Margin="0">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -180,7 +180,7 @@
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="80" />
-            <ColumnDefinition MinWidth="100" />
+            <ColumnDefinition Width="*" MinWidth="100" />
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
@@ -225,7 +225,16 @@
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
           <!-- Row 4 -->
-          <ProgressBar Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" IsIndeterminate="False" Height="8" Name="ProgressBar" BorderThickness="0" Visibility="Hidden" IsTabStop="False" />
+          <ProgressBar 
+            Grid.Row="4" 
+            Grid.Column="0" 
+            Grid.ColumnSpan="2" 
+            IsIndeterminate="False" 
+            Height="4" 
+            Name="ProgressBar" 
+            BorderThickness="0" 
+            Visibility="Hidden" 
+            IsTabStop="False" Margin="-4,0" />
         </Grid>
       </StackPanel>
     </Border>

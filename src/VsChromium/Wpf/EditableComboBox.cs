@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -11,7 +10,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using VsChromium.Core.Logging;
 
 namespace VsChromium.Wpf {
   public class EditableComboBox : ComboBox {
@@ -41,12 +39,12 @@ namespace VsChromium.Wpf {
 
     private void ApplyCustomBrushes() {
       this.Border.Background = this.BorderBackgroundBrush;
+      if (this.ArrowBorder != null)
+        this.ArrowBorder.Background = this.BorderBackgroundBrush;
       this.DropDownBorder.Background = DropDownBackgroundBrush;
       this.EditableTextBox.Background = this.CursorBrush;
       if (this.ArrowPath != null)
         this.ArrowPath.Fill = this.ArrowBrush;
-      if (this.ArrowBorder != null)
-        this.ArrowBorder.Background = this.DropDownBackgroundBrush;
     }
 
     #region TextChanged
@@ -173,6 +171,8 @@ namespace VsChromium.Wpf {
       var value = (Brush)e.NewValue;
       if (control.Border != null)
         control.Border.Background = value;
+      if (control.ArrowBorder != null)
+        control.ArrowBorder.Background = value;
     }
 
     #endregion

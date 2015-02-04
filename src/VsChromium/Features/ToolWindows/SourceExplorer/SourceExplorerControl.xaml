@@ -47,7 +47,7 @@
       <Setter Property="DropDownBackgroundBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
       <Setter Property="ArrowBrush" Value="{DynamicResource VsBrush.ComboBoxGlyph}"/>
       <Setter Property="CursorBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
-      <Setter Property="BorderBackgroundBrush" Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxBorderBrushKey}}"/>
+      <Setter Property="BorderBackgroundBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
       <Setter Property="Margin" Value="6,0"/>
       <Setter Property="IsEditable" Value="True"/>
       <Setter Property="ItemsSource" Value="{Binding Items}"/>
@@ -69,41 +69,41 @@
     </Border>
 
     <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
-      <Button IsTabStop="False" Click="SyncButton_Click">
+      <Button IsTabStop="False" Click="SyncButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
         <Button.ToolTip>
           <TextBlock Text="Sync with Active Document"/>
         </Button.ToolTip>
         <Image Source="{Binding SyncButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
       </Button>
-      <Button IsTabStop="False" Click="RefreshFileSystemTreeButton_Click">
+      <Button IsTabStop="False" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
         <Button.ToolTip>
           <TextBlock Text="Refresh Source Explorer tree by rescanning directories"/>
         </Button.ToolTip>
         <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
       </Button>
       <Separator Width="2" />
-      <ToggleButton Content="Aa" IsChecked="{Binding MatchCase}" IsTabStop="False">
+      <ToggleButton Content="Aa" IsChecked="{Binding MatchCase}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding MatchCaseToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <ToggleButton Content="Word" IsChecked="{Binding MatchWholeWord}" IsTabStop="False">
+      <ToggleButton Content="Word" IsChecked="{Binding MatchWholeWord}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding MatchWholeWordToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <ToggleButton Content="Regex" IsChecked="{Binding UseRegex}" IsTabStop="False">
+      <ToggleButton Content="Regex" IsChecked="{Binding UseRegex}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding UseRegexToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
-      <ToggleButton Content="Lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False">
+      <ToggleButton Content="Lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>
         </ToggleButton.ToolTip>
       </ToggleButton>
       <Separator Width="2" />
-      <Button IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click">
+      <Button IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click" Foreground="{DynamicResource VsBrush.WindowText}">
         <Button.ToolTip>
           <TextBlock Text="Go to previous search result (Shift-F8 or Ctrl-Shift-F8)"/>
         </Button.ToolTip>
@@ -119,7 +119,7 @@
           </Image.Style>
         </Image>
       </Button>
-      <Button IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}" Click="GotoNext_Click">
+      <Button IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}" Click="GotoNext_Click" Foreground="{DynamicResource VsBrush.WindowText}">
         <Button.ToolTip>
           <TextBlock Text="Go to next search result (F8 or Ctrl-F8)"/>
         </Button.ToolTip>
@@ -135,7 +135,7 @@
           </Image.Style>
         </Image>
       </Button>
-      <Button IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click">
+      <Button IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click" Foreground="{DynamicResource VsBrush.WindowText}">
         <Button.ToolTip>
           <TextBlock Text="Clear current search and revert to File System view"/>
         </Button.ToolTip>
@@ -169,7 +169,7 @@
         </LinearGradientBrush>
       </Border.Background>
 
-      <StackPanel HorizontalAlignment="Stretch" Margin="2,2,2,0" Orientation="Vertical">
+      <StackPanel HorizontalAlignment="Stretch" Margin="2,2,2,0" Orientation="Vertical" Background="{DynamicResource VsBrush.ToolWindowBackground}">
         <Grid HorizontalAlignment="Stretch" Margin="0">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -183,7 +183,7 @@
             <ColumnDefinition MinWidth="100" />
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" />
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
           <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="FileNamesSearch">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
@@ -225,7 +225,7 @@
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
           <!-- Row 4 -->
-          <ProgressBar Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" IsIndeterminate="False" Height="8" Name="ProgressBar" BorderThickness="0" Visibility="Hidden" IsTabStop="False" />
+          <ProgressBar Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" IsIndeterminate="False" Height="8" Name="ProgressBar" BorderThickness="0" Visibility="Hidden" IsTabStop="False" />
         </Grid>
       </StackPanel>
     </Border>
@@ -408,6 +408,10 @@
           </StackPanel>
         </HierarchicalDataTemplate>
 
+        <Style x:Key="SearchTextResult" TargetType="TextBlock">
+          <Setter Property="FontFamily" Value="Consolas"/>
+          <Setter Property="FontSize" Value="13"/>
+        </Style>
         <DataTemplate DataType="{x:Type sourceExplorer:FilePositionViewModel}">
           <StackPanel Orientation="Horizontal">
             <StackPanel.ContextMenu>
@@ -417,13 +421,11 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
-            <TextBlock Text="{Binding TextBeforeMatch}" FontFamily="Consolas" FontSize="13"/>
-            <TextBlock Text="{Binding MatchText}"
-                       FontFamily="Consolas"
-                       FontSize="13"
+            <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource SearchTextResult}"/>
+            <TextBlock Text="{Binding MatchText}" Style="{StaticResource SearchTextResult}"
                        Foreground="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightForeground}}"
                        Background="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightBackground}}" />
-            <TextBlock Text="{Binding TextAfterMatch}" FontFamily="Consolas" FontSize="13"/>
+            <TextBlock Text="{Binding TextAfterMatch}" Style="{StaticResource SearchTextResult}"/>
           </StackPanel>
         </DataTemplate>
 

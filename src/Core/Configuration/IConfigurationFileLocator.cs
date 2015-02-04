@@ -10,7 +10,7 @@ namespace VsChromium.Core.Configuration {
   /// <summary>
   /// Provides access to configuration files in various configuration directories.
   /// </summary>
-  public interface IConfigurationFileProvider {
+  public interface IConfigurationFileLocator {
     /// <summary>
     /// Returns the contents of the configuration file named <paramref name="relativePath"/>.
     /// Throws an exception if the file cannot be found.

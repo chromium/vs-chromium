@@ -7,14 +7,14 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
   public class DirectoryFilter : IDirectoryFilter {
-    private readonly PathPatternsFile _ignorePatternsFile;
+    private readonly FilePatternsPathMatcherProvider _ignoreMatcherProvider;
 
     public DirectoryFilter(IConfigurationSectionProvider configurationSectionProvider) {
-      _ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnore);
+      _ignoreMatcherProvider = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnore);
     }
 
     public bool Include(RelativePath relativePath) {
-      var ignore = _ignorePatternsFile.GetPathMatcher().MatchDirectoryName(relativePath, SystemPathComparer.Instance);
+      var ignore = _ignoreMatcherProvider.AnyPathMatcher.MatchDirectoryName(relativePath, SystemPathComparer.Instance);
       return !ignore;
     }
   }

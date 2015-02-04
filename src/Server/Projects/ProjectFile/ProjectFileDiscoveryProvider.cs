@@ -93,7 +93,10 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
       var fileWithSections = new FileWithSections(_fileSystem, path);
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
-      return new Project(configurationProvider, rootPath);
+      var directoryFilter = new DirectoryFilter(configurationProvider);
+      var fileFilter = new FileFilter(configurationProvider);
+      var searchableFilesFilter = new SearchableFilesFilter(configurationProvider);
+      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter);
     }
   }
 }

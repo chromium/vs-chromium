@@ -12,11 +12,11 @@ using VsChromium.Core.Win32.Files;
 namespace VsChromium.Core.Chromium {
   public class ChromiumDiscovery : IChromiumDiscovery {
     private readonly IFileSystem _fileSystem;
-    private readonly IPathPatternsFile _chromiumEnlistmentPatterns;
+    private readonly IFilePatternsPathMatcherProvider _chromiumEnlistmentFilePatterns;
 
     public ChromiumDiscovery(IConfigurationSectionProvider configurationSectionProvider, IFileSystem fileSystem) {
       _fileSystem = fileSystem;
-      _chromiumEnlistmentPatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationFileNames.ChromiumEnlistmentDetectionPatterns);
+      _chromiumEnlistmentFilePatterns = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationFileNames.ChromiumEnlistmentDetectionPatterns);
     }
 
     public void ValidateCache() {
@@ -29,7 +29,7 @@ namespace VsChromium.Core.Chromium {
         return default(FullPath);
 
       return EnumerateParents(filename)
-        .FirstOrDefault(x => IsChromiumSourceDirectory(x, _chromiumEnlistmentPatterns));
+        .FirstOrDefault(x => IsChromiumSourceDirectory(x, _chromiumEnlistmentFilePatterns));
     }
 
     private IEnumerable<FullPath> EnumerateParents(FullPath path) {
@@ -39,10 +39,10 @@ namespace VsChromium.Core.Chromium {
       }
     }
 
-    private bool IsChromiumSourceDirectory(FullPath path, IPathPatternsFile chromiumEnlistmentPatterns) {
+    private bool IsChromiumSourceDirectory(FullPath path, IFilePatternsPathMatcherProvider chromiumEnlistmentFilePatterns) {
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
       var entries = _fileSystem.GetDirectoryEntries(path);
-      return chromiumEnlistmentPatterns.GetPathMatcherLines()
+      return chromiumEnlistmentFilePatterns.PathMatcherEntries
         .All(item => MatchFileOrDirectory(item, entries));
     }
 

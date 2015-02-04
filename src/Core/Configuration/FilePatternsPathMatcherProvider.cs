@@ -10,29 +10,29 @@ using System.Threading;
 using VsChromium.Core.Files.PatternMatching;
 
 namespace VsChromium.Core.Configuration {
-  public class PathPatternsFile : IPathPatternsFile {
-    private readonly string _configurationFileName;
+  public class FilePatternsPathMatcherProvider : IFilePatternsPathMatcherProvider {
+    private readonly string _sectionName;
     private readonly IConfigurationSectionProvider _configurationSectionProvider;
     private readonly Lazy<IPathMatcher> _matcher;
     private readonly Lazy<List<PathMatcher>> _matcherLines;
 
-    public PathPatternsFile(IConfigurationSectionProvider configurationSectionProvider, string configurationFileName) {
+    public FilePatternsPathMatcherProvider(IConfigurationSectionProvider configurationSectionProvider, string sectionName) {
       _configurationSectionProvider = configurationSectionProvider;
-      _configurationFileName = configurationFileName;
+      _sectionName = sectionName;
       _matcherLines = new Lazy<List<PathMatcher>>(CreateMatcherLines, LazyThreadSafetyMode.PublicationOnly);
       _matcher = new Lazy<IPathMatcher>(CreateMatcher, LazyThreadSafetyMode.PublicationOnly);
     }
 
-    public IPathMatcher GetPathMatcher() {
-      return _matcher.Value;
+    public IPathMatcher AnyPathMatcher {
+      get { return _matcher.Value; }
     }
 
-    public IEnumerable<IPathMatcher> GetPathMatcherLines() {
-      return _matcherLines.Value;
+    public IEnumerable<IPathMatcher> PathMatcherEntries {
+      get { return _matcherLines.Value; }
     }
 
     private List<PathMatcher> CreateMatcherLines() {
-      var patterns = _configurationSectionProvider.GetSection(_configurationFileName, FilterDirectories);
+      var patterns = _configurationSectionProvider.GetSection(_sectionName, FilterDirectories);
       return patterns.Select(x => PatternParser.ParsePattern(x)).ToList();
     }
 

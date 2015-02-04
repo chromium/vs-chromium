@@ -15,13 +15,13 @@ namespace VsChromium.ChromiumEnlistment {
     private readonly ConcurrentDictionary<string, bool> _applyCodingStyleResults =
       new ConcurrentDictionary<string, bool>(SystemPathComparer.Instance.StringComparer);
 
-    private readonly IPathPatternsFile _chromiumCodingStylePatterns;
+    private readonly IFilePatternsPathMatcherProvider _chromiumCodingStyleFilePatterns;
     private readonly IChromiumDiscoveryWithCache<FullPath> _chromiumDiscoveryProvider;
 
     [ImportingConstructor]
-    public ChromiumSourceFiles(IConfigurationFileProvider configurationFileProvider, IFileSystem fileSystem) {
-      var configurationSectionProvider = new ConfigurationFileSectionProvider(configurationFileProvider, fileSystem);
-      _chromiumCodingStylePatterns = new PathPatternsFile(configurationSectionProvider, ConfigurationStyleFilenames.ChromiumCodingStyleIgnore);
+    public ChromiumSourceFiles(IConfigurationFileLocator configurationFileLocator, IFileSystem fileSystem) {
+      var configurationSectionProvider = new ConfigurationFileConfigurationSectionProvider(configurationFileLocator);
+      _chromiumCodingStyleFilePatterns = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationStyleFilenames.ChromiumCodingStyleIgnore);
       _chromiumDiscoveryProvider = new ChromiumDiscoveryWithCache<FullPath>(configurationSectionProvider, fileSystem);
     }
 
@@ -49,7 +49,7 @@ namespace VsChromium.ChromiumEnlistment {
       if (relativePath.Length == 0)
         return false;
 
-      return !_chromiumCodingStylePatterns.GetPathMatcher().MatchFileName(new RelativePath(relativePath), SystemPathComparer.Instance);
+      return !_chromiumCodingStyleFilePatterns.AnyPathMatcher.MatchFileName(new RelativePath(relativePath), SystemPathComparer.Instance);
     }
   }
 }

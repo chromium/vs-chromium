@@ -8,14 +8,18 @@ using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects.Chromium {
+  /// <summary>
+  /// Implementation of <see cref="IProjectDiscoveryProvider"/> looking for
+  /// Chromium enlistments in the file system.
+  /// </summary>
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ChromiumProjectDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly IConfigurationSectionProvider _configurationSectionProvider;
     private readonly IChromiumDiscoveryWithCache<Project> _chromiumDiscovery;
 
     [ImportingConstructor]
-    public ChromiumProjectDiscoveryProvider(IConfigurationFileProvider configurationFileProvider, IFileSystem fileSystem) {
-      _configurationSectionProvider = new ConfigurationFileSectionProvider(configurationFileProvider, fileSystem);
+    public ChromiumProjectDiscoveryProvider(IConfigurationFileLocator configurationFileLocator, IFileSystem fileSystem) {
+      _configurationSectionProvider = new ConfigurationFileConfigurationSectionProvider(configurationFileLocator);
       _chromiumDiscovery = new ChromiumDiscoveryWithCache<Project>(_configurationSectionProvider, fileSystem);
     }
 
@@ -34,7 +38,10 @@ namespace VsChromium.Server.Projects.Chromium {
     }
 
     private Project CreateProject(FullPath rootPath) {
-      return new Project(_configurationSectionProvider, rootPath);
+      var directoryFilter = new DirectoryFilter(_configurationSectionProvider);
+      var fileFilter = new FileFilter(_configurationSectionProvider);
+      var searchableFilesFilter = new SearchableFilesFilter(_configurationSectionProvider);
+      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter);
     }
   }
 }

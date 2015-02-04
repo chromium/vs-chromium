@@ -16,23 +16,23 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker {
   /// </summary>
   public class ChromiumStyleClassifier : IClassifier {
     private readonly IEnumerable<ITextLineChecker> _checkers;
-    private readonly IConfigurationFileProvider _configurationFileProvider;
+    private readonly IConfigurationFileLocator _configurationFileLocator;
     private readonly IClassificationType _classificationType;
     private readonly Lazy<IList<string>> _disabledCheckers;
 
     internal ChromiumStyleClassifier(
       IClassificationTypeRegistryService classificationRegistry,
       IEnumerable<ITextLineChecker> checkers,
-      IConfigurationFileProvider configurationFileProvider) {
+      IConfigurationFileLocator configurationFileLocator) {
       _classificationType = classificationRegistry.GetClassificationType(ChromiumStyleClassifierConstants.Name);
       _checkers = checkers;
-      _configurationFileProvider = configurationFileProvider;
+      _configurationFileLocator = configurationFileLocator;
       _disabledCheckers = new Lazy<IList<string>>(ReadDisableCheckers);
     }
 
     private IList<string> ReadDisableCheckers() {
       return
-        _configurationFileProvider.ReadFile(new RelativePath(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled),
+        _configurationFileLocator.ReadFile(new RelativePath(ConfigurationStyleFilenames.ChromiumStyleCheckersDisabled),
                                             (filename, x) => x.Where(line => !line.TrimStart().StartsWith("#"))).ToList();
     }
 

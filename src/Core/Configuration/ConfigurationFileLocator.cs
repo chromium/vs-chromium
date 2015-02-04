@@ -11,12 +11,12 @@ using System.Reflection;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Configuration {
-  [Export(typeof(IConfigurationFileProvider))]
-  public class ConfigurationFileProvider : IConfigurationFileProvider {
+  [Export(typeof(IConfigurationFileLocator))]
+  public class ConfigurationFileLocator : IConfigurationFileLocator {
     private readonly IFileSystem _fileSystem;
 
     [ImportingConstructor]
-    public ConfigurationFileProvider(IFileSystem fileSystem) {
+    public ConfigurationFileLocator(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }
 

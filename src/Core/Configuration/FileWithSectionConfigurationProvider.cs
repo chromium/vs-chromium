@@ -6,6 +6,10 @@ using System;
 using System.Collections.Generic;
 
 namespace VsChromium.Core.Configuration {
+  /// <summary>
+  /// Implementation of <see cref="IConfigurationSectionProvider"/> using a
+  /// single file with multiple sections.
+  /// </summary>
   public class FileWithSectionConfigurationProvider : IConfigurationSectionProvider {
     private readonly IFileWithSections _fileWithSections;
 

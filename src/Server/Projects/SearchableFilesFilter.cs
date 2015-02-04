@@ -7,18 +7,18 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
   public class SearchableFilesFilter : ISearchableFilesFilter {
-    private readonly PathPatternsFile _ignorePatternsFile;
-    private readonly PathPatternsFile _includePatternsFile;
+    private readonly FilePatternsPathMatcherProvider _ignoreMatcherProvider;
+    private readonly FilePatternsPathMatcherProvider _includeMatcherProvider;
 
     public SearchableFilesFilter(IConfigurationSectionProvider configurationSectionProvider) {
-      _ignorePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesIgnore);
-      _includePatternsFile = new PathPatternsFile(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesInclude);
+      _ignoreMatcherProvider = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesIgnore);
+      _includeMatcherProvider = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesInclude);
     }
 
     public bool Include(RelativePath fileName) {
-      if (_ignorePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance))
+      if (_ignoreMatcherProvider.AnyPathMatcher.MatchFileName(fileName, SystemPathComparer.Instance))
         return false;
-      return _includePatternsFile.GetPathMatcher().MatchFileName(fileName, SystemPathComparer.Instance);
+      return _includeMatcherProvider.AnyPathMatcher.MatchFileName(fileName, SystemPathComparer.Instance);
     }
   }
 }

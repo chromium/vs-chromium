@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
@@ -12,19 +11,16 @@ namespace VsChromium.Server.Projects {
     private readonly IFileFilter _fileFilter;
     private readonly ISearchableFilesFilter _searchableFilesFilter;
 
-    public Project(IConfigurationSectionProvider configurationSectionProvider, FullPath rootPath) {
+    public Project(FullPath rootPath, IFileFilter fileFilter, IDirectoryFilter directoryFilter, ISearchableFilesFilter searchableFilesFilter) {
       _rootPath = rootPath;
-      _directoryFilter = new DirectoryFilter(configurationSectionProvider);
-      _fileFilter = new FileFilter(configurationSectionProvider);
-      _searchableFilesFilter = new SearchableFilesFilter(configurationSectionProvider);
+      _directoryFilter = directoryFilter;
+      _fileFilter = fileFilter;
+      _searchableFilesFilter = searchableFilesFilter;
     }
 
     public FullPath RootPath { get { return _rootPath; } }
-
-    public IDirectoryFilter DirectoryFilter { get { return _directoryFilter; } }
-
     public IFileFilter FileFilter { get { return _fileFilter; } }
-
+    public IDirectoryFilter DirectoryFilter { get { return _directoryFilter; } }
     public ISearchableFilesFilter SearchableFilesFilter { get { return _searchableFilesFilter; } }
   }
 }

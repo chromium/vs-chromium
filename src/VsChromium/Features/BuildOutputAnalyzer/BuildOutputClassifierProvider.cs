@@ -25,7 +25,7 @@ namespace VsChromium.Features.BuildOutputAnalyzer {
     internal IClassificationTypeRegistryService ClassificationRegistry = null; // Set via MEF
 
     [Import]
-    internal IConfigurationFileProvider ConfigurationFileProvider = null; // Set via MEF
+    internal IConfigurationFileLocator ConfigurationFileLocator = null; // Set via MEF
 
     [Import]
     internal IBuildOutputParser BuildOutputParser = null; // Set via MEF

@@ -25,7 +25,7 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker {
     internal IClassificationTypeRegistryService ClassificationRegistry = null; // Set via MEF
 
     [Import]
-    internal IConfigurationFileProvider ConfigurationFileProvider = null; // Set via MEF
+    internal IConfigurationFileLocator ConfigurationFileLocator = null; // Set via MEF
 
     [ImportMany]
     internal IEnumerable<ITextLineChecker> TextLineCheckers = null; // Set via MEF
@@ -35,7 +35,7 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker {
         buffer.Properties.GetOrCreateSingletonProperty<ChromiumStyleClassifier>(
           () =>
           new ChromiumStyleClassifier(ClassificationRegistry, TextLineCheckers,
-                                 ConfigurationFileProvider));
+                                 ConfigurationFileLocator));
     }
   }
 }

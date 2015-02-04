@@ -112,20 +112,13 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     private TextFragment CreateFragmentFromRange(TextRange textRange) {
-      // Note: In some case, textRange may be outside of our bounds. This is
-      // because FileContents and FileContentsPiece may be out of date wrt to
-      // each other, see FileData.UpdateContents method.
-      var fullFragment = this.TextFragment;
-      var offset = Math.Min(textRange.CharacterOffset, fullFragment.CharacterCount);
-      var count = Math.Min(textRange.CharacterCount, fullFragment.CharacterCount - offset);
-      var textFragment = this.TextFragment.Sub(offset, count);
-      return textFragment;
+      return TextFragment.Sub(textRange.CharacterOffset, textRange.CharacterCount);
     }
 
     private Func<TextRange, TextRange?> CreateFilterForOtherEntries(
       CompiledTextSearchData compiledTextSearchData) {
-      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count > 0 ||
-          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count > 0) {
+      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
+          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
         return x => x;
       }
 

@@ -17,6 +17,7 @@ namespace VsChromium.Server.NativeInterop {
     /// </summary>
     IList<TextRange> FindAll(
       TextFragment textFragment,
+      Func<TextRange, TextRange?> postProcess,
       IOperationProgressTracker progressTracker);
 
     /// <summary>

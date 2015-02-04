@@ -39,14 +39,14 @@ namespace VsChromium.Server.NativeInterop {
     public virtual void Dispose() {
     }
 
-    public IList<TextRange> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+    public IList<TextRange> FindAll(TextFragment textFragment, Func<TextRange, TextRange?> postProcess, IOperationProgressTracker progressTracker) {
       if (progressTracker.ShouldEndProcessing)
         return NoResult;
-      return FindWorker(textFragment, progressTracker, int.MaxValue);
+      return FindWorker(textFragment, postProcess, progressTracker, int.MaxValue);
     }
 
     public TextRange? FindFirst(TextFragment textFragment, IOperationProgressTracker progressTracker) {
-      var result = FindWorker(textFragment, progressTracker, 1);
+      var result = FindWorker(textFragment, x => x, progressTracker, 1);
       if (result.Count == 0)
         return null;
       return result.First();
@@ -54,6 +54,7 @@ namespace VsChromium.Server.NativeInterop {
 
     private unsafe List<TextRange> FindWorker(
       TextFragment textFragment,
+      Func<TextRange, TextRange?> postProcess, 
       IOperationProgressTracker progressTracker,
       int maxResultSize) {
       List<TextRange> result = null;
@@ -74,16 +75,24 @@ namespace VsChromium.Server.NativeInterop {
         if (searchParams.MatchStart == IntPtr.Zero)
           break;
 
-        var searchHit = textFragment.Sub(searchParams.MatchStart, searchParams.MatchLength);
-        var range = new TextRange(searchHit.CharacterOffset, searchHit.CharacterCount);
+        // Convert match from *byte* pointers to a *text* range
+        var matchFragment = textFragment.Sub(searchParams.MatchStart, searchParams.MatchLength);
+        var matchRange = new TextRange(matchFragment.CharacterOffset, matchFragment.CharacterCount);
+
+        // Post process match, maybe skipping it
+        var postMatchRange = postProcess(matchRange);
+        if (postMatchRange == null)
+          continue;
+        matchRange = postMatchRange.Value;
 
         // Add to result collection
         if (result == null)
           result = new List<TextRange>();
-        result.Add(range);
+        result.Add(matchRange);
 
         // Check it is time to end processing early.
         maxResultSize--;
+        progressTracker.AddResults(1);
         if (maxResultSize <= 0 || progressTracker.ShouldEndProcessing) {
           CancelSearch(ref searchParams);
           break;

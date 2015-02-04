@@ -11,50 +11,46 @@ namespace VsChromium.Server.Search {
   public delegate TextRange GetLineRangeFunction(long position);
 
   public class TextSourceTextSearch {
-    private readonly GetLineRangeFunction _getLineRange;
     private readonly FindEntryFunction _findEntry;
+    private readonly ParsedSearchString _parsedSearchString;
+    private readonly GetLineExtentCache _getLineExtentCache;
 
-    public TextSourceTextSearch(GetLineRangeFunction getLineRange, FindEntryFunction findEntry) {
-      _getLineRange = getLineRange;
+    public TextSourceTextSearch(
+      GetLineRangeFunction getLineRange,
+      FindEntryFunction findEntry,
+      ParsedSearchString parsedSearchString) {
       _findEntry = findEntry;
+      _parsedSearchString = parsedSearchString;
+      _getLineExtentCache = new GetLineExtentCache(getLineRange);
     }
 
-    public IEnumerable<TextRange> FilterOnOtherEntries(
-      ParsedSearchString parsedSearchString,
-      IEnumerable<TextRange> matches) {
-      var getLineExtentCache = new GetLineExtentCache(_getLineRange);
-      return matches
-        .Select<TextRange, TextRange?>(match => {
-          var lineExtent = getLineExtentCache.GetLineExtent(match.CharacterOffset);
-          // We got the line extent, the offset at which we found the MainEntry.
-          // Now we need to check that "OtherEntries" are present (in order) and
-          // in appropriate intervals.
-          var range1 = new TextRange(
-            lineExtent.CharacterOffset,
-            match.CharacterOffset - lineExtent.CharacterOffset);
-          var entriesInterval1 = parsedSearchString.EntriesBeforeMainEntry;
-          var foundRange1 = entriesInterval1.Any()
-            ? CheckEntriesInRange(range1, entriesInterval1)
-            : match;
+    public TextRange? FilterSearchHit(TextRange match) {
+      var lineExtent = _getLineExtentCache.GetLineExtent(match.CharacterOffset);
+      // We got the line extent, the offset at which we found the MainEntry.
+      // Now we need to check that "OtherEntries" are present (in order) and
+      // in appropriate intervals.
+      var range1 = new TextRange(
+        lineExtent.CharacterOffset,
+        match.CharacterOffset - lineExtent.CharacterOffset);
+      var entriesInterval1 = _parsedSearchString.EntriesBeforeMainEntry;
+      var foundRange1 = entriesInterval1.Any()
+        ? CheckEntriesInRange(range1, entriesInterval1)
+        : match;
 
-          var range2 = new TextRange(
-            match.CharacterEndOffset,
-            lineExtent.CharacterEndOffset-  match.CharacterEndOffset);
-          var entriesInterval2 = parsedSearchString.EntriesAfterMainEntry;
-          var foundRange2 = entriesInterval2.Any()
-            ? CheckEntriesInRange(range2, entriesInterval2)
-            : match;
+      var range2 = new TextRange(
+        match.CharacterEndOffset,
+        lineExtent.CharacterEndOffset - match.CharacterEndOffset);
+      var entriesInterval2 = _parsedSearchString.EntriesAfterMainEntry;
+      var foundRange2 = entriesInterval2.Any()
+        ? CheckEntriesInRange(range2, entriesInterval2)
+        : match;
 
-          if (foundRange1.HasValue && foundRange2.HasValue) {
-            return new TextRange(
-              foundRange1.Value.CharacterOffset,
-              foundRange2.Value.CharacterEndOffset - foundRange1.Value.CharacterOffset);
-          }
-          return null;
-        })
-        .Where(x => x != null)
-        .Select(x => x.Value)
-        .ToList();
+      if (foundRange1.HasValue && foundRange2.HasValue) {
+        return new TextRange(
+          foundRange1.Value.CharacterOffset,
+          foundRange2.Value.CharacterEndOffset - foundRange1.Value.CharacterOffset);
+      }
+      return null;
     }
 
     private TextRange? CheckEntriesInRange(

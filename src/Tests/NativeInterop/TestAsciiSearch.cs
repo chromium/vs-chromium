@@ -127,6 +127,7 @@ namespace VsChromium.Tests.NativeInterop {
       for (var i = 0; i < repeat; i++) {
         matchCount = algo.FindAll(
           new TextFragment(textBlock.Pointer, 0, (int) textBlock.ByteLength, sizeof (byte)),
+          x => x,
           OperationProgressTracker.None).Count();
       }
       return matchCount;

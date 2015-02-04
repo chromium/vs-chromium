@@ -58,15 +58,9 @@ namespace VsChromium.Server.FileSystemContents {
       var textFragment = CreateFragmentFromRange(textRange);
       var providerForMainEntry = compiledTextSearchData
         .GetSearchAlgorithmProvider(compiledTextSearchData.ParsedSearchString.MainEntry);
-      var textSearch = this.GetCompiledTextSearch(providerForMainEntry);
-      var result = textSearch.FindAll(textFragment, progressTracker);
-
-      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count > 0 ||
-          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count > 0) {
-        result = FilterOnOtherEntries(compiledTextSearchData, result).ToList();
-      }
-
-      progressTracker.AddResults(result.Count);
+      var textSearch = GetCompiledTextSearch(providerForMainEntry);
+      var postProcessSearchHit = CreateFilterForOtherEntries(compiledTextSearchData);
+      var result = textSearch.FindAll(textFragment, postProcessSearchHit, progressTracker);
       return result;
     }
 
@@ -128,18 +122,28 @@ namespace VsChromium.Server.FileSystemContents {
       return textFragment;
     }
 
-    private IEnumerable<TextRange> FilterOnOtherEntries(
-      CompiledTextSearchData compiledTextSearchData,
-      IEnumerable<TextRange> matches) {
+    private Func<TextRange, TextRange?> CreateFilterForOtherEntries(
+      CompiledTextSearchData compiledTextSearchData) {
+      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count > 0 ||
+          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count > 0) {
+        return x => x;
+      }
+
+      // Search for a match for "entry" withing "textRange"
       FindEntryFunction findEntry = (textRange, entry) => {
         var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchAlgorithmProvider(entry));
         return algo.FindFirst(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
       };
+
+      // Return the extent of the line to look into for non-main entries.
       GetLineRangeFunction getLineRange = position =>
         this.GetLineTextRangeFromPosition(position, MaxLineExtentOffset);
 
-      return new TextSourceTextSearch(getLineRange, findEntry)
-          .FilterOnOtherEntries(compiledTextSearchData.ParsedSearchString, matches);
+      var sourceTextSearch = new TextSourceTextSearch(
+        getLineRange,
+        findEntry,
+        compiledTextSearchData.ParsedSearchString);
+      return sourceTextSearch.FilterSearchHit;
     }
   }
 }

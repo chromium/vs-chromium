@@ -60,12 +60,14 @@ namespace VsChromium.Server.FileSystemContents {
         .GetSearchAlgorithmProvider(compiledTextSearchData.ParsedSearchString.MainEntry);
       var textSearch = this.GetCompiledTextSearch(providerForMainEntry);
       var result = textSearch.FindAll(textFragment, progressTracker);
-      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
-          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
-        return result.ToList();
+
+      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count > 0 ||
+          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count > 0) {
+        result = FilterOnOtherEntries(compiledTextSearchData, result).ToList();
       }
 
-      return FilterOnOtherEntries(compiledTextSearchData, result).ToList();
+      progressTracker.AddResults(result.Count);
+      return result;
     }
 
     public virtual IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {

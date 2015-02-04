@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,19 +8,38 @@ using System.Linq;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.NativeInterop {
-  public abstract class AsciiCompiledTextSearch : ICompiledTextSearch {
+  public abstract class CompiledTextSearchBase : ICompiledTextSearch {
     private static readonly List<TextRange> NoResult = new List<TextRange>();
 
-    public abstract int PatternLength { get; }
-    public abstract int SearchBufferSize { get; }
+    protected abstract int SearchBufferSize { get; }
 
-    public abstract void Search(ref NativeMethods.SearchParams searchParams);
-    public abstract void CancelSearch(ref NativeMethods.SearchParams searchParams);
+    /// <summary>
+    /// Perform a single search step given <paramref name="searchParams"/>.
+    /// <see cref="NativeMethods.SearchParams.TextStart"/> and <see
+    /// cref="NativeMethods.SearchParams.TextLength"/> define the range of the
+    /// search between each call.
+    /// On the first call, <see cref="NativeMethods.SearchParams.MatchStart"/>
+    /// is <code>null</code>. On subsequent calls, <see
+    /// cref="NativeMethods.SearchParams.MatchStart"/> is the result of the
+    /// previous call.
+    /// The implementation is responsible for setting the value of <see
+    /// cref="NativeMethods.SearchParams.MatchStart"/>: Either the pointer to
+    /// the search hit, or <code>null</code> if no match is found.
+    /// </summary>
+    /// <param name="searchParams"></param>
+    protected abstract void Search(ref NativeMethods.SearchParams searchParams);
+
+    /// <summary>
+    /// If the search is abandonned before all hits have been found, this method
+    /// is called to allow the implementation to cleanup intermediate data
+    /// structures used by the implementation.
+    /// </summary>
+    protected abstract void CancelSearch(ref NativeMethods.SearchParams searchParams);
 
     public virtual void Dispose() {
     }
 
-    public IEnumerable<TextRange> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
+    public IList<TextRange> FindAll(TextFragment textFragment, IOperationProgressTracker progressTracker) {
       if (progressTracker.ShouldEndProcessing)
         return NoResult;
       return FindWorker(textFragment, progressTracker, int.MaxValue);
@@ -37,7 +56,7 @@ namespace VsChromium.Server.NativeInterop {
       TextFragment textFragment,
       IOperationProgressTracker progressTracker,
       int maxResultSize) {
-        List<TextRange> result = null;
+      List<TextRange> result = null;
 
       // Note: From C# spec: If E is zero, then no allocation is made, and
       // the pointer returned is implementation-defined. 
@@ -65,8 +84,7 @@ namespace VsChromium.Server.NativeInterop {
 
         // Check it is time to end processing early.
         maxResultSize--;
-        progressTracker.AddResults(1);
-        if (progressTracker.ShouldEndProcessing || maxResultSize <= 0) {
+        if (maxResultSize <= 0 || progressTracker.ShouldEndProcessing) {
           CancelSearch(ref searchParams);
           break;
         }

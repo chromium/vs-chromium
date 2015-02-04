@@ -50,7 +50,7 @@ namespace VsChromium.Server.FileSystemContents {
         .ToList();
     }
 
-    public static AsciiCompiledTextSearch CreateSearchAlgo(string pattern, SearchProviderOptions searchOptions) {
+    public static ICompiledTextSearch CreateSearchAlgo(string pattern, SearchProviderOptions searchOptions) {
       var options = NativeMethods.SearchOptions.kNone;
       if (searchOptions.MatchCase) {
         options |= NativeMethods.SearchOptions.kMatchCase;

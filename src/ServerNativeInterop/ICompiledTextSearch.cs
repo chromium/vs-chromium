@@ -15,7 +15,7 @@ namespace VsChromium.Server.NativeInterop {
     /// Find all occurrences of the stored prepared search pattern in the given
     /// text fragment.
     /// </summary>
-    IEnumerable<TextRange> FindAll(
+    IList<TextRange> FindAll(
       TextFragment textFragment,
       IOperationProgressTracker progressTracker);
 

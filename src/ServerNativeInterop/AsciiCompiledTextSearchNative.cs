@@ -8,10 +8,9 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Server.NativeInterop {
-  public class AsciiCompiledTextSearchNative : AsciiCompiledTextSearch {
+  public class AsciiCompiledTextSearchNative : CompiledTextSearchBase {
     private readonly SafeSearchHandle _handle;
     private readonly SafeHGlobalHandle _patternHandle;
-    private readonly int _patternLength;
     private readonly int _searchBufferSize;
 
     public AsciiCompiledTextSearchNative(
@@ -19,9 +18,9 @@ namespace VsChromium.Server.NativeInterop {
         string pattern,
         NativeMethods.SearchOptions searchOptions) {
       _patternHandle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(pattern));
-      _patternLength = pattern.Length;
+      var patternLength = pattern.Length;
 
-      _handle = CreateSearchHandle(kind, _patternHandle, _patternLength, searchOptions);
+      _handle = CreateSearchHandle(kind, _patternHandle, patternLength, searchOptions);
       _searchBufferSize = NativeMethods.AsciiSearchAlgorithm_GetSearchBufferSize(_handle);
     }
 
@@ -48,19 +47,15 @@ namespace VsChromium.Server.NativeInterop {
       return result;
     }
 
-    public override int PatternLength {
-      get { return _patternLength; }
-    }
-
-    public override int SearchBufferSize {
+    protected override int SearchBufferSize {
       get { return _searchBufferSize; }
     }
 
-    public override void Search(ref NativeMethods.SearchParams searchParams) {
+    protected override void Search(ref NativeMethods.SearchParams searchParams) {
       NativeMethods.AsciiSearchAlgorithm_Search(_handle, ref searchParams);
     }
 
-    public override void CancelSearch(ref NativeMethods.SearchParams searchParams) {
+    protected override void CancelSearch(ref NativeMethods.SearchParams searchParams) {
       NativeMethods.AsciiSearchAlgorithm_CancelSearch(_handle, ref searchParams);
     }
 

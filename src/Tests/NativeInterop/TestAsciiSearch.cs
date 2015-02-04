@@ -121,7 +121,7 @@ namespace VsChromium.Tests.NativeInterop {
 
     private static int PerformSearch(
         SafeHeapBlockHandle textBlock,
-        AsciiCompiledTextSearch algo,
+        ICompiledTextSearch algo,
         int repeat) {
       int matchCount = 0;
       for (var i = 0; i < repeat; i++) {

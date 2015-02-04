@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Server.NativeInterop {
-  public class Utf16CompiledTextSearchStdSearch : Utf16CompiledTextSearch {
+  public class Utf16CompiledTextSearchStdSearch : CompiledTextSearchBase {
     private readonly SafeHGlobalHandle _patternPtr;
     private readonly int _patternLength;
     private readonly NativeMethods.SearchOptions _searchOptions;
@@ -23,20 +23,34 @@ namespace VsChromium.Server.NativeInterop {
       base.Dispose();
     }
 
-    public override TextFragment Search(TextFragment textFragment) {
+    protected override int SearchBufferSize {
+      get { return 0; }
+    }
+
+    protected override void CancelSearch(ref NativeMethods.SearchParams searchParams) {
+      // Nothing to do.
+    }
+
+    protected override void Search(ref NativeMethods.SearchParams searchParams) {
+      var start = searchParams.TextStart;
+      if (searchParams.MatchStart != IntPtr.Zero) {
+        start = searchParams.MatchStart + searchParams.MatchLength * sizeof(char);
+      }
+      var end = searchParams.TextStart + searchParams.TextLength * sizeof(char);
+      var count = Pointers.Offset64(start, end) / sizeof(char);
       var searchHitPtr = NativeMethods.Utf16_Search(
-        textFragment.FragmentStart,
-        textFragment.CharacterCount,
+        start,
+        count,
         _patternPtr.Pointer,
         _patternLength,
         _searchOptions);
-      if (searchHitPtr == IntPtr.Zero)
-        return TextFragment.Null;
-      return textFragment.Sub(searchHitPtr, _patternLength);
-    }
-
-    public override int PatternLength {
-      get { return _patternLength; }
+      if (searchHitPtr == IntPtr.Zero) {
+        searchParams.MatchStart = IntPtr.Zero;
+        searchParams.MatchLength = 0;
+      } else {
+        searchParams.MatchStart = searchHitPtr;
+        searchParams.MatchLength = _patternLength;
+      }
     }
   }
 }

@@ -22,7 +22,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsciiCompiledTextSearch.cs" />
     <Compile Include="AsciiCompiledTextSearchBndm32.cs" />
     <Compile Include="AsciiCompiledTextSearchBndm64.cs" />
     <Compile Include="AsciiCompiledTextSearchBoyerMoore.cs" />
@@ -30,6 +29,7 @@
     <Compile Include="AsciiCompiledTextSearchRe2.cs" />
     <Compile Include="AsciiCompiledTextSearchRegex.cs" />
     <Compile Include="AsciiCompiledTextSearchStrStr.cs" />
+    <Compile Include="CompiledTextSearchBase.cs" />
     <Compile Include="ICompiledTextSearch.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Pointers.cs" />
@@ -38,7 +38,6 @@
     <Compile Include="Utf16CompiledTextSearchStdSearch.cs" />
     <Compile Include="TextFragment.cs" />
     <Compile Include="TextRange.cs" />
-    <Compile Include="Utf16CompiledTextSearch.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">

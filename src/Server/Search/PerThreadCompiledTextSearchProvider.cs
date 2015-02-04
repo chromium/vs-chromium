@@ -17,9 +17,9 @@ namespace VsChromium.Server.Search {
   public class PerThreadCompiledTextSearchProvider : ICompiledTextSearchProvider {
     private readonly string _pattern;
     private readonly SearchProviderOptions _searchOptions;
-    private readonly ConcurrentDictionary<int, AsciiCompiledTextSearch> _asciiAlgorithms = new ConcurrentDictionary<int, AsciiCompiledTextSearch>();
-    private readonly Func<int, AsciiCompiledTextSearch> _asciiAlgorithmFactory;
-    private readonly Utf16CompiledTextSearch _unicodeCompiledTextSearchAlgo;
+    private readonly ConcurrentDictionary<int, ICompiledTextSearch> _asciiAlgorithms = new ConcurrentDictionary<int, ICompiledTextSearch>();
+    private readonly Func<int, ICompiledTextSearch> _asciiAlgorithmFactory;
+    private readonly ICompiledTextSearch _unicodeCompiledTextSearchAlgo;
 
     public PerThreadCompiledTextSearchProvider(string pattern, SearchProviderOptions searchOptions) {
       _pattern = pattern;

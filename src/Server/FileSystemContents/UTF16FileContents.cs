@@ -54,7 +54,7 @@ namespace VsChromium.Server.FileSystemContents {
       return new TextRange(lineStart, lineLength);
     }
 
-    public static Utf16CompiledTextSearch CreateSearchAlgo(
+    public static CompiledTextSearchBase CreateSearchAlgo(
         string pattern,
         SearchProviderOptions searchOptions) {
       var options = NativeMethods.SearchOptions.kNone;

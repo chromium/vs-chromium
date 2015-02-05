@@ -2,24 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace VsChromium.Tests.Server {
   [TestClass]
-  public class TestFileContentsHash : MefTestBase {
-    private CompositionContainer _container;
-
-    [TestInitialize]
-    public void Initialize() {
-      _container = SetupServerMefContainer();
-    }
-
-    [TestCleanup]
-    public void Cleanup() {
-      _container.Dispose();
-    }
-
+  public class TestFileContentsHash {
     [TestMethod]
     public void HashForEmptyContentsWorks() {
       const string text = "";

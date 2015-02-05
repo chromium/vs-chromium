@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using VsChromium.Core.Utility;
@@ -56,7 +54,7 @@ namespace VsChromium.Core.Files {
       return path[prefix.Length] == Path.DirectorySeparatorChar;
     }
 
-    public static KeyValuePair<string, string> SplitPrefix(string path, string prefix) {
+    public static SplitPath SplitPrefix(string path, string prefix) {
       if (string.IsNullOrEmpty(path))
         throw new ArgumentException();
       if (string.IsNullOrEmpty(prefix))
@@ -78,7 +76,7 @@ namespace VsChromium.Core.Files {
 
       var root = path.Substring(0, prefixEnd + 1);
       var relativePath = path.Substring(suffixStart);
-      return KeyValuePair.Create(root, relativePath);
+      return new SplitPath(root, relativePath);
     }
 
     /// <summary>
@@ -150,6 +148,40 @@ namespace VsChromium.Core.Files {
       catch (Exception) {
         return false;
       }
+    }
+  }
+
+  /// <summary>
+  /// Simple abstraction over a path split into its root (absolute) part and a
+  /// relative suffix, which may be empty.
+  /// </summary>
+  public struct SplitPath {
+    private readonly string _root;
+    private readonly string _suffix;
+
+    public SplitPath(string root, string suffix) {
+      if (string.IsNullOrEmpty(root))
+        throw new ArgumentException();
+      if (suffix == null)
+        throw new ArgumentException();
+      _root = root;
+      _suffix = suffix;
+    }
+
+    /// <summary>
+    /// Root of the path, never empty or null. Does *not* end with path
+    /// separator.
+    /// </summary>
+    public string Root {
+      get { return _root; }
+    }
+
+    /// <summary>
+    /// Suffix of the path, after <see cref="Root"/>. Can be empty string (but
+    /// not null). Does *not* start with a path separator.
+    /// </summary>
+    public string Suffix {
+      get { return _suffix; }
     }
   }
 }

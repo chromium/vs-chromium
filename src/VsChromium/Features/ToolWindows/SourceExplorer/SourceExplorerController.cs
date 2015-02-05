@@ -195,12 +195,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var pair = PathHelpers.SplitPrefix(path.Value, fileSystemTreeEntry.Name);
 
       // Special case: "path" is actually a Root entry.
-      if (pair.Value == "") {
+      if (string.IsNullOrEmpty(pair.Suffix)) {
         return fileSystemTreeEntry;
       }
 
       // Descend the FileSystemTree nodes hierarchy as we split the directory name.
-      foreach (var childName in pair.Value.Split(Path.DirectorySeparatorChar)) {
+      foreach (var childName in pair.Suffix.Split(Path.DirectorySeparatorChar)) {
         // First try without forcing loading the lazy loaded entries.
         var childViewModel = fileSystemTreeEntry
           .Children

@@ -1,4 +1,4 @@
-[ChromiumExplorer.ignore]
+[SourceExplorer.ignore]
 .git/
 *.sdf
 *.opensdf

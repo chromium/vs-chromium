@@ -29,28 +29,28 @@ namespace VsChromium.Tests.Core {
     [TestMethod]
     public void SplitPrefixRemovesSeparators() {
       var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:");
-      Assert.AreEqual(@"d:", result.Key);
-      Assert.AreEqual(@"ooo\bar.txt", result.Value);
+      Assert.AreEqual(@"d:", result.Root);
+      Assert.AreEqual(@"ooo\bar.txt", result.Suffix);
     }
 
     [TestMethod]
     public void SplitPrefixRemovesSeparators2() {
       var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:\ooo");
-      Assert.AreEqual(@"d:\ooo", result.Key);
-      Assert.AreEqual(@"bar.txt", result.Value);
+      Assert.AreEqual(@"d:\ooo", result.Root);
+      Assert.AreEqual(@"bar.txt", result.Suffix);
     }
 
     [TestMethod]
     public void SplitPrefixRemovesTrailingSeparators() {
       var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:\");
-      Assert.AreEqual(@"d:", result.Key);
-      Assert.AreEqual(@"ooo\bar.txt", result.Value);
+      Assert.AreEqual(@"d:", result.Root);
+      Assert.AreEqual(@"ooo\bar.txt", result.Suffix);
     }
     [TestMethod]
     public void SplitPrefixRemovesTrailingSeparators2() {
       var result = PathHelpers.SplitPrefix(@"d:\ooo\bar.txt", @"d:\ooo\");
-      Assert.AreEqual(@"d:\ooo", result.Key);
-      Assert.AreEqual(@"bar.txt", result.Value);
+      Assert.AreEqual(@"d:\ooo", result.Root);
+      Assert.AreEqual(@"bar.txt", result.Suffix);
     }
   }
 }

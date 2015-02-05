@@ -10,8 +10,9 @@ using VsChromium.Core.Linq;
 
 namespace VsChromium.Server.Projects.ProjectFile {
   /// <summary>
-  /// Implementation of <see cref="IProjectDiscoveryProvider"/> looking for
-  /// project file in the file system.
+  /// Implementation of <see cref="IProjectDiscoveryProvider"/> looking for a
+  /// project file "vs-chromium-project.txt" (or the obsoleted
+  /// "project.vs-chromium-project") in the file system.
   /// </summary>
   [Export(typeof(IProjectDiscoveryProvider))]
   public class ProjectFileDiscoveryProvider : IProjectDiscoveryProvider {

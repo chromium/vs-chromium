@@ -66,7 +66,10 @@ namespace VsChromium.Server.Projects.ProjectFile {
     private IProject GetProjectWorker(FullPath filepath) {
       var directory = filepath.Parent;
       if (_fileSystem.DirectoryExists(directory)) {
-        var project = filepath.EnumerateParents().Select(CreateProject).FirstOrDefault();
+        var project = filepath
+          .EnumerateParents()
+          .Select(CreateProject)
+          .FirstOrDefault(x => x != null);
         if (project != null) {
           _knownProjectRootDirectories.Add(project.RootPath, project);
           return project;

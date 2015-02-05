@@ -50,17 +50,22 @@ void AsciiSearchBase::StartSearch(
   int patternLen,
   SearchOptions options,
   SearchCreateResult& result) {
-  options_ = options;
   this->StartSearchWorker(pattern, patternLen, options, result);
+  if (options & kMatchWholeWord) {
+    findNext_ = &AsciiSearchBase::FindNextWholeWord;
+  } else {
+    findNext_ = &AsciiSearchBase::FindNextWorker;
+  }
 }
 
 void AsciiSearchBase::FindNext(SearchParams* searchParams) {
+  (this->*findNext_)(searchParams);
+}
+
+void AsciiSearchBase::FindNextWholeWord(SearchParams* searchParams) {
   while (true) {
     this->FindNextWorker(searchParams);
     if (searchParams->MatchStart == nullptr)
-      break;
-
-    if ((options_ & kMatchWholeWord) == 0)
       break;
 
     if (IsWholeWordMatch(searchParams))

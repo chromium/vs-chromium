@@ -8,13 +8,13 @@ using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Win32.Strings {
   public static class Conversion {
-    public static unsafe SafeHeapBlockHandle UTF8ToUnicode(SafeHeapBlockHandle block) {
+    public static unsafe SafeHeapBlockHandle Utf8ToUtf16(SafeHeapBlockHandle block) {
       var start = (byte*)block.Pointer;
       var end = start + block.ByteLength;
-      return UTF8ToUnicode(start, end);
+      return Utf8ToUtf16(start, end);
     }
 
-    public static unsafe SafeHeapBlockHandle UTF8ToUnicode(byte* start, byte* end) {
+    public static unsafe SafeHeapBlockHandle Utf8ToUtf16(byte* start, byte* end) {
       if (start >= end)
         throw new ArgumentException();
 
@@ -34,25 +34,28 @@ namespace VsChromium.Core.Win32.Strings {
       return newBlock;
     }
 
-    public static unsafe string UTF8ToString(byte* start, byte* end) {
-      var block = UTF8ToUnicode(start, end);
-      return new string((char*)block.Pointer, 0, (int)block.ByteLength / 2);
+    public static unsafe string Utf8ToString(byte* start, byte* end) {
+      return new string((sbyte*)start, 0, (int)(end - start));
     }
 
-    public static unsafe string UnicodeToUnicode(byte[] bytes) {
-      fixed (void* pointer = bytes) {
-        return new string((char*)pointer);
-      }
-    }
-
-    public static unsafe string AnsiToUnicode(byte[] bytes) {
+    public static unsafe string Utf8ToString(byte[] bytes) {
       // Note: When debugging unit tests, the following line will sometime
       // throw an exception of type "AccessViolationException" from 
       // VsChromium.Core.Debugger.DebuggerThread.GetOutputDebugString()
       // The only workaround found so far is to disable the call (see comment
       // in the method above).
       fixed (byte* pointer = bytes) {
-        return new string((sbyte*)pointer);
+        return new string((sbyte*)pointer, 0, bytes.Length);
+      }
+    }
+
+    public static unsafe string Utf16ToString(byte* start, byte* end) {
+      return new string((char*)start, 0, (int)((end - start) / sizeof(char)));
+    }
+
+    public static unsafe string Utf16ToString(byte[] bytes) {
+      fixed (void* pointer = bytes) {
+        return new string((char*)pointer, 0, bytes.Length / sizeof(char));
       }
     }
   }

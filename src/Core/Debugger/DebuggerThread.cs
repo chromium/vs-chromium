@@ -194,7 +194,7 @@ namespace VsChromium.Core.Debugger {
         return string.Format("<error getting debug string from process: {0}>", new LastWin32ErrorException().Message);
       }
 
-      var message = (isUnicode ? Conversion.UnicodeToUnicode(bytes) : Conversion.AnsiToUnicode(bytes));
+      var message = (isUnicode ? Conversion.Utf16ToString(bytes) : Conversion.Utf8ToString(bytes));
       message = message.TrimEnd('\r', '\n');
       return message;
 #endif

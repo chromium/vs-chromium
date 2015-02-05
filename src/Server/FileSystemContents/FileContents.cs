@@ -64,9 +64,16 @@ namespace VsChromium.Server.FileSystemContents {
       return result;
     }
 
-    public virtual IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
-      return NoFileExtracts;
+    public IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
+      var offsets = GetFileOffsets();
+
+      return spans
+        .Select(x => offsets.FilePositionSpanToFileExtract(x, maxLength))
+        .Where(x => x != null)
+        .ToList();
     }
+
+    protected abstract ITextLineOffsets GetFileOffsets();
 
     protected abstract long CharacterCount { get; }
 

@@ -18,7 +18,7 @@ namespace VsChromium.Tests.Server {
     public static FileContentsMemory CreateUtf16Memory(string text) {
       var size = (text.Length + 1) * sizeof(char);
       var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(text));
-      return new FileContentsMemory(handle, size, 0, size);
+      return new FileContentsMemory(handle, size, 0, size - 1);
     }
 
     public static AsciiFileContents CreateAsciiFileContents(string text) {

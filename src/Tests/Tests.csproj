@@ -32,6 +32,7 @@
     <Compile Include="ServerProcess\TestUnregisterFile.cs" />
     <Compile Include="ServerProcess\TestFileSystemTree.cs" />
     <Compile Include="NativeInterop\TestGetTextKind.cs" />
+    <Compile Include="Server\TestFileContentsGetFileExtracts.cs" />
     <Compile Include="Server\TestFileSystemMock.cs" />
     <Compile Include="Server\TestProjectFileDiscoveryProvider.cs" />
     <Compile Include="Server\Utils.cs" />

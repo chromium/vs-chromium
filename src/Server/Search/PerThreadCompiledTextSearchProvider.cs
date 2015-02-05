@@ -19,13 +19,13 @@ namespace VsChromium.Server.Search {
     private readonly SearchProviderOptions _searchOptions;
     private readonly ConcurrentDictionary<int, ICompiledTextSearch> _asciiAlgorithms = new ConcurrentDictionary<int, ICompiledTextSearch>();
     private readonly Func<int, ICompiledTextSearch> _asciiAlgorithmFactory;
-    private readonly ICompiledTextSearch _unicodeCompiledTextSearchAlgo;
+    private readonly ICompiledTextSearch _utf16CompiledTextSearchAlgo;
 
     public PerThreadCompiledTextSearchProvider(string pattern, SearchProviderOptions searchOptions) {
       _pattern = pattern;
       _searchOptions = searchOptions;
       _asciiAlgorithmFactory = x => AsciiFileContents.CreateSearchAlgo(_pattern, _searchOptions);
-      _unicodeCompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(_pattern, _searchOptions);
+      _utf16CompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(_pattern, _searchOptions);
 
       // Force execution on the current thread so that we get an exception if
       // the search engine finds "pattern" is invalid.
@@ -37,7 +37,7 @@ namespace VsChromium.Server.Search {
     }
 
     public ICompiledTextSearch GetUtf16Search() {
-      return _unicodeCompiledTextSearchAlgo;
+      return _utf16CompiledTextSearchAlgo;
     }
 
     public void Dispose() {
@@ -45,7 +45,7 @@ namespace VsChromium.Server.Search {
         algo.Dispose();
       }
       _asciiAlgorithms.Clear();
-      _unicodeCompiledTextSearchAlgo.Dispose();
+      _utf16CompiledTextSearchAlgo.Dispose();
     }
   }
 }

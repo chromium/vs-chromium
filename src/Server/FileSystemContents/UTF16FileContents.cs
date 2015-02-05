@@ -23,6 +23,10 @@ namespace VsChromium.Server.FileSystemContents {
       return CompareBinaryContents(this, Pointer, ByteLength, other2, other2.Pointer, other2.ByteLength);
     }
 
+    protected override ITextLineOffsets GetFileOffsets() {
+      return new Utf16TextLineOffsets(_heap);
+    }
+
     private IntPtr Pointer { get { return _heap.Pointer; } }
 
     protected override int CharacterSize {

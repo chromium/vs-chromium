@@ -3,10 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
@@ -40,14 +37,8 @@ namespace VsChromium.Server.FileSystemContents {
       return CompareBinaryContents(this, Pointer, ByteLength, other2, other2.Pointer, other2.ByteLength);
     }
 
-    public override IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
-      var offsets = new AsciiTextLineOffsets(_heap);
-      offsets.CollectLineOffsets();
-
-      return spans
-        .Select(x => offsets.FilePositionSpanToFileExtract(x, maxLength))
-        .Where(x => x != null)
-        .ToList();
+    protected override ITextLineOffsets GetFileOffsets() {
+      return new AsciiTextLineOffsets(_heap);
     }
 
     public static ICompiledTextSearch CreateSearchAlgo(string pattern, SearchProviderOptions searchOptions) {

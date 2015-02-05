@@ -5,12 +5,13 @@
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.FileSystemContents {
-  public class AsciiTextLineOffsets : ITextLineOffsets {
+  public class Utf16TextLineOffsets : ITextLineOffsets {
     private readonly TextLineOffsetsImpl _impl;
-    public AsciiTextLineOffsets(FileContentsMemory heap) {
-      _impl = new TextLineOffsetsImpl(heap, sizeof(byte));
+    public Utf16TextLineOffsets(FileContentsMemory heap) {
+      _impl = new TextLineOffsetsImpl(heap, sizeof(char));
       _impl.CollectLineOffsets();
     }
+
 
     public FileExtract FilePositionSpanToFileExtract(FilePositionSpan filePositionSpan, int maxTextExtent) {
       return _impl.FilePositionSpanToFileExtract(filePositionSpan, maxTextExtent);

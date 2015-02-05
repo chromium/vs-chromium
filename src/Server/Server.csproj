@@ -23,7 +23,10 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileSystemContents\AsciiTextLineOffsets.cs" />
     <Compile Include="FileSystemContents\FileContentsHash.cs" />
+    <Compile Include="FileSystemContents\ITextLineOffsets.cs" />
+    <Compile Include="FileSystemContents\TextLineOffsetsImpl.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />
@@ -103,7 +106,7 @@
     <Compile Include="Projects\ProjectDiscovery.cs" />
     <Compile Include="Projects\ProjectFile\ProjectFileDiscoveryProvider.cs" />
     <Compile Include="Projects\SearchableFilesFilter.cs" />
-    <Compile Include="FileSystemContents\AsciiTextLineOffsets.cs" />
+    <Compile Include="FileSystemContents\Utf16TextLineOffsets.cs" />
     <Compile Include="FileSystemContents\FileContentsMemory.cs" />
     <Compile Include="FileSystemDatabase\FileDatabaseBuilder.cs" />
     <Compile Include="FileSystemDatabase\FileDatabaseFactory.cs" />
@@ -132,7 +135,7 @@
     <Compile Include="FileSystemContents\IFileContentsFactory.cs" />
     <Compile Include="Search\ISearchEngine.cs" />
     <Compile Include="Search\CompiledTextSearchData.cs" />
-    <Compile Include="FileSystemContents\UTF16FileContents.cs" />
+    <Compile Include="FileSystemContents\Utf16FileContents.cs" />
     <Compile Include="FileSystemContents\AsciiFileContents.cs" />
     <Compile Include="FileSystemContents\FileContents.cs" />
     <Compile Include="FileSystemDatabase\FileDatabase.cs" />

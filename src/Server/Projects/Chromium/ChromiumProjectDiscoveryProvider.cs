@@ -38,8 +38,8 @@ namespace VsChromium.Server.Projects.Chromium {
     }
 
     private Project CreateProject(FullPath rootPath) {
-      var directoryFilter = new DirectoryFilter(_configurationSectionProvider);
-      var fileFilter = new FileFilter(_configurationSectionProvider);
+      var fileFilter = new FileFilter(_configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnoreObsolete);
+      var directoryFilter = new DirectoryFilter(_configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnoreObsolete);
       var searchableFilesFilter = new SearchableFilesFilter(_configurationSectionProvider);
       return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter);
     }

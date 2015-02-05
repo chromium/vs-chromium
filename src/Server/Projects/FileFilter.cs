@@ -9,8 +9,8 @@ namespace VsChromium.Server.Projects {
   public class FileFilter : IFileFilter {
     private readonly FilePatternsPathMatcherProvider _ignoreMatcherProvider;
 
-    public FileFilter(IConfigurationSectionProvider configurationSectionProvider) {
-      _ignoreMatcherProvider = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnore);
+    public FileFilter(IConfigurationSectionProvider configurationSectionProvider, string ignoreSection) {
+      _ignoreMatcherProvider = new FilePatternsPathMatcherProvider(configurationSectionProvider, ignoreSection);
     }
 
     public bool Include(RelativePath relativePath) {

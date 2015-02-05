@@ -81,11 +81,14 @@ namespace VsChromium.Server.Projects.ProjectFile {
     /// <summary>
     /// Create a project instance corresponding to the vschromium project file
     /// on disk at <paramref name="rootPath"/>.
+    /// Return <code>null</code> if there is no project file.
     /// </summary>
     private Project CreateProject(FullPath rootPath) {
       var path = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileName));
+      var sectionName = ConfigurationSectionNames.SourceExplorerIgnore;
       if (!_fileSystem.FileExists(path)) {
         path = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameObsolete));
+        sectionName = ConfigurationSectionNames.SourceExplorerIgnoreObsolete;
         if (!_fileSystem.FileExists(path)) {
           return null;
         }
@@ -93,8 +96,8 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
       var fileWithSections = new FileWithSections(_fileSystem, path);
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
-      var directoryFilter = new DirectoryFilter(configurationProvider);
-      var fileFilter = new FileFilter(configurationProvider);
+      var fileFilter = new FileFilter(configurationProvider, sectionName);
+      var directoryFilter = new DirectoryFilter(configurationProvider, sectionName);
       var searchableFilesFilter = new SearchableFilesFilter(configurationProvider);
       return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter);
     }

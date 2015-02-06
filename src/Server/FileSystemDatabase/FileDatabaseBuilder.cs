@@ -144,6 +144,10 @@ namespace VsChromium.Server.FileSystemDatabase {
         totalFileCount,
         partitionCount);
 
+      // Store large files
+      foreach (var item in largeFiles) {
+        fileContents[generator.Next()] = item;
+      }
       // Store small files
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
@@ -153,10 +157,6 @@ namespace VsChromium.Server.FileSystemDatabase {
             fileData.Contents.TextRange);
           fileContents[generator.Next()] = item;
         }
-      }
-      // Store large files
-      foreach (var item in largeFiles) {
-        fileContents[generator.Next()] = item;
       }
 
 #if false

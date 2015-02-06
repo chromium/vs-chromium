@@ -294,14 +294,36 @@ namespace VsChromium.Server.Search {
       SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
-      var pattern = ConvertUserSearchStringToSearchPattern(searchParams);
-      if (pattern == null)
-        return null;
 
+      // Regex has its own set of rules for pre-processing
       if (searchParams.Regex) {
         return PreProcessRegularExpressionSearch(searchParams, matchName, matchRelativeName);
       }
-      var matcher = FileNameMatching.ParsePattern(pattern);
+
+      // Check pattern is not empty
+      var pattern = (searchParams.SearchString ?? "").Trim();
+      if (string.IsNullOrWhiteSpace(pattern))
+        return null;
+
+      // Split pattern around ";", normalize directory separators and
+      // add "*" if not a whole word search
+      var patterns = pattern
+        .Split(new[] {';'})
+        .Where(x => !string.IsNullOrWhiteSpace(x.Trim()))
+        .Select(x => x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar))
+        .Select(x => {
+            // Exception to ".gitignore" syntax: If the search string doesn't contain any special
+            // character, surround the pattern with "*" so that we match sub-strings.
+            // TODO(rpaquay): What about "."? Special or not?
+            if (x.IndexOf(Path.DirectorySeparatorChar) < 0 && x.IndexOf('*') < 0) {
+              if (!searchParams.MatchWholeWord) {
+                x = "*" + x + "*";
+              }
+            }
+            return x;
+          });
+
+      var matcher = new AnyPathMatcher(patterns.Select(PatternParser.ParsePattern));
 
       var comparer = searchParams.MatchCase ?
                        PathComparerRegistry.CaseSensitive :
@@ -394,29 +416,6 @@ namespace VsChromium.Server.Search {
           Marshal.FreeHGlobal(ptr);
         }
       }
-    }
-
-    private static string ConvertUserSearchStringToSearchPattern(SearchParams searchParams) {
-      var pattern = searchParams.SearchString ?? "";
-
-      pattern = pattern.Trim();
-      if (string.IsNullOrWhiteSpace(pattern))
-        return null;
-
-      // We use "\\" internally for paths and patterns.
-      pattern = pattern.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-
-      // Exception to ".gitignore" syntax: If the search string doesn't contain any special
-      // character, surround the pattern with "*" so that we match sub-strings.
-      // TODO(rpaquay): What about "."? Special or not?
-      if (pattern.IndexOf(Path.DirectorySeparatorChar) < 0 &&
-          pattern.IndexOf('*') < 0) {
-        if (!searchParams.MatchWholeWord) {
-          pattern = "*" + pattern + "*";
-        }
-      }
-
-      return pattern;
     }
 
     private void ComputeNewState(FileSystemTreeSnapshot newSnapshot) {

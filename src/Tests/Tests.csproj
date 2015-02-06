@@ -84,6 +84,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="TestData\chromium\src\PRESUBMIT.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestData\chromium\src\base\file_present_three_times.txt" />
+    <Content Include="TestData\chromium\src\chrome\test_directory\marker.txt" />
+    <Content Include="TestData\chromium\src\content\folder\test_directory\marker.txt" />
+    <Content Include="TestData\chromium\src\file_present_three_times.txt" />
+    <Content Include="TestData\chromium\src\folder\folder2\file_present_three_times.txt" />
+    <Content Include="TestData\chromium\src\readme.txt" />
+    <Content Include="TestData\chromium\src\readme2.txt" />
+    <Content Include="TestData\chromium\src\test_directory\marker.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -21,7 +21,7 @@ namespace VsChromium.Tests.ServerProcess {
 
     protected static DirectoryInfo GetChromiumEnlistmentDirectory() {
       var assemblyFileInfo = new FileInfo(Assembly.GetExecutingAssembly().Location);
-      var testDataPath = Path.Combine(assemblyFileInfo.Directory.Parent.Parent.FullName, "src", "Tests", "TestData", "src");
+      var testDataPath = Path.Combine(assemblyFileInfo.Directory.Parent.Parent.FullName, "src", "Tests", "TestData", "chromium", "src");
       var result = new DirectoryInfo(testDataPath);
       Assert.IsTrue(result.Exists, string.Format("Test data path \"{0}\" not found!", testDataPath));
       return result;

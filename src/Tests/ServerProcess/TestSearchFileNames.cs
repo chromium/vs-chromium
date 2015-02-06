@@ -53,6 +53,22 @@ namespace VsChromium.Tests.ServerProcess {
       VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 3);
     }
 
+    [TestMethod]
+    public void SemiColonSeparatorWithWildcardWorks() {
+      const string searchPattern = "*.txt;*.py";
+      const string fileName = "";
+
+      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorWithPartialNamesWorks() {
+      const string searchPattern = ".txt;.py";
+      const string fileName = "";
+
+      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
+    }
+
     private static void VerifySearchFileNamesResponse(
       ITypedRequestProcessProxy server,
       string searchPattern,
@@ -76,7 +92,9 @@ namespace VsChromium.Tests.ServerProcess {
 
       chromiumEntry.Entries.ForAll(x => Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name)));
       Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
-      Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count(x => Path.GetFileName(x.Name) == fileName));
+      if (fileName != "") {
+        Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count(x => Path.GetFileName(x.Name) == fileName));
+      }
     }
   }
 }

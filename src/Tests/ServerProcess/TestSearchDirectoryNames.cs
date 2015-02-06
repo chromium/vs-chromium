@@ -56,6 +56,30 @@ namespace VsChromium.Tests.ServerProcess {
       VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 3);
     }
 
+    [TestMethod]
+    public void SemiColonSeparatorWithFullNamesWorks() {
+      const string searchPattern = "content;folder";
+      const string directoryName = "";
+
+      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 4);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorWithFullNamesWorks2() {
+      const string searchPattern = "content/;folder/";
+      const string directoryName = "";
+
+      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 3);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorWithPartialNamesWorks() {
+      const string searchPattern = "conten;older";
+      const string directoryName = "";
+
+      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 4);
+    }
+
     private static void VerifySearchDirectoryNamesResponse(
       ITypedRequestProcessProxy server,
       string searchPattern,
@@ -79,7 +103,9 @@ namespace VsChromium.Tests.ServerProcess {
 
       chromiumEntry.Entries.ForAll(x => Debug.WriteLine(string.Format("Directory name: \"{0}\"", x.Name)));
       Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
-      Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count(x => x.Name.Contains(directoryName)));
+      if (directoryName != "") { 
+        Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count(x => x.Name.Contains(directoryName)));
+      }
     }
   }
 }

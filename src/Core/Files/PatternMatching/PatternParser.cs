@@ -17,8 +17,8 @@ namespace VsChromium.Core.Files.PatternMatching {
     }
 
     private static readonly char PathSeparator = Path.DirectorySeparatorChar;
-    private static string AnyDirMatchPrefix = "**" + PathSeparator;
-    private static string AnyDirMatch = PathSeparator + "**" + PathSeparator;
+    private static readonly string AnyDirMatchPrefix = "**" + PathSeparator;
+    private static readonly string AnyDirMatch = PathSeparator + "**" + PathSeparator;
 
     private static IEnumerable<BaseOperator> ParsePatternWorker(PatternWrapper pattern) {
       var result = new List<BaseOperator>();

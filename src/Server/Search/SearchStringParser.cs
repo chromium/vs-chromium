@@ -2,6 +2,7 @@
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text;
+using VsChromium.Core.Ipc;
 
 namespace VsChromium.Server.Search {
   [Export(typeof(ISearchStringParser))]
@@ -28,10 +29,16 @@ namespace VsChromium.Server.Search {
             }
             break;
           default:
+            if (inEscapeSequence) {
+              throw new RecoverableErrorException(string.Format("Invalid escape character sequence \"\\{0}\"",c));
+            }
             inEscapeSequence = false;
             subStrings.AddCharacter(c);
             break;
         }
+      }
+      if (inEscapeSequence) {
+        throw new RecoverableErrorException("Unterminated escape character sequence");
       }
       subStrings.FinishCurrent();
 

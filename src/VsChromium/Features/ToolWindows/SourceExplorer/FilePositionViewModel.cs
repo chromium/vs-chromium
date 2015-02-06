@@ -72,7 +72,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         // [extract - match - extract]
         var offset = _matchPosition.Position + _matchPosition.Length - _extractPosition.Offset;
         var length = _extractPosition.Length - offset;
-        return _extractPosition.Text.Substring(offset, length).TrimEnd();
+        var text = _extractPosition.Text.Substring(offset, length).TrimEnd();
+        return string.Format("{0} ({1}, {2})", text, _extractPosition.LineNumber + 1, _extractPosition.ColumnNumber + 1);
       }
     }
 

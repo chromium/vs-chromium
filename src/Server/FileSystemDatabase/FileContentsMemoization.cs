@@ -4,11 +4,25 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemDatabase {
+  public class NullFileContentsMemoization : IFileContentsMemoization {
+    private int _count;
+
+    public FileContents Get(FileName fileName, FileContents fileContents) {
+      Interlocked.Increment(ref _count);
+      return fileContents;
+    }
+
+    public int Count {
+      get { return _count; }
+    }
+  }
+
   public class FileContentsMemoization : IFileContentsMemoization {
     private readonly ConcurrentDictionary<MapKey, FileContents> _map = new ConcurrentDictionary<MapKey, FileContents>();
 
@@ -25,16 +39,15 @@ namespace VsChromium.Server.FileSystemDatabase {
 
       public MapKey(FileName fileName, FileContents fileContents) {
         _fileContents = fileContents;
-        _hashCode =
-          HashCode.Combine(
-            fileName.RelativePath.FileName.GetHashCode(),
-            HashCode.Combine(
-              (int)(fileContents.ByteLength & uint.MaxValue),
-              (int)(fileContents.ByteLength >> 32)));
+        _hashCode = HashCode.Combine(
+            _fileContents.UtcLastModified.GetHashCode(),
+            _fileContents.ByteLength.GetHashCode());
       }
 
       public bool Equals(MapKey other) {
-        return _fileContents.HasSameContents(other._fileContents);
+        return
+          _fileContents.UtcLastModified.Equals(other._fileContents.UtcLastModified) &&
+          _fileContents.HasSameContents(other._fileContents);
       }
 
       public override int GetHashCode() {

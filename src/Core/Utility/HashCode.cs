@@ -13,5 +13,11 @@ namespace VsChromium.Core.Utility {
         return hash;
       }
     }
+    public static int Combine(int h1, int h2, int h3) {
+      return Combine(Combine(h1, h2), h3);
+    }
+    public static int Combine(int h1, int h2, int h3, int h4) {
+      return Combine(Combine(h1, h2), Combine(h3, h4));
+    }
   }
 }

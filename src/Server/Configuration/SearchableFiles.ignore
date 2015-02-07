@@ -32,10 +32,12 @@ build/Debug/**/third_party/ffmpeg/
 build/Release/**/third_party/ffmpeg/
 
 # 27MB
-third_party/cld_2/src/internal/cld2_generated_quad0720.cc
+cld2_generated_*.cc
+
 
 # Big json files (14MB)
-third_party/trace-viewer/test_data
+third_party/trace-viewer/test_data/*.json
+chrome/browser/resources/tracing/tests/*.json
 
 # More or less dead project
 chrome_frame/
@@ -177,3 +179,6 @@ build/Release/gen/webkit/bindings/
 *.rgb
 *.mp4
 *.ac3
+*.utf8
+*.dae
+*.pyc

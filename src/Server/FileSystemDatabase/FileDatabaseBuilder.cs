@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -22,6 +23,7 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
+    private static bool LogStats = false;
     private const int ChunkSize = 100 * 1024;
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
@@ -101,6 +103,28 @@ namespace VsChromium.Server.FileSystemDatabase {
         var directories = _directories;
         var filesWithContents = GetFilesWithContents(files.Values);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
+        if (LogStats) {
+          var filesByExtensions = filesWithContents
+            .GroupBy(x => {
+              var ext = Path.GetExtension(x.FileName.FullPath.Value);
+              if (ext == "" || x.Contents.ByteLength >=  500 * 1024)
+                return Path.GetFileName(x.FileName.FullPath.Value);
+              return ext;
+            })
+            .Select(g => {
+            var count = g.Count();
+            var size = g.Aggregate(0L, (c, x) => c + x.Contents.ByteLength);
+              return Tuple.Create(g.Key, count, size);
+            })
+            .OrderByDescending(x => x.Item3);
+          filesByExtensions.ForAll(g => {
+            var count = g.Item2;
+            var size = g.Item3;
+            if (size > 1024L) {
+              Logger.Log("{0}: {1:n0} files, {2:n0} bytes", g.Item1, count, size);
+            }
+          });
+        }
         return new FileDatabase(
           files,
           files.Keys.ToArray(),
@@ -235,7 +259,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private void TransferUnchangedFileContents(FileDatabase oldState, IFileContentsMemoization fileContentsMemoization) {
       using (new TimeElapsedLogger("Checking for out of date files")) {
-        IList<KeyValuePair<FileData,ProjectFileData>> commonOldFiles = GetCommonFiles(oldState).ToArray();
+        IList<KeyValuePair<FileData, ProjectFileData>> commonOldFiles = GetCommonFiles(oldState).ToArray();
         using (var progress = _progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
           var commonSearchableFiles = commonOldFiles
             .AsParallel()

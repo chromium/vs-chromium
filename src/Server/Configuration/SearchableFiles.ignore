@@ -166,3 +166,10 @@ build/Release/gen/webkit/bindings/
 *.po
 *.pdf
 *.raw
+*.ai
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.ogg
+*.ex_

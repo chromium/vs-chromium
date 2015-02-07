@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.Linq;
 
 namespace VsChromium.Core.Configuration {
   /// <summary>
@@ -17,8 +18,10 @@ namespace VsChromium.Core.Configuration {
       _fileWithSections = fileWithSections;
     }
 
-    public IEnumerable<string> GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
-      return _fileWithSections.ReadSection(sectionName, postProcessing);
+    public IConfigurationSectionContents GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
+      return new ConfigurationSectionContents(
+        sectionName,
+        _fileWithSections.ReadSection(sectionName, postProcessing).ToReadOnlyCollection());
     }
   }
 }

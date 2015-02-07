@@ -46,9 +46,11 @@
     <Compile Include="Configuration\ConfigurationDirectoryNames.cs" />
     <Compile Include="Configuration\ConfigurationFileNames.cs" />
     <Compile Include="Configuration\ConfigurationFileConfigurationSectionProvider.cs" />
+    <Compile Include="Configuration\ConfigurationSectionContents.cs" />
     <Compile Include="Configuration\ConfigurationSectionNames.cs" />
     <Compile Include="Configuration\ConfigurationStyleFilenames.cs" />
     <Compile Include="Configuration\FileWithSectionConfigurationProvider.cs" />
+    <Compile Include="Configuration\IConfigurationSectionContents.cs" />
     <Compile Include="Configuration\IConfigurationSectionProvider.cs" />
     <Compile Include="Configuration\IFileWithSections.cs" />
     <Compile Include="Configuration\FileWithSections.cs" />

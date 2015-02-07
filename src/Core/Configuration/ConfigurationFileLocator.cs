@@ -9,22 +9,43 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using VsChromium.Core.Files;
+using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Configuration {
   [Export(typeof(IConfigurationFileLocator))]
   public class ConfigurationFileLocator : IConfigurationFileLocator {
     private readonly IFileSystem _fileSystem;
+    private readonly Dictionary<RelativePath, IList<string>> _fileLines = new Dictionary<RelativePath, IList<string>>();
+    private readonly object _lock = new object();
 
     [ImportingConstructor]
     public ConfigurationFileLocator(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }
 
-    public IEnumerable<string> ReadFile(RelativePath relativePath, Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing) {
+    public IEnumerable<string> ReadFile(
+      RelativePath relativePath,
+      Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing) {
+      // TODO(rpaquay): Find way to invalidate cache.
+      lock (_lock) {
+        IList<string> result;
+        if (_fileLines.TryGetValue(relativePath, out result))
+          return result;
+
+        result = ReadFileWorker(relativePath, postProcessing);
+        _fileLines.Add(relativePath, result);
+        return result;
+      }
+    }
+
+    private IList<string> ReadFileWorker(RelativePath relativePath, Func<FullPath, IEnumerable<string>, IEnumerable<string>> postProcessing) {
       foreach (var directoryName in PossibleDirectoryNames()) {
         var path = directoryName.Combine(relativePath);
-        if (_fileSystem.FileExists(path))
-          return postProcessing(path, _fileSystem.ReadAllLines(path));
+        if (_fileSystem.FileExists(path)) {
+          Logger.Log("Using configuration file at \"{0}\"", path);
+          return postProcessing(path, _fileSystem.ReadAllLines(path)).ToReadOnlyCollection();
+        }
       }
 
       throw new FileLoadException(

@@ -11,6 +11,6 @@ namespace VsChromium.Core.Configuration {
   /// "sections", i.e. set of text lines grouped into a section with a given name.
   /// </summary>
   public interface IConfigurationSectionProvider {
-    IEnumerable<string> GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing);
+    IConfigurationSectionContents GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing);
   }
 }

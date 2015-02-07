@@ -11,14 +11,12 @@ using VsChromium.Core.Files.PatternMatching;
 
 namespace VsChromium.Core.Configuration {
   public class FilePatternsPathMatcherProvider : IFilePatternsPathMatcherProvider {
-    private readonly string _sectionName;
-    private readonly IConfigurationSectionProvider _configurationSectionProvider;
+    private readonly IConfigurationSectionContents _sectionContents;
     private readonly Lazy<IPathMatcher> _matcher;
     private readonly Lazy<List<PathMatcher>> _matcherLines;
 
     public FilePatternsPathMatcherProvider(IConfigurationSectionProvider configurationSectionProvider, string sectionName) {
-      _configurationSectionProvider = configurationSectionProvider;
-      _sectionName = sectionName;
+      _sectionContents = configurationSectionProvider.GetSection(sectionName, FilterDirectories);
       _matcherLines = new Lazy<List<PathMatcher>>(CreateMatcherLines, LazyThreadSafetyMode.PublicationOnly);
       _matcher = new Lazy<IPathMatcher>(CreateMatcher, LazyThreadSafetyMode.PublicationOnly);
     }
@@ -32,8 +30,8 @@ namespace VsChromium.Core.Configuration {
     }
 
     private List<PathMatcher> CreateMatcherLines() {
-      var patterns = _configurationSectionProvider.GetSection(_sectionName, FilterDirectories);
-      return patterns.Select(x => PatternParser.ParsePattern(x)).ToList();
+      var patterns = _sectionContents.Contents;
+      return patterns.Select(PatternParser.ParsePattern).ToList();
     }
 
     private IPathMatcher CreateMatcher() {

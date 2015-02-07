@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using VsChromium.Core.Files;
+using VsChromium.Core.Linq;
 
 namespace VsChromium.Core.Configuration {
   /// <summary>
@@ -18,9 +19,10 @@ namespace VsChromium.Core.Configuration {
       _configurationFileLocator = configurationFileLocator;
     }
 
-    public IEnumerable<string> GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
+    public IConfigurationSectionContents GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
       var filename = new RelativePath(sectionName);
-      return _configurationFileLocator.ReadFile(filename, (fullPathName, lines) => postProcessing(lines));
+      var contents = _configurationFileLocator.ReadFile(filename, (path, lines) => postProcessing(lines)).ToReadOnlyCollection();
+      return new ConfigurationSectionContents(sectionName, contents);
     }
   }
 }

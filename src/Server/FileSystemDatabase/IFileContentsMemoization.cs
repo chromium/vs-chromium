@@ -12,5 +12,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// to the passed in <paramref name="fileContents"/>.
     /// </summary>
     FileContents Get(FileName fileName, FileContents fileContents);
+
+    int Count { get; }
   }
 }

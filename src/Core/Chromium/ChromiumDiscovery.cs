@@ -14,7 +14,7 @@ namespace VsChromium.Core.Chromium {
     private readonly IFileSystem _fileSystem;
     private readonly IFilePatternsPathMatcherProvider _chromiumEnlistmentFilePatterns;
 
-    public ChromiumDiscovery(IConfigurationSectionProvider configurationSectionProvider, IFileSystem fileSystem) {
+    public ChromiumDiscovery(IFileSystem fileSystem, IConfigurationSectionProvider configurationSectionProvider) {
       _fileSystem = fileSystem;
       _chromiumEnlistmentFilePatterns = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationFileNames.ChromiumEnlistmentDetectionPatterns);
     }

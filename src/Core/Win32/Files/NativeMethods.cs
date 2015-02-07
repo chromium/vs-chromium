@@ -11,6 +11,23 @@ using Microsoft.Win32.SafeHandles;
 
 namespace VsChromium.Core.Win32.Files {
   static class NativeMethods {
+    public enum FINDEX_INFO_LEVELS {
+      FindExInfoStandard = 0,
+      FindExInfoBasic = 1
+    }
+
+    public enum FINDEX_SEARCH_OPS {
+      FindExSearchNameMatch = 0,
+      FindExSearchLimitToDirectories = 1,
+      FindExSearchLimitToDevices = 2
+    }
+
+    [Flags]
+    public enum FINDEX_ADDITIONAL_FLAGS {
+      FindFirstExCaseSensitive = 1,
+      FindFirstExLargeFetch = 2,
+    }
+
     [SuppressUnmanagedCodeSecurity]
     [DllImport(@"kernel32", CharSet = CharSet.Auto, SetLastError = true)]
     public static extern bool ReadFile(
@@ -38,6 +55,15 @@ namespace VsChromium.Core.Win32.Files {
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern SafeFindHandle FindFirstFile(string fileName, out WIN32_FIND_DATA data);
+
+    [DllImport("kernel32.dll", BestFitMapping = false, SetLastError = true, CharSet = CharSet.Unicode)]
+    internal static unsafe extern SafeFindHandle FindFirstFileEx(
+        char* pszPattern,
+        FINDEX_INFO_LEVELS fInfoLevelId,
+        out WIN32_FIND_DATA lpFindFileData,
+        FINDEX_SEARCH_OPS fSearchOp,
+        IntPtr lpSearchFilter,
+        FINDEX_ADDITIONAL_FLAGS dwAdditionalFlags);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]

@@ -61,12 +61,31 @@ namespace VsChromium.Core.Win32.Files {
     /// <summary>
     /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
     /// </summary>
-    public static List<DirectoryEntry> GetDirectoryEntries(string path) {
-      var pattern = path + "\\*";
+    public static unsafe List<DirectoryEntry> GetDirectoryEntries(string path) {
+      // Buidl search pattern (on the stack) as path + "\\*" + '\0'
+      var charCount = path.Length + 2 + 1;
+      char* patternBuffer = stackalloc char[charCount];
+      char* dest = patternBuffer;
+      fixed (char* pathPtr = path) {
+        char* src = pathPtr;
+        while ((*dest = *src) != 0) {
+          dest++;
+          src++;
+        }
+      }
+      *dest++ = '\\';
+      *dest++ = '*';
+      *dest++ = '\0';
 
       var result = new List<DirectoryEntry>();
       WIN32_FIND_DATA data;
-      using (var handle = NativeMethods.FindFirstFile(pattern, out data)) {
+      using (var handle = NativeMethods.FindFirstFileEx(
+        patternBuffer,
+        NativeMethods.FINDEX_INFO_LEVELS.FindExInfoBasic,
+        out data,
+        NativeMethods.FINDEX_SEARCH_OPS.FindExSearchNameMatch,
+        IntPtr.Zero,
+        NativeMethods.FINDEX_ADDITIONAL_FLAGS.FindFirstExLargeFetch)) {
         if (handle.IsInvalid) {
           var lastWin32Error = Marshal.GetLastWin32Error();
           if (lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
@@ -93,7 +112,7 @@ namespace VsChromium.Core.Win32.Files {
     }
 
     private static void AddResult(ref WIN32_FIND_DATA data, List<DirectoryEntry> entries) {
-      var entry = new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE) data.dwFileAttributes);
+      var entry = new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE)data.dwFileAttributes);
       if (SkipSpecialEntry(entry))
         return;
 

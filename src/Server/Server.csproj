@@ -30,7 +30,6 @@
     <Compile Include="FileSystemContents\TextLineOffsetsImpl.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileContentsMemoization.cs" />
-    <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsPiece.cs" />
     <Compile Include="FileSystemContents\FileContentsPiece.cs" />
     <Compile Include="FileSystemDatabase\NullFileContentsMemoization.cs" />

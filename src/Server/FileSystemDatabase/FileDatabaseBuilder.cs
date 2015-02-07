@@ -28,7 +28,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
-    private FileNameDictionary<ProjectFileData> _files;
+    private Dictionary<FileName, ProjectFileData> _files;
     private Dictionary<DirectoryName, DirectoryData> _directories;
 
     public FileDatabaseBuilder(
@@ -252,7 +252,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             x => x.FileName,
             new ReferenceEqualityComparer<FileName>());
 
-        _files = new FileNameDictionary<ProjectFileData>(files);
+        _files = files;
         _directories = directoryNames;
       }
     }

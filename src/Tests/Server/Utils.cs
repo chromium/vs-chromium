@@ -3,12 +3,23 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.FileSystemContents;
 
 namespace VsChromium.Tests.Server {
   public static class Utils {
+    public static DirectoryInfo GetTestDataDirectory() {
+      var assemblyFileInfo = new FileInfo(Assembly.GetExecutingAssembly().Location);
+      var testDataPath = Path.Combine(assemblyFileInfo.Directory.Parent.Parent.FullName, "src", "Tests", "TestData");
+      var result = new DirectoryInfo(testDataPath);
+      Assert.IsTrue(result.Exists, string.Format("Test data path \"{0}\" not found!", testDataPath));
+      return result;
+    }
+
     public static FileContentsMemory CreateAsciiMemory(string text) {
       var size = text.Length + 1;
       var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(text));

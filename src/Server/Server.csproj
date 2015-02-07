@@ -24,6 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileSystemContents\AsciiTextLineOffsets.cs" />
+    <Compile Include="FileSystemContents\BinaryFileContents.cs" />
     <Compile Include="FileSystemContents\FileContentsHash.cs" />
     <Compile Include="FileSystemContents\ITextLineOffsets.cs" />
     <Compile Include="FileSystemContents\TextLineOffsetsImpl.cs" />
@@ -32,6 +33,7 @@
     <Compile Include="FileSystemDatabase\FileNameDictionary.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsPiece.cs" />
     <Compile Include="FileSystemContents\FileContentsPiece.cs" />
+    <Compile Include="FileSystemDatabase\NullFileContentsMemoization.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
     <Compile Include="FileSystemSnapshot\DirectoryData.cs" />
@@ -117,6 +119,7 @@
     <Compile Include="Search\ICompiledTextSearchProviderFactory.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
     <Compile Include="Search\GetLineExtentCache.cs" />
+    <Compile Include="Search\NullCompiledTextSearch.cs" />
     <Compile Include="Search\PerThreadCompiledTextSearchProvider.cs" />
     <Compile Include="Search\CompiledTextSearchProvider.cs" />
     <Compile Include="Search\SearchDirectoryNamesResult.cs" />

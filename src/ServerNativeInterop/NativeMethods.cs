@@ -25,10 +25,11 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     public enum TextKind {
-      Ascii,
-      AsciiWithUtf8Bom,
-      Utf8WithBom,
-      Unknown
+      TextKind_Ascii,
+      TextKind_AsciiWithUtf8Bom,
+      TextKind_Utf8,
+      TextKind_Utf8WithBom,
+      TextKind_ProbablyBinary,
     }
 
     [StructLayout(LayoutKind.Sequential)]

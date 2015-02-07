@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -299,8 +298,10 @@ namespace VsChromium.Server.FileSystemDatabase {
               // Load the file only if 1) it has no contents yet (from a
               // previous snapshot) and 2) it is searchable
               if (projectFileData.FileData.Contents == null && projectFileData.IsSearchable) {
-                Interlocked.Increment(ref loadedFileCount);
                 var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
+                if (!(fileContents is BinaryFileContents)) {
+                  Interlocked.Increment(ref loadedFileCount);
+                }
                 fileContents = fileContentsMemoization.Get(projectFileData.FileName, fileContents);
                 projectFileData.FileData.UpdateContents(fileContents);
               }

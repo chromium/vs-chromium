@@ -95,6 +95,7 @@
     <Content Include="TestData\chromium\src\readme.txt" />
     <Content Include="TestData\chromium\src\readme2.txt" />
     <Content Include="TestData\chromium\src\test_directory\marker.txt" />
+    <Content Include="TestData\files\bear.ac3" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

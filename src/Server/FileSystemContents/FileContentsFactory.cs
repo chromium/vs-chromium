@@ -4,9 +4,9 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Win32.Strings;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.FileSystemContents {
@@ -26,7 +26,7 @@ namespace VsChromium.Server.FileSystemContents {
       }
       catch (Exception e) {
         Logger.LogException(e, "Error reading content of text file \"{0}\", skipping file.", path);
-        return AsciiFileContents.Empty;
+        return BinaryFileContents.Empty;
       }
     }
 
@@ -37,27 +37,30 @@ namespace VsChromium.Server.FileSystemContents {
       var kind = NativeMethods.Text_GetKind(block.Pointer, contentsByteCount);
 
       switch (kind) {
-        case NativeMethods.TextKind.Ascii:
+        case NativeMethods.TextKind.TextKind_Ascii:
+        // Note: Since we don't support UTF16 regex, just load all utf8 files as ascii.
+        case NativeMethods.TextKind.TextKind_Utf8:
           return new AsciiFileContents(new FileContentsMemory(block, 0, contentsByteCount), fileInfo.LastWriteTimeUtc);
 
+        case NativeMethods.TextKind.TextKind_AsciiWithUtf8Bom:
         // Note: Since we don't support UTF16 regex, just load all utf8 files as ascii.
-        case NativeMethods.TextKind.Utf8WithBom:
-        case NativeMethods.TextKind.AsciiWithUtf8Bom:
+        case NativeMethods.TextKind.TextKind_Utf8WithBom:
           const int utf8BomSize = 3;
           return new AsciiFileContents(new FileContentsMemory(block, utf8BomSize, contentsByteCount - utf8BomSize), fileInfo.LastWriteTimeUtc);
 
 #if false
-        case NativeMethods.TextKind.Utf8WithBom:
+        case NativeMethods.TextKind.TextKind_Utf8WithBom:
           var utf16Block = Conversion.UTF8ToUnicode(block);
           block.Dispose();
           return new Utf16FileContents(new FileContentsMemory(utf16Block, 0, utf16Block.ByteLength), fileInfo.LastWriteTimeUtc);
 #endif
-        case NativeMethods.TextKind.Unknown:
+        case NativeMethods.TextKind.TextKind_ProbablyBinary:
+          block.Dispose();
+          return new BinaryFileContents(fileInfo.LastWriteTimeUtc);
+
         default:
-          // TODO(rpaquay): Figure out a better way to detect encoding.
-          //Logger.Log("Text Encoding of file \"{0}\" is not recognized.", fullName);
-          return new AsciiFileContents(new FileContentsMemory(block, 0, contentsByteCount), fileInfo.LastWriteTimeUtc);
-        //throw new NotImplementedException(string.Format("Text Encoding of file \"{0}\" is not recognized.", fullName));
+          Debug.Assert(false);
+          throw new InvalidOperationException();
       }
     }
   }

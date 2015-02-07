@@ -173,3 +173,7 @@ build/Release/gen/webkit/bindings/
 *.jpeg
 *.ogg
 *.ex_
+*.yuv
+*.rgb
+*.mp4
+*.ac3

@@ -154,10 +154,11 @@ EXPORT void __stdcall AsciiSearchAlgorithm_Delete(AsciiSearchBase* search) {
 }
 
 enum TextKind {
-  Ascii,
-  AsciiWithUtf8Bom,
-  Utf8WithBom,
-  Unknown
+  TextKind_Ascii,
+  TextKind_AsciiWithUtf8Bom,
+  TextKind_Utf8,
+  TextKind_Utf8WithBom,
+  TextKind_ProbablyBinary,
 };
 
 namespace {
@@ -169,15 +170,95 @@ bool Text_HasUtf8Bom(const char *text, int textLen) {
     static_cast<uint8_t>(text[2]) == static_cast<uint8_t>(0xBF);
 }
 
-bool Text_IsAscii(const char* text, int textLen) {
-  const uint8_t* textPtr = (const uint8_t *)text;
-  const uint8_t* textEndPtr = textPtr + textLen;
-  const uint8_t asciiLimit = 0x7f;
-  for(; textPtr < textEndPtr; textPtr++) {
-    if (*textPtr > asciiLimit)
-      return false;
+namespace {
+
+enum ContentKindResult {
+  ResultAscii,
+  ResultUtf8,
+  ResultBinary
+};
+
+const uint8_t maskSeq2 = 0xE0; // 111x-xxxx
+const uint8_t maskSeq3 = 0xF0; // 1111-xxxx
+const uint8_t maskSeq4 = 0xF8; // 1111-1xxx
+const uint8_t maskRest = 0xC0; // 11xx-xxxx
+
+const uint8_t valueSeq2 = 0xC0; // 110x-xxxx
+const uint8_t valueSeq3 = 0xE0; // 1110-xxxx
+const uint8_t valueSeq4 = 0xF0; // 1111-0xxx
+const uint8_t valueRest = 0x80; // 10xx-xxxx
+
+bool isSeq(const uint8_t* ch, uint8_t mask, uint8_t value) {
+  return (*ch & mask) == value;
+}
+
+bool isRest(const uint8_t* ch) {
+  return (*ch & maskRest) == valueRest;
+}
+
+bool IsUtf8Rune(const uint8_t** pch, int* len) {
+  const uint8_t* text = *pch;
+  uint8_t ch = *text;
+  if (isSeq(text, maskSeq4, valueSeq4) && (*len >= 4)) {
+    if (isRest(text + 1) && isRest(text + 2) && isRest(text + 3)) {
+      (*pch) = text + 4;
+      (*len) -= 4;
+      return true;
+    }
+  } else if (isSeq(text, maskSeq3, valueSeq3) && (*len >= 3)) {
+    if (isRest(text + 1) && isRest(text + 2)) {
+      (*pch) = text + 3;
+      (*len) -= 3;
+      return true;
+    }
+  } else if (isSeq(text, maskSeq2, valueSeq2) && (*len >= 2)) {
+    if (isRest(text + 1)) {
+      (*pch) = text + 2;
+      (*len) -= 2;
+      return true;
+    }
   }
-  return true;
+  return false;
+}
+
+}  // namespace
+
+ContentKindResult Text_ContentKind(const char* text, int textLen) {
+  int asciiCount = 0;
+  int utf8Count = 0;
+  int otherCount = 0;
+
+  const uint8_t* textPtr = (const uint8_t *)text;
+  while(textLen > 0) {
+    uint8_t ch = *textPtr;
+
+    // See http://www.asciitable.com/
+    if ((ch >= 32 && ch <= 126) || ch == '\t' || ch == '\r' || ch == '\n') {
+      asciiCount++;
+      textPtr++;
+      textLen--;
+    }
+    else if (IsUtf8Rune(&textPtr, &textLen)) {
+      utf8Count++;
+    }
+    else {
+      otherCount++;
+      textPtr++;
+      textLen--;
+    }
+  }
+
+  if (otherCount == 0) {
+    if (utf8Count == 0)
+      return ResultAscii;
+    else
+      return ResultUtf8;
+  }
+  double asciiToOtherRatio = (double)asciiCount / (double)otherCount;
+  if ((asciiToOtherRatio >= 0.9) && (asciiCount > otherCount))
+    return ResultAscii;
+  else
+    return ResultBinary;
 }
 
 }
@@ -185,17 +266,21 @@ bool Text_IsAscii(const char* text, int textLen) {
 EXPORT TextKind __stdcall Text_GetKind(const char* text, int textLen) {
   bool utf8 = Text_HasUtf8Bom(text, textLen);
   if (utf8) {
-    bool isAscii = Text_IsAscii(text + 3, textLen -3);
-    if (isAscii)
-      return AsciiWithUtf8Bom;
-    else
-      return Utf8WithBom;
+    ContentKindResult kind = Text_ContentKind(text + 3, textLen -3);
+    if (kind == ResultAscii)
+      return TextKind_AsciiWithUtf8Bom;
+    else if (kind == ResultUtf8)
+      return TextKind_Utf8WithBom;
+    else 
+      return TextKind_ProbablyBinary;
   } else {
-    bool isAscii = Text_IsAscii(text, textLen);
-    if (isAscii)
-      return Ascii;
-    else
-      return Unknown;
+    ContentKindResult kind = Text_ContentKind(text, textLen);
+    if (kind == ResultAscii)
+      return TextKind_Ascii;
+    else if (kind == ResultUtf8)
+      return TextKind_Utf8;
+    else 
+      return TextKind_ProbablyBinary;
   }
 }
 

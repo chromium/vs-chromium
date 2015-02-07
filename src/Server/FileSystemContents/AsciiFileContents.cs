@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Runtime.InteropServices;
-using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
 
@@ -16,15 +14,6 @@ namespace VsChromium.Server.FileSystemContents {
   public class AsciiFileContents : FileContents {
     public AsciiFileContents(FileContentsMemory heap, DateTime utcLastModified)
       : base(heap, utcLastModified) {
-    }
-
-    public static AsciiFileContents Empty = CreateEmpty();
-
-    private static AsciiFileContents CreateEmpty() {
-      var block = HeapAllocStatic.Alloc(1);
-      Marshal.WriteByte(block.Pointer, 0);
-      var mem = new FileContentsMemory(block, 0, 0);
-      return new AsciiFileContents(mem, DateTime.MinValue);
     }
 
     public override long ByteLength { get { return _heap.ByteLength; } }

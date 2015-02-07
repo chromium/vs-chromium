@@ -3,45 +3,92 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Server.NativeInterop;
+using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.NativeInterop {
   [TestClass]
   public class TestGetTextKind {
     [TestMethod]
-    public unsafe void GetTextKindForAsciiWorks() {
-      var bytes = new byte[] { 0x54, 0x68, 0x01, 0x7f };
-      fixed (byte* array = bytes) {
-        var kind = NativeMethods.Text_GetKind(new IntPtr(array), bytes.Length);
-        Assert.AreEqual(NativeMethods.TextKind.Ascii, kind);
-      }
+    public void GetTextKindForAsciiWorks() {
+      var bytes = new byte[] {
+        0x54, 0x68, 0x20, 0x60 // ascii
+      };
+      CheckKind(bytes, NativeMethods.TextKind.TextKind_Ascii);
     }
 
     [TestMethod]
-    public unsafe void GetTextKindForAsciiWithUtf8BomWorks() {
-      var bytes = new byte[] { 0xef, 0xbb, 0xbf, 0x54, 0x68 };
-      fixed (byte* array = bytes) {
-        var kind = NativeMethods.Text_GetKind(new IntPtr(array), bytes.Length);
-        Assert.AreEqual(NativeMethods.TextKind.AsciiWithUtf8Bom, kind);
-      }
+    public void GetTextKindForAsciiWithUtf8BomWorks() {
+      var bytes = new byte[] {
+        0xef, 0xbb, 0xbf, // bom
+        0x54, 0x68 // ascii
+      };
+      CheckKind(bytes, NativeMethods.TextKind.TextKind_AsciiWithUtf8Bom);
     }
 
     [TestMethod]
-    public unsafe void GetTextKindForUtf8WithBomWorks() {
-      var bytes = new byte[] { 0xef, 0xbb, 0xbf, 0xef, 0x68 };
-      fixed (byte* array = bytes) {
-        var kind = NativeMethods.Text_GetKind(new IntPtr(array), bytes.Length);
-        Assert.AreEqual(NativeMethods.TextKind.Utf8WithBom, kind);
-      }
+    public void GetTextKindForUtf8WithBomWorks() {
+      var bytes = new byte[] {
+        0xef, 0xbb, 0xbf, // bom
+        0xcf, 0x95, // seq2
+        0xe5, 0xaa, 0x95, // seq3
+        0xf5, 0xaa, 0xaa, 0x95, // seq4
+        0x20, // ascii
+        0x21, // ascii
+        0x22, // ascii
+      };
+      CheckKind(bytes, NativeMethods.TextKind.TextKind_Utf8WithBom);
     }
 
     [TestMethod]
-    public unsafe void GetTextKindForUnknownWorks() {
-      var bytes = new byte[] { 0xbb, 0xbb, 0xbe, 0xbe };
+    public void GetTextKindForUtf8Works() {
+      var bytes = new byte[] {
+        0xcf, 0x95, // seq2
+        0xe5, 0xaa, 0x95, // seq3
+        0xf5, 0xaa, 0xaa, 0x95, // seq4
+        0x20, // ascii
+        0x21, // ascii
+        0x22, // ascii
+      };
+      CheckKind(bytes, NativeMethods.TextKind.TextKind_Utf8);
+    }
+
+    [TestMethod]
+    public void GetTextKindForBinaryWorks() {
+      var bytes = new byte[] {
+        0xbb, 0xbb, 0xbe, 0xbe // random binary values
+      };
+      CheckKind(bytes, NativeMethods.TextKind.TextKind_ProbablyBinary);
+    }
+
+    [TestMethod]
+    public void GetTextKindForBinaryFilesWorks() {
+      CheckKind(ReadTestFile("files\\bear.ac3"), NativeMethods.TextKind.TextKind_ProbablyBinary);
+    }
+
+    private static unsafe void CheckKind(byte[] bytes, NativeMethods.TextKind expectedKind) {
       fixed (byte* array = bytes) {
         var kind = NativeMethods.Text_GetKind(new IntPtr(array), bytes.Length);
-        Assert.AreEqual(NativeMethods.TextKind.Unknown, kind);
+        Assert.AreEqual(expectedKind, kind);
+      }
+    }
+
+    private byte[] ReadTestFile(string name) {
+      var dir = Utils.GetTestDataDirectory();
+      var path = Path.Combine(dir.FullName, name);
+      Assert.IsTrue(File.Exists(path));
+      using (var stream = new FileStream(path, FileMode.Open)) {
+        var memStream = new MemoryStream();
+        var buffer = new byte[4096];
+        while (true) {
+          int count = stream.Read(buffer, 0, buffer.Length);
+          if (count == 0)
+            break;
+          memStream.Write(buffer, 0, count);
+        }
+        return memStream.ToArray();
       }
     }
   }

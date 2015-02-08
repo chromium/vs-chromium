@@ -43,6 +43,11 @@ namespace VsChromium.Server.Search {
     public TextRange? FilterSearchHit(TextRange match) {
       var lineExtent = _getLineExtentCache.GetLineExtent(match.CharacterOffset);
       if (_previousMatch.HasValue) {
+        // If match overlaps with previous one, fail
+        if (match.CharacterOffset < _previousMatch.Value.CharacterEndOffset) {
+          return null;
+        }
+        // If line extent overlaps with previous match, shrink it.
         if (lineExtent.CharacterOffset < _previousMatch.Value.CharacterEndOffset) {
           lineExtent = new TextRange(
             _previousMatch.Value.CharacterEndOffset,

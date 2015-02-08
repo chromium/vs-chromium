@@ -43,7 +43,7 @@ namespace VsChromium.Server.FileSystemContents {
       get { return 0; }
     }
 
-    protected override int CharacterSize {
+    protected override byte CharacterSize {
       get { return 1; }
     }
 

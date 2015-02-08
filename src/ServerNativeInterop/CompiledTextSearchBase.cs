@@ -63,9 +63,9 @@ namespace VsChromium.Server.NativeInterop {
       // the pointer returned is implementation-defined. 
       byte* searchBuffer = stackalloc byte[this.SearchBufferSize];
       var searchParams = new NativeMethods.SearchParams {
-        TextStart = textFragment.FragmentStart,
+        TextStart = textFragment.StartPtr,
         // TODO(rpaquay): We are limited to 2GB for now.
-        TextLength = (int)textFragment.CharacterCount,
+        TextLength = (int)textFragment.Length,
         SearchBuffer = new IntPtr(searchBuffer),
       };
 
@@ -77,7 +77,7 @@ namespace VsChromium.Server.NativeInterop {
 
         // Convert match from *byte* pointers to a *text* range
         var matchFragment = textFragment.Sub(searchParams.MatchStart, searchParams.MatchLength);
-        var matchRange = new TextRange(matchFragment.CharacterOffset, matchFragment.CharacterCount);
+        var matchRange = new TextRange(matchFragment.Position, matchFragment.Length);
 
         // Post process match, maybe skipping it
         var postMatchRange = postProcess(matchRange);

@@ -72,6 +72,7 @@ namespace VsChromium.Server.Search {
         var newMatch = new TextRange(
           foundRange1.Value.CharacterOffset,
           foundRange2.Value.CharacterEndOffset - foundRange1.Value.CharacterOffset);
+        // Save the this match for next iteration
         _previousMatch = newMatch;
         return newMatch;
       }

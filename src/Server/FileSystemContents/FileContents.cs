@@ -77,7 +77,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected abstract long CharacterCount { get; }
 
-    protected abstract int CharacterSize { get; }
+    protected abstract byte CharacterSize { get; }
 
     protected abstract TextFragment TextFragment { get; }
 

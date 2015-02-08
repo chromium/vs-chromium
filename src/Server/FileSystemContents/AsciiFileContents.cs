@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     private IntPtr Pointer { get { return _heap.Pointer; } }
 
-    protected override int CharacterSize {
+    protected override byte CharacterSize {
       get { return sizeof(byte); }
     }
 

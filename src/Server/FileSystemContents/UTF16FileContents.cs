@@ -13,7 +13,7 @@ namespace VsChromium.Server.FileSystemContents {
       : base(heap, utcLastModified) {
     }
 
-    public override long ByteLength { get { return _heap.ByteLength; } }
+    public override int ByteLength { get { return _heap.ByteLength; } }
 
     public override bool HasSameContents(FileContents other) {
       var other2 = other as Utf16FileContents;
@@ -27,31 +27,37 @@ namespace VsChromium.Server.FileSystemContents {
       return new Utf16TextLineOffsets(_heap);
     }
 
-    private IntPtr Pointer { get { return _heap.Pointer; } }
-
-    protected override byte CharacterSize {
-      get { return sizeof (char); }
+    private IntPtr Pointer {
+      get { return _heap.Pointer; }
     }
 
-    protected override long CharacterCount { get { return _heap.ByteLength / 2; } }
+    protected override byte CharacterSize {
+      get { return sizeof(char); }
+    }
+
+    protected override int CharacterCount {
+      get {
+        return _heap.ByteLength / CharacterSize;
+      }
+    }
 
     protected override TextFragment TextFragment {
-      get { return new TextFragment(this.Pointer, 0, this.CharacterCount, this.CharacterSize); }
+      get {
+        return new TextFragment(this.Pointer, 0, this.CharacterCount, this.CharacterSize);
+      }
     }
 
     protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider) {
       return provider.GetUtf16Search();
     }
 
-    protected override TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength) {
+    protected override TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
       int lineStart;
       int lineLength;
       NativeMethods.Utf16_GetLineExtentFromPosition(
           this.Pointer,
-          // TODO(rpaquay): We are limited to 2GB for now.
-          (int)this.CharacterCount,
-          // TODO(rpaquay): We are limited to 2GB for now.
-          (int)position,
+          this.CharacterCount,
+          position,
           MaxLineExtentOffset,
           out lineStart,
           out lineLength);

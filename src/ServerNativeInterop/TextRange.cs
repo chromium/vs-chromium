@@ -9,26 +9,26 @@ namespace VsChromium.Server.NativeInterop {
   /// length.
   /// </summary>
   public struct TextRange {
-    private readonly long _characterOffset;
-    private readonly long _characterCount;
+    private readonly int _position;
+    private readonly int _count;
 
-    public TextRange(long characterOffset, long characterCount) {
-      if (characterOffset < 0 || characterCount < 0)
+    public TextRange(int position, int count) {
+      if (position < 0 || count < 0)
         ThrowArgumentException();
-      _characterOffset = characterOffset;
-      _characterCount = characterCount;
+      _position = position;
+      _count = count;
     }
 
-    public long CharacterOffset {
-      get { return _characterOffset; }
+    public int CharacterOffset {
+      get { return _position; }
     }
 
-    public long CharacterCount {
-      get { return _characterCount; }
+    public int CharacterCount {
+      get { return _count; }
     }
 
-    public long CharacterEndOffset {
-      get { return _characterOffset + _characterCount; }
+    public int CharacterEndOffset {
+      get { return _position + _count; }
     }
 
     private static void ThrowArgumentException() {

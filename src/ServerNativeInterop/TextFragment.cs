@@ -13,11 +13,11 @@ namespace VsChromium.Server.NativeInterop {
   public struct TextFragment {
     public static TextFragment Null;
     private readonly IntPtr _textPtr;
-    private readonly long _position;
-    private readonly long _length;
+    private readonly int _position;
+    private readonly int _length;
     private readonly byte _characterSize;
 
-    public TextFragment(IntPtr textPtr, long position, long length, byte characterSize) {
+    public TextFragment(IntPtr textPtr, int position, int length, byte characterSize) {
       _textPtr = textPtr;
       _position = position;
       _length = length;
@@ -38,11 +38,11 @@ namespace VsChromium.Server.NativeInterop {
       }
     }
 
-    public long Position {
+    public int Position {
       get { return _position; }
     }
 
-    public long Length {
+    public int Length {
       get { return _length; }
     }
 
@@ -50,7 +50,7 @@ namespace VsChromium.Server.NativeInterop {
     /// Return a new fragment starting at <paramref name="characterOffset"/> up
     /// to the end of this text fragment.
     /// </summary>
-    public TextFragment Suffix(long characterOffset) {
+    public TextFragment Suffix(int characterOffset) {
       if (characterOffset < _position)
         throw new ArgumentException();
 
@@ -62,8 +62,8 @@ namespace VsChromium.Server.NativeInterop {
     /// Return a new fragment starting at <paramref name="characterStart"/>
     /// and containing <paramref name="characterCount"/> characters.
     /// </summary>
-    public TextFragment Sub(IntPtr characterStart, long characterCount) {
-      var byteOffset = Pointers.Offset64(_textPtr, characterStart);
+    public TextFragment Sub(IntPtr characterStart, int characterCount) {
+      var byteOffset = Pointers.Offset32(_textPtr, characterStart);
       if (byteOffset < 0 || (byteOffset % _characterSize) != 0)
         throw new ArgumentException();
       return Sub(byteOffset / _characterSize, characterCount);
@@ -71,7 +71,7 @@ namespace VsChromium.Server.NativeInterop {
 
     /// Return a new fragment starting at <paramref name="index"/>
     /// and containing <paramref name="count"/> characters.
-    public TextFragment Sub(long index, long count) {
+    public TextFragment Sub(int index, int count) {
       if (index < 0 || count < 0)
         throw new ArgumentException();
       return new TextFragment(_textPtr, index, count, _characterSize);

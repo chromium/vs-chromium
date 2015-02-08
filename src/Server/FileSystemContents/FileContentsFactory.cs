@@ -33,7 +33,7 @@ namespace VsChromium.Server.FileSystemContents {
     private FileContents ReadFileContents(IFileInfoSnapshot fileInfo) {
       const int trailingByteCount = 2;
       var block = _fileSystem.ReadFileNulTerminated(fileInfo, trailingByteCount);
-      var contentsByteCount = (int)block.ByteLength - trailingByteCount; // Padding added by ReadFileNulTerminated
+      var contentsByteCount = block.ByteLength - trailingByteCount; // Padding added by ReadFileNulTerminated
       var kind = NativeMethods.Text_GetKind(block.Pointer, contentsByteCount);
 
       switch (kind) {

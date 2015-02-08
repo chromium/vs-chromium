@@ -64,8 +64,7 @@ namespace VsChromium.Server.NativeInterop {
       byte* searchBuffer = stackalloc byte[this.SearchBufferSize];
       var searchParams = new NativeMethods.SearchParams {
         TextStart = textFragment.StartPtr,
-        // TODO(rpaquay): We are limited to 2GB for now.
-        TextLength = (int)textFragment.Length,
+        TextLength = textFragment.Length,
         SearchBuffer = new IntPtr(searchBuffer),
       };
 

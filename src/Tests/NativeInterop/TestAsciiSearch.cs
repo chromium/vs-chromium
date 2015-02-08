@@ -20,16 +20,16 @@ namespace VsChromium.Tests.NativeInterop {
 
     [TestMethod]
     public void AsciiSearchForVariousPatternsWorks() {
-      const long oneKB = 1024L;
-      const long oneMB = 1024 * oneKB;
-      const long tenMB = 10 * oneMB;
+      const int oneKB = 1024;
+      const int oneMB = 1024 * oneKB;
+      const int tenMB = 10 * oneMB;
 
 #if FULL_THROUGHPUT_TEST
       const int iterationCount = 5;
       const long one100MB = 100 * oneMB;
 #else
       const int iterationCount = 2;
-      const long one100MB = 1 * oneMB;
+      const int one100MB = 1 * oneMB;
 #endif
 
       const int averageMatchCount = 100;
@@ -58,7 +58,7 @@ namespace VsChromium.Tests.NativeInterop {
     }
 
     public void AsciiSearchForVariousPatternsWorks(
-      long blockByteLength,
+      int blockByteLength,
       string pattern,
       NativeMethods.SearchOptions searchOptions,
       int patternOccurrenceCount,
@@ -126,7 +126,7 @@ namespace VsChromium.Tests.NativeInterop {
       int matchCount = 0;
       for (var i = 0; i < repeat; i++) {
         matchCount = algo.FindAll(
-          new TextFragment(textBlock.Pointer, 0, (int) textBlock.ByteLength, sizeof (byte)),
+          new TextFragment(textBlock.Pointer, 0, textBlock.ByteLength, sizeof (byte)),
           x => x,
           OperationProgressTracker.None).Count();
       }

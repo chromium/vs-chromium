@@ -37,7 +37,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     public TextRange TextRange { get { return new TextRange(0, CharacterCount); } }
 
-    public abstract long ByteLength { get; }
+    public abstract int ByteLength { get; }
 
     public abstract bool HasSameContents(FileContents other);
 
@@ -75,7 +75,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected abstract ITextLineOffsets GetFileOffsets();
 
-    protected abstract long CharacterCount { get; }
+    protected abstract int CharacterCount { get; }
 
     protected abstract byte CharacterSize { get; }
 
@@ -83,7 +83,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider);
 
-    protected abstract TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength);
+    protected abstract TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength);
 
     protected FileContentsHash Hash { get { return _hash.Value; } }
 

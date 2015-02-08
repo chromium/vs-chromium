@@ -18,7 +18,7 @@ namespace VsChromium.Core.Win32.Memory {
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32")]
-    public static extern IntPtr HeapAlloc(SafeHeapHandle hHeap, HeapFlags flags, IntPtr size);
+    public static extern IntPtr HeapAlloc(IntPtr hHeap, HeapFlags flags, IntPtr size);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32")]

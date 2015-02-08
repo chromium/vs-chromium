@@ -195,8 +195,8 @@ namespace VsChromium.Server.Search {
             Spans = item
               .FindAll(compiledTextSearchData, progressTracker)
               .Select(x => new FilePositionSpan {
-                Position = (int)x.CharacterOffset,
-                Length = (int)x.CharacterCount,
+                Position = x.CharacterOffset,
+                Length = x.CharacterCount,
               }).
               ToList(),
           };

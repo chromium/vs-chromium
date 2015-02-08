@@ -27,7 +27,7 @@ namespace VsChromium.Server.FileSystemContents {
       : base(LazyEmptyContentsMemory.Value, utcLastModified) {
     }
 
-    public override long ByteLength {
+    public override int ByteLength {
       get { return 0; }
     }
 
@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystemContents {
       throw new NotImplementedException();
     }
 
-    protected override long CharacterCount {
+    protected override int CharacterCount {
       get { return 0; }
     }
 
@@ -55,7 +55,7 @@ namespace VsChromium.Server.FileSystemContents {
       return NullCompiledTextSearch.Instance;
     }
 
-    protected override TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength) {
+    protected override TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
       return new TextRange(0, 0);
     }
   }

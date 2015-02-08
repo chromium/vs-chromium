@@ -15,14 +15,14 @@ namespace VsChromium.Server.FileSystemContents {
   /// </summary>
   public struct FileContentsMemory {
     private readonly SafeHandle _block;
-    private readonly long _contentsOffset;
-    private readonly long _contentsLength;
+    private readonly int _contentsOffset;
+    private readonly int _contentsLength;
 
-    public FileContentsMemory(SafeHeapBlockHandle block, long contentsOffset, long contentsLength) :
+    public FileContentsMemory(SafeHeapBlockHandle block, int contentsOffset, int contentsLength) :
       this(block, block.ByteLength, contentsOffset, contentsLength) {
     }
 
-    public FileContentsMemory(SafeHandle block, long size, long contentsOffset, long contentsLength) {
+    public FileContentsMemory(SafeHandle block, int size, int contentsOffset, int contentsLength) {
       if (contentsOffset < 0)
         throw new ArgumentException("Contents offset must be positive", "contentsOffset");
       if (contentsOffset < 0)
@@ -42,7 +42,7 @@ namespace VsChromium.Server.FileSystemContents {
     /// <summary>
     /// Return the number of bytes of the usable memory of this block.
     /// </summary>
-    public long ByteLength { get { return _contentsLength; } }
+    public int ByteLength { get { return _contentsLength; } }
 
     /// <summary>
     /// Create a stream over the underlying memory content.

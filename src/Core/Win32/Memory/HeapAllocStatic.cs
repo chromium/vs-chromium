@@ -7,25 +7,25 @@ using System.Threading;
 
 namespace VsChromium.Core.Win32.Memory {
   public static class HeapAllocStatic {
-    private static readonly SafeProcessHeapHandle _processHeap = NativeMethods.GetProcessHeap();
+    public static readonly IntPtr ProcessHeapPtr = NativeMethods.GetProcessHeap().DangerousGetHandle();
     private static long _totalMemory;
 
     public static long TotalMemory { get { return _totalMemory; } }
 
-    public static SafeHeapBlockHandle Alloc(long size) {
-      IntPtr block = NativeMethods.HeapAlloc(_processHeap, HeapFlags.Default, new IntPtr(size));
+    public static SafeHeapBlockHandle Alloc(int size) {
+      IntPtr block = NativeMethods.HeapAlloc(ProcessHeapPtr, HeapFlags.Default, new IntPtr(size));
       if (block == IntPtr.Zero)
         throw new OutOfMemoryException();
 
       OnAlloc(size);
-      return new SafeHeapBlockHandle(_processHeap, block, size);
+      return new SafeHeapBlockHandle(block, size);
     }
 
-    public static void OnAlloc(long size) {
+    public static void OnAlloc(int size) {
       Interlocked.Add(ref _totalMemory, size);
     }
 
-    public static void OnFree(long size) {
+    public static void OnFree(int size) {
       Interlocked.Add(ref _totalMemory, -size);
     }
   }

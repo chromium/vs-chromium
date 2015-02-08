@@ -8,13 +8,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace VsChromium.Core.Win32.Memory {
   public class SafeHeapBlockHandle : SafeHandleZeroOrMinusOneIsInvalid {
-    private readonly long _byteLength;
-    /// <summary>
-    /// Keep a reference to the heap to prevent it from being destroyed during
-    /// normal GC operations.
-    /// </summary>
-    private readonly IntPtr _processHeapPtr;
-
+    private readonly int _byteLength;
     /// <summary>
     /// Note: We only support process heap for now, as using any other heap
     /// would require us to keep a SafeHandle to the heap, and this creates
@@ -22,20 +16,19 @@ namespace VsChromium.Core.Win32.Memory {
     /// using a managed object during finalization leads to undeterministic
     /// behavior.
     /// </summary>
-    public SafeHeapBlockHandle(SafeProcessHeapHandle heap, IntPtr handle, long byteLength)
+    public SafeHeapBlockHandle(IntPtr handle, int byteLength)
       : base(true) {
-        _processHeapPtr = heap.DangerousGetHandle();
       _byteLength = byteLength;
       SetHandle(handle);
     }
 
-    public long ByteLength { get { return _byteLength; } }
+    public int ByteLength { get { return _byteLength; } }
 
     public IntPtr Pointer { get { return DangerousGetHandle(); } }
 
     protected override bool ReleaseHandle() {
       HeapAllocStatic.OnFree(ByteLength);
-      return NativeMethods.HeapFree(_processHeapPtr, HeapFlags.Default, handle);
+      return NativeMethods.HeapFree(HeapAllocStatic.ProcessHeapPtr, HeapFlags.Default, handle);
     }
 
     /// <summary>

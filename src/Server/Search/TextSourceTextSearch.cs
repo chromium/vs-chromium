@@ -15,7 +15,7 @@ namespace VsChromium.Server.Search {
   /// <summary>
   /// Returns the extent of a line given any position inside the line.
   /// </summary>
-  public delegate TextRange GetLineRangeFunction(long position);
+  public delegate TextRange GetLineRangeFunction(int position);
 
   /// <summary>
   /// Implements a delegate that looks for all search entries once the main
@@ -89,7 +89,7 @@ namespace VsChromium.Server.Search {
           return null;
         }
 
-        long newOffset = entryRange.Value.CharacterEndOffset;
+        var newOffset = entryRange.Value.CharacterEndOffset;
         textRange = new TextRange(newOffset, textRange.CharacterEndOffset - newOffset);
 
         if (result == null) {

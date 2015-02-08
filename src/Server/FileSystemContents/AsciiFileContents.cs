@@ -16,7 +16,7 @@ namespace VsChromium.Server.FileSystemContents {
       : base(heap, utcLastModified) {
     }
 
-    public override long ByteLength { get { return _heap.ByteLength; } }
+    public override int ByteLength { get { return _heap.ByteLength; } }
 
     public override bool HasSameContents(FileContents other) {
       var other2 = other as AsciiFileContents;
@@ -57,7 +57,7 @@ namespace VsChromium.Server.FileSystemContents {
       get { return sizeof(byte); }
     }
 
-    protected override long CharacterCount { get { return _heap.ByteLength; } }
+    protected override int CharacterCount { get { return _heap.ByteLength; } }
 
     protected override TextFragment TextFragment {
       get { return new TextFragment(this.Pointer, 0, this.CharacterCount, this.CharacterSize); }
@@ -67,15 +67,13 @@ namespace VsChromium.Server.FileSystemContents {
       return provider.GetAsciiSearch();
     }
 
-    protected override TextRange GetLineTextRangeFromPosition(long position, long maxRangeLength) {
+    protected override TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
       int lineStart;
       int lineLength;
       NativeMethods.Ascii_GetLineExtentFromPosition(
         this.Pointer,
-        // TODO(rpaquay): We are limited to 2GB for now.
-        (int)this.CharacterCount,
-        // TODO(rpaquay): We are limited to 2GB for now.
-        (int)position,
+        this.CharacterCount,
+        position,
         MaxLineExtentOffset,
         out lineStart,
         out lineLength);

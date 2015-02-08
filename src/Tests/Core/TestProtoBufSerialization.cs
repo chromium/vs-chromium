@@ -104,10 +104,8 @@ namespace VsChromium.Tests.Core {
             Tree = CreateBigFileSystemTree()
           }
         };
-        for (var i = 0; i < 3; i++) {
-          Logger.LogMemoryStats();
-          AssertRoundTrip(serializer, req);
-        }
+        Logger.LogMemoryStats();
+        AssertRoundTrip(serializer, req);
       }
       Logger.LogMemoryStats();
     }

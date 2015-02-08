@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Files;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Win32.Files {
@@ -44,7 +45,11 @@ namespace VsChromium.Core.Win32.Files {
           throw new Win32Exception();
 
         // Note: We are limited to 2GB files by design.
-        var len = (int)fileInfo.Length;
+        int maxLen = Int32.MaxValue - trailingByteCount;
+        if (fileInfo.Length >= maxLen) {
+          Logger.Log("File too big, truncated to {0} bytes", maxLen);
+        }
+        var len = (int)Math.Min(maxLen, fileInfo.Length);
         var heap = HeapAllocStatic.Alloc(len + trailingByteCount);
         var bytesRead = new int[1];
 
@@ -78,34 +83,40 @@ namespace VsChromium.Core.Win32.Files {
       *dest++ = '\0';
 
       var result = new List<DirectoryEntry>();
+
+      // Start enumerating files
       WIN32_FIND_DATA data;
-      using (var handle = NativeMethods.FindFirstFileEx(
+      var findHandle = NativeMethods.FindFirstFileEx(
         patternBuffer,
         NativeMethods.FINDEX_INFO_LEVELS.FindExInfoBasic,
         out data,
         NativeMethods.FINDEX_SEARCH_OPS.FindExSearchNameMatch,
         IntPtr.Zero,
-        NativeMethods.FINDEX_ADDITIONAL_FLAGS.FindFirstExLargeFetch)) {
-        if (handle.IsInvalid) {
+        NativeMethods.FINDEX_ADDITIONAL_FLAGS.FindFirstExLargeFetch);
+        if (findHandle.IsInvalid) {
           var lastWin32Error = Marshal.GetLastWin32Error();
           if (lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
               lastWin32Error != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
+              lastWin32Error != (int)Win32Errors.ERROR_ACCESS_DENIED &&
               lastWin32Error != (int)Win32Errors.ERROR_NO_MORE_FILES) {
-            throw new LastWin32ErrorException(lastWin32Error, string.Format("Error getting first entry of file entries for path \"{0}\".", path));
+            throw new LastWin32ErrorException(lastWin32Error, 
+              string.Format("Error enumerating files at \"{0}\".", path));
           }
           return result;
         }
 
+      using (findHandle) {
         AddResult(ref data, result);
-        while (NativeMethods.FindNextFile(handle, out data)) {
+        while (NativeMethods.FindNextFile(findHandle, out data)) {
           AddResult(ref data, result);
         }
-        var lastWin32Error2 = Marshal.GetLastWin32Error();
-        if (lastWin32Error2 != (int)Win32Errors.ERROR_SUCCESS &&
-            lastWin32Error2 != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
-            lastWin32Error2 != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
-            lastWin32Error2 != (int)Win32Errors.ERROR_NO_MORE_FILES) {
-          throw new LastWin32ErrorException(lastWin32Error2, string.Format("Error getting next entry of file entries for path \"{0}\".", path));
+        var lastWin32Error = Marshal.GetLastWin32Error();
+        if (lastWin32Error != (int)Win32Errors.ERROR_SUCCESS &&
+            lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
+            lastWin32Error != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
+            lastWin32Error != (int)Win32Errors.ERROR_NO_MORE_FILES) {
+          throw new LastWin32ErrorException(lastWin32Error,
+            string.Format("Error during enumeration of files at \"{0}\".", path));
         }
       }
       return result;

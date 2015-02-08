@@ -6,75 +6,85 @@ using System;
 
 namespace VsChromium.Server.NativeInterop {
   /// <summary>
-  /// Abstraction over a fragment of text stored in native memory.
-  /// Note: For performance reasons, the caller is responsible for ensuring
-  /// the native memory is not freed as long as the fragment is in use.
+  /// Abstraction over a fragment of text stored in native memory. Note: For
+  /// performance reasons, the caller is responsible for ensuring the native
+  /// memory is not freed as long as the fragment is in use.
   /// </summary>
   public struct TextFragment {
-    public static TextFragment Null;
     private readonly IntPtr _textPtr;
     private readonly int _position;
     private readonly int _length;
     private readonly byte _characterSize;
 
     public TextFragment(IntPtr textPtr, int position, int length, byte characterSize) {
+      if (position < 0 || length < 0 || characterSize < 1 || characterSize > 2)
+        ThrowArgumentException();
+
       _textPtr = textPtr;
       _position = position;
       _length = length;
       _characterSize = characterSize;
     }
 
-    public bool IsNull {
-      get { return _textPtr == IntPtr.Zero; }
+    /// <summary>
+    /// The starting position of the text from the beginning of the native
+    /// memory buffer.
+    /// </summary>
+    public int Position {
+      get { return _position; }
     }
 
-    public bool IsEmpty {
-      get { return _length == 0; }
+    /// <summary>
+    /// The number of characters part of the fragment.
+    /// </summary>
+    public int Length {
+      get { return _length; }
     }
 
+    /// <summary>
+    /// The pointer corresponding to <see cref="Position"/>.
+    /// </summary>
     public IntPtr StartPtr {
       get {
         return Pointers.AddPtr(_textPtr, _position * _characterSize);
       }
     }
 
-    public int Position {
-      get { return _position; }
-    }
+    /// <summary>
+    /// Return a new fragment starting at <paramref name="index"/> up to the end
+    /// of this text fragment. <paramref name="index"/> must be comprised
+    /// between <see cref="Position"/> and <see cref="Position"/> + <see
+    /// cref="Length"/>.
+    /// </summary>
+    public TextFragment Sub(int index) {
+      if (index < _position || index > _position + _length)
+        ThrowArgumentException();
 
-    public int Length {
-      get { return _length; }
+      var length = _position + _length - index;
+      return new TextFragment(_textPtr, index, length, _characterSize);
     }
 
     /// <summary>
-    /// Return a new fragment starting at <paramref name="characterOffset"/> up
-    /// to the end of this text fragment.
+    /// Return a new fragment starting at <paramref name="startPtr"/>
+    /// and containing <paramref name="count"/> characters.
     /// </summary>
-    public TextFragment Suffix(int characterOffset) {
-      if (characterOffset < _position)
-        throw new ArgumentException();
-
-      var count = Math.Max(0, _length - (characterOffset - _position));
-      return new TextFragment(_textPtr, characterOffset, count, _characterSize);
-    }
-
-    /// <summary>
-    /// Return a new fragment starting at <paramref name="characterStart"/>
-    /// and containing <paramref name="characterCount"/> characters.
-    /// </summary>
-    public TextFragment Sub(IntPtr characterStart, int characterCount) {
-      var byteOffset = Pointers.Offset32(_textPtr, characterStart);
+    public TextFragment Sub(IntPtr startPtr, int count) {
+      var byteOffset = Pointers.Offset32(_textPtr, startPtr);
       if (byteOffset < 0 || (byteOffset % _characterSize) != 0)
-        throw new ArgumentException();
-      return Sub(byteOffset / _characterSize, characterCount);
+        ThrowArgumentException();
+      return Sub(byteOffset / _characterSize, count);
     }
 
     /// Return a new fragment starting at <paramref name="index"/>
     /// and containing <paramref name="count"/> characters.
     public TextFragment Sub(int index, int count) {
       if (index < 0 || count < 0)
-        throw new ArgumentException();
+        ThrowArgumentException();
       return new TextFragment(_textPtr, index, count, _characterSize);
+    }
+
+    private static void ThrowArgumentException() {
+      throw new ArgumentException();
     }
   }
 }

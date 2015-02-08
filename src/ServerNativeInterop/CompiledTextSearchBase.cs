@@ -60,7 +60,7 @@ namespace VsChromium.Server.NativeInterop {
       List<TextRange> result = null;
 
       // Note: From C# spec: If E is zero, then no allocation is made, and
-      // the pointer returned is implementation-defined. 
+      // the pointer returned is implementation-defined.
       byte* searchBuffer = stackalloc byte[this.SearchBufferSize];
       var searchParams = new NativeMethods.SearchParams {
         TextStart = textFragment.StartPtr,

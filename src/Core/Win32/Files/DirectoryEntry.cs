@@ -4,7 +4,9 @@
 
 namespace VsChromium.Core.Win32.Files {
   /// <summary>
-  /// Directory entry information returned by <see cref="NativeFile.GetDirectoryEntries"/>.
+  /// File or directory entry information returned by <see
+  /// cref="NativeFile.GetDirectoryEntries"/>, including the short <see
+  /// cref="Name"/> and file attributes.
   /// </summary>
   public struct DirectoryEntry {
     private readonly string _name;

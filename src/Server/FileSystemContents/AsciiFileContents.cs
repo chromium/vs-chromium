@@ -12,22 +12,22 @@ namespace VsChromium.Server.FileSystemContents {
   /// values are less than 127).
   /// </summary>
   public class AsciiFileContents : FileContents {
-    public AsciiFileContents(FileContentsMemory heap, DateTime utcLastModified)
-      : base(heap, utcLastModified) {
+    public AsciiFileContents(FileContentsMemory contents, DateTime utcLastModified)
+      : base(contents, utcLastModified) {
     }
-
-    public override int ByteLength { get { return _heap.ByteLength; } }
 
     public override bool HasSameContents(FileContents other) {
       var other2 = other as AsciiFileContents;
       if (other2 == null)
         return false;
 
-      return CompareBinaryContents(this, Pointer, ByteLength, other2, other2.Pointer, other2.ByteLength);
+      return CompareBinaryContents(
+        this, Contents.Pointer, ByteLength,
+        other2, other2.Contents.Pointer, other2.ByteLength);
     }
 
     protected override ITextLineOffsets GetFileOffsets() {
-      return new AsciiTextLineOffsets(_heap);
+      return new AsciiTextLineOffsets(Contents);
     }
 
     public static ICompiledTextSearch CreateSearchAlgo(string pattern, SearchProviderOptions searchOptions) {
@@ -51,16 +51,8 @@ namespace VsChromium.Server.FileSystemContents {
       return new AsciiCompiledTextSearchBoyerMoore(pattern, options);
     }
 
-    private IntPtr Pointer { get { return _heap.Pointer; } }
-
     protected override byte CharacterSize {
       get { return sizeof(byte); }
-    }
-
-    protected override int CharacterCount { get { return _heap.ByteLength; } }
-
-    protected override TextFragment TextFragment {
-      get { return new TextFragment(this.Pointer, 0, this.CharacterCount, this.CharacterSize); }
     }
 
     protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider) {
@@ -71,7 +63,7 @@ namespace VsChromium.Server.FileSystemContents {
       int lineStart;
       int lineLength;
       NativeMethods.Ascii_GetLineExtentFromPosition(
-        this.Pointer,
+        this.Contents.Pointer,
         this.CharacterCount,
         position,
         MaxLineExtentOffset,

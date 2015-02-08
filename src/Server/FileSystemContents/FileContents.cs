@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
@@ -23,12 +24,12 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
-    protected readonly FileContentsMemory _heap;
+    private readonly FileContentsMemory _contents;
     private readonly DateTime _utcLastModified;
     private readonly Lazy<FileContentsHash> _hash;
 
-    protected FileContents(FileContentsMemory heap, DateTime utcLastModified) {
-      _heap = heap;
+    protected FileContents(FileContentsMemory contents, DateTime utcLastModified) {
+      _contents = contents;
       _utcLastModified = utcLastModified;
       _hash = new Lazy<FileContentsHash>(CreateHash);
     }
@@ -37,7 +38,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     public TextRange TextRange { get { return new TextRange(0, CharacterCount); } }
 
-    public abstract int ByteLength { get; }
+    public int ByteLength { get { return _contents.ByteLength; } }
 
     public abstract bool HasSameContents(FileContents other);
 
@@ -73,19 +74,25 @@ namespace VsChromium.Server.FileSystemContents {
         .ToList();
     }
 
+    protected int CharacterCount { get { return ByteLength / CharacterSize; } }
+
+    protected TextFragment TextFragment {
+      get { return new TextFragment(this.Contents.Pointer, 0, this.CharacterCount, this.CharacterSize); }
+    }
+
     protected abstract ITextLineOffsets GetFileOffsets();
 
-    protected abstract int CharacterCount { get; }
-
     protected abstract byte CharacterSize { get; }
-
-    protected abstract TextFragment TextFragment { get; }
 
     protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider);
 
     protected abstract TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength);
 
     protected FileContentsHash Hash { get { return _hash.Value; } }
+
+    protected FileContentsMemory Contents {
+      get { return _contents; }
+    }
 
     protected static bool CompareBinaryContents(
       FileContents item1,
@@ -115,7 +122,7 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     private FileContentsHash CreateHash() {
-      return new FileContentsHash(_heap);
+      return new FileContentsHash(Contents);
     }
 
     private TextFragment CreateFragmentFromRange(TextRange textRange) {

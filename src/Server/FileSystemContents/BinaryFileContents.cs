@@ -27,10 +27,6 @@ namespace VsChromium.Server.FileSystemContents {
       : base(LazyEmptyContentsMemory.Value, utcLastModified) {
     }
 
-    public override int ByteLength {
-      get { return 0; }
-    }
-
     public override bool HasSameContents(FileContents other) {
       return other is BinaryFileContents;
     }
@@ -39,16 +35,8 @@ namespace VsChromium.Server.FileSystemContents {
       throw new NotImplementedException();
     }
 
-    protected override int CharacterCount {
-      get { return 0; }
-    }
-
     protected override byte CharacterSize {
       get { return 1; }
-    }
-
-    protected override TextFragment TextFragment {
-      get { return new TextFragment(_heap.Pointer, 0, 0, 1); }
     }
 
     protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider) {

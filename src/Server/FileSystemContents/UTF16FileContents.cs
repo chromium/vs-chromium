@@ -9,42 +9,26 @@ using VsChromium.Server.Search;
 namespace VsChromium.Server.FileSystemContents {
   public class Utf16FileContents : FileContents {
 
-    public Utf16FileContents(FileContentsMemory heap, DateTime utcLastModified)
-      : base(heap, utcLastModified) {
+    public Utf16FileContents(FileContentsMemory contents, DateTime utcLastModified)
+      : base(contents, utcLastModified) {
     }
-
-    public override int ByteLength { get { return _heap.ByteLength; } }
 
     public override bool HasSameContents(FileContents other) {
       var other2 = other as Utf16FileContents;
       if (other2 == null)
         return false;
 
-      return CompareBinaryContents(this, Pointer, ByteLength, other2, other2.Pointer, other2.ByteLength);
+      return CompareBinaryContents(
+        this, Contents.Pointer, ByteLength,
+        other2, other2.Contents.Pointer, other2.ByteLength);
     }
 
     protected override ITextLineOffsets GetFileOffsets() {
-      return new Utf16TextLineOffsets(_heap);
-    }
-
-    private IntPtr Pointer {
-      get { return _heap.Pointer; }
+      return new Utf16TextLineOffsets(Contents);
     }
 
     protected override byte CharacterSize {
       get { return sizeof(char); }
-    }
-
-    protected override int CharacterCount {
-      get {
-        return _heap.ByteLength / CharacterSize;
-      }
-    }
-
-    protected override TextFragment TextFragment {
-      get {
-        return new TextFragment(this.Pointer, 0, this.CharacterCount, this.CharacterSize);
-      }
     }
 
     protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider) {
@@ -55,7 +39,7 @@ namespace VsChromium.Server.FileSystemContents {
       int lineStart;
       int lineLength;
       NativeMethods.Utf16_GetLineExtentFromPosition(
-          this.Pointer,
+          this.Contents.Pointer,
           this.CharacterCount,
           position,
           MaxLineExtentOffset,

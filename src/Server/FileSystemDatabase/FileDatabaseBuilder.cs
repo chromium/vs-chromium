@@ -278,7 +278,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
               // If the file is not searchable in the current project, it should
               // be ignored too. Note that "IsSearachable" is a somewhat
-              // expansive operation, as the filename is checked against
+              // expensive operation, as the filename is checked against
               // potentially many glob patterns.
               if (!projectFileData.IsSearchable)
                 return false;

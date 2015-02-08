@@ -119,7 +119,7 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     private TextFragment CreateFragmentFromRange(TextRange textRange) {
-      return TextFragment.Sub(textRange.CharacterOffset, textRange.CharacterCount);
+      return TextFragment.Sub(textRange.Position, textRange.Length);
     }
 
     private Func<TextRange, TextRange?> CreateFilterForOtherEntries(

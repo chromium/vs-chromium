@@ -15,8 +15,8 @@ namespace VsChromium.Server.Search {
 
     public TextRange GetLineExtent(int position) {
       if (_previousSpan.HasValue) {
-        if (position >= _previousSpan.Value.CharacterOffset &&
-            position < _previousSpan.Value.CharacterOffset + _previousSpan.Value.CharacterCount) {
+        if (position >= _previousSpan.Value.Position &&
+            position < _previousSpan.Value.Position + _previousSpan.Value.Length) {
           return _previousSpan.Value;
         }
       }

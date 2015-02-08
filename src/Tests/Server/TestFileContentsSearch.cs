@@ -36,8 +36,8 @@ namespace VsChromium.Tests.Server {
       const string pattern = "piece";
       var result = PerformSearch(text, pattern);
       Assert.AreEqual(1, result.Count);
-      Assert.AreEqual(10, result[0].CharacterOffset);
-      Assert.AreEqual(5, result[0].CharacterCount);
+      Assert.AreEqual(10, result[0].Position);
+      Assert.AreEqual(5, result[0].Length);
     }
 
     [TestMethod]
@@ -46,8 +46,8 @@ namespace VsChromium.Tests.Server {
       const string pattern = "piece*text";
       var result = PerformSearch(text, pattern);
       Assert.AreEqual(1, result.Count);
-      Assert.AreEqual(10, result[0].CharacterOffset);
-      Assert.AreEqual(13, result[0].CharacterCount);
+      Assert.AreEqual(10, result[0].Position);
+      Assert.AreEqual(13, result[0].Length);
     }
 
     [TestMethod]
@@ -56,8 +56,8 @@ namespace VsChromium.Tests.Server {
       const string searchPattern = "Test*directory*looking*like";
       var result = PerformSearch(text, searchPattern);
       Assert.AreEqual(1, result.Count);
-      Assert.AreEqual(0, result[0].CharacterOffset);
-      Assert.AreEqual(27, result[0].CharacterCount);
+      Assert.AreEqual(0, result[0].Position);
+      Assert.AreEqual(27, result[0].Length);
     }
 
     [TestMethod]

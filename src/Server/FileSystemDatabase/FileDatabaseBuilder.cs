@@ -220,13 +220,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// </summary>
     private static IEnumerable<FileContentsPiece> SplitFileContents(FileData fileData, int fileId) {
       var range = fileData.Contents.TextRange;
-      while (range.CharacterCount > 0) {
+      while (range.Length > 0) {
         // TODO(rpaquay): Be smarter and split around new lines characters.
-        var chunkLength = Math.Min(range.CharacterCount, ChunkSize);
-        var chunk = new TextRange(range.CharacterOffset, chunkLength);
+        var chunkLength = Math.Min(range.Length, ChunkSize);
+        var chunk = new TextRange(range.Position, chunkLength);
         yield return fileData.Contents.CreatePiece(fileData.FileName, fileId, chunk);
 
-        range = new TextRange(chunk.CharacterEndOffset, range.CharacterEndOffset - chunk.CharacterEndOffset);
+        range = new TextRange(chunk.EndPosition, range.EndPosition - chunk.EndPosition);
       }
     }
 

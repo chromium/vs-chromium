@@ -7,13 +7,29 @@ using System.Linq;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
+  /// <summary>
+  /// Looks for the extent of <paramref name="entry"/> inside the given line
+  /// extent.
+  /// </summary>
   public delegate TextRange? FindEntryFunction(TextRange textRange, ParsedSearchString.Entry entry);
+  /// <summary>
+  /// Returns the extent of a line given any position inside the line.
+  /// </summary>
   public delegate TextRange GetLineRangeFunction(long position);
 
+  /// <summary>
+  /// Implements a delegate that looks for all search entries once the main
+  /// search entry has been found.
+  /// </summary>
   public class TextSourceTextSearch {
     private readonly FindEntryFunction _findEntry;
     private readonly ParsedSearchString _parsedSearchString;
     private readonly GetLineExtentCache _getLineExtentCache;
+    /// <summary>
+    /// Keeps track of the previous match so that new matches won't overlap with
+    /// previous ones.
+    /// </summary>
+    private TextRange? _previousMatch;
 
     public TextSourceTextSearch(
       GetLineRangeFunction getLineRange,
@@ -26,6 +42,13 @@ namespace VsChromium.Server.Search {
 
     public TextRange? FilterSearchHit(TextRange match) {
       var lineExtent = _getLineExtentCache.GetLineExtent(match.CharacterOffset);
+      if (_previousMatch.HasValue) {
+        if (lineExtent.CharacterOffset < _previousMatch.Value.CharacterEndOffset) {
+          lineExtent = new TextRange(
+            _previousMatch.Value.CharacterEndOffset,
+            lineExtent.CharacterEndOffset - _previousMatch.Value.CharacterEndOffset);
+        }
+      }
       // We got the line extent, the offset at which we found the MainEntry.
       // Now we need to check that "OtherEntries" are present (in order) and
       // in appropriate intervals.
@@ -46,9 +69,11 @@ namespace VsChromium.Server.Search {
         : match;
 
       if (foundRange1.HasValue && foundRange2.HasValue) {
-        return new TextRange(
+        var newMatch = new TextRange(
           foundRange1.Value.CharacterOffset,
           foundRange2.Value.CharacterEndOffset - foundRange1.Value.CharacterOffset);
+        _previousMatch = newMatch;
+        return newMatch;
       }
       return null;
     }

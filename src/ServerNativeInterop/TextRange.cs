@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 namespace VsChromium.Server.NativeInterop {
   /// <summary>
   /// Abstraction over a range of text, in terms of character offset and range
@@ -12,6 +13,8 @@ namespace VsChromium.Server.NativeInterop {
     private readonly long _characterCount;
 
     public TextRange(long characterOffset, long characterCount) {
+      if (characterOffset < 0 || characterCount < 0)
+        ThrowArgumentException();
       _characterOffset = characterOffset;
       _characterCount = characterCount;
     }
@@ -26,6 +29,10 @@ namespace VsChromium.Server.NativeInterop {
 
     public long CharacterEndOffset {
       get { return _characterOffset + _characterCount; }
+    }
+
+    private static void ThrowArgumentException() {
+      throw new ArgumentException();
     }
   }
 }

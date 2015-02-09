@@ -19,25 +19,6 @@ namespace VsChromium.Tests.ServerProcess {
     //protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5000.0);
     protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5.0);
 
-    protected static DirectoryInfo GetChromiumEnlistmentDirectory() {
-      var assemblyFileInfo = new FileInfo(Assembly.GetExecutingAssembly().Location);
-      var testDataPath = Path.Combine(assemblyFileInfo.Directory.Parent.Parent.FullName, "src", "Tests", "TestData", "chromium", "src");
-      var result = new DirectoryInfo(testDataPath);
-      Assert.IsTrue(result.Exists, string.Format("Test data path \"{0}\" not found!", testDataPath));
-      return result;
-    }
-
-    protected static FileInfo GetChromiumEnlistmentFile() {
-#if REAL_ENLISTMENT_TEST
-      var filePath = @"D:\src\chromium\head\src\PRESUBMIT.py";
-#else
-      var filePath = Path.Combine(GetChromiumEnlistmentDirectory().FullName, "PRESUBMIT.py");
-      var result = new FileInfo(filePath);
-      Assert.IsTrue(result.Exists, string.Format("Test data file \"{0}\" not found!", filePath));
-      return result;
-#endif
-    }
-
     protected static FileSystemTree GetFileSystemFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
       SendFileSystemRequest(server, testFile, SendRegisterFileRequest);
       var tree = SendGetFileSystemRequest(server);

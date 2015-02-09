@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.ServerProxy;
+using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
@@ -22,7 +23,7 @@ namespace VsChromium.Tests.ServerProcess {
     public static void Initialize(TestContext context) {
       _container = SetupMefContainer();
       _server = _container.GetExportedValue<ITypedRequestProcessProxy>();
-      _testFile = GetChromiumEnlistmentFile();
+      _testFile = Utils.GetChromiumTestEnlistmentFile();
       GetFileSystemFromServer(_server, _testFile);
     }
 

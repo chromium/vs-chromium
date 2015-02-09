@@ -5,13 +5,14 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.ServerProxy;
+using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestUnregisterFile : TestServerBase {
     [TestMethod]
     public void UnregisterFileRequestWorks() {
-      var testFile = GetChromiumEnlistmentFile();
+      var testFile = Utils.GetChromiumTestEnlistmentFile();
 
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {

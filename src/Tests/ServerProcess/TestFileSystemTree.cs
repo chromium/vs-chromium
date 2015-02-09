@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.ServerProxy;
+using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
@@ -14,7 +15,7 @@ namespace VsChromium.Tests.ServerProcess {
     public void FileSystemTreeCreationWorks() {
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          var testFile = GetChromiumEnlistmentFile();
+          var testFile = Utils.GetChromiumTestEnlistmentFile();
           var tree = GetFileSystemFromServer(server, testFile);
           var chromiumEntry = tree.Root.Entries[0] as DirectoryEntry;
           Assert.IsNotNull(chromiumEntry);

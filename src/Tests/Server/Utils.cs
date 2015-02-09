@@ -20,6 +20,25 @@ namespace VsChromium.Tests.Server {
       return result;
     }
 
+    public static DirectoryInfo GetChromiumTestEnlistmentDirectory() {
+      var baseInfo = GetTestDataDirectory();
+      var result = new DirectoryInfo(Path.Combine(baseInfo.FullName, "chromium", "src"));
+      Assert.IsTrue(result.Exists, string.Format("Chromium test enlistment \"{0}\" not found!", result));
+      return result;
+    }
+
+
+    public static FileInfo GetChromiumTestEnlistmentFile() {
+#if REAL_ENLISTMENT_TEST
+      var filePath = @"D:\src\chromium\head\src\PRESUBMIT.py";
+#else
+      var filePath = Path.Combine(GetChromiumTestEnlistmentDirectory().FullName, "PRESUBMIT.py");
+      var result = new FileInfo(filePath);
+      Assert.IsTrue(result.Exists, string.Format("Test data file \"{0}\" not found!", filePath));
+      return result;
+#endif
+    }
+
     public static FileContentsMemory CreateAsciiMemory(string text) {
       var size = text.Length + 1;
       var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(text));

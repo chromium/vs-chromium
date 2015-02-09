@@ -13,6 +13,7 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.ServerProxy;
+using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
@@ -23,7 +24,7 @@ namespace VsChromium.Tests.ServerProcess {
 
     //[TestMethod]
     public void TestServer() {
-      var testFile = GetChromiumEnlistmentFile();
+      var testFile = Utils.GetChromiumTestEnlistmentFile();
 
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {

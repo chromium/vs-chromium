@@ -11,6 +11,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.ServerProxy;
+using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
@@ -23,7 +24,7 @@ namespace VsChromium.Tests.ServerProcess {
     public static void Initialize(TestContext context) {
       _container = SetupMefContainer();
       _server = _container.GetExportedValue<ITypedRequestProcessProxy>();
-      _testFile = GetChromiumEnlistmentFile();
+      _testFile = Utils.GetChromiumTestEnlistmentFile();
       GetFileSystemFromServer(_server, _testFile);
     }
 
@@ -41,106 +42,6 @@ namespace VsChromium.Tests.ServerProcess {
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
       VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1);
-    }
-
-    [TestMethod]
-    public void MultipleOccurrenceWorks() {
-      const string searchPattern = "Nothing here. Just making sure the directory exists.";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 3);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 3);
-    }
-
-    [TestMethod]
-    public void SingleWildcardWorks() {
-      const string searchPattern = "Test*looking";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 0, 22);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 0, 22);
-    }
-
-    [TestMethod]
-    public void SingleWildcardWorks2() {
-      const string searchPattern = "looking*like";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 15, 12);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 15, 12);
-    }
-
-    [TestMethod]
-    public void MultipleWildcardsWorks() {
-      const string searchPattern = "Test*looking*like";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 0, 27);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 0, 27);
-    }
-
-    [TestMethod]
-    public void MultipleWildcardsWorks2() {
-      const string searchPattern = "Test*directory*looking*like";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 0, 27);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 0, 27);
-    }
-
-    [TestMethod]
-    public void MultipleWildcardsWorks3() {
-      const string searchPattern = "directory*looking*like";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 5, 22);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 5, 22);
-    }
-
-    [TestMethod]
-    public void EscapeWildcardWorks() {
-      const string searchPattern = @"foo\* bar";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 7, 8);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 7, 8);
-    }
-
-    [TestMethod]
-    public void EscapeWildcardWorks2() {
-      const string searchPattern = @"foo\*\\bar";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1, 39, 8);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1, 39, 8);
-    }
-
-    [TestMethod]
-    public void RegexWorks() {
-      const string searchPattern = "Test directory looking like";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase | Options.Regex, _testFile.Directory, 1);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.Regex, _testFile.Directory, 1);
-    }
-
-    [TestMethod]
-    public void RegexWorks2() {
-      const string searchPattern = "[a-z]+";
-
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase | Options.Regex, _testFile.Directory, 9);
-
-      var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.Regex, _testFile.Directory, 9);
     }
 
     [Flags]

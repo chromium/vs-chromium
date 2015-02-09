@@ -4,13 +4,14 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.ServerProxy;
+using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestRegisterFile : TestServerBase {
     [TestMethod]
     public void RegisterFileRequestWorks() {
-      var testFile = GetChromiumEnlistmentFile();
+      var testFile = Utils.GetChromiumTestEnlistmentFile();
 
       using (var container = SetupMefContainer()) {
         using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {

@@ -35,6 +35,7 @@
     <Compile Include="Server\TestFileContentsGetFileExtracts.cs" />
     <Compile Include="Server\TestFileSystemMock.cs" />
     <Compile Include="Server\TestProjectFileDiscoveryProvider.cs" />
+    <Compile Include="Server\TestSearchText.cs" />
     <Compile Include="Server\Utils.cs" />
     <Compile Include="Server\TestFileContentsHash.cs" />
     <Compile Include="Server\TestFileContentsSearch.cs" />

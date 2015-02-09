@@ -311,12 +311,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       List<TreeViewItemViewModel> oldFileSystemTree,
       List<TreeViewItemViewModel> newFileSystemTree) {
       var state = new FileSystemTreeState();
-      oldFileSystemTree.ForEach(state.ProcessNodes);
+      oldFileSystemTree.ForEach(x => state.ProcessNodes(x));
       state.ExpandedNodes.ForAll(
         x => {
           var y = FindSameNode(newFileSystemTree, x);
           if (y != null)
             y.IsExpanded = true;
+        });
+      state.CollapsedParentNodes.ForAll(
+        x => {
+          var y = FindSameNode(newFileSystemTree, x);
+          if (y != null)
+            y.IsExpanded = false;
         });
       state.SelectedNodes.ForAll(
         x => {
@@ -329,6 +335,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public class FileSystemTreeState {
       private readonly List<TreeViewItemViewModel> _expandedNodes = new List<TreeViewItemViewModel>();
       private readonly List<TreeViewItemViewModel> _selectedNodes = new List<TreeViewItemViewModel>();
+      private readonly List<TreeViewItemViewModel> _collapsedParentNodes = new List<TreeViewItemViewModel>();
 
       public List<TreeViewItemViewModel> ExpandedNodes {
         get { return _expandedNodes; }
@@ -338,14 +345,30 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         get { return _selectedNodes; }
       }
 
-      public void ProcessNodes(TreeViewItemViewModel x) {
-        if (x.IsExpanded) {
+      public List<TreeViewItemViewModel> CollapsedParentNodes {
+        get { return _collapsedParentNodes; }
+      }
+
+      public bool ProcessNodes(TreeViewItemViewModel x) {
+        bool isExpanded = x.IsExpanded;
+        if (isExpanded) {
           _expandedNodes.Add(x);
         }
+
         if (x.IsSelected) {
           SelectedNodes.Add(x);
         }
-        x.Children.ForAll(ProcessNodes);
+
+        var anyChildExpanded = false;
+        x.Children.ForAll(child => {
+          if (ProcessNodes(child))
+            anyChildExpanded = true;
+        });
+
+        if (anyChildExpanded && !isExpanded) {
+          _collapsedParentNodes.Add(x);
+        }
+        return isExpanded;
       }
     }
 

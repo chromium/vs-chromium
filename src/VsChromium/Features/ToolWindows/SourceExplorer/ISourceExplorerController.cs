@@ -4,6 +4,7 @@
 
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -24,6 +25,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     void SearchFilesNames(string searchPattern);
     void SearchDirectoryNames(string searchPattern);
     void SearchText(string searchPattern);
+    void SetFileSystemTreeError(ErrorResponse error);
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);

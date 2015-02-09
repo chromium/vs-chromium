@@ -11,6 +11,7 @@ using System.Threading;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Threads;
@@ -129,6 +130,34 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       result.ForAll(rootNode.AddChild);
       ChromiumExplorerViewModelBase.ExpandNodes(result, expandAll);
       return result;
+    }
+
+    public List<TreeViewItemViewModel> CreateErrorResponseViewModel(ErrorResponse errorResponse) {
+      var messages = new List<TreeViewItemViewModel>();
+      if (errorResponse.IsRecoverable()) {
+        // For a recoverable error, the deepest exception contains the 
+        // "user friendly" error message.
+        var rootError = new TextWarningItemViewModel(
+          StandarImageSourceFactory,
+          null,
+          errorResponse.GetBaseError().Message);
+        messages.Add(rootError);
+      } else {
+        // In case of non recoverable error, display a generic "user friendly"
+        // message, with nested nodes for exception messages.
+        var rootError = new TextErrorItemViewModel(
+          StandarImageSourceFactory,
+          null,
+          "Error processing request. You may need to restart Visual Studio.");
+        messages.Add(rootError);
+
+        // Add all errors to the parent
+        while (errorResponse != null) {
+          rootError.Children.Add(new TextItemViewModel(StandarImageSourceFactory, rootError, errorResponse.Message));
+          errorResponse = errorResponse.InnerError;
+        }
+      }
+      return messages;
     }
 
     /// <summary>
@@ -459,6 +488,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       /// received from the server.
       /// </summary>
       public Action<TypedResponse, Stopwatch> ProcessResponse { get; set; }
+      /// <summary>
+      /// Lambda invoked when the request resulted in an error from the server.
+      /// </summary>
+      public Action<ErrorResponse, Stopwatch> ProcessError { get; set; }
     }
 
     private void SearchWorker(SearchWorkerParams workerParams) {
@@ -491,7 +524,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         OnError = errorResponse => {
           if (cancellationToken.IsCancellationRequested)
             return;
-          ViewModel.SetErrorResponse(errorResponse);
+          workerParams.ProcessError(errorResponse, sw);
         }
       };
 
@@ -534,6 +567,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             Regex = ViewModel.UseRegex,
           }
         },
+        ProcessError = (errorResponse, stopwatch) => {
+          var viewModel = CreateErrorResponseViewModel(errorResponse);
+          ViewModel.SetFileNamesSearchResult(viewModel);
+        },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFileNamesResponse)typedResponse);
           var msg = string.Format("Found {0:n0} file names among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
@@ -562,6 +599,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             UseRe2Engine = ViewModel.UseRe2Regex,
             Regex = ViewModel.UseRegex,
           }
+        },
+        ProcessError = (errorResponse, stopwatch) => {
+          var viewModel = CreateErrorResponseViewModel(errorResponse);
+          ViewModel.SetDirectoryNamesSearchResult(viewModel);
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchDirectoryNamesResponse)typedResponse);
@@ -592,6 +633,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             Regex = ViewModel.UseRegex,
           }
         },
+        ProcessError = (errorResponse, stopwatch) => {
+          var viewModel = CreateErrorResponseViewModel(errorResponse);
+          ViewModel.SetTextSearchResult(viewModel);
+        },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchTextResponse)typedResponse);
           var msg = string.Format("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
@@ -604,6 +649,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           ViewModel.SetTextSearchResult(viewModel);
         }
       });
+    }
+
+    public void SetFileSystemTreeError(ErrorResponse error) {
+      var viewModel = CreateErrorResponseViewModel(error);
+      ViewModel.SetFileSystemTree(viewModel);
     }
 
     enum Direction {

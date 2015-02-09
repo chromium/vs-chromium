@@ -202,7 +202,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FileSystemTreeComputing);
           if (@event.Error != null) {
-            ViewModel.SetErrorResponse(@event.Error);
+            Controller.SetFileSystemTreeError(@event.Error);
             return;
           }
           Logger.Log("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
@@ -227,7 +227,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
           if (@event.Error != null) {
-            ViewModel.SetErrorResponse(@event.Error);
+            Controller.SetFileSystemTreeError(@event.Error);
             return;
           }
           Logger.Log("Search engine is done loading files on server.");
@@ -244,7 +244,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           Controller.SetFileSystemTree(response.Tree);
         },
         OnError = (errorResponse) => {
-          ViewModel.SetErrorResponse(errorResponse);
+          Controller.SetFileSystemTreeError(errorResponse);
         }
       };
 

@@ -91,7 +91,7 @@ namespace VsChromium.Wpf {
 
       // Update UI
       if (_progressBar.Visibility != Visibility.Visible) {
-        //Logger.Log("Showing progress bar for item: {0}.", item.ToolTipText);
+        //Logger.LogInfo("Showing progress bar for item: {0}.", item.ToolTipText);
         _progressBar.IsIndeterminate = true;
         _progressBar.Visibility = Visibility.Visible;
       }
@@ -104,13 +104,13 @@ namespace VsChromium.Wpf {
       // Update UI
       if (isEmpty) {
         if (_progressBar.Visibility == Visibility.Visible) {
-          //Logger.Log("Hiding progress bar.");
+          //Logger.LogInfo("Hiding progress bar.");
           _progressBar.Visibility = Visibility.Hidden;
           _progressBar.IsIndeterminate = false;
         }
         _progressBar.ToolTip = null;
       } else {
-        //Logger.Log("Updating tooltip.");
+        //Logger.LogInfo("Updating tooltip.");
         _progressBar.ToolTip = _items.Last().ToolTipText;
       }
     }

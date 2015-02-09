@@ -25,7 +25,7 @@ namespace VsChromium.Server.FileSystemContents {
         return ReadFileContents(fileInfo);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error reading content of text file \"{0}\", skipping file.", path);
+        Logger.LogWarning(e, "Error reading content of text file \"{0}\", skipping file.", path);
         return BinaryFileContents.Empty;
       }
     }

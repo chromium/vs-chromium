@@ -59,7 +59,7 @@ namespace VsChromium.Features.AutoUpdate {
         PerformVersionCheck();
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error checking for latest update information");
+        Logger.LogError(e, "Error checking for latest update information");
       }
       EnqueueOperation();
     }
@@ -73,7 +73,7 @@ namespace VsChromium.Features.AutoUpdate {
     }
 
     private void NotifyUpdate(UpdateInfo updateInfo) {
-      Logger.Log("New version {0} available online at {1}", updateInfo.Version, updateInfo.Url);
+      Logger.LogInfo("New version {0} available online at {1}", updateInfo.Version, updateInfo.Url);
       _updateNotificationListeners.ForAll(x => x.NotifyUpdate(updateInfo));
     }
   }

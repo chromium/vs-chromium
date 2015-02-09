@@ -167,6 +167,7 @@
     <Compile Include="Ipc\IpcRequest.cs" />
     <Compile Include="Debugger\DebuggerThread.cs" />
     <Compile Include="DkmShared\PackageServices.cs" />
+    <Compile Include="Logging\LoggerConfiguration.cs" />
     <Compile Include="Processes\ExtensionMethods.cs" />
     <Compile Include="Processes\NtProcess.cs" />
     <Compile Include="Processes\ProcessUtility.cs" />

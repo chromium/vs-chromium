@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystem {
         Entries = groups.Cast<FileSystemEntry>().ToList()
       };
       sw.Stop();
-      //Logger.Log("ToFlatSearchResult created {0} groups, first group contains {1:n0} elements in {2:n0} msec.",
+      //Logger.LogInfo("ToFlatSearchResult created {0} groups, first group contains {1:n0} elements in {2:n0} msec.",
       //  result.Entries.Count, (result.Entries.Count >= 1 ? ((DirectoryEntry)result.Entries[0]).Entries.Count : -1), sw.ElapsedMilliseconds);
       return result;
     }

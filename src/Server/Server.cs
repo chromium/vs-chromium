@@ -36,7 +36,7 @@ namespace VsChromium.Server {
       var client = new TcpClient();
       client.NoDelay = true;
       client.Connect(IPAddress.Loopback, port);
-      Logger.Log("Server connected to host port {0}.", port);
+      Logger.LogInfo("Server connected to host port {0}.", port);
       _stream = new IpcStreamOverNetworkStream(_serializer, client.GetStream());
 
       _stream.WriteResponse(HelloWorldProtocol.Response);
@@ -48,7 +48,7 @@ namespace VsChromium.Server {
       // Receive thread will terminate soon after the TCP connection to the VS package is
       // closed. There is nothing left for the server to do other than exiting at this point.
       _receiveThread.WaitOne();
-      Logger.Log("Server terminating properly.");
+      Logger.LogInfo("Server terminating properly.");
     }
   }
 }

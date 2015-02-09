@@ -99,7 +99,7 @@ namespace VsChromium.Server.Threads {
       }
       catch (Exception e) {
         // TODO(rpaquay): Do we want to propage the exception here?
-        Logger.LogException(e, "Error executing task on custom thread pool.");
+        Logger.LogError(e, "Error executing task on custom thread pool.");
       }
       finally {
         ReleaseThread(thread);

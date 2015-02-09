@@ -23,13 +23,13 @@ namespace VsChromium.Views {
 
     public void ReportProgress(string displayText, int completed, int total) {
       if (completed >= total) {
-        Logger.Log("Stopping progress at {0:n0} completed operations.", completed);
+        Logger.LogInfo("Stopping progress at {0:n0} completed operations.", completed);
         StopProgress();
         return;
       }
 
       if (_statusBar == null) {
-        Logger.Log("Starting progress of {0:n0} total operations.", total);
+        Logger.LogInfo("Starting progress of {0:n0} total operations.", total);
         _statusBar = _serviceProvider.GetService(typeof(SVsStatusbar)) as IVsStatusbar;
         if (_statusBar == null)
           return;

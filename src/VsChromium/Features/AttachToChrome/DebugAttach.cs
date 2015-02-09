@@ -55,7 +55,7 @@ namespace VsChromium.Features.AttachToChrome {
         }
 
         IVsDebugger2 debugger = (IVsDebugger2)VsPackage.GetGlobalService(typeof(SVsShellDebugger));
-        Logger.Log("Launching {0} debug targets", processes.Length);
+        Logger.LogInfo("Launching {0} debug targets", processes.Length);
         int hr = debugger.LaunchDebugTargets2((uint)processes.Length, targetsBuffer);
         if (hr != 0) {
           IVsUIShell shell = (IVsUIShell)VsPackage.GetGlobalService(typeof(SVsUIShell));

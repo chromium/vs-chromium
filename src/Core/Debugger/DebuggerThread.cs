@@ -130,7 +130,7 @@ namespace VsChromium.Core.Debugger {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Exception in debugger loop");
+        Logger.LogError(e, "Exception in debugger loop");
       }
     }
 
@@ -144,7 +144,7 @@ namespace VsChromium.Core.Debugger {
     private void LogDebugEvent(DEBUG_EVENT debugEvent) {
       switch (debugEvent.dwDebugEventCode) {
         case DEBUG_EVENT_CODE.OUTPUT_DEBUG_STRING_EVENT:
-          Logger.Log("{0}", GetOutputDebugString(debugEvent.DebugString));
+          Logger.LogInfo("{0}", GetOutputDebugString(debugEvent.DebugString));
           break;
         case DEBUG_EVENT_CODE.CREATE_THREAD_DEBUG_EVENT:
         case DEBUG_EVENT_CODE.EXIT_THREAD_DEBUG_EVENT:
@@ -153,7 +153,7 @@ namespace VsChromium.Core.Debugger {
           // Too noisy...
           break;
         default:
-          Logger.Log("DBGEVENT: {0}: {1}", debugEvent.dwDebugEventCode, GetDebugEventText(debugEvent));
+          Logger.LogInfo("DBGEVENT: {0}: {1}", debugEvent.dwDebugEventCode, GetDebugEventText(debugEvent));
           break;
       }
     }

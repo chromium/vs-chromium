@@ -118,7 +118,7 @@ namespace VsChromium.Tests.ServerProcess {
       server.RunAsync(request, typedResponse => {
         Assert.IsInstanceOfType(typedResponse, typeof(T));
         sw.Stop();
-        Logger.Log("Request {0} took {1} msec to complete.", request.ClassName, sw.ElapsedMilliseconds);
+        Logger.LogInfo("Request {0} took {1} msec to complete.", request.ClassName, sw.ElapsedMilliseconds);
         response = (T)typedResponse;
         waitHandle.Set();
       }, errorResponse => {

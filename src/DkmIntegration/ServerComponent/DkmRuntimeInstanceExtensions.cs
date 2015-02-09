@@ -48,7 +48,7 @@ namespace VsChromium.DkmIntegration.ServerComponent {
         return true;
 
       if (options.ChildDebuggingMode == ChildDebuggingMode.UseDefault) {
-        Logger.Log(
+        Logger.LogInfo(
             "Requesting default child process debugging mode for process {0}.", 
             process.UniqueId);
         DkmCustomMessage attachRequest = DkmCustomMessage.Create(

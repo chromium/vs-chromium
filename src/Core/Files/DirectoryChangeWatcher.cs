@@ -78,7 +78,7 @@ namespace VsChromium.Core.Files {
         _watchers.Add(directory, watcher);
       }
 
-      Logger.Log("Starting monitoring directory \"{0}\" for change notifications.", directory);
+      Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
       watcher.Path = directory.Value;
       watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
       watcher.IncludeSubdirectories = true;
@@ -98,12 +98,12 @@ namespace VsChromium.Core.Files {
           return;
         _watchers.Remove(directory);
       }
-      Logger.Log("Removing directory \"{0}\" from change notification monitoring.", directory);
+      Logger.LogInfo("Removing directory \"{0}\" from change notification monitoring.", directory);
       watcher.Dispose();
     }
 
     private void ThreadLoop() {
-      Logger.Log("Starting directory change notification monitoring thread.");
+      Logger.LogInfo("Starting directory change notification monitoring thread.");
       try {
         while (true) {
           _eventReceived.WaitOne(_pollingThreadTimeout);
@@ -113,7 +113,7 @@ namespace VsChromium.Core.Files {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error in DirectoryChangeWatcher.");
+        Logger.LogError(e, "Error in DirectoryChangeWatcher.");
       }
     }
 
@@ -241,12 +241,12 @@ namespace VsChromium.Core.Files {
 
     private void WatcherOnError(object sender, ErrorEventArgs errorEventArgs) {
       // TODO(rpaquay): Try to recover?
-      Logger.LogException(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
+      Logger.LogError(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
                           ((FileSystemWatcher)sender).Path);
     }
 
     private void EnqueueChangeEvent(FullPath path, PathChangeKind changeKind) {
-      //Logger.Log("Enqueue change event: {0}, {1}", path, changeKind);
+      //Logger.LogInfo("Enqueue change event: {0}, {1}", path, changeKind);
       lock (_changedPathsLock) {
         MergePathChange(_changedPaths, path, changeKind);
       }
@@ -313,11 +313,11 @@ namespace VsChromium.Core.Files {
     /// </summary>
     private bool SkipPath(string path) {
       if (PathHelpers.IsPathTooLong(path)) {
-        Logger.Log("Skipping file change event because path is too long: \"{0}\"", path);
+        Logger.LogInfo("Skipping file change event because path is too long: \"{0}\"", path);
         return true;
       }
       if (!PathHelpers.IsValidBclPath(path)) {
-        Logger.Log("Skipping file change event because path is invalid: \"{0}\"", path);
+        Logger.LogInfo("Skipping file change event because path is invalid: \"{0}\"", path);
         return true;
       }
       return false;
@@ -366,9 +366,9 @@ namespace VsChromium.Core.Files {
       if (changes.Count == 0)
         return;
 
-      //Logger.Log("DirectoryChangedWatcher.OnPathsChanged: {0} items (logging max 5 below).", changes.Count);
+      //Logger.LogInfo("DirectoryChangedWatcher.OnPathsChanged: {0} items (logging max 5 below).", changes.Count);
       //changes.Take(5).ForAll(x => 
-      //  Logger.Log("  Path changed: \"{0}\", {1}.", x.Path, x.Kind));
+      //  Logger.LogInfo("  Path changed: \"{0}\", {1}.", x.Path, x.Kind));
       var handler = PathsChanged;
       if (handler != null)
         handler(changes);

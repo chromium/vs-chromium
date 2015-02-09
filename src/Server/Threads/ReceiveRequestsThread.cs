@@ -44,14 +44,14 @@ namespace VsChromium.Server.Threads {
         while (true) {
           var request = _ipcStream.ReadRequest();
           if (request == null) {
-            Logger.Log("IPC stream has closed. Time to terminate server.");
+            Logger.LogInfo("IPC stream has closed. Time to terminate server.");
             break;
           }
           _ipcRequestDispatcher.ProcessRequestAsync(request);
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Exception in ReceiveRequestsThread.");
+        Logger.LogError(e, "Exception in ReceiveRequestsThread.");
         throw;
       }
     }

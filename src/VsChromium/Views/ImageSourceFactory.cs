@@ -42,7 +42,7 @@ namespace VsChromium.Views {
         "pack://application:,,,/{0};component/{1}",
         Assembly.GetExecutingAssembly().GetName().Name,
         filePath);
-      //Logger.Log("GetImage: {0}", uriString);
+      //Logger.LogInfo("GetImage: {0}", uriString);
       return new Uri(uriString, UriKind.Absolute);
 #else
       var uriString = string.Format("/{0};component/{1}",

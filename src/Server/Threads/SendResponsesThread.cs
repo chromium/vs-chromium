@@ -45,7 +45,7 @@ namespace VsChromium.Server.Threads {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Exception in SendResponseThread.");
+        Logger.LogError(e, "Exception in SendResponseThread.");
         throw;
       }
     }

@@ -37,7 +37,7 @@ namespace VsChromium.Package.CommandHandler {
         ErrorHandler.ThrowOnFailure(hr);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error registering priority command handler.");
+        Logger.LogError(e, "Error registering priority command handler.");
         return;
       }
 

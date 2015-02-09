@@ -115,7 +115,7 @@ namespace VsChromium.Wpf {
         if (childObject.IsVisual) {
           var childItemsControl = BringObjectToView(parentItemsControl, parentObject, childObject);
           if (childItemsControl == null) {
-            Logger.Log("Tree view item corresponding to hierarchy object was not found.");
+            Logger.LogWarning("Tree view item corresponding to hierarchy object was not found.");
             parentItemsControl = null;
             break;
           }

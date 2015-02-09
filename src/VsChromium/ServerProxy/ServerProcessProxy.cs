@@ -68,7 +68,7 @@ namespace VsChromium.ServerProxy {
     private void OnEventReceived(IpcEvent obj) {
       // Special case: progress report events are too noisy...
       if (!(obj.Data is ProgressReportEvent)) {
-        Logger.Log("Event {0} of type \"{1}\" received from server.", obj.RequestId, obj.Data.GetType().Name);
+        Logger.LogInfo("Event {0} of type \"{1}\" received from server.", obj.RequestId, obj.Data.GetType().Name);
       }
       var handler = EventReceived;
       if (handler != null)
@@ -80,7 +80,7 @@ namespace VsChromium.ServerProxy {
     }
 
     private IEnumerable<string> PreCreateProxy() {
-      Logger.Log("PreCreateProxy");
+      Logger.LogInfo("PreCreateProxy");
       _tcpListener = CreateServerSocket();
 
       return new string[] {
@@ -89,13 +89,13 @@ namespace VsChromium.ServerProxy {
     }
 
     private void AfterProxyCreated(CreateProcessResult serverProcess) {
-      Logger.Log("AfterProxyCreated (pid={0}", serverProcess.Process.Id);
+      Logger.LogInfo("AfterProxyCreated (pid={0}", serverProcess.Process.Id);
       var timeout = TimeSpan.FromSeconds(5.0);
 #if PROFILE_SERVER
       timeout = TimeSpan.FromSeconds(120.0);
       System.Diagnostics.Trace.WriteLine(string.Format("You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds, ((IPEndPoint)_tcpListener.LocalEndpoint).Port));
 #endif
-      Logger.Log("AfterProxyCreated: Wait for TCP client connection from server process.");
+      Logger.LogInfo("AfterProxyCreated: Wait for TCP client connection from server process.");
       if (!_waitForConnection.WaitOne(timeout)) {
         throw new InvalidOperationException(
           string.Format("Child process did not connect to server within {0:n0} seconds.", timeout.TotalSeconds));
@@ -104,11 +104,11 @@ namespace VsChromium.ServerProxy {
       _ipcStream = new IpcStreamOverNetworkStream(_serializer, _tcpClient.GetStream());
 
       // Ensure process is alive and ready to process requests
-      Logger.Log("AfterProxyCreated: Wait for \"Hello\" message from server process.");
+      Logger.LogInfo("AfterProxyCreated: Wait for \"Hello\" message from server process.");
       WaitForProcessHelloMessage();
 
       // Start reading process output
-      Logger.Log("AfterProxyCreated: Start receive response thread.");
+      Logger.LogInfo("AfterProxyCreated: Start receive response thread.");
       _receiveResponsesThread.ResponseReceived += response => {
         var callback = _callbacks.Remove(response.RequestId);
         callback(response);
@@ -116,7 +116,7 @@ namespace VsChromium.ServerProxy {
       _receiveResponsesThread.EventReceived += @event => { OnEventReceived(@event); };
       _receiveResponsesThread.Start(_ipcStream);
 
-      Logger.Log("AfterProxyCreated: Start send request thread..");
+      Logger.LogInfo("AfterProxyCreated: Start send request thread..");
       _sendRequestsThread.RequestError += OnRequestError;
       _sendRequestsThread.Start(_ipcStream, _requestQueue);
     }
@@ -128,16 +128,16 @@ namespace VsChromium.ServerProxy {
     }
 
     private TcpListener CreateServerSocket() {
-      Logger.Log("Opening TCP server socket for server process client connection.");
+      Logger.LogInfo("Opening TCP server socket for server process client connection.");
       var server = new TcpListener(IPAddress.Loopback, 0);
       server.Start();
-      Logger.Log("TCP server started on port {0}.", ((IPEndPoint)server.LocalEndpoint).Port);
+      Logger.LogInfo("TCP server started on port {0}.", ((IPEndPoint)server.LocalEndpoint).Port);
       server.BeginAcceptTcpClient(ClientConnected, server);
       return server;
     }
 
     private void ClientConnected(IAsyncResult result) {
-      Logger.Log("TCP Server received client connection.");
+      Logger.LogInfo("TCP Server received client connection.");
       _tcpClient = _tcpListener.EndAcceptTcpClient(result);
       _waitForConnection.Set();
     }
@@ -145,7 +145,7 @@ namespace VsChromium.ServerProxy {
     private void WaitForProcessHelloMessage() {
       var response = _ipcStream.ReadResponse();
       if (response == null) {
-        Logger.Log("EOF reached on server process standard output (process terminated!)");
+        Logger.LogInfo("EOF reached on server process standard output (process terminated!)");
         throw new InvalidOperationException("EOF reached on server process standard output (process terminated!)");
       }
 

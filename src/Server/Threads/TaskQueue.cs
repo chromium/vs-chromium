@@ -31,7 +31,7 @@ namespace VsChromium.Server.Threads {
         StopWatch = new Stopwatch(),
       };
 
-      Logger.Log("Queue \"{0}\": Enqueing task \"{1}\"", _description, entry.Id.Description);
+      Logger.LogInfo("Queue \"{0}\": Enqueing task \"{1}\"", _description, entry.Id.Description);
 
       bool isFirstTask;
       lock (_lock) {
@@ -51,7 +51,7 @@ namespace VsChromium.Server.Threads {
     private void RunTaskAsync(TaskEntry entry) {
       _customThreadPool.RunAsync(() => {
         try {
-          Logger.Log("Queue \"{0}\": Executing task \"{1}\" after waiting for {2:n0} msec",
+          Logger.LogInfo("Queue \"{0}\": Executing task \"{1}\" after waiting for {2:n0} msec",
             _description,
             entry.Id.Description,
             (_dateTimeProvider.UtcNow - entry.EnqueuedDateTimeUtc).TotalMilliseconds);
@@ -66,7 +66,7 @@ namespace VsChromium.Server.Threads {
 
     private void OnTaskFinished(TaskEntry task) {
       task.StopWatch.Stop();
-      Logger.Log("Queue \"{0}\": Executed task \"{1}\" in {2:n0} msec",
+      Logger.LogInfo("Queue \"{0}\": Executed task \"{1}\" in {2:n0} msec",
         _description,
         task.Id.Description,
         task.StopWatch.ElapsedMilliseconds);

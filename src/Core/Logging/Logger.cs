@@ -19,26 +19,48 @@ namespace VsChromium.Core.Logging {
       Trace.WriteLine(string.Format("[{0}:tid={1}] {2}", GetLoggerId(), Thread.CurrentThread.ManagedThreadId, message));
     }
 
-    public static void Log(string format, params object[] args) {
+    public static void LogInfo(string format, params object[] args) {
+      if (!LoggerConfiguration.Instance.Info)
+        return;
+
       LogImpl(format, args);
     }
 
+    public static void LogWarning(string format, params object[] args) {
+      if (!LoggerConfiguration.Instance.Warning)
+        return;
+
+      LogImpl(format, args);
+    }
+
+    public static void LogWarning(Exception exception, string format, params object[] args) {
+      if (!LoggerConfiguration.Instance.Warning)
+        return;
+
+      LogImpl(format, args);
+      LogException(exception);
+    }
+
     public static void LogError(string format, params object[] args) {
+      if (!LoggerConfiguration.Instance.Error)
+        return;
+
       LogImpl("ERROR: {0}", string.Format(format, args));
     }
 
-    public static void LogException(Exception exception, string format, params object[] args) {
+    public static void LogError(Exception exception, string format, params object[] args) {
+      if (!LoggerConfiguration.Instance.Error)
+        return;
+
       var msg = string.Format(format, args);
       LogImpl("ERROR: {0}", msg);
-      for (var ex = exception; ex != null; ex = ex.InnerException) {
-        LogImpl("  Message:     {0}", ex.Message);
-        LogImpl("  Type:        {0}", ex.GetType().FullName);
-        LogImpl("  StackTrace:");
-        LogImpl("{0}", ex.StackTrace);
-      }
+      LogException(exception);
     }
 
     public static void LogMemoryStats(string indent = "") {
+      if (!LoggerConfiguration.Instance.Info)
+        return;
+
       var msg = "";
       msg += string.Format("{0}GC Memory: {1:n0} bytes.", indent, GC.GetTotalMemory(false));
       for (var i = 0; i <= GC.MaxGeneration; i++) {
@@ -53,7 +75,15 @@ namespace VsChromium.Core.Logging {
         action();
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error during callback execution");
+        Logger.LogError(e, "Error during callback execution");
+      }
+    }
+    private static void LogException(Exception exception) {
+      for (var ex = exception; ex != null; ex = ex.InnerException) {
+        LogImpl("  Message:     {0}", ex.Message);
+        LogImpl("  Type:        {0}", ex.GetType().FullName);
+        LogImpl("  StackTrace:");
+        LogImpl("{0}", ex.StackTrace);
       }
     }
   }

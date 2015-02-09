@@ -141,9 +141,9 @@ namespace VsChromium.Server.FileSystem {
       if (!entries.Any())
         return;
 
-      Logger.Log("FlushFileRegistrationQueueTask:");
+      Logger.LogInfo("FlushFileRegistrationQueueTask:");
       foreach (var entry in entries) {
-        Logger.Log("    Path=\"{0}\", Kind={1}", entry.Path, entry.Kind);
+        Logger.LogInfo("    Path=\"{0}\", Kind={1}", entry.Path, entry.Kind);
       }
 
       bool recompute = ValidateKnownFiles();
@@ -207,7 +207,7 @@ namespace VsChromium.Server.FileSystem {
       var deletedFileNames = filenames.Where(x => !_fileSystem.FileExists(x)).ToList();
 
       if (deletedFileNames.Any()) {
-        Logger.Log("Some known files do not exist on disk anymore. Time to recompute the world.");
+        Logger.LogInfo("Some known files do not exist on disk anymore. Time to recompute the world.");
         lock (_lock) {
           deletedFileNames.ForEach(x => _registeredFiles.Remove(x));
         }
@@ -222,7 +222,7 @@ namespace VsChromium.Server.FileSystem {
         OnBeforeExecute = info => OnSnapshotComputing(info),
         OnError = (info, error) => OnSnapshotComputed(new SnapshotComputedResult { OperationInfo = info, Error = error }),
         Execute = info => {
-          Logger.Log("Collecting list of files from file system.");
+          Logger.LogInfo("Collecting list of files from file system.");
           Logger.LogMemoryStats();
           var sw = Stopwatch.StartNew();
 
@@ -253,7 +253,7 @@ namespace VsChromium.Server.FileSystem {
           }
 
           sw.Stop();
-          Logger.Log(">>>>>>>> Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
+          Logger.LogInfo(">>>>>>>> Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
             newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
             newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)),
             sw.ElapsedMilliseconds);

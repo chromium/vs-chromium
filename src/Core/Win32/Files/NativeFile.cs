@@ -47,7 +47,7 @@ namespace VsChromium.Core.Win32.Files {
         // Note: We are limited to 2GB files by design.
         int maxLen = Int32.MaxValue - trailingByteCount;
         if (fileInfo.Length >= maxLen) {
-          Logger.Log("File too big, truncated to {0} bytes", maxLen);
+          Logger.LogWarning("File too big, truncated to {0} bytes", maxLen);
         }
         var len = (int)Math.Min(maxLen, fileInfo.Length);
         var heap = HeapAllocStatic.Alloc(len + trailingByteCount);

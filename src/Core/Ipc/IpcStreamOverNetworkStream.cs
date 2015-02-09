@@ -48,9 +48,9 @@ namespace VsChromium.Core.Ipc {
         }
         catch (Exception e) {
           if (IsSocketClosedException(e)) {
-            Logger.Log("Socket connection was closed -- assuming normal termination.");
+            Logger.LogInfo("Socket connection was closed -- assuming normal termination.");
           } else {
-            Logger.LogException(e, "Error reading string from NetworkStream");
+            Logger.LogError(e, "Error reading string from NetworkStream");
           }
           return null;
         }

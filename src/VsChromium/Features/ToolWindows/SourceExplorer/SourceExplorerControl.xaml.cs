@@ -188,7 +188,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var @event = typedEvent as FileSystemTreeComputing;
       if (@event != null) {
         WpfUtilities.Post(this, () => {
-          Logger.Log("FileSystemTree is being computed on server.");
+          Logger.LogInfo("FileSystemTree is being computed on server.");
           _progressBarTracker.Start(OperationsIds.FileSystemTreeComputing,
                                     "Loading files and directory names from file system.");
           ViewModel.FileSystemTreeComputing();
@@ -205,7 +205,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             Controller.SetFileSystemTreeError(@event.Error);
             return;
           }
-          Logger.Log("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
+          Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
           FetchFilesystemTree();
         });
       }
@@ -215,7 +215,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var @event = typedEvent as SearchEngineFilesLoading;
       if (@event != null) {
         Wpf.WpfUtilities.Post(this, () => {
-          Logger.Log("Search engine is loading files on server.");
+          Logger.LogInfo("Search engine is loading files on server.");
           _progressBarTracker.Start(OperationsIds.FilesLoading, "Loading files contents from file system.");
         });
       }
@@ -230,7 +230,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             Controller.SetFileSystemTreeError(@event.Error);
             return;
           }
-          Logger.Log("Search engine is done loading files on server.");
+          Logger.LogInfo("Search engine is done loading files on server.");
         });
       }
     }

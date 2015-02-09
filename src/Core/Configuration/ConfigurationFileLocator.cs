@@ -28,7 +28,7 @@ namespace VsChromium.Core.Configuration {
       foreach (var directoryName in PossibleDirectoryNames()) {
         var path = directoryName.Combine(relativePath);
         if (_fileSystem.FileExists(path)) {
-          Logger.Log("Using configuration file at \"{0}\"", path);
+          Logger.LogInfo("Using configuration file at \"{0}\"", path);
           return postProcessing(path, _fileSystem.ReadAllLines(path)).ToReadOnlyCollection();
         }
       }

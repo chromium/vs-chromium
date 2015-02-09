@@ -139,7 +139,7 @@ namespace VsChromium.DkmIntegration.ServerComponent {
             info.dwProcessId);
         attachRequest.SendToVsService(PackageServices.DkmComponentEventHandler, false);
       } catch (Exception exception) {
-        Logger.LogException(
+        Logger.LogError(
             exception,
             "An error occured handling the exit breakpoint.  HR = 0x{0:X}", 
             exception.HResult);

@@ -50,12 +50,12 @@ namespace VsChromium.Core.Linq {
           });
 
 #if false
-      Logger.Log("Created {0} partitions for a total ot {1:n0} elements and weight of {2:n0}.",
+      Logger.LogInfo("Created {0} partitions for a total ot {1:n0} elements and weight of {2:n0}.",
         partitions.Count,
         partitions.Aggregate(0L, (c, x) => c + x.Items.Count),
         partitions.Aggregate(0L, (c, x) => c + x.TotalWeight));
       partitions.ForAll(x => {
-        Logger.Log("  Partition count is {0:n0}, total weight is {1:n0}.", x.Items.Count, x.TotalWeight);
+        Logger.LogInfo("  Partition count is {0:n0}, total weight is {1:n0}.", x.Items.Count, x.TotalWeight);
       });
 #endif
         return partitions.Select(x => x.Items);

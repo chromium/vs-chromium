@@ -62,7 +62,7 @@ namespace VsChromium.Commands {
           isSupported = _owner._commandTarget.HandlesCommand(commandId);
         }
         catch (Exception e) {
-          Logger.LogException(e, "Error in {0}.HandlesCommand.", _owner._commandTarget.GetType().FullName);
+          Logger.LogError(e, "Error in {0}.HandlesCommand.", _owner._commandTarget.GetType().FullName);
         }
         if (!isSupported) {
           if (_owner.NextCommandTarget == null) {
@@ -97,7 +97,7 @@ namespace VsChromium.Commands {
           return VSConstants.S_OK;
         }
         catch (Exception e) {
-          Logger.LogException(e, "Error executing editor command.");
+          Logger.LogError(e, "Error executing editor command.");
           return Marshal.GetHRForException(e);
         }
       }

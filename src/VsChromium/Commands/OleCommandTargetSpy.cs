@@ -41,7 +41,7 @@ namespace VsChromium.Commands {
       }
 
       if (LogCommand(command.CommandID)) {
-        Logger.Log(
+        Logger.LogInfo(
           "BeforeQueryStatus: cmd={0}, handler={1}: Supported={2}, Checked={3}, Enabled={4}, Visible={5}",
           command,
           handler,
@@ -63,7 +63,7 @@ namespace VsChromium.Commands {
 
       var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[0].cmdID);
       if (LogCommand(commandId)) {
-        Logger.Log("WrapQueryStatus: => recv={0}, impl={1}, parent={2}",
+        Logger.LogInfo("WrapQueryStatus: => recv={0}, impl={1}, parent={2}",
           receiver,
           GetImplementerString(implementer),
           GetParentTargetString(implementer));
@@ -74,7 +74,7 @@ namespace VsChromium.Commands {
         : implementer.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
 
       if (LogCommand(commandId)) {
-        Logger.Log("WrapQueryStatus: <= recv={0}, impl={1}, parent={2}, hr={3}, cmdf={4}",
+        Logger.LogInfo("WrapQueryStatus: <= recv={0}, impl={1}, parent={2}, hr={3}, cmdf={4}",
           receiver,
           GetImplementerString(implementer),
           GetParentTargetString(implementer),
@@ -96,7 +96,7 @@ namespace VsChromium.Commands {
 
       var commandId = new CommandID(pguidCmdGroup, (int)nCmdID);
       if (LogCommand(commandId)) {
-        Logger.Log("WrapExec: => recv={0}, impl={1}, parent={2}",
+        Logger.LogInfo("WrapExec: => recv={0}, impl={1}, parent={2}",
           receiver,
           GetImplementerString(implementer),
           GetParentTargetString(implementer));
@@ -121,7 +121,7 @@ namespace VsChromium.Commands {
       }
 
       if (LogCommand(commandId)) {
-        Logger.Log("WrapExec: <= recv={0}, impl={1}, parent={2}, hr={3}",
+        Logger.LogInfo("WrapExec: <= recv={0}, impl={1}, parent={2}, hr={3}",
           receiver,
           GetImplementerString(implementer),
           GetParentTargetString(implementer),

@@ -52,7 +52,7 @@ namespace VsChromium.Views {
         return NavigateInTextView(vsTextView, span.Value);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error openning document \"{0}\".", fileName);
+        Logger.LogError(e, "Error openning document \"{0}\".", fileName);
         return false;
       }
     }

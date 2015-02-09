@@ -31,7 +31,7 @@ namespace VsChromium.Threads {
 
     private void Run() {
       try {
-        Logger.Log("Starting SendRequests thread.");
+        Logger.LogInfo("Starting SendRequests thread.");
         Loop();
       }
       finally {
@@ -44,7 +44,7 @@ namespace VsChromium.Threads {
         while (true) {
           var request = _requestQeueue.Dequeue();
           if (request == null) {
-            Logger.Log("No more requests to send. Time to terminate thread.");
+            Logger.LogInfo("No more requests to send. Time to terminate thread.");
             break;
           }
           try {
@@ -56,7 +56,7 @@ namespace VsChromium.Threads {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Exception in SendRequestsThread.");
+        Logger.LogError(e, "Exception in SendRequestsThread.");
         throw;
       }
     }

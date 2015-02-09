@@ -64,7 +64,7 @@ namespace VsChromium.Threads {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error in DelayedOperationProcessor.");
+        Logger.LogError(e, "Error in DelayedOperationProcessor.");
       }
     }
 

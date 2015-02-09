@@ -13,12 +13,12 @@ namespace VsChromium.Host {
   class Program {
     private static void Main(string[] args) {
       try {
-        Logger.Log("Starting server host process (version={0}).", Assembly.GetExecutingAssembly().GetName().Version);
-        Logger.Log("Host process id={0}.", Process.GetCurrentProcess().Id);
+        Logger.LogInfo("Starting server host process (version={0}).", Assembly.GetExecutingAssembly().GetName().Version);
+        Logger.LogInfo("Host process id={0}.", Process.GetCurrentProcess().Id);
         RunServerProcess(args);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error in server host process.");
+        Logger.LogError(e, "Error in server host process.");
         throw;
       }
     }
@@ -28,9 +28,9 @@ namespace VsChromium.Host {
       var port = GetTcpPort(args);
       var profileServerFlag = GetProfileServerFlag(args);
 
-      Logger.Log("Server image file name is: {0}", filename);
-      Logger.Log("TCP port is: {0}", port);
-      Logger.Log("Profile server flag is: {0}", profileServerFlag);
+      Logger.LogInfo("Server image file name is: {0}", filename);
+      Logger.LogInfo("TCP port is: {0}", port);
+      Logger.LogInfo("Profile server flag is: {0}", profileServerFlag);
 
       if (profileServerFlag) {
         Debug.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -39,22 +39,22 @@ namespace VsChromium.Host {
       } else {
         using (var job = new JobObject()) {
           // Create a new Job for this process and its children.
-          Logger.Log("Creating job.");
+          Logger.LogInfo("Creating job.");
           job.AddCurrentProcess();
-          Logger.Log("Job created successfully.");
+          Logger.LogInfo("Job created successfully.");
 
           // Create the child process and redirect stdin, stdout, stderr.
           var argumentLine = (port.HasValue ? port.Value.ToString() : "");
-          Logger.Log("Creating server process.");
+          Logger.LogInfo("Creating server process.");
           using (var createProcessResult = new ProcessCreator().CreateProcess(filename, argumentLine, CreateProcessOptions.Default)) {
-            Logger.Log("Server process created successfully (pid={0}).", createProcessResult.Process.Id);
-            Logger.Log("Waiting for server process to exit.");
+            Logger.LogInfo("Server process created successfully (pid={0}).", createProcessResult.Process.Id);
+            Logger.LogInfo("Waiting for server process to exit.");
             createProcessResult.Process.WaitForExit();
-            Logger.Log("Server process exit code: 0x{0:x8}.", createProcessResult.Process.ExitCode);
+            Logger.LogInfo("Server process exit code: 0x{0:x8}.", createProcessResult.Process.ExitCode);
           }
         }
 
-        Logger.Log("Exiting normally.");
+        Logger.LogInfo("Exiting normally.");
       }
     }
 

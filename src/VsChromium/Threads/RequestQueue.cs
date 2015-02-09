@@ -45,7 +45,7 @@ namespace VsChromium.Threads {
     }
 
     public void Dispose() {
-      Logger.Log("Disposing RequestQueue.");
+      Logger.LogInfo("Disposing RequestQueue.");
       _disposed = true;
       _waitHandle.Set();
     }

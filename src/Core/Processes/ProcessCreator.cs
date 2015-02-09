@@ -16,7 +16,7 @@ namespace VsChromium.Core.Processes {
   [Export(typeof(IProcessCreator))]
   public class ProcessCreator : IProcessCreator {
     public CreateProcessResult CreateProcess(string filename, string arguments, CreateProcessOptions options) {
-      Logger.Log("CreateProcess: {0} {1}", filename, arguments);
+      Logger.LogInfo("CreateProcess: {0} {1}", filename, arguments);
 
       // Attaching the debugger ensures the child process will die with the current process.
       var debuggerObject = new DebuggerObject();
@@ -24,7 +24,7 @@ namespace VsChromium.Core.Processes {
         debuggerObject.CreateProcess(() => CreateProcessImpl(filename, arguments, options)) :
         CreateProcessImpl(filename, arguments, options);
 
-      Logger.Log("CreateProcess: Creating CreateProcessResult instance.");
+      Logger.LogInfo("CreateProcess: Creating CreateProcessResult instance.");
       return new CreateProcessResult(processInformation, debuggerObject);
     }
 
@@ -40,12 +40,12 @@ namespace VsChromium.Core.Processes {
     }
 
     private ProcessInformation CreateProcessWithStartInfo(SimpleProcessStartupInfo simpleProcessStartupInfo, CreateProcessOptions options) {
-      Logger.Log("CreateProcessWithStartInfo: Entry point.");
+      Logger.LogInfo("CreateProcessWithStartInfo: Entry point.");
       var stringBuilder = BuildCommandLine(simpleProcessStartupInfo.FileName, simpleProcessStartupInfo.Arguments);
-      Logger.Log("CreateProcessWithStartInfo: command line is {0}.", stringBuilder);
+      Logger.LogInfo("CreateProcessWithStartInfo: command line is {0}.", stringBuilder);
 
       using (var startupInfo = new STARTUPINFO()) {
-        Logger.Log("CreateProcessWithStartInfo: Creation flags.");
+        Logger.LogInfo("CreateProcessWithStartInfo: Creation flags.");
         ProcessCreationFlags processCreationFlags = 0;
         if (simpleProcessStartupInfo.CreateNoWindow) {
           processCreationFlags |= ProcessCreationFlags.CREATE_NO_WINDOW;
@@ -58,21 +58,21 @@ namespace VsChromium.Core.Processes {
         if (workingDirectory == string.Empty) {
           workingDirectory = Environment.CurrentDirectory;
         }
-        Logger.Log("CreateProcessWithStartInfo: Working directory: {0}.", workingDirectory);
+        Logger.LogInfo("CreateProcessWithStartInfo: Working directory: {0}.", workingDirectory);
 
         if ((options & CreateProcessOptions.AttachDebugger) != 0) {
-          Logger.Log("CreateProcessWithStartInfo: Setting DEBUG_PROCESS flag.");
+          Logger.LogInfo("CreateProcessWithStartInfo: Setting DEBUG_PROCESS flag.");
           processCreationFlags |= ProcessCreationFlags.DEBUG_PROCESS;
           processCreationFlags |= ProcessCreationFlags.DEBUG_ONLY_THIS_PROCESS;
         }
 
-        Logger.Log("CreateProcessWithStartInfo: Calling Win32 CreateProcess.");
+        Logger.LogInfo("CreateProcessWithStartInfo: Calling Win32 CreateProcess.");
         var processInformation = new PROCESS_INFORMATION();
         var environmentPtr = IntPtr.Zero;
         var lastError = 0;
         var success = NativeMethods.CreateProcess(null, stringBuilder, null, null, true, processCreationFlags,
                                                  environmentPtr, workingDirectory, startupInfo, processInformation);
-        Logger.Log("CreateProcessWithStartInfo: CreateProcess result: Success={0}-LastError={1}.", success, Marshal.GetLastWin32Error());
+        Logger.LogInfo("CreateProcessWithStartInfo: CreateProcess result: Success={0}-LastError={1}.", success, Marshal.GetLastWin32Error());
         if (!success) {
           lastError = Marshal.GetLastWin32Error();
         }
@@ -84,18 +84,18 @@ namespace VsChromium.Core.Processes {
         }
 
         if (safeProcessHandle.IsInvalid || safeThreadHandle.IsInvalid) {
-          Logger.Log("CreateProcessWithStartInfo: Invalid process handle.");
+          Logger.LogInfo("CreateProcessWithStartInfo: Invalid process handle.");
           throw new Exception(string.Format("Error creating process from file \"{0}\" (invalid process handle)", simpleProcessStartupInfo.FileName));
         }
 
-        Logger.Log("CreateProcessWithStartInfo: Creating ProcessResult instance.");
+        Logger.LogInfo("CreateProcessWithStartInfo: Creating ProcessResult instance.");
         var processResult = new ProcessInformation {
           ProcessHandle = safeProcessHandle,
           ProcessId = processInformation.dwProcessId
         };
         safeThreadHandle.Close();
 
-        Logger.Log("CreateProcessWithStartInfo: Success!");
+        Logger.LogInfo("CreateProcessWithStartInfo: Success!");
         return processResult;
       }
     }

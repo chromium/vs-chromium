@@ -56,7 +56,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         // Load file contents into newState
         ReadMissingFileContents(fileContentsMemoization);
 
-        Logger.Log("{0}{1:n0} unique file contents remaining in memory after memoization of {2:n0} files.",
+        Logger.LogInfo("{0}{1:n0} unique file contents remaining in memory after memoization of {2:n0} files.",
             logger.Indent,
             fileContentsMemoization.Count,
             _files.Values.Count(x => x.FileData.Contents != null));
@@ -121,7 +121,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             var count = g.Item2;
             var size = g.Item3;
             if (size > 1024L) {
-              Logger.Log("{0}: {1:n0} files, {2:n0} bytes", g.Item1, count, size);
+              Logger.LogInfo("{0}: {1:n0} files, {2:n0} bytes", g.Item1, count, size);
             }
           });
         }
@@ -197,7 +197,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
       fileContents.GetPartitionRanges(partitionCount).ForAll(
         (index, range) => {
-          Logger.Log("Partition {0} has a weight of {1:n0}",
+          Logger.LogInfo("Partition {0} has a weight of {1:n0}",
             index,
             fileContents
               .Skip(range.Key)
@@ -332,7 +332,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             });
         }
 
-        Logger.Log("{0}Loaded {1:n0} files", logger.Indent, loadedFileCount);
+        Logger.LogInfo("{0}Loaded {1:n0} files", logger.Indent, loadedFileCount);
         Logger.LogMemoryStats(logger.Indent);
       }
     }

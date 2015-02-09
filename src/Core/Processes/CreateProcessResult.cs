@@ -35,7 +35,7 @@ namespace VsChromium.Core.Processes {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error killing process.");
+        Logger.LogError(e, "Error killing process.");
       }
     }
   }

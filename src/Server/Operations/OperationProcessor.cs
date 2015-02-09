@@ -21,7 +21,7 @@ namespace VsChromium.Server.Operations {
         operationHandlers.Execute(info);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error executing operation {0}", _operationIdFactory.GetNextId());
+        Logger.LogError(e, "Error executing operation {0}", _operationIdFactory.GetNextId());
         operationHandlers.OnError(info, e);
       }
     }

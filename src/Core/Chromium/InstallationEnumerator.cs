@@ -67,7 +67,7 @@ namespace VsChromium.Core.Chromium {
         return exePath;
       }
       catch (Exception e) {
-        Logger.LogException(e, "InstallLocation seems to be invalid: {0}", location);
+        Logger.LogWarning(e, "InstallLocation seems to be invalid: {0}", location);
         return null;
       }
     }

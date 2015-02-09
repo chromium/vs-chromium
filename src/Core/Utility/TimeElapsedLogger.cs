@@ -24,13 +24,13 @@ namespace VsChromium.Core.Utility {
       _description = description;
       _stopwatch = Stopwatch.StartNew();
       _indent = GetIndent(_currentThreadIndent);
-      Logger.Log("{0}{1}.", _indent, _description);
+      Logger.LogInfo("{0}{1}.", _indent, _description);
     }
 
     public void Dispose() {
       _currentThreadIndent--;
       _stopwatch.Stop();
-      Logger.Log("{0}{1} performed in {2:n0} msec.", _indent, _description, _stopwatch.ElapsedMilliseconds);
+      Logger.LogInfo("{0}{1} performed in {2:n0} msec.", _indent, _description, _stopwatch.ElapsedMilliseconds);
     }
 
     public string Indent {

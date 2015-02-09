@@ -8,14 +8,14 @@ using VsChromium.Core.Logging;
 namespace VsChromium.Server {
   class Program {
     private static void Main(string[] args) {
-      Logger.Log("Server process started");
+      Logger.LogInfo("Server process started");
       try {
         var port = GetTcpPort(args);
-        Logger.Log("Server starting with host on port {0}.", port);
+        Logger.LogInfo("Server starting with host on port {0}.", port);
         new ServerStub().Run(port);
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error in server process.");
+        Logger.LogError(e, "Error in server process.");
         throw;
       }
     }

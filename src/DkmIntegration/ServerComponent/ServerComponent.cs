@@ -57,7 +57,7 @@ namespace VsChromium.DkmIntegration.ServerComponent {
               process.SetDataItem(
                   DkmDataCreationDisposition.CreateNew, 
                   new AutoAttachToChildHandler());
-              Logger.Log(
+              Logger.LogInfo(
                 "Successfully delay-enabled child debugging for process {0}.", 
                 processGuid);
             } else {
@@ -71,7 +71,7 @@ namespace VsChromium.DkmIntegration.ServerComponent {
             break;
         }
       } catch (DkmException exception) {
-        Logger.LogException(
+        Logger.LogError(
             exception, 
             "An error occurred while handling a debugger message.  HR = 0x{0:X}",
             exception.HResult);

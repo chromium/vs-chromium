@@ -87,14 +87,14 @@ namespace VsChromium.Server.FileSystemSnapshot {
           return KeyValuePair.Create(traversedDirectoryEntry.DirectoryData, fileNames);
         })
         .ToList();
-      ssw.Step(sw => Logger.Log("Done traversing file system in {0:n0} msec.", sw.ElapsedMilliseconds));
+      ssw.Step(sw => Logger.LogInfo("Done traversing file system in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // We sort entries by directory name *descending* to make sure we process
       // directories bottom up, so that we know
       // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
       // 2) we create instances of child directories before their parent.
       directoriesWithFiles.Sort((x, y) => -x.Key.DirectoryName.RelativePath.CompareTo(y.Key.DirectoryName.RelativePath));
-      ssw.Step(sw => Logger.Log("Done sorting list of directories in {0:n0} msec.", sw.ElapsedMilliseconds));
+      ssw.Step(sw => Logger.LogInfo("Done sorting list of directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Build map from parent directory -> list of child directories
       var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
@@ -107,7 +107,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
         GetOrCreateList(directoriesToChildDirectories, directoryName.DirectoryName.Parent).Add(directoryName.DirectoryName);
       });
-      ssw.Step(sw => Logger.Log("Done creating children directories in {0:n0} msec.", sw.ElapsedMilliseconds));
+      ssw.Step(sw => Logger.LogInfo("Done creating children directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Build directory snapshots for each directory entry, using an
       // intermediate map to enable connecting snapshots to their parent.
@@ -132,7 +132,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         return result;
       })
       .ToList();
-      ssw.Step(sw => Logger.Log("Done creating directory snapshots in {0:n0} msec.", sw.ElapsedMilliseconds));
+      ssw.Step(sw => Logger.LogInfo("Done creating directory snapshots in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Since we sort directories by name descending, the last entry is always the
       // entry correcsponding to the project root.

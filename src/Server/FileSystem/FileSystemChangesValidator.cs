@@ -31,23 +31,23 @@ namespace VsChromium.Server.FileSystem {
         .Where(x => !PathIsExcluded(x.Path))
         .ToList();
 
-      Logger.Log("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering (showing max 5 below).",
+      Logger.LogInfo("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering (showing max 5 below).",
                  filteredChanges.Count, changes.Count);
       filteredChanges.Take(5).ForAll(x => 
-        Logger.Log("  Path changed: \"{0}\", kind={1}", x.Path, x.Kind));
+        Logger.LogInfo("  Path changed: \"{0}\", kind={1}", x.Path, x.Kind));
 
       if (filteredChanges.Any()) {
         // If the only changes we see are file modification, don't recompute the graph, just 
         // raise a "files changes event". Note that we also watch for any "special" filename.
         if (filteredChanges.All(IsIncrementalChange)) {
-          Logger.Log("All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
+          Logger.LogInfo("All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
           var fileNames = filteredChanges.Select(change => GetProjectFileName(change.Path)).Where(name => name != null);
           return new FileSystemValidationResult {
             ChangedFiles = fileNames.ToList()
           };
         } else {
           // TODO(rpaquay): Could we be smarter here?
-          Logger.Log("Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
+          Logger.LogInfo("Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
           return new FileSystemValidationResult {
             RecomputeGraph = true
           };

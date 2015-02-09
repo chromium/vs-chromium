@@ -48,11 +48,11 @@ namespace VsChromium.ServerProxy {
     }
 
     private void CreateServerProcessWorker(Func<IEnumerable<string>> preCreate, Action<CreateProcessResult> postCreate) {
-      Logger.Log("Creating VsChromiumHost process.");
+      Logger.LogInfo("Creating VsChromiumHost process.");
       var path = GetProcessPath();
-      Logger.Log("  Path={0}", path);
+      Logger.LogInfo("  Path={0}", path);
       var serverPath = Path.Combine(Path.GetDirectoryName(path.Value), ServerName);
-      Logger.Log("  Server path={0}", serverPath);
+      Logger.LogInfo("  Server path={0}", serverPath);
 
       var arguments = new List<string>();
       arguments.Add(serverPath);
@@ -62,11 +62,11 @@ namespace VsChromium.ServerProxy {
 #endif
 
       var argumentLine = arguments.Aggregate("", (x, v) => x + QuoteArgument(v) + " ");
-      Logger.Log("  Arguments={0}", argumentLine);
+      Logger.LogInfo("  Arguments={0}", argumentLine);
       _serverProcess = _processCreator.CreateProcess(path.Value, argumentLine,
                                                      CreateProcessOptions.AttachDebugger |
                                                      CreateProcessOptions.BreakAwayFromJob);
-      Logger.Log("VsChromiumHost process created (pid={0}).", _serverProcess.Process.Id);
+      Logger.LogInfo("VsChromiumHost process created (pid={0}).", _serverProcess.Process.Id);
       postCreate(_serverProcess);
     }
 

@@ -83,7 +83,7 @@ namespace VsChromium {
           _disposeContainer.RunAll();
         }
         catch (Exception e) {
-          Logger.LogException(e, "Error disposing VsChromium package.");
+          Logger.LogError(e, "Error disposing VsChromium package.");
           //throw;
         }
       }
@@ -97,7 +97,7 @@ namespace VsChromium {
         PostInitialize();
       }
       catch (Exception e) {
-        Logger.LogException(e, "Error initializing VsChromium package.");
+        Logger.LogError(e, "Error initializing VsChromium package.");
         throw;
       }
     }

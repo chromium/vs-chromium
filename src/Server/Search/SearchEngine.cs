@@ -423,14 +423,14 @@ namespace VsChromium.Server.Search {
         OnBeforeExecute = info => OnFilesLoading(info),
         OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
         Execute = info => {
-          Logger.Log("Computing new state of file database from file system tree.");
+          Logger.LogInfo("Computing new state of file database from file system tree.");
           var sw = Stopwatch.StartNew();
 
           var oldState = _currentFileDatabase;
           var newState = _fileDatabaseFactory.CreateIncremental(oldState, newSnapshot);
 
           sw.Stop();
-          Logger.Log(">>>>>>>> Done computing new state of file database from file system tree in {0:n0} msec.",
+          Logger.LogInfo(">>>>>>>> Done computing new state of file database from file system tree in {0:n0} msec.",
             sw.ElapsedMilliseconds);
           Logger.LogMemoryStats();
 

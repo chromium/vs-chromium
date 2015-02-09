@@ -57,7 +57,7 @@ namespace VsChromium.Features.AttachToChrome {
                 );
                 response.SendLower();
               } else {
-                Logger.Log(
+                Logger.LogInfo(
                     "Not enabling child process debugging for process {0}.  " +
                     "Child debugging is disabled by default.",
                     processGuid);
@@ -66,7 +66,7 @@ namespace VsChromium.Features.AttachToChrome {
             break;
         }
       } catch (Exception exception) {
-        Logger.LogException(
+        Logger.LogError(
             exception,
             "An error occured while handling a VsPackage message.  HR=0x{0:X}", 
             exception.HResult);

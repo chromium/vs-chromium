@@ -33,7 +33,7 @@ namespace VsChromium.Threads {
 
     private void Run() {
       try {
-        Logger.Log("Starting ReceiveResponses thread.");
+        Logger.LogInfo("Starting ReceiveResponses thread.");
         Loop();
       }
       finally {
@@ -46,7 +46,7 @@ namespace VsChromium.Threads {
         while (true) {
           var response = _ipcStream.ReadResponse();
           if (response == null) {
-            Logger.Log("EOF reached on stdin. Time to terminate server.");
+            Logger.LogInfo("EOF reached on stdin. Time to terminate server.");
             break;
           }
 
@@ -59,7 +59,7 @@ namespace VsChromium.Threads {
         }
       }
       catch (Exception e) {
-        Logger.LogException(e, "Exception in ReceiveRequestsThread.");
+        Logger.LogError(e, "Exception in ReceiveRequestsThread.");
         throw;
       }
     }

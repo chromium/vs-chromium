@@ -20,7 +20,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void Advise() {
       var hr = _frame.Advise(this, out _notifyCookie);
       if (ErrorHandler.Failed(hr)) {
-        Logger.LogError("IVsWindowFrame2.Advise() failed: hr={0}", hr);
+        Logger.LogWarning("IVsWindowFrame2.Advise() failed: hr={0}", hr);
       }
     }
 
@@ -37,7 +37,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           _isVisible = false;
           var hr = _frame.Unadvise(_notifyCookie);
           if (ErrorHandler.Failed(hr)) {
-            Logger.Log("IVsWindowFrame2.Unadvise() failed: hr={0}", hr);
+            Logger.LogWarning("IVsWindowFrame2.Unadvise() failed: hr={0}", hr);
           }
           break;
         case __FRAMESHOW.FRAMESHOW_TabActivated:

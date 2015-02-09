@@ -25,7 +25,7 @@ namespace VsChromium.Features.AutoUpdate {
             return ParseUpdateInfo(contents);
           }
           catch (Exception e) {
-            Logger.LogException(e, "Error parsing version info file from url {0}:\r\n{1}", _requestUriString, contents);
+            Logger.LogError(e, "Error parsing version info file from url {0}:\r\n{1}", _requestUriString, contents);
             throw new FileFormatException("Invalid version file", e);
           }
         }

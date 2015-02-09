@@ -39,7 +39,7 @@ namespace VsChromium.Server.Ipc {
       _ipcResponseQueue.Enqueue(response);
       sw.Stop();
 
-      Logger.Log("Request {0} of type \"{1}\" took {2:n0} msec to handle.",
+      Logger.LogInfo("Request {0} of type \"{1}\" took {2:n0} msec to handle.",
                  request.RequestId, request.Data.GetType().Name, sw.ElapsedMilliseconds);
     }
 
@@ -54,19 +54,19 @@ namespace VsChromium.Server.Ipc {
         return processor.Process(request);
       }
       catch (OperationCanceledException e) {
-        Logger.Log("Request {0} of type \"{1}\" has been canceled.",
+        Logger.LogInfo("Request {0} of type \"{1}\" has been canceled.",
                    request.RequestId, request.Data.GetType().Name);
         return ErrorResponseHelper.CreateIpcErrorResponse(request, e);
       }
       catch (RecoverableErrorException e) {
-        Logger.Log("Request {0} of type \"{1}\" generated a recoverable error: {2}.",
+        Logger.LogInfo("Request {0} of type \"{1}\" generated a recoverable error: {2}.",
                    request.RequestId, request.Data.GetType().Name, e.Message);
         return ErrorResponseHelper.CreateIpcErrorResponse(request, e);
       }
       catch (Exception e) {
         var message = string.Format("Error executing request {0} of type \"{1}\".",
                             request.RequestId, request.Data.GetType().Name);
-        Logger.LogException(e, "{0}", message);
+        Logger.LogError(e, "{0}", message);
         var outer = new Exception(message, e);
         return ErrorResponseHelper.CreateIpcErrorResponse(request, outer);
       }

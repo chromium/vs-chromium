@@ -10,18 +10,18 @@ using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   /// <summary>
-  /// Implementation of <see cref="ICompiledTextSearchProvider"/> that
+  /// Implementation of <see cref="ICompiledTextSearchContainer"/> that
   /// instantiates search algorithms per thread instance to avoid lock
   /// contention.
   /// </summary>
-  public class PerThreadCompiledTextSearchProvider : ICompiledTextSearchProvider {
+  public class PerThreadCompiledTextSearchContainer : ICompiledTextSearchContainer {
     private readonly string _pattern;
     private readonly SearchProviderOptions _searchOptions;
     private readonly ConcurrentDictionary<int, ICompiledTextSearch> _asciiAlgorithms = new ConcurrentDictionary<int, ICompiledTextSearch>();
     private readonly Func<int, ICompiledTextSearch> _asciiAlgorithmFactory;
     private readonly ICompiledTextSearch _utf16CompiledTextSearchAlgo;
 
-    public PerThreadCompiledTextSearchProvider(string pattern, SearchProviderOptions searchOptions) {
+    public PerThreadCompiledTextSearchContainer(string pattern, SearchProviderOptions searchOptions) {
       _pattern = pattern;
       _searchOptions = searchOptions;
       _asciiAlgorithmFactory = x => AsciiFileContents.CreateSearchAlgo(_pattern, _searchOptions);

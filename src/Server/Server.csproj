@@ -114,13 +114,13 @@
     <Compile Include="FileSystemDatabase\IFileDatabase.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabaseFactory.cs" />
     <Compile Include="Search\ICompiledTextSearchDataFactory.cs" />
-    <Compile Include="Search\ICompiledTextSearchProvider.cs" />
+    <Compile Include="Search\ICompiledTextSearchContainer.cs" />
     <Compile Include="Search\ICompiledTextSearchProviderFactory.cs" />
     <Compile Include="Search\ISearchStringParser.cs" />
     <Compile Include="Search\GetLineExtentCache.cs" />
     <Compile Include="Search\NullCompiledTextSearch.cs" />
-    <Compile Include="Search\PerThreadCompiledTextSearchProvider.cs" />
-    <Compile Include="Search\CompiledTextSearchProvider.cs" />
+    <Compile Include="Search\PerThreadCompiledTextSearchContainer.cs" />
+    <Compile Include="Search\CompiledTextSearchContainer.cs" />
     <Compile Include="Search\SearchDirectoryNamesResult.cs" />
     <Compile Include="Search\SearchTextResult.cs" />
     <Compile Include="Search\SearchFileNamesResult.cs" />

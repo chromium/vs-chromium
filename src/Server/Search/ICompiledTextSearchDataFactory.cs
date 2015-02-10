@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Search {
   /// <summary>
@@ -14,6 +16,8 @@ namespace VsChromium.Server.Search {
     /// Note: Throws an exception if the <paramref name="searchParams"/> query is
     /// invalid.
     /// </summary>
-    CompiledTextSearchData Create(SearchParams searchParams);
+    CompiledTextSearchData Create(
+      SearchParams searchParams,
+      Func<FileName, bool> fileNamePathMatcher);
   }
 }

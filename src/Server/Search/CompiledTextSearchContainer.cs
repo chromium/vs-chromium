@@ -7,14 +7,14 @@ using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
   /// <summary>
-  /// Implementation of <see cref="ICompiledTextSearchProvider"/> that
+  /// Implementation of <see cref="ICompiledTextSearchContainer"/> that
   /// instantiates single instances of search algorithms.
   /// </summary>
-  public class CompiledTextSearchProvider : ICompiledTextSearchProvider {
+  public class CompiledTextSearchContainer : ICompiledTextSearchContainer {
     private readonly ICompiledTextSearch _asciiCompiledTextSearchAlgo;
     private readonly ICompiledTextSearch _utf16CompiledTextSearchAlgo;
 
-    public CompiledTextSearchProvider(string pattern, SearchProviderOptions searchOptions) {
+    public CompiledTextSearchContainer(string pattern, SearchProviderOptions searchOptions) {
       _asciiCompiledTextSearchAlgo = AsciiFileContents.CreateSearchAlgo(pattern, searchOptions);
       _utf16CompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(pattern, searchOptions);
     }

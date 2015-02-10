@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Search {
   /// <summary>
@@ -12,25 +13,51 @@ namespace VsChromium.Server.Search {
   /// </summary>
   public class CompiledTextSearchData : IDisposable {
     private readonly ParsedSearchString _parsedSearchString;
-    private readonly IList<ICompiledTextSearchProvider> _searchAlgorithms;
+    private readonly IList<ICompiledTextSearchContainer> _searchContainers;
+    private readonly Func<FileName, bool> _fileNameFilter;
 
-    public CompiledTextSearchData(ParsedSearchString parsedSearchString, IList<ICompiledTextSearchProvider> searchAlgorithms) {
+    public CompiledTextSearchData(
+      ParsedSearchString parsedSearchString,
+      IList<ICompiledTextSearchContainer> searchContainers,
+      Func<FileName, bool> fileNameFilter) {
       _parsedSearchString = parsedSearchString;
-      _searchAlgorithms = searchAlgorithms;
+      _searchContainers = searchContainers;
+      _fileNameFilter = fileNameFilter;
     }
 
     /// <summary>
-    /// The user provied search string split into sub-entries according to wildcards characters.
+    /// The user provied search string split into sub-entries according to
+    /// wildcards characters.
     /// </summary>
-    public ParsedSearchString ParsedSearchString { get { return _parsedSearchString; } }
-
-    public ICompiledTextSearchProvider GetSearchAlgorithmProvider(ParsedSearchString.Entry entry) {
-      return _searchAlgorithms[entry.Index];
+    public ParsedSearchString ParsedSearchString {
+      get {
+        return _parsedSearchString;
+      }
     }
 
+    /// <summary>
+    /// Function used to filter file names that should not be part of the text
+    /// search.
+    /// </summary>
+    public Func<FileName, bool> FileNameFilter {
+      get { return _fileNameFilter; }
+    }
+
+    /// <summary>
+    /// Retrieve the <see cref="ICompiledTextSearchContainer"/> for a given
+    /// search entry.
+    /// </summary>
+    public ICompiledTextSearchContainer GetSearchContainer(
+      ParsedSearchString.Entry entry) {
+      return _searchContainers[entry.Index];
+    }
+
+    /// <summary>
+    /// Release the text search provider.
+    /// </summary>
     public void Dispose() {
-      foreach (var algo in _searchAlgorithms) {
-        algo.Dispose();
+      foreach (var provider in _searchContainers) {
+        provider.Dispose();
       }
     }
   }

@@ -7,16 +7,16 @@ using System.ComponentModel.Composition;
 namespace VsChromium.Server.Search {
   [Export(typeof(ICompiledTextSearchProviderFactory))]
   public class CompiledTextSearchProviderFactory : ICompiledTextSearchProviderFactory {
-    public ICompiledTextSearchProvider CreateProvider(
+    public ICompiledTextSearchContainer CreateProvider(
       string pattern,
       SearchProviderOptions searchOptions) {
       // RE2 engine requires a per-thread provider, as the current C++
       // implementation suffers from serious lock contention if a RE2 regex
       // instance is shared accross threads.
       if (searchOptions.UseRegex && searchOptions.UseRe2Engine)
-        return new PerThreadCompiledTextSearchProvider(pattern, searchOptions);
+        return new PerThreadCompiledTextSearchContainer(pattern, searchOptions);
 
-      return new CompiledTextSearchProvider(pattern, searchOptions);
+      return new CompiledTextSearchContainer(pattern, searchOptions);
     }
   }
 }

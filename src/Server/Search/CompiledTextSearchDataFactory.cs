@@ -2,11 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
+using System.Text.RegularExpressions;
+using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Search {
   [Export(typeof(ICompiledTextSearchDataFactory))]
@@ -23,7 +27,7 @@ namespace VsChromium.Server.Search {
       _compiledTextSearchProviderFactory = compiledTextSearchProviderFactory;
     }
 
-    public CompiledTextSearchData Create(SearchParams searchParams) {
+    public CompiledTextSearchData Create(SearchParams searchParams, Func<FileName, bool> fileNamePathMatcher) {
       ParsedSearchString parsedSearchString;
       if (searchParams.Regex) {
         parsedSearchString = new ParsedSearchString(
@@ -49,10 +53,14 @@ namespace VsChromium.Server.Search {
           UseRegex = searchParams.Regex,
           UseRe2Engine = searchParams.UseRe2Engine
         });
-      return new CompiledTextSearchData(parsedSearchString, searchContentsAlgorithms);
+
+      return new CompiledTextSearchData(
+        parsedSearchString,
+        searchContentsAlgorithms,
+        fileNamePathMatcher);
     }
 
-    private List<ICompiledTextSearchProvider> CreateSearchAlgorithms(
+    private List<ICompiledTextSearchContainer> CreateSearchAlgorithms(
       ParsedSearchString parsedSearchString, SearchProviderOptions options) {
       return parsedSearchString.EntriesBeforeMainEntry
         .Concat(new[] { parsedSearchString.MainEntry })

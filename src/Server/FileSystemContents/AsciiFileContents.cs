@@ -55,8 +55,8 @@ namespace VsChromium.Server.FileSystemContents {
       get { return sizeof(byte); }
     }
 
-    protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider) {
-      return provider.GetAsciiSearch();
+    protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container) {
+      return container.GetAsciiSearch();
     }
 
     protected override TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {

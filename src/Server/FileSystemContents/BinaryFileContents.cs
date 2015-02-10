@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystemContents {
       get { return 1; }
     }
 
-    protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider) {
+    protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container) {
       return NullCompiledTextSearch.Instance;
     }
 

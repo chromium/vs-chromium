@@ -640,7 +640,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public void SearchText(string searchPattern) {
+    public void SearchText(string searchPattern, string fileNamePattern) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
         HintText = "Searching for matching text in files...",
@@ -648,6 +648,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
+            FileNamePattern = fileNamePattern,
             MaxResults = GlobalSettings.SearchTextMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,

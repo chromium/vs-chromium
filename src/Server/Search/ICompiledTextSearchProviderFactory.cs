@@ -4,7 +4,7 @@
 
 namespace VsChromium.Server.Search {
   public interface ICompiledTextSearchProviderFactory {
-    ICompiledTextSearchProvider CreateProvider(string pattern, SearchProviderOptions searchOptions);
+    ICompiledTextSearchContainer CreateProvider(string pattern, SearchProviderOptions searchOptions);
   }
 
   public class SearchProviderOptions {

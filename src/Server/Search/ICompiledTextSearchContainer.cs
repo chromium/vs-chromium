@@ -6,7 +6,10 @@ using System;
 using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.Search {
-  public interface ICompiledTextSearchProvider : IDisposable {
+  /// <summary>
+  /// Gives access to the native text search engine for supported encodings.
+  /// </summary>
+  public interface ICompiledTextSearchContainer : IDisposable {
     ICompiledTextSearch GetAsciiSearch();
     ICompiledTextSearch GetUtf16Search();
   }

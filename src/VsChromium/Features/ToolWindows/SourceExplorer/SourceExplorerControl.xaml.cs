@@ -51,9 +51,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
-      InitComboBox(FileNamesSearch, new ComboBoxInfo {
+      InitComboBox(SearchFileNamesPattern, new ComboBoxInfo {
         SearchFunction = SearchFilesNames,
-        NextElement = DirectoryNamesSearch,
+        NextElement = SearchDirectoryNamesPattern,
         InitialItems = {
           "*.c;*.cpp;*.cxx;*.cc;*.tli;*.tlh;*.h;*.hh;*.hpp;*.hxx;*.hh;*.inl;*.rc;*.resx;*.idl;*.asm;*.inc",
           "*.htm;*.html;*.xml;*.gif;*.jpg;*.png;*.css;*.disco;*.js;*.srf",
@@ -64,14 +64,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           "*.*",
         }
       });
-      InitComboBox(DirectoryNamesSearch, new ComboBoxInfo {
+      InitComboBox(SearchDirectoryNamesPattern, new ComboBoxInfo {
         SearchFunction = SearchDirectoryNames,
-        PreviousElement = FileNamesSearch,
-        NextElement = FileContentsSearch,
+        PreviousElement = SearchFileNamesPattern,
+        NextElement = SearchTextPattern,
       });
-      InitComboBox(FileContentsSearch, new ComboBoxInfo {
+      InitComboBox(SearchTextPattern, new ComboBoxInfo {
         SearchFunction = SearchText,
-        PreviousElement = DirectoryNamesSearch,
+        PreviousElement = SearchDirectoryNamesPattern,
         NextElement = FileTreeView,
       });
     }
@@ -157,15 +157,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchFilesNames() {
-      Controller.SearchFilesNames(FileNamesSearch.Text);
+      Controller.SearchFilesNames(SearchFileNamesPattern.Text);
     }
 
     private void SearchDirectoryNames() {
-      Controller.SearchDirectoryNames(DirectoryNamesSearch.Text);
+      Controller.SearchDirectoryNames(SearchDirectoryNamesPattern.Text);
     }
 
     private void SearchText() {
-      Controller.SearchText(FileContentsSearch.Text);
+      Controller.SearchText(SearchTextPattern.Text, SearchFileNamesPattern.Text);
     }
 
     private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
@@ -359,7 +359,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           var parent = item.ParentViewModel as RootTreeViewItemViewModel;
           if (parent != null) {
             if (item == parent.Children.FirstOrDefault()) {
-              FileContentsSearch.Focus();
+              SearchTextPattern.Focus();
               e.Handled = true;
             }
           }

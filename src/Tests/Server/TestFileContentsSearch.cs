@@ -85,7 +85,7 @@ namespace VsChromium.Tests.Server {
         Regex = false,
         UseRe2Engine = false,
       };
-      using (var searchData = _factory.Create(searchParams)) {
+      using (var searchData = _factory.Create(searchParams, x => true)) {
         var contents = fileContentsFactory();
         var result = contents.FindAll(searchData,
           contents.TextRange, OperationProgressTracker.None);

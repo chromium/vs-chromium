@@ -58,7 +58,7 @@ namespace VsChromium.Server.FileSystemContents {
 
       var textFragment = CreateFragmentFromRange(textRange);
       var providerForMainEntry = compiledTextSearchData
-        .GetSearchAlgorithmProvider(compiledTextSearchData.ParsedSearchString.MainEntry);
+        .GetSearchContainer(compiledTextSearchData.ParsedSearchString.MainEntry);
       var textSearch = GetCompiledTextSearch(providerForMainEntry);
       var postProcessSearchHit = CreateFilterForOtherEntries(compiledTextSearchData);
       var result = textSearch.FindAll(textFragment, postProcessSearchHit, progressTracker);
@@ -84,7 +84,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected abstract byte CharacterSize { get; }
 
-    protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchProvider provider);
+    protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container);
 
     protected abstract TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength);
 
@@ -138,7 +138,7 @@ namespace VsChromium.Server.FileSystemContents {
 
       // Search for a match for "entry" withing "textRange"
       FindEntryFunction findEntry = (textRange, entry) => {
-        var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchAlgorithmProvider(entry));
+        var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchContainer(entry));
         return algo.FindFirst(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
       };
 

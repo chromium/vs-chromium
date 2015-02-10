@@ -184,7 +184,7 @@
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
-          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="FileNamesSearch">
+          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="SearchFileNamesPattern">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type file name pattern to search for. 
@@ -198,7 +198,7 @@
           </wpf:EditableComboBox>
           <!-- Row 1 -->
           <TextBlock Grid.Row="1" Grid.Column="0" Text="Folder name:" VerticalAlignment="Center"/>
-          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectoryNamesSearch">
+          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchDirectoryNamesPattern">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type directory name pattern to search for.
@@ -212,7 +212,7 @@
           </wpf:EditableComboBox>
           <!-- Row 2 -->
           <TextBlock Grid.Row="2" Grid.Column="0" Text="Text search:" VerticalAlignment="Center" />
-          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="FileContentsSearch">
+          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="SearchTextPattern">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type text pattern to search for.

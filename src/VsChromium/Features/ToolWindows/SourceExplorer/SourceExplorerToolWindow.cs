@@ -101,13 +101,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void FocusSearchTextBox(CommandID commandId) {
       switch (commandId.ID) {
         case PkgCmdIdList.CmdidSearchFileNames:
-          ExplorerControl.FileNamesSearch.Focus();
+          ExplorerControl.SearchFileNamesPattern.Focus();
           break;
         case PkgCmdIdList.CmdidSearchDirectoryNames:
-          ExplorerControl.DirectoryNamesSearch.Focus();
+          ExplorerControl.SearchDirectoryNamesPattern.Focus();
           break;
         case PkgCmdIdList.CmdidSearchText:
-          ExplorerControl.FileContentsSearch.Focus();
+          ExplorerControl.SearchTextPattern.Focus();
           break;
       }
     }

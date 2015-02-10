@@ -160,7 +160,17 @@ namespace VsChromium.Server.Search {
       // the previous queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams)) {
+      Func<FileName, bool> fileNameMatcher = x =>true;
+      if (!string.IsNullOrEmpty(searchParams.FileNamePattern)) {
+        var temp = searchParams.SearchString;
+        searchParams.SearchString = searchParams.FileNamePattern;
+        var preProcessResult = PreProcessFileSystemNameSearch<FileName>(searchParams, MatchFileName, MatchFileRelativePath);
+        if (preProcessResult != null) {
+          fileNameMatcher = preProcessResult.Matcher;
+        }
+        searchParams.SearchString = temp;
+      }
+      using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams, fileNameMatcher)) {
         var cancellationToken = _taskCancellation.GetNewToken();
         return SearchTextWorker(
           searchContentsData,
@@ -185,9 +195,14 @@ namespace VsChromium.Server.Search {
         .WithCancellation(cancellationToken)
         .Where(x => !progressTracker.ShouldEndProcessing)
         .Select(item => {
+          // Filter out files inside symlinks if needed
           if (!includeSymLinks) {
             if (_currentFileDatabase.IsContainedInSymLink(item.FileName))
-              return new SearchableContentsResult();
+              return default(SearchableContentsResult);
+          }
+          // Filter out files that don't match the file name match pattern
+          if (!compiledTextSearchData.FileNameFilter(item.FileName)) {
+            return default(SearchableContentsResult);
           }
           searchedFileIds.Set(item.FileId, true);
           return new SearchableContentsResult {
@@ -297,7 +312,10 @@ namespace VsChromium.Server.Search {
 
       // Regex has its own set of rules for pre-processing
       if (searchParams.Regex) {
-        return PreProcessRegularExpressionSearch(searchParams, matchName, matchRelativeName);
+        return PreProcessFileSystemNameRegularExpressionSearch(
+          searchParams,
+          matchName,
+          matchRelativeName);
       }
 
       // Check pattern is not empty
@@ -308,20 +326,20 @@ namespace VsChromium.Server.Search {
       // Split pattern around ";", normalize directory separators and
       // add "*" if not a whole word search
       var patterns = pattern
-        .Split(new[] {';'})
+        .Split(new[] { ';' })
         .Where(x => !string.IsNullOrWhiteSpace(x.Trim()))
         .Select(x => x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar))
         .Select(x => {
-            // Exception to ".gitignore" syntax: If the search string doesn't contain any special
-            // character, surround the pattern with "*" so that we match sub-strings.
-            // TODO(rpaquay): What about "."? Special or not?
-            if (x.IndexOf(Path.DirectorySeparatorChar) < 0 && x.IndexOf('*') < 0) {
-              if (!searchParams.MatchWholeWord) {
-                x = "*" + x + "*";
-              }
+          // Exception to ".gitignore" syntax: If the search string doesn't contain any special
+          // character, surround the pattern with "*" so that we match sub-strings.
+          // TODO(rpaquay): What about "."? Special or not?
+          if (x.IndexOf(Path.DirectorySeparatorChar) < 0 && x.IndexOf('*') < 0) {
+            if (!searchParams.MatchWholeWord) {
+              x = "*" + x + "*";
             }
-            return x;
-          });
+          }
+          return x;
+        });
 
       var matcher = new AnyPathMatcher(patterns.Select(PatternParser.ParsePattern));
 
@@ -339,7 +357,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private SearchPreProcessResult<T> PreProcessRegularExpressionSearch<T>(
+    private SearchPreProcessResult<T> PreProcessFileSystemNameRegularExpressionSearch<T>(
       SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
@@ -349,8 +367,8 @@ namespace VsChromium.Server.Search {
       if (string.IsNullOrWhiteSpace(pattern))
         return null;
 
-      var data = _compiledTextSearchDataFactory.Create(searchParams);
-      var provider = data.GetSearchAlgorithmProvider(data.ParsedSearchString.MainEntry);
+      var data = _compiledTextSearchDataFactory.Create(searchParams, x => true);
+      var provider = data.GetSearchContainer(data.ParsedSearchString.MainEntry);
       var matcher = new CompiledTextSearchProviderPathMatcher(provider);
       var comparer = searchParams.MatchCase ?
                        PathComparerRegistry.CaseSensitive :
@@ -368,11 +386,21 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    public class CompiledTextSearchProviderPathMatcher : IPathMatcher {
-      private readonly ICompiledTextSearchProvider _searchProvider;
+    public class NonePathMatcher : IPathMatcher {
+      public bool MatchDirectoryName(RelativePath path, IPathComparer comparer) {
+        return false;
+      }
 
-      public CompiledTextSearchProviderPathMatcher(ICompiledTextSearchProvider searchProvider) {
-        _searchProvider = searchProvider;
+      public bool MatchFileName(RelativePath path, IPathComparer comparer) {
+        return false;
+      }
+    }
+
+    public class CompiledTextSearchProviderPathMatcher : IPathMatcher {
+      private readonly ICompiledTextSearchContainer _searchContainer;
+
+      public CompiledTextSearchProviderPathMatcher(ICompiledTextSearchContainer searchContainer) {
+        _searchContainer = searchContainer;
       }
 
       public bool MatchDirectoryName(RelativePath path, IPathComparer comparer) {
@@ -390,7 +418,7 @@ namespace VsChromium.Server.Search {
         try {
           var range = new TextFragment(ptr, 0, value.Length, sizeof(byte));
 
-          var hit = _searchProvider.GetAsciiSearch()
+          var hit = _searchContainer.GetAsciiSearch()
             .FindFirst(range, OperationProgressTracker.None);
           if (hit.HasValue)
             return true;
@@ -399,7 +427,7 @@ namespace VsChromium.Server.Search {
             return false;
 
           // Replace '\' with '/' and try again
-          var first = (byte *)ptr.ToPointer();
+          var first = (byte*)ptr.ToPointer();
           var last = first + value.Length;
           for (; first != last; first++) {
             if ((char)(*first) == Path.DirectorySeparatorChar) {
@@ -408,7 +436,7 @@ namespace VsChromium.Server.Search {
           }
 
           // Search again
-          hit = _searchProvider.GetAsciiSearch()
+          hit = _searchContainer.GetAsciiSearch()
                       .FindFirst(range, OperationProgressTracker.None);
           return hit.HasValue;
         }

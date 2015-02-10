@@ -50,7 +50,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public override void OnToolWindowCreated() {
       base.OnToolWindowCreated();
-      ExplorerControl.OnToolWindowCreated(this);
+      ExplorerControl.OnVsToolWindowCreated(this);
 
       // Advise IVsWindowFrameNotify so we know when we get hidden, etc.
       var frame = this.Frame as IVsWindowFrame2;

@@ -5,6 +5,10 @@
 using System.Collections.Generic;
 
 namespace VsChromium.Wpf {
+  /// <summary>
+  /// Abstraction over a tree of Visual objects, where nodes have one parent and
+  /// many children.
+  /// </summary>
   public interface IHierarchyObject {
     bool IsVisual { get; }
     IHierarchyObject GetParent();

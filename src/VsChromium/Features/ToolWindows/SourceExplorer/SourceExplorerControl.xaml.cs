@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -76,7 +75,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public void OnToolWindowCreated(IServiceProvider serviceProvider) {
+    /// <summary>
+    /// Called when Visual Studio creates our container ToolWindow.
+    /// </summary>
+    public void OnVsToolWindowCreated(IServiceProvider serviceProvider) {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
@@ -101,15 +103,20 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         synchronizationContextProvider,
         openDocumentHelper);
 
-      // TODO(rpaquay): leaky abstraction
-      ViewModel.SetController(Controller);
-      // TODO(rpaquay): leaky abstraction
-      ViewModel.OnToolWindowCreated(serviceProvider);
+      // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
+      // exposes pictures from Visual Studio resources.
+      ViewModel.ImageSourceFactory = standarImageSourceFactory;
 
       FetchFilesystemTree();
 
       // Hookup property changed notifier
       ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+      ViewModel.RootNodesChanged += ViewModelOnRootNodesChanged;
+    }
+
+    private void ViewModelOnRootNodesChanged(object sender, EventArgs eventArgs) {
+      //FileTreeView.Items.Refresh();
+      //FileTreeView.UpdateLayout();
     }
 
     public SourceExplorerViewModel ViewModel {

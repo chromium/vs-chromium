@@ -14,8 +14,16 @@ namespace VsChromium.Features.ToolWindows {
       _text = text;
     }
 
-    public string Text { get { return _text; } }
+    public string Text {
+      get {
+        return _text;
+      }
+    }
 
-    public override ImageSource ImageSourcePath { get { return StandarImageSourceFactory.GetImage("TextEntry"); } }
+    public override ImageSource ImageSourcePath {
+      get {
+        return StandarImageSourceFactory.GetImage("TextEntry");
+      }
+    }
   }
 }

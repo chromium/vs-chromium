@@ -83,7 +83,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         .Entries
         .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)));
       result.ForAll(rootNode.AddChild);
-      ChromiumExplorerViewModelBase.ExpandNodes(result, false);
+      TreeViewItemViewModel.ExpandNodes(result, false);
       return result;
     }
 
@@ -98,7 +98,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
           .ToList();
       result.ForAll(rootNode.AddChild);
-      ChromiumExplorerViewModelBase.ExpandNodes(result, expandAll);
+      TreeViewItemViewModel.ExpandNodes(result, expandAll);
       return result;
     }
 
@@ -113,7 +113,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
           .ToList();
       result.ForAll(rootNode.AddChild);
-      ChromiumExplorerViewModelBase.ExpandNodes(result, expandAll);
+      TreeViewItemViewModel.ExpandNodes(result, expandAll);
       return result;
     }
 
@@ -128,7 +128,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
           .ToList();
       result.ForAll(rootNode.AddChild);
-      ChromiumExplorerViewModelBase.ExpandNodes(result, expandAll);
+      TreeViewItemViewModel.ExpandNodes(result, expandAll);
       return result;
     }
 

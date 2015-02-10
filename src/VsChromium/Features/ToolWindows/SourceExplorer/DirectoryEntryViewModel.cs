@@ -34,11 +34,25 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         .ToList();
     }
 
-    public override FileSystemEntry FileSystemEntry { get { return _directoryEntry; } }
+    public override FileSystemEntry FileSystemEntry {
+      get {
+        return _directoryEntry;
+      }
+    }
 
-    public override int ChildrenCount { get { return _directoryEntry.Entries.Count; } }
+    public override int ChildrenCount {
+      get {
+        return _directoryEntry.Entries.Count;
+      }
+    }
 
-    public override ImageSource ImageSourcePath { get { return IsExpanded ? StandarImageSourceFactory.OpenFolder : StandarImageSourceFactory.ClosedFolder; } }
+    public override ImageSource ImageSourcePath {
+      get {
+        return IsExpanded
+          ? StandarImageSourceFactory.OpenFolder
+          : StandarImageSourceFactory.ClosedFolder;
+      }
+    }
 
     protected override IEnumerable<TreeViewItemViewModel> GetChildren() {
       return _children.Value;
@@ -83,7 +97,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     #endregion
-
 
     protected override void OnPropertyChanged(string propertyName) {
       base.OnPropertyChanged(propertyName);

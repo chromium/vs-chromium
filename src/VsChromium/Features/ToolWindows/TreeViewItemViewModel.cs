@@ -5,7 +5,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
@@ -20,13 +19,15 @@ namespace VsChromium.Features.ToolWindows {
   public class TreeViewItemViewModel : INotifyPropertyChanged, IHierarchyObject {
     private static readonly TreeViewItemViewModel DummyChild = new TreeViewItemViewModel();
 
-    private readonly LazyObservableCollection<TreeViewItemViewModel> _children;
-    private readonly IStandarImageSourceFactory _imageSourceFactory;
     private readonly TreeViewItemViewModel _parentViewModel;
+    private readonly IStandarImageSourceFactory _imageSourceFactory;
+    private readonly LazyObservableCollection<TreeViewItemViewModel> _children;
     private bool _isExpanded;
     private bool _isSelected;
 
-    // This is used to create the DummyChild instance.
+    /// <summary>
+    /// This is used to create the DummyChild instance.
+    /// </summary>
     private TreeViewItemViewModel() {
     }
 
@@ -42,28 +43,35 @@ namespace VsChromium.Features.ToolWindows {
         _children.Add(DummyChild);
     }
 
-    public IStandarImageSourceFactory StandarImageSourceFactory { get { return _imageSourceFactory; } }
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    public TreeViewItemViewModel ParentViewModel {
+      get {
+        return _parentViewModel;
+      }
+    }
 
     public override string ToString() {
       return DisplayText;
     }
 
+    /// <summary>
+    /// Databound!
+    /// </summary>
     public virtual string DisplayText {
       get { return GetType().FullName; }
     }
 
     public virtual int ChildrenCount { get { return 0; } }
 
+    /// <summary>
+    /// Databound!
+    /// </summary>
     public virtual ImageSource ImageSourcePath { get { return null; } }
-
-    public virtual Visibility ImageVisibility {
-      get {
-        return (ImageSourcePath == null) ? Visibility.Collapsed : Visibility.Visible;
-      } 
-    }
 
     /// <summary>
     /// Returns the logical child items of this object.
+    /// Databound!
     /// </summary>
     public LazyObservableCollection<TreeViewItemViewModel> Children {
       get {
@@ -74,13 +82,9 @@ namespace VsChromium.Features.ToolWindows {
     }
 
     /// <summary>
-    /// Returns true if this object's Children have not yet been populated.
-    /// </summary>
-    public bool HasDummyChild { get { return _children.Count == 1 && _children[0] == DummyChild; } }
-
-    /// <summary>
     /// Gets/sets whether the TreeViewItem associated with this object is
     /// expanded.
+    /// Databound!
     /// </summary>
     public bool IsExpanded {
       get { return _isExpanded; }
@@ -104,6 +108,7 @@ namespace VsChromium.Features.ToolWindows {
     /// <summary>
     /// Gets/sets whether the TreeViewItem associated with this object is
     /// selected.
+    /// Databound!
     /// </summary>
     public virtual bool IsSelected {
       get { return _isSelected; }
@@ -117,10 +122,57 @@ namespace VsChromium.Features.ToolWindows {
       }
     }
 
-    public TreeViewItemViewModel ParentViewModel { get { return _parentViewModel; } }
-    protected virtual bool IsVisual { get { return true; } }
+    public void EnsureAllChildrenLoaded() {
+      LoadChildren();
+      _children.ExpandLazyNode();
+    }
+
+    public static void ExpandNodes(IEnumerable<TreeViewItemViewModel> source, bool expandAll) {
+      source.ForAll(x => {
+        if (expandAll)
+          ExpandAll(x);
+        else
+          x.IsExpanded = true;
+      });
+    }
+
+    public static void ExpandAll(TreeViewItemViewModel item) {
+      item.IsExpanded = true;
+      item.Children.ForAll(ExpandAll);
+    }
+
+    protected IStandarImageSourceFactory StandarImageSourceFactory {
+      get {
+        return _imageSourceFactory;
+      }
+    }
+
+    protected virtual bool IsVisual {
+      get {
+        return true;
+      }
+    }
+
+    protected virtual IEnumerable<TreeViewItemViewModel> GetChildren() {
+      return Enumerable.Empty<TreeViewItemViewModel>();
+    }
+
+    protected virtual void OnPropertyChanged(string propertyName) {
+      if (PropertyChanged != null)
+        PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    /// <summary>
+    /// Returns true if this object's Children have not yet been populated.
+    /// </summary>
+    private bool HasDummyChild {
+      get {
+        return _children.Count == 1 && _children[0] == DummyChild;
+      }
+    }
 
     #region IHierarchyObject
+
     bool IHierarchyObject.IsVisual {
       get { return this.IsVisual; }
     }
@@ -133,9 +185,8 @@ namespace VsChromium.Features.ToolWindows {
       this.EnsureAllChildrenLoaded();
       return this.Children.Cast<IHierarchyObject>().ToList();
     }
-    #endregion
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    #endregion
 
     private LazyItemViewModel CreateLazyItemViewModel() {
       var result = new LazyItemViewModel(_imageSourceFactory, this);
@@ -149,26 +200,12 @@ namespace VsChromium.Features.ToolWindows {
       return result;
     }
 
-    public void EnsureAllChildrenLoaded() {
-      LoadChildren();
-      _children.ExpandLazyNode();
-    }
-
     private void LoadChildren() {
       // Lazy load the child items, if necessary.
       if (HasDummyChild) {
         _children.Remove(DummyChild);
         GetChildren().ForAll(x => _children.Add(x));
       }
-    }
-
-    protected virtual IEnumerable<TreeViewItemViewModel> GetChildren() {
-      return Enumerable.Empty<TreeViewItemViewModel>();
-    }
-
-    protected virtual void OnPropertyChanged(string propertyName) {
-      if (PropertyChanged != null)
-        PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
     }
   }
 }

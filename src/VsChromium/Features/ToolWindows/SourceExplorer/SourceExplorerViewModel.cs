@@ -7,7 +7,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.Ipc;
 using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 
@@ -17,7 +16,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private List<TreeViewItemViewModel> _directoryNameSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
-    private ISourceExplorerController _controller;
     private UpdateInfo _updateInfo;
     private bool _matchCase;
     private bool _matchWholeWord;
@@ -36,14 +34,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // Default values for options in toolbar.
       this.IncludeSymLinks = true;
       this.UseRe2Regex = true;
-    }
-
-    /// <summary>
-    /// Assign the controller associated to this ViewModel. This cannot be done in the constructor
-    /// due to the way WPF DataContext objects are instantiated.
-    /// </summary>
-    public void SetController(ISourceExplorerController controller) {
-      _controller = controller;
     }
 
     public DisplayKind ActiveDisplay {
@@ -193,9 +183,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// </summary>
     public ImageSource LightningBoltImage {
       get {
-        if (_controller == null)
+        if (ImageSourceFactory == null)
           return null;
-        return _controller.StandarImageSourceFactory.LightningBolt;
+        return ImageSourceFactory.LightningBolt;
       }
     }
 
@@ -264,10 +254,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private ImageSource GetImageFromResource(string name) {
-      if (_controller == null) {
+      if (ImageSourceFactory == null) {
         return Views.ImageSourceFactory.Instance.GetImage(name);
       }
-      return _controller.StandarImageSourceFactory.GetImage(name);
+      return ImageSourceFactory.GetImage(name);
     }
 
     public ImageSource GotoPreviousButtonImage {
@@ -301,6 +291,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     protected override void OnRootNodesChanged() {
+      base.OnRootNodesChanged();
+
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));

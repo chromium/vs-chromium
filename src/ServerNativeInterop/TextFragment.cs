@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Core.Win32;
 
 namespace VsChromium.Server.NativeInterop {
   /// <summary>

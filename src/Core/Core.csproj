@@ -168,6 +168,7 @@
     <Compile Include="Debugger\DebuggerThread.cs" />
     <Compile Include="DkmShared\PackageServices.cs" />
     <Compile Include="Logging\LoggerConfiguration.cs" />
+    <Compile Include="Win32\Pointers.cs" />
     <Compile Include="Processes\ExtensionMethods.cs" />
     <Compile Include="Processes\NtProcess.cs" />
     <Compile Include="Processes\ProcessUtility.cs" />

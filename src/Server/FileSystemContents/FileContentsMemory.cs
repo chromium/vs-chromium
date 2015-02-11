@@ -5,8 +5,8 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Memory;
-using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.FileSystemContents {
   /// <summary>

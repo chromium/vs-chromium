@@ -26,6 +26,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\TestConversion.cs" />
     <Compile Include="Core\TestPathHelpers.cs" />
     <Compile Include="Mocks\FileSystemMock.cs" />
     <Compile Include="NativeInterop\TestGetLineExtent.cs" />

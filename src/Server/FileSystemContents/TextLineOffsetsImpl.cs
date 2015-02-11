@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Strings;
 using VsChromium.Server.NativeInterop;
 

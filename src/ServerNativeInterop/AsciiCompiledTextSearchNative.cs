@@ -6,6 +6,7 @@ using System;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Win32.Strings;
 
 namespace VsChromium.Server.NativeInterop {
   public class AsciiCompiledTextSearchNative : CompiledTextSearchBase {

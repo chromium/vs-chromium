@@ -4,6 +4,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Server.NativeInterop {

@@ -17,9 +17,9 @@ namespace VsChromium.Core.Files {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
     private readonly IFileSystem _fileSystem;
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
-    private readonly PollingHelper _pathChangesPolling;
-    private readonly PollingHelper _simplePathChangesPolling;
-    private readonly PollingHelper _checkRootsPolling;
+    private readonly PollingDelayPolicy _pathChangesPolling;
+    private readonly PollingDelayPolicy _simplePathChangesPolling;
+    private readonly PollingDelayPolicy _checkRootsPolling;
 
     /// <summary>
     /// Dictionary of watchers, one per root directory path.
@@ -41,9 +41,9 @@ namespace VsChromium.Core.Files {
 
     public DirectoryChangeWatcher(IFileSystem fileSystem, IDateTimeProvider dateTimeProvider) {
       _fileSystem = fileSystem;
-      _simplePathChangesPolling = new PollingHelper(dateTimeProvider, TimeSpan.FromSeconds(1.0));
-      _pathChangesPolling = new PollingHelper(dateTimeProvider, TimeSpan.FromSeconds(10.0));
-      _checkRootsPolling = new PollingHelper(dateTimeProvider, TimeSpan.FromSeconds(15.0));
+      _simplePathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(10.0));
+      _pathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(60.0));
+      _checkRootsPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
     }
 
     public void WatchDirectories(IEnumerable<FullPath> directories) {
@@ -181,7 +181,8 @@ namespace VsChromium.Core.Files {
         // Note we don't update the simple "file change" events, as those as cheaper
         // to process.
         if (morePathsChanged.Count > 0) {
-          _pathChangesPolling.Restart();
+          _simplePathChangesPolling.Checkpoint();
+          _pathChangesPolling.Checkpoint();
         }
       }
 
@@ -198,7 +199,7 @@ namespace VsChromium.Core.Files {
     /// name="paths"/> that match <paramref name="predicate"/>
     /// </summary>
     private void PostPathsChangedEvents(IDictionary<FullPath, PathChangeKind> paths, Func<PathChangeKind, bool> predicate) {
-      FilterEvents(paths);
+      RemoveIgnorableEvents(paths);
 
       var changes = paths
         .Where(x => predicate(x.Value))
@@ -235,7 +236,7 @@ namespace VsChromium.Core.Files {
       }
     }
 
-    private void FilterEvents(IDictionary<FullPath, PathChangeKind> temp) {
+    private void RemoveIgnorableEvents(IDictionary<FullPath, PathChangeKind> temp) {
       temp.RemoveWhere(x => !IncludeChange(x.Key, x.Value));
     }
 
@@ -374,23 +375,34 @@ namespace VsChromium.Core.Files {
         handler(changes);
     }
 
-    private class PollingHelper {
+    private class PollingDelayPolicy {
       private readonly IDateTimeProvider _dateTimeProvider;
       private readonly TimeSpan _delay;
+      private readonly TimeSpan _maxDelay;
       private DateTime _lastPollUtc;
-      public PollingHelper(IDateTimeProvider dateTimeProvider, TimeSpan delay) {
+      private DateTime _lastCheckpointUtc;
+
+      public PollingDelayPolicy(IDateTimeProvider dateTimeProvider, TimeSpan delay, TimeSpan maxDelay) {
         _dateTimeProvider = dateTimeProvider;
-        // Initialize as if the last time we posted events is "now".
-        _lastPollUtc = dateTimeProvider.UtcNow;
         _delay = delay;
+        _maxDelay = maxDelay;
+        Restart();
       }
 
       public void Restart() {
-        _lastPollUtc = _dateTimeProvider.UtcNow;
+        _lastPollUtc = _lastCheckpointUtc = _dateTimeProvider.UtcNow;
+      }
+
+      public void Checkpoint() {
+        _lastCheckpointUtc = _dateTimeProvider.UtcNow;
       }
 
       public bool WaitTimeExpired() {
-        return _lastPollUtc + _delay < _dateTimeProvider.UtcNow;
+        var now = _dateTimeProvider.UtcNow;
+
+        return 
+          (now - _lastPollUtc >= _maxDelay) ||
+          (now -_lastCheckpointUtc >= _delay);
       }
     }
   }

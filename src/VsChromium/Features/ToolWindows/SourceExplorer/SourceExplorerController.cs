@@ -350,11 +350,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
 
       public bool ProcessNodes(TreeViewItemViewModel x) {
-        bool isExpanded = x.IsExpanded;
-        if (isExpanded) {
-          _expandedNodes.Add(x);
-        }
-
         if (x.IsSelected) {
           SelectedNodes.Add(x);
         }
@@ -365,8 +360,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             anyChildExpanded = true;
         });
 
-        if (anyChildExpanded && !isExpanded) {
-          _collapsedParentNodes.Add(x);
+        var isExpanded = x.IsExpanded;
+        if (anyChildExpanded) {
+          if (!isExpanded) {
+            _collapsedParentNodes.Add(x);
+          }
+        } else {
+          if (isExpanded) {
+            _expandedNodes.Add(x);
+          }
         }
         return isExpanded;
       }

@@ -7,18 +7,22 @@ using System.IO;
 
 namespace VsChromium.Core.Files.PatternMatching {
   /// <summary>
-  /// Matches "*" inside a sub-path component (e.g. foo/*/bar).
+  /// Matches any character except "/"
   /// </summary>
   public class OpAsterisk : BaseOperator {
     public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
-      // Heuristic: If last operator, there is a full match (since "*" at the end matches everything)
-      if (operatorIndex == operators.Count - 1)
-        return path.Length;
+      // Heuristic: If last operator, there is a full match (since "*" at the
+      // end matches everything)
+      if (operatorIndex == operators.Count - 1) {
+        if (path.IndexOf(Path.DirectorySeparatorChar, pathIndex) < 0)
+          return path.Length;
+        return -1;
+      }
 
-      // Heuristic:
-      // * if we are matching a file name
-      // * if there are not path separators after "pathIndex"
-      // * if the only operator after us is "OpText", and
+      // Heuristic for "*[a-z]+":
+      // * if we are matching a file name and
+      // * if there are not path separators after "pathIndex" and
+      // * if the only operator after us is "OpText"
       // * then we only need to check that path end with the text.
       if (kind == MatchKind.File) {
         if (path.IndexOf(Path.DirectorySeparatorChar, pathIndex) < 0) {
@@ -36,15 +40,15 @@ namespace VsChromium.Core.Files.PatternMatching {
         }
       }
 
-      // Full "*" semantics (recursive...)
+      // Full "*" semantics: any character except "/"
       for (var i = pathIndex; i < path.Length; i++) {
+        // If we reach "/", move on to next operator
+        if (FileNameMatching.IsPathSeparator(path[i]))
+          return Match(kind, comparer, operators, operatorIndex + 1, path, i);
+
         var result = Match(kind, comparer, operators, operatorIndex + 1, path, i);
         if (result == path.Length)
           return result;
-
-        // Stop at first path separator
-        if (FileNameMatching.IsPathSeparator(path[i]))
-          break;
       }
 
       return -1;

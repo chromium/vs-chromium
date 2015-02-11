@@ -14,6 +14,7 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
@@ -339,14 +340,15 @@ namespace VsChromium.Server.Search {
             }
           }
           return x;
-        });
+        })
+        .ToReadOnlyCollection();
 
       var matcher = new AnyPathMatcher(patterns.Select(PatternParser.ParsePattern));
 
       var comparer = searchParams.MatchCase ?
                        PathComparerRegistry.CaseSensitive :
                        PathComparerRegistry.CaseInsensitive;
-      if (pattern.Contains(Path.DirectorySeparatorChar)) {
+      if (patterns.Any(x => x.Contains(Path.DirectorySeparatorChar))) {
         return new SearchPreProcessResult<T> {
           Matcher = (item) => matchRelativeName(matcher, item, comparer)
         };

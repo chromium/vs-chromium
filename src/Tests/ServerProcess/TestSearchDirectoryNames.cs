@@ -70,7 +70,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string searchPattern = "content/;folder/";
       const string directoryName = "";
 
-      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 3);
+      VerifySearchDirectoryNamesResponse(_server, searchPattern, _testFile.Directory, directoryName, 5);
     }
 
     [TestMethod]

@@ -278,6 +278,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
+    public ImageSource SearchLensButtonImage {
+      get {
+        return GetImageFromResource("SearchLens");
+      }
+    }
+
+    public ImageSource ClearSearchButtonImage {
+      get {
+        return GetImageFromResource("ClearSearch");
+      }
+    }
+
     public ImageSource SyncButtonImage {
       get {
         return GetImageFromResource("SyncActiveDocument");

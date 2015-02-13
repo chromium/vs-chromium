@@ -22,9 +22,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     void RefreshFileSystemTree();
     void SetFileSystemTree(FileSystemTree tree);
+
+    void SearchText(string searchPattern, string fileNamePattern);
     void SearchFilesNames(string searchPattern);
     void SearchDirectoryNames(string searchPattern);
-    void SearchText(string searchPattern, string fileNamePattern);
+
     void SetFileSystemTreeError(ErrorResponse error);
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);

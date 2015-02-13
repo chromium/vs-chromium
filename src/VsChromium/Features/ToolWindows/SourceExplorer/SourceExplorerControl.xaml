@@ -174,45 +174,18 @@
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="0" />
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="80" />
             <ColumnDefinition Width="*" MinWidth="100" />
+            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="16"/>
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="File name:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
-          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="SearchFileNamesPattern">
-            <wpf:EditableComboBox.ToolTip>
-              <TextBlock>
-                Type file name pattern to search for. 
-                <LineBreak/>
-                For simple searches, the pattern may include wildcards and directory separators, e.g. &quot;bar&quot;,
-                &quot;bar.*&quot;, &quot;foo/bar*&quot;, &quot;foo/**/bar.*&quot;.
-                <LineBreak/>
-                For regular expression searches, the pattern is a regular expression.
-              </TextBlock>
-            </wpf:EditableComboBox.ToolTip>
-          </wpf:EditableComboBox>
-          <!-- Row 1 -->
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Folder name:" VerticalAlignment="Center"/>
-          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchDirectoryNamesPattern">
-            <wpf:EditableComboBox.ToolTip>
-              <TextBlock>
-                Type directory name pattern to search for.
-                <LineBreak/>
-                For simple searches, the pattern may include wildcards and directory separators, e.g. &quot;foo&quot;,
-                &quot;foo/bar*&quot;, &quot;foo/**/bar&quot;, &quot;/bar&quot;.
-                <LineBreak/>
-                For regular expression searches, the pattern is a regular expression.
-              </TextBlock>
-            </wpf:EditableComboBox.ToolTip>
-          </wpf:EditableComboBox>
-          <!-- Row 2 -->
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Text search:" VerticalAlignment="Center" />
-          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="SearchTextPattern">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Find in Files:" VerticalAlignment="Center" />
+          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="SearchTextPattern">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type text pattern to search for.
@@ -224,11 +197,65 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <!-- Row 4 -->
+          <Button Grid.Row="0" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchText_Click">
+            <Button.ToolTip>
+              <TextBlock Text="Search"/>
+            </Button.ToolTip>
+            <Image Source="{Binding SearchLensButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
+          </Button>
+          <Button Grid.Row="0" Grid.Column="3" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearSearchText_Click">
+            <Button.ToolTip>
+              <TextBlock Text="Clear text"/>
+            </Button.ToolTip>
+            <Image Source="{Binding ClearSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
+          </Button>
+          <!-- Row 1 -->
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="File path:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
+          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFileNamesPattern">
+            <wpf:EditableComboBox.ToolTip>
+              <TextBlock>
+                Type file name pattern to search for. 
+                <LineBreak/>
+                For simple searches, the pattern may include wildcards and directory separators, e.g. &quot;bar&quot;,
+                &quot;bar.*&quot;, &quot;foo/bar*&quot;, &quot;foo/**/bar.*&quot;.
+                <LineBreak/>
+                For regular expression searches, the pattern is a regular expression.
+              </TextBlock>
+            </wpf:EditableComboBox.ToolTip>
+          </wpf:EditableComboBox>
+          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchFileNames_Click">
+            <Button.ToolTip>
+              <TextBlock Text="Search"/>
+            </Button.ToolTip>
+            <Image Source="{Binding SearchLensButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
+          </Button>
+          <Button Grid.Row="1" Grid.Column="3" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearFileNamesPattern_Click">
+            <Button.ToolTip>
+              <TextBlock Text="Clear file path"/>
+            </Button.ToolTip>
+            <Image Source="{Binding ClearSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
+          </Button>
+
+          <!-- Row 2 -->
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Folder name:" VerticalAlignment="Center"/>
+          <wpf:EditableComboBox Grid.Row="2" Grid.Column="1" x:Name="SearchDirectoryNamesPattern">
+            <wpf:EditableComboBox.ToolTip>
+              <TextBlock>
+                Type directory name pattern to search for.
+                <LineBreak/>
+                For simple searches, the pattern may include wildcards and directory separators, e.g. &quot;foo&quot;,
+                &quot;foo/bar*&quot;, &quot;foo/**/bar&quot;, &quot;/bar&quot;.
+                <LineBreak/>
+                For regular expression searches, the pattern is a regular expression.
+              </TextBlock>
+            </wpf:EditableComboBox.ToolTip>
+          </wpf:EditableComboBox>
+          
+          <!-- Row 3 -->
           <ProgressBar 
-            Grid.Row="4" 
+            Grid.Row="3" 
             Grid.Column="0" 
-            Grid.ColumnSpan="2" 
+            Grid.ColumnSpan="4" 
             IsIndeterminate="False" 
             Height="4" 
             Name="ProgressBar" 

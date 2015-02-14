@@ -50,18 +50,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
-      InitComboBox(SearchDirectoryNamesPattern, new ComboBoxInfo {
-        SearchFunction = SearchDirectoryNames,
-        //PreviousElement = SearchFileNamesPattern,
-        //NextElement = SearchTextPattern,
-      });
-      InitComboBox(SearchTextPattern, new ComboBoxInfo {
+      //InitComboBox(SearchDirectoryNamesCombo, new ComboBoxInfo {
+      //  SearchFunction = SearchDirectoryNames,
+      //  PreviousElement = SearchFileNamesCombo,
+      //  NextElement = SearchTextCombo,
+      //});
+      InitComboBox(SearchTextCombo, new ComboBoxInfo {
         SearchFunction = SearchText,
-        NextElement = SearchFileNamesPattern,
+        NextElement = SearchFileNamesCombo,
       });
-      InitComboBox(SearchFileNamesPattern, new ComboBoxInfo {
+      InitComboBox(SearchFileNamesCombo, new ComboBoxInfo {
         SearchFunction = SearchFilesNames,
-        PreviousElement = SearchTextPattern,
+        PreviousElement = SearchTextCombo,
         NextElement = FileTreeView,
         InitialItems = {
           "*",
@@ -86,7 +86,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
-      
+
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
@@ -122,7 +122,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public SourceExplorerViewModel ViewModel {
       get {
-        return (SourceExplorerViewModel) DataContext;
+        return (SourceExplorerViewModel)DataContext;
       }
     }
 
@@ -144,39 +144,39 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           info.SearchFunction();
         }
       };
-      comboBox.PrePreviewKeyUp += (s, e) => {
-        if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
-          if (!comboBox.IsDropDownOpen) {
-            if (info.PreviousElement != null) {
-              Logger.LogInfo("Before focus: {0}", comboBox);
+
+      if (info.PreviousElement != null) {
+        comboBox.PrePreviewKeyUp += (s, e) => {
+          if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
+            if (!comboBox.IsDropDownOpen) {
               info.PreviousElement.Focus();
-              Logger.LogInfo("After focus: {0}", comboBox);
               e.Handled = true;
             }
           }
-        }
-      };
-      comboBox.PrePreviewKeyDown += (s, e) => {
-        if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Down) {
-          if (!comboBox.IsDropDownOpen) {
-            if (info.NextElement != null) {
+        };
+      }
+
+      if (info.NextElement != null) {
+        comboBox.PrePreviewKeyDown += (s, e) => {
+          if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Down) {
+            if (!comboBox.IsDropDownOpen) {
               info.NextElement.Focus();
               e.Handled = true;
             }
           }
-        }
-      };
+        };
+      }
     }
 
     private void SearchFilesNames() {
-      if (string.IsNullOrWhiteSpace(SearchTextPattern.Text))
-        Controller.SearchFilesNames(SearchFileNamesPattern.Text);
+      if (string.IsNullOrWhiteSpace(SearchTextCombo.Text))
+        Controller.SearchFilesNames(SearchFileNamesCombo.Text);
       else
-        Controller.SearchText(SearchTextPattern.Text, SearchFileNamesPattern.Text);
+        Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text);
     }
 
     private void SearchDirectoryNames() {
-      Controller.SearchDirectoryNames(SearchDirectoryNamesPattern.Text);
+      Controller.SearchDirectoryNames(SearchDirectoryNamesCombo.Text);
     }
 
     private void SearchText() {
@@ -370,18 +370,21 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void FileTreeView_OnPreviewKeyDown(object sender, KeyEventArgs e) {
       if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Return) {
-        e.Handled = Controller.ExecuteOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
-      } else if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
+        e.Handled = Controller.ExecuteOpenCommandForItem(
+          FileTreeView.SelectedItem as TreeViewItemViewModel);
+      }
+    }
+
+    private void FileTreeView_KeyDown(object sender, KeyEventArgs e) {
+      if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
         // If topmost item is selected, move selection to bottom combo box
         var item = FileTreeView.SelectedItem as TreeViewItemViewModel;
         if (item != null) {
           var parent = item.ParentViewModel as RootTreeViewItemViewModel;
           if (parent != null) {
             if (item == parent.Children.FirstOrDefault()) {
+              SearchFileNamesCombo.Focus();
               e.Handled = true;
-              Logger.LogInfo("Set Focus from tree: {0}", SearchFileNamesPattern);
-              SearchFileNamesPattern.Focus();
-              Logger.LogInfo("After Focus from tree: {0}", SearchFileNamesPattern);
             }
           }
         }
@@ -444,7 +447,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void ClearFileNamesPattern_Click(object sender, RoutedEventArgs e) {
-      SearchFileNamesPattern.Text = "";
+      SearchFileNamesCombo.Text = "";
       RefreshSearchResults();
     }
 
@@ -453,7 +456,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void ClearSearchText_Click(object sender, RoutedEventArgs e) {
-      SearchTextPattern.Text = "";
+      SearchTextCombo.Text = "";
       RefreshSearchResults();
     }
 

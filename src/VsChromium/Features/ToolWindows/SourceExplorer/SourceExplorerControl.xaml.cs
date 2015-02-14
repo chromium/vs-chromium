@@ -146,7 +146,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       };
 
       if (info.PreviousElement != null) {
-        comboBox.PrePreviewKeyUp += (s, e) => {
+        comboBox.PrePreviewKeyDown += (s, e) => {
           if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
             if (!comboBox.IsDropDownOpen) {
               info.PreviousElement.Focus();

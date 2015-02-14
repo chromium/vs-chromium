@@ -50,11 +50,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
-      //InitComboBox(SearchDirectoryNamesPattern, new ComboBoxInfo {
-      //  SearchFunction = SearchDirectoryNames,
-      //  PreviousElement = SearchFileNamesPattern,
-      //  NextElement = SearchTextPattern,
-      //});
+      InitComboBox(SearchDirectoryNamesPattern, new ComboBoxInfo {
+        SearchFunction = SearchDirectoryNames,
+        //PreviousElement = SearchFileNamesPattern,
+        //NextElement = SearchTextPattern,
+      });
       InitComboBox(SearchTextPattern, new ComboBoxInfo {
         SearchFunction = SearchText,
         NextElement = SearchFileNamesPattern,
@@ -139,14 +139,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       comboBox.DataContext = new StringListViewModel(info.InitialItems);
       comboBox.TextChanged += (s, e) => info.SearchFunction();
       comboBox.KeyDown += (s, e) => {
-        if (e.Key == Key.Return || e.Key == Key.Enter)
+        if ((e.KeyboardDevice.Modifiers == ModifierKeys.None) &&
+            (e.Key == Key.Return || e.Key == Key.Enter)) {
           info.SearchFunction();
+        }
       };
       comboBox.PrePreviewKeyUp += (s, e) => {
         if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
           if (!comboBox.IsDropDownOpen) {
             if (info.PreviousElement != null) {
+              Logger.LogInfo("Before focus: {0}", comboBox);
               info.PreviousElement.Focus();
+              Logger.LogInfo("After focus: {0}", comboBox);
               e.Handled = true;
             }
           }
@@ -365,17 +369,19 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void FileTreeView_OnPreviewKeyDown(object sender, KeyEventArgs e) {
-      if (e.Key == Key.Return) {
+      if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Return) {
         e.Handled = Controller.ExecuteOpenCommandForItem(FileTreeView.SelectedItem as TreeViewItemViewModel);
-      } else if (e.Key == Key.Up && e.KeyboardDevice.Modifiers == ModifierKeys.None) {
+      } else if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
         // If topmost item is selected, move selection to bottom combo box
         var item = FileTreeView.SelectedItem as TreeViewItemViewModel;
         if (item != null) {
           var parent = item.ParentViewModel as RootTreeViewItemViewModel;
           if (parent != null) {
             if (item == parent.Children.FirstOrDefault()) {
-              SearchFileNamesPattern.Focus();
               e.Handled = true;
+              Logger.LogInfo("Set Focus from tree: {0}", SearchFileNamesPattern);
+              SearchFileNamesPattern.Focus();
+              Logger.LogInfo("After Focus from tree: {0}", SearchFileNamesPattern);
             }
           }
         }

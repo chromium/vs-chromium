@@ -13,11 +13,18 @@ namespace VsChromium.Wpf {
     private readonly ObservableCollection<string> _items = new ObservableCollection<string>();
     private string _selectedItem;
 
+    public StringListViewModel() {
+    }
+
     public StringListViewModel(IEnumerable<string> initialItems) {
       initialItems.ForAll(_items.Add);
     }
 
-    public IEnumerable<string> Items { get { return _items; } }
+    public ICollection<string> Items {
+      get {
+        return _items;
+      }
+    }
 
     public string SelectedItem {
       get { return _selectedItem; }

@@ -34,7 +34,7 @@
         </Trigger>
       </Style.Triggers>
     </Style>
-    <Style TargetType="wpf:EditableComboBox" d:DataContext="{d:DesignInstance wpf:StringListViewModel }">
+    <Style TargetType="wpf:EditableComboBox" d:DataContext="{d:DesignInstance wpf:StringListViewModel}">
       <Style.Triggers>
         <!-- Override default template behavior which is hard-coded to set Foregroud
              color to "White" on "IsKeyboardFocusWithin" -->
@@ -42,7 +42,6 @@
           <Setter Property="Foreground" Value="{DynamicResource VsBrush.ToolWindowText}"/>
         </Trigger>
       </Style.Triggers>
-
       <Setter Property="Foreground" Value="{DynamicResource VsBrush.ToolWindowText}"/>
       <Setter Property="Background" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
       <Setter Property="DropDownBackgroundBrush" Value="{DynamicResource VsBrush.ComboBoxBackground}"/>
@@ -53,7 +52,7 @@
       <Setter Property="IsEditable" Value="True"/>
       <Setter Property="ItemsSource" Value="{Binding Items}"/>
       <Setter Property="SelectedItem" Value="{Binding SelectedItem}"/>
-      <Setter Property="Text" Value="{Binding (NewItem), UpdateSourceTrigger=LostFocus}"/>
+      <Setter Property="Text" Value="{Binding NewItem, UpdateSourceTrigger=LostFocus}"/>
     </Style>
   </UserControl.Resources>
 
@@ -276,7 +275,7 @@
       Background="{DynamicResource VsBrush.ToolWindowBackground}"
       Foreground="{DynamicResource VsBrush.WindowText}"
       PreviewKeyDown="FileTreeView_OnPreviewKeyDown"
-      PreviewMouseRightButtonDown="FileTreeView_PreviewMouseRightButtonDown" KeyDown="FileTreeView_KeyDown">
+      PreviewMouseRightButtonDown="FileTreeView_PreviewMouseRightButtonDown">
 
       <TreeView.ItemContainerStyle>
 

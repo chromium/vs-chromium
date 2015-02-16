@@ -208,6 +208,21 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyController.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyControllerFactory.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\IVsGlyphService.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\IVsSolutionEventsHandler.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\SolutionExplorerHierarchyInitializer.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsGlyphService.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyNodes.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchy.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\IDocumentOperations.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerView.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\NodeViewModel.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyUtilities.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsSolutionEventsHandler.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml.cs">
       <DependentUpon>BuildExplorerControl.xaml</DependentUpon>
     </Compile>
@@ -241,6 +256,8 @@
     <Compile Include="Package\DisposeContainer.cs" />
     <Compile Include="Package\IDisposeContainer.cs" />
     <Compile Include="Package\VsSolutionEventsHandler.cs" />
+    <Compile Include="ServerProxy\FileSystemTreeSource.cs" />
+    <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />
     <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
     <Compile Include="Views\IImageSourceFactory.cs" />

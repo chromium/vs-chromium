@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
 using VsChromium.Core.Files;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -40,6 +41,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private bool _swallowsRequestBringIntoView = true;
     private SourceExplorerController _controller;
     private IVisualStudioPackageProvider _visualStudioPackageProvider;
+    private IFileSystemTreeSource _fileSystemTreeSource;
 
     public SourceExplorerControl() {
       InitializeComponent();
@@ -85,9 +87,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
+      _fileSystemTreeSource = componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>();
       _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
 
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
+      _fileSystemTreeSource.TreeReceived += FileSystemTreeSourceOnTreeReceived;
+      _fileSystemTreeSource.ErrorReceived += FileSystemTreeSourceOnErrorReceived;
+
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
       var clipboard = componentModel.DefaultExportProvider.GetExportedValue<IClipboard>();
@@ -108,7 +114,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       // exposes pictures from Visual Studio resources.
       ViewModel.ImageSourceFactory = standarImageSourceFactory;
 
-      FetchFilesystemTree();
+      _fileSystemTreeSource.Fetch();
 
       // Hookup property changed notifier
       ViewModel.PropertyChanged += ViewModel_PropertyChanged;
@@ -221,7 +227,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             return;
           }
           Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
-          FetchFilesystemTree();
         });
       }
     }
@@ -250,20 +255,16 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    private void FetchFilesystemTree() {
-      var request = new UIRequest() {
-        Id = "GetFileSystemRequest",
-        Request = new GetFileSystemRequest(),
-        OnSuccess = (typedResponse) => {
-          var response = (GetFileSystemResponse)typedResponse;
-          Controller.SetFileSystemTree(response.Tree);
-        },
-        OnError = (errorResponse) => {
-          Controller.SetFileSystemTreeError(errorResponse);
-        }
-      };
+    private void FileSystemTreeSourceOnTreeReceived(FileSystemTree fileSystemTree) {
+      WpfUtilities.Post(this, () => {
+        Controller.SetFileSystemTree(fileSystemTree);
+      });
+    }
 
-      _uiRequestProcessor.Post(request);
+    private void FileSystemTreeSourceOnErrorReceived(ErrorResponse errorResponse) {
+      WpfUtilities.Post(this, () => {
+        Controller.SetFileSystemTreeError(errorResponse);
+      });
     }
 
     private class ComboBoxInfo {

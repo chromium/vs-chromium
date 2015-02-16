@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Package {
-  interface IPackagePostDispose {
+  public interface IPackagePostDispose {
     int Priority { get; }
     void Run(IVisualStudioPackage package);
   }

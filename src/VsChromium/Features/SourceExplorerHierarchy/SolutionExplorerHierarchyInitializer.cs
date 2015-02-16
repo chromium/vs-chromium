@@ -2,24 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.ComponentModel.Composition;
 using VsChromium.Package;
+using VsChromium.Threads;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   [Export(typeof(IPackagePostInitializer))]
   public class SolutionExplorerHierarchyInitializer : IPackagePostInitializer {
     private readonly ISourceExplorerHierarchyControllerFactory _sourceExplorerHierarchyControllerFactory;
+    private readonly IUIDelayedOperationProcessor _uiDelayedOperationProcessor;
 
     [ImportingConstructor]
     public SolutionExplorerHierarchyInitializer(
-      ISourceExplorerHierarchyControllerFactory sourceExplorerHierarchyControllerFactory) {
+      ISourceExplorerHierarchyControllerFactory sourceExplorerHierarchyControllerFactory,
+      IUIDelayedOperationProcessor uiDelayedOperationProcessor) {
       _sourceExplorerHierarchyControllerFactory = sourceExplorerHierarchyControllerFactory;
+      _uiDelayedOperationProcessor = uiDelayedOperationProcessor;
     }
 
     public int Priority { get { return 0; } }
 
     public void Run(IVisualStudioPackage package) {
-      _sourceExplorerHierarchyControllerFactory.CreateController();
+      _uiDelayedOperationProcessor.Post(new DelayedOperation {
+        Id = "SolutionExplorerHierarchyInitializer",
+        Delay = TimeSpan.FromSeconds(2.0),
+        Action = () => {
+          var controller = _sourceExplorerHierarchyControllerFactory.CreateController();
+          controller.Activate();
+        }
+      });
     }
   }
 }

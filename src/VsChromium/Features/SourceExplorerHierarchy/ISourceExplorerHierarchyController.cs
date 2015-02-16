@@ -4,6 +4,6 @@
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public interface ISourceExplorerHierarchyController {
-    
+    void Activate();
   }
 }

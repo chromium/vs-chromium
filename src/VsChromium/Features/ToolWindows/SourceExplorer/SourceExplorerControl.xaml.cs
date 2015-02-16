@@ -373,9 +373,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         e.Handled = Controller.ExecuteOpenCommandForItem(
           FileTreeView.SelectedItem as TreeViewItemViewModel);
       }
-    }
 
-    private void FileTreeView_KeyDown(object sender, KeyEventArgs e) {
       if (e.KeyboardDevice.Modifiers == ModifierKeys.None && e.Key == Key.Up) {
         // If topmost item is selected, move selection to bottom combo box
         var item = FileTreeView.SelectedItem as TreeViewItemViewModel;

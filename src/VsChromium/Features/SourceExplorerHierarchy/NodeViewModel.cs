@@ -23,8 +23,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private NodeViewModel _lastChild;
 
     public NodeViewModel(VsHierarchy hier) {
-      OpenFolderImageIndex = -1;
-      ImageIndex = -1;
+      OpenFolderImageIndex = NoImage;
+      ImageIndex = NoImage;
       DocCookie = uint.MaxValue;
       ItemId = uint.MaxValue;
       this._owningHierarchy = hier;
@@ -44,15 +44,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public bool IsExpanded { get; set; }
     public bool ExpandByDefault { get; set; }
 
-    public IEnumerable<NodeViewModel> Children {
-      get {
-        return _children;
-      }
-    }
-
     public bool IsRoot {
       get {
-        return (int)this.ItemId == -2;
+        return ItemId == VsHierarchyNodes.RootNodeItemId;
       }
     }
 
@@ -188,11 +182,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int SetProperty(int propid, object var) {
-      if (propid == -2035)
-        this.IsExpanded = (bool)var;
+      if (propid == (int)__VSHPROPID.VSHPROPID_Expanded)
+        IsExpanded = (bool)var;
       else
-        this._properties[propid] = var;
-      return 0;
+        _properties[propid] = var;
+      return VSConstants.S_OK;
     }
 
     public int GetProperty(int propid, out object pvar) {
@@ -218,28 +212,31 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         case (int)__VSHPROPID.VSHPROPID_ItemDocCookie:
           pvar = (object)this.ItemId;
           break;
-        case (int)__VSHPROPID.VSHPROPID_OpenFolderIconIndex:
-          int num1 = this.GetOpenFolderImageIndex();
-          if (num1 == -1)
-            num1 = this.GetImageIndex();
-          if (num1 == -1)
-            return VSConstants.E_NOTIMPL;
-          pvar = (object)num1;
-          break;
-        case (int)__VSHPROPID.VSHPROPID_OpenFolderIconHandle:
-          IntPtr num2 = this.GetOpenFolderIconHandle();
-          if (num2 == IntPtr.Zero)
-            num2 = this.GetIconHandle();
-          if (num2 == IntPtr.Zero)
-            return VSConstants.E_NOTIMPL;
-          pvar = (object)num2;
-          break;
-        case (int)__VSHPROPID.VSHPROPID_IconHandle:
-          IntPtr iconHandle = this.GetIconHandle();
-          if (iconHandle == IntPtr.Zero)
-            return VSConstants.E_NOTIMPL;
-          pvar = (object)iconHandle;
-          break;
+        case (int)__VSHPROPID.VSHPROPID_OpenFolderIconIndex: {
+            int iconIndex = this.GetOpenFolderImageIndex();
+            if (iconIndex == NoImage)
+              iconIndex = this.GetImageIndex();
+            if (iconIndex == NoImage)
+              return VSConstants.E_NOTIMPL;
+            pvar = (object)iconIndex;
+            break;
+          }
+        case (int)__VSHPROPID.VSHPROPID_OpenFolderIconHandle: {
+            IntPtr iconHandle = this.GetOpenFolderIconHandle();
+            if (iconHandle == IntPtr.Zero)
+              iconHandle = this.GetIconHandle();
+            if (iconHandle == IntPtr.Zero)
+              return VSConstants.E_NOTIMPL;
+            pvar = (object)iconHandle;
+            break;
+          }
+        case (int)__VSHPROPID.VSHPROPID_IconHandle: {
+            IntPtr iconHandle = this.GetIconHandle();
+            if (iconHandle == IntPtr.Zero)
+              return VSConstants.E_NOTIMPL;
+            pvar = (object)iconHandle;
+            break;
+          }
         case (int)__VSHPROPID.VSHPROPID_ProjectName:
         case (int)__VSHPROPID.VSHPROPID_SaveName:
           pvar = (object)this.Name;
@@ -250,13 +247,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         case (int)__VSHPROPID.VSHPROPID_Expandable:
           pvar = this._firstChild == null ? (object)false : (object)true;
           break;
-        case (int)__VSHPROPID.VSHPROPID_IconIndex:
-          int imageIndex = this.GetImageIndex();
-          if (imageIndex == -1)
-            return VSConstants.E_NOTIMPL;
-          pvar = (object)imageIndex;
-          break;
-        case (int)__VSHPROPID.VSHPROPID_Caption :
+        case (int)__VSHPROPID.VSHPROPID_IconIndex: {
+            int imageIndex = this.GetImageIndex();
+            if (imageIndex == NoImage)
+              return VSConstants.E_NOTIMPL;
+            pvar = (object)imageIndex;
+            break;
+          }
+        case (int)__VSHPROPID.VSHPROPID_Caption:
           pvar = Caption;
           break;
         case (int)__VSHPROPID.VSHPROPID_Parent:
@@ -265,7 +263,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         default:
           return VSConstants.E_NOTIMPL;
       }
-      return 0;
+      return VSConstants.S_OK;
     }
   }
 }

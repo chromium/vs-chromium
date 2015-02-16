@@ -13,6 +13,8 @@ using VsChromium.Threads;
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class SourceExplorerHierarchyController : ISourceExplorerHierarchyController {
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
+    private readonly IFileSystemTreeSource _fileSystemTreeSource;
+    private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
     private readonly IVsGlyphService _vsGlyphService;
     private readonly VsHierarchy _hierarchy;
 
@@ -23,18 +25,24 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IVsGlyphService vsGlyphService) {
 
       _synchronizationContextProvider = synchronizationContextProvider;
+      _fileSystemTreeSource = fileSystemTreeSource;
+      _visualStudioPackageProvider = visualStudioPackageProvider;
       _vsGlyphService = vsGlyphService;
-      _hierarchy = new VsHierarchy(visualStudioPackageProvider.Package.ServiceProvider, vsGlyphService);
+      _hierarchy = new VsHierarchy(
+        visualStudioPackageProvider.Package.ServiceProvider,
+        vsGlyphService);
+    }
 
-      IVsSolutionEventsHandler vsSolutionEvents = new VsSolutionEventsHandler(visualStudioPackageProvider);
+    public void Activate() {
+      IVsSolutionEventsHandler vsSolutionEvents = new VsSolutionEventsHandler(_visualStudioPackageProvider);
       vsSolutionEvents.AfterOpenSolution += AfterOpenSolutionHandler;
       vsSolutionEvents.BeforeCloseSolution += BeforeCloseSolutionHandler;
 
-      fileSystemTreeSource.TreeReceived += OnTreeReceived;
-      fileSystemTreeSource.ErrorReceived += OnErrorReceived;
+      _fileSystemTreeSource.TreeReceived += OnTreeReceived;
+      _fileSystemTreeSource.ErrorReceived += OnErrorReceived;
 
       // Force getting the tree and refreshing the ui hierarchy.
-      fileSystemTreeSource.Fetch();
+      _fileSystemTreeSource.Fetch();
     }
 
     /// <summary>
@@ -108,6 +116,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         foreach (var child in directoryEntry.Entries) {
           AddNodeForEntry(nodes, child, node);
         }
+      } else {
+        node.ImageIndex = _vsGlyphService.GetImageIndex(
+          StandardGlyphGroup.GlyphCSharpFile,
+          StandardGlyphItem.GlyphItemPublic);
       }
     }
 

@@ -218,7 +218,6 @@
     <Compile Include="Features\SourceExplorerHierarchy\VsGlyphService.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyNodes.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchy.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IDocumentOperations.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerView.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\NodeViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyUtilities.cs" />

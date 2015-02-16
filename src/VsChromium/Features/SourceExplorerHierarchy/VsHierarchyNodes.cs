@@ -6,10 +6,10 @@ using System.Collections.Generic;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class VsHierarchyNodes {
+    public const uint RootNodeItemId = unchecked((uint)-2);
     private readonly VsHierarchy _hierarchy;
     private readonly Dictionary<uint, NodeViewModel> _itemIdMap = new Dictionary<uint, NodeViewModel>();
     private readonly NodeViewModel _rootNode;
-    private const uint RootNodeItemId = unchecked((uint)-2);
 
     // TODO: Remove "hierarchy" param.
     public VsHierarchyNodes(VsHierarchy hierarchy) {

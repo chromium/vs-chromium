@@ -4,11 +4,13 @@
 
 using System;
 using System.Collections;
+using System.Linq;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.Logging;
+using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   /// <summary>
@@ -18,7 +20,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly System.IServiceProvider _serviceProvider;
     private readonly IVsGlyphService _vsGlyphService;
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
-    private VsHierarchyNodes _nodes;
+    private VsHierarchyNodes _nodes = new VsHierarchyNodes();
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
     private bool _vsHierarchyActive;
@@ -28,7 +30,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IVsGlyphService vsGlyphService) {
       _serviceProvider = serviceProvider;
       _vsGlyphService = vsGlyphService;
-      _nodes = new VsHierarchyNodes(this);
     }
 
     public EventSinkCollection EventSinks {
@@ -41,9 +42,40 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       get { return _vsGlyphService.ImageListPtr; }
     }
 
+    public void Dispose() {
+      Close();
+      _nodes.Clear();
+    }
+
+    public void Disconnect() {
+      CloseVsHierarchy();
+    }
+
+    public void Refresh() {
+      CloseVsHierarchy();
+      SetNodes(_nodes);
+    }
+
+    public void SetNodes(VsHierarchyNodes nodes) {
+      _nodes = nodes;
+      EndRefresh();
+    }
+
     private void Log(string format, params object[] args) {
       // For debugging.
       Logger.LogInfo("VsHierarchy: {0}", string.Format(format, args));
+    }
+
+    private void LogProperty(string message, int propid) {
+      Log("{0} - {1}", message, GetEnumName(propid, typeof(__VSHPROPID), typeof(__VSHPROPID2), typeof(__VSHPROPID3), typeof(__VSHPROPID4), typeof(__VSHPROPID5), typeof(__VSHPROPID6)));
+    }
+
+    private string GetEnumName(int value, params Type[] enumTypes) {
+      var name =
+        enumTypes.Select(enumType => Enum.GetName(enumType, value)).FirstOrDefault(x => x != null);
+      if (name != null)
+        return name;
+      return value.ToString();
     }
 
     private void EndRefresh() {
@@ -118,7 +150,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       //this._documentOperations.OpenScriptDocument(node.ScriptId, 0, 0);
     }
 
-    public bool FindNode(string name, out NodeViewModel node) {
+    private bool FindNode(string name, out NodeViewModel node) {
       node = (NodeViewModel)null;
       if (!string.IsNullOrEmpty(name))
         return _nodes.RootNode.FindNodeByMoniker(name, out node);
@@ -130,7 +162,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return 0;
     }
 
-    public void Open() {
+    private void Open() {
       if (!(this is IVsSelectionEvents))
         return;
       IVsMonitorSelection monitorSelection = this._serviceProvider.GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
@@ -151,6 +183,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetCanonicalName(uint itemid, out string pbstrName) {
+      Log("GetCanonicalName({0})", itemid);
       pbstrName = null;
 
       NodeViewModel node;
@@ -162,11 +195,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetGuidProperty(uint itemid, int propid, out Guid pguid) {
+      Log("GetGuidProperty({0})", itemid);
       pguid = Guid.Empty;
       return VSConstants.E_FAIL;
     }
 
     public int GetNestedHierarchy(uint itemid, ref Guid iidHierarchyNested, out IntPtr ppHierarchyNested, out uint pitemidNested) {
+      Log("GetNestedHierarchy({0})", itemid);
       pitemidNested = uint.MaxValue;
       ppHierarchyNested = IntPtr.Zero;
       itemid = 0U;
@@ -174,6 +209,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetProperty(uint itemid, int propid, out object pvar) {
+      LogProperty("GetProperty - ", propid);
       if (itemid == _nodes.RootNode.ItemId && propid == (int)__VSHPROPID.VSHPROPID_ProjectDir) {
         pvar = "";
         return VSConstants.S_OK;
@@ -198,11 +234,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetSite(out Microsoft.VisualStudio.OLE.Interop.IServiceProvider site) {
+      Log("GetSite()");
       site = this._site;
       return 0;
     }
 
     public int ParseCanonicalName(string pszName, out uint pitemid) {
+      Log("ParseCanonicalName({0})", pszName);
       pitemid = 0U;
       return VSConstants.E_NOTIMPL;
     }
@@ -217,6 +255,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int SetProperty(uint itemid, int propid, object var) {
+      LogProperty("SetProperty - ", propid);
       NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;
@@ -261,7 +300,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int ExecCommand(uint itemid, ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
       if (!(pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) || (int)nCmdID != 2)
-        return -2147221248;
+        return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
       this.OpenScriptDocument(itemid);
       return 0;
     }
@@ -272,10 +311,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           NodeViewModel node;
           if (_nodes.FindNode(itemid, out node))
             prgCmds[index].cmdf = 1U;
-          return 0;
+          return VSConstants.S_OK;
         }
       }
-      return -2147221248;
+      return (int)Constants.OLECMDERR_E_NOTSUPPORTED ;
     }
 
     public int AddItemFromPackage(string pszItemName, VSADDRESULT[] pResult) {
@@ -297,13 +336,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetItemContext(uint itemid, out Microsoft.VisualStudio.OLE.Interop.IServiceProvider ppSP) {
-      ppSP = (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)null;
+      Log("GetItemContext({0})", itemid);
+      ppSP = null;
       return 0;
     }
 
     public int GetMkDocument(uint itemid, out string pbstrMkDocument) {
-      pbstrMkDocument = (string)null;
-      NodeViewModel node = (NodeViewModel)null;
+      Log("GetMkDocument({0})", itemid);
+      pbstrMkDocument = null;
+      NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;
       pbstrMkDocument = node.GetMkDocument();
@@ -311,6 +352,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int IsDocumentInProject(string pszMkDocument, out int pfFound, VSDOCUMENTPRIORITY[] pdwPriority, out uint pitemid) {
+      Log("IsDocumentInProject({0})", pszMkDocument);
       pfFound = 0;
       pitemid = 0U;
       if (pdwPriority != null && pdwPriority.Length >= 1)
@@ -413,25 +455,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int TransferItem(string pszMkDocumentOld, string pszMkDocumentNew, IVsWindowFrame punkWindowFrame) {
       return 0;
-    }
-
-    public void Dispose() {
-      Close();
-      _nodes.Clear();
-    }
-
-    public void Disconnect() {
-      CloseVsHierarchy();
-    }
-
-    public void Refresh() {
-      CloseVsHierarchy();
-      SetNodes(_nodes);
-    }
-
-    public void SetNodes(VsHierarchyNodes nodes) {
-      _nodes = nodes;
-      EndRefresh();
     }
   }
 }

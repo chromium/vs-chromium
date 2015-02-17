@@ -63,7 +63,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// Note: This is executed on a background thred.
     /// </summary>
     private void OnTreeReceived(FileSystemTree fileSystemTree) {
-      var nodes = new VsHierarchyNodes(_hierarchy);
+      var nodes = new VsHierarchyNodes();
       SetupRootNode(nodes.RootNode);
       if (fileSystemTree != null) {
         foreach (var root in fileSystemTree.Root.Entries) {
@@ -93,11 +93,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void AddNodeForEntry(VsHierarchyNodes nodes, FileSystemEntry entry, NodeViewModel parent) {
-      var node = new NodeViewModel(_hierarchy) {
+      var node = new NodeViewModel {
         Caption = entry.Name,
         Name = entry.Name,
-        Moniker =
-          (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.Moniker, entry.Name)),
+        LocalMoniker =
+          (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.LocalMoniker, entry.Name)),
         ExpandByDefault = (parent == null),
         IsExpanded = (parent == null)
       };

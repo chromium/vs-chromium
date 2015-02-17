@@ -3,10 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using Microsoft.Internal.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.PlatformUI;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.Logging;
 using VsChromium.Package;
@@ -23,20 +20,16 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       ListenToSolutionEvents();
     }
 
-    public bool IsSolutionOpen {
-      get { return HierarchyUtilities.IsSolutionOpen; }
-    }
-
     public event Action AfterOpenSolution;
 
-    public void OnAfterOpenSolution() {
+    protected virtual void OnAfterOpenSolution() {
       var handler = AfterOpenSolution;
       if (handler != null) handler();
     }
 
     public event Action BeforeCloseSolution;
 
-    public void OnBeforeCloseSolution() {
+    protected virtual void OnBeforeCloseSolution() {
       var handler = BeforeCloseSolution;
       if (handler != null) handler();
     }

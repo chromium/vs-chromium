@@ -41,7 +41,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         throw new InvalidOperationException();
 
       object pvar;
-      if (ErrorHandler.Failed(vsShell.GetProperty(-9027, out pvar)) || pvar == null)
+      if (ErrorHandler.Failed(vsShell.GetProperty((int)__VSSPROPID.VSSPROPID_ObjectMgrTypesImgList, out pvar)) || pvar == null)
         throw new InvalidOperationException();
 
       return Unbox.AsIntPtr(pvar);

@@ -6,8 +6,6 @@ using System;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public interface IVsSolutionEventsHandler {
-    bool IsSolutionOpen { get; }
-
     event Action AfterOpenSolution;
     event Action BeforeCloseSolution;
   }

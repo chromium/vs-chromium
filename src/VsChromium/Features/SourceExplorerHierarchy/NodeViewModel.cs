@@ -16,18 +16,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private const int NoImage = -1;
     private readonly List<NodeViewModel> _children = new List<NodeViewModel>();
     private readonly Dictionary<int, object> _properties = new Dictionary<int, object>();
-    private readonly VsHierarchy _owningHierarchy;
-    private NodeViewModel _prevSibling;
     private NodeViewModel _parent;
     private NodeViewModel _firstChild;
     private NodeViewModel _lastChild;
 
-    public NodeViewModel(VsHierarchy hier) {
+    public NodeViewModel() {
       OpenFolderImageIndex = NoImage;
       ImageIndex = NoImage;
       DocCookie = uint.MaxValue;
       ItemId = uint.MaxValue;
-      this._owningHierarchy = hier;
     }
 
     public uint ItemId { get; set; }
@@ -78,10 +75,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     private void AddSiblingAfter(NodeViewModel node) {
       if (this.NextSibling != null) {
-        this.NextSibling._prevSibling = node;
         node.NextSibling = this.NextSibling;
       }
-      node._prevSibling = this;
       this.NextSibling = node;
     }
 
@@ -165,6 +160,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return this.FindNodeByMonikerHelper(this, searchMoniker, out node);
     }
 
+#if false
     public void Redraw() {
       foreach (IVsHierarchyEvents vsHierarchyEvents in (IEnumerable)this._owningHierarchy.EventSinks) {
         vsHierarchyEvents.OnPropertyChanged(this.ItemId, (int)__VSHPROPID.VSHPROPID_Caption, 0U);
@@ -172,6 +168,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         vsHierarchyEvents.OnPropertyChanged(this.ItemId, (int)__VSHPROPID.VSHPROPID_StateIconIndex, 0U);
       }
     }
+#endif
 
     public bool IsRemote() {
       return !string.IsNullOrEmpty(this.Moniker);

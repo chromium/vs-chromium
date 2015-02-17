@@ -26,8 +26,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public uint ItemId { get; set; }
     public string Name { get; set; }
     public string Caption { get; set; }
-    public string Moniker { get; set; }
-    public string LocalMoniker { get; set; }
+    public string Path { get; set; }
     public uint DocCookie { get; set; }
     public int ImageIndex { get; set; }
     public int OpenFolderImageIndex { get; set; }
@@ -39,14 +38,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public bool IsRoot {
       get {
         return ItemId == VsHierarchyNodes.RootNodeItemId;
-      }
-    }
-
-    public string OriginalPath {
-      get {
-        if (this.IsRemote())
-          return this.Moniker;
-        return this.LocalMoniker;
       }
     }
 
@@ -119,7 +110,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (parentNode == null)
         return false;
 
-      if (SystemPathComparer.Instance.StringComparer.Equals(parentNode.LocalMoniker, searchMoniker)) {
+      if (SystemPathComparer.Instance.StringComparer.Equals(parentNode.Path, searchMoniker)) {
         foundNode = parentNode;
         return true;
       }
@@ -139,12 +130,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return FindNodeByMonikerHelper(this, searchMoniker, out node);
     }
 
-    public bool IsRemote() {
-      return !string.IsNullOrEmpty(this.Moniker);
-    }
-
     public string GetMkDocument() {
-      return LocalMoniker;
+      return Path;
     }
 
     public int SetProperty(int propid, object var) {

@@ -18,16 +18,23 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly System.IServiceProvider _serviceProvider;
     private readonly IVsGlyphService _vsGlyphService;
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
+    private readonly VsHierarchyLogger _logger;
     private VsHierarchyNodes _nodes = new VsHierarchyNodes();
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
     private bool _vsHierarchyActive;
-    private VsHierarchyLogger _logger;
 
     public VsHierarchy(System.IServiceProvider serviceProvider, IVsGlyphService vsGlyphService) {
       _serviceProvider = serviceProvider;
       _vsGlyphService = vsGlyphService;
       _logger = new VsHierarchyLogger(this);
+    }
+
+    public event Action<string> OpenDocument;
+
+    protected virtual void OnOpenDocument(string obj) {
+      var handler = OpenDocument;
+      if (handler != null) handler(obj);
     }
 
     public EventSinkCollection EventSinks {
@@ -124,11 +131,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _vsHierarchyActive = true;
     }
 
-    private void OpenScriptDocument(uint itemid) {
-      //NodeViewModel node;
-      //if (!this.FindNode(itemid, out node) || node.ScriptId == null)
-      //  return;
-      //this._documentOperations.OpenScriptDocument(node.ScriptId, 0, 0);
+    private void OpenItemDocument(uint itemid) {
+      NodeViewModel node;
+      if (!_nodes.FindNode(itemid, out node))
+        return;
+      if (node.Path == null)
+        return;
+      OnOpenDocument(node.Path);
     }
 
     private bool FindNode(string name, out NodeViewModel node) {
@@ -283,7 +292,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _logger.LogExecCommand(itemid, pguidCmdGroup, nCmdID, nCmdexecopt);
       if (!(pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) || (int)nCmdID != 2)
         return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
-      this.OpenScriptDocument(itemid);
+      OpenItemDocument(itemid);
       return 0;
     }
 
@@ -343,6 +352,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return 0;
     }
 
+#if false
     private int OpenItemViaMiscellaneousProject(uint flags, string moniker, ref Guid rguidLogicalView, out IVsWindowFrame ppWindowFrame) {
       ppWindowFrame = (IVsWindowFrame)null;
       IVsProject3 miscellaneousProject = VsShellUtilities.GetMiscellaneousProject(this._serviceProvider);
@@ -363,7 +373,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
       return num;
     }
-
     private void IsDocumentInAnotherProject(string originalPath, out IVsHierarchy hierOpen, out uint itemId, out int isDocInProj) {
       IVsSolution vsSolution = this._serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
       Guid rguidEnumOnlyThisType = Guid.Empty;
@@ -391,9 +400,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         ppenum.Next(1U, rgelt, out pceltFetched);
       }
     }
+#endif
 
     public int OpenItem(uint itemid, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
+      _logger.Log("OpenItem({0})", itemid);
       ppWindowFrame = (IVsWindowFrame)null;
+      return VSConstants.E_NOTIMPL;
+#if false
       NodeViewModel node = (NodeViewModel)null;
       uint flags = 536936448U;
       int num = 0;
@@ -401,13 +414,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return VSConstants.E_FAIL;
       if (node.IsRemote())
         flags |= 32U;
-      if (string.IsNullOrEmpty(node.LocalMoniker))
+      if (string.IsNullOrEmpty(node.Path))
         return VSConstants.E_NOTIMPL;
       IVsUIHierarchy hierarchy = (IVsUIHierarchy)null;
       IVsHierarchy hierOpen = (IVsHierarchy)null;
       int isDocInProj = 0;
       uint itemid1;
-      if (!VsShellUtilities.IsDocumentOpen(this._serviceProvider, node.LocalMoniker, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
+      if (!VsShellUtilities.IsDocumentOpen(this._serviceProvider, node.Path, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
         this.IsDocumentInAnotherProject(node.OriginalPath, out hierOpen, out itemid1, out isDocInProj);
         if (hierOpen == null) {
           num = this.OpenItemViaMiscellaneousProject(flags, node.OriginalPath, ref rguidLogicalView, out ppWindowFrame);
@@ -419,6 +432,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (ppWindowFrame != null)
         num = ppWindowFrame.Show();
       return num;
+#endif
     }
 
     public int OpenItemWithSpecific(uint itemid, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {

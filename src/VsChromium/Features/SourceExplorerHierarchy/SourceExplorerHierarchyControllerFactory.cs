@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
+using VsChromium.Core.Files;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
+using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   [Export(typeof(ISourceExplorerHierarchyControllerFactory))]
@@ -14,17 +16,23 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
     private readonly IVsGlyphService _vsGlyphService;
+    private readonly IOpenDocumentHelper _openDocumentHelper;
+    private readonly IFileSystem _fileSystem;
 
     [ImportingConstructor]
     public SourceExplorerHierarchyControllerFactory(
       ISynchronizationContextProvider synchronizationContextProvider,
       IFileSystemTreeSource fileSystemTreeSource,
       IVisualStudioPackageProvider visualStudioPackageProvider,
-      IVsGlyphService vsGlyphService) {
+      IVsGlyphService vsGlyphService,
+      IOpenDocumentHelper openDocumentHelper,
+      IFileSystem fileSystem) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _vsGlyphService = vsGlyphService;
+      _openDocumentHelper = openDocumentHelper;
+      _fileSystem = fileSystem;
     }
 
     public ISourceExplorerHierarchyController CreateController() {
@@ -32,7 +40,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _synchronizationContextProvider,
         _fileSystemTreeSource,
         _visualStudioPackageProvider,
-        _vsGlyphService);
+        _vsGlyphService,
+        _openDocumentHelper,
+        _fileSystem);
     }
   }
 }

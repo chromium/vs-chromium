@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
@@ -9,6 +10,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
+using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class SourceExplorerHierarchyController : ISourceExplorerHierarchyController {
@@ -16,21 +18,34 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
     private readonly IVsGlyphService _vsGlyphService;
+    private readonly IOpenDocumentHelper _openDocumentHelper;
+    private readonly IFileSystem _fileSystem;
     private readonly VsHierarchy _hierarchy;
 
     public SourceExplorerHierarchyController(
       ISynchronizationContextProvider synchronizationContextProvider,
       IFileSystemTreeSource fileSystemTreeSource,
       IVisualStudioPackageProvider visualStudioPackageProvider,
-      IVsGlyphService vsGlyphService) {
+      IVsGlyphService vsGlyphService,
+      IOpenDocumentHelper openDocumentHelper,
+      IFileSystem fileSystem) {
 
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _vsGlyphService = vsGlyphService;
+      _openDocumentHelper = openDocumentHelper;
+      _fileSystem = fileSystem;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
+      _hierarchy.OpenDocument += HierarchyOnOpenDocument;
+    }
+
+    private void HierarchyOnOpenDocument(string path) {
+      if (!_fileSystem.FileExists(new FullPath(path)))
+        return;
+      _openDocumentHelper.OpenDocument(path, view => null);
     }
 
     public void Activate() {
@@ -96,8 +111,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       var node = new NodeViewModel {
         Caption = entry.Name,
         Name = entry.Name,
-        LocalMoniker =
-          (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.LocalMoniker, entry.Name)),
+        Path =
+          (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.Path, entry.Name)),
         ExpandByDefault = (parent == null),
         IsExpanded = (parent == null)
       };

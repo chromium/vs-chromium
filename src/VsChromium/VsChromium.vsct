@@ -13,6 +13,10 @@
       <Group guid="guidVsChromiumCmdSet" id="MyMenuGroup" priority="0x0600">
         <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS" />
       </Group>
+      <!-- Setup our custom source explorer group to appear in source explorer toolbar -->
+      <Group guid="guidVsChromiumCmdSet" id="SourceExplorerToolbarGroup" priority="0xF000">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_TOOL_PROJWIN"/>
+      </Group>
       <Group guid="guidChromeDebugCmdSet" id="ChromeDebugTopLevelMenuGroup" priority="0x0600">
         <Parent guid="guidVSDebugGroup" id="IDM_DEBUG_MENU" />
       </Group>
@@ -89,6 +93,22 @@
           <LocCanonicalName>VsChromium.FindInFiles</LocCanonicalName>
         </Strings>
       </Button>
+      <!-- Custom "Sync to document" command (in Source Explorer toolbar) -->
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSyncToDocument" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerToolbarGroup" />
+        <Icon guid="guidSyncToDocumentImage" id="Icon" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
+              and is used as a default value for other entries if they are not specified-->
+          <ButtonText>VsChromium Sync To Active Document</ButtonText>
+          <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
+          <CommandName>VsChromium - Sync To Active Document</CommandName>
+          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <LocCanonicalName>VsChromium.SyncToActiveDocument</LocCanonicalName>
+        </Strings>
+      </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -136,8 +156,14 @@
       <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows" />
       <Bitmap guid="guidPackageChromeDebugImages" href="Resources\ChromeDebugIcons.png" />
       <Bitmap guid="guidSourceExplorerImages" href="Resources\VsChromiumIcon.png" />
+      <Bitmap guid="guidSourceExplorerImages" href="Resources\VsChromiumIcon.png" />
+      <Bitmap guid="guidSyncToDocumentImage" href="Views\Images\SyncActiveDocument.png" />
+      
     </Bitmaps>
   </Commands>
+  <VisibilityConstraints>
+    <VisibilityItem guid="guidVsChromiumCmdSet" id="cmdidSyncToDocument" context="UICONTEXT_SolutionExists" />
+  </VisibilityConstraints>
   <KeyBindings>
     <!-- Note: VK_OEM_1 is the semicolon character on US keyboards. -->
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt" />
@@ -153,7 +179,10 @@
     <GuidSymbol name="guidVsChromiumPkg" value="{a10cf7af-5f0a-4502-b44b-51ff1b7c8a87}" />
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidVsChromiumCmdSet" value="{1d4bc583-de49-4113-af8d-81c62fd4b61b}">
+      <!-- Group is for adding menu items to the "View" top level menu-->
       <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <!-- Group is for adding toolbar buttong to the Source Explorer toolbar -->
+      <IDSymbol name="SourceExplorerToolbarGroup" value="0x1021" />
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
       <IDSymbol name="cmdidSourceExplorerToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
@@ -163,6 +192,7 @@
       <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />
       <IDSymbol name="cmdidCancelSearch" value="0x0107" />
       <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0110" />
+      <IDSymbol name="cmdidSyncToDocument" value="0x0120" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">
       <IDSymbol name="ChromeDebugTopLevelMenu" value="0x0100" />
@@ -187,6 +217,9 @@
       <IDSymbol name="bmpAttachChoose" value="4" />
     </GuidSymbol>
     <GuidSymbol name="guidSourceExplorerImages" value="{29eec5ec-3d88-4bf4-ae57-c38a635ea373}">
+      <IDSymbol name="Icon" value="1" />
+    </GuidSymbol>
+    <GuidSymbol name="guidSyncToDocumentImage" value="{00065DAD-60CB-4FD5-A85F-2DDFE0E116B8}">
       <IDSymbol name="Icon" value="1" />
     </GuidSymbol>
   </Symbols>

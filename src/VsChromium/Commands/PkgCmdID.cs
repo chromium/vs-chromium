@@ -13,5 +13,6 @@ namespace VsChromium.Commands {
     public const int CmdidGotoPreviousLocation = 0x106;
     public const int CmdidCancelSearch = 0x107;
     public const int CmdidBuildExplorerToolWindow = 0x110;
+    public const int CmdidSyncToDocument = 0x120;
   };
 }

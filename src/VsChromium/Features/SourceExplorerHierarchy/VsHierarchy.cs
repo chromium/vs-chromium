@@ -8,6 +8,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using VsChromium.Commands;
 using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -31,6 +32,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public event Action<string> OpenDocument;
+    public event Action SyncToActiveDocument;
+
+    protected virtual void OnSyncToActiveDocument() {
+      var handler = SyncToActiveDocument;
+      if (handler != null) handler();
+    }
 
     protected virtual void OnOpenDocument(string obj) {
       var handler = OpenDocument;
@@ -295,19 +302,32 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int ExecCommand(uint itemid, ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
       _logger.LogExecCommand(itemid, pguidCmdGroup, nCmdID, nCmdexecopt);
-      if (!(pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) || (int)nCmdID != 2)
-        return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
-      OpenItemDocument(itemid);
-      return 0;
+
+      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick) {
+        OpenItemDocument(itemid);
+        return VSConstants.S_OK;
+      }
+
+      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey) {
+        OpenItemDocument(itemid);
+        return VSConstants.S_OK;
+      }
+
+      if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == PkgCmdIdList.CmdidSyncToDocument) {
+        OnSyncToActiveDocument();
+        return VSConstants.S_OK;
+      }
+
+      return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
     }
 
     public int QueryStatusCommand(uint itemid, ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
-      for (int index = 0; (long)index < (long)cCmds; ++index) {
+      for (var index = 0; index < cCmds; ++index) {
         _logger.LogQueryStatusCommand(itemid, pguidCmdGroup, prgCmds[index].cmdID);
-        if (pguidCmdGroup == VSConstants.VSStd2K && (int)prgCmds[index].cmdID == 134) {
+        if (pguidCmdGroup == VSConstants.VSStd2K && prgCmds[index].cmdID == (int)VSConstants.VSStd2KCmdID.DOUBLECLICK) {
           NodeViewModel node;
           if (_nodes.FindNode(itemid, out node))
-            prgCmds[index].cmdf = 1U;
+            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED);
           return VSConstants.S_OK;
         }
       }

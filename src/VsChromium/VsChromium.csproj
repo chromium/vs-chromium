@@ -216,6 +216,7 @@
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsGlyphService.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyLogger.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyNodes.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchy.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\NodeViewModel.cs" />

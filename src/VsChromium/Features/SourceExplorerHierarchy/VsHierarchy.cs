@@ -4,12 +4,10 @@
 
 using System;
 using System.Collections;
-using System.Linq;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using VsChromium.Core.Logging;
 using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -24,12 +22,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
     private bool _vsHierarchyActive;
+    private VsHierarchyLogger _logger;
 
-    public VsHierarchy(
-      System.IServiceProvider serviceProvider,
-      IVsGlyphService vsGlyphService) {
+    public VsHierarchy(System.IServiceProvider serviceProvider, IVsGlyphService vsGlyphService) {
       _serviceProvider = serviceProvider;
       _vsGlyphService = vsGlyphService;
+      _logger = new VsHierarchyLogger(this);
     }
 
     public EventSinkCollection EventSinks {
@@ -59,23 +57,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public void SetNodes(VsHierarchyNodes nodes) {
       _nodes = nodes;
       EndRefresh();
-    }
-
-    private void Log(string format, params object[] args) {
-      // For debugging.
-      Logger.LogInfo("VsHierarchy: {0}", string.Format(format, args));
-    }
-
-    private void LogProperty(string message, int propid) {
-      Log("{0} - {1}", message, GetEnumName(propid, typeof(__VSHPROPID), typeof(__VSHPROPID2), typeof(__VSHPROPID3), typeof(__VSHPROPID4), typeof(__VSHPROPID5), typeof(__VSHPROPID6)));
-    }
-
-    private string GetEnumName(int value, params Type[] enumTypes) {
-      var name =
-        enumTypes.Select(enumType => Enum.GetName(enumType, value)).FirstOrDefault(x => x != null);
-      if (name != null)
-        return name;
-      return value.ToString();
     }
 
     private void EndRefresh() {
@@ -183,7 +164,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetCanonicalName(uint itemid, out string pbstrName) {
-      Log("GetCanonicalName({0})", itemid);
+      _logger.Log("GetCanonicalName({0})", itemid);
       pbstrName = null;
 
       NodeViewModel node;
@@ -195,13 +176,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetGuidProperty(uint itemid, int propid, out Guid pguid) {
-      Log("GetGuidProperty({0})", itemid);
+      _logger.LogPropertyGuid("GetGuidProperty", itemid, propid);
       pguid = Guid.Empty;
       return VSConstants.E_FAIL;
     }
 
     public int GetNestedHierarchy(uint itemid, ref Guid iidHierarchyNested, out IntPtr ppHierarchyNested, out uint pitemidNested) {
-      Log("GetNestedHierarchy({0})", itemid);
+      _logger.Log("GetNestedHierarchy({0})", itemid);
       pitemidNested = uint.MaxValue;
       ppHierarchyNested = IntPtr.Zero;
       itemid = 0U;
@@ -209,7 +190,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetProperty(uint itemid, int propid, out object pvar) {
-      LogProperty("GetProperty - ", propid);
+      _logger.LogProperty("GetProperty", itemid, propid);
       if (itemid == _nodes.RootNode.ItemId && propid == (int)__VSHPROPID.VSHPROPID_ProjectDir) {
         pvar = "";
         return VSConstants.S_OK;
@@ -234,13 +215,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetSite(out Microsoft.VisualStudio.OLE.Interop.IServiceProvider site) {
-      Log("GetSite()");
+      _logger.Log("GetSite()");
       site = this._site;
       return 0;
     }
 
     public int ParseCanonicalName(string pszName, out uint pitemid) {
-      Log("ParseCanonicalName({0})", pszName);
+      _logger.Log("ParseCanonicalName({0})", pszName);
       pitemid = 0U;
       return VSConstants.E_NOTIMPL;
     }
@@ -255,7 +236,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int SetProperty(uint itemid, int propid, object var) {
-      LogProperty("SetProperty - ", propid);
+      _logger.LogProperty("SetProperty - ", itemid, propid);
       NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;
@@ -299,6 +280,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int ExecCommand(uint itemid, ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
+      _logger.LogExecCommand(itemid, pguidCmdGroup, nCmdID, nCmdexecopt);
       if (!(pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) || (int)nCmdID != 2)
         return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
       this.OpenScriptDocument(itemid);
@@ -307,6 +289,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int QueryStatusCommand(uint itemid, ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
       for (int index = 0; (long)index < (long)cCmds; ++index) {
+        _logger.LogQueryStatusCommand(itemid, pguidCmdGroup, prgCmds[index].cmdID);
         if (pguidCmdGroup == VSConstants.VSStd2K && (int)prgCmds[index].cmdID == 134) {
           NodeViewModel node;
           if (_nodes.FindNode(itemid, out node))
@@ -336,13 +319,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetItemContext(uint itemid, out Microsoft.VisualStudio.OLE.Interop.IServiceProvider ppSP) {
-      Log("GetItemContext({0})", itemid);
+      _logger.Log("GetItemContext({0})", itemid);
       ppSP = null;
       return 0;
     }
 
     public int GetMkDocument(uint itemid, out string pbstrMkDocument) {
-      Log("GetMkDocument({0})", itemid);
+      _logger.Log("GetMkDocument({0})", itemid);
       pbstrMkDocument = null;
       NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node))
@@ -352,7 +335,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int IsDocumentInProject(string pszMkDocument, out int pfFound, VSDOCUMENTPRIORITY[] pdwPriority, out uint pitemid) {
-      Log("IsDocumentInProject({0})", pszMkDocument);
+      _logger.Log("IsDocumentInProject({0})", pszMkDocument);
       pfFound = 0;
       pitemid = 0U;
       if (pdwPriority != null && pdwPriority.Length >= 1)

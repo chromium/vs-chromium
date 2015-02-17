@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
+using VsChromium.Core.Logging;
 using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -54,6 +55,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       get { return _vsGlyphService.ImageListPtr; }
     }
 
+    public VsHierarchyNodes Nodes {
+      get { return _nodes; }
+    }
+
     public void Dispose() {
       Close();
       _nodes.Clear();
@@ -71,6 +76,31 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public void SetNodes(VsHierarchyNodes nodes) {
       _nodes = nodes;
       EndRefresh();
+    }
+
+    public void SelectNode(NodeViewModel node) {
+      var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(this._serviceProvider);
+      if (uiHierarchyWindow == null)
+        return;
+
+#if true
+      if (ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_SelectItem))) {
+        Logger.LogError("Error selecting item in solution explorer.");
+      }
+#else
+      uint pdwState;
+      if (ErrorHandler.Failed(uiHierarchyWindow.GetItemState(this, node.ItemId, (int)__VSHIERARCHYITEMSTATE.HIS_Selected, out pdwState)))
+        return;
+
+      if (pdwState == (uint)__VSHIERARCHYITEMSTATE.HIS_Selected)
+        return;
+
+      if (ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_ExpandParentsToShowItem)) ||
+          ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_ExpandFolder)) ||
+          ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_SelectItem))) {
+        return;
+      }
+#endif
     }
 
     private void EndRefresh() {
@@ -150,13 +180,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (node.Path == null)
         return;
       OnOpenDocument(node.Path);
-    }
-
-    private bool FindNode(string name, out NodeViewModel node) {
-      node = (NodeViewModel)null;
-      if (!string.IsNullOrEmpty(name))
-        return _nodes.RootNode.FindNodeByMoniker(name, out node);
-      return false;
     }
 
     public int AdviseHierarchyEvents(IVsHierarchyEvents pEventSink, out uint pdwCookie) {
@@ -348,7 +371,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GenerateUniqueItemName(uint itemidLoc, string pszExt, string pszSuggestedRoot, out string pbstrItemName) {
-      pbstrItemName = (string)null;
+      pbstrItemName = null;
       return VSConstants.E_NOTIMPL;
     }
 

@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
@@ -39,7 +40,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
-      _hierarchy.OpenDocument += HierarchyOnOpenDocument;
     }
 
     private void HierarchyOnOpenDocument(string path) {
@@ -58,6 +58,31 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       // Force getting the tree and refreshing the ui hierarchy.
       _fileSystemTreeSource.Fetch();
+
+      _hierarchy.OpenDocument += HierarchyOnOpenDocument;
+      _hierarchy.SyncToActiveDocument += HierarchyOnSyncToActiveDocument;
+    }
+
+    private void HierarchyOnSyncToActiveDocument() {
+      Logger.WrapActionInvocation(
+        () => {
+          var dte = _visualStudioPackageProvider.Package.DTE;
+          var document = dte.ActiveDocument;
+          if (document == null)
+            return;
+          var path = document.FullName;
+          if (!PathHelpers.IsAbsolutePath(path))
+            return;
+          if (!PathHelpers.IsValidBclPath(path))
+            return;
+
+          //
+
+          NodeViewModel node;
+          if (_hierarchy.Nodes.RootNode.FindNodeByMoniker(path, out node)) {
+            _hierarchy.SelectNode(node);
+          }
+        });
     }
 
     /// <summary>

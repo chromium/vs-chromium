@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.Files;
@@ -17,8 +15,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly List<NodeViewModel> _children = new List<NodeViewModel>();
     private readonly Dictionary<int, object> _properties = new Dictionary<int, object>();
     private NodeViewModel _parent;
-    private NodeViewModel _firstChild;
-    private NodeViewModel _lastChild;
 
     public NodeViewModel() {
       OpenFolderImageIndex = NoImage;
@@ -33,7 +29,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public string Moniker { get; set; }
     public string LocalMoniker { get; set; }
     public uint DocCookie { get; set; }
-    public NodeViewModel NextSibling { get; set; }
     public int ImageIndex { get; set; }
     public int OpenFolderImageIndex { get; set; }
     public Icon Icon { get; set; }
@@ -56,46 +51,37 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public uint GetFirstChildItemId() {
-      if (this._firstChild != null)
-        return this._firstChild.ItemId;
-      return uint.MaxValue;
+      if (_children.Count == 0)
+        return uint.MaxValue;
+
+      return _children[0].ItemId;
     }
 
     private uint GetParentItemId() {
-      if (this._parent != null)
-        return this._parent.ItemId;
-      return uint.MaxValue;
+      if (_parent == null)
+        return uint.MaxValue;
+
+      return _parent.ItemId;
     }
 
     private uint GetNextSiblingItemId() {
-      if (this.NextSibling != null)
-        return this.NextSibling.ItemId;
-      return uint.MaxValue;
-    }
+      // TODO(rpaquay): Perf?
+      if (_parent == null)
+        return uint.MaxValue;
 
-    private void AddSiblingAfter(NodeViewModel node) {
-      if (this.NextSibling != null) {
-        node.NextSibling = this.NextSibling;
-      }
-      this.NextSibling = node;
+      var index = _parent._children.IndexOf(this);
+      if (index < 0 || index >= _parent._children.Count - 1)
+        return uint.MaxValue;
+      return _parent._children[index + 1].ItemId;
     }
 
     public void AddChild(NodeViewModel node) {
       node._parent = this;
-      if (this._lastChild == null)
-        this._firstChild = node;
-      else
-        this._lastChild.AddSiblingAfter(node);
-      this._lastChild = node;
-      this._children.Add(node);
+      _children.Add(node);
     }
 
     public void RemoveChildren() {
-      var list = this._children.ToList();
-      foreach (var virtualProjectNode in list)
-        this._children.Remove(virtualProjectNode);
-      this._firstChild = null;
-      this._lastChild = null;
+      _children.Clear();
     }
 
     private IntPtr GetIconHandleForImageIndex(int imageIndex) {
@@ -103,79 +89,62 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private IntPtr GetIconHandle() {
-      Icon icon = this.Icon;
-      if (this.Icon != null)
+      var icon = this.Icon;
+      if (icon != null)
         return icon.Handle;
-      return this.GetIconHandleForImageIndex(this.GetImageIndex());
+      return GetIconHandleForImageIndex(GetImageIndex());
     }
 
     private IntPtr GetOpenFolderIconHandle() {
-      Icon icon = this.OpenFolderIcon;
-      if (this.Icon != null && icon != null)
+      var icon = OpenFolderIcon;
+      if (Icon != null && icon != null)
         return icon.Handle;
-      return this.GetIconHandleForImageIndex(this.GetOpenFolderImageIndex());
+      return GetIconHandleForImageIndex(GetOpenFolderImageIndex());
     }
 
     public int GetChildrenCount() {
-      return this._children.Count;
+      return _children.Count;
     }
 
     private int GetImageIndex() {
-      return this.ImageIndex;
+      return ImageIndex;
     }
 
     private int GetOpenFolderImageIndex() {
-      return this.OpenFolderImageIndex;
-    }
-
-    public void Inactivate() {
-      this.Caption = this.Name;
-    }
-
-    public void Activate() {
-      this.Caption = string.Format("{0} active", this.Name);
+      return OpenFolderImageIndex;
     }
 
     private bool FindNodeByMonikerHelper(NodeViewModel parentNode, string searchMoniker, out NodeViewModel foundNode) {
-      foundNode = (NodeViewModel)null;
+      foundNode = null;
       if (parentNode == null)
         return false;
+
       if (SystemPathComparer.Instance.StringComparer.Equals(parentNode.LocalMoniker, searchMoniker)) {
         foundNode = parentNode;
         return true;
       }
-      bool flag = false;
-      for (NodeViewModel parentNode1 = parentNode._firstChild; parentNode1 != null; parentNode1 = parentNode1.NextSibling) {
-        flag = this.FindNodeByMonikerHelper(parentNode1, searchMoniker, out foundNode);
-        if (flag)
-          break;
+
+      foreach (var child in parentNode._children) {
+        if (FindNodeByMonikerHelper(child, searchMoniker, out foundNode)) {
+          return true;
+        }
       }
-      return flag;
+      return false;
     }
 
     public bool FindNodeByMoniker(string searchMoniker, out NodeViewModel node) {
-      node = (NodeViewModel)null;
-      if (!this.IsRoot)
+      node = null;
+      if (!IsRoot)
         return false;
-      return this.FindNodeByMonikerHelper(this, searchMoniker, out node);
+      return FindNodeByMonikerHelper(this, searchMoniker, out node);
     }
-
-#if false
-    public void Redraw() {
-      foreach (IVsHierarchyEvents vsHierarchyEvents in (IEnumerable)this._owningHierarchy.EventSinks) {
-        vsHierarchyEvents.OnPropertyChanged(this.ItemId, (int)__VSHPROPID.VSHPROPID_Caption, 0U);
-        vsHierarchyEvents.OnPropertyChanged(this.ItemId, (int)__VSHPROPID.VSHPROPID_IconIndex, 0U);
-        vsHierarchyEvents.OnPropertyChanged(this.ItemId, (int)__VSHPROPID.VSHPROPID_StateIconIndex, 0U);
-      }
-    }
-#endif
 
     public bool IsRemote() {
       return !string.IsNullOrEmpty(this.Moniker);
     }
 
     public string GetMkDocument() {
-      return this.LocalMoniker;
+      return LocalMoniker;
     }
 
     public int SetProperty(int propid, object var) {
@@ -190,48 +159,48 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       pvar = null;
       switch (propid) {
         case (int)__VSHPROPID2.VSHPROPID_KeepAliveDocument:
-          pvar = (object)true;
+          pvar = true;
           break;
         case (int)__VSHPROPID.VSHPROPID_OverlayIconIndex:
-          pvar = (object)VSOVERLAYICON.OVERLAYICON_NONE;
+          pvar = VSOVERLAYICON.OVERLAYICON_NONE;
           break;
         case (int)__VSHPROPID.VSHPROPID_NextVisibleSibling:
         case (int)__VSHPROPID.VSHPROPID_NextSibling:
-          pvar = (object)this.GetNextSiblingItemId();
+          pvar = GetNextSiblingItemId();
           break;
         case (int)__VSHPROPID.VSHPROPID_FirstVisibleChild:
         case (int)__VSHPROPID.VSHPROPID_FirstChild:
-          pvar = (object)this.GetFirstChildItemId();
+          pvar = GetFirstChildItemId();
           break;
         case (int)__VSHPROPID.VSHPROPID_Expanded:
-          pvar = (object)(this.IsExpanded ? 1 : 0);
+          pvar = (this.IsExpanded ? 1 : 0);
           break;
         case (int)__VSHPROPID.VSHPROPID_ItemDocCookie:
           pvar = (object)this.ItemId;
           break;
         case (int)__VSHPROPID.VSHPROPID_OpenFolderIconIndex: {
-            int iconIndex = this.GetOpenFolderImageIndex();
+            var iconIndex = GetOpenFolderImageIndex();
             if (iconIndex == NoImage)
-              iconIndex = this.GetImageIndex();
+              iconIndex = GetImageIndex();
             if (iconIndex == NoImage)
               return VSConstants.E_NOTIMPL;
-            pvar = (object)iconIndex;
+            pvar = iconIndex;
             break;
           }
         case (int)__VSHPROPID.VSHPROPID_OpenFolderIconHandle: {
-            IntPtr iconHandle = this.GetOpenFolderIconHandle();
+            var iconHandle = GetOpenFolderIconHandle();
             if (iconHandle == IntPtr.Zero)
-              iconHandle = this.GetIconHandle();
+              iconHandle = GetIconHandle();
             if (iconHandle == IntPtr.Zero)
               return VSConstants.E_NOTIMPL;
-            pvar = (object)iconHandle;
+            pvar = iconHandle;
             break;
           }
         case (int)__VSHPROPID.VSHPROPID_IconHandle: {
-            IntPtr iconHandle = this.GetIconHandle();
+            var iconHandle = GetIconHandle();
             if (iconHandle == IntPtr.Zero)
               return VSConstants.E_NOTIMPL;
-            pvar = (object)iconHandle;
+            pvar = iconHandle;
             break;
           }
         case (int)__VSHPROPID.VSHPROPID_ProjectName:
@@ -242,7 +211,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           pvar = (object)(this.ExpandByDefault ? 1 : 0);
           break;
         case (int)__VSHPROPID.VSHPROPID_Expandable:
-          pvar = this._firstChild == null ? (object)false : (object)true;
+          pvar = this._children.Count > 0;
           break;
         case (int)__VSHPROPID.VSHPROPID_IconIndex: {
             int imageIndex = this.GetImageIndex();

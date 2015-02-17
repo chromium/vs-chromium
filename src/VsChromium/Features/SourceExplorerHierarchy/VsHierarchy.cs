@@ -32,7 +32,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public EventSinkCollection EventSinks {
       get {
-        return this._eventSinks;
+        return _eventSinks;
       }
     }
 
@@ -422,8 +422,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int OpenItemWithSpecific(uint itemid, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
-      ppWindowFrame = (IVsWindowFrame)null;
-      return this.OpenItem(itemid, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
+      return OpenItem(itemid, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
     }
 
     public int RemoveItem(uint dwReserved, uint itemid, out int pfResult) {

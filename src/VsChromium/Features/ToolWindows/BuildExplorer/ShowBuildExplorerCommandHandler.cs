@@ -13,7 +13,7 @@ namespace VsChromium.Features.ToolWindows.BuildExplorer {
 
     [ImportingConstructor]
     public ShowBuildExplorerCommandHandler(IVisualStudioPackageProvider provider)
-      : base(provider, PkgCmdIdList.CmdidBuildExplorerToolWindow) {
+      : base(provider, (int)PkgCmdIdList.CmdidBuildExplorerToolWindow) {
     }
   }
 }

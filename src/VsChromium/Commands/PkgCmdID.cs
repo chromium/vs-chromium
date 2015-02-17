@@ -3,16 +3,16 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Commands {
-  static class PkgCmdIdList {
-    public const int CmdidFormatComment = 0x100;
-    public const int CmdidSourceExplorerToolWindow = 0x101;
-    public const int CmdidSearchFileNames = 0x102;
-    public const int CmdidSearchDirectoryNames = 0x103;
-    public const int CmdidSearchText = 0x104;
-    public const int CmdidGotoNextLocation = 0x105;
-    public const int CmdidGotoPreviousLocation = 0x106;
-    public const int CmdidCancelSearch = 0x107;
-    public const int CmdidBuildExplorerToolWindow = 0x110;
-    public const int CmdidSyncToDocument = 0x120;
+  public enum PkgCmdIdList {
+    CmdidFormatComment = 0x100,
+    CmdidSourceExplorerToolWindow = 0x101,
+    CmdidSearchFileNames = 0x102,
+    CmdidSearchDirectoryNames = 0x103,
+    CmdidSearchText = 0x104,
+    CmdidGotoNextLocation = 0x105,
+    CmdidGotoPreviousLocation = 0x106,
+    CmdidCancelSearch = 0x107,
+    CmdidBuildExplorerToolWindow = 0x110,
+    CmdidSyncToDocument = 0x120,
   };
 }

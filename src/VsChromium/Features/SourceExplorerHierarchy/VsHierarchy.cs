@@ -313,7 +313,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return VSConstants.S_OK;
       }
 
-      if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == PkgCmdIdList.CmdidSyncToDocument) {
+      if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == (int)PkgCmdIdList.CmdidSyncToDocument) {
         OnSyncToActiveDocument();
         return VSConstants.S_OK;
       }

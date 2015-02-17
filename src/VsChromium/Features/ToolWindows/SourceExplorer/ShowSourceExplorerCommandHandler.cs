@@ -13,7 +13,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     [ImportingConstructor]
     public ShowSourceExplorerCommandHandler(IVisualStudioPackageProvider provider)
-      : base(provider, PkgCmdIdList.CmdidSourceExplorerToolWindow) {
+      : base(provider, (int) PkgCmdIdList.CmdidSourceExplorerToolWindow) {
     }
   }
 }

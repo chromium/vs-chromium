@@ -21,7 +21,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public override CommandID CommandId {
       get {
-        return new CommandID(GuidList.GuidVsChromiumCmdSet, PkgCmdIdList.CmdidGotoPreviousLocation);
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidGotoPreviousLocation);
       }
     }
 

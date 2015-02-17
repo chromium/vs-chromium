@@ -67,6 +67,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void EndRefresh() {
+      if (_nodes.RootNode.GetChildrenCount() == 0) {
+        CloseVsHierarchy();
+        return;
+      }
+
       OpenVsHierarchy();
       Redraw();
     }

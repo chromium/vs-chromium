@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
@@ -22,6 +24,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IVsGlyphService _vsGlyphService;
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
     private readonly VsHierarchyLogger _logger;
+    private readonly Dictionary<CommandID, VsHierarchyCommandHandler> _commandHandlers = new Dictionary<CommandID, VsHierarchyCommandHandler>();
+
     private VsHierarchyNodes _nodes = new VsHierarchyNodes();
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
@@ -44,6 +48,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     protected virtual void OnOpenDocument(string obj) {
       var handler = OpenDocument;
       if (handler != null) handler(obj);
+    }
+
+    public void AddCommandHandler(VsHierarchyCommandHandler handler) {
+      _commandHandlers.Add(handler.CommandId, handler);
     }
 
     public EventSinkCollection EventSinks {
@@ -349,36 +357,38 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public int QueryStatusCommand(uint itemid, ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
       for (var index = 0; index < cCmds; ++index) {
         _logger.LogQueryStatusCommand(itemid, pguidCmdGroup, prgCmds[index].cmdID);
+
+        NodeViewModel node;
+        if (!_nodes.FindNode(itemid, out node)) {
+          return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+        }
+
         if (pguidCmdGroup == VSConstants.VSStd2K && prgCmds[index].cmdID == (int)VSConstants.VSStd2KCmdID.DOUBLECLICK) {
-          NodeViewModel node;
-          if (_nodes.FindNode(itemid, out node))
+          if (node != null) {
             prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
+          }
           return VSConstants.S_OK;
         }
         if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && prgCmds[index].cmdID == (int)VSConstants.VSStd97CmdID.Open) {
-          NodeViewModel node;
-          if (_nodes.FindNode(itemid, out node))
+          if (node != null) {
             prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
+          }
           return VSConstants.S_OK;
         }
         if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && prgCmds[index].cmdID == (int)VSConstants.VSStd97CmdID.OpenWith) {
-          NodeViewModel node;
-          if (_nodes.FindNode(itemid, out node))
+          if (node != null) {
             prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
+          }
           return VSConstants.S_OK;
         }
-        if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFullPath) ||
-            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFullPathPosix) ||
-            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyRelativePath) ||
-            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyRelativePathPosix) ||
-            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileFullPath) ||
-            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileFullPathPosix) ||
-            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileRelativePath) ||
-            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileRelativePathPosix)) {
-          NodeViewModel node;
-          if (_nodes.FindNode(itemid, out node))
+
+        var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[index].cmdID);
+        VsHierarchyCommandHandler handler;
+        if (_commandHandlers.TryGetValue(commandId, out handler)) {
+          if (handler.IsEnabled(node)) {
             prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
-          return VSConstants.S_OK;
+            return VSConstants.S_OK;
+          }
         }
       }
       return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
@@ -386,6 +396,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int ExecCommand(uint itemid, ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
       _logger.LogExecCommand(itemid, pguidCmdGroup, nCmdID, nCmdexecopt);
+
+      var commandId = new CommandID(pguidCmdGroup, (int)nCmdID);
+      NodeViewModel node;
+      if (!_nodes.FindNode(itemid, out node)) {
+        return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+      }
 
       if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick) {
         OpenItemDocument(itemid);
@@ -431,6 +447,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == (int)PkgCmdIdList.CmdidSyncToDocument) {
         OnSyncToActiveDocument();
+        return VSConstants.S_OK;
+      }
+
+      VsHierarchyCommandHandler handler;
+      if (_commandHandlers.TryGetValue(commandId, out handler)) {
+        if (!handler.IsEnabled(node)) {
+          return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+        }
+        handler.Execute(node);
         return VSConstants.S_OK;
       }
 
@@ -485,7 +510,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       var miscellaneousProject = VsShellUtilities.GetMiscellaneousProject(this._serviceProvider);
       int hresult = VSConstants.E_FAIL;
-      if (miscellaneousProject != null && 
+      if (miscellaneousProject != null &&
          _serviceProvider.GetService(typeof(SVsUIShellOpenDocument)) is IVsUIShellOpenDocument) {
         var externalFilesManager = this._serviceProvider.GetService(typeof(SVsExternalFilesManager)) as IVsExternalFilesManager;
         externalFilesManager.TransferDocument(null, moniker, null);
@@ -557,8 +582,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           hresult = OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame);
         } else {
           var vsProject3 = hierOpen as IVsProject3;
-          hresult = vsProject3 == null 
-            ? OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame) 
+          hresult = vsProject3 == null
+            ? OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame)
             : vsProject3.OpenItem(itemid1, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
         }
       }

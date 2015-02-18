@@ -18,6 +18,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IVsGlyphService _vsGlyphService;
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IFileSystem _fileSystem;
+    private readonly IClipboard _clipboard;
 
     [ImportingConstructor]
     public SourceExplorerHierarchyControllerFactory(
@@ -26,13 +27,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IVisualStudioPackageProvider visualStudioPackageProvider,
       IVsGlyphService vsGlyphService,
       IOpenDocumentHelper openDocumentHelper,
-      IFileSystem fileSystem) {
+      IFileSystem fileSystem,
+      IClipboard clipboard) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _vsGlyphService = vsGlyphService;
       _openDocumentHelper = openDocumentHelper;
       _fileSystem = fileSystem;
+      _clipboard = clipboard;
     }
 
     public ISourceExplorerHierarchyController CreateController() {
@@ -42,7 +45,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _visualStudioPackageProvider,
         _vsGlyphService,
         _openDocumentHelper,
-        _fileSystem);
+        _fileSystem,
+        _clipboard);
     }
   }
 }

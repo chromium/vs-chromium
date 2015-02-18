@@ -216,6 +216,7 @@
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsGlyphService.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyCommandHandler.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyLogger.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyNodes.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchy.cs" />
@@ -264,8 +265,8 @@
     <Compile Include="Views\ImageSourceFactory.cs" />
     <Compile Include="Wpf\HierarchyObjectNavigator.cs" />
     <Compile Include="Wpf\IWindowsExplorer.cs" />
-    <Compile Include="Wpf\Clipboard.cs" />
-    <Compile Include="Wpf\IClipboard.cs" />
+    <Compile Include="Views\Clipboard.cs" />
+    <Compile Include="Views\IClipboard.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerController.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\CommandDelegate.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelBase.cs" />

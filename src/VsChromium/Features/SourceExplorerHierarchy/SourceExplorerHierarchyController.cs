@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Language.Intellisense;
+using VsChromium.Commands;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -20,6 +22,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IVsGlyphService _vsGlyphService;
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IFileSystem _fileSystem;
+    private readonly IClipboard _clipboard;
     private readonly VsHierarchy _hierarchy;
 
     public SourceExplorerHierarchyController(
@@ -28,7 +31,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IVisualStudioPackageProvider visualStudioPackageProvider,
       IVsGlyphService vsGlyphService,
       IOpenDocumentHelper openDocumentHelper,
-      IFileSystem fileSystem) {
+      IFileSystem fileSystem,
+      IClipboard clipboard) {
 
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
@@ -36,6 +40,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _vsGlyphService = vsGlyphService;
       _openDocumentHelper = openDocumentHelper;
       _fileSystem = fileSystem;
+      _clipboard = clipboard;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
@@ -60,6 +65,48 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       _hierarchy.OpenDocument += HierarchyOnOpenDocument;
       _hierarchy.SyncToActiveDocument += HierarchyOnSyncToActiveDocument;
+
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPath),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = node => _clipboard.SetText(node.Path)
+      });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPathPosix),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = node => _clipboard.SetText(PathHelpers.ToPosix(node.Path))
+      });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyRelativePath),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = node => _clipboard.SetText(node.GetRelativePath())
+      });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyRelativePathPosix),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = node => _clipboard.SetText(PathHelpers.ToPosix(node.GetRelativePath()))
+      });
+
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPath),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => _clipboard.SetText(node.Path)
+      });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPathPosix),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => _clipboard.SetText(PathHelpers.ToPosix(node.Path))
+      });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePath),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => _clipboard.SetText(node.GetRelativePath())
+      });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePathPosix),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => _clipboard.SetText(PathHelpers.ToPosix(node.GetRelativePath()))
+      });
     }
 
     private void HierarchyOnSyncToActiveDocument() {

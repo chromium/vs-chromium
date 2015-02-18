@@ -218,6 +218,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
       return VSConstants.S_OK;
     }
+
+    public string GetRelativePath() {
+      if (_parent == null || _parent.IsRoot)
+        return "";
+      return PathHelpers.CombinePaths(_parent.GetRelativePath(), Name);
+    }
   }
 
   public class DirectoryNodeViewModel : NodeViewModel {

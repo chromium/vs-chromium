@@ -367,6 +367,19 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
             prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
           return VSConstants.S_OK;
         }
+        if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFullPath) ||
+            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFullPathPosix) ||
+            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyRelativePath) ||
+            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyRelativePathPosix) ||
+            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileFullPath) ||
+            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileFullPathPosix) ||
+            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileRelativePath) ||
+            (pguidCmdGroup == GuidList.GuidVsChromiumCmdSet && prgCmds[index].cmdID == (int)PkgCmdIdList.CmdidCopyFileRelativePathPosix)) {
+          NodeViewModel node;
+          if (_nodes.FindNode(itemid, out node))
+            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
+          return VSConstants.S_OK;
+        }
       }
       return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
     }

@@ -14,5 +14,13 @@ namespace VsChromium.Commands {
     CmdidCancelSearch = 0x107,
     CmdidBuildExplorerToolWindow = 0x110,
     CmdidSyncToDocument = 0x120,
+    CmdidCopyFullPath = 0x130,
+    CmdidCopyFullPathPosix = 0x131,
+    CmdidCopyRelativePath = 0x132,
+    CmdidCopyRelativePathPosix = 0x133,
+    CmdidCopyFileFullPath = 0x140,
+    CmdidCopyFileRelativePath = 0x142,
+    CmdidCopyFileFullPathPosix = 0x141,
+    CmdidCopyFileRelativePathPosix = 0x143,
   };
 }

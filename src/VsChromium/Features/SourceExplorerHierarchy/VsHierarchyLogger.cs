@@ -95,13 +95,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public void LogExecCommand(uint itemid, Guid pguidCmdGroup, uint nCmdId, uint nCmdexecopt) {
       if (CommandsEnabled) {
-        Log("Exec: {0}", GetCommandName(pguidCmdGroup, nCmdId));
+        Log("Exec({0}): {1}", (int)itemid, GetCommandName(pguidCmdGroup, nCmdId));
       }
     }
 
     public void LogQueryStatusCommand(uint itemid, Guid pguidCmdGroup, uint cmdId) {
       if (CommandsEnabled) {
-        Log("QueryStatus: {0}", GetCommandName(pguidCmdGroup, cmdId));
+        Log("QueryStatus({0}): {1}", (int)itemid, GetCommandName(pguidCmdGroup, cmdId));
       }
     }
 

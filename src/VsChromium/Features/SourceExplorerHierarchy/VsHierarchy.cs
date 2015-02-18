@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections;
+using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -208,7 +209,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetCanonicalName(uint itemid, out string pbstrName) {
-      _logger.Log("GetCanonicalName({0})", itemid);
+      _logger.Log("GetCanonicalName({0})", (int)itemid);
       pbstrName = null;
 
       NodeViewModel node;
@@ -221,12 +222,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int GetGuidProperty(uint itemid, int propid, out Guid pguid) {
       _logger.LogPropertyGuid("GetGuidProperty", itemid, propid);
-      pguid = Guid.Empty;
-      return VSConstants.E_FAIL;
+      pguid = new Guid(GuidList.GuidVsChromiumPkgString);
+      return VSConstants.S_OK;
     }
 
     public int GetNestedHierarchy(uint itemid, ref Guid iidHierarchyNested, out IntPtr ppHierarchyNested, out uint pitemidNested) {
-      _logger.Log("GetNestedHierarchy({0})", itemid);
+      _logger.Log("GetNestedHierarchy({0})", (int)itemid);
       pitemidNested = uint.MaxValue;
       ppHierarchyNested = IntPtr.Zero;
       itemid = 0U;
@@ -246,7 +247,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           case (int)__VSHPROPID.VSHPROPID_ParentHierarchy:
             pvar = null;
             return VSConstants.E_FAIL;
-          case (int) __VSHPROPID.VSHPROPID_IconImgList:
+          case (int)__VSHPROPID.VSHPROPID_IconImgList:
             pvar = (int)ImageListPtr;
             return 0;
           default:
@@ -336,12 +337,54 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return VSConstants.S_OK;
       }
 
+      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_RightClick) {
+        // See https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.vsconstants.vsuihierarchywindowcmdids.aspx
+        //
+        // The UIHWCMDID_RightClick command is what tells the interface
+        // IVsUIHierarchy in a IVsUIHierarchyWindow to display the context menu.
+        // Since the mouse position may change between the mouse down and the
+        // mouse up events and the right click command might even originate from
+        // the keyboard Visual Studio provides the proper menu position into
+        // pvaIn by performing a memory copy operation on a POINTS structure
+        // into the VT_UI4 part of the pvaIn variant.
+        //
+        // To show the menu use the derived POINTS as the coordinates to show
+        // the context menu, calling ShowContextMenu. To ensure proper command
+        // handling you should pass a NULL command target into ShowContextMenu
+        // menu so that the IVsUIHierarchyWindow will have the first chance to
+        // handle commands like delete.
+        object variant = Marshal.GetObjectForNativeVariant(pvaIn);
+        var pointsAsUint = (UInt32)variant;
+        var x = (short)(pointsAsUint & 0xffff);
+        var y = (short)(pointsAsUint >> 16);
+        var points = new POINTS();
+        points.x = x;
+        points.y = y;
+
+        return DisplayContextMenu(itemid, points);
+      }
+
       if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == (int)PkgCmdIdList.CmdidSyncToDocument) {
         OnSyncToActiveDocument();
         return VSConstants.S_OK;
       }
 
       return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+    }
+
+    private int DisplayContextMenu(uint itemid, POINTS points) {
+      var shell = _serviceProvider.GetService(typeof(SVsUIShell)) as IVsUIShell;
+      if (shell == null) {
+        return VSConstants.E_FAIL;
+      }
+      var pointsIn = new POINTS[1];
+      pointsIn[0].x = points.x;
+      pointsIn[0].y = points.y;
+      var groupGuid = VsMenus.guidSHLMainMenu;
+      //var menuId = VsMenus.IDM_VS_CTXT_PROJNODE;
+      var menuId = VsMenus.IDM_VS_CTXT_FOLDERNODE;
+      //var menuId = VsMenus.IDM_VS_CTXT_PROJNODE;
+      return shell.ShowContextMenu(0, ref groupGuid, menuId, pointsIn, null);
     }
 
     public int QueryStatusCommand(uint itemid, ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
@@ -354,7 +397,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           return VSConstants.S_OK;
         }
       }
-      return (int)Constants.OLECMDERR_E_NOTSUPPORTED ;
+      return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
     }
 
     public int AddItemFromPackage(string pszItemName, VSADDRESULT[] pResult) {
@@ -363,7 +406,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int AddItem(uint itemidLoc, VSADDITEMOPERATION dwAddItemOperation, string pszItemName, uint cFilesToOpen, string[] rgpszFilesToOpen, IntPtr hwndDlgOwner, VSADDRESULT[] pResult) {
       Guid guid = Guid.Empty;
-      return this.AddItemWithSpecific(itemidLoc, dwAddItemOperation, pszItemName, cFilesToOpen, rgpszFilesToOpen, hwndDlgOwner, 0U, ref guid, (string)null, ref guid, pResult);
+      return AddItemWithSpecific(itemidLoc, dwAddItemOperation, pszItemName, cFilesToOpen, rgpszFilesToOpen, hwndDlgOwner, 0U, ref guid, (string)null, ref guid, pResult);
     }
 
     public int AddItemWithSpecific(uint itemidLoc, VSADDITEMOPERATION dwAddItemOperation, string pszItemName, uint cFilesToOpen, string[] rgpszFilesToOpen, IntPtr hwndDlgOwner, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, VSADDRESULT[] pResult) {
@@ -376,13 +419,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetItemContext(uint itemid, out Microsoft.VisualStudio.OLE.Interop.IServiceProvider ppSP) {
-      _logger.Log("GetItemContext({0})", itemid);
+      _logger.Log("GetItemContext({0})", (int)itemid);
       ppSP = null;
       return 0;
     }
 
     public int GetMkDocument(uint itemid, out string pbstrMkDocument) {
-      _logger.Log("GetMkDocument({0})", itemid);
+      _logger.Log("GetMkDocument({0})", (int)itemid);
       pbstrMkDocument = null;
       NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node))
@@ -400,44 +443,47 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return 0;
     }
 
-#if false
     private int OpenItemViaMiscellaneousProject(uint flags, string moniker, ref Guid rguidLogicalView, out IVsWindowFrame ppWindowFrame) {
-      ppWindowFrame = (IVsWindowFrame)null;
-      IVsProject3 miscellaneousProject = VsShellUtilities.GetMiscellaneousProject(this._serviceProvider);
-      int num = VSConstants.E_FAIL;
-      if (miscellaneousProject != null && this._serviceProvider.GetService(typeof(SVsUIShellOpenDocument)) is IVsUIShellOpenDocument) {
-        uint pitemid = uint.MaxValue;
-        VSDOCUMENTPRIORITY[] pdwPriority = new VSDOCUMENTPRIORITY[1];
-        IVsExternalFilesManager externalFilesManager = this._serviceProvider.GetService(typeof(SVsExternalFilesManager)) as IVsExternalFilesManager;
-        externalFilesManager.TransferDocument((string)null, moniker, (IVsWindowFrame)null);
+      ppWindowFrame = null;
+
+      var miscellaneousProject = VsShellUtilities.GetMiscellaneousProject(this._serviceProvider);
+      int hresult = VSConstants.E_FAIL;
+      if (miscellaneousProject != null && 
+         _serviceProvider.GetService(typeof(SVsUIShellOpenDocument)) is IVsUIShellOpenDocument) {
+        var externalFilesManager = this._serviceProvider.GetService(typeof(SVsExternalFilesManager)) as IVsExternalFilesManager;
+        externalFilesManager.TransferDocument(null, moniker, null);
         IVsProject ppProject;
-        num = externalFilesManager.GetExternalFilesProject(out ppProject);
+        hresult = externalFilesManager.GetExternalFilesProject(out ppProject);
         if (ppProject != null) {
           int pfFound;
-          num = ppProject.IsDocumentInProject(moniker, out pfFound, pdwPriority, out pitemid);
+          uint pitemid;
+          var pdwPriority = new VSDOCUMENTPRIORITY[1];
+          hresult = ppProject.IsDocumentInProject(moniker, out pfFound, pdwPriority, out pitemid);
           if (pfFound == 1 && (int)pitemid != -1)
-            num = ppProject.OpenItem(pitemid, ref rguidLogicalView, IntPtr.Zero, out ppWindowFrame);
+            hresult = ppProject.OpenItem(pitemid, ref rguidLogicalView, IntPtr.Zero, out ppWindowFrame);
         }
       }
-      return num;
+      return hresult;
     }
+
     private void IsDocumentInAnotherProject(string originalPath, out IVsHierarchy hierOpen, out uint itemId, out int isDocInProj) {
-      IVsSolution vsSolution = this._serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
-      Guid rguidEnumOnlyThisType = Guid.Empty;
+      var vsSolution = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+      var rguidEnumOnlyThisType = Guid.Empty;
       IEnumHierarchies ppenum = (IEnumHierarchies)null;
       itemId = uint.MaxValue;
-      hierOpen = (IVsHierarchy)null;
+      hierOpen = null;
       isDocInProj = 0;
       vsSolution.GetProjectEnum(1U, ref rguidEnumOnlyThisType, out ppenum);
       if (ppenum == null)
         return;
+
       ppenum.Reset();
       uint pceltFetched = 1U;
       IVsHierarchy[] rgelt = new IVsHierarchy[1];
       ppenum.Next(1U, rgelt, out pceltFetched);
       while ((int)pceltFetched == 1) {
-        IVsProject vsProject = rgelt[0] as IVsProject;
-        VSDOCUMENTPRIORITY[] pdwPriority = new VSDOCUMENTPRIORITY[1];
+        var vsProject = rgelt[0] as IVsProject;
+        var pdwPriority = new VSDOCUMENTPRIORITY[1];
         uint pitemid;
         vsProject.IsDocumentInProject(originalPath, out isDocInProj, pdwPriority, out pitemid);
         if (isDocInProj == 1) {
@@ -448,39 +494,40 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         ppenum.Next(1U, rgelt, out pceltFetched);
       }
     }
-#endif
 
     public int OpenItem(uint itemid, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
-      _logger.Log("OpenItem({0})", itemid);
-      ppWindowFrame = (IVsWindowFrame)null;
-      return VSConstants.E_NOTIMPL;
-#if false
-      NodeViewModel node = (NodeViewModel)null;
+      _logger.Log("OpenItem({0})", (int)itemid);
+      ppWindowFrame = null;
+
+      NodeViewModel node = null;
       uint flags = 536936448U;
-      int num = 0;
+      int hresult = 0;
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;
-      if (node.IsRemote())
-        flags |= 32U;
+
+      //if (node.IsRemote())
+      //  flags |= 32U;
       if (string.IsNullOrEmpty(node.Path))
         return VSConstants.E_NOTIMPL;
-      IVsUIHierarchy hierarchy = (IVsUIHierarchy)null;
-      IVsHierarchy hierOpen = (IVsHierarchy)null;
+      IVsUIHierarchy hierarchy = null;
       int isDocInProj = 0;
       uint itemid1;
-      if (!VsShellUtilities.IsDocumentOpen(this._serviceProvider, node.Path, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
-        this.IsDocumentInAnotherProject(node.OriginalPath, out hierOpen, out itemid1, out isDocInProj);
+
+      if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.Path, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
+        IVsHierarchy hierOpen = null;
+        IsDocumentInAnotherProject(node.Path, out hierOpen, out itemid1, out isDocInProj);
         if (hierOpen == null) {
-          num = this.OpenItemViaMiscellaneousProject(flags, node.OriginalPath, ref rguidLogicalView, out ppWindowFrame);
+          hresult = OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame);
         } else {
-          IVsProject3 vsProject3 = hierOpen as IVsProject3;
-          num = vsProject3 == null ? this.OpenItemViaMiscellaneousProject(flags, node.OriginalPath, ref rguidLogicalView, out ppWindowFrame) : vsProject3.OpenItem(itemid1, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
+          var vsProject3 = hierOpen as IVsProject3;
+          hresult = vsProject3 == null 
+            ? OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame) 
+            : vsProject3.OpenItem(itemid1, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
         }
       }
       if (ppWindowFrame != null)
-        num = ppWindowFrame.Show();
-      return num;
-#endif
+        hresult = ppWindowFrame.Show();
+      return hresult;
     }
 
     public int OpenItemWithSpecific(uint itemid, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
@@ -493,7 +540,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int ReopenItem(uint itemid, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
-      ppWindowFrame = (IVsWindowFrame)null;
+      ppWindowFrame = null;
       return VSConstants.E_NOTIMPL;
     }
 

@@ -324,54 +324,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return VSConstants.E_NOTIMPL;
     }
 
-    public int ExecCommand(uint itemid, ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
-      _logger.LogExecCommand(itemid, pguidCmdGroup, nCmdID, nCmdexecopt);
-
-      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick) {
-        OpenItemDocument(itemid);
-        return VSConstants.S_OK;
-      }
-
-      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey) {
-        OpenItemDocument(itemid);
-        return VSConstants.S_OK;
-      }
-
-      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_RightClick) {
-        // See https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.vsconstants.vsuihierarchywindowcmdids.aspx
-        //
-        // The UIHWCMDID_RightClick command is what tells the interface
-        // IVsUIHierarchy in a IVsUIHierarchyWindow to display the context menu.
-        // Since the mouse position may change between the mouse down and the
-        // mouse up events and the right click command might even originate from
-        // the keyboard Visual Studio provides the proper menu position into
-        // pvaIn by performing a memory copy operation on a POINTS structure
-        // into the VT_UI4 part of the pvaIn variant.
-        //
-        // To show the menu use the derived POINTS as the coordinates to show
-        // the context menu, calling ShowContextMenu. To ensure proper command
-        // handling you should pass a NULL command target into ShowContextMenu
-        // menu so that the IVsUIHierarchyWindow will have the first chance to
-        // handle commands like delete.
-        object variant = Marshal.GetObjectForNativeVariant(pvaIn);
-        var pointsAsUint = (UInt32)variant;
-        var x = (short)(pointsAsUint & 0xffff);
-        var y = (short)(pointsAsUint >> 16);
-        var points = new POINTS();
-        points.x = x;
-        points.y = y;
-
-        return DisplayContextMenu(itemid, points);
-      }
-
-      if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == (int)PkgCmdIdList.CmdidSyncToDocument) {
-        OnSyncToActiveDocument();
-        return VSConstants.S_OK;
-      }
-
-      return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
-    }
-
     private int DisplayContextMenu(uint itemid, POINTS points) {
       var shell = _serviceProvider.GetService(typeof(SVsUIShell)) as IVsUIShell;
       if (shell == null) {
@@ -416,6 +368,59 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           return VSConstants.S_OK;
         }
       }
+      return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
+    }
+
+    public int ExecCommand(uint itemid, ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
+      _logger.LogExecCommand(itemid, pguidCmdGroup, nCmdID, nCmdexecopt);
+
+      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick) {
+        OpenItemDocument(itemid);
+        return VSConstants.S_OK;
+      }
+
+      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey) {
+        OpenItemDocument(itemid);
+        return VSConstants.S_OK;
+      }
+
+      if ((pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97) && nCmdID == (int)VSConstants.VSStd97CmdID.Open) {
+        OpenItemDocument(itemid);
+        return VSConstants.S_OK;
+      }
+
+      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_RightClick) {
+        // See https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.vsconstants.vsuihierarchywindowcmdids.aspx
+        //
+        // The UIHWCMDID_RightClick command is what tells the interface
+        // IVsUIHierarchy in a IVsUIHierarchyWindow to display the context menu.
+        // Since the mouse position may change between the mouse down and the
+        // mouse up events and the right click command might even originate from
+        // the keyboard Visual Studio provides the proper menu position into
+        // pvaIn by performing a memory copy operation on a POINTS structure
+        // into the VT_UI4 part of the pvaIn variant.
+        //
+        // To show the menu use the derived POINTS as the coordinates to show
+        // the context menu, calling ShowContextMenu. To ensure proper command
+        // handling you should pass a NULL command target into ShowContextMenu
+        // menu so that the IVsUIHierarchyWindow will have the first chance to
+        // handle commands like delete.
+        object variant = Marshal.GetObjectForNativeVariant(pvaIn);
+        var pointsAsUint = (UInt32)variant;
+        var x = (short)(pointsAsUint & 0xffff);
+        var y = (short)(pointsAsUint >> 16);
+        var points = new POINTS();
+        points.x = x;
+        points.y = y;
+
+        return DisplayContextMenu(itemid, points);
+      }
+
+      if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == (int)PkgCmdIdList.CmdidSyncToDocument) {
+        OnSyncToActiveDocument();
+        return VSConstants.S_OK;
+      }
+
       return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
     }
 

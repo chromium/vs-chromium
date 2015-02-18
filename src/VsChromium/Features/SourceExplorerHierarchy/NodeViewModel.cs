@@ -219,4 +219,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return VSConstants.S_OK;
     }
   }
+
+  public class DirectoryNodeViewModel : NodeViewModel {
+    
+  }
+
+  public class FileNodeViewModel : NodeViewModel {
+    
+  }
 }

@@ -116,7 +116,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void SetupRootNode(NodeViewModel root) {
-      var name = "VS Chromium Projects Source Explorer";
+      var name = "VS Chromium Projects";
       root.Name = name;
       root.Caption = name;
       root.ExpandByDefault = true;
@@ -133,18 +133,17 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void AddNodeForEntry(VsHierarchyNodes nodes, FileSystemEntry entry, NodeViewModel parent) {
-      var node = new NodeViewModel {
-        Caption = entry.Name,
-        Name = entry.Name,
-        Path =
-          (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.Path, entry.Name)),
-        ExpandByDefault = (parent == null),
-        IsExpanded = (parent == null)
-      };
-
-      nodes.AddNode(node, parent);
-
       var directoryEntry = entry as DirectoryEntry;
+      var node = directoryEntry != null
+        ? (NodeViewModel)new DirectoryNodeViewModel()
+        : (NodeViewModel)new FileNodeViewModel();
+
+      node.Caption = entry.Name;
+      node.Name = entry.Name;
+      node.Path =
+        (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.Path, entry.Name));
+      node.ExpandByDefault = (parent == null);
+      node.IsExpanded = (parent == null);
       if (directoryEntry != null) {
         node.ImageIndex = _vsGlyphService.GetImageIndex(
           StandardGlyphGroup.GlyphClosedFolder,
@@ -161,6 +160,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           StandardGlyphGroup.GlyphCSharpFile,
           StandardGlyphItem.GlyphItemPublic);
       }
+
+      nodes.AddNode(node, parent);
     }
 
     private void OnErrorReceived(ErrorResponse errorResponse) {

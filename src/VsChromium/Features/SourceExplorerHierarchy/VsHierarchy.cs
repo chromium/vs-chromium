@@ -377,13 +377,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (shell == null) {
         return VSConstants.E_FAIL;
       }
+
+      NodeViewModel node;
+      if (!_nodes.FindNode(itemid, out node))
+        return VSConstants.E_FAIL;
+
       var pointsIn = new POINTS[1];
       pointsIn[0].x = points.x;
       pointsIn[0].y = points.y;
       var groupGuid = VsMenus.guidSHLMainMenu;
-      //var menuId = VsMenus.IDM_VS_CTXT_PROJNODE;
-      var menuId = VsMenus.IDM_VS_CTXT_FOLDERNODE;
-      //var menuId = VsMenus.IDM_VS_CTXT_PROJNODE;
+      var menuId = (node.IsRoot)
+        ? VsMenus.IDM_VS_CTXT_PROJNODE
+        : (node is DirectoryNodeViewModel)
+          ? VsMenus.IDM_VS_CTXT_FOLDERNODE
+          : VsMenus.IDM_VS_CTXT_ITEMNODE;
       return shell.ShowContextMenu(0, ref groupGuid, menuId, pointsIn, null);
     }
 
@@ -393,7 +400,19 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         if (pguidCmdGroup == VSConstants.VSStd2K && prgCmds[index].cmdID == (int)VSConstants.VSStd2KCmdID.DOUBLECLICK) {
           NodeViewModel node;
           if (_nodes.FindNode(itemid, out node))
-            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED);
+            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
+          return VSConstants.S_OK;
+        }
+        if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && prgCmds[index].cmdID == (int)VSConstants.VSStd97CmdID.Open) {
+          NodeViewModel node;
+          if (_nodes.FindNode(itemid, out node))
+            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
+          return VSConstants.S_OK;
+        }
+        if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && prgCmds[index].cmdID == (int)VSConstants.VSStd97CmdID.OpenWith) {
+          NodeViewModel node;
+          if (_nodes.FindNode(itemid, out node))
+            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
           return VSConstants.S_OK;
         }
       }

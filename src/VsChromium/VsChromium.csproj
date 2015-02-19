@@ -253,6 +253,7 @@
     <Compile Include="Package\CommandHandler\PackageCommandHandlerExtensions.cs" />
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerBase.cs" />
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerRegistration.cs" />
+    <Compile Include="Package\CommandHandler\SimplePackageCommandHandler.cs" />
     <Compile Include="Package\DisposeContainer.cs" />
     <Compile Include="Package\IDisposeContainer.cs" />
     <Compile Include="Package\VsSolutionEventsHandler.cs" />

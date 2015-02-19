@@ -14,6 +14,7 @@ using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
 using VsChromium.Views;
+using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class SourceExplorerHierarchyController : ISourceExplorerHierarchyController {
@@ -61,11 +62,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // Force getting the tree and refreshing the ui hierarchy.
       _fileSystemTreeSource.Fetch();
 
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSyncToDocument),
-        IsEnabled = node => true,
-        Execute = args => HierarchyOnSyncToActiveDocument()
-      });
+      var mcs = _visualStudioPackageProvider.Package.OleMenuCommandService;
+      if (mcs != null) {
+        var cmd = new SimplePackageCommandHandler(
+          new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidSyncToDocument),
+          () => _hierarchy.Nodes.RootNode.GetChildrenCount() >= 1,
+          (s, e) => HierarchyOnSyncToActiveDocument());
+        mcs.AddCommand(cmd.ToOleMenuCommand());
+      }
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),

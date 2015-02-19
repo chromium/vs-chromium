@@ -37,17 +37,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _logger = new VsHierarchyLogger(this);
     }
 
-    public event Action<string> OpenDocument;
     public event Action SyncToActiveDocument;
 
     protected virtual void OnSyncToActiveDocument() {
       var handler = SyncToActiveDocument;
       if (handler != null) handler();
-    }
-
-    protected virtual void OnOpenDocument(string obj) {
-      var handler = OpenDocument;
-      if (handler != null) handler(obj);
     }
 
     public void AddCommandHandler(VsHierarchyCommandHandler handler) {
@@ -180,15 +174,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (!ErrorHandler.Succeeded(hr))
         return;
       _vsHierarchyActive = true;
-    }
-
-    private void OpenItemDocument(uint itemid) {
-      NodeViewModel node;
-      if (!_nodes.FindNode(itemid, out node))
-        return;
-      if (node.Path == null)
-        return;
-      OnOpenDocument(node.Path);
     }
 
     public int AdviseHierarchyEvents(IVsHierarchyEvents pEventSink, out uint pdwCookie) {
@@ -363,25 +348,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
         }
 
-        if (pguidCmdGroup == VSConstants.VSStd2K && prgCmds[index].cmdID == (int)VSConstants.VSStd2KCmdID.DOUBLECLICK) {
-          if (node != null) {
-            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
-          }
-          return VSConstants.S_OK;
-        }
-        if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && prgCmds[index].cmdID == (int)VSConstants.VSStd97CmdID.Open) {
-          if (node != null) {
-            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
-          }
-          return VSConstants.S_OK;
-        }
-        if (pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97 && prgCmds[index].cmdID == (int)VSConstants.VSStd97CmdID.OpenWith) {
-          if (node != null) {
-            prgCmds[index].cmdf = (uint)(OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
-          }
-          return VSConstants.S_OK;
-        }
-
         var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[index].cmdID);
         VsHierarchyCommandHandler handler;
         if (_commandHandlers.TryGetValue(commandId, out handler)) {
@@ -401,21 +367,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node)) {
         return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
-      }
-
-      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick) {
-        OpenItemDocument(itemid);
-        return VSConstants.S_OK;
-      }
-
-      if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey) {
-        OpenItemDocument(itemid);
-        return VSConstants.S_OK;
-      }
-
-      if ((pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97) && nCmdID == (int)VSConstants.VSStd97CmdID.Open) {
-        OpenItemDocument(itemid);
-        return VSConstants.S_OK;
       }
 
       if ((pguidCmdGroup == VSConstants.GUID_VsUIHierarchyWindowCmds) && nCmdID == (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_RightClick) {

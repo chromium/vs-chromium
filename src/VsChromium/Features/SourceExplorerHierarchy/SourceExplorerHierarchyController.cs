@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Design;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Commands;
 using VsChromium.Core.Files;
@@ -66,8 +67,32 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // Force getting the tree and refreshing the ui hierarchy.
       _fileSystemTreeSource.Fetch();
 
-      _hierarchy.OpenDocument += HierarchyOnOpenDocument;
       _hierarchy.SyncToActiveDocument += HierarchyOnSyncToActiveDocument;
+
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => HierarchyOnOpenDocument(node.Path)
+      });
+
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => HierarchyOnOpenDocument(node.Path)
+      });
+
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.Open),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => HierarchyOnOpenDocument(node.Path)
+      });
+
+      // TODO(rpaquay): Implement "Open With..." behavior.
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.OpenWith),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => HierarchyOnOpenDocument(node.Path)
+      });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPath),

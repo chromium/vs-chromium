@@ -136,22 +136,33 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public VsHierarchyLogger(VsHierarchy vsHierarchy) {
       _vsHierarchy = vsHierarchy;
-      //Enabled = true;
+      Enabled = true;
+      //LogHierarchyActivity = true;
       //LogPropertyIdActivity = true;
       //LogPropteryGuidActivity = true;
       //LogCommandTargetActivity = true;
+      //IsLogDiffEnabled = true;
     }
 
     public bool Enabled { get; set; }
+    public bool LogHierarchyActivity { get; set; }
     public bool LogPropertyIdActivity { get; set; }
     public bool LogPropteryGuidActivity { get; set; }
     public bool LogCommandTargetActivity { get; set; }
+    public bool IsLogDiffEnabled { get; set; }
 
     public void Log(string format, params object[] args) {
       if (!Enabled)
         return;
 
       Logger.LogInfo("VsHierarchy: {0}", string.Format(format, args));
+    }
+
+    public void LogHierarchy(string format, params object[] args) {
+      if (!LogHierarchyActivity)
+        return;
+
+      Log("VsHierarchy: {0}", string.Format(format, args));
     }
 
     public void LogProperty(string message, uint itemid, int propid) {

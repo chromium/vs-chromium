@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -36,10 +36,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _logger = new VsHierarchyLogger(this);
     }
 
-    public void AddCommandHandler(VsHierarchyCommandHandler handler) {
-      _commandHandlers.Add(handler.CommandId, handler);
-    }
-
     public EventSinkCollection EventSinks {
       get {
         return _eventSinks;
@@ -54,6 +50,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       get { return _nodes; }
     }
 
+    public void AddCommandHandler(VsHierarchyCommandHandler handler) {
+      _commandHandlers.Add(handler.CommandId, handler);
+    }
+
     public void Dispose() {
       Close();
     }
@@ -62,60 +62,96 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       CloseVsHierarchy();
     }
 
-    public void Refresh() {
+    public void Reconnect() {
       CloseVsHierarchy();
-      SetNodes(_nodes);
+      SetNodes(_nodes, null);
     }
 
-    public void SetNodes(VsHierarchyNodes nodes) {
-      _nodes = nodes;
-      EndRefresh();
-    }
+    public void SetNodes(VsHierarchyNodes nodes, VsHierarchyChanges changes) {
+      _logger.Log("SetNodes(node count={0}, added={1}, deleted={2})",
+        nodes.Count,
+        (changes == null ? -1 : changes.AddedItems.Count),
+        (changes == null ? -1 : changes.DeletedItems.Count));
 
-    public void SelectNode(NodeViewModel node) {
-      var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(this._serviceProvider);
-      if (uiHierarchyWindow == null)
-        return;
-
-#if true
-      if (ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_SelectItem))) {
-        Logger.LogError("Error selecting item in solution explorer.");
-      }
-#else
-      uint pdwState;
-      if (ErrorHandler.Failed(uiHierarchyWindow.GetItemState(this, node.ItemId, (int)__VSHIERARCHYITEMSTATE.HIS_Selected, out pdwState)))
-        return;
-
-      if (pdwState == (uint)__VSHIERARCHYITEMSTATE.HIS_Selected)
-        return;
-
-      if (ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_ExpandParentsToShowItem)) ||
-          ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_ExpandFolder)) ||
-          ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_SelectItem))) {
-        return;
-      }
-#endif
-    }
-
-    private void EndRefresh() {
-      if (_nodes.RootNode.GetChildrenCount() == 0) {
+      // Simple case: empty hiererchy
+      if (nodes.RootNode.GetChildrenCount() == 0) {
+        _nodes = nodes;
         CloseVsHierarchy();
         return;
       }
 
-      OpenVsHierarchy();
-      Redraw();
+      // Simple case of unknwon changes or hierarchy is not active.
+      if (changes == null || !_vsHierarchyActive) {
+        _nodes = nodes;
+        OpenVsHierarchy();
+        RefreshAll();
+      }
+
+      // Incremental case: Notify of add/remove items.
+      Debug.Assert(_vsHierarchyActive);
+      Debug.Assert(changes != null);
+
+      // Pass 1: Notify deletion of old items as long as we have the old node
+      // collection active. This is safe because the hierarchy host at this
+      // point knows only about current nodes, and does not know anything about
+      // new nodes. In return, we have not updated out "_nodes" member, so any
+      // GetProperty call will return info about current node only.
+      foreach (var deleted in changes.DeletedItems) {
+        var deletedNode = _nodes.GetNode(deleted);
+        Debug.Assert(deletedNode != null);
+        Debug.Assert(deletedNode.Parent != null);
+        if (_logger.IsLogDiffEnabled) {
+          _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.Path);
+        }
+        foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
+          vsHierarchyEvents.OnItemDeleted(deletedNode.ItemId);
+        }
+      }
+
+      // Pass 2: Notify of node additions. We first need to switch our "_nodes"
+      // field to the new node collection, so that any query made by the
+      // hierarchy host as a result of add events will be answered with the
+      // right set of nodes (the new ones).
+      _nodes = nodes;
+      foreach (var added in changes.AddedItems) {
+        var addedNode = nodes.GetNode(added);
+        var previousSiblingItemId = addedNode.GetPreviousSiblingItemId();
+        Debug.Assert(addedNode != null);
+        Debug.Assert(addedNode.Parent != null);
+        if (_logger.IsLogDiffEnabled) {
+          _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.Path);
+          _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.Path);
+          _logger.Log("    next to {0,7}-\"{1}\"", previousSiblingItemId,
+            (previousSiblingItemId != VSConstants.VSITEMID_NIL ? nodes.GetNode(previousSiblingItemId).Path : "nil"));
+        }
+        foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
+          vsHierarchyEvents.OnItemAdded(
+            addedNode.Parent.ItemId,
+            previousSiblingItemId,
+            addedNode.ItemId);
+        }
+      }
     }
 
-    private void Redraw() {
-      // TODO(rpaquay): Make this more granular.
-      foreach (IVsHierarchyEvents vsHierarchyEvents in (IEnumerable)this.EventSinks)
+    public void SelectNode(NodeViewModel node) {
+      var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(_serviceProvider);
+      if (uiHierarchyWindow == null)
+        return;
+
+      if (ErrorHandler.Failed(uiHierarchyWindow.ExpandItem(this, node.ItemId, EXPANDFLAGS.EXPF_SelectItem))) {
+        Logger.LogError("Error selecting item in solution explorer.");
+      }
+    }
+
+    private void RefreshAll() {
+      foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
         vsHierarchyEvents.OnInvalidateItems(_nodes.RootNode.ItemId);
+      }
       ExpandNode(_nodes.RootNode);
     }
 
     private void ExpandNode(NodeViewModel node) {
-      var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(this._serviceProvider);
+      var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(_serviceProvider);
       if (uiHierarchyWindow == null)
         return;
 
@@ -132,22 +168,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void CloseVsHierarchy() {
-      if (!this._vsHierarchyActive)
-        return;
-      var vsSolution2 = this._serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
-      if (vsSolution2 == null || !ErrorHandler.Succeeded(vsSolution2.RemoveVirtualProject((IVsHierarchy)this, 2U)))
-        return;
-      this._vsHierarchyActive = false;
-    }
-
     private void OpenVsHierarchy() {
       if (_vsHierarchyActive)
         return;
-      var vsSolution2 = this._serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
+      var vsSolution2 = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
       if (vsSolution2 == null)
         return;
-      this.Open();
+      Open();
       int hr = 0;
       if (ErrorHandler.Succeeded(hr)) {
         __VSADDVPFLAGS flags =
@@ -167,9 +194,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _vsHierarchyActive = true;
     }
 
-    public int AdviseHierarchyEvents(IVsHierarchyEvents pEventSink, out uint pdwCookie) {
-      pdwCookie = this._eventSinks.Add((object)pEventSink);
-      return 0;
+    private void CloseVsHierarchy() {
+      if (!_vsHierarchyActive)
+        return;
+      var vsSolution2 = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
+      if (vsSolution2 == null || !ErrorHandler.Succeeded(vsSolution2.RemoveVirtualProject(this, (uint)__VSREMOVEVPFLAGS.REMOVEVP_DontSaveHierarchy)))
+        return;
+      _vsHierarchyActive = false;
     }
 
     private void Open() {
@@ -181,18 +212,24 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       monitorSelection.AdviseSelectionEvents(this as IVsSelectionEvents, out this._selectionEventsCookie);
     }
 
+    public int AdviseHierarchyEvents(IVsHierarchyEvents pEventSink, out uint pdwCookie) {
+      pdwCookie = _eventSinks.Add(pEventSink);
+      return 0;
+    }
+
     public int Close() {
-      if ((int)this._selectionEventsCookie != 0) {
+      _logger.LogHierarchy("Close");
+      if ((int)_selectionEventsCookie != 0) {
         IVsMonitorSelection monitorSelection = this._serviceProvider.GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
         if (monitorSelection != null)
           monitorSelection.UnadviseSelectionEvents(this._selectionEventsCookie);
-        this._selectionEventsCookie = 0U;
+        _selectionEventsCookie = 0U;
       }
       return VSConstants.S_OK;
     }
 
     public int GetCanonicalName(uint itemid, out string pbstrName) {
-      _logger.Log("GetCanonicalName({0})", (int)itemid);
+      _logger.LogHierarchy("GetCanonicalName({0})", (int)itemid);
       pbstrName = null;
 
       NodeViewModel node;
@@ -200,7 +237,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return VSConstants.E_FAIL;
 
       pbstrName = node.Name;
-      return 0;
+      return VSConstants.S_OK;
     }
 
     public int GetGuidProperty(uint itemid, int propid, out Guid pguid) {
@@ -210,10 +247,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetNestedHierarchy(uint itemid, ref Guid iidHierarchyNested, out IntPtr ppHierarchyNested, out uint pitemidNested) {
-      _logger.Log("GetNestedHierarchy({0})", (int)itemid);
+      _logger.LogHierarchy("GetNestedHierarchy({0})", (int)itemid);
       pitemidNested = uint.MaxValue;
       ppHierarchyNested = IntPtr.Zero;
-      itemid = 0U;
       return VSConstants.E_FAIL;
     }
 
@@ -236,20 +272,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           default:
             return node.GetProperty(propid, out pvar);
         }
-      } else {
-        pvar = null;
-        return VSConstants.E_NOTIMPL;
       }
+
+      pvar = null;
+      return VSConstants.E_NOTIMPL;
     }
 
     public int GetSite(out Microsoft.VisualStudio.OLE.Interop.IServiceProvider site) {
-      _logger.Log("GetSite()");
-      site = this._site;
+      _logger.LogHierarchy("GetSite()");
+      site = _site;
       return 0;
     }
 
     public int ParseCanonicalName(string pszName, out uint pitemid) {
-      _logger.Log("ParseCanonicalName({0})", pszName);
+      _logger.LogHierarchy("ParseCanonicalName({0})", pszName);
       pitemid = 0U;
       return VSConstants.E_NOTIMPL;
     }
@@ -260,6 +296,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int SetGuidProperty(uint itemid, int propid, ref Guid rguid) {
+      _logger.LogProperty("SetGuidProperty - ", itemid, propid);
       return VSConstants.E_NOTIMPL;
     }
 
@@ -269,8 +306,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;
       switch (propid) {
-        case -2033:
-        case -2032:
+        case (int)__VSHPROPID.VSHPROPID_ParentHierarchyItemid:
+        case (int)__VSHPROPID.VSHPROPID_ParentHierarchy:
           return VSConstants.E_NOTIMPL;
         default:
           return node.SetProperty(propid, var);
@@ -278,12 +315,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int SetSite(Microsoft.VisualStudio.OLE.Interop.IServiceProvider site) {
-      this._site = site;
+      _site = site;
       return 0;
     }
 
     public int UnadviseHierarchyEvents(uint dwCookie) {
-      this._eventSinks.RemoveAt(dwCookie);
+      _eventSinks.RemoveAt(dwCookie);
       return 0;
     }
 
@@ -350,31 +387,35 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int AddItemFromPackage(string pszItemName, VSADDRESULT[] pResult) {
-      return this.AddItem(uint.MaxValue, VSADDITEMOPERATION.VSADDITEMOP_OPENFILE, pszItemName, 0U, (string[])null, IntPtr.Zero, pResult);
+      _logger.LogHierarchy("AddItemFromPackage({0})", pszItemName);
+      return AddItem(uint.MaxValue, VSADDITEMOPERATION.VSADDITEMOP_OPENFILE, pszItemName, 0U, (string[])null, IntPtr.Zero, pResult);
     }
 
-    public int AddItem(uint itemidLoc, VSADDITEMOPERATION dwAddItemOperation, string pszItemName, uint cFilesToOpen, string[] rgpszFilesToOpen, IntPtr hwndDlgOwner, VSADDRESULT[] pResult) {
+    public int AddItem(uint itemid, VSADDITEMOPERATION dwAddItemOperation, string pszItemName, uint cFilesToOpen, string[] rgpszFilesToOpen, IntPtr hwndDlgOwner, VSADDRESULT[] pResult) {
+      _logger.LogHierarchy("AddItem({0})", (int)itemid);
       Guid guid = Guid.Empty;
-      return AddItemWithSpecific(itemidLoc, dwAddItemOperation, pszItemName, cFilesToOpen, rgpszFilesToOpen, hwndDlgOwner, 0U, ref guid, (string)null, ref guid, pResult);
+      return AddItemWithSpecific(itemid, dwAddItemOperation, pszItemName, cFilesToOpen, rgpszFilesToOpen, hwndDlgOwner, 0U, ref guid, (string)null, ref guid, pResult);
     }
 
-    public int AddItemWithSpecific(uint itemidLoc, VSADDITEMOPERATION dwAddItemOperation, string pszItemName, uint cFilesToOpen, string[] rgpszFilesToOpen, IntPtr hwndDlgOwner, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, VSADDRESULT[] pResult) {
+    public int AddItemWithSpecific(uint itemid, VSADDITEMOPERATION dwAddItemOperation, string pszItemName, uint cFilesToOpen, string[] rgpszFilesToOpen, IntPtr hwndDlgOwner, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, VSADDRESULT[] pResult) {
+      _logger.LogHierarchy("AddItemWithSpecific({0})", (int)itemid);
       return VSConstants.E_NOTIMPL;
     }
 
-    public int GenerateUniqueItemName(uint itemidLoc, string pszExt, string pszSuggestedRoot, out string pbstrItemName) {
+    public int GenerateUniqueItemName(uint itemid, string pszExt, string pszSuggestedRoot, out string pbstrItemName) {
+      _logger.LogHierarchy("GenerateUniqueItemName({0})", (int)itemid);
       pbstrItemName = null;
       return VSConstants.E_NOTIMPL;
     }
 
     public int GetItemContext(uint itemid, out Microsoft.VisualStudio.OLE.Interop.IServiceProvider ppSP) {
-      _logger.Log("GetItemContext({0})", (int)itemid);
+      _logger.LogHierarchy("GetItemContext({0})", (int)itemid);
       ppSP = null;
       return 0;
     }
 
     public int GetMkDocument(uint itemid, out string pbstrMkDocument) {
-      _logger.Log("GetMkDocument({0})", (int)itemid);
+      _logger.LogHierarchy("GetMkDocument({0})", (int)itemid);
       pbstrMkDocument = null;
       NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node))
@@ -384,12 +425,64 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int IsDocumentInProject(string pszMkDocument, out int pfFound, VSDOCUMENTPRIORITY[] pdwPriority, out uint pitemid) {
-      _logger.Log("IsDocumentInProject({0})", pszMkDocument);
+      _logger.LogHierarchy("IsDocumentInProject({0})", pszMkDocument);
       pfFound = 0;
       pitemid = 0U;
       if (pdwPriority != null && pdwPriority.Length >= 1)
         pdwPriority[0] = VSDOCUMENTPRIORITY.DP_Unsupported;
       return 0;
+    }
+
+    public int OpenItem(uint itemid, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
+      _logger.LogHierarchy("OpenItem({0})", (int)itemid);
+      ppWindowFrame = null;
+
+      NodeViewModel node = null;
+      uint flags = 536936448U;
+      int hresult = 0;
+      if (!_nodes.FindNode(itemid, out node))
+        return VSConstants.E_FAIL;
+
+      if (string.IsNullOrEmpty(node.Path))
+        return VSConstants.E_NOTIMPL;
+      IVsUIHierarchy hierarchy;
+      int isDocInProj;
+      uint itemid1;
+
+      if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.Path, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
+        IVsHierarchy hierOpen = null;
+        IsDocumentInAnotherProject(node.Path, out hierOpen, out itemid1, out isDocInProj);
+        if (hierOpen == null) {
+          hresult = OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame);
+        } else {
+          var vsProject3 = hierOpen as IVsProject3;
+          hresult = vsProject3 == null
+            ? OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame)
+            : vsProject3.OpenItem(itemid1, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
+        }
+      }
+      if (ppWindowFrame != null)
+        hresult = ppWindowFrame.Show();
+      return hresult;
+    }
+
+    public int OpenItemWithSpecific(uint itemid, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
+      _logger.LogHierarchy("OpenItemWithSpecific({0})", (int)itemid);
+      return OpenItem(itemid, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
+    }
+
+    public int RemoveItem(uint dwReserved, uint itemid, out int pfResult) {
+      pfResult = 0;
+      return VSConstants.E_NOTIMPL;
+    }
+
+    public int ReopenItem(uint itemid, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
+      ppWindowFrame = null;
+      return VSConstants.E_NOTIMPL;
+    }
+
+    public int TransferItem(string pszMkDocumentOld, string pszMkDocumentNew, IVsWindowFrame punkWindowFrame) {
+      return VSConstants.S_OK;
     }
 
     private int OpenItemViaMiscellaneousProject(uint flags, string moniker, ref Guid rguidLogicalView, out IVsWindowFrame ppWindowFrame) {
@@ -418,7 +511,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private void IsDocumentInAnotherProject(string originalPath, out IVsHierarchy hierOpen, out uint itemId, out int isDocInProj) {
       var vsSolution = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
       var rguidEnumOnlyThisType = Guid.Empty;
-      IEnumHierarchies ppenum = (IEnumHierarchies)null;
+      IEnumHierarchies ppenum;
       itemId = uint.MaxValue;
       hierOpen = null;
       isDocInProj = 0;
@@ -428,7 +521,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       ppenum.Reset();
       uint pceltFetched = 1U;
-      IVsHierarchy[] rgelt = new IVsHierarchy[1];
+      var rgelt = new IVsHierarchy[1];
       ppenum.Next(1U, rgelt, out pceltFetched);
       while ((int)pceltFetched == 1) {
         var vsProject = rgelt[0] as IVsProject;
@@ -442,59 +535,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         }
         ppenum.Next(1U, rgelt, out pceltFetched);
       }
-    }
-
-    public int OpenItem(uint itemid, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
-      _logger.Log("OpenItem({0})", (int)itemid);
-      ppWindowFrame = null;
-
-      NodeViewModel node = null;
-      uint flags = 536936448U;
-      int hresult = 0;
-      if (!_nodes.FindNode(itemid, out node))
-        return VSConstants.E_FAIL;
-
-      //if (node.IsRemote())
-      //  flags |= 32U;
-      if (string.IsNullOrEmpty(node.Path))
-        return VSConstants.E_NOTIMPL;
-      IVsUIHierarchy hierarchy = null;
-      int isDocInProj = 0;
-      uint itemid1;
-
-      if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.Path, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
-        IVsHierarchy hierOpen = null;
-        IsDocumentInAnotherProject(node.Path, out hierOpen, out itemid1, out isDocInProj);
-        if (hierOpen == null) {
-          hresult = OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame);
-        } else {
-          var vsProject3 = hierOpen as IVsProject3;
-          hresult = vsProject3 == null
-            ? OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame)
-            : vsProject3.OpenItem(itemid1, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
-        }
-      }
-      if (ppWindowFrame != null)
-        hresult = ppWindowFrame.Show();
-      return hresult;
-    }
-
-    public int OpenItemWithSpecific(uint itemid, uint grfEditorFlags, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
-      return OpenItem(itemid, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
-    }
-
-    public int RemoveItem(uint dwReserved, uint itemid, out int pfResult) {
-      pfResult = 0;
-      return VSConstants.E_NOTIMPL;
-    }
-
-    public int ReopenItem(uint itemid, ref Guid rguidEditorType, string pszPhysicalView, ref Guid rguidLogicalView, IntPtr punkDocDataExisting, out IVsWindowFrame ppWindowFrame) {
-      ppWindowFrame = null;
-      return VSConstants.E_NOTIMPL;
-    }
-
-    public int TransferItem(string pszMkDocumentOld, string pszMkDocumentNew, IVsWindowFrame punkWindowFrame) {
-      return 0;
     }
   }
 }

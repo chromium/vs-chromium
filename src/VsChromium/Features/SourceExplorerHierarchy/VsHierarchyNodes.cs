@@ -20,6 +20,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public NodeViewModel RootNode { get { return _rootNode; } }
 
     public uint MaxItemId { get { return _nextItemId; } }
+    public int Count { get { return _itemIdMap.Count; } }
 
     public void AddNode(NodeViewModel node, NodeViewModel parent) {
       if (node == null)
@@ -35,6 +36,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       } else if (node.ItemId == uint.MaxValue) {
         node.ItemId = _nextItemId;
         _nextItemId++;
+      } else {
+        _nextItemId = Math.Max(_nextItemId, node.ItemId);
       }
 
       _itemIdMap.Add(node.ItemId, node);
@@ -43,6 +46,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (parent != null) {
         parent.AddChild(node);
       }
+    }
+
+    public NodeViewModel GetNode(uint itemid) {
+      NodeViewModel result;
+      if (!FindNode(itemid, out result))
+        return null;
+      return result;
     }
 
     public bool FindNode(uint itemid, out NodeViewModel node) {

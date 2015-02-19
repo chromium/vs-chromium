@@ -124,5 +124,25 @@ namespace VsChromium.Tests.Core {
       // All the elements of the initial list must be present in the union of the partitions.
       Assert.IsTrue(list.OrderBy(x => x).SequenceEqual(partitions.SelectMany(x => x).OrderBy(x => x)));
     }
+
+    [TestMethod]
+    public void SmallArrayDiffsWorks() {
+      var left = new [] {5, 4, 6, 10};
+      var right = new [] {10, 1};
+      var diffs = ArrayUtilities.BuildArrayDiffsForSmallArrays(left, right);
+      Assert.AreEqual(diffs.LeftOnlyItems.Count, 3);
+      Assert.AreEqual(diffs.RightOnlyItems.Count, 1);
+      Assert.AreEqual(diffs.CommonItems.Count, 1);
+    }
+
+    [TestMethod]
+    public void LargeArrayDiffsWorks() {
+      var left = new[] { 5, 4, 6, 10 };
+      var right = new[] { 10, 1 };
+      var diffs = ArrayUtilities.BuildArrayDiffsForLargeArrays(left, right);
+      Assert.AreEqual(diffs.LeftOnlyItems.Count, 3);
+      Assert.AreEqual(diffs.RightOnlyItems.Count, 1);
+      Assert.AreEqual(diffs.CommonItems.Count, 1);
+    }
   }
 }

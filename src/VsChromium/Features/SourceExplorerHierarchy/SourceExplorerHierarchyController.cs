@@ -6,7 +6,6 @@ using System;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
@@ -239,7 +238,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// Note: This is executed on the UI thread.
     /// </summary>
     private void AfterOpenSolutionHandler() {
-      _hierarchy.Refresh();
+      _hierarchy.Reconnect();
     }
 
     /// <summary>
@@ -253,66 +252,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// Note: This is executed on a background thred.
     /// </summary>
     private void OnTreeReceived(FileSystemTree fileSystemTree) {
-      var nodes = new VsHierarchyNodes();
-      SetupRootNode(nodes.RootNode);
-      if (fileSystemTree != null) {
-        foreach (var root in fileSystemTree.Root.Entries) {
-          AddRootEntry(nodes, root);
-        }
-      }
+      var builder = new IncrementalHierarchyBuilder(_vsGlyphService, _hierarchy.Nodes, fileSystemTree);
+      var buildResult = builder.Run();
 
       _synchronizationContextProvider.UIContext.Post(
-        () => _hierarchy.SetNodes(nodes));
+        () => _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes));
     }
 
-    private void SetupRootNode(NodeViewModel root) {
-      var name = "VS Chromium Projects";
-      root.Name = name;
-      root.Caption = name;
-      root.ExpandByDefault = true;
-      root.ImageIndex = _vsGlyphService.GetImageIndex(
-        StandardGlyphGroup.GlyphClosedFolder,
-        StandardGlyphItem.GlyphItemPublic);
-      root.OpenFolderImageIndex = _vsGlyphService.GetImageIndex(
-        StandardGlyphGroup.GlyphOpenFolder,
-        StandardGlyphItem.GlyphItemPublic);
-    }
-
-    private void AddRootEntry(VsHierarchyNodes nodes, FileSystemEntry root) {
-      AddNodeForEntry(nodes, root, null);
-    }
-
-    private void AddNodeForEntry(VsHierarchyNodes nodes, FileSystemEntry entry, NodeViewModel parent) {
-      var directoryEntry = entry as DirectoryEntry;
-      var node = directoryEntry != null
-        ? (NodeViewModel)new DirectoryNodeViewModel()
-        : (NodeViewModel)new FileNodeViewModel();
-
-      node.Caption = entry.Name;
-      node.Name = entry.Name;
-      node.Path =
-        (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.Path, entry.Name));
-      node.ExpandByDefault = (parent == null);
-      node.IsExpanded = (parent == null);
-      if (directoryEntry != null) {
-        node.ImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphClosedFolder,
-          StandardGlyphItem.GlyphItemPublic);
-        node.OpenFolderImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphOpenFolder,
-          StandardGlyphItem.GlyphItemPublic);
-
-        foreach (var child in directoryEntry.Entries) {
-          AddNodeForEntry(nodes, child, node);
-        }
-      } else {
-        node.ImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphCSharpFile,
-          StandardGlyphItem.GlyphItemPublic);
-      }
-
-      nodes.AddNode(node, parent ?? nodes.RootNode);
-    }
 
     private void OnErrorReceived(ErrorResponse errorResponse) {
       // TODO(rpaquay)

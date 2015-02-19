@@ -208,6 +208,10 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\IncrementalBuildResult.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\DirectoryNodeViewModel.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\FileNodeViewModel.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilder.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyControllerFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IVsGlyphService.cs" />
@@ -216,6 +220,7 @@
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsGlyphService.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyChanges.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyCommandHandler.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyLogger.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyNodes.cs" />

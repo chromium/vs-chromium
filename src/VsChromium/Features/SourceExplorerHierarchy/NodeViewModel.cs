@@ -41,6 +41,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
+    public IList<NodeViewModel> Children {
+      get { return _children; }
+    }
+
+    public NodeViewModel Parent {
+      get { return _parent; }
+    }
+
     public uint GetFirstChildItemId() {
       if (_children.Count == 0)
         return uint.MaxValue;
@@ -50,29 +58,36 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     private uint GetParentItemId() {
       if (_parent == null)
-        return uint.MaxValue;
+        return VSConstants.VSITEMID_NIL;
 
       return _parent.ItemId;
     }
 
-    private uint GetNextSiblingItemId() {
+    public uint GetNextSiblingItemId() {
       // TODO(rpaquay): Perf?
       if (_parent == null)
-        return uint.MaxValue;
+        return VSConstants.VSITEMID_NIL;
 
       var index = _parent._children.IndexOf(this);
       if (index < 0 || index >= _parent._children.Count - 1)
-        return uint.MaxValue;
+        return VSConstants.VSITEMID_NIL;
       return _parent._children[index + 1].ItemId;
+    }
+
+    public uint GetPreviousSiblingItemId() {
+      // TODO(rpaquay): Perf?
+      if (_parent == null)
+        return VSConstants.VSITEMID_NIL;
+
+      var index = _parent._children.IndexOf(this);
+      if (index < 1)
+        return VSConstants.VSITEMID_NIL;
+      return _parent._children[index - 1].ItemId;
     }
 
     public void AddChild(NodeViewModel node) {
       node._parent = this;
       _children.Add(node);
-    }
-
-    public void RemoveChildren() {
-      _children.Clear();
     }
 
     private IntPtr GetIconHandleForImageIndex(int imageIndex) {
@@ -163,7 +178,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           pvar = (this.IsExpanded ? 1 : 0);
           break;
         case (int)__VSHPROPID.VSHPROPID_ItemDocCookie:
-          pvar = (object)this.ItemId;
+          pvar = ItemId;
           break;
         case (int)__VSHPROPID.VSHPROPID_OpenFolderIconIndex: {
             var iconIndex = GetOpenFolderImageIndex();
@@ -192,19 +207,19 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           }
         case (int)__VSHPROPID.VSHPROPID_ProjectName:
         case (int)__VSHPROPID.VSHPROPID_SaveName:
-          pvar = (object)this.Name;
+          pvar = Name;
           break;
         case (int)__VSHPROPID.VSHPROPID_ExpandByDefault:
           pvar = (object)(this.ExpandByDefault ? 1 : 0);
           break;
         case (int)__VSHPROPID.VSHPROPID_Expandable:
-          pvar = this._children.Count > 0;
+          pvar = _children.Count > 0;
           break;
         case (int)__VSHPROPID.VSHPROPID_IconIndex: {
-            int imageIndex = this.GetImageIndex();
+            int imageIndex = GetImageIndex();
             if (imageIndex == NoImage)
               return VSConstants.E_NOTIMPL;
-            pvar = (object)imageIndex;
+            pvar = imageIndex;
             break;
           }
         case (int)__VSHPROPID.VSHPROPID_Caption:
@@ -224,13 +239,5 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return "";
       return PathHelpers.CombinePaths(_parent.GetRelativePath(), Name);
     }
-  }
-
-  public class DirectoryNodeViewModel : NodeViewModel {
-    
-  }
-
-  public class FileNodeViewModel : NodeViewModel {
-    
   }
 }

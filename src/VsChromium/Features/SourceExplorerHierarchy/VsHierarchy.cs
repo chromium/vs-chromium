@@ -37,13 +37,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _logger = new VsHierarchyLogger(this);
     }
 
-    public event Action SyncToActiveDocument;
-
-    protected virtual void OnSyncToActiveDocument() {
-      var handler = SyncToActiveDocument;
-      if (handler != null) handler();
-    }
-
     public void AddCommandHandler(VsHierarchyCommandHandler handler) {
       _commandHandlers.Add(handler.CommandId, handler);
     }
@@ -394,11 +387,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         points.y = y;
 
         return DisplayContextMenu(itemid, points);
-      }
-
-      if ((pguidCmdGroup == GuidList.GuidVsChromiumCmdSet) && nCmdID == (int)PkgCmdIdList.CmdidSyncToDocument) {
-        OnSyncToActiveDocument();
-        return VSConstants.S_OK;
       }
 
       VsHierarchyCommandHandler handler;

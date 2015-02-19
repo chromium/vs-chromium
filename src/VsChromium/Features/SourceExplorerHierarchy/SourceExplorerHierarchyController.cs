@@ -50,12 +50,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         vsGlyphService);
     }
 
-    private void HierarchyOnOpenDocument(string path) {
-      if (!_fileSystem.FileExists(new FullPath(path)))
-        return;
-      _openDocumentHelper.OpenDocument(path, view => null);
-    }
-
     public void Activate() {
       IVsSolutionEventsHandler vsSolutionEvents = new VsSolutionEventsHandler(_visualStudioPackageProvider);
       vsSolutionEvents.AfterOpenSolution += AfterOpenSolutionHandler;
@@ -67,31 +61,35 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // Force getting the tree and refreshing the ui hierarchy.
       _fileSystemTreeSource.Fetch();
 
-      _hierarchy.SyncToActiveDocument += HierarchyOnSyncToActiveDocument;
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSyncToDocument),
+        IsEnabled = node => true,
+        Execute = args => HierarchyOnSyncToActiveDocument()
+      });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => HierarchyOnOpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node.Path)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => HierarchyOnOpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node.Path)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.Open),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => HierarchyOnOpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node.Path)
       });
 
       // TODO(rpaquay): Implement "Open With..." behavior.
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.OpenWith),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => HierarchyOnOpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node.Path)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
@@ -147,6 +145,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       });
     }
 
+    private void OpenDocument(string path) {
+      Logger.WrapActionInvocation(
+        () => {
+          if (!_fileSystem.FileExists(new FullPath(path)))
+            return;
+          _openDocumentHelper.OpenDocument(path, view => null);
+        });
+    }
+
     private void HierarchyOnSyncToActiveDocument() {
       Logger.WrapActionInvocation(
         () => {
@@ -160,8 +167,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           if (!PathHelpers.IsValidBclPath(path))
             return;
 
-          //
-
+          // TODO(rpaquay): Make this more efficient?
           NodeViewModel node;
           if (_hierarchy.Nodes.RootNode.FindNodeByMoniker(path, out node)) {
             _hierarchy.SelectNode(node);

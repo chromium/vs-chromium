@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -93,6 +94,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         Debug.Assert(_vsHierarchyActive);
         Debug.Assert(changes != null);
 
+        // Note: We want to avoid calling "OnItemAdded" in "IVsHierarchyEvents"
+        // if possible, because it implies making the item visible.
+        // "IVsHierarchyEvents" supports a version of "OnItemAdded" with a
+        // "ensureVisible" flag.
+        var events1 = EventSinks.OfType<IVsHierarchyEvents>().ToList();
+        var events2 = events1.OfType<IVsHierarchyEvents2>().ToList();
+        var events1Only = events1.Except(events2.OfType<IVsHierarchyEvents>()).ToList();
+
         // Pass 1: Notify deletion of old items as long as we have the old node
         // collection active. This is safe because the hierarchy host at this
         // point knows only about current nodes, and does not know anything about
@@ -105,8 +114,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           if (_logger.IsLogDiffEnabled) {
             _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.Path);
           }
-          foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
-            vsHierarchyEvents.OnItemDeleted(deletedNode.ItemId);
+
+          // PERF: avoid allocation
+          for(var i = 0; i < events1.Count; i++){
+            events1[i].OnItemDeleted(deletedNode.ItemId);
           }
         }
 
@@ -130,11 +141,22 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
                 ? nodes.GetNode(previousSiblingItemId).Path
                 : "nil"));
           }
-          foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
-            vsHierarchyEvents.OnItemAdded(
+
+          // PERF: avoid allocation
+          for (var i = 0; i < events1Only.Count; i++) {
+            events1Only[i].OnItemAdded(
               addedNode.Parent.ItemId,
               previousSiblingItemId,
               addedNode.ItemId);
+          }
+
+          // PERF: avoid allocation
+          for (var i = 0; i < events2.Count; i++) {
+            events2[i].OnItemAdded(
+              addedNode.Parent.ItemId,
+              previousSiblingItemId,
+              addedNode.ItemId,
+              false /* ensure visible */);
           }
         }
       }

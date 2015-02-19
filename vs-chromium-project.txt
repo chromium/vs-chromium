@@ -3,6 +3,9 @@
 *.sdf
 *.opensdf
 *.suo
+*.csproj
+*.vcxproj
+
 
 [SearchableFiles.ignore]
 Binaries/

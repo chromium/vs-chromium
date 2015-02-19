@@ -127,8 +127,8 @@ namespace VsChromium.Tests.Core {
 
     [TestMethod]
     public void SmallArrayDiffsWorks() {
-      var left = new [] {5, 4, 6, 10};
-      var right = new [] {10, 1};
+      var left = new[] { 5, 4, 6, 10 };
+      var right = new[] { 10, 1 };
       var diffs = ArrayUtilities.BuildArrayDiffsForSmallArrays(left, right);
       Assert.AreEqual(diffs.LeftOnlyItems.Count, 3);
       Assert.AreEqual(diffs.RightOnlyItems.Count, 1);
@@ -143,6 +143,53 @@ namespace VsChromium.Tests.Core {
       Assert.AreEqual(diffs.LeftOnlyItems.Count, 3);
       Assert.AreEqual(diffs.RightOnlyItems.Count, 1);
       Assert.AreEqual(diffs.CommonItems.Count, 1);
+    }
+
+    [TestMethod]
+    public void ArrayDiffShouldHandleEmptyLeft() {
+      var left = new int[] { };
+      var right = new[] { 10, 1 };
+      var diffs = ArrayUtilities.BuildArrayDiffs(left, right);
+      Assert.AreEqual(diffs.LeftOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.RightOnlyItems.Count, 2);
+      Assert.AreEqual(diffs.CommonItems.Count, 0);
+    }
+
+    [TestMethod]
+    public void ArrayDiffShouldHandleEmptyRight() {
+      var left = new[] { 10, 1 };
+      var right = new int[] { };
+      var diffs = ArrayUtilities.BuildArrayDiffs(left, right);
+      Assert.AreEqual(diffs.LeftOnlyItems.Count, 2);
+      Assert.AreEqual(diffs.RightOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.CommonItems.Count, 0);
+    }
+    [TestMethod]
+    public void ArrayDiffShouldHandleEmptyLeftAndRight() {
+      var left = new int[] { };
+      var right = new int[] { };
+      var diffs = ArrayUtilities.BuildArrayDiffs(left, right);
+      Assert.AreEqual(diffs.LeftOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.RightOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.CommonItems.Count, 0);
+    }
+    [TestMethod]
+    public void ArrayDiffShouldHandleOrderedIdenticalSequences() {
+      var left = new int[] { 1, 2, 3 };
+      var right = new int[] {1, 2, 3 };
+      var diffs = ArrayUtilities.BuildArrayDiffs(left, right);
+      Assert.AreEqual(diffs.LeftOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.RightOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.CommonItems.Count, 3);
+    }
+    [TestMethod]
+    public void ArrayDiffShouldHandleUnorderedIdenticalSequences() {
+      var left = new int[] { 3, 2, 1 };
+      var right = new int[] { 1, 2, 3 };
+      var diffs = ArrayUtilities.BuildArrayDiffs(left, right);
+      Assert.AreEqual(diffs.LeftOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.RightOnlyItems.Count, 0);
+      Assert.AreEqual(diffs.CommonItems.Count, 3);
     }
   }
 }

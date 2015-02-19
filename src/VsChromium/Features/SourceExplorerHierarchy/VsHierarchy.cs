@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -68,67 +69,73 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public void SetNodes(VsHierarchyNodes nodes, VsHierarchyChanges changes) {
-      _logger.Log("SetNodes(node count={0}, added={1}, deleted={2})",
+      var description = string.Format("SetNodes(node count={0}, added={1}, deleted={2})",
         nodes.Count,
         (changes == null ? -1 : changes.AddedItems.Count),
         (changes == null ? -1 : changes.DeletedItems.Count));
+      using (new TimeElapsedLogger(description)) {
+        // Simple case: empty hiererchy
+        if (nodes.RootNode.GetChildrenCount() == 0) {
+          _nodes = nodes;
+          CloseVsHierarchy();
+          return;
+        }
 
-      // Simple case: empty hiererchy
-      if (nodes.RootNode.GetChildrenCount() == 0) {
+        // Simple case of unknwon changes or hierarchy is not active.
+        if (changes == null || !_vsHierarchyActive) {
+          _nodes = nodes;
+          OpenVsHierarchy();
+          RefreshAll();
+          return;
+        }
+
+        // Incremental case: Notify of add/remove items.
+        Debug.Assert(_vsHierarchyActive);
+        Debug.Assert(changes != null);
+
+        // Pass 1: Notify deletion of old items as long as we have the old node
+        // collection active. This is safe because the hierarchy host at this
+        // point knows only about current nodes, and does not know anything about
+        // new nodes. In return, we have not updated out "_nodes" member, so any
+        // GetProperty call will return info about current node only.
+        foreach (var deleted in changes.DeletedItems) {
+          var deletedNode = _nodes.GetNode(deleted);
+          Debug.Assert(deletedNode != null);
+          Debug.Assert(deletedNode.Parent != null);
+          if (_logger.IsLogDiffEnabled) {
+            _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.Path);
+          }
+          foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
+            vsHierarchyEvents.OnItemDeleted(deletedNode.ItemId);
+          }
+        }
+
+        // Pass 2: Notify of node additions. We first need to switch our "_nodes"
+        // field to the new node collection, so that any query made by the
+        // hierarchy host as a result of add events will be answered with the
+        // right set of nodes (the new ones).
         _nodes = nodes;
-        CloseVsHierarchy();
-        return;
-      }
-
-      // Simple case of unknwon changes or hierarchy is not active.
-      if (changes == null || !_vsHierarchyActive) {
-        _nodes = nodes;
-        OpenVsHierarchy();
-        RefreshAll();
-      }
-
-      // Incremental case: Notify of add/remove items.
-      Debug.Assert(_vsHierarchyActive);
-      Debug.Assert(changes != null);
-
-      // Pass 1: Notify deletion of old items as long as we have the old node
-      // collection active. This is safe because the hierarchy host at this
-      // point knows only about current nodes, and does not know anything about
-      // new nodes. In return, we have not updated out "_nodes" member, so any
-      // GetProperty call will return info about current node only.
-      foreach (var deleted in changes.DeletedItems) {
-        var deletedNode = _nodes.GetNode(deleted);
-        Debug.Assert(deletedNode != null);
-        Debug.Assert(deletedNode.Parent != null);
-        if (_logger.IsLogDiffEnabled) {
-          _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.Path);
-        }
-        foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
-          vsHierarchyEvents.OnItemDeleted(deletedNode.ItemId);
-        }
-      }
-
-      // Pass 2: Notify of node additions. We first need to switch our "_nodes"
-      // field to the new node collection, so that any query made by the
-      // hierarchy host as a result of add events will be answered with the
-      // right set of nodes (the new ones).
-      _nodes = nodes;
-      foreach (var added in changes.AddedItems) {
-        var addedNode = nodes.GetNode(added);
-        var previousSiblingItemId = addedNode.GetPreviousSiblingItemId();
-        Debug.Assert(addedNode != null);
-        Debug.Assert(addedNode.Parent != null);
-        if (_logger.IsLogDiffEnabled) {
-          _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.Path);
-          _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.Path);
-          _logger.Log("    next to {0,7}-\"{1}\"", previousSiblingItemId,
-            (previousSiblingItemId != VSConstants.VSITEMID_NIL ? nodes.GetNode(previousSiblingItemId).Path : "nil"));
-        }
-        foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
-          vsHierarchyEvents.OnItemAdded(
-            addedNode.Parent.ItemId,
-            previousSiblingItemId,
-            addedNode.ItemId);
+        foreach (var added in changes.AddedItems) {
+          var addedNode = nodes.GetNode(added);
+          var previousSiblingItemId = addedNode.GetPreviousSiblingItemId();
+          Debug.Assert(addedNode != null);
+          Debug.Assert(addedNode.Parent != null);
+          if (_logger.IsLogDiffEnabled) {
+            _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.Path);
+            _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.Path);
+            _logger.Log(
+              "    next to {0,7}-\"{1}\"",
+              previousSiblingItemId,
+              (previousSiblingItemId != VSConstants.VSITEMID_NIL
+                ? nodes.GetNode(previousSiblingItemId).Path
+                : "nil"));
+          }
+          foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
+            vsHierarchyEvents.OnItemAdded(
+              addedNode.Parent.ItemId,
+              previousSiblingItemId,
+              addedNode.ItemId);
+          }
         }
       }
     }

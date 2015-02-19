@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class IncrementalHierarchyBuilder {
@@ -28,22 +29,24 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public IncrementalBuildResult Run() {
-      _newNodeNextItemId = _oldNodes.MaxItemId + 1;
-      BuildPathToNodeMap(_oldNodes.RootNode);
+      using (new TimeElapsedLogger("Computing new NodesViewModel with diffs")) {
+        _newNodeNextItemId = _oldNodes.MaxItemId + 1;
+        BuildPathToNodeMap(_oldNodes.RootNode);
 
-      SetupRootNode(_newNodes.RootNode);
+        SetupRootNode(_newNodes.RootNode);
 
-      if (_fileSystemTree != null) {
-        foreach (var root in _fileSystemTree.Root.Entries) {
-          AddRootEntry(root);
+        if (_fileSystemTree != null) {
+          foreach (var root in _fileSystemTree.Root.Entries) {
+            AddRootEntry(root);
+          }
         }
-      }
 
-      return new IncrementalBuildResult {
-        OldNodes = _oldNodes,
-        NewNodes = _newNodes,
-        Changes = BuildChanges()
-      };
+        return new IncrementalBuildResult {
+          OldNodes = _oldNodes,
+          NewNodes = _newNodes,
+          Changes = BuildChanges()
+        };
+      }
     }
 
     private VsHierarchyChanges BuildChanges() {
@@ -53,7 +56,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void BuildChanges(NodeViewModel oldNode, NodeViewModel newNode, VsHierarchyChanges result) {
-      var diff = ArrayUtilities.BuildArrayDiffs(oldNode.Children, newNode.Children, NodePathComparer.Instance);
+      // Note: It is correct to compare the "Name" property only for computing
+      // diffs, as we are guaranteed that both nodes have the same parent, hence
+      // are located in the same directory. We also use the
+      // System.Reflection.Type to handle the fact a directory can be deleted
+      // and then a name with the same name can be added. We need to consider
+      // that as a pair of "delete/add" instead of a "no-op".
+      var diff = ArrayUtilities.BuildArrayDiffs(oldNode.Children, newNode.Children, NodeTypeAndNameComparer.Instance);
       foreach (var left in diff.LeftOnlyItems) {
         result.DeletedItems.Add(left.ItemId);
       }
@@ -65,15 +74,18 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private class NodePathComparer : IEqualityComparer<NodeViewModel> {
-      public static readonly NodePathComparer Instance = new NodePathComparer();
+    private class NodeTypeAndNameComparer : IEqualityComparer<NodeViewModel> {
+      public static readonly NodeTypeAndNameComparer Instance = new NodeTypeAndNameComparer();
 
       public bool Equals(NodeViewModel x, NodeViewModel y) {
-        return StringComparer.Ordinal.Equals(x.Path, y.Path);
+        if (x.GetType() != y.GetType())
+          return false;
+
+        return StringComparer.Ordinal.Equals(x.Name, y.Name);
       }
 
       public int GetHashCode(NodeViewModel obj) {
-        return StringComparer.Ordinal.GetHashCode(obj.Path);
+        return StringComparer.Ordinal.GetHashCode(obj.Name);
       }
     }
 

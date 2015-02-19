@@ -8,8 +8,8 @@ using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Utility {
   /// <summary>
-  /// Utility class to log memory usage and time spend in a block of code
-  /// typically wrapped with a "using" statement of an instance of this class.
+  /// Utility class to measure and log time spent in a block of code typically
+  /// wrapped with a "using" statement of an instance of this class.
   /// </summary>
   public struct TimeElapsedLogger : IDisposable {
     [ThreadStatic]

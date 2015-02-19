@@ -23,6 +23,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IFileSystem _fileSystem;
     private readonly IClipboard _clipboard;
+    private readonly IWindowsExplorer _windowsExplorer;
     private readonly VsHierarchy _hierarchy;
 
     public SourceExplorerHierarchyController(
@@ -32,7 +33,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IVsGlyphService vsGlyphService,
       IOpenDocumentHelper openDocumentHelper,
       IFileSystem fileSystem,
-      IClipboard clipboard) {
+      IClipboard clipboard,
+      IWindowsExplorer windowsExplorer) {
 
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
@@ -41,6 +43,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _openDocumentHelper = openDocumentHelper;
       _fileSystem = fileSystem;
       _clipboard = clipboard;
+      _windowsExplorer = windowsExplorer;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
@@ -86,6 +89,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         IsEnabled = node => node is DirectoryNodeViewModel,
         Execute = node => _clipboard.SetText(PathHelpers.ToPosix(node.GetRelativePath()))
       });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenFolderInExplorer),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = node => _windowsExplorer.OpenFolder(node.Path)
+      });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPath),
@@ -106,6 +114,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePathPosix),
         IsEnabled = node => node is FileNodeViewModel,
         Execute = node => _clipboard.SetText(PathHelpers.ToPosix(node.GetRelativePath()))
+      });
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenContainingFolder),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = node => _windowsExplorer.OpenContainingFolder(node.Path)
       });
     }
 

@@ -264,7 +264,7 @@
     <Compile Include="Views\VsResources.cs" />
     <Compile Include="Views\ImageSourceFactory.cs" />
     <Compile Include="Wpf\HierarchyObjectNavigator.cs" />
-    <Compile Include="Wpf\IWindowsExplorer.cs" />
+    <Compile Include="Views\IWindowsExplorer.cs" />
     <Compile Include="Views\Clipboard.cs" />
     <Compile Include="Views\IClipboard.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerController.cs" />
@@ -345,7 +345,7 @@
     <Compile Include="Wpf\EditableComboBox.cs" />
     <Compile Include="Wpf\StringListViewModel.cs" />
     <Compile Include="Wpf\IHierarchyObject.cs" />
-    <Compile Include="Wpf\WindowsExplorer.cs" />
+    <Compile Include="Views\WindowsExplorer.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
     <Page Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml">
       <SubType>Designer</SubType>

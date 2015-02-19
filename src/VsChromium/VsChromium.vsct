@@ -117,6 +117,36 @@
           <LocCanonicalName>VsChromium.SyncToActiveDocument</LocCanonicalName>
         </Strings>
       </Button>
+      <!-- Custom "Open Folder in File Explorer" command (in Source Explorer toolbar) -->
+      <Button guid="guidVsChromiumCmdSet" id="cmdidOpenFolderInExplorer" priority="0x00f0" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
+              and is used as a default value for other entries if they are not specified-->
+          <ButtonText>Open Folder in File Explorer</ButtonText>
+          <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
+          <CommandName>VsChromium - Open Folder in File Explorer</CommandName>
+          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <LocCanonicalName>VsChromium.OpenFolderInExplorer</LocCanonicalName>
+        </Strings>
+      </Button>
+      <!-- Custom "Open Containing Folder" command (in Source Explorer toolbar) -->
+      <Button guid="guidVsChromiumCmdSet" id="cmdidOpenContainingFolder" priority="0x00f0" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerItemNodeGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <Strings>
+          <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
+              and is used as a default value for other entries if they are not specified-->
+          <ButtonText>Open Containing Folder</ButtonText>
+          <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
+          <CommandName>VsChromium - Open Containing Folder</CommandName>
+          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <LocCanonicalName>VsChromium.OpenContainingFolder</LocCanonicalName>
+        </Strings>
+      </Button>
       <!-- Custom "CopyFullPath" command (in Source Explorer toolbar) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyFullPath" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" />
@@ -328,10 +358,12 @@
       <IDSymbol name="cmdidCopyFullPathPosix" value="0x0131" />
       <IDSymbol name="cmdidCopyRelativePath" value="0x0132" />
       <IDSymbol name="cmdidCopyRelativePathPosix" value="0x0133" />
+      <IDSymbol name="cmdidOpenFolderInExplorer" value="0x0134" />
       <IDSymbol name="cmdidCopyFileFullPath" value="0x0140" />
       <IDSymbol name="cmdidCopyFileFullPathPosix" value="0x0141" />
       <IDSymbol name="cmdidCopyFileRelativePath" value="0x0142" />
       <IDSymbol name="cmdidCopyFileRelativePathPosix" value="0x0143" />
+      <IDSymbol name="cmdidOpenContainingFolder" value="0x0144" />
     </GuidSymbol>
     <GuidSymbol name="guidChromeDebugCmdSet" value="{6608d840-ce6c-45ab-b856-eb0a0b471ff1}">
       <IDSymbol name="ChromeDebugTopLevelMenu" value="0x0100" />

@@ -29,7 +29,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public IncrementalBuildResult Run() {
-      using (new TimeElapsedLogger("Computing new NodesViewModel with diffs")) {
+      using (new TimeElapsedLogger("Computing NodesViewModel with diffs")) {
         _newNodeNextItemId = _oldNodes.MaxItemId + 1;
         BuildPathToNodeMap(_oldNodes.RootNode);
 
@@ -124,8 +124,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       var path = (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.Path, entry.Name));
 
-      if (_pathToNode.ContainsKey(path)) {
-        var oldNode = _pathToNode[path];
+      NodeViewModel oldNode;
+      if (_pathToNode.TryGetValue(path, out oldNode)) {
         node.ItemId = oldNode.ItemId;
         node.IsExpanded = oldNode.IsExpanded;
       } else {

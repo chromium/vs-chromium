@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.ComponentModel.Design;
+using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
@@ -84,6 +88,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_RightClick),
+        IsEnabled = node => true,
+        Execute = args => ShowContextMenu(args.Node, args.VariantIn)
+      });
+
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.Open),
         IsEnabled = node => node is FileNodeViewModel,
         Execute = args => OpenDocument(args.Node.Path)
@@ -147,6 +157,52 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         IsEnabled = node => node is FileNodeViewModel,
         Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.Path)
       });
+    }
+
+    private void ShowContextMenu(NodeViewModel node, IntPtr variantIn) {
+      // See https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.vsconstants.vsuihierarchywindowcmdids.aspx
+      //
+      // The UIHWCMDID_RightClick command is what tells the interface
+      // IVsUIHierarchy in a IVsUIHierarchyWindow to display the context menu.
+      // Since the mouse position may change between the mouse down and the
+      // mouse up events and the right click command might even originate from
+      // the keyboard Visual Studio provides the proper menu position into
+      // pvaIn by performing a memory copy operation on a POINTS structure
+      // into the VT_UI4 part of the pvaIn variant.
+      //
+      // To show the menu use the derived POINTS as the coordinates to show
+      // the context menu, calling ShowContextMenu. To ensure proper command
+      // handling you should pass a NULL command target into ShowContextMenu
+      // menu so that the IVsUIHierarchyWindow will have the first chance to
+      // handle commands like delete.
+      object variant = Marshal.GetObjectForNativeVariant(variantIn);
+      var pointsAsUint = (UInt32)variant;
+      var x = (short)(pointsAsUint & 0xffff);
+      var y = (short)(pointsAsUint >> 16);
+      var points = new POINTS();
+      points.x = x;
+      points.y = y;
+
+      var shell = _visualStudioPackageProvider.Package.ServiceProvider.GetService(typeof(SVsUIShell)) as IVsUIShell;
+      if (shell == null) {
+        Logger.LogError("Error accessing IVsUIShell service.");
+        return;
+      }
+
+      var pointsIn = new POINTS[1];
+      pointsIn[0].x = points.x;
+      pointsIn[0].y = points.y;
+      var groupGuid = VsMenus.guidSHLMainMenu;
+      var menuId = (node.IsRoot)
+        ? VsMenus.IDM_VS_CTXT_PROJNODE
+        : (node is DirectoryNodeViewModel)
+          ? VsMenus.IDM_VS_CTXT_FOLDERNODE
+          : VsMenus.IDM_VS_CTXT_ITEMNODE;
+      int hresult = shell.ShowContextMenu(0, ref groupGuid, menuId, pointsIn, null);
+      if (!ErrorHandler.Succeeded(hresult)) {
+        Logger.LogError("Error showing context menu.");
+        return;
+      }
     }
 
     private void OpenDocument(string path) {

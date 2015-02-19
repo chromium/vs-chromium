@@ -71,7 +71,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         var cmd = new SimplePackageCommandHandler(
           new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidSyncToDocument),
           () => _hierarchy.Nodes.RootNode.GetChildrenCount() >= 1,
-          (s, e) => HierarchyOnSyncToActiveDocument());
+          (s, e) => SyncToActiveDocument());
         mcs.AddCommand(cmd.ToOleMenuCommand());
       }
 
@@ -214,7 +214,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         });
     }
 
-    private void HierarchyOnSyncToActiveDocument() {
+    private void SyncToActiveDocument() {
       Logger.WrapActionInvocation(
         () => {
           var dte = _visualStudioPackageProvider.Package.DTE;
@@ -311,7 +311,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           StandardGlyphItem.GlyphItemPublic);
       }
 
-      nodes.AddNode(node, parent);
+      nodes.AddNode(node, parent ?? nodes.RootNode);
     }
 
     private void OnErrorReceived(ErrorResponse errorResponse) {

@@ -56,7 +56,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public void Dispose() {
       Close();
-      _nodes.Clear();
     }
 
     public void Disconnect() {
@@ -189,7 +188,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           monitorSelection.UnadviseSelectionEvents(this._selectionEventsCookie);
         this._selectionEventsCookie = 0U;
       }
-      _nodes.Clear();
       return VSConstants.S_OK;
     }
 

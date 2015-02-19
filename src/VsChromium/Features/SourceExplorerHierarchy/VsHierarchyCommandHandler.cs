@@ -10,6 +10,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public CommandID CommandId { get; set; }
 
     public Func<NodeViewModel, bool> IsEnabled { get; set; }
-    public Action<NodeViewModel> Execute { get; set; }
+    public Action<CommandArgs> Execute { get; set; }
+  }
+
+  public class CommandArgs {
+    public CommandArgs(CommandID commandId, NodeViewModel node, IntPtr variantIn, IntPtr variantOut) {
+      CommandId = commandId;
+      Node = node;
+      VariantIn = variantIn;
+      VariantOut = variantOut;
+    }
+
+    public CommandID CommandId { get; private set; }
+    public NodeViewModel Node { get; private set; }
+    public IntPtr VariantIn { get; private set; }
+    public IntPtr VariantOut { get; private set; }
   }
 }

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.VisualStudio;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -11,40 +12,23 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public const uint RootNodeItemId = unchecked((uint)-2);
     private readonly Dictionary<uint, NodeViewModel> _itemIdMap = new Dictionary<uint, NodeViewModel>();
     private readonly NodeViewModel _rootNode = new NodeViewModel();
-    private uint _nextItemId = 5; // Arbitrary number not too close to 0.
+    private uint _maxItemId = 5; // Arbitrary number not too close to 0.
 
     public VsHierarchyNodes() {
-      AddNodeImpl(_rootNode, null);
+      _rootNode.ItemId = RootNodeItemId;
+      AddNode(_rootNode);
     }
 
     public NodeViewModel RootNode { get { return _rootNode; } }
 
-    public uint MaxItemId { get { return _nextItemId; } }
+    public uint MaxItemId { get { return _maxItemId; } }
     public int Count { get { return _itemIdMap.Count; } }
 
-    public void AddNode(NodeViewModel node, NodeViewModel parent) {
-      if (node == null)
-        throw new ArgumentNullException();
-      if (parent == null)
-        throw new ArgumentNullException();
-      AddNodeImpl(node, parent);
-    }
-
-    private void AddNodeImpl(NodeViewModel node, NodeViewModel parent) {
-      if (_itemIdMap.Count == 0) {
-        node.ItemId = RootNodeItemId;
-      } else if (node.ItemId == uint.MaxValue) {
-        node.ItemId = _nextItemId;
-        _nextItemId++;
-      } else {
-        _nextItemId = Math.Max(_nextItemId, node.ItemId);
-      }
-
+    public void AddNode(NodeViewModel node) {
+      Debug.Assert(node.ItemId != VSConstants.VSITEMID_NIL);
       _itemIdMap.Add(node.ItemId, node);
-
-      // Add to children
-      if (parent != null) {
-        parent.AddChild(node);
+      if (node.ItemId != RootNodeItemId) {
+        _maxItemId = Math.Max(_maxItemId, node.ItemId);
       }
     }
 

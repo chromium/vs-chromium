@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
@@ -16,7 +18,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly VsHierarchyNodes _oldNodes;
     private readonly FileSystemTree _fileSystemTree;
     private readonly VsHierarchyNodes _newNodes = new VsHierarchyNodes();
-    private readonly Dictionary<string, NodeViewModel> _pathToNode = new Dictionary<string, NodeViewModel>(); 
+    private readonly VsHierarchyChanges _changes = new VsHierarchyChanges();
     private uint _newNodeNextItemId;
 
     public IncrementalHierarchyBuilder(
@@ -31,47 +33,114 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public IncrementalBuildResult Run() {
       using (new TimeElapsedLogger("Computing NodesViewModel with diffs")) {
         _newNodeNextItemId = _oldNodes.MaxItemId + 1;
-        BuildPathToNodeMap(_oldNodes.RootNode);
 
         SetupRootNode(_newNodes.RootNode);
 
         if (_fileSystemTree != null) {
-          foreach (var root in _fileSystemTree.Root.Entries) {
-            AddRootEntry(root);
-          }
+          AddNodeForChildren(_fileSystemTree.Root, _oldNodes.RootNode, _newNodes.RootNode);
         }
 
         return new IncrementalBuildResult {
           OldNodes = _oldNodes,
           NewNodes = _newNodes,
-          Changes = BuildChanges()
+          Changes = _changes,
         };
       }
     }
 
-    private VsHierarchyChanges BuildChanges() {
-      var result = new VsHierarchyChanges();
-      BuildChanges(_oldNodes.RootNode, _newNodes.RootNode, result);
-      return result;
-    }
+    private void AddNodeForChildren(FileSystemEntry entry, NodeViewModel oldParent, NodeViewModel newParent) {
+      Debug.Assert(entry != null);
+      Debug.Assert(newParent != null);
+      Debug.Assert(newParent.Children.Count == 0);
 
-    private void BuildChanges(NodeViewModel oldNode, NodeViewModel newNode, VsHierarchyChanges result) {
+      // Create children nodes
+      var directoryEntry = entry as DirectoryEntry;
+      if (directoryEntry != null) {
+        foreach (var childEntry in directoryEntry.Entries) {
+          CreateNodeViewModel(childEntry, newParent);
+        }
+      }
+
       // Note: It is correct to compare the "Name" property only for computing
       // diffs, as we are guaranteed that both nodes have the same parent, hence
       // are located in the same directory. We also use the
       // System.Reflection.Type to handle the fact a directory can be deleted
       // and then a name with the same name can be added. We need to consider
       // that as a pair of "delete/add" instead of a "no-op".
-      var diff = ArrayUtilities.BuildArrayDiffs(oldNode.Children, newNode.Children, NodeTypeAndNameComparer.Instance);
-      foreach (var left in diff.LeftOnlyItems) {
-        result.DeletedItems.Add(left.ItemId);
+      var diffs = ArrayUtilities.BuildArrayDiffs(
+        oldParent == null ? ArrayUtilities.EmptyList<NodeViewModel>.Instance : oldParent.Children, 
+        newParent.Children,
+        NodeTypeAndNameComparer.Instance);
+
+      foreach (var oldChild in diffs.LeftOnlyItems) {
+        _changes.DeletedItems.Add(oldChild.ItemId);
       }
-      foreach (var right in diff.RightOnlyItems) {
-        result.AddedItems.Add(right.ItemId);
+
+      foreach (var newChild in diffs.RightOnlyItems) {
+        newChild.ItemId = _newNodeNextItemId;
+        _newNodeNextItemId++;
+        newChild.IsExpanded = newParent.IsRoot;
+        _newNodes.AddNode(newChild);
+
+        if (oldParent != null) {
+          _changes.AddedItems.Add(newChild.ItemId);
+        }
       }
-      foreach (var leftRight in diff.CommonItems) {
-        BuildChanges(leftRight.LeftItem, leftRight.RigthtItem, result);
+
+      foreach (var pair in diffs.CommonItems) {
+        pair.RigthtItem.ItemId = pair.LeftItem.ItemId;
+        pair.RigthtItem.IsExpanded = pair.LeftItem.IsExpanded;
+        _newNodes.AddNode(pair.RigthtItem);
       }
+
+      // Call recursively on all children
+      if (directoryEntry != null) {
+        Debug.Assert(directoryEntry.Entries.Count == newParent.Children.Count);
+        for (var i = 0; i < newParent.Children.Count; i++) {
+          var childEntry = directoryEntry.Entries[i];
+          var newChildNode = newParent.Children[i];
+          // TODO(rpaquay): Perf?
+          var oldChildNode = diffs.CommonItems
+              .Where(x => x.RigthtItem == newChildNode)
+              .Select(x => x.LeftItem)
+              .FirstOrDefault();
+
+          AddNodeForChildren(childEntry, oldChildNode, newChildNode);
+        }
+      }
+    }
+
+    private NodeViewModel CreateNodeViewModel(FileSystemEntry entry, NodeViewModel parent) {
+      Debug.Assert(entry != null);
+      Debug.Assert(parent != null);
+
+      var directoryEntry = entry as DirectoryEntry;
+      var node = directoryEntry != null
+        ? (NodeViewModel)new DirectoryNodeViewModel()
+        : (NodeViewModel)new FileNodeViewModel();
+
+      var path = parent.IsRoot
+        ? entry.Name
+        : PathHelpers.CombinePaths(parent.Path, entry.Name);
+
+      node.Caption = entry.Name;
+      node.Name = entry.Name;
+      node.Path = path;
+      node.ExpandByDefault = parent.IsRoot;
+      if (directoryEntry != null) {
+        node.ImageIndex = _vsGlyphService.GetImageIndex(
+          StandardGlyphGroup.GlyphClosedFolder,
+          StandardGlyphItem.GlyphItemPublic);
+        node.OpenFolderImageIndex = _vsGlyphService.GetImageIndex(
+          StandardGlyphGroup.GlyphOpenFolder,
+          StandardGlyphItem.GlyphItemPublic);
+      } else {
+        node.ImageIndex = _vsGlyphService.GetImageIndex(
+          StandardGlyphGroup.GlyphCSharpFile,
+          StandardGlyphItem.GlyphItemPublic);
+      }
+      parent.AddChild(node);
+      return node;
     }
 
     private class NodeTypeAndNameComparer : IEqualityComparer<NodeViewModel> {
@@ -89,16 +158,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void BuildPathToNodeMap(NodeViewModel node) {
-      if (!string.IsNullOrEmpty(node.Path)) {
-        _pathToNode.Add(node.Path, node);
-      }
-
-      foreach (var child in node.Children) {
-        BuildPathToNodeMap(child);
-      }
-    }
-
     private void SetupRootNode(NodeViewModel root) {
       var name = "VS Chromium Projects";
       root.Name = name;
@@ -110,52 +169,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       root.OpenFolderImageIndex = _vsGlyphService.GetImageIndex(
         StandardGlyphGroup.GlyphOpenFolder,
         StandardGlyphItem.GlyphItemPublic);
-    }
-
-    private void AddRootEntry(FileSystemEntry root) {
-      AddNodeForEntry(root, null);
-    }
-
-    private void AddNodeForEntry(FileSystemEntry entry, NodeViewModel parent) {
-      var directoryEntry = entry as DirectoryEntry;
-      var node = directoryEntry != null
-        ? (NodeViewModel)new DirectoryNodeViewModel()
-        : (NodeViewModel)new FileNodeViewModel();
-
-      var path = (parent == null ? entry.Name : PathHelpers.CombinePaths(parent.Path, entry.Name));
-
-      NodeViewModel oldNode;
-      if (_pathToNode.TryGetValue(path, out oldNode)) {
-        node.ItemId = oldNode.ItemId;
-        node.IsExpanded = oldNode.IsExpanded;
-      } else {
-        node.ItemId = _newNodeNextItemId;
-        _newNodeNextItemId++;
-        node.IsExpanded = (parent == null);
-      }
-
-      node.Caption = entry.Name;
-      node.Name = entry.Name;
-      node.Path = path;
-      node.ExpandByDefault = (parent == null);
-      if (directoryEntry != null) {
-        node.ImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphClosedFolder,
-          StandardGlyphItem.GlyphItemPublic);
-        node.OpenFolderImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphOpenFolder,
-          StandardGlyphItem.GlyphItemPublic);
-
-        foreach (var child in directoryEntry.Entries) {
-          AddNodeForEntry(child, node);
-        }
-      } else {
-        node.ImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphCSharpFile,
-          StandardGlyphItem.GlyphItemPublic);
-      }
-
-      _newNodes.AddNode(node, parent ?? _newNodes.RootNode);
     }
   }
 }

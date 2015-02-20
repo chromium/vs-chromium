@@ -20,7 +20,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       OpenFolderImageIndex = NoImage;
       ImageIndex = NoImage;
       DocCookie = uint.MaxValue;
-      ItemId = uint.MaxValue;
+      ItemId = VSConstants.VSITEMID_NIL;
     }
 
     public uint ItemId { get; set; }

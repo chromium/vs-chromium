@@ -11,7 +11,7 @@ namespace VsChromium.Core.Collections {
   public static class ArrayUtilities {
     private const int SmallArrayThreshold = 200;
 
-    private class EmptyList<T> {
+    public class EmptyList<T> {
       public static IList<T> Instance = new List<T>().ToReadOnlyCollection();
     }
 

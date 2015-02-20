@@ -33,7 +33,7 @@ namespace VsChromium.Core.Utility {
       _stopwatch.Stop();
       if (Logger.Perf) {
         Logger.LogPerf(
-          "{0}{1} performed in {2:n0} msec. (Memory={3:n0})",
+          "{0}{1} performed in {2:n0} msec - GC Memory: {3:n0} bytes.",
           _indent,
           _description,
           _stopwatch.ElapsedMilliseconds,

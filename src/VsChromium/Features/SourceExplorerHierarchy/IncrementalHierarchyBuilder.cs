@@ -119,13 +119,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         ? (NodeViewModel)new DirectoryNodeViewModel()
         : (NodeViewModel)new FileNodeViewModel();
 
-      var path = parent.IsRoot
-        ? entry.Name
-        : PathHelpers.CombinePaths(parent.Path, entry.Name);
-
       node.Caption = entry.Name;
       node.Name = entry.Name;
-      node.Path = path;
       node.ExpandByDefault = parent.IsRoot;
       if (directoryEntry != null) {
         node.ImageIndex = _vsGlyphService.GetImageIndex(

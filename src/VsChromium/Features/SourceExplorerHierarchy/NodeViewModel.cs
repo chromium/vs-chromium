@@ -24,7 +24,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public uint ItemId { get; set; }
     public string Name { get; set; }
     public string Caption { get; set; }
-    public string Path { get; set; }
     public uint DocCookie { get; set; }
     public int ImageIndex { get; set; }
     public int OpenFolderImageIndex { get; set; }
@@ -47,6 +46,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public NodeViewModel Parent {
       get { return _parent; }
+    }
+
+    public string Path {
+      get {
+        if (_parent == null)
+          return "";
+        return PathHelpers.CombinePaths(_parent.Path, Name);
+      }
+    }
+
+    public string GetRelativePath() {
+      if (_parent == null || _parent.IsRoot)
+        return "";
+      return PathHelpers.CombinePaths(_parent.GetRelativePath(), Name);
     }
 
     public uint GetFirstChildItemId() {
@@ -233,12 +246,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           return VSConstants.E_NOTIMPL;
       }
       return VSConstants.S_OK;
-    }
-
-    public string GetRelativePath() {
-      if (_parent == null || _parent.IsRoot)
-        return "";
-      return PathHelpers.CombinePaths(_parent.GetRelativePath(), Name);
     }
   }
 }

@@ -23,7 +23,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public IncrementalHierarchyBuilder(
       IVsGlyphService vsGlyphService,
-      VsHierarchyNodes oldNodes, 
+      VsHierarchyNodes oldNodes,
       FileSystemTree fileSystemTree) {
       _vsGlyphService = vsGlyphService;
       _oldNodes = oldNodes;
@@ -56,8 +56,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // Create children nodes
       var directoryEntry = entry as DirectoryEntry;
       if (directoryEntry != null) {
-        foreach (var childEntry in directoryEntry.Entries) {
-          CreateNodeViewModel(childEntry, newParent);
+        // PERF: Avoid memory allocation
+        for (var i = 0; i < directoryEntry.Entries.Count; i++) {
+          var child = CreateNodeViewModel(directoryEntry.Entries[i], newParent);
+          newParent.AddChild(child);
         }
       }
 
@@ -68,15 +70,18 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // and then a name with the same name can be added. We need to consider
       // that as a pair of "delete/add" instead of a "no-op".
       var diffs = ArrayUtilities.BuildArrayDiffs(
-        oldParent == null ? ArrayUtilities.EmptyList<NodeViewModel>.Instance : oldParent.Children, 
+        oldParent == null ? ArrayUtilities.EmptyList<NodeViewModel>.Instance : oldParent.Children,
         newParent.Children,
         NodeTypeAndNameComparer.Instance);
 
-      foreach (var oldChild in diffs.LeftOnlyItems) {
-        _changes.DeletedItems.Add(oldChild.ItemId);
+      // PERF: Avoid memory allocation
+      for (var i = 0; i < diffs.LeftOnlyItems.Count; i++) {
+        _changes.DeletedItems.Add(diffs.LeftOnlyItems[i].ItemId);
       }
 
-      foreach (var newChild in diffs.RightOnlyItems) {
+      // PERF: Avoid memory allocation
+      for (var i = 0; i < diffs.RightOnlyItems.Count; i++) {
+        var newChild = diffs.RightOnlyItems[i];
         newChild.ItemId = _newNodeNextItemId;
         _newNodeNextItemId++;
         newChild.IsExpanded = newParent.IsRoot;
@@ -87,7 +92,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         }
       }
 
-      foreach (var pair in diffs.CommonItems) {
+      // PERF: Avoid memory allocation
+      for (var i = 0; i < diffs.CommonItems.Count; i++) {
+        var pair = diffs.CommonItems[i];
         pair.RigthtItem.ItemId = pair.LeftItem.ItemId;
         pair.RigthtItem.IsExpanded = pair.LeftItem.IsExpanded;
         _newNodes.AddNode(pair.RigthtItem);
@@ -99,15 +106,25 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         for (var i = 0; i < newParent.Children.Count; i++) {
           var childEntry = directoryEntry.Entries[i];
           var newChildNode = newParent.Children[i];
-          // TODO(rpaquay): Perf?
-          var oldChildNode = diffs.CommonItems
-              .Where(x => x.RigthtItem == newChildNode)
-              .Select(x => x.LeftItem)
-              .FirstOrDefault();
+          var oldChildNode = GetCommonOldNode(newParent, i, diffs, newChildNode);
 
           AddNodeForChildren(childEntry, oldChildNode, newChildNode);
         }
       }
+    }
+
+    private static NodeViewModel GetCommonOldNode(NodeViewModel newParent, int index, ArrayDiffsResult<NodeViewModel> diffs, NodeViewModel newChildNode) {
+      if (diffs.CommonItems.Count == newParent.Children.Count) {
+        return diffs.CommonItems[index].LeftItem;
+      }
+
+      for (var i = 0; i < diffs.CommonItems.Count; i++) {
+        var pair = diffs.CommonItems[i];
+        if (pair.RigthtItem == newChildNode)
+          return pair.LeftItem;
+      }
+
+      return null;
     }
 
     private NodeViewModel CreateNodeViewModel(FileSystemEntry entry, NodeViewModel parent) {
@@ -134,7 +151,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           StandardGlyphGroup.GlyphCSharpFile,
           StandardGlyphItem.GlyphItemPublic);
       }
-      parent.AddChild(node);
       return node;
     }
 

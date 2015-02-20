@@ -9,9 +9,25 @@ using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Logging {
   public class Logger {
-    private static readonly Lazy<string> _processName = new Lazy<string>(() => Process.GetCurrentProcess().ProcessName, LazyThreadSafetyMode.PublicationOnly);
+    private static readonly Lazy<string> ProcessName = new Lazy<string>(() => Process.GetCurrentProcess().ProcessName, LazyThreadSafetyMode.PublicationOnly);
+
+    static Logger() {
+#if DEBUG
+      Info = true;
+      Perf = true;
+#endif
+      Perf = true;
+      Warning = true;
+      Error = true;
+    }
+
+    public static bool Info { get; set; }
+    public static bool Perf { get; set; }
+    public static bool Warning { get; set; }
+    public static  bool Error { get; set; }
+
     private static string GetLoggerId() {
-      return _processName.Value;
+      return ProcessName.Value;
     }
 
     private static void LogImpl(string format, params object[] args) {
@@ -20,28 +36,28 @@ namespace VsChromium.Core.Logging {
     }
 
     public static void LogInfo(string format, params object[] args) {
-      if (!LoggerConfiguration.Instance.Info)
+      if (!Logger.Info)
         return;
 
       LogImpl(format, args);
     }
 
     public static void LogPerf(string format, params object[] args) {
-      if (!LoggerConfiguration.Instance.Perf)
+      if (!Logger.Perf)
         return;
 
       LogImpl(format, args);
     }
 
     public static void LogWarning(string format, params object[] args) {
-      if (!LoggerConfiguration.Instance.Warning)
+      if (!Logger.Warning)
         return;
 
       LogImpl(format, args);
     }
 
     public static void LogWarning(Exception exception, string format, params object[] args) {
-      if (!LoggerConfiguration.Instance.Warning)
+      if (!Logger.Warning)
         return;
 
       LogImpl(format, args);
@@ -49,14 +65,14 @@ namespace VsChromium.Core.Logging {
     }
 
     public static void LogError(string format, params object[] args) {
-      if (!LoggerConfiguration.Instance.Error)
+      if (!Logger.Error)
         return;
 
       LogImpl("ERROR: {0}", string.Format(format, args));
     }
 
     public static void LogError(Exception exception, string format, params object[] args) {
-      if (!LoggerConfiguration.Instance.Error)
+      if (!Logger.Error)
         return;
 
       var msg = string.Format(format, args);
@@ -65,7 +81,7 @@ namespace VsChromium.Core.Logging {
     }
 
     public static void LogMemoryStats(string indent = "") {
-      if (!LoggerConfiguration.Instance.Info)
+      if (!Logger.Perf)
         return;
 
       var msg = "";

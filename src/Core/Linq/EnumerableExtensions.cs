@@ -6,11 +6,55 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Linq {
   public static class EnumerableExtensions {
+    public struct ListEnumerator<T> {
+      private readonly IList<T> _list;
+      private readonly int _count;
+      private int _index;
+
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      public ListEnumerator(IList<T> list) {
+        _list = list;
+        _count = list.Count;
+        _index = -1;
+      }
+
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      public ListEnumerator<T> GetEnumerator() {
+        return this;
+      }
+
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      public bool MoveNext() {
+        return (++_index < _count);
+      }
+
+      public T Current {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get { return _list[_index]; }
+      }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ListEnumerator<T> ToEnumerator<T>(this IList<T> list) {
+      return new ListEnumerator<T>(list);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static List<T> ToEnumerator<T>(this List<T> list) {
+      return list;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] ToEnumerator<T>(this T[] list) {
+      return list;
+    }
+
     /// <summary>
     /// Partition a list of elements of <paramref name="weight"/> into <paramref
     /// name="partitionCount"/> lists having identical total weight (as best as

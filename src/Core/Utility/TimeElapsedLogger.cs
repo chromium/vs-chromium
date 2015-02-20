@@ -24,13 +24,21 @@ namespace VsChromium.Core.Utility {
       _description = description;
       _stopwatch = Stopwatch.StartNew();
       _indent = GetIndent(_currentThreadIndent);
-      Logger.LogInfo("{0}{1}.", _indent, _description);
+      if (Logger.Info)
+        Logger.LogInfo("{0}{1}.", _indent, _description);
     }
 
     public void Dispose() {
       _currentThreadIndent--;
       _stopwatch.Stop();
-      Logger.LogPerf("{0}{1} performed in {2:n0} msec.", _indent, _description, _stopwatch.ElapsedMilliseconds);
+      if (Logger.Perf) {
+        Logger.LogPerf(
+          "{0}{1} performed in {2:n0} msec. (Memory={3:n0})",
+          _indent,
+          _description,
+          _stopwatch.ElapsedMilliseconds,
+          GC.GetTotalMemory(false));
+      }
     }
 
     public string Indent {
@@ -42,19 +50,19 @@ namespace VsChromium.Core.Utility {
         case 0:
           return "";
         case 1:
-          return "++";
+          return ">> ";
         case 2:
-          return "++++";
+          return ">>>> ";
         case 3:
-          return "++++++";
+          return ">>>>>> ";
         case 4:
-          return "++++++++";
+          return ">>>>>>>> ";
         case 5:
-          return "++++++++++";
+          return ">>>>>>>>>> ";
         case 6:
-          return "++++++++++++";
+          return ">>>>>>>>>>>> ";
         default:
-          return new string('+', indent*2);
+          return new string('+', indent * 2);
       }
     }
   }

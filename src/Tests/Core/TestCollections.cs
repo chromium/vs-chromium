@@ -8,6 +8,8 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Tests.Core {
   [TestClass]
@@ -176,7 +178,7 @@ namespace VsChromium.Tests.Core {
     [TestMethod]
     public void ArrayDiffShouldHandleOrderedIdenticalSequences() {
       var left = new int[] { 1, 2, 3 };
-      var right = new int[] {1, 2, 3 };
+      var right = new int[] { 1, 2, 3 };
       var diffs = ArrayUtilities.BuildArrayDiffs(left, right);
       Assert.AreEqual(diffs.LeftOnlyItems.Count, 0);
       Assert.AreEqual(diffs.RightOnlyItems.Count, 0);
@@ -190,6 +192,99 @@ namespace VsChromium.Tests.Core {
       Assert.AreEqual(diffs.LeftOnlyItems.Count, 0);
       Assert.AreEqual(diffs.RightOnlyItems.Count, 0);
       Assert.AreEqual(diffs.CommonItems.Count, 3);
+    }
+
+    [TestMethod]
+    public void ListEnumeratorWorks() {
+      const int iterationCount = 3;
+      const int loopCount = 300000;
+      Logger.Perf = true;
+      Logger.Info = false;
+
+      var items = new List<int>();
+      IList<int> itemsAsIList = items;
+      var itemsArray = new int[100];
+      for (var i = 0; i < 100; i++) {
+        items.Add(i);
+        itemsArray[i] = i;
+      }
+
+      for (var iteration = 0; iteration < iterationCount; iteration++) {
+        Logger.LogPerf("Iteration #{0}", iteration);
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "for loop, List<T>:"))) {
+          for (var loop = 0; loop < loopCount; loop++) {
+            for (var i = 0; i < items.Count; i++) {
+              var item = items[i];
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "ToEnum, List<T>:"))) {
+          for (var i = 0; i < loopCount; i++) {
+            foreach (var item in items.ToEnumerator()) {
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "foreach, List<T>:"))) {
+          for (var loop = 0; loop < loopCount; loop++) {
+            foreach (var item in items) {
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "for loop, IList<T>:"))) {
+          for (var loop = 0; loop < loopCount; loop++) {
+            for (var i = 0; i < itemsAsIList.Count; i++) {
+              var item = items[i];
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "ToEnum, IList<T>:"))) {
+          for (var i = 0; i < loopCount; i++) {
+            foreach (var item in itemsAsIList.ToEnumerator()) {
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "foreach, IList<T>:"))) {
+          for (var loop = 0; loop < loopCount; loop++) {
+            foreach (var item in itemsAsIList) {
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "for loop, T[]:"))) {
+          for (var loop = 0; loop < loopCount; loop++) {
+            for (var i = 0; i < itemsArray.Length; i++) {
+              var item = items[i];
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "ToEnum, T[]:"))) {
+          for (var i = 0; i < loopCount; i++) {
+            foreach (var item in itemsArray.ToEnumerator()) {
+            }
+          }
+        }
+        GabargeCollect();
+        using (new TimeElapsedLogger(string.Format("{0,-20}", "foreach, T[]:"))) {
+          for (var loop = 0; loop < loopCount; loop++) {
+            foreach (var item in itemsArray) {
+            }
+          }
+        }
+      }
+    }
+
+    private static void GabargeCollect() {
+      for (var i = 0; i < 3; i++) {
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
+        GC.WaitForPendingFinalizers();
+      }
     }
   }
 }

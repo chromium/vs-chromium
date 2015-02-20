@@ -25,57 +25,73 @@ namespace VsChromium.Core.Collections {
       IEqualityComparer<T> comparer) {
       comparer = comparer ?? EqualityComparer<T>.Default;
 
-      ArrayDiffsResult<T> result = ProcessSpecialCases(leftList, rightList, comparer);
+      var result = ProcessSpecialCases(leftList, rightList, comparer);
       if (result != null) {
-        return result;
+        return result.Value;
       }
 
       bool smallList = leftList.Count + rightList.Count <= SmallArrayThreshold;
-      result = smallList
+      var result2 = smallList
         ? BuildArrayDiffsForSmallArrays(leftList, rightList, comparer)
         : BuildArrayDiffsForLargeArrays(leftList, rightList, comparer);
 
       // Quick check assumption about identity is verified: both list should not
       // contain duplicate elements.
-      Debug.Assert(result.LeftOnlyItems.Count + result.RightOnlyItems.Count + result.CommonItems.Count * 2 == leftList.Count + rightList.Count);
-      return result;
+      Debug.Assert(
+        result2.LeftOnlyItems.Count +
+        result2.RightOnlyItems.Count +
+        result2.CommonItems.Count * 2 ==
+        leftList.Count + rightList.Count);
+      return result2;
     }
 
-    private static ArrayDiffsResult<T> ProcessSpecialCases<T>(IList<T> leftList, IList<T> rightList, IEqualityComparer<T> comparer) {
+    private static class EmptyResult<T> {
+      public static ArrayDiffsResult<T> Instance = new ArrayDiffsResult<T>(
+        EmptyList<T>.Instance,
+        EmptyList<T>.Instance,
+        EmptyList<LeftRightItemPair<T>>.Instance);
+    }
+
+    private static ArrayDiffsResult<T>? ProcessSpecialCases<T>(IList<T> leftList, IList<T> rightList, IEqualityComparer<T> comparer) {
       if (leftList.Count == 0 && rightList.Count == 0) {
-        return new ArrayDiffsResult<T> {
-          LeftOnlyItems = EmptyList<T>.Instance,
-          RightOnlyItems = EmptyList<T>.Instance,
-          CommonItems = EmptyList<LeftRightItemPair<T>>.Instance,
-        };
+        return EmptyResult<T>.Instance;
       }
 
       if (leftList.Count == 0) {
-        return new ArrayDiffsResult<T> {
-          LeftOnlyItems = EmptyList<T>.Instance,
-          RightOnlyItems = rightList.ToReadOnlyCollection(),
-          CommonItems = EmptyList<LeftRightItemPair<T>>.Instance,
-        };
+        return new ArrayDiffsResult<T>(
+          EmptyList<T>.Instance,
+          rightList,
+          EmptyList<LeftRightItemPair<T>>.Instance);
       }
 
       if (rightList.Count == 0) {
-        return new ArrayDiffsResult<T> {
-          LeftOnlyItems = leftList.ToReadOnlyCollection(),
-          RightOnlyItems = EmptyList<T>.Instance,
-          CommonItems = EmptyList<LeftRightItemPair<T>>.Instance,
-        };
+        return new ArrayDiffsResult<T>(
+          leftList,
+          EmptyList<T>.Instance,
+          EmptyList<LeftRightItemPair<T>>.Instance);
       }
 
-      if (leftList.Count == rightList.Count &&
-          Enumerable.SequenceEqual(leftList, rightList, comparer)) {
-        return new ArrayDiffsResult<T> {
-          LeftOnlyItems = EmptyList<T>.Instance,
-          RightOnlyItems = EmptyList<T>.Instance,
-          CommonItems = leftList.Zip(rightList, (x, y) => new LeftRightItemPair<T>(x, y)).ToReadOnlyCollection(),
-        };
+      if (ListAreEqual(leftList, rightList, comparer)) {
+        var common = new LeftRightItemPair<T>[rightList.Count];
+        for (var i = 0; i < common.Length; i++) {
+          common[i] = new LeftRightItemPair<T>(leftList[i], rightList[i]);
+        }
+
+        return new ArrayDiffsResult<T>(EmptyList<T>.Instance, EmptyList<T>.Instance, common);
       }
 
       return null;
+    }
+
+    private static bool ListAreEqual<T>(IList<T> leftList, IList<T> rightList, IEqualityComparer<T> comparer) {
+      if (leftList.Count != rightList.Count)
+        return false;
+
+      for (var i = 0; i < leftList.Count; i++) {
+        if (!comparer.Equals(leftList[i], rightList[i]))
+          return false;
+      }
+      return true;
     }
 
     public static ArrayDiffsResult<T> BuildArrayDiffsForSmallArrays<T>(
@@ -90,11 +106,11 @@ namespace VsChromium.Core.Collections {
       IEqualityComparer<T> comparer) {
       comparer = comparer ?? EqualityComparer<T>.Default;
 
-      var result = new ArrayDiffsResult<T> {
-        LeftOnlyItems = new List<T>(),
-        RightOnlyItems = new List<T>(),
-        CommonItems = new List<LeftRightItemPair<T>>()
-      };
+      var result = new ArrayDiffsResult<T>(
+        new List<T>(),
+        new List<T>(),
+        new List<LeftRightItemPair<T>>()
+      );
 
       // Append left items, either unique or common with right items
       foreach (var left in leftList) {
@@ -129,11 +145,11 @@ namespace VsChromium.Core.Collections {
       IEqualityComparer<T> comparer) {
       comparer = comparer ?? EqualityComparer<T>.Default;
 
-      var result = new ArrayDiffsResult<T> {
-        LeftOnlyItems = new List<T>(),
-        RightOnlyItems = new List<T>(),
-        CommonItems = new List<LeftRightItemPair<T>>()
-      };
+      var result = new ArrayDiffsResult<T>(
+        new List<T>(),
+        new List<T>(),
+        new List<LeftRightItemPair<T>>()
+      );
 
       // Build both map from item to item index.
       var leftMap = new Dictionary<T, int>(leftList.Count, comparer);

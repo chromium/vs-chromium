@@ -10,13 +10,11 @@ using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
-  public class NodeViewModel {
+  public abstract class NodeViewModel {
     private const int NoImage = -1;
-    private readonly List<NodeViewModel> _children = new List<NodeViewModel>();
-    private readonly Dictionary<int, object> _properties = new Dictionary<int, object>();
     private NodeViewModel _parent;
 
-    public NodeViewModel() {
+    protected NodeViewModel() {
       OpenFolderImageIndex = NoImage;
       ImageIndex = NoImage;
       DocCookie = uint.MaxValue;
@@ -41,8 +39,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
+    protected abstract IList<NodeViewModel> ChildrenImpl { get; }
+
     public IList<NodeViewModel> Children {
-      get { return _children; }
+      get { return ChildrenImpl; }
     }
 
     public NodeViewModel Parent {
@@ -50,10 +50,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public uint GetFirstChildItemId() {
-      if (_children.Count == 0)
-        return uint.MaxValue;
+      if (ChildrenImpl.Count == 0)
+        return VSConstants.VSITEMID_NIL;
 
-      return _children[0].ItemId;
+      return ChildrenImpl[0].ItemId;
     }
 
     private uint GetParentItemId() {
@@ -68,10 +68,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (_parent == null)
         return VSConstants.VSITEMID_NIL;
 
-      var index = _parent._children.IndexOf(this);
-      if (index < 0 || index >= _parent._children.Count - 1)
+      var index = _parent.ChildrenImpl.IndexOf(this);
+      if (index < 0 || index >= _parent.ChildrenImpl.Count - 1)
         return VSConstants.VSITEMID_NIL;
-      return _parent._children[index + 1].ItemId;
+      return _parent.ChildrenImpl[index + 1].ItemId;
     }
 
     public uint GetPreviousSiblingItemId() {
@@ -79,15 +79,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (_parent == null)
         return VSConstants.VSITEMID_NIL;
 
-      var index = _parent._children.IndexOf(this);
+      var index = _parent.ChildrenImpl.IndexOf(this);
       if (index < 1)
         return VSConstants.VSITEMID_NIL;
-      return _parent._children[index - 1].ItemId;
+      return _parent.ChildrenImpl[index - 1].ItemId;
     }
 
     public void AddChild(NodeViewModel node) {
       node._parent = this;
-      _children.Add(node);
+      ChildrenImpl.Add(node);
     }
 
     private IntPtr GetIconHandleForImageIndex(int imageIndex) {
@@ -109,7 +109,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int GetChildrenCount() {
-      return _children.Count;
+      return ChildrenImpl.Count;
     }
 
     private int GetImageIndex() {
@@ -130,7 +130,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return true;
       }
 
-      foreach (var child in parentNode._children) {
+      foreach (var child in parentNode.ChildrenImpl) {
         if (FindNodeByMonikerHelper(child, searchMoniker, out foundNode)) {
           return true;
         }
@@ -150,11 +150,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int SetProperty(int propid, object var) {
-      if (propid == (int)__VSHPROPID.VSHPROPID_Expanded)
-        IsExpanded = (bool)var;
-      else
-        _properties[propid] = var;
-      return VSConstants.S_OK;
+      if (propid == (int) __VSHPROPID.VSHPROPID_Expanded) {
+        IsExpanded = (bool) var;
+        return VSConstants.S_OK;
+      }
+
+      return VSConstants.E_NOTIMPL;
     }
 
     public int GetProperty(int propid, out object pvar) {
@@ -210,10 +211,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           pvar = Name;
           break;
         case (int)__VSHPROPID.VSHPROPID_ExpandByDefault:
-          pvar = (object)(this.ExpandByDefault ? 1 : 0);
+          pvar = (ExpandByDefault ? 1 : 0);
           break;
         case (int)__VSHPROPID.VSHPROPID_Expandable:
-          pvar = _children.Count > 0;
+          pvar = ChildrenImpl.Count > 0;
           break;
         case (int)__VSHPROPID.VSHPROPID_IconIndex: {
             int imageIndex = GetImageIndex();

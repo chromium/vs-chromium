@@ -216,6 +216,7 @@
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyControllerFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IVsGlyphService.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IVsSolutionEventsHandler.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\RootNodeViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SolutionExplorerHierarchyInitializer.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />

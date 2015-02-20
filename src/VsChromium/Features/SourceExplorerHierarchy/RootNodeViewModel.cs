@@ -3,12 +3,13 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromium.Core.Collections;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
-  public class FileNodeViewModel : NodeViewModel {
+  public class RootNodeViewModel : NodeViewModel {
+    private readonly List<NodeViewModel> _childrenList = new List<NodeViewModel>();
+
     protected override IList<NodeViewModel> ChildrenImpl {
-      get { return ArrayUtilities.EmptyList<NodeViewModel>.Instance; }
+      get { return _childrenList; }
     }
   }
 }

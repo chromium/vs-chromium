@@ -196,8 +196,10 @@ namespace VsChromium.Tests.Core {
 
     [TestMethod]
     public void ListEnumeratorWorks() {
-      const int iterationCount = 3;
-      const int loopCount = 300000;
+      //const int iterationCount = 3;
+      //const int loopCount = 300000;
+      const int iterationCount = 1;
+      const int loopCount = 3000;
       Logger.Perf = true;
       Logger.Info = false;
 
@@ -281,10 +283,8 @@ namespace VsChromium.Tests.Core {
     }
 
     private static void GabargeCollect() {
-      for (var i = 0; i < 3; i++) {
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
-        GC.WaitForPendingFinalizers();
-      }
+      GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
+      GC.WaitForPendingFinalizers();
     }
   }
 }

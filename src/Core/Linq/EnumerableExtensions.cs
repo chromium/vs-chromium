@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -12,6 +13,20 @@ using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Linq {
   public static class EnumerableExtensions {
+    public struct ListEnumerable<T> {
+      private readonly IList<T> _list;
+
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      public ListEnumerable(IList<T> list) {
+        _list = list;
+      }
+
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      public ListEnumerator<T> GetEnumerator() {
+        return new ListEnumerator<T>(_list);
+      }
+    }
+
     public struct ListEnumerator<T> {
       private readonly IList<T> _list;
       private readonly int _count;
@@ -22,11 +37,6 @@ namespace VsChromium.Core.Linq {
         _list = list;
         _count = list.Count;
         _index = -1;
-      }
-
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      public ListEnumerator<T> GetEnumerator() {
-        return this;
       }
 
       [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -41,8 +51,8 @@ namespace VsChromium.Core.Linq {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ListEnumerator<T> ToEnumerator<T>(this IList<T> list) {
-      return new ListEnumerator<T>(list);
+    public static ListEnumerable<T> ToEnumerator<T>(this IList<T> list) {
+      return new ListEnumerable<T>(list);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

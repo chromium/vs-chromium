@@ -8,6 +8,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -56,9 +57,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // Create children nodes
       var directoryEntry = entry as DirectoryEntry;
       if (directoryEntry != null) {
-        // PERF: Avoid memory allocation
-        for (var i = 0; i < directoryEntry.Entries.Count; i++) {
-          var child = CreateNodeViewModel(directoryEntry.Entries[i], newParent);
+        foreach (var childEntry in directoryEntry.Entries.ToEnumerator()) {
+          var child = CreateNodeViewModel(childEntry, newParent);
           newParent.AddChild(child);
         }
       }
@@ -74,14 +74,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         newParent.Children,
         NodeTypeAndNameComparer.Instance);
 
-      // PERF: Avoid memory allocation
-      for (var i = 0; i < diffs.LeftOnlyItems.Count; i++) {
-        _changes.DeletedItems.Add(diffs.LeftOnlyItems[i].ItemId);
+      foreach (var item in diffs.LeftOnlyItems.ToEnumerator()) {
+        _changes.DeletedItems.Add(item.ItemId);
       }
 
-      // PERF: Avoid memory allocation
-      for (var i = 0; i < diffs.RightOnlyItems.Count; i++) {
-        var newChild = diffs.RightOnlyItems[i];
+      foreach(var newChild in diffs.RightOnlyItems.ToEnumerator()) {
         newChild.ItemId = _newNodeNextItemId;
         _newNodeNextItemId++;
         newChild.IsExpanded = newParent.IsRoot;
@@ -92,9 +89,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         }
       }
 
-      // PERF: Avoid memory allocation
-      for (var i = 0; i < diffs.CommonItems.Count; i++) {
-        var pair = diffs.CommonItems[i];
+      foreach (var pair in diffs.CommonItems.ToEnumerator()) {
         pair.RigthtItem.ItemId = pair.LeftItem.ItemId;
         pair.RigthtItem.IsExpanded = pair.LeftItem.IsExpanded;
         _newNodes.AddNode(pair.RigthtItem);
@@ -118,8 +113,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return diffs.CommonItems[index].LeftItem;
       }
 
-      for (var i = 0; i < diffs.CommonItems.Count; i++) {
-        var pair = diffs.CommonItems[i];
+      foreach (var pair in diffs.CommonItems.ToEnumerator()) {
         if (pair.RigthtItem == newChildNode)
           return pair.LeftItem;
       }

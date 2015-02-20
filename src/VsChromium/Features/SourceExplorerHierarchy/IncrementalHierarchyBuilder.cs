@@ -5,15 +5,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Core.Collections;
-using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class IncrementalHierarchyBuilder {
+    private NodeTemplateFactory _templateFactory;
     private readonly IVsGlyphService _vsGlyphService;
     private readonly VsHierarchyNodes _oldNodes;
     private readonly FileSystemTree _fileSystemTree;
@@ -26,6 +25,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       VsHierarchyNodes oldNodes,
       FileSystemTree fileSystemTree) {
       _vsGlyphService = vsGlyphService;
+      _templateFactory = new NodeTemplateFactory(vsGlyphService);
       _oldNodes = oldNodes;
       _fileSystemTree = fileSystemTree;
     }
@@ -138,18 +138,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       node.Caption = entry.Name;
       node.Name = entry.Name;
-      node.ExpandByDefault = parent.IsRoot;
-      if (directoryEntry != null) {
-        node.ImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphClosedFolder,
-          StandardGlyphItem.GlyphItemPublic);
-        node.OpenFolderImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphOpenFolder,
-          StandardGlyphItem.GlyphItemPublic);
+      if (parent.IsRoot) {
+        node.Template = _templateFactory.ProjectTemplate;
+      } else if (directoryEntry != null) {
+        node.Template = _templateFactory.DirectoryTemplate;
       } else {
-        node.ImageIndex = _vsGlyphService.GetImageIndex(
-          StandardGlyphGroup.GlyphCSharpFile,
-          StandardGlyphItem.GlyphItemPublic);
+        node.Template = _templateFactory.FileTemplate;
       }
       return node;
     }
@@ -173,13 +167,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       var name = "VS Chromium Projects";
       root.Name = name;
       root.Caption = name;
-      root.ExpandByDefault = true;
-      root.ImageIndex = _vsGlyphService.GetImageIndex(
-        StandardGlyphGroup.GlyphClosedFolder,
-        StandardGlyphItem.GlyphItemPublic);
-      root.OpenFolderImageIndex = _vsGlyphService.GetImageIndex(
-        StandardGlyphGroup.GlyphOpenFolder,
-        StandardGlyphItem.GlyphItemPublic);
+      root.Template = _templateFactory.RootNodeTemplate;
     }
   }
 }

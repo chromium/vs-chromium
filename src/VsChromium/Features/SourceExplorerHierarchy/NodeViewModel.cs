@@ -11,26 +11,37 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public abstract class NodeViewModel {
-    private const int NoImage = -1;
+    public const int NoImage = -1;
     private NodeViewModel _parent;
 
     protected NodeViewModel() {
-      OpenFolderImageIndex = NoImage;
-      ImageIndex = NoImage;
       DocCookie = uint.MaxValue;
       ItemId = VSConstants.VSITEMID_NIL;
+      Template = NodeViewModelTemplate.Default;
     }
 
     public uint ItemId { get; set; }
     public string Name { get; set; }
     public string Caption { get; set; }
     public uint DocCookie { get; set; }
-    public int ImageIndex { get; set; }
-    public int OpenFolderImageIndex { get; set; }
-    public Icon Icon { get; set; }
-    public Icon OpenFolderIcon { get; set; }
     public bool IsExpanded { get; set; }
-    public bool ExpandByDefault { get; set; }
+    public NodeViewModelTemplate Template { get; set; }
+
+    public int ImageIndex {
+      get { return Template.ImageIndex; }
+    }
+    public int OpenFolderImageIndex {
+      get { return Template.OpenFolderImageIndex; }
+    }
+    public Icon Icon {
+      get { return Template.Icon; }
+    }
+    public Icon OpenFolderIcon {
+      get { return Template.OpenFolderIcon; }
+    }
+    public bool ExpandByDefault {
+      get { return Template.ExpandByDefault; }
+    }
 
     public bool IsRoot {
       get {

@@ -26,6 +26,13 @@ namespace VsChromium.Core.Logging {
       LogImpl(format, args);
     }
 
+    public static void LogPerf(string format, params object[] args) {
+      if (!LoggerConfiguration.Instance.Perf)
+        return;
+
+      LogImpl(format, args);
+    }
+
     public static void LogWarning(string format, params object[] args) {
       if (!LoggerConfiguration.Instance.Warning)
         return;

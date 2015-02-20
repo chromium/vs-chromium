@@ -30,7 +30,7 @@ namespace VsChromium.Core.Utility {
     public void Dispose() {
       _currentThreadIndent--;
       _stopwatch.Stop();
-      Logger.LogInfo("{0}{1} performed in {2:n0} msec.", _indent, _description, _stopwatch.ElapsedMilliseconds);
+      Logger.LogPerf("{0}{1} performed in {2:n0} msec.", _indent, _description, _stopwatch.ElapsedMilliseconds);
     }
 
     public string Indent {

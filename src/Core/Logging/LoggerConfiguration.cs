@@ -9,12 +9,14 @@ namespace VsChromium.Core.Logging {
     public LoggerConfiguration() {
 #if DEBUG
       this.Info = true;
+      this.Perf = true;
 #endif
       this.Warning = true;
       this.Error = true;
     }
 
     public bool Info { get; set; }
+    public bool Perf { get; set; }
     public bool Warning { get; set; }
     public bool Error { get; set; }
   }

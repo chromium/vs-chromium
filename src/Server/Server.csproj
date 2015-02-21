@@ -58,6 +58,7 @@
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotComputedResult.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\GetDatabaseStatisticsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDirectoryStatisticsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\RefreshFileSystemTreeRequestHandler.cs" />
     <Compile Include="Operations\IOperationIdFactory.cs" />

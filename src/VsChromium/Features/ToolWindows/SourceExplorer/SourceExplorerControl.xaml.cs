@@ -87,8 +87,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
 
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
-      _fileSystemTreeSource.TreeReceived += FileSystemTreeSourceOnTreeReceived;
-      _fileSystemTreeSource.ErrorReceived += FileSystemTreeSourceOnErrorReceived;
+      _fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
+      _fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
 
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
@@ -225,6 +225,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (@event != null) {
         WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
+          Controller.FilesLoaded();
           if (@event.Error != null) {
             Controller.SetFileSystemTreeError(@event.Error);
             return;
@@ -234,13 +235,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    private void FileSystemTreeSourceOnTreeReceived(FileSystemTree fileSystemTree) {
+    private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
       WpfUtilities.Post(this, () => {
         Controller.SetFileSystemTree(fileSystemTree);
       });
     }
 
-    private void FileSystemTreeSourceOnErrorReceived(ErrorResponse errorResponse) {
+    private void FileSystemTreeSource_OnErrorReceived(ErrorResponse errorResponse) {
       WpfUtilities.Post(this, () => {
         Controller.SetFileSystemTreeError(errorResponse);
       });

@@ -27,6 +27,10 @@ namespace VsChromium.Server.FileSystemContents {
       get { return _fileName; }
     }
 
+    public FileContents FileContents {
+      get { return _fileContents; }
+    }
+
     public int FileId {
       get { return _fileId; }
     }

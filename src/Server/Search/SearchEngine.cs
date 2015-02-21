@@ -71,6 +71,8 @@ namespace VsChromium.Server.Search {
       fileSystemProcessor.FilesChanged += FileSystemProcessorOnFilesChanged;
     }
 
+    public IFileDatabase CurrentFileDatabase { get { return _currentFileDatabase; } }
+
     public SearchFileNamesResult SearchFileNames(SearchParams searchParams) {
       // taskCancellation is used to make sure we cancel previous tasks as fast
       // as possible to avoid using too many CPU resources if the caller keeps
@@ -161,7 +163,7 @@ namespace VsChromium.Server.Search {
       // the previous queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      Func<FileName, bool> fileNameMatcher = x =>true;
+      Func<FileName, bool> fileNameMatcher = x => true;
       if (!string.IsNullOrEmpty(searchParams.FileNamePattern)) {
         var temp = searchParams.SearchString;
         searchParams.SearchString = searchParams.FileNamePattern;

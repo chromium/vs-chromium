@@ -6,10 +6,13 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.Search {
   public interface ISearchEngine {
+    IFileDatabase CurrentFileDatabase { get; }
+
     SearchFileNamesResult SearchFileNames(SearchParams searchParams);
     SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams);
     SearchTextResult SearchText(SearchParams searchParams);

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Configuration;
@@ -22,6 +21,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private bool _useRegex;
     private bool _includeSymLinks;
     private bool _useRe2Regex;
+    private string _statusText;
 
     public enum DisplayKind {
       FileSystemTree,
@@ -287,6 +287,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public ImageSource RefreshFileSystemTreeButtonImage {
       get {
         return GetImageFromResource("RefreshFileSystemTree");
+      }
+    }
+
+    public string StatusText {
+      get { return _statusText; }
+      set {
+        _statusText = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.StatusText));
       }
     }
 

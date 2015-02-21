@@ -161,6 +161,8 @@
           </Image.Style>
         </Image>
       </Button>
+      <Separator Width="2" />
+      <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="4,0,0,0" />
     </ToolBar>
 
     <!-- SEARCH AREA -->

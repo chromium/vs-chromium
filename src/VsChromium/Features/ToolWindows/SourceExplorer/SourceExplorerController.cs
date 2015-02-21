@@ -556,6 +556,24 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       ViewModel.SetFileSystemTree(viewModel);
     }
 
+    public void FilesLoaded() {
+      _uiRequestProcessor.Post(new UIRequest {
+        Id = "GetDatabaseStatisticsRequest",
+        Request = new GetDatabaseStatisticsRequest(),
+        OnSuccess = r => {
+          var response = (GetDatabaseStatisticsResponse) r;
+          var message =
+            String.Format(
+              "Projects: {0} - Files: {1:n0} - Indexed Files: {2:n0} - Index Memory: {3:n0} byte(s)",
+              response.ProjectCount,
+              response.FileCount,
+              response.IndexedFileCount,
+              response.IndexedFileSize);
+          ViewModel.StatusText = message;
+        }
+      });
+    }
+
     public void SearchFilesNames(string searchPattern) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,

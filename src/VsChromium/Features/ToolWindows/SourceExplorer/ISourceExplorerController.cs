@@ -24,6 +24,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     void RefreshFileSystemTree();
     void SetFileSystemTree(FileSystemTree tree);
+    void FilesLoaded();
 
     void SearchText(string searchPattern, string fileNamePattern);
     void SearchFilesNames(string searchPattern);

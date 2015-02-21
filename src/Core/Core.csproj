@@ -111,6 +111,8 @@
     <Compile Include="Ipc\IpcEvent.cs" />
     <Compile Include="Ipc\IpcMessage.cs" />
     <Compile Include="Ipc\RecoverableErrorException.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDatabaseStatisticsRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDatabaseStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeRequest.cs" />

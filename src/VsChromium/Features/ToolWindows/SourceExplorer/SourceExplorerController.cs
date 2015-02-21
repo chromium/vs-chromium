@@ -15,6 +15,8 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Threads;
+using VsChromium.Features.SourceExplorerHierarchy;
+using VsChromium.Package;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -35,6 +37,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly IClipboard _clipboard;
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IOpenDocumentHelper _openDocumentHelper;
+    private readonly IEventBus _eventBus;
     private readonly TaskCancellation _taskCancellation;
 
     /// <summary>
@@ -50,7 +53,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       IWindowsExplorer windowsExplorer,
       IClipboard clipboard,
       ISynchronizationContextProvider synchronizationContextProvider,
-      IOpenDocumentHelper openDocumentHelper) {
+      IOpenDocumentHelper openDocumentHelper,
+      IEventBus eventBus) {
       _control = control;
       _uiRequestProcessor = uiRequestProcessor;
       _progressBarTracker = progressBarTracker;
@@ -59,6 +63,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _clipboard = clipboard;
       _synchronizationContextProvider = synchronizationContextProvider;
       _openDocumentHelper = openDocumentHelper;
+      _eventBus = eventBus;
       _taskCancellation = new TaskCancellation();
     }
 
@@ -398,7 +403,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// is already the currently active ViewModel.
     /// </summary>
     public void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry) {
-      // If the view model is displaying the file system tree, don't do anything.
+#if true
+      var path = relativePathEntry.GetFullPath();
+      _eventBus.Fire("ShowInSolutionExplorer", relativePathEntry, new FilePathEventArgs {
+        FilePath = path
+      });
+#else
+  // If the view model is displaying the file system tree, don't do anything.
       if (ViewModel.ActiveDisplay == SourceExplorerViewModel.DisplayKind.FileSystemTree)
         return;
 
@@ -411,6 +422,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         ViewModel.SwitchToFileSystemTree();
         BringItemViewModelToView(entry);
       }
+#endif
     }
 
     /// <summary>

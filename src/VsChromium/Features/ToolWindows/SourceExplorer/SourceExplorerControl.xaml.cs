@@ -95,6 +95,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       var windowsExplorer = componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>();
       var openDocumentHelper = componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
       var synchronizationContextProvider = componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
+      var eventBus = componentModel.DefaultExportProvider.GetExportedValue<IEventBus>();
       _controller = new SourceExplorerController(
         this,
         _uiRequestProcessor,
@@ -103,7 +104,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         windowsExplorer,
         clipboard,
         synchronizationContextProvider,
-        openDocumentHelper);
+        openDocumentHelper,
+        eventBus);
 
       // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
       // exposes pictures from Visual Studio resources.

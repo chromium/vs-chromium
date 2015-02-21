@@ -31,6 +31,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IClipboard _clipboard;
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly IEventBus _eventBus;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
 
@@ -44,7 +45,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IFileSystem fileSystem,
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
-      IUIRequestProcessor uiRequestProcessor) {
+      IUIRequestProcessor uiRequestProcessor,
+      IEventBus eventBus) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -54,6 +56,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _clipboard = clipboard;
       _windowsExplorer = windowsExplorer;
       _uiRequestProcessor = uiRequestProcessor;
+      _eventBus = eventBus;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
@@ -169,6 +172,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       });
 
       _nodeTemplateFactory.Activate();
+      _eventBus.RegisterHandler("ShowInSolutionExplorer", ShowInSolutionExplorerHandler);
+    }
+
+    private void ShowInSolutionExplorerHandler(object sender, EventArgs eventArgs) {
+      ShowInSolutionExplorer(((FilePathEventArgs)eventArgs).FilePath);
     }
 
     private void RefreshFileSystemTree() {
@@ -246,18 +254,21 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           var document = dte.ActiveDocument;
           if (document == null)
             return;
-          var path = document.FullName;
-          if (!PathHelpers.IsAbsolutePath(path))
-            return;
-          if (!PathHelpers.IsValidBclPath(path))
-            return;
-
-          // TODO(rpaquay): Make this more efficient?
-          NodeViewModel node;
-          if (_hierarchy.Nodes.RootNode.FindNodeByMoniker(path, out node)) {
-            _hierarchy.SelectNode(node);
-          }
+          ShowInSolutionExplorer(document.FullName);
         });
+    }
+
+    private void ShowInSolutionExplorer(string path) {
+      if (!PathHelpers.IsAbsolutePath(path))
+        return;
+      if (!PathHelpers.IsValidBclPath(path))
+        return;
+
+      // TODO(rpaquay): Make this more efficient?
+      NodeViewModel node;
+      if (_hierarchy.Nodes.RootNode.FindNodeByMoniker(path, out node)) {
+        _hierarchy.SelectNode(node);
+      }
     }
 
     /// <summary>
@@ -286,7 +297,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           // We need to load these images on the main UI thread
           buildResult.FileTemplatesToInitialize.ForAll(
             item => {
-              var icon =_imageSourceFactory.GetFileExtensionIcon(item.Key);
+              var icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
               if (icon == null)
                 icon = _imageSourceFactory.GetFileExtensionIcon(".txt");
               if (icon == null)

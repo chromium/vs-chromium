@@ -40,7 +40,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public bool FindNode(uint itemid, out NodeViewModel node) {
-      node = (NodeViewModel)null;
+      node = null;
       if (itemid == 0 || itemid == VSConstants.VSITEMID_NIL || itemid == VSConstants.VSITEMID_SELECTION)
         return false;
       if (itemid != RootNodeItemId)

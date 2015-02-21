@@ -36,6 +36,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
+    private bool _enabled;
 
     public SourceExplorerHierarchyController(
       ISynchronizationContextProvider synchronizationContextProvider,
@@ -184,8 +185,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void SynchronizeHierarchy() {
+      if (_enabled == _globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects)
+        return;
+      _enabled = _globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects;
+
       // Force getting the tree and refreshing the ui hierarchy.
-      if (_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects) {
+      if (_enabled) {
         _fileSystemTreeSource.Fetch();
       } else {
         _hierarchy.Disable();

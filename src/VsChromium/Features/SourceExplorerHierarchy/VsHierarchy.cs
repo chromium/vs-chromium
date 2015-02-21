@@ -61,6 +61,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public void Disable() {
       CloseVsHierarchy();
+      // Reset nodes to avoid holding onto memory if we had an active hierarchy.
       _nodes = new VsHierarchyNodes();
     }
 

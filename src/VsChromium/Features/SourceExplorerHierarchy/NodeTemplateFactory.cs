@@ -35,7 +35,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     private NodeViewModelTemplate CreateProjectTemplate() {
       return new NodeViewModelTemplate {
-        ImageIndex = _vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphGroupModule, StandardGlyphItem.GlyphItemPublic),
+        Icon = _imageSourceFactory.GetIcon("ProjectNodeIcon"),
         ExpandByDefault = true
       };
     }

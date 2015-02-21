@@ -70,7 +70,7 @@ namespace VsChromium {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Source Explorer.
+        ///   Looks up a localized string similar to Code Search.
         /// </summary>
         internal static string SourceExplorerToolWindowTitle {
             get {

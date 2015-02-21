@@ -25,7 +25,7 @@ namespace VsChromium.Features.ToolWindows {
     public override void Execute(object sender, EventArgs e) {
       var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(TToolWindow), 0 /*instance id*/, true /*create*/);
       if (window == null || window.Frame == null) {
-        throw new NotSupportedException("Error creating to \"Source Explorer\" tool window.");
+        throw new NotSupportedException("Error creating the \"Code Search\" tool window.");
       }
       var windowFrame = (IVsWindowFrame)window.Frame;
       ErrorHandler.ThrowOnFailure(windowFrame.Show());

@@ -426,7 +426,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void RefreshFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(
-        () => Controller.RefreshFileSystemTree());
+        () => RefreshSearchResults());
     }
 
     private void GotoPrevious_Click(object sender, RoutedEventArgs e) {

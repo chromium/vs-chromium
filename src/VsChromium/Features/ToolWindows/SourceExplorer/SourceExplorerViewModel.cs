@@ -67,7 +67,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public string MatchCaseToolTip {
       get {
         return string.Format(
-          "Toggle case matching for all searches. " + 
+          "Toggle case matching for all searches. " +
           "Searches are currently case {0}.",
           MatchCase ? "sensitive" : "insensitive");
       }
@@ -253,6 +253,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get { return ActiveDisplay != DisplayKind.FileSystemTree; }
     }
 
+    public bool RefreshSearchResultEnabled {
+      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+    }
+
     private ImageSource GetImageFromResource(string name) {
       if (ImageSourceFactory == null) {
         return Views.ImageSourceFactory.Instance.GetImage(name);
@@ -308,6 +312,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultEnabled));
     }
 
     public void SwitchToFileSystemTree() {

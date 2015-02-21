@@ -13,16 +13,16 @@
       <Group guid="guidVsChromiumCmdSet" id="MyMenuGroup" priority="0x0600">
         <Parent guid="guidStdEditor" id="IDG_VS_EDITOR_ADVANCED_CMDS" />
       </Group>
-      <!-- Setup our custom source explorer group to appear in Solution Explorer toolbar -->
-      <Group guid="guidVsChromiumCmdSet" id="SourceExplorerToolbarGroup" priority="0xF000">
+      <!-- Setup our custom "VS Chromium Projects" group to appear in Solution Explorer toolbar -->
+      <Group guid="guidVsChromiumCmdSet" id="SolutionExplorerToolbarGroup" priority="0xF000">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_TOOL_PROJWIN"/>
       </Group>
       <!-- Attach command group to context menu of folders in Solution Explorer -->
-      <Group guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" priority="0x0400">
+      <Group guid="guidVsChromiumCmdSet" id="VsHierarchyFolderNodeGroup" priority="0x0400">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_FOLDERNODE"/>
       </Group>
       <!-- Attach command group to context menu of items (files) in Solution Explorer -->
-      <Group guid="guidVsChromiumCmdSet" id="SourceExplorerItemNodeGroup" priority="0x0400">
+      <Group guid="guidVsChromiumCmdSet" id="VsHierarchyFileNodeGroup" priority="0x0400">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE"/>
       </Group>
       <Group guid="guidChromeDebugCmdSet" id="ChromeDebugTopLevelMenuGroup" priority="0x0600">
@@ -56,10 +56,13 @@
         <Parent guid="guidSHLMainMenu" id="IDG_VS_VIEW_ORG_WINDOWS" />
         <Icon guid="guidSourceExplorerImages" id="Icon" />
         <Strings>
-          <CommandName>cmdidSourceExplorerToolWindow</CommandName>
-          <ButtonText>Source Explorer</ButtonText>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
-          <LocCanonicalName>VsChromium.SourceExplorer</LocCanonicalName>
+          <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
+              and is used as a default value for other entries if they are not specified-->
+          <ButtonText>Code Search</ButtonText>
+          <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
+          <CommandName>VsChromium - Code Search ToolWindow</CommandName>
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
+          <LocCanonicalName>VsChromium.CodeSearchToolWindow</LocCanonicalName>
         </Strings>
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidBuildExplorerToolWindow" priority="0x0100" type="Button">
@@ -79,7 +82,7 @@
           <ButtonText>VsChromium Find File Names</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Find File Names</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.FindFileNames</LocCanonicalName>
         </Strings>
       </Button>
@@ -101,9 +104,9 @@
           <LocCanonicalName>VsChromium.FindInFiles</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "Sync to document" command (in Source Explorer toolbar) -->
+      <!-- Custom "Sync to document" command (in  Explorer toolbar) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidSyncToDocument" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerToolbarGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="SolutionExplorerToolbarGroup" />
         <Icon guid="guidSyncToDocumentImage" id="Icon" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
@@ -113,13 +116,13 @@
           <ButtonText>VsChromium Sync To Active Document</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Sync To Active Document</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.SyncToActiveDocument</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "Open Folder in File Explorer" command (in Source Explorer toolbar) -->
+      <!-- Custom "Open Folder in File Explorer" command (in context menu of Vs Hierarhcy Folder) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidOpenFolderInExplorer" priority="0x00f0" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFolderNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -128,13 +131,13 @@
           <ButtonText>Open Folder in File Explorer</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Open Folder in File Explorer</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.OpenFolderInExplorer</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "Open Containing Folder" command (in Source Explorer toolbar) -->
+      <!-- Custom "Open Containing Folder" command (in context menu of Vs Hierarhcy File) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidOpenContainingFolder" priority="0x00f0" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerItemNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFileNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -143,13 +146,13 @@
           <ButtonText>Open Containing Folder</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Open Containing Folder</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.OpenContainingFolder</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyFullPath" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyFullPath" command (in context menu of Vs Hierarhcy Folder) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyFullPath" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFolderNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -158,13 +161,13 @@
           <ButtonText>Copy Full Path</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy Full Path</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyFullPath</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyFullPathPosix" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyFullPathPosix" command (in context menu of Vs Hierarhcy Folder) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyFullPathPosix" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFolderNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -173,13 +176,13 @@
           <ButtonText>Copy Full Path (Posix)</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy Full Path (Posix)</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyFullPathPosix</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyRelativePath" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyRelativePath" command (in context menu of Vs Hierarhcy Folder) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyRelativePath" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFolderNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -188,13 +191,13 @@
           <ButtonText>Copy Relative Path</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy Relative Path</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyRelativePath</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyRelativePathPosix" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyRelativePathPosix" command (in context menu of Vs Hierarhcy Folder) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyRelativePathPosix" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerFolderNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFolderNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -203,13 +206,13 @@
           <ButtonText>Copy Relative Path (Posix)</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy Relative Path (Posix)</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyRelativePathPosix</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyFileFullPath" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyFileFullPath" command (in context menu of Vs Hierarhcy File) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyFileFullPath" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerItemNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFileNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -218,13 +221,13 @@
           <ButtonText>Copy Full Path</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy File Full Path</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyFileFullPath</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyFileFullPathPosix" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyFileFullPathPosix" command (in context menu of Vs Hierarhcy File) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyFileFullPathPosix" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerItemNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFileNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -233,13 +236,13 @@
           <ButtonText>Copy Full Path (Posix)</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy FileFull Path (Posix)</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyFileFullPathPosix</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyFileRelativePath" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyFileRelativePath" command (in context menu of Vs Hierarhcy File) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyFileRelativePath" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerItemNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFileNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -248,13 +251,13 @@
           <ButtonText>Copy Relative Path</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy File Relative Path</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyFileRelativePath</LocCanonicalName>
         </Strings>
       </Button>
-      <!-- Custom "CopyFileRelativePathPosix" command (in Source Explorer toolbar) -->
+      <!-- Custom "CopyFileRelativePathPosix" command (in context menu of Vs Hierarhcy File) -->
       <Button guid="guidVsChromiumCmdSet" id="cmdidCopyFileRelativePathPosix" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="SourceExplorerItemNodeGroup" />
+        <Parent guid="guidVsChromiumCmdSet" id="VsHierarchyFileNodeGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
@@ -263,7 +266,7 @@
           <ButtonText>Copy Relative Path (Posix)</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
           <CommandName>VsChromium - Copy File Relative Path (Posix)</CommandName>
-          <!-- LocCanonicalName is used to displat the command name in the "Options | Keyboard" dialog -->
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
           <LocCanonicalName>VsChromium.CopyFileRelativePathPosix</LocCanonicalName>
         </Strings>
       </Button>
@@ -338,12 +341,12 @@
     <GuidSymbol name="guidVsChromiumCmdSet" value="{1d4bc583-de49-4113-af8d-81c62fd4b61b}">
       <!-- Group is for adding menu items to the "View" top level menu-->
       <IDSymbol name="MyMenuGroup" value="0x1020" />
-      <!-- Group is for adding toolbar button to the Source Explorer toolbar -->
-      <IDSymbol name="SourceExplorerToolbarGroup" value="0x1021" />
+      <!-- Group is for adding toolbar button to the Solution Explorer toolbar -->
+      <IDSymbol name="SolutionExplorerToolbarGroup" value="0x1021" />
       <!-- Group is for adding context menu items to a folder node -->
-      <IDSymbol name="SourceExplorerFolderNodeGroup" value="0x1022" />
+      <IDSymbol name="VsHierarchyFolderNodeGroup" value="0x1022" />
       <!-- Group is for adding context menu items to a item node -->
-      <IDSymbol name="SourceExplorerItemNodeGroup" value="0x1023" />
+      <IDSymbol name="VsHierarchyFileNodeGroup" value="0x1023" />
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
       <IDSymbol name="cmdidSourceExplorerToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />

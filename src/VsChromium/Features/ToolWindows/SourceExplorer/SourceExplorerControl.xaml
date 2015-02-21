@@ -69,19 +69,13 @@
     </Border>
 
     <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
-      <Button IsTabStop="False" Click="SyncButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+      <!--<Button IsTabStop="False" Click="SyncButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
         <Button.ToolTip>
           <TextBlock Text="Sync with Active Document"/>
         </Button.ToolTip>
         <Image Source="{Binding SyncButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
-      </Button>
-      <Button IsTabStop="False" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
-        <Button.ToolTip>
-          <TextBlock Text="Refresh Source Explorer tree by rescanning directories"/>
-        </Button.ToolTip>
-        <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
-      </Button>
-      <Separator Width="2" />
+      </Button>-->
+      <!--<Separator Width="2" />-->
       <ToggleButton Content="Aa" IsChecked="{Binding MatchCase}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
         <ToggleButton.ToolTip>
           <TextBlock Text="{Binding MatchCaseToolTip}"/>
@@ -140,6 +134,22 @@
           <TextBlock Text="Clear current search and revert to File System view"/>
         </Button.ToolTip>
         <Image Source="{Binding CancelSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          <Image.Style>
+            <Style TargetType="Image">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Image.Style>
+        </Image>
+      </Button>
+      <Button IsTabStop="False" IsEnabled="{Binding RefreshSearchResultEnabled}" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button.ToolTip>
+          <TextBlock Text="Refresh search results"/>
+        </Button.ToolTip>
+        <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
           <Image.Style>
             <Style TargetType="Image">
               <Style.Triggers>
@@ -411,7 +421,7 @@
           <StackPanel Orientation="Horizontal">
             <StackPanel.ContextMenu>
               <ContextMenu>
-                <MenuItem Header="Show in Source Explorer" Command="{Binding OpenCommand}" FontWeight="Bold" />
+                <MenuItem Header="Show in Solution Explorer" Command="{Binding OpenCommand}" FontWeight="Bold" />
                 <MenuItem Header="Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" />
                 <Separator />
                 <MenuItem Header="Copy Full Path" Command="{Binding CopyFullPathCommand}" />
@@ -430,7 +440,7 @@
             <StackPanel.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Open" Command="{Binding OpenCommand}" FontWeight="Bold" />
-                <MenuItem Header="Show in Source Explorer" Command="{Binding ShowInSourceExplorer}" />
+                <MenuItem Header="Show in Solution Explorer" Command="{Binding ShowInSourceExplorer}" />
                 <MenuItem Header="Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" />
                 <Separator />
                 <MenuItem Header="Copy Full Path" Command="{Binding CopyFullPathCommand}" />

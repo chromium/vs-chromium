@@ -176,22 +176,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool EnableChildDebugging { get; set; }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public ImageSource LightningBoltImage {
-      get {
-        if (ImageSourceFactory == null)
-          return null;
-        return ImageSourceFactory.LightningBolt;
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
     public string UpdateInfoText {
       get {
         if (_updateInfo == null)

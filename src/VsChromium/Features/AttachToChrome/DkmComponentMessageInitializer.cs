@@ -15,8 +15,8 @@ namespace VsChromium.Features.AttachToChrome {
 
     public void Run(IVisualStudioPackage package) {
       // Register handler to receive custom messages from the Dkm components.
-      DkmComponentEventHandler handler = new DkmComponentEventHandler(package);
-      IServiceContainer container = (IServiceContainer)package;
+      var handler = new DkmComponentEventHandler(package);
+      var container = (IServiceContainer)package;
       container.AddService(handler.GetType(), handler, true);
     }
   }

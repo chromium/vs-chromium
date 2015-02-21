@@ -34,14 +34,6 @@ namespace VsChromium.Views {
       } 
     }
 
-    public ImageSource LightningBolt { 
-      get { 
-        return _glyphService.GetGlyph(
-            StandardGlyphGroup.GlyphGroupEvent, 
-            StandardGlyphItem.GlyphItemProtected); 
-      } 
-    }
-
     public ImageSource GetImageForDocument(string path) {
       return GetImage("TextDocument");
     }

@@ -10,13 +10,13 @@ using Microsoft.VisualStudio.Debugger.DefaultPort;
 using Microsoft.VisualStudio.Debugger.Interop;
 using VsChromium.Core.DkmShared;
 using VsChromium.Core.Logging;
-using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
+using VsChromium.ToolsOptions;
 
 namespace VsChromium.Features.AttachToChrome {
   [Guid(PackageServices.DkmComponentEventHandlerId)]
   class DkmComponentEventHandler : IVsCustomDebuggerEventHandler110 {
-    private IVisualStudioPackage _package;
+    private readonly IVisualStudioPackage _package;
 
     public DkmComponentEventHandler(IVisualStudioPackage package) {
       _package = package;
@@ -24,10 +24,7 @@ namespace VsChromium.Features.AttachToChrome {
 
     private bool IsChildDebuggingEnabledByDefault {
       get {
-        Type type = typeof(SourceExplorerToolWindow);
-        SourceExplorerToolWindow toolWindow = 
-            (SourceExplorerToolWindow)_package.FindToolWindow(type, 0, false);
-        return toolWindow.ExplorerControl.ViewModel.EnableChildDebugging;
+        return _package.GetToolsOptionsPage<DebuggingOptions>().EnableChildDebugging;
       }
     }
     public int OnCustomDebugEvent(ref Guid ProcessId, VsComponentMessage message) {

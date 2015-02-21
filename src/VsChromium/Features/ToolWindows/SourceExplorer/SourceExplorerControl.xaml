@@ -161,13 +161,6 @@
           </Image.Style>
         </Image>
       </Button>
-      <Separator Width="2" />
-      <ToggleButton IsChecked="{Binding EnableChildDebugging}" IsTabStop="False">
-        <ToggleButton.ToolTip>
-          <TextBlock Text="Enable child-process debugging for launch/attach scenarios other than those available through the Attach to Chrome dialog."/>
-        </ToggleButton.ToolTip>
-        <Image Source="{Binding LightningBoltImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None"/>
-      </ToggleButton>
     </ToolBar>
 
     <!-- SEARCH AREA -->

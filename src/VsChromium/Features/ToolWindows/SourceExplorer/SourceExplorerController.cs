@@ -89,7 +89,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         var rootError = new TextItemViewModel(
           StandarImageSourceFactory,
           rootNode,
-          "No search resulta available - Type text to search for in \"Find in Files\" and/or \"File path\"");
+          "No search results available - Type text to search for in \"Find in Files\" and/or \"File path\"");
         messages.Add(rootError);
       }
       messages.ForAll(rootNode.AddChild);
@@ -403,52 +403,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// is already the currently active ViewModel.
     /// </summary>
     public void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry) {
-#if true
       var path = relativePathEntry.GetFullPath();
       _eventBus.Fire("ShowInSolutionExplorer", relativePathEntry, new FilePathEventArgs {
         FilePath = path
       });
-#else
-  // If the view model is displaying the file system tree, don't do anything.
-      if (ViewModel.ActiveDisplay == SourceExplorerViewModel.DisplayKind.FileSystemTree)
-        return;
-
-      var entry = FindFileSystemEntryForRelativePath(ViewModel.FileSystemTreeNodes, relativePathEntry);
-      if (entry != null) {
-        // Ensure no node is selected before displaying file system tree.
-        ViewModel.FileSystemTreeNodes.ForAll(RemoveSelection);
-
-        // Switch to file system tree ViewModel and select the entry we found.
-        ViewModel.SwitchToFileSystemTree();
-        BringItemViewModelToView(entry);
-      }
-#endif
-    }
-
-    /// <summary>
-    /// Navigate to the FileSystemTree directory entry corresponding to
-    /// <paramref name="path"/>. This is a no-op if the FileSystemTree
-    /// is already the currently active ViewModel.
-    /// </summary>
-    public void ShowInSourceExplorer(FullPath path) {
-      // If the view model is displaying the file system tree, don't do anything.
-      //if (ViewModel.ActiveDisplay == SourceExplorerViewModel.DisplayKind.FileSystemTree)
-      //  return;
-
-      var entry = FindFileSystemEntryForPath(ViewModel.FileSystemTreeNodes, path);
-      if (entry != null) {
-        // Ensure no node is selected before displaying file system tree.
-        ViewModel.FileSystemTreeNodes.ForAll(RemoveSelection);
-
-        // Switch to file system tree ViewModel and select the entry we found.
-        ViewModel.SwitchToFileSystemTree();
-        BringItemViewModelToView(entry);
-      }
-    }
-
-    private void RemoveSelection(TreeViewItemViewModel item) {
-      item.IsSelected = false;
-      item.Children.ForAll(RemoveSelection);
     }
 
     public void BringItemViewModelToView(TreeViewItemViewModel item) {

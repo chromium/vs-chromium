@@ -284,7 +284,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void RefreshSearchResults() {
       if (string.IsNullOrWhiteSpace(SearchTextCombo.Text) &&
-          string.IsNullOrWhiteSpace(SearchTextCombo.Text)) {
+          string.IsNullOrWhiteSpace(SearchFileNamesCombo.Text)) {
         Controller.CancelSearch();
         return;
       }
@@ -387,23 +387,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       treeViewItem.Focus();
       e.Handled = true;
-    }
-
-    private void SyncButton_Click(object sender, RoutedEventArgs e) {
-      Logger.WrapActionInvocation(
-        () => {
-          var dte = _visualStudioPackageProvider.Package.DTE;
-          var document = dte.ActiveDocument;
-          if (document == null)
-            return;
-          var path = document.FullName;
-          if (!PathHelpers.IsAbsolutePath(path))
-            return;
-          if (!PathHelpers.IsValidBclPath(path))
-            return;
-          Controller.ShowInSourceExplorer(new FullPath(path));
-          FileTreeView.Focus();
-        });
     }
 
     private void RefreshFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {

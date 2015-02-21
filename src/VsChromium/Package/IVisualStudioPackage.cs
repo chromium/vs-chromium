@@ -6,6 +6,7 @@ using System;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using VsChromium.ToolsOptions;
 
 namespace VsChromium.Package {
   public interface IVisualStudioPackage {
@@ -19,5 +20,6 @@ namespace VsChromium.Package {
     IDisposeContainer DisposeContainer { get; }
 
     ToolWindowPane FindToolWindow(Type toolWindowType, int id, bool create);
+    T GetToolsOptionsPage<T>() where T : DialogPage;
   }
 }

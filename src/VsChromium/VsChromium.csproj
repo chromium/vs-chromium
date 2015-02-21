@@ -259,7 +259,10 @@
     <Compile Include="Features\ToolWindows\SourceExplorer\GlobalNextLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
-    <Compile Include="GlobalSettings.cs" />
+    <Compile Include="Settings\GlobalSettings.cs" />
+    <Compile Include="Settings\GlobalSettingsProvider.cs" />
+    <Compile Include="Settings\HardCodedSettings.cs" />
+    <Compile Include="Settings\IGlobalSettingsProvider.cs" />
     <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerBase.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerExtensions.cs" />
@@ -478,6 +481,7 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>
   </PropertyGroup>

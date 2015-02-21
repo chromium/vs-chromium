@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -19,6 +20,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IClipboard Clipboard { get; }
     IWindowsExplorer WindowsExplorer { get; }
+    GlobalSettings Settings { get; }
 
     void RefreshFileSystemTree();
     void SetFileSystemTree(FileSystemTree tree);

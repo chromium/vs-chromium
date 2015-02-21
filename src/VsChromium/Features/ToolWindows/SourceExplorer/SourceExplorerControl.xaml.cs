@@ -20,6 +20,7 @@ using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -91,21 +92,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
-      var clipboard = componentModel.DefaultExportProvider.GetExportedValue<IClipboard>();
-      var windowsExplorer = componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>();
-      var openDocumentHelper = componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
-      var synchronizationContextProvider = componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
-      var eventBus = componentModel.DefaultExportProvider.GetExportedValue<IEventBus>();
       _controller = new SourceExplorerController(
         this,
         _uiRequestProcessor,
         _progressBarTracker,
         standarImageSourceFactory,
-        windowsExplorer,
-        clipboard,
-        synchronizationContextProvider,
-        openDocumentHelper,
-        eventBus);
+        componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IClipboard>(),
+        componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IEventBus>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>());
 
       // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
       // exposes pictures from Visual Studio resources.

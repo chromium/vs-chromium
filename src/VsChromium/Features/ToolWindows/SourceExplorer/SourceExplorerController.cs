@@ -17,6 +17,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Threads;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -38,6 +39,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IEventBus _eventBus;
+    private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly TaskCancellation _taskCancellation;
 
     /// <summary>
@@ -54,7 +56,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       IClipboard clipboard,
       ISynchronizationContextProvider synchronizationContextProvider,
       IOpenDocumentHelper openDocumentHelper,
-      IEventBus eventBus) {
+      IEventBus eventBus,
+      IGlobalSettingsProvider globalSettingsProvider) {
       _control = control;
       _uiRequestProcessor = uiRequestProcessor;
       _progressBarTracker = progressBarTracker;
@@ -64,6 +67,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _synchronizationContextProvider = synchronizationContextProvider;
       _openDocumentHelper = openDocumentHelper;
       _eventBus = eventBus;
+      _globalSettingsProvider = globalSettingsProvider;
       _taskCancellation = new TaskCancellation();
     }
 
@@ -72,6 +76,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
     public IClipboard Clipboard { get { return _clipboard; } }
     public IWindowsExplorer WindowsExplorer { get { return _windowsExplorer; } }
+    public GlobalSettings Settings { get { return _globalSettingsProvider.GlobalSettings; } }
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
@@ -555,11 +560,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,
         HintText = "Searching for matching file names...",
-        Delay = GlobalSettings.SearchFileNamesDelay,
+        Delay = Settings.AutoSearchDelay,
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = GlobalSettings.SearchFileNamesMaxResults,
+            MaxResults = Settings.SearchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -588,11 +593,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.DirectoryNamesSearch,
         HintText = "Searching for matching directory names...",
-        Delay = GlobalSettings.SearchDirectoryNamesDelay,
+        Delay = Settings.AutoSearchDelay,
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = GlobalSettings.SearchDirectoryNamesMaxResults,
+            MaxResults = Settings.SearchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -621,12 +626,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
         HintText = "Searching for matching text in files...",
-        Delay = GlobalSettings.SearchTextDelay,
+        Delay = Settings.AutoSearchDelay,
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             FileNamePattern = fileNamePattern,
-            MaxResults = GlobalSettings.SearchTextMaxResults,
+            MaxResults = Settings.SearchTextMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -645,7 +650,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             response.SearchedFileCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
-          bool expandAll = response.HitCount < GlobalSettings.SearchTextExpandMaxResults;
+          bool expandAll = response.HitCount < HardCodedSettings.SearchTextExpandMaxResults;
           var viewModel = CreateTextSearchResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetTextSearchResult(viewModel);
         }

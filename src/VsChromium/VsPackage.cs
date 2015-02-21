@@ -87,6 +87,10 @@ namespace VsChromium {
       get { return _disposeContainer; }
     }
 
+    public T GetToolsOptionsPage<T>() where T : DialogPage {
+      return (T)GetDialogPage(typeof(T));
+    }
+
     protected override void Dispose(bool disposing) {
       if (disposing) {
         try {

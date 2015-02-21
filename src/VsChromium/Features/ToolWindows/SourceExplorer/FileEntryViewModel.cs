@@ -118,7 +118,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       var request = new GetFileExtractsRequest {
         FileName = Path,
-        MaxExtractLength = GlobalSettings.MaxTextExtractLength,
+        MaxExtractLength = Controller.Settings.MaxTextExtractLength,
         Positions = positions
           .Select(x => new FilePositionSpan {
             Position = x.Position,

@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Commands;
 using VsChromium.Views;
 
-namespace VsChromium {
+namespace VsChromium.Package {
   /// <summary>
   /// Ensure the VsPackage is initialized as soon as a view is created. We need
   /// this because we rely on ITextDocumentFactory observers to track document

@@ -30,6 +30,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IFileSystem _fileSystem;
     private readonly IClipboard _clipboard;
     private readonly IWindowsExplorer _windowsExplorer;
+    private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
 
@@ -42,7 +43,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IOpenDocumentHelper openDocumentHelper,
       IFileSystem fileSystem,
       IClipboard clipboard,
-      IWindowsExplorer windowsExplorer) {
+      IWindowsExplorer windowsExplorer,
+      IUIRequestProcessor uiRequestProcessor) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -51,6 +53,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _fileSystem = fileSystem;
       _clipboard = clipboard;
       _windowsExplorer = windowsExplorer;
+      _uiRequestProcessor = uiRequestProcessor;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
@@ -108,6 +111,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.VSStd2K, (int)VSConstants.VSStd2KCmdID.SLNREFRESH),
+        IsEnabled = node => true,
+        Execute = args => RefreshFileSystemTree()
+      });
+
+      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPath),
         IsEnabled = node => node is DirectoryNodeViewModel,
         Execute = args => _clipboard.SetText(args.Node.Path)
@@ -160,6 +169,16 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       });
 
       _nodeTemplateFactory.Activate();
+    }
+
+    private void RefreshFileSystemTree() {
+      var uiRequest = new UIRequest {
+        Request = new RefreshFileSystemTreeRequest(),
+        Id = "RefreshFileSystemTreeRequest",
+        Delay = TimeSpan.FromSeconds(0.0),
+      };
+
+      _uiRequestProcessor.Post(uiRequest);
     }
 
     private void ShowContextMenu(NodeViewModel node, IntPtr variantIn) {

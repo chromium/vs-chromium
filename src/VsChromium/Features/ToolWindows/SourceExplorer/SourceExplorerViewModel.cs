@@ -243,7 +243,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private ImageSource GetImageFromResource(string name) {
       if (ImageSourceFactory == null) {
-        return Views.ImageSourceFactory.Instance.GetImage(name);
+        return Views.ImageSourceFactory.Instance.GetImageSource(name);
       }
       return ImageSourceFactory.GetImage(name);
     }

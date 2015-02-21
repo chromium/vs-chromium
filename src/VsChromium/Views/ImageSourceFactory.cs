@@ -29,7 +29,7 @@ namespace VsChromium.Views {
     private readonly ConcurrentDictionary<string, Tuple<SafeIconHandle, Icon>> _icons =
       new ConcurrentDictionary<string, Tuple<SafeIconHandle, Icon>>(SystemPathComparer.Instance.StringComparer);
 
-    public ImageSource GetImage(string resourceName) {
+    public ImageSource GetImageSource(string resourceName) {
       return _images.GetOrAdd(resourceName, name => {
         var bitmapImage = new BitmapImage();
         bitmapImage.BeginInit();
@@ -41,23 +41,27 @@ namespace VsChromium.Views {
 
     public Icon GetIcon(string resourceName) {
       return _icons.GetOrAdd(resourceName, name => {
-        var image = GetImage(name);
+        var image = GetImageSource(name);
         return ImageSourceToIcon(image);
       }).Item2;
     }
 
+    public ImageSource GetFileExtensionImageSource(string fileExtension) {
+      var list = DefaultIconImageList.Instance;
+      ImageSource source = list.GetImage(fileExtension);
+      if (source == null)
+        source = list.GetImage(".txt");
+      if (source == null)
+        source = GetImageSource("TexTDocument");
+      return source;
+    }
+
     public Icon GetFileExtensionIcon(string fileExtension) {
       const string keyPrefix = "__files__";
-      var result = _icons.GetOrAdd(keyPrefix + fileExtension, name => {
-        var list = DefaultIconImageList.Instance;
-        var source = list.GetImage(name.Substring(keyPrefix.Length));
-        if (source == null)
-          return null;
-        return ImageSourceToIcon(source);
-      });
-      if (result == null)
-        return null;
-      return result.Item2;
+      return _icons.GetOrAdd(keyPrefix + fileExtension, name => {
+        var image = GetFileExtensionImageSource(fileExtension);
+        return ImageSourceToIcon(image);
+      }).Item2;
     }
 
     private static Tuple<SafeIconHandle, Icon> ImageSourceToIcon(ImageSource source) {

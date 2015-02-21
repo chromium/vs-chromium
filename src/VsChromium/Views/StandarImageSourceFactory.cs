@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Windows.Media;
 using Microsoft.VisualStudio.Language.Intellisense;
 
@@ -35,11 +36,11 @@ namespace VsChromium.Views {
     }
 
     public ImageSource GetImageForDocument(string path) {
-      return GetImage("TextDocument");
+      return _imageSourceFactory.GetFileExtensionImageSource(Path.GetExtension(path));
     }
 
     public ImageSource GetImage(string resourceName) {
-      return _imageSourceFactory.GetImage(resourceName);
+      return _imageSourceFactory.GetImageSource(resourceName);
     }
   }
 }

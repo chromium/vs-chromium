@@ -297,12 +297,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           // We need to load these images on the main UI thread
           buildResult.FileTemplatesToInitialize.ForAll(
             item => {
-              var icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
-              if (icon == null)
-                icon = _imageSourceFactory.GetFileExtensionIcon(".txt");
-              if (icon == null)
-                icon = _imageSourceFactory.GetIcon("TextDocument");
-              item.Value.Icon = icon;
+              item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
             });
 
           _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);

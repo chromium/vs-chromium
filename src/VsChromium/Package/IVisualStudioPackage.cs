@@ -15,6 +15,7 @@ namespace VsChromium.Package {
     IVsUIShell VsUIShell { get; }
     EnvDTE.DTE DTE { get; }
     IServiceProvider ServiceProvider { get; }
+    Microsoft.VisualStudio.OLE.Interop.IServiceProvider InteropServiceProvider { get; }
     IDisposeContainer DisposeContainer { get; }
 
     ToolWindowPane FindToolWindow(Type toolWindowType, int id, bool create);

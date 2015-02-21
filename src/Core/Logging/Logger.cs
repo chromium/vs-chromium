@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using VsChromium.Core.Win32.Memory;
 
@@ -80,6 +81,23 @@ namespace VsChromium.Core.Logging {
       LogException(exception);
     }
 
+    public static void LogHResult(int hresult, string format, params object[] args) {
+      if (!Logger.Error)
+        return;
+
+      var exception = Marshal.GetExceptionForHR(hresult);
+      if (exception == null) {
+        LogError("{0} (hresult=0x{1:x8})",
+          string.Format(format, args),
+          hresult);
+      } else {
+        LogError("{0} (hresult=0x{1:x8}, message={2})",
+          string.Format(format, args),
+          hresult,
+          exception.Message);
+      }
+    }
+
     public static void LogMemoryStats(string indent = "") {
       if (!Logger.Perf)
         return;
@@ -101,6 +119,7 @@ namespace VsChromium.Core.Logging {
         Logger.LogError(e, "Error during callback execution");
       }
     }
+
     private static void LogException(Exception exception) {
       for (var ex = exception; ex != null; ex = ex.InnerException) {
         LogImpl("  Message:     {0}", ex.Message);

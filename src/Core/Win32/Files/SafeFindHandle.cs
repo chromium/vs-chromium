@@ -5,7 +5,7 @@
 using Microsoft.Win32.SafeHandles;
 
 namespace VsChromium.Core.Win32.Files {
-  sealed class SafeFindHandle : SafeHandleZeroOrMinusOneIsInvalid {
+  public sealed class SafeFindHandle : SafeHandleZeroOrMinusOneIsInvalid {
     internal SafeFindHandle()
       : base(true) {
     }

@@ -220,14 +220,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
               iconHandle = GetIconHandle();
             if (iconHandle == IntPtr.Zero)
               return VSConstants.E_NOTIMPL;
-            pvar = iconHandle;
+            pvar = (int)iconHandle;
             break;
           }
         case (int)__VSHPROPID.VSHPROPID_IconHandle: {
             var iconHandle = GetIconHandle();
             if (iconHandle == IntPtr.Zero)
               return VSConstants.E_NOTIMPL;
-            pvar = iconHandle;
+            pvar = (int)iconHandle;
             break;
           }
         case (int)__VSHPROPID.VSHPROPID_ProjectName:

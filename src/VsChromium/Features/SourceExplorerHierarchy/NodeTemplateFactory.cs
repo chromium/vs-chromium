@@ -2,40 +2,68 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using Microsoft.VisualStudio.Language.Intellisense;
+using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class NodeTemplateFactory : INodeTemplateFactory {
-    private readonly NodeViewModelTemplate _directoryTemplate;
-    private readonly NodeViewModelTemplate _fileTemplate;
-    private readonly NodeViewModelTemplate _rootNodeTemplate;
-    private readonly NodeViewModelTemplate _projectTemplate;
+    private readonly IVsGlyphService _vsGlyphService;
+    private readonly IImageSourceFactory _imageSourceFactory;
+    private readonly Lazy<NodeViewModelTemplate> _directoryTemplate;
+    private readonly Lazy<NodeViewModelTemplate> _fileTemplate;
+    private readonly Lazy<NodeViewModelTemplate> _rootNodeTemplate;
+    private readonly Lazy<NodeViewModelTemplate> _projectTemplate;
 
-    public NodeTemplateFactory(IVsGlyphService vsGlyphService) {
-      _rootNodeTemplate = new NodeViewModelTemplate {
-        ImageIndex = vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphLibrary, StandardGlyphItem.GlyphItemPublic),
+    public NodeTemplateFactory(IVsGlyphService vsGlyphService, IImageSourceFactory imageSourceFactory) {
+      _vsGlyphService = vsGlyphService;
+      _imageSourceFactory = imageSourceFactory;
+      _rootNodeTemplate = new Lazy<NodeViewModelTemplate>(CreateRootNodeTemplate);
+      _projectTemplate = new Lazy<NodeViewModelTemplate>(CreateProjectTemplate);
+      _directoryTemplate = new Lazy<NodeViewModelTemplate>(CreateDirectoryTemplate);
+      _fileTemplate = new Lazy<NodeViewModelTemplate>(CreateFileTemplate);
+    }
+
+    private NodeViewModelTemplate CreateRootNodeTemplate() {
+      return new NodeViewModelTemplate {
+        Icon = _imageSourceFactory.GetIcon("VsChromiumIcon"),
         ExpandByDefault = true
-      };
-
-      _projectTemplate = new NodeViewModelTemplate {
-        ImageIndex = vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphClosedFolder, StandardGlyphItem.GlyphItemPublic),
-        OpenFolderImageIndex = vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphOpenFolder, StandardGlyphItem.GlyphItemPublic),
-        ExpandByDefault = true
-      };
-
-      _directoryTemplate = new NodeViewModelTemplate {
-        ImageIndex = vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphClosedFolder, StandardGlyphItem.GlyphItemPublic),
-        OpenFolderImageIndex = vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphOpenFolder, StandardGlyphItem.GlyphItemPublic)
-      };
-
-      _fileTemplate = new NodeViewModelTemplate {
-        ImageIndex = vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphCSharpFile, StandardGlyphItem.GlyphItemPublic)
       };
     }
 
-    public NodeViewModelTemplate RootNodeTemplate { get { return _rootNodeTemplate; } }
-    public NodeViewModelTemplate ProjectTemplate { get { return _projectTemplate; } }
-    public NodeViewModelTemplate DirectoryTemplate { get { return _directoryTemplate; } }
-    public NodeViewModelTemplate FileTemplate { get { return _fileTemplate; } }
+    private NodeViewModelTemplate CreateProjectTemplate() {
+      return new NodeViewModelTemplate {
+        ImageIndex = _vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphLibrary, StandardGlyphItem.GlyphItemPublic),
+        ExpandByDefault = true
+      };
+    }
+
+    private NodeViewModelTemplate CreateDirectoryTemplate() {
+      return new NodeViewModelTemplate {
+        ImageIndex = _vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphClosedFolder, StandardGlyphItem.GlyphItemPublic),
+        OpenFolderImageIndex = _vsGlyphService.GetImageIndex(StandardGlyphGroup.GlyphOpenFolder, StandardGlyphItem.GlyphItemPublic)
+      };
+    }
+
+    private NodeViewModelTemplate CreateFileTemplate() {
+      return new NodeViewModelTemplate {
+        Icon = _imageSourceFactory.GetIcon("TextDocument")
+      };
+    }
+
+    public NodeViewModelTemplate RootNodeTemplate { get { return _rootNodeTemplate.Value; } }
+    public NodeViewModelTemplate ProjectTemplate { get { return _projectTemplate.Value; } }
+    public NodeViewModelTemplate DirectoryTemplate { get { return _directoryTemplate.Value; } }
+    public NodeViewModelTemplate FileTemplate { get { return _fileTemplate.Value; } }
+
+    /// <summary>
+    /// Execution on the main thread, so that icons are fetched on the main thread.
+    /// </summary>
+    public void Activate() {
+      var a1 = this.RootNodeTemplate;
+      var a2 = this.ProjectTemplate;
+      var a3 = this.DirectoryTemplate;
+      var a4 = this.FileTemplate;
+    }
   }
 }

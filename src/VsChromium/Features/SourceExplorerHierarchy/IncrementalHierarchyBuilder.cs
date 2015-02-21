@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.VisualStudio.Language.Intellisense;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
@@ -13,8 +12,7 @@ using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class IncrementalHierarchyBuilder {
-    private NodeTemplateFactory _templateFactory;
-    private readonly IVsGlyphService _vsGlyphService;
+    private readonly INodeTemplateFactory _templateFactory;
     private readonly VsHierarchyNodes _oldNodes;
     private readonly FileSystemTree _fileSystemTree;
     private readonly VsHierarchyNodes _newNodes = new VsHierarchyNodes();
@@ -22,11 +20,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private uint _newNodeNextItemId;
 
     public IncrementalHierarchyBuilder(
-      IVsGlyphService vsGlyphService,
+      INodeTemplateFactory nodeTemplateFactory,
       VsHierarchyNodes oldNodes,
       FileSystemTree fileSystemTree) {
-      _vsGlyphService = vsGlyphService;
-      _templateFactory = new NodeTemplateFactory(vsGlyphService);
+      _templateFactory = nodeTemplateFactory;
       _oldNodes = oldNodes;
       _fileSystemTree = fileSystemTree;
     }

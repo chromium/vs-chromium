@@ -67,6 +67,12 @@ namespace VsChromium {
       }
     }
 
+    public Microsoft.VisualStudio.OLE.Interop.IServiceProvider InteropServiceProvider {
+      get {
+        return this;
+      }
+    }
+
     public IDisposeContainer DisposeContainer {
       get { return _disposeContainer; }
     }

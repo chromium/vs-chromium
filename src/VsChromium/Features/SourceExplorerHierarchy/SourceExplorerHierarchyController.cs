@@ -24,27 +24,26 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
-    private readonly IVsGlyphService _vsGlyphService;
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IFileSystem _fileSystem;
     private readonly IClipboard _clipboard;
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly VsHierarchy _hierarchy;
+    private readonly NodeTemplateFactory _nodeTemplateFactory;
 
     public SourceExplorerHierarchyController(
       ISynchronizationContextProvider synchronizationContextProvider,
       IFileSystemTreeSource fileSystemTreeSource,
       IVisualStudioPackageProvider visualStudioPackageProvider,
       IVsGlyphService vsGlyphService,
+      IImageSourceFactory imageSourceFactory,
       IOpenDocumentHelper openDocumentHelper,
       IFileSystem fileSystem,
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer) {
-
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
-      _vsGlyphService = vsGlyphService;
       _openDocumentHelper = openDocumentHelper;
       _fileSystem = fileSystem;
       _clipboard = clipboard;
@@ -52,6 +51,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
+      _nodeTemplateFactory = new NodeTemplateFactory(vsGlyphService, imageSourceFactory);
     }
 
     public void Activate() {
@@ -68,7 +68,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       var mcs = _visualStudioPackageProvider.Package.OleMenuCommandService;
       if (mcs != null) {
         var cmd = new SimplePackageCommandHandler(
-          new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidSyncToDocument),
+          new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSyncToDocument),
           () => _hierarchy.Nodes.RootNode.GetChildrenCount() >= 1,
           (s, e) => SyncToActiveDocument());
         mcs.AddCommand(cmd.ToOleMenuCommand());
@@ -77,13 +77,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
@@ -95,14 +95,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.Open),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node)
       });
 
-      // TODO(rpaquay): Implement "Open With..." behavior.
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.OpenWith),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node.Path)
+        Execute = args => OpenDocument(args.Node, openWith: true)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
@@ -156,6 +155,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         IsEnabled = node => node is FileNodeViewModel,
         Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.Path)
       });
+
+      _nodeTemplateFactory.Activate();
     }
 
     private void ShowContextMenu(NodeViewModel node, IntPtr variantIn) {
@@ -204,12 +205,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void OpenDocument(string path) {
+    private void OpenDocument(NodeViewModel node, bool openWith = false) {
       Logger.WrapActionInvocation(
         () => {
-          if (!_fileSystem.FileExists(new FullPath(path)))
+          if (!_fileSystem.FileExists(new FullPath(node.Path)))
             return;
-          _openDocumentHelper.OpenDocument(path, view => null);
+          if (openWith)
+            _openDocumentHelper.OpenDocumentWith(node.Path, _hierarchy, node.ItemId, view => null);
+          else
+            _openDocumentHelper.OpenDocument(node.Path, view => null);
         });
     }
 
@@ -252,7 +256,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// Note: This is executed on a background thred.
     /// </summary>
     private void OnTreeReceived(FileSystemTree fileSystemTree) {
-      var builder = new IncrementalHierarchyBuilder(_vsGlyphService, _hierarchy.Nodes, fileSystemTree);
+      var builder = new IncrementalHierarchyBuilder(_nodeTemplateFactory, _hierarchy.Nodes, fileSystemTree);
       var buildResult = builder.Run();
 
       _synchronizationContextProvider.UIContext.Post(

@@ -4,6 +4,8 @@
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public interface INodeTemplateFactory {
+    NodeViewModelTemplate RootNodeTemplate { get; }
+    NodeViewModelTemplate ProjectTemplate { get; }
     NodeViewModelTemplate DirectoryTemplate { get; }
     NodeViewModelTemplate FileTemplate { get; }
   }

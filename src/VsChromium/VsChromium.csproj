@@ -137,6 +137,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Views\Images\VsChromiumIcon.png" />
     <Resource Include="Views\Images\SearchLens.png" />
     <Resource Include="Views\Images\ClearSearch.png" />
     <Resource Include="Resources\VsChromiumIcon.png" />

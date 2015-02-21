@@ -16,6 +16,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
     private readonly IVsGlyphService _vsGlyphService;
+    private readonly IImageSourceFactory _imageSourceFactory;
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IFileSystem _fileSystem;
     private readonly IClipboard _clipboard;
@@ -27,6 +28,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IFileSystemTreeSource fileSystemTreeSource,
       IVisualStudioPackageProvider visualStudioPackageProvider,
       IVsGlyphService vsGlyphService,
+      IImageSourceFactory imageSourceFactory,
       IOpenDocumentHelper openDocumentHelper,
       IFileSystem fileSystem,
       IClipboard clipboard,
@@ -35,6 +37,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _vsGlyphService = vsGlyphService;
+      _imageSourceFactory = imageSourceFactory;
       _openDocumentHelper = openDocumentHelper;
       _fileSystem = fileSystem;
       _clipboard = clipboard;
@@ -47,6 +50,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _fileSystemTreeSource,
         _visualStudioPackageProvider,
         _vsGlyphService,
+        _imageSourceFactory,
         _openDocumentHelper,
         _fileSystem,
         _clipboard,

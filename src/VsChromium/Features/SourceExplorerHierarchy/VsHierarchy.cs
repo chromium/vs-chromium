@@ -288,6 +288,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         pvar = "";
         return VSConstants.S_OK;
       }
+      // Displat node before regular projects, but after "Solution Items".
+      if (itemid == _nodes.RootNode.ItemId && propid == (int)__VSHPROPID.VSHPROPID_SortPriority) {
+        pvar = -1;
+        return VSConstants.S_OK;
+      }
       NodeViewModel node;
       if (_nodes.FindNode(itemid, out node)) {
         switch (propid) {
@@ -544,7 +549,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       itemId = uint.MaxValue;
       hierOpen = null;
       isDocInProj = 0;
-      vsSolution.GetProjectEnum(1U, ref rguidEnumOnlyThisType, out ppenum);
+      vsSolution.GetProjectEnum((int)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION, ref rguidEnumOnlyThisType, out ppenum);
       if (ppenum == null)
         return;
 

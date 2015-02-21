@@ -15,6 +15,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Features.ToolWindows.BuildExplorer;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
+using VsChromium.ToolsOptions;
 using IServiceProvider = System.IServiceProvider;
 
 namespace VsChromium {
@@ -27,6 +28,15 @@ namespace VsChromium {
   [ProvideToolWindow(typeof(SourceExplorerToolWindow))]
   [ProvideToolWindow(typeof(BuildExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
+  [ProvideOptionPage(
+    typeof(GeneralOptions), // Type of page to open
+    "VS Chromium", // Non localized version of the top level category
+    "General", // Non localized version of the page name within the category
+    210, // Localized resource id of the top level category 
+    211, // Loalized resource id of the page name within the category
+    false, // Support automation (TODO)
+    new []{"VS Chromium", "Code Search", "Search"}) // List of keywords for Tools|Options search
+  ]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage, IOleCommandTarget {
     private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
 

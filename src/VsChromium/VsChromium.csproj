@@ -275,6 +275,9 @@
     <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />
     <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
+    <Compile Include="ToolsOptions\GeneralOptions.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Views\IImageSourceFactory.cs" />
     <Compile Include="Views\VsResources.cs" />
     <Compile Include="Views\ImageSourceFactory.cs" />

@@ -79,12 +79,17 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     public List<TreeViewItemViewModel> CreateFileSystemTreeViewModel(FileSystemTree tree) {
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
-      var result = new List<TreeViewItemViewModel>(tree.Root
-        .Entries
-        .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)));
-      result.ForAll(rootNode.AddChild);
-      TreeViewItemViewModel.ExpandNodes(result, false);
-      return result;
+      var messages = new List<TreeViewItemViewModel>();
+      if (tree.Root.Entries.Count > 0) {
+        var rootError = new TextItemViewModel(
+          StandarImageSourceFactory,
+          rootNode,
+          "No search resulta available - Type text to search for in \"Find in Files\" and/or \"File path\"");
+        messages.Add(rootError);
+      }
+      messages.ForAll(rootNode.AddChild);
+      TreeViewItemViewModel.ExpandNodes(messages, false);
+      return messages;
     }
 
     public List<TreeViewItemViewModel> CreateFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {

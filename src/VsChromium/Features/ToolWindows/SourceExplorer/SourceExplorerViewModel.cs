@@ -354,8 +354,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public void FileSystemTreeComputing() {
-      if (!FileSystemTreeNodes.Any()) {
-        SetRootNodes(_fileSystemTreeNodes, "(Loading files from Chromium enlistment...)");
+      if (_fileSystemTreeNodes.Count <= 1) {
+        SetRootNodes(_fileSystemTreeNodes, "(Loading files from VS Chromium projects...)");
       }
     }
   }

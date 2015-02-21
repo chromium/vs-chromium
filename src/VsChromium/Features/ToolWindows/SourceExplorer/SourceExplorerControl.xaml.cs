@@ -52,17 +52,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
-      //InitComboBox(SearchDirectoryNamesCombo, new ComboBoxInfo {
-      //  SearchFunction = SearchDirectoryNames,
-      //  PreviousElement = SearchFileNamesCombo,
-      //  NextElement = SearchTextCombo,
-      //});
       InitComboBox(SearchTextCombo, new ComboBoxInfo {
-        SearchFunction = SearchText,
+        SearchFunction = RefreshSearchResults,
         NextElement = SearchFileNamesCombo,
       });
       InitComboBox(SearchFileNamesCombo, new ComboBoxInfo {
-        SearchFunction = SearchFilesNames,
+        SearchFunction = RefreshSearchResults,
         PreviousElement = SearchTextCombo,
         NextElement = FileTreeView,
         InitialItems = {
@@ -172,21 +167,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           }
         };
       }
-    }
-
-    private void SearchFilesNames() {
-      if (string.IsNullOrWhiteSpace(SearchTextCombo.Text))
-        Controller.SearchFilesNames(SearchFileNamesCombo.Text);
-      else
-        Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text);
-    }
-
-    private void SearchDirectoryNames() {
-      Controller.SearchDirectoryNames(SearchDirectoryNamesCombo.Text);
-    }
-
-    private void SearchText() {
-      SearchFilesNames();
     }
 
     private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
@@ -301,18 +281,18 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void RefreshSearchResults() {
-      // Redo search
-      switch (ViewModel.ActiveDisplay) {
-        case SourceExplorerViewModel.DisplayKind.FileNameSearchResult:
-          SearchFilesNames();
-          break;
-        case SourceExplorerViewModel.DisplayKind.DirectoryNameSearchResult:
-          SearchDirectoryNames();
-          break;
-        case SourceExplorerViewModel.DisplayKind.TextSearchResult:
-          SearchText();
-          break;
+      if (string.IsNullOrWhiteSpace(SearchTextCombo.Text) &&
+          string.IsNullOrWhiteSpace(SearchTextCombo.Text)) {
+        Controller.CancelSearch();
+        return;
       }
+
+      if (string.IsNullOrWhiteSpace(SearchTextCombo.Text)) {
+        Controller.SearchFilesNames(SearchFileNamesCombo.Text);
+        return;
+      }
+
+      Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text);
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -442,7 +422,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchFileNames_Click(object sender, RoutedEventArgs e) {
-      SearchFilesNames();
+      RefreshSearchResults();
     }
 
     private void ClearFileNamesPattern_Click(object sender, RoutedEventArgs e) {
@@ -451,7 +431,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchText_Click(object sender, RoutedEventArgs e) {
-      SearchText();
+      RefreshSearchResults();
     }
 
     private void ClearSearchText_Click(object sender, RoutedEventArgs e) {

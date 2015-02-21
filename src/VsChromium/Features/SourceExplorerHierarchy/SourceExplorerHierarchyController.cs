@@ -203,7 +203,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           : VsMenus.IDM_VS_CTXT_ITEMNODE;
       int hresult = shell.ShowContextMenu(0, ref groupGuid, menuId, pointsIn, null);
       if (!ErrorHandler.Succeeded(hresult)) {
-        Logger.LogError("Error showing context menu.");
+        Logger.LogHResult(hresult, "Error showing context menu.");
         return;
       }
     }

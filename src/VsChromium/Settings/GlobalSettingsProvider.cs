@@ -25,6 +25,7 @@ namespace VsChromium.Settings {
           SearchTextMaxResults = InRange(page.SearchFileNamesMaxEntries, 1000, 1000 * 1000),
           MaxTextExtractLength = InRange(page.MaxTextExtractLength, 10, 1024),
           AutoSearchDelay = TimeSpan.FromMilliseconds(InRange(page.AutoSearchDelayMsec, 0, int.MaxValue)),
+          EnableVsChromiumProjects = page.EnableVsChromiumProjects,
         };
       }
     }

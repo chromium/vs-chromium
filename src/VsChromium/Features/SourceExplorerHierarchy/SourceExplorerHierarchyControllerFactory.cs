@@ -6,6 +6,7 @@ using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 
@@ -23,6 +24,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IEventBus _eventBus;
+    private readonly IGlobalSettingsProvider _globalSettingsProvider;
 
     [ImportingConstructor]
     public SourceExplorerHierarchyControllerFactory(
@@ -36,7 +38,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
       IUIRequestProcessor uiRequestProcessor,
-      IEventBus eventBus) {
+      IEventBus eventBus,
+      IGlobalSettingsProvider globalSettingsProvider) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -48,6 +51,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _windowsExplorer = windowsExplorer;
       _uiRequestProcessor = uiRequestProcessor;
       _eventBus = eventBus;
+      _globalSettingsProvider = globalSettingsProvider;
     }
 
     public ISourceExplorerHierarchyController CreateController() {
@@ -62,7 +66,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _clipboard,
         _windowsExplorer,
         _uiRequestProcessor,
-        _eventBus);
+        _eventBus,
+        _globalSettingsProvider);
     }
   }
 }

@@ -26,7 +26,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
     private readonly VsHierarchyLogger _logger;
     private readonly Dictionary<CommandID, VsHierarchyCommandHandler> _commandHandlers = new Dictionary<CommandID, VsHierarchyCommandHandler>();
-
     private VsHierarchyNodes _nodes = new VsHierarchyNodes();
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
@@ -58,6 +57,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public void Dispose() {
       Close();
+    }
+
+    public void Disable() {
+      CloseVsHierarchy();
+      _nodes = new VsHierarchyNodes();
     }
 
     public void Disconnect() {

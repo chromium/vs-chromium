@@ -16,6 +16,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Package.CommandHandler;
@@ -32,6 +33,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IEventBus _eventBus;
+    private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
 
@@ -46,7 +48,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
       IUIRequestProcessor uiRequestProcessor,
-      IEventBus eventBus) {
+      IEventBus eventBus,
+      IGlobalSettingsProvider globalSettingsProvider) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -57,6 +60,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _windowsExplorer = windowsExplorer;
       _uiRequestProcessor = uiRequestProcessor;
       _eventBus = eventBus;
+      _globalSettingsProvider = globalSettingsProvider;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
@@ -70,9 +74,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       _fileSystemTreeSource.TreeReceived += OnTreeReceived;
       _fileSystemTreeSource.ErrorReceived += OnErrorReceived;
-
-      // Force getting the tree and refreshing the ui hierarchy.
-      _fileSystemTreeSource.Fetch();
 
       var mcs = _visualStudioPackageProvider.Package.OleMenuCommandService;
       if (mcs != null) {
@@ -173,6 +174,22 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       _nodeTemplateFactory.Activate();
       _eventBus.RegisterHandler("ShowInSolutionExplorer", ShowInSolutionExplorerHandler);
+      _eventBus.RegisterHandler("GlobalSettingsChanged", GlobalSettingsChangedHandler);
+
+      SynchronizeHierarchy();
+    }
+
+    private void GlobalSettingsChangedHandler(object sender, EventArgs e) {
+      SynchronizeHierarchy();
+    }
+
+    private void SynchronizeHierarchy() {
+      // Force getting the tree and refreshing the ui hierarchy.
+      if (_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects) {
+        _fileSystemTreeSource.Fetch();
+      } else {
+        _hierarchy.Disable();
+      }
     }
 
     private void ShowInSolutionExplorerHandler(object sender, EventArgs eventArgs) {
@@ -289,6 +306,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// Note: This is executed on a background thred.
     /// </summary>
     private void OnTreeReceived(FileSystemTree fileSystemTree) {
+      if (!_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects)
+        return;
+
       var builder = new IncrementalHierarchyBuilder(_nodeTemplateFactory, _hierarchy.Nodes, fileSystemTree);
       var buildResult = builder.Run();
 

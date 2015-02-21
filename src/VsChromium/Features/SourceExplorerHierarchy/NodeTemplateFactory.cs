@@ -3,17 +3,20 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Concurrent;
 using Microsoft.VisualStudio.Language.Intellisense;
+using VsChromium.Core.Files;
 using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class NodeTemplateFactory : INodeTemplateFactory {
     private readonly IVsGlyphService _vsGlyphService;
     private readonly IImageSourceFactory _imageSourceFactory;
-    private readonly Lazy<NodeViewModelTemplate> _directoryTemplate;
-    private readonly Lazy<NodeViewModelTemplate> _fileTemplate;
     private readonly Lazy<NodeViewModelTemplate> _rootNodeTemplate;
     private readonly Lazy<NodeViewModelTemplate> _projectTemplate;
+    private readonly Lazy<NodeViewModelTemplate> _directoryTemplate;
+    private readonly ConcurrentDictionary<string, NodeViewModelTemplate> _fileExtenionTemplates =
+      new ConcurrentDictionary<string, NodeViewModelTemplate>(SystemPathComparer.Instance.StringComparer);
 
     public NodeTemplateFactory(IVsGlyphService vsGlyphService, IImageSourceFactory imageSourceFactory) {
       _vsGlyphService = vsGlyphService;
@@ -21,7 +24,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _rootNodeTemplate = new Lazy<NodeViewModelTemplate>(CreateRootNodeTemplate);
       _projectTemplate = new Lazy<NodeViewModelTemplate>(CreateProjectTemplate);
       _directoryTemplate = new Lazy<NodeViewModelTemplate>(CreateDirectoryTemplate);
-      _fileTemplate = new Lazy<NodeViewModelTemplate>(CreateFileTemplate);
     }
 
     private NodeViewModelTemplate CreateRootNodeTemplate() {
@@ -45,16 +47,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       };
     }
 
-    private NodeViewModelTemplate CreateFileTemplate() {
-      return new NodeViewModelTemplate {
-        Icon = _imageSourceFactory.GetIcon("TextDocument")
-      };
-    }
-
     public NodeViewModelTemplate RootNodeTemplate { get { return _rootNodeTemplate.Value; } }
     public NodeViewModelTemplate ProjectTemplate { get { return _projectTemplate.Value; } }
     public NodeViewModelTemplate DirectoryTemplate { get { return _directoryTemplate.Value; } }
-    public NodeViewModelTemplate FileTemplate { get { return _fileTemplate.Value; } }
+
+    public NodeViewModelTemplate GetFileTemplate(string fileExtension) {
+      return _fileExtenionTemplates.GetOrAdd(fileExtension, 
+        key => new NodeViewModelTemplate());
+    }
 
     /// <summary>
     /// Execution on the main thread, so that icons are fetched on the main thread.
@@ -63,7 +63,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       var a1 = this.RootNodeTemplate;
       var a2 = this.ProjectTemplate;
       var a3 = this.DirectoryTemplate;
-      var a4 = this.FileTemplate;
     }
   }
 }

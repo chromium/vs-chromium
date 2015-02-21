@@ -12,6 +12,7 @@ using VsChromium.Commands;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
@@ -24,6 +25,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
+    private readonly IImageSourceFactory _imageSourceFactory;
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IFileSystem _fileSystem;
     private readonly IClipboard _clipboard;
@@ -44,6 +46,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
+      _imageSourceFactory = imageSourceFactory;
       _openDocumentHelper = openDocumentHelper;
       _fileSystem = fileSystem;
       _clipboard = clipboard;
@@ -260,7 +263,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       var buildResult = builder.Run();
 
       _synchronizationContextProvider.UIContext.Post(
-        () => _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes));
+        () => {
+          // We need to load these images on the main UI thread
+          buildResult.FileTemplatesToInitialize.ForAll(
+            item => {
+              var icon =_imageSourceFactory.GetFileExtensionIcon(item.Key);
+              if (icon == null)
+                icon = _imageSourceFactory.GetFileExtensionIcon(".txt");
+              if (icon == null)
+                icon = _imageSourceFactory.GetIcon("TextDocument");
+              item.Value.Icon = icon;
+            });
+
+          _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);
+        });
     }
 
 

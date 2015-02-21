@@ -9,5 +9,6 @@ namespace VsChromium.Views {
   public interface IImageSourceFactory {
     ImageSource GetImage(string resourceName);
     Icon GetIcon(string resourceName);
+    Icon GetFileExtensionIcon(string fileExtension);
   }
 }

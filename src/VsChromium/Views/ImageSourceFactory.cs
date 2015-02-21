@@ -41,13 +41,32 @@ namespace VsChromium.Views {
 
     public Icon GetIcon(string resourceName) {
       return _icons.GetOrAdd(resourceName, name => {
-        var image = GetImage(name) as BitmapSource;
-        if (image == null)
-          throw new InvalidOperationException();
-        IntPtr hIcon = ImageHelper.BitmapFromBitmapSource(image).GetHicon();
-        var iconHandle = new SafeIconHandle(hIcon);
-        return Tuple.Create(iconHandle, Icon.FromHandle(hIcon));
+        var image = GetImage(name);
+        return ImageSourceToIcon(image);
       }).Item2;
+    }
+
+    public Icon GetFileExtensionIcon(string fileExtension) {
+      const string keyPrefix = "__files__";
+      var result = _icons.GetOrAdd(keyPrefix + fileExtension, name => {
+        var list = DefaultIconImageList.Instance;
+        var source = list.GetImage(name.Substring(keyPrefix.Length));
+        if (source == null)
+          return null;
+        return ImageSourceToIcon(source);
+      });
+      if (result == null)
+        return null;
+      return result.Item2;
+    }
+
+    private static Tuple<SafeIconHandle, Icon> ImageSourceToIcon(ImageSource source) {
+      var image = source as BitmapSource;
+      if (image == null)
+        throw new InvalidOperationException();
+      IntPtr hIcon = ImageHelper.BitmapFromBitmapSource(image).GetHicon();
+      var iconHandle = new SafeIconHandle(hIcon);
+      return Tuple.Create(iconHandle, Icon.FromHandle(hIcon));
     }
 
     private static Uri GetUri(string filePath) {

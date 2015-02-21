@@ -5,7 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using VsChromium.Core.Collections;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
@@ -17,6 +19,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly FileSystemTree _fileSystemTree;
     private readonly VsHierarchyNodes _newNodes = new VsHierarchyNodes();
     private readonly VsHierarchyChanges _changes = new VsHierarchyChanges();
+    private readonly Dictionary<string, NodeViewModelTemplate> _fileTemplatesToInitialize =
+      new Dictionary<string, NodeViewModelTemplate>(SystemPathComparer.Instance.StringComparer); 
     private uint _newNodeNextItemId;
 
     public IncrementalHierarchyBuilder(
@@ -42,6 +46,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           OldNodes = _oldNodes,
           NewNodes = _newNodes,
           Changes = _changes,
+          FileTemplatesToInitialize = _fileTemplatesToInitialize
         };
       }
     }
@@ -134,7 +139,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       } else if (directoryEntry != null) {
         node.Template = _templateFactory.DirectoryTemplate;
       } else {
-        node.Template = _templateFactory.FileTemplate;
+        var extension = Path.GetExtension(entry.Name);
+        Debug.Assert(extension != null);
+        node.Template = _templateFactory.GetFileTemplate(extension);
+        if (node.Template.Icon == null) {
+          if (!_fileTemplatesToInitialize.ContainsKey(extension)) {
+            _fileTemplatesToInitialize.Add(extension, node.Template);
+          }
+        }
       }
       return node;
     }

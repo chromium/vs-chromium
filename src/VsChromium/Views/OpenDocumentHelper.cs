@@ -83,7 +83,8 @@ namespace VsChromium.Views {
         }
 
         var flags = __VSOSEFLAGS.OSE_UseOpenWithDialog;
-        Guid viewGuid = VSConstants.LOGVIEWID_TextView;
+        //Guid viewGuid = VSConstants.LOGVIEWID_TextView;
+        Guid viewGuid = Guid.Empty;
         IVsWindowFrame windowFrame;
         hresult = openDocument.OpenStandardEditor(
           (uint) flags,

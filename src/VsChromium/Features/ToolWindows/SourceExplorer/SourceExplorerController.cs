@@ -582,22 +582,28 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       // Set tree as the new active tree.
       ViewModel.SetFileSystemTree(viewModel);
+      FetchDatabaseStatistics();
     }
 
     public void FilesLoaded() {
-      _uiRequestProcessor.Post(new UIRequest {
-        Id = "GetDatabaseStatisticsRequest",
-        Request = new GetDatabaseStatisticsRequest(),
-        OnSuccess = r => {
-          var response = (GetDatabaseStatisticsResponse)r;
-          var message =
-            String.Format(
-              "Index: {0:n0} files, {1:n0} MB",
-              response.IndexedFileCount,
-              response.IndexedFileSize / 1024L / 1024L);
-          ViewModel.StatusText = message;
-        }
-      });
+      FetchDatabaseStatistics();
+    }
+
+    private void FetchDatabaseStatistics() {
+      _uiRequestProcessor.Post(
+        new UIRequest {
+          Id = "GetDatabaseStatisticsRequest",
+          Request = new GetDatabaseStatisticsRequest(),
+          OnSuccess = r => {
+            var response = (GetDatabaseStatisticsResponse) r;
+            var message =
+              String.Format(
+                "Index: {0:n0} files, {1:n0} MB",
+                response.IndexedFileCount,
+                response.IndexedFileSize / 1024L / 1024L);
+            ViewModel.StatusText = message;
+          }
+        });
     }
 
     public void SearchFilesNames(string searchPattern, bool immediate) {

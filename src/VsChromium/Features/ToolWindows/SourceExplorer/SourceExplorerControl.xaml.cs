@@ -41,7 +41,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
     private SourceExplorerController _controller;
-    private IVisualStudioPackageProvider _visualStudioPackageProvider;
     private IFileSystemTreeSource _fileSystemTreeSource;
 
     public SourceExplorerControl() {
@@ -84,7 +83,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _fileSystemTreeSource = componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>();
-      _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
 
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
       _fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;

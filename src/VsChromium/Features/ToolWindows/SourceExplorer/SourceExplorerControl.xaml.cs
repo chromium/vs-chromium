@@ -53,10 +53,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
       InitComboBox(SearchTextCombo, new ComboBoxInfo {
+        TextChanged = text => { ViewModel.SearchTextValue = text; },
         SearchFunction = RefreshSearchResults,
         NextElement = SearchFileNamesCombo,
       });
       InitComboBox(SearchFileNamesCombo, new ComboBoxInfo {
+        TextChanged = text => { ViewModel.SearchFileNamesValue = text; },
         SearchFunction = RefreshSearchResults,
         PreviousElement = SearchTextCombo,
         NextElement = FileTreeView,
@@ -135,7 +137,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void InitComboBox(EditableComboBox comboBox, ComboBoxInfo info) {
       comboBox.DataContext = new StringListViewModel(info.InitialItems);
-      comboBox.TextChanged += (s, e) => info.SearchFunction(false);
+      comboBox.TextChanged += (s, e) => {
+        info.TextChanged(comboBox.Text);
+        info.SearchFunction(false);
+      };
       comboBox.KeyDown += (s, e) => {
         if ((e.KeyboardDevice.Modifiers == ModifierKeys.None) &&
             (e.Key == Key.Return || e.Key == Key.Enter)) {
@@ -250,6 +255,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         this.InitialItems = new List<string>();
       }
 
+      public Action<string> TextChanged { get; set; }
       public Action<bool> SearchFunction { get; set; }
       public UIElement PreviousElement { get; set; }
       public UIElement NextElement { get; set; }

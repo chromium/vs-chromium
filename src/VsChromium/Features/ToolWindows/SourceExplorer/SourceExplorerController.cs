@@ -16,7 +16,6 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Threads;
-using VsChromium.Core.Utility;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
 using VsChromium.Settings;
@@ -598,7 +597,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             var response = (GetDatabaseStatisticsResponse) r;
             var message =
               String.Format(
-                "Index: {0:n0} files, {1:n0} MB",
+                "Index: {0:n0} files - {1:n0} MB",
                 response.IndexedFileCount,
                 response.IndexedFileSize / 1024L / 1024L);
             ViewModel.StatusText = message;

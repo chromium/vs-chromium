@@ -21,6 +21,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private bool _useRegex;
     private bool _includeSymLinks;
     private string _statusText;
+    private string _searchTextValue;
+    private string _searchFileNamesValue;
 
     public enum DisplayKind {
       FileSystemTree,
@@ -211,7 +213,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     public bool RefreshSearchResultEnabled {
-      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+      get {
+        return !string.IsNullOrEmpty(SearchFileNamesValue) || !string.IsNullOrEmpty(SearchTextValue);
+      }
     }
 
     private ImageSource GetImageFromResource(string name) {
@@ -266,8 +270,32 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public string StatusText {
       get { return _statusText; }
       set {
+        if (value == _statusText)
+          return;
         _statusText = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.StatusText));
+      }
+    }
+
+    public string SearchTextValue {
+      get { return _searchTextValue; }
+      set {
+        if (value == _searchTextValue)
+          return;
+        _searchTextValue = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchTextValue));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultEnabled));
+      }
+    }
+
+    public string SearchFileNamesValue {
+      get { return _searchFileNamesValue; }
+      set {
+        if (value == _searchFileNamesValue)
+          return;
+        _searchFileNamesValue = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFileNamesValue));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultEnabled));
       }
     }
 

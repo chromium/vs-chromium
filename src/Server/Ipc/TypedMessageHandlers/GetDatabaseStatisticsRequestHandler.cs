@@ -30,7 +30,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         DirectoryCount = database.DirectoryNames.Count,
         FileCount = database.FileNames.Count,
         IndexedFileCount = database.SearchableFileCount,
-        IndexedFileSize = database.FileContentsPieces.GroupBy(x => x.FileId).Aggregate(0L, (x, group) => x + group.First().FileContents.ByteLength),
+        IndexedFileSize = database.FileContentsPieces.Aggregate(0L, (x, piece) => x + piece.ByteLength),
       };
     }
   }

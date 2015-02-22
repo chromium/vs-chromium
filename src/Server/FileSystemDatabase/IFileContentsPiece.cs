@@ -17,8 +17,8 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// </summary>
   public interface IFileContentsPiece {
     FileName FileName { get; }
-    FileContents FileContents { get; }
     int FileId { get; }
+    int ByteLength { get; }
 
     IList<TextRange> FindAll(
       CompiledTextSearchData compiledTextSearchData,

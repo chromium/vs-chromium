@@ -35,7 +35,7 @@ namespace VsChromium.Server.FileSystemContents {
       throw new NotImplementedException();
     }
 
-    protected override byte CharacterSize {
+    public override byte CharacterSize {
       get { return 1; }
     }
 

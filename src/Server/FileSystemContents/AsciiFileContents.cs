@@ -51,7 +51,7 @@ namespace VsChromium.Server.FileSystemContents {
       return new AsciiCompiledTextSearchBoyerMoore(pattern, options);
     }
 
-    protected override byte CharacterSize {
+    public override byte CharacterSize {
       get { return sizeof(byte); }
     }
 

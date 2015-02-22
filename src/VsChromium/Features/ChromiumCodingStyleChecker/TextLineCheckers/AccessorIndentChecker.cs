@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
 using VsChromium.Core.Files;
+using VsChromium.Settings;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -23,34 +24,40 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
     [Import]
     private IFileSystem _fileSystem = null; // Set by MEF
+    [Import]
+    private IGlobalSettingsProvider _globalSettingsProvider = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("C/C++");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
-        int indent = 0;
-        var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
-        foreach (var point in fragment.GetPoints()) {
-          if (WhitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
-            // continue as long as we find whitespaces
-            indent++;
-          } else if (GetMarker(line, fragment, point) != null) {
-            if (indent % 2 == 0) // even indentation is not ok
-            {
-              var marker = GetMarker(line, fragment, point);
-              yield return new TextLineCheckerError {
-                Span = new SnapshotSpan(point, marker.Length),
-                Message =
-                  string.Format("Accessor \"{0}\" should always be indented 1 character less than rest of class body.",
-                                marker)
-              };
-            }
-          } else {
-            // Stop at the first non-whitespace character.
-            yield break;
+      if (!_globalSettingsProvider.GlobalSettings.CodingStyleAccessorIndent)
+        yield break;
+
+      if (!_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line))
+        yield break;
+
+      int indent = 0;
+      var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
+      foreach (var point in fragment.GetPoints()) {
+        if (WhitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
+          // continue as long as we find whitespaces
+          indent++;
+        } else if (GetMarker(line, fragment, point) != null) {
+          // even indentation is not ok
+          if (indent % 2 == 0) {
+            var marker = GetMarker(line, fragment, point);
+            yield return new TextLineCheckerError {
+              Span = new SnapshotSpan(point, marker.Length),
+              Message =
+                string.Format("Accessor \"{0}\" should always be indented 1 character less than rest of class body.",
+                              marker)
+            };
           }
+        } else {
+          // Stop at the first non-whitespace character.
+          yield break;
         }
       }
     }

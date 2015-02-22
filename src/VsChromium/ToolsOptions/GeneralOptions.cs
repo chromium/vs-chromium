@@ -51,7 +51,7 @@ namespace VsChromium.ToolsOptions {
       }
 
       var bus = componentModel.DefaultExportProvider.GetExportedValue<IEventBus>();
-      bus.Fire("GlobalSettingsChanged", this, new EventArgs());
+      bus.Fire("ToolsOptionsPageApply", this, new EventArgs());
     }
 
     [Category(CodeSearchUserInterfaceCategory)]

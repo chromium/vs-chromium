@@ -8,14 +8,14 @@ using VsChromium.Core.Logging;
 
 namespace VsChromium.Threads {
   public class SynchronizationContextDelegate : ISynchronizationContext {
-    private readonly SynchronizationContext _current;
+    private readonly SynchronizationContext _context;
 
-    public SynchronizationContextDelegate(SynchronizationContext current) {
-      _current = current;
+    public SynchronizationContextDelegate(SynchronizationContext context) {
+      _context = context;
     }
 
     public void Post(Action action) {
-      _current.Post(_ => Logger.WrapActionInvocation(action), null);
+      _context.Post(_ => Logger.WrapActionInvocation(action), null);
     }
   }
 }

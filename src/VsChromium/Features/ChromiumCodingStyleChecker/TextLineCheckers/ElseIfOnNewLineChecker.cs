@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
 using VsChromium.Core.Files;
+using VsChromium.Settings;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -28,27 +29,33 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
     [Import]
     private IFileSystem _fileSystem = null; // Set by MEF
+    [Import]
+    private IGlobalSettingsProvider _globalSettingsProvider = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("C/C++");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
-        var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
-        foreach (var point in fragment.GetPoints()) {
-          if (WhitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
-            // continue as long as we find whitespaces
-          } else if (GetMarker(line, fragment, point) != null) {
-            var marker = GetMarker(line, fragment, point);
-            yield return new TextLineCheckerError {
-              Span = new SnapshotSpan(point, marker.Length),
-              Message = string.Format("\"{0}\" should always be on the same line as the \"}}\" character.", marker)
-            };
-          } else {
-            // Stop at the first non-whitespace character.
-            yield break;
-          }
+      if (!_globalSettingsProvider.GlobalSettings.CodingStyleElseIfOnNewLine)
+        yield break;
+
+      if (!_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line))
+        yield break;
+
+      var fragment = line.GetFragment(line.Start, line.End, TextLineFragment.Options.Default);
+      foreach (var point in fragment.GetPoints()) {
+        if (WhitespaceCharacters.IndexOf(point.GetChar()) >= 0) {
+          // continue as long as we find whitespaces
+        } else if (GetMarker(line, fragment, point) != null) {
+          var marker = GetMarker(line, fragment, point);
+          yield return new TextLineCheckerError {
+            Span = new SnapshotSpan(point, marker.Length),
+            Message = string.Format("\"{0}\" should always be on the same line as the \"}}\" character.", marker)
+          };
+        } else {
+          // Stop at the first non-whitespace character.
+          yield break;
         }
       }
     }

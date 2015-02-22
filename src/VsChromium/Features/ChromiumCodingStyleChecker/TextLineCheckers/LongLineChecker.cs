@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
 using VsChromium.Core.Files;
+using VsChromium.Settings;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -21,13 +22,20 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
     [Import]
     private IFileSystem _fileSystem = null; // Set by MEF
+    [Import]
+    private IGlobalSettingsProvider _globalSettingsProvider = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("code");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
+      if (!_globalSettingsProvider.GlobalSettings.CodingStyleLongLine)
+        yield break;
+
+      if (!_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line))
+        yield break;
+
         if (line.Length > 80) {
           if (!IsAllowedOverflow(line)) {
             yield return new TextLineCheckerError {
@@ -35,7 +43,6 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
               Message = "Maximum length of line is 80 characters.",
             };
           }
-        }
       }
     }
 

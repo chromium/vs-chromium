@@ -137,11 +137,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void InitComboBox(EditableComboBox comboBox, ComboBoxInfo info) {
       comboBox.DataContext = new StringListViewModel(info.InitialItems);
-      comboBox.TextChanged += (s, e) => info.SearchFunction();
+      comboBox.TextChanged += (s, e) => info.SearchFunction(false);
       comboBox.KeyDown += (s, e) => {
         if ((e.KeyboardDevice.Modifiers == ModifierKeys.None) &&
             (e.Key == Key.Return || e.Key == Key.Enter)) {
-          info.SearchFunction();
+          info.SearchFunction(true);
         }
       };
 
@@ -252,7 +252,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         this.InitialItems = new List<string>();
       }
 
-      public Action SearchFunction { get; set; }
+      public Action<bool> SearchFunction { get; set; }
       public UIElement PreviousElement { get; set; }
       public UIElement NextElement { get; set; }
       public List<string> InitialItems { get; set; }
@@ -275,11 +275,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchWholeWord) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UseRegex) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.IncludeSymLinks)) {
-        RefreshSearchResults();
+        RefreshSearchResults(true);
       }
     }
 
-    private void RefreshSearchResults() {
+    private void RefreshSearchResults(bool immediate) {
       if (string.IsNullOrWhiteSpace(SearchTextCombo.Text) &&
           string.IsNullOrWhiteSpace(SearchFileNamesCombo.Text)) {
         Controller.CancelSearch();
@@ -287,11 +287,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
 
       if (string.IsNullOrWhiteSpace(SearchTextCombo.Text)) {
-        Controller.SearchFilesNames(SearchFileNamesCombo.Text);
+        Controller.SearchFilesNames(SearchFileNamesCombo.Text, immediate);
         return;
       }
 
-      Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text);
+      Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text, immediate);
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -388,7 +388,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void RefreshFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(
-        () => RefreshSearchResults());
+        () => RefreshSearchResults(true));
     }
 
     private void GotoPrevious_Click(object sender, RoutedEventArgs e) {
@@ -404,21 +404,21 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchFileNames_Click(object sender, RoutedEventArgs e) {
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     private void ClearFileNamesPattern_Click(object sender, RoutedEventArgs e) {
       SearchFileNamesCombo.Text = "";
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     private void SearchText_Click(object sender, RoutedEventArgs e) {
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     private void ClearSearchText_Click(object sender, RoutedEventArgs e) {
       SearchTextCombo.Text = "";
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     #endregion

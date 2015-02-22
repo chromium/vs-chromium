@@ -600,11 +600,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public void SearchFilesNames(string searchPattern) {
+    public void SearchFilesNames(string searchPattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,
         HintText = "Searching for matching file names...",
-        Delay = TimeSpan.FromMilliseconds(Settings.AutoSearchDelayMsec),
+        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
@@ -666,11 +666,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public void SearchText(string searchPattern, string fileNamePattern) {
+    public void SearchText(string searchPattern, string fileNamePattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
         HintText = "Searching for matching text in files...",
-        Delay = TimeSpan.FromMilliseconds(Settings.AutoSearchDelayMsec),
+        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,

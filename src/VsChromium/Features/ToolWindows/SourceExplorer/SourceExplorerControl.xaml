@@ -165,7 +165,7 @@
         </Button>
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
       </StackPanel>
-      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0" />
+      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" />
     </Grid>
 
     <!-- SEARCH AREA -->

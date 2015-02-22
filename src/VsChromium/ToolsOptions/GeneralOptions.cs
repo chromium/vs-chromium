@@ -15,17 +15,22 @@ namespace VsChromium.ToolsOptions {
   //[CLSCompliant(false)]
   [ComVisible(true)]
   public class GeneralOptions : DialogPage {
+    private const string CodeSearchUserInterfaceCategory = "Code Search User Interface";
+    private const string CodeSearchOptionsCategory = "Code Search Options";
+
     public GeneralOptions() {
       SetDefaults();
     }
 
     private void SetDefaults() {
-      // Default.
-      EnableVsChromiumProjects = true;
       FindInFilesMaxEntries = 10 * 1000;
       SearchFileNamesMaxEntries = 2 * 1000;
       MaxTextExtractLength = 120;
       AutoSearchDelayMsec = 20;
+
+      SearchMatchCase = true;
+
+      EnableVsChromiumProjects = true;
     }
 
     public override void ResetSettings() {
@@ -49,29 +54,49 @@ namespace VsChromium.ToolsOptions {
       bus.Fire("GlobalSettingsChanged", this, new EventArgs());
     }
 
-    [Category("Projects")]
-    [DisplayName("Enable Solution Explorer integration")]
-    [Description("Show the \"VS Chromium Projects\" entry in Solution Explorer")]
-    public bool EnableVsChromiumProjects { get; set; }
-
-    [Category("Code Search")]
-    [DisplayName("Maximum number of entries when searching text")]
+    [Category(CodeSearchUserInterfaceCategory)]
+    [DisplayName("Maximum number of results for Find in Files")]
     [Description("Limit the number of entries returned when searching for text in files. Higher values may slow down the User Interface.")]
     public int FindInFilesMaxEntries { get; set; }
 
-    [Category("Code Search")]
-    [DisplayName("Maximum number of entries when searching file paths")]
+    [Category(CodeSearchUserInterfaceCategory)]
+    [DisplayName("Maximum number of results for Find File Paths")]
     [Description("Limit the numer of entries returned when searching for file names. Higher values may slow down the User Interface.")]
     public int SearchFileNamesMaxEntries { get; set; }
 
-    [Category("Code Search")]
-    [DisplayName("Maximum text extract length")]
+    [Category(CodeSearchUserInterfaceCategory)]
+    [DisplayName("Maximum number of characters in text extracts")]
     [Description("Limit the numer of characters displayed per text line in search results. Higher values may slow down the User Interface.")]
     public int MaxTextExtractLength { get; set; }
 
-    [Category("Code Search")]
+    [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Auto Search delay (milliseconds)")]
     [Description("Time interval to wait after user input before displaying search results. Lower value may slow down the User Interface. Higher values may render the User Interface less responsive.")]
     public int AutoSearchDelayMsec { get; set; }
+
+    [Category(CodeSearchOptionsCategory)]
+    [DisplayName("Match case")]
+    [Description("Search are case sensitive by default.")]
+    public bool SearchMatchCase { get; set; }
+
+    [Category(CodeSearchOptionsCategory)]
+    [DisplayName("Match whole word")]
+    [Description("Match whole word by default.")]
+    public bool SearchMatchWholeWord { get; set; }
+
+    [Category(CodeSearchOptionsCategory)]
+    [DisplayName("Use Regular Expression")]
+    [Description("Search patterns are regular expression by default.")]
+    public bool SearchUseRegEx { get; set; }
+
+    [Category(CodeSearchOptionsCategory)]
+    [DisplayName("Search through Symbolic Links")]
+    [Description("Search looks at files in symbolic link by default.")]
+    public bool SearchIncludeSymLinks { get; set; }
+
+    [Category("Solution Explorer Integration")]
+    [DisplayName("Enable \"VS Chromium Projects\" entry")]
+    [Description("Show the list of \"VS Chromium Projects\" and their files in Solution Explorer")]
+    public bool EnableVsChromiumProjects { get; set; }
   }
 }

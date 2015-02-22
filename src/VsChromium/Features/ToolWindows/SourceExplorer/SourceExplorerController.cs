@@ -564,11 +564,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           var response = (GetDatabaseStatisticsResponse) r;
           var message =
             String.Format(
-              "Projects: {0} - Files: {1:n0} - Indexed Files: {2:n0} - Index Memory: {3:n0} byte(s)",
-              response.ProjectCount,
-              response.FileCount,
+              "Index: {0:n0} files, {1:n0} MB",
               response.IndexedFileCount,
-              response.IndexedFileSize);
+              response.IndexedFileSize / 1024L / 1024L);
           ViewModel.StatusText = message;
         }
       });

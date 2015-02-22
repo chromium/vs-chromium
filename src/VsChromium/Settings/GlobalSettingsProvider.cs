@@ -4,6 +4,7 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.Reflection;
 using VsChromium.Package;
 using VsChromium.ToolsOptions;
 
@@ -11,10 +12,12 @@ namespace VsChromium.Settings {
   [Export(typeof(IGlobalSettingsProvider))]
   public class GlobalSettingsProvider : IGlobalSettingsProvider {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
+    private readonly IEventBus _eventBus;
 
     [ImportingConstructor]
-    public GlobalSettingsProvider(IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public GlobalSettingsProvider(IVisualStudioPackageProvider visualStudioPackageProvider, IEventBus eventBus) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
+      _eventBus = eventBus;
     }
 
     public GlobalSettings GlobalSettings {
@@ -28,6 +31,10 @@ namespace VsChromium.Settings {
           EnableVsChromiumProjects = page.EnableVsChromiumProjects,
         };
       }
+    }
+
+    public IGlobalSettingChangeListener<T> CreateChangeListener<T>(PropertyInfo propertyInfo) {
+      return new GlobalSettingChangeListener<T>(_eventBus, this, propertyInfo);
     }
 
     private static int InRange(int value, int min, int max) {

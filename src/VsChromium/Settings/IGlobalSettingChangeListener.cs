@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Reflection;
+using System;
 
 namespace VsChromium.Settings {
-  public interface IGlobalSettingsProvider {
-    GlobalSettings GlobalSettings { get; }
+  public interface IGlobalSettingChangeListener<T> : IDisposable {
+    event EventHandler<PropetyChangedEventArgs<T>> PropertyChanged;
 
-    IGlobalSettingChangeListener<T> CreateChangeListener<T>(PropertyInfo propertyInfo);
+    T Current { get; }
   }
 }

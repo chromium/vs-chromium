@@ -14,6 +14,7 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
@@ -36,7 +37,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
-    private bool _enabled;
+    private IGlobalSettingChangeListener<bool> _listener;
 
     public SourceExplorerHierarchyController(
       ISynchronizationContextProvider synchronizationContextProvider,
@@ -175,22 +176,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       _nodeTemplateFactory.Activate();
       _eventBus.RegisterHandler("ShowInSolutionExplorer", ShowInSolutionExplorerHandler);
-      _eventBus.RegisterHandler("GlobalSettingsChanged", GlobalSettingsChangedHandler);
+      var propertyInfo = ReflectionUtils.GetPropertyInfo(_globalSettingsProvider.GlobalSettings, x => x.EnableVsChromiumProjects);
+      _listener = _globalSettingsProvider.CreateChangeListener<bool>(propertyInfo);
+      _listener.PropertyChanged += EnableVsChromiumProjects_ChangedHandler;
 
       SynchronizeHierarchy();
     }
 
-    private void GlobalSettingsChangedHandler(object sender, EventArgs e) {
+    private void EnableVsChromiumProjects_ChangedHandler(object sender, EventArgs e) {
       SynchronizeHierarchy();
     }
 
     private void SynchronizeHierarchy() {
-      if (_enabled == _globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects)
-        return;
-      _enabled = _globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects;
-
       // Force getting the tree and refreshing the ui hierarchy.
-      if (_enabled) {
+      if (_listener.Current) {
         _fileSystemTreeSource.Fetch();
       } else {
         _hierarchy.Disable();

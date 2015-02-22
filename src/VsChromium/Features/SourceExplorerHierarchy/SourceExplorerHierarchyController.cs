@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
@@ -37,7 +38,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
-    private IGlobalSettingChangeListener<bool> _listener;
 
     public SourceExplorerHierarchyController(
       ISynchronizationContextProvider synchronizationContextProvider,
@@ -176,20 +176,22 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       _nodeTemplateFactory.Activate();
       _eventBus.RegisterHandler("ShowInSolutionExplorer", ShowInSolutionExplorerHandler);
-      var propertyInfo = ReflectionUtils.GetPropertyInfo(_globalSettingsProvider.GlobalSettings, x => x.EnableVsChromiumProjects);
-      _listener = _globalSettingsProvider.CreateChangeListener<bool>(propertyInfo);
-      _listener.PropertyChanged += EnableVsChromiumProjects_ChangedHandler;
 
+      _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
       SynchronizeHierarchy();
     }
 
-    private void EnableVsChromiumProjects_ChangedHandler(object sender, EventArgs e) {
-      SynchronizeHierarchy();
+    private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
+      var name = args.PropertyName;
+      var model = (GlobalSettings) sender;
+      if (name == ReflectionUtils.GetPropertyName(model, x => x.EnableVsChromiumProjects)) {
+        SynchronizeHierarchy();
+      }
     }
 
     private void SynchronizeHierarchy() {
       // Force getting the tree and refreshing the ui hierarchy.
-      if (_listener.Current) {
+      if (_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects) {
         _fileSystemTreeSource.Fetch();
       } else {
         _hierarchy.Disable();

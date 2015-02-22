@@ -20,7 +20,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private bool _matchWholeWord;
     private bool _useRegex;
     private bool _includeSymLinks;
-    private bool _useRe2Regex;
     private string _statusText;
 
     public enum DisplayKind {
@@ -33,7 +32,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public SourceExplorerViewModel() {
       // Default values for options in toolbar.
       this.IncludeSymLinks = true;
-      this.UseRe2Regex = true;
     }
 
     public DisplayKind ActiveDisplay {
@@ -145,31 +143,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           "Toggle searching inside symbolic links for all searches. " +
           "Symbolic links are currently {0} in search results.",
           IncludeSymLinks ? "included" : "excluded");
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public bool UseRe2Regex {
-      get { return _useRe2Regex; }
-      set {
-        if (_useRe2Regex != value) {
-          _useRe2Regex = value;
-          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UseRe2Regex));
-        }
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public string UseRe2RegexToolTip {
-      get {
-        return string.Format(
-          "Toggle usage of the RE2 regular expression engine as a replacement of the standard C++ library for improved performance. " +
-          "The RE2 engine is currently {0}.",
-          UseRe2Regex ? "enabled" : "disabled");
       }
     }
 

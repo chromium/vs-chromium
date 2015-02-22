@@ -28,7 +28,7 @@ namespace VsChromium.ToolsOptions {
       MaxTextExtractLength = 120;
       AutoSearchDelayMsec = 20;
 
-      SearchMatchCase = true;
+      SearchIncludeSymLinks = true;
 
       EnableVsChromiumProjects = true;
     }

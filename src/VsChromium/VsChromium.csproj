@@ -259,11 +259,9 @@
     <Compile Include="Features\ToolWindows\SourceExplorer\GlobalNextLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
-    <Compile Include="Settings\GlobalSettingChangeListener.cs" />
     <Compile Include="Settings\GlobalSettings.cs" />
     <Compile Include="Settings\GlobalSettingsProvider.cs" />
     <Compile Include="Settings\HardCodedSettings.cs" />
-    <Compile Include="Settings\IGlobalSettingChangeListener.cs" />
     <Compile Include="Settings\IGlobalSettingsProvider.cs" />
     <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerBase.cs" />
@@ -278,7 +276,6 @@
     <Compile Include="Package\VsSolutionEventsHandler.cs" />
     <Compile Include="ServerProxy\FileSystemTreeSource.cs" />
     <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />
-    <Compile Include="Settings\PropetyChangedEventArgs.cs" />
     <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
     <Compile Include="ToolsOptions\DebuggingOptions.cs">

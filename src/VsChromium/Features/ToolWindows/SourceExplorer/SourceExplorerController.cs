@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,6 +16,7 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Threads;
+using VsChromium.Core.Utility;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
 using VsChromium.Settings;
@@ -69,6 +71,32 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _taskCancellation = new TaskCancellation();
+
+      // Ensure initial values are in sync.
+      GlobalSettingsOnPropertyChanged(null, null);
+
+      // Ensure changes to ViewModel are synchronized to global settings
+      ViewModel.PropertyChanged += ViewModelOnPropertyChanged;
+
+      // Ensure changes to global settings are synchronized to ViewModel
+      _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
+    }
+
+    private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
+      var setting = _globalSettingsProvider.GlobalSettings;
+      ViewModel.MatchCase = setting.SearchMatchCase;
+      ViewModel.MatchWholeWord = setting.SearchMatchWholeWord;
+      ViewModel.UseRegex = setting.SearchUseRegEx;
+      ViewModel.IncludeSymLinks = setting.SearchIncludeSymLinks;
+    }
+
+    private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
+      var settings = _globalSettingsProvider.GlobalSettings;
+      var model = (SourceExplorerViewModel)sender;
+      settings.SearchMatchCase = model.MatchCase;
+      settings.SearchMatchWholeWord = model.MatchWholeWord;
+      settings.SearchUseRegEx = model.UseRegex;
+      settings.SearchIncludeSymLinks = model.IncludeSymLinks;
     }
 
     public SourceExplorerViewModel ViewModel { get { return _control.ViewModel; } }
@@ -561,7 +589,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         Id = "GetDatabaseStatisticsRequest",
         Request = new GetDatabaseStatisticsRequest(),
         OnSuccess = r => {
-          var response = (GetDatabaseStatisticsResponse) r;
+          var response = (GetDatabaseStatisticsResponse)r;
           var message =
             String.Format(
               "Index: {0:n0} files, {1:n0} MB",
@@ -576,7 +604,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,
         HintText = "Searching for matching file names...",
-        Delay = Settings.AutoSearchDelay,
+        Delay = TimeSpan.FromMilliseconds(Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
@@ -584,7 +612,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = ViewModel.UseRe2Regex,
+            UseRe2Engine = true,
             Regex = ViewModel.UseRegex,
           }
         },
@@ -609,7 +637,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.DirectoryNamesSearch,
         HintText = "Searching for matching directory names...",
-        Delay = Settings.AutoSearchDelay,
+        Delay = TimeSpan.FromMilliseconds(Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
@@ -617,7 +645,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = ViewModel.UseRe2Regex,
+            UseRe2Engine = true,
             Regex = ViewModel.UseRegex,
           }
         },
@@ -642,16 +670,16 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
         HintText = "Searching for matching text in files...",
-        Delay = Settings.AutoSearchDelay,
+        Delay = TimeSpan.FromMilliseconds(Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             FileNamePattern = fileNamePattern,
-            MaxResults = Settings.SearchTextMaxResults,
+            MaxResults = Settings.FindInFilesMaxEntries,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = ViewModel.UseRe2Regex,
+            UseRe2Engine = true,
             Regex = ViewModel.UseRegex,
           }
         },

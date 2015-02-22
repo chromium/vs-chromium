@@ -7,7 +7,5 @@ using System.Reflection;
 namespace VsChromium.Settings {
   public interface IGlobalSettingsProvider {
     GlobalSettings GlobalSettings { get; }
-
-    IGlobalSettingChangeListener<T> CreateChangeListener<T>(PropertyInfo propertyInfo);
   }
 }

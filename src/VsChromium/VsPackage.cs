@@ -40,7 +40,7 @@ namespace VsChromium {
     SupportsProfiles = true)
   ]
   [ProvideOptionPage(
-    typeof(GeneralOptions), // Type of page to open
+    typeof(DebuggingOptions), // Type of page to open
     "VS Chromium", // Non localized version of the top level category
     "Debugging", // Non localized version of the page name within the category
     210, // Localized resource id of the top level category 

@@ -31,6 +31,10 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker {
     internal IEnumerable<ITextLineChecker> TextLineCheckers = null; // Set via MEF
 
     public IClassifier GetClassifier(ITextBuffer buffer) {
+      // Ensure VS Package is loaded, as classifier implementation depends on services
+      // and initialization code provider by the implementation.
+      VsPackage.EnsureLoaded();
+
       return
         buffer.Properties.GetOrCreateSingletonProperty<ChromiumStyleClassifier>(
           () =>

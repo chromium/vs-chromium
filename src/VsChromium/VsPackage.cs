@@ -65,6 +65,26 @@ namespace VsChromium {
     private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
 
     public VsPackage() {
+      Logger.LogInfo("{0} constructor.", this.GetType().FullName);
+    }
+
+    private static bool _loaded = false;
+    public static void EnsureLoaded() {
+      // Try loading only once since this is a heavy operation.
+      if (_loaded)
+        return;
+      _loaded = true;
+
+      Logger.WrapActionInvocation(
+        () => {
+          var shell = GetGlobalService(typeof (SVsShell)) as IVsShell;
+          if (shell == null)
+            return;
+
+          IVsPackage package;
+          var packageToBeLoadedGuid = new Guid(GuidList.GuidVsChromiumPkgString);
+          shell.LoadPackage(ref packageToBeLoadedGuid, out package);
+        });
     }
 
     public IComponentModel ComponentModel {
@@ -117,6 +137,7 @@ namespace VsChromium {
 
     protected override void Dispose(bool disposing) {
       if (disposing) {
+        Logger.LogInfo("{0}.Dispose()", this.GetType().FullName);
         try {
           if (ComponentModel != null) {
             var exports = ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostDispose>();
@@ -135,6 +156,8 @@ namespace VsChromium {
     }
 
     protected override void Initialize() {
+      Logger.LogInfo("{0}.Initialize()", this.GetType().FullName);
+
       base.Initialize();
       try {
         PreInitialize();

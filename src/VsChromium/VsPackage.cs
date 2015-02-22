@@ -50,6 +50,17 @@ namespace VsChromium {
     new[] { "VS Chromium", "Chrome", "Debugging" },
     SupportsProfiles = true)
   ]
+  [ProvideOptionPage(
+    typeof(CodingStyleOptions), // Type of page to open
+    "VS Chromium", // Non localized version of the top level category
+    "Coding Style", // Non localized version of the page name within the category
+    210, // Localized resource id of the top level category 
+    213, // Loalized resource id of the page name within the category
+    true, // Support automation
+    // List of keywords for Tools|Options search
+    new[] { "VS Chromium", "Chrome", "Coding Style", "Style" },
+    SupportsProfiles = true)
+  ]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage, IOleCommandTarget {
     private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
 

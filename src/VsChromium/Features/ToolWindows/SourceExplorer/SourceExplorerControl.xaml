@@ -147,11 +147,11 @@
             </Image.Style>
           </Image>
         </Button>
-        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding RefreshSearchResultEnabled}" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding RefreshSearchResultsEnabled}" Click="RefreshSearchResultsButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
           <Button.ToolTip>
             <TextBlock Text="Refresh search results"/>
           </Button.ToolTip>
-          <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          <Image Source="{Binding RefreshSearchResultsButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
             <Image.Style>
               <Style TargetType="Image">
                 <Style.Triggers>
@@ -165,7 +165,16 @@
         </Button>
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
       </StackPanel>
-      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" />
+      <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" />
+        <Button VerticalAlignment="Center" HorizontalAlignment="Right" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+          <Button.ToolTip>
+            <TextBlock Text="Refresh index by rescanning directories"/>
+          </Button.ToolTip>
+          <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          </Image>
+        </Button>
+      </StackPanel>
     </Grid>
 
     <!-- SEARCH AREA -->
@@ -475,14 +484,14 @@
 
         <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextErrorItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
-            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
         <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextWarningItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
-            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </HierarchicalDataTemplate>
@@ -490,7 +499,7 @@
         <!-- Placeholder item used to show "Click here for more results" -->
         <DataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
           <StackPanel Orientation="Horizontal">
-            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </DataTemplate>
@@ -498,7 +507,7 @@
         <!-- Simple text string item -->
         <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
           <StackPanel Orientation="Horizontal">
-            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </DataTemplate>

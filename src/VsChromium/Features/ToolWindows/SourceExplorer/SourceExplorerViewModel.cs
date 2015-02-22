@@ -212,7 +212,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get { return ActiveDisplay != DisplayKind.FileSystemTree; }
     }
 
-    public bool RefreshSearchResultEnabled {
+    public bool RefreshSearchResultsEnabled {
       get {
         return !string.IsNullOrEmpty(SearchFileNamesValue) || !string.IsNullOrEmpty(SearchTextValue);
       }
@@ -261,6 +261,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
+    public ImageSource RefreshSearchResultsButtonImage {
+      get {
+        return GetImageFromResource("SearchLens");
+      }
+    }
+
     public ImageSource RefreshFileSystemTreeButtonImage {
       get {
         return GetImageFromResource("RefreshFileSystemTree");
@@ -284,7 +290,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           return;
         _searchTextValue = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchTextValue));
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultEnabled));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
       }
     }
 
@@ -295,7 +301,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           return;
         _searchFileNamesValue = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFileNamesValue));
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultEnabled));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
       }
     }
 
@@ -305,7 +311,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));
-      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultEnabled));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
     }
 
     public void SwitchToFileSystemTree() {

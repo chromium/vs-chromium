@@ -390,9 +390,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       e.Handled = true;
     }
 
-    private void RefreshFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
+    private void RefreshSearchResultsButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(
         () => RefreshSearchResults(true));
+    }
+
+    private void RefreshFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
+      Logger.WrapActionInvocation(
+        () => Controller.RefreshFileSystemTree());
     }
 
     private void GotoPrevious_Click(object sender, RoutedEventArgs e) {
@@ -426,6 +431,10 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     #endregion
+
+    private void RefreshSearchFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
+
+    }
 
   }
 }

@@ -428,7 +428,7 @@
                 <MenuItem Header="Copy Relative Path  with &quot;/&quot;" Command="{Binding CopyRelativePathPosixCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
@@ -447,7 +447,7 @@
                 <MenuItem Header="Copy Relative Path  with &quot;/&quot;" Command="{Binding CopyRelativePathPosixCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
@@ -464,7 +464,7 @@
                 <MenuItem Header="Copy" Command="{Binding CopyCommand}"/>
               </ContextMenu>
             </StackPanel.ContextMenu>
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
             <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource SearchTextResult}"/>
             <TextBlock Text="{Binding MatchText}" Style="{StaticResource SearchTextResult}"
                        Foreground="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightForeground}}"
@@ -475,14 +475,14 @@
 
         <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextErrorItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
         <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextWarningItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </HierarchicalDataTemplate>
@@ -490,7 +490,7 @@
         <!-- Placeholder item used to show "Click here for more results" -->
         <DataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </DataTemplate>
@@ -498,7 +498,7 @@
         <!-- Simple text string item -->
         <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
           <StackPanel Orientation="Horizontal">
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" />
           </StackPanel>
         </DataTemplate>

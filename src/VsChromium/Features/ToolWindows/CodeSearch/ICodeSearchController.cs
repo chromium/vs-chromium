@@ -18,16 +18,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IClipboard Clipboard { get; }
     IWindowsExplorer WindowsExplorer { get; }
-    GlobalSettings Settings { get; }
+    GlobalSettings GlobalSettings { get; }
 
     void RefreshFileSystemTree();
-    void FilesLoaded();
 
     void PerformSearch(bool immediate);
 
+    // Callbacks from server about updates to the index database
     void SetFileSystemTreeComputing();
-    void SetFileSystemTreeError(ErrorResponse error);
     void SetFileSystemTreeComputed(FileSystemTree tree);
+    void SetFileSystemTreeError(ErrorResponse error);
+    void FilesLoaded();
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);
@@ -40,7 +41,5 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void NavigateToNextLocation();
     void NavigateToPreviousLocation();
     void CancelSearch();
-
-    bool IsSourceExplorerEnabled { get; }
   }
 }

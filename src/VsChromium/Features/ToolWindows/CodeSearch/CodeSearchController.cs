@@ -102,7 +102,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
     public IClipboard Clipboard { get { return _clipboard; } }
     public IWindowsExplorer WindowsExplorer { get { return _windowsExplorer; } }
-    public GlobalSettings Settings { get { return _globalSettingsProvider.GlobalSettings; } }
+    public GlobalSettings GlobalSettings { get { return _globalSettingsProvider.GlobalSettings; } }
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
@@ -142,10 +142,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public void CancelSearch() {
       ViewModel.SwitchToInformationMessages();
-    }
-
-    public bool IsSourceExplorerEnabled {
-      get { return _globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects; }
     }
 
     public void FilesLoaded() {
@@ -411,11 +407,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchFilePaths,
         HintText = "Searching for matching file paths...",
-        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
+        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : GlobalSettings.AutoSearchDelayMsec),
         TypedRequest = new SearchFilePathsRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = Settings.SearchFilePathsMaxResults,
+            MaxResults = GlobalSettings.SearchFilePathsMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -444,12 +440,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchCode,
         HintText = "Searching for matching text in files...",
-        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
+        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : GlobalSettings.AutoSearchDelayMsec),
         TypedRequest = new SearchCodeRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             FilePathPattern = filePathPattern,
-            MaxResults = Settings.SearchCodeMaxResults,
+            MaxResults = GlobalSettings.SearchCodeMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,

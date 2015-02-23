@@ -95,7 +95,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       get {
         return CommandDelegate.Create(
           sender => Controller.ShowInSourceExplorer(this),
-          sender => Controller.IsSourceExplorerEnabled);
+          sender => Controller.GlobalSettings.EnableVsChromiumProjects);
       }
     }
 
@@ -120,7 +120,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       var request = new GetFileExtractsRequest {
         FileName = Path,
-        MaxExtractLength = Controller.Settings.MaxTextExtractLength,
+        MaxExtractLength = Controller.GlobalSettings.MaxTextExtractLength,
         Positions = positions
           .Select(x => new FilePositionSpan {
             Position = x.Position,

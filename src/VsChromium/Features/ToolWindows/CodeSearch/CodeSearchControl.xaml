@@ -196,7 +196,6 @@
             <ColumnDefinition Width="80" />
             <ColumnDefinition Width="*" MinWidth="100" />
             <ColumnDefinition Width="16"/>
-            <ColumnDefinition Width="16"/>
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="Search Code:" VerticalAlignment="Center" />
@@ -212,13 +211,7 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="0" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchCode_Click">
-            <Button.ToolTip>
-              <TextBlock Text="Search"/>
-            </Button.ToolTip>
-            <Image Source="{Binding SearchLensButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
-          </Button>
-          <Button Grid.Row="0" Grid.Column="3" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearSearchCode_Click">
+          <Button Grid.Row="0" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearSearchCode_Click">
             <Button.ToolTip>
               <TextBlock Text="Clear text"/>
             </Button.ToolTip>
@@ -238,13 +231,7 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchFilePaths_Click">
-            <Button.ToolTip>
-              <TextBlock Text="Search"/>
-            </Button.ToolTip>
-            <Image Source="{Binding SearchLensButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
-          </Button>
-          <Button Grid.Row="1" Grid.Column="3" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearFileNamesPattern_Click">
+          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearFileNamesPattern_Click">
             <Button.ToolTip>
               <TextBlock Text="Clear file path"/>
             </Button.ToolTip>
@@ -255,7 +242,7 @@
           <ProgressBar 
             Grid.Row="2" 
             Grid.Column="0" 
-            Grid.ColumnSpan="4" 
+            Grid.ColumnSpan="3" 
             IsIndeterminate="False" 
             Height="4" 
             Name="ProgressBar" 

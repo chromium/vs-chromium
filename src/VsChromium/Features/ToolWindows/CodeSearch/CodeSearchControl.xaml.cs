@@ -411,16 +411,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       Controller.CancelSearch();
     }
 
-    private void SearchFilePaths_Click(object sender, RoutedEventArgs e) {
-      RefreshSearchResults(true);
-    }
-
     private void ClearFileNamesPattern_Click(object sender, RoutedEventArgs e) {
       SearchFilePathsCombo.Text = "";
-      RefreshSearchResults(true);
-    }
-
-    private void SearchCode_Click(object sender, RoutedEventArgs e) {
       RefreshSearchResults(true);
     }
 

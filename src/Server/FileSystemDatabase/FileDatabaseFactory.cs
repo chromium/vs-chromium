@@ -43,7 +43,9 @@ namespace VsChromium.Server.FileSystemDatabase {
           0);
     }
 
-    public IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
+    public IFileDatabase CreateIncremental(
+      IFileDatabase previousFileDatabase,
+      FileSystemTreeSnapshot newSnapshot) {
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
           .Build(previousFileDatabase, newSnapshot);
     }
@@ -54,9 +56,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// snapshot" semantics but enables efficient updates for the most common
     /// type of file change events.
     /// </summary>
-    public IFileDatabase CreateWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
+    public IFileDatabase CreateWithChangedFiles(
+      IFileDatabase previousFileDatabase,
+      IEnumerable<Tuple<IProject, FileName>> changedFiles,
+      Action onLoading,
+      Action onLoaded) {
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-        .BuildWithChangedFiles(previousFileDatabase, changedFiles);
+        .BuildWithChangedFiles(previousFileDatabase, changedFiles, onLoading, onLoaded);
     }
   }
 }

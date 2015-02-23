@@ -65,25 +65,33 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
-    public IFileDatabase BuildWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles) {
+    public IFileDatabase BuildWithChangedFiles(
+      IFileDatabase previousFileDatabase,
+      IEnumerable<Tuple<IProject, FileName>> changedFiles,
+      Action onLoading,
+      Action onLoaded) {
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
         var fileDatabase = (FileDatabase)previousFileDatabase;
 
         // Update file contents of file data entries of changed files.
-        var contentsUpdated = false;
-        changedFiles.ForAll(x => {
-          if (x.Item1.IsFileSearchable(x.Item2) && fileDatabase.Files.ContainsKey(x.Item2)) {
-            var newContents = _fileContentsFactory.GetFileContents(x.Item2.FullPath);
-            fileDatabase.Files[x.Item2].UpdateContents(newContents);
-            contentsUpdated = true;
-          }
-        });
+        var filesToRead = changedFiles
+          .Where(x => x.Item1.IsFileSearchable(x.Item2) && fileDatabase.Files.ContainsKey(x.Item2))
+          .ToList();
 
-        if (!contentsUpdated)
+        if (filesToRead.Count == 0)
           return previousFileDatabase;
 
+
+        // Read file contents.
+        onLoading();
+        filesToRead.ForAll(x => {
+          var newContents = _fileContentsFactory.GetFileContents(x.Item2.FullPath);
+          fileDatabase.Files[x.Item2].UpdateContents(newContents);
+        });
+        onLoaded();
+
         // Return new file database with updated file contents.
-        var filesWithContents = GetFilesWithContents(fileDatabase.Files.Values);
+        var filesWithContents = FilterFilesWithContents(fileDatabase.Files.Values);
         return new FileDatabase(
           fileDatabase.Files,
           fileDatabase.FileNames,
@@ -100,19 +108,19 @@ namespace VsChromium.Server.FileSystemDatabase {
         // may be new instances from a complete file system enumeration.
         var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
         var directories = _directories;
-        var filesWithContents = GetFilesWithContents(files.Values);
+        var filesWithContents = FilterFilesWithContents(files.Values);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
         if (LogStats) {
           var filesByExtensions = filesWithContents
             .GroupBy(x => {
               var ext = Path.GetExtension(x.FileName.FullPath.Value);
-              if (ext == "" || x.Contents.ByteLength >=  500 * 1024)
+              if (ext == "" || x.Contents.ByteLength >= 500 * 1024)
                 return Path.GetFileName(x.FileName.FullPath.Value);
               return ext;
             })
             .Select(g => {
-            var count = g.Count();
-            var size = g.Aggregate(0L, (c, x) => c + x.Contents.ByteLength);
+              var count = g.Count();
+              var size = g.Aggregate(0L, (c, x) => c + x.Contents.ByteLength);
               return Tuple.Create(g.Key, count, size);
             })
             .OrderByDescending(x => x.Item3);
@@ -206,7 +214,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       return fileContents;
     }
 
-    private static List<FileData> GetFilesWithContents(ICollection<FileData> files) {
+    private static List<FileData> FilterFilesWithContents(ICollection<FileData> files) {
       // Create filesWithContents with minimum memory allocations and copying.
       var filesWithContents = new List<FileData>(files.Count);
       filesWithContents.AddRange(files.Where(x => x.Contents != null && x.Contents.ByteLength > 0));

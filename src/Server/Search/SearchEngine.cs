@@ -211,13 +211,13 @@ namespace VsChromium.Server.Search {
 
     public event EventHandler<FilesLoadedResult> FilesLoaded;
 
-    protected virtual void OnFilesLoaded(FilesLoadedResult e) {
-      EventHandler<FilesLoadedResult> handler = FilesLoaded;
+    protected virtual void OnFilesLoading(OperationInfo e) {
+      EventHandler<OperationInfo> handler = FilesLoading;
       if (handler != null) handler(this, e);
     }
 
-    protected virtual void OnFilesLoading(OperationInfo e) {
-      EventHandler<OperationInfo> handler = FilesLoading;
+    protected virtual void OnFilesLoaded(FilesLoadedResult e) {
+      EventHandler<FilesLoadedResult> handler = FilesLoaded;
       if (handler != null) handler(this, e);
     }
 
@@ -226,12 +226,20 @@ namespace VsChromium.Server.Search {
     }
 
     private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> files) {
+      OperationInfo operationInfo = null;
       _operationProcessor.Execute(new OperationHandlers {
-        OnBeforeExecute = info => OnFilesLoading(info),
-        OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
+        OnBeforeExecute = info =>
+          operationInfo = info,
+        OnError = (info, error) => {
+          OnFilesLoading(info);
+          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error });
+        },
         Execute = info => {
-          _currentFileDatabase = _fileDatabaseFactory.CreateWithChangedFiles(_currentFileDatabase, files);
-          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });
+          _currentFileDatabase = _fileDatabaseFactory.CreateWithChangedFiles(
+            _currentFileDatabase,
+            files,
+            onLoading: () => OnFilesLoading(operationInfo),
+            onLoaded: () => OnFilesLoaded(new FilesLoadedResult { OperationInfo = operationInfo }));
         }
       });
     }

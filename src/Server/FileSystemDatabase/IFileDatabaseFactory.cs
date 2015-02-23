@@ -11,7 +11,13 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabaseFactory {
     IFileDatabase CreateEmpty();
+
     IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot);
-    IFileDatabase CreateWithChangedFiles(IFileDatabase previousFileDatabase, IEnumerable<Tuple<IProject, FileName>> changedFiles);
+
+    IFileDatabase CreateWithChangedFiles(
+      IFileDatabase previousFileDatabase,
+      IEnumerable<Tuple<IProject, FileName>> changedFiles,
+      Action onLoading,
+      Action onLoaded);
   }
 }

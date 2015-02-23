@@ -218,7 +218,7 @@
             <Image Source="{Binding ClearSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
           </Button>
           <!-- Row 1 -->
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="File path:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="File Paths:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
           <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFilePathsCombo">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>

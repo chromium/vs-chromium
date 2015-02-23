@@ -399,13 +399,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         new UIRequest {
           Id = "GetDatabaseStatisticsRequest",
           Request = new GetDatabaseStatisticsRequest(),
-          OnSuccess = r => {
-            var response = (GetDatabaseStatisticsResponse)r;
+          OnSuccess = typedResponse => {
+            var response = (GetDatabaseStatisticsResponse)typedResponse;
+            var memoryUsageMb = response.IndexedFileSize / 1024L / 1024L;
+            if (memoryUsageMb == 0 && response.IndexedFileSize > 0)
+              memoryUsageMb = 1;
             var message =
               String.Format(
                 "Index: {0:n0} files - {1:n0} MB",
                 response.IndexedFileCount,
-                response.IndexedFileSize / 1024L / 1024L);
+                memoryUsageMb);
             ViewModel.StatusText = message;
           }
         });

@@ -27,7 +27,6 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var database = _searchEngine.CurrentFileDatabase;
       return new GetDatabaseStatisticsResponse {
         ProjectCount = snapshot.ProjectRoots.Count,
-        DirectoryCount = database.DirectoryNames.Count,
         FileCount = database.FileNames.Count,
         IndexedFileCount = database.SearchableFileCount,
         IndexedFileSize = database.FileContentsPieces.Aggregate(0L, (x, piece) => x + piece.ByteLength),

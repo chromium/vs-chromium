@@ -10,12 +10,10 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     [ProtoMember(1)]
     public int ProjectCount { get; set; }
     [ProtoMember(2)]
-    public long DirectoryCount { get; set; }
-    [ProtoMember(3)]
     public long FileCount { get; set; }
-    [ProtoMember(4)]
+    [ProtoMember(3)]
     public long IndexedFileCount { get; set; }
-    [ProtoMember(5)]
+    [ProtoMember(4)]
     public long IndexedFileSize { get; set; }
   }
 }

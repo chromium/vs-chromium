@@ -12,7 +12,6 @@ using VsChromium.Features.AutoUpdate;
 namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class SourceExplorerViewModel : ChromiumExplorerViewModelBase {
     private List<TreeViewItemViewModel> _fileSystemTreeNodes = new List<TreeViewItemViewModel>();
-    private List<TreeViewItemViewModel> _directoryNameSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
     private UpdateInfo _updateInfo;
@@ -27,7 +26,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public enum DisplayKind {
       FileSystemTree,
       FileNameSearchResult,
-      DirectoryNameSearchResult,
       TextSearchResult,
     }
 
@@ -42,8 +40,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           return DisplayKind.TextSearchResult;
         if (ReferenceEquals(ActiveRootNodes, _fileNameSearchResultNodes))
           return DisplayKind.FileNameSearchResult;
-        if (ReferenceEquals(ActiveRootNodes, _directoryNameSearchResultNodes))
-          return DisplayKind.DirectoryNameSearchResult;
         return DisplayKind.FileSystemTree;
       }
     }
@@ -324,10 +320,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SetRootNodes(_fileNameSearchResultNodes);
     }
 
-    private void SwitchToDirectoryNamesSearchResult() {
-      SetRootNodes(_directoryNameSearchResultNodes);
-    }
-
     private void SwitchToTextSearchResult() {
       SetRootNodes(_textSearchResultNodes);
     }
@@ -340,11 +332,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public void SetFileNamesSearchResult(List<TreeViewItemViewModel> viewModel) {
       _fileNameSearchResultNodes = viewModel;
       SwitchToFileNamesSearchResult();
-    }
-
-    public void SetDirectoryNamesSearchResult(List<TreeViewItemViewModel> viewModel) {
-      _directoryNameSearchResultNodes = viewModel;
-      SwitchToDirectoryNamesSearchResult();
     }
 
     public void SetTextSearchResult(List<TreeViewItemViewModel> viewModel) {

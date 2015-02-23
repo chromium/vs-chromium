@@ -27,7 +27,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
   public class SourceExplorerController : ISourceExplorerController {
     private static class OperationsIds {
       public const string FileContentsSearch = "files-contents-search";
-      public const string DirectoryNamesSearch = "directory-names-search";
       public const string FileNamesSearch = "file-names-search";
     }
 
@@ -136,21 +135,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
         }.Concat(
           fileResults
-            .Entries
-            .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
-          .ToList();
-      result.ForAll(rootNode.AddChild);
-      TreeViewItemViewModel.ExpandNodes(result, expandAll);
-      return result;
-    }
-
-    public List<TreeViewItemViewModel> CreateDirectoryNamesSearchResult(DirectoryEntry directoryResults, string description, bool expandAll) {
-      var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
-      var result =
-        new List<TreeViewItemViewModel> {
-          new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
-        }.Concat(
-          directoryResults
             .Entries
             .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
           .ToList();
@@ -634,39 +618,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             searchPattern);
           var viewModel = CreateFileNamesSearchResult(response.SearchResult, msg, true);
           ViewModel.SetFileNamesSearchResult(viewModel);
-        }
-      });
-    }
-
-    public void SearchDirectoryNames(string searchPattern) {
-      SearchWorker(new SearchWorkerParams {
-        OperationName = OperationsIds.DirectoryNamesSearch,
-        HintText = "Searching for matching directory names...",
-        Delay = TimeSpan.FromMilliseconds(Settings.AutoSearchDelayMsec),
-        TypedRequest = new SearchDirectoryNamesRequest {
-          SearchParams = new SearchParams {
-            SearchString = searchPattern,
-            MaxResults = Settings.SearchFileNamesMaxResults,
-            MatchCase = ViewModel.MatchCase,
-            MatchWholeWord = ViewModel.MatchWholeWord,
-            IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = true,
-            Regex = ViewModel.UseRegex,
-          }
-        },
-        ProcessError = (errorResponse, stopwatch) => {
-          var viewModel = CreateErrorResponseViewModel(errorResponse);
-          ViewModel.SetDirectoryNamesSearchResult(viewModel);
-        },
-        ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchDirectoryNamesResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} folder names among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
-            response.HitCount,
-            response.TotalCount,
-            stopwatch.Elapsed.TotalSeconds,
-            searchPattern);
-          var viewModel = CreateDirectoryNamesSearchResult(response.SearchResult, msg, true);
-          ViewModel.SetDirectoryNamesSearchResult(viewModel);
         }
       });
     }

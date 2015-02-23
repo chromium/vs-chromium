@@ -114,47 +114,6 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    public SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams) {
-      // taskCancellation is used to make sure we cancel previous tasks as fast
-      // as possible to avoid using too many CPU resources if the caller keeps
-      // asking us to search for things. Note that this assumes the caller is
-      // only interested in the result of the *last* query, while the previous
-      // queries will throw an OperationCanceled exception.
-      _taskCancellation.CancelAll();
-
-      var preProcessResult = PreProcessFileSystemNameSearch<DirectoryName>(
-        searchParams,
-        MatchDirectoryName,
-        MatchDirectoryRelativePath);
-      if (preProcessResult == null)
-        return SearchDirectoryNamesResult.Empty;
-
-      using (preProcessResult) {
-        var searchedFileCount = 0;
-        var matches = _currentFileDatabase.DirectoryNames
-          .AsParallel()
-          // We need the line below because of "Take" (.net 4.0 PLinq limitation)
-          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-          .WithCancellation(_taskCancellation.GetNewToken())
-          .Where(
-            item => {
-              if (!searchParams.IncludeSymLinks) {
-                if (_currentFileDatabase.IsContainedInSymLink(item))
-                  return false;
-              }
-              Interlocked.Increment(ref searchedFileCount);
-              return preProcessResult.Matcher(item);
-            })
-          .Take(searchParams.MaxResults)
-          .ToList();
-
-        return new SearchDirectoryNamesResult {
-          DirectoryNames = matches,
-          TotalCount = searchedFileCount
-        };
-      }
-    }
-
     public SearchTextResult SearchText(SearchParams searchParams) {
       // taskCancellation is used to make sure we cancel previous tasks as
       // fast as possible to avoid using too many CPU resources if the caller
@@ -479,22 +438,6 @@ namespace VsChromium.Server.Search {
 
     private bool MatchFileRelativePath(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
       return matcher.MatchFileName(fileName.RelativePath, comparer);
-    }
-
-    private bool MatchDirectoryName(IPathMatcher matcher, DirectoryName directoryName, IPathComparer comparer) {
-      // "Chromium" root directories make it through here, skip them.
-      if (directoryName.IsAbsoluteName)
-        return false;
-
-      return matcher.MatchDirectoryName(new RelativePath(directoryName.RelativePath.FileName), comparer);
-    }
-
-    private bool MatchDirectoryRelativePath(IPathMatcher matcher, DirectoryName directoryName, IPathComparer comparer) {
-      // "Chromium" root directories make it through here, skip them.
-      if (directoryName.IsAbsoluteName)
-        return false;
-
-      return matcher.MatchDirectoryName(directoryName.RelativePath, comparer);
     }
   }
 }

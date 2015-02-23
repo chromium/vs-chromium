@@ -17,20 +17,17 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IDictionary<FileName, FileData> _files;
     private readonly IList<FileName> _fileNames;
     private readonly IDictionary<DirectoryName, DirectoryData> _directories;
-    private readonly IList<DirectoryName> _directoryNames;
     private readonly IList<IFileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
     public FileDatabase(IDictionary<FileName, FileData> files,
                         IList<FileName> fileNames,
                         IDictionary<DirectoryName, DirectoryData> directories,
-                        IList<DirectoryName> directoryNames,
                         IList<IFileContentsPiece> fileContentsPieces,
                         long searchableFileCount) {
       _files = files;
       _fileNames = fileNames;
       _directories = directories;
-      _directoryNames = directoryNames;
       _fileContentsPieces = fileContentsPieces;
       _searchableFileCount = searchableFileCount;
     }
@@ -50,12 +47,6 @@ namespace VsChromium.Server.FileSystemDatabase {
     public IList<FileName> FileNames {
       get {
         return _fileNames;
-      }
-    }
-
-    public IList<DirectoryName> DirectoryNames {
-      get {
-        return _directoryNames;
       }
     }
 

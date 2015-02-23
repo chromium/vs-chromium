@@ -146,8 +146,6 @@
     <Compile Include="Ipc\TypedMessages\FilePositionsData.cs" />
     <Compile Include="Ipc\TypedMessages\FileSearchResult.cs" />
     <Compile Include="Ipc\TypedMessages\FileSystemEntryData.cs" />
-    <Compile Include="Ipc\TypedMessages\SearchDirectoryNamesRequest.cs" />
-    <Compile Include="Ipc\TypedMessages\SearchDirectoryNamesResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemVersionRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemVersionResponse.cs" />
     <Compile Include="Ipc\TypedMessages\SearchTextResponse.cs" />

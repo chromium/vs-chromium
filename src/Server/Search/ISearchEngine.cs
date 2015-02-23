@@ -14,7 +14,6 @@ namespace VsChromium.Server.Search {
     IFileDatabase CurrentFileDatabase { get; }
 
     SearchFileNamesResult SearchFileNames(SearchParams searchParams);
-    SearchDirectoryNamesResult SearchDirectoryNames(SearchParams searchParams);
     SearchTextResult SearchText(SearchParams searchParams);
     IEnumerable<FileExtract> GetFileExtracts(FullPath filename, IEnumerable<FilePositionSpan> spans, int maxLength);
 

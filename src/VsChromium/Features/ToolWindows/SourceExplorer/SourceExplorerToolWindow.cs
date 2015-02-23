@@ -89,7 +89,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get {
         switch (ExplorerControl.ViewModel.ActiveDisplay) {
           case SourceExplorerViewModel.DisplayKind.FileNameSearchResult:
-          case SourceExplorerViewModel.DisplayKind.DirectoryNameSearchResult:
           case SourceExplorerViewModel.DisplayKind.TextSearchResult:
             return true;
           default:
@@ -102,9 +101,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       switch (commandId.ID) {
         case (int)PkgCmdIdList.CmdidSearchFileNames:
           ExplorerControl.SearchFileNamesCombo.Focus();
-          break;
-        case (int)PkgCmdIdList.CmdidSearchDirectoryNames:
-          ExplorerControl.SearchDirectoryNamesCombo.Focus();
           break;
         case (int)PkgCmdIdList.CmdidSearchText:
           ExplorerControl.SearchTextCombo.Focus();

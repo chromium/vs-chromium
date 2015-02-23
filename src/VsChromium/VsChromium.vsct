@@ -86,15 +86,6 @@
           <LocCanonicalName>VsChromium.FindFileNames</LocCanonicalName>
         </Strings>
       </Button>
-      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" priority="0x0100" type="Button">
-        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
-        <CommandFlag>DefaultInvisible</CommandFlag>
-        <Strings>
-          <ButtonText>VsChromium Find Directory Names</ButtonText>
-          <CommandName>VsChromium - Find Directory Names</CommandName>
-          <LocCanonicalName>VsChromium.FindDirectoryNames</LocCanonicalName>
-        </Strings>
-      </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchText" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -327,7 +318,6 @@
   <KeyBindings>
     <!-- Note: VK_OEM_1 is the semicolon character on US keyboards. -->
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt" />
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchDirectoryNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchText" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
@@ -350,7 +340,6 @@
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
       <IDSymbol name="cmdidSourceExplorerToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
-      <IDSymbol name="cmdidSearchDirectoryNames" value="0x0103" />
       <IDSymbol name="cmdidSearchText" value="0x0104" />
       <IDSymbol name="cmdidGotoNextLocation" value="0x0105" />
       <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />

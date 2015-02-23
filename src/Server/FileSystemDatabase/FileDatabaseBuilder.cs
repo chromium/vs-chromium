@@ -88,7 +88,6 @@ namespace VsChromium.Server.FileSystemDatabase {
           fileDatabase.Files,
           fileDatabase.FileNames,
           fileDatabase.Directories,
-          fileDatabase.DirectoryNames,
           CreateFilePieces(filesWithContents),
           filesWithContents.Count);
       }
@@ -129,7 +128,6 @@ namespace VsChromium.Server.FileSystemDatabase {
           files,
           files.Keys.ToArray(),
           directories,
-          directories.Keys.ToArray(),
           searchableContentsCollection,
           filesWithContents.Count);
       }

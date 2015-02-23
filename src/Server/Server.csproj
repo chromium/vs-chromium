@@ -69,7 +69,6 @@
     <Compile Include="Ipc\ProtocolHandlers\IProtocolHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileExtractsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\UnregisterFileRequestHandler.cs" />
-    <Compile Include="Ipc\TypedMessageHandlers\SearchDirectoryNamesRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileSystemVersionRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\ITypedMessageRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\SearchTextRequestHandler.cs" />
@@ -122,7 +121,6 @@
     <Compile Include="Search\NullCompiledTextSearch.cs" />
     <Compile Include="Search\PerThreadCompiledTextSearchContainer.cs" />
     <Compile Include="Search\CompiledTextSearchContainer.cs" />
-    <Compile Include="Search\SearchDirectoryNamesResult.cs" />
     <Compile Include="Search\SearchTextResult.cs" />
     <Compile Include="Search\SearchFileNamesResult.cs" />
     <Compile Include="Search\TextSourceTextSearch.cs" />

@@ -17,14 +17,6 @@ namespace VsChromium.Server.FileSystemDatabase {
     IList<FileName> FileNames { get; }
 
     /// <summary>
-    /// The list of directory names suitable for directory name search.
-    /// 
-    /// Note: Return type is IList to allow efficient partitioning with
-    /// ".AsParallel()".
-    /// </summary>
-    IList<DirectoryName> DirectoryNames { get; }
-
-    /// <summary>
     /// Returns the list of entities with text contents suitable for text search.
     /// For large files, there is more than one <see cref="IFileContentsPiece"/>
     /// entry per file.

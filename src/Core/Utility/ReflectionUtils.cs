@@ -115,11 +115,13 @@ namespace VsChromium.Core.Utility {
         var destinationProperty = destinationProperties.FirstOrDefault(x => x.Name == destName);
         if (destinationProperty != null) {
           destinationProperty.SetValue(destination, sourceValue);
+#if false
           Logger.LogInfo("Copyging property value {0}-{5} from {1}.{2} to {3}.{4}",
             sourceValue,
             source.GetType().FullName, sourceProperty.Name,
             destination.GetType().FullName, destinationProperty.Name,
             destinationProperty.GetValue(destination));
+#endif
         } else if (throwOnExtraProperty) {
           throw new InvalidOperationException(string.Format(
             "Property \"{0}\" in destination type \"{1}\" not found from property \"{2}\" in source type \"{3}\".", 

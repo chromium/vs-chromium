@@ -13,7 +13,7 @@ using VsChromium.ToolsOptions;
 namespace VsChromium.Settings {
   [Export(typeof(IGlobalSettingsProvider))]
   public class GlobalSettingsProvider : IGlobalSettingsProvider {
-    private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
+    private readonly IToolsOptionsPageProvider _visualStudioPackageProvider;
     private readonly IEventBus _eventBus;
     private readonly Lazy<GlobalSettings> _globalSettings;
     private readonly int _writeThreadId = Thread.CurrentThread.ManagedThreadId;
@@ -21,7 +21,7 @@ namespace VsChromium.Settings {
 
     [ImportingConstructor]
     public GlobalSettingsProvider(
-      IVisualStudioPackageProvider visualStudioPackageProvider,
+      IToolsOptionsPageProvider visualStudioPackageProvider,
       IEventBus eventBus) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _eventBus = eventBus;
@@ -90,10 +90,10 @@ namespace VsChromium.Settings {
         throw new InvalidOperationException("Global Settings can only be mofidied on the UI thread.");
       }
 
-      var page = _visualStudioPackageProvider.Package.GetToolsOptionsPage<GeneralOptions>();
+      var page = _visualStudioPackageProvider.GetToolsOptionsPage<GeneralOptions>();
       ReflectionUtils.CopyDeclaredPublicProperties(page, "", globalSettings, "", throwOnExtraProperty: true);
 
-      var page2 = _visualStudioPackageProvider.Package.GetToolsOptionsPage<CodingStyleOptions>();
+      var page2 = _visualStudioPackageProvider.GetToolsOptionsPage<CodingStyleOptions>();
       ReflectionUtils.CopyDeclaredPublicProperties(page2, "", globalSettings, "CodingStyle", throwOnExtraProperty: true);
     }
 
@@ -106,11 +106,11 @@ namespace VsChromium.Settings {
         throw new InvalidOperationException("Global Settings can only be mofidied on the UI thread.");
       }
 
-      var page = _visualStudioPackageProvider.Package.GetToolsOptionsPage<GeneralOptions>();
+      var page = _visualStudioPackageProvider.GetToolsOptionsPage<GeneralOptions>();
       ReflectionUtils.CopyDeclaredPublicProperties(globalSettings, "", page, "", throwOnExtraProperty: false);
       page.SaveSettingsToStorage();
 
-      var page2 = _visualStudioPackageProvider.Package.GetToolsOptionsPage<CodingStyleOptions>();
+      var page2 = _visualStudioPackageProvider.GetToolsOptionsPage<CodingStyleOptions>();
       ReflectionUtils.CopyDeclaredPublicProperties(globalSettings, "CodingStyle", page2, "", throwOnExtraProperty: false);
       page2.SaveSettingsToStorage();
     }

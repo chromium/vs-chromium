@@ -52,7 +52,7 @@
           <ButtonText>Format Comment</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidVsChromiumCmdSet" id="cmdidSourceExplorerToolWindow" priority="0xF100" type="Button">
+      <Button guid="guidVsChromiumCmdSet" id="cmdidCodeSearchToolWindow" priority="0xF100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_VIEW_ORG_WINDOWS" />
         <Icon guid="guidSourceExplorerImages" id="Icon" />
         <Strings>
@@ -338,7 +338,7 @@
       <!-- Group is for adding context menu items to a item node -->
       <IDSymbol name="VsHierarchyFileNodeGroup" value="0x1023" />
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
-      <IDSymbol name="cmdidSourceExplorerToolWindow" value="0x0101" />
+      <IDSymbol name="cmdidCodeSearchToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
       <IDSymbol name="cmdidSearchText" value="0x0104" />
       <IDSymbol name="cmdidGotoNextLocation" value="0x0105" />

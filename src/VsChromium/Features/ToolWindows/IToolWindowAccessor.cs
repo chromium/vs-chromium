@@ -5,7 +5,7 @@ using VsChromium.Features.ToolWindows.CodeSearch;
 
 namespace VsChromium.Features.ToolWindows {
   public interface IToolWindowAccessor {
-    SourceExplorerToolWindow SourceExplorer { get; }
+    CodeSearchToolWindow CodeSearch { get; }
     BuildExplorerToolWindow BuildExplorer { get; }
 
     IVsWindowFrame FindToolWindow(Guid guid);

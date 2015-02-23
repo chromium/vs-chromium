@@ -21,7 +21,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public override CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchFileNames); } }
 
     public override void Execute(object sender, EventArgs e) {
-      _toolWindowAccessor.SourceExplorer.FocusSearchTextBox(CommandId);
+      _toolWindowAccessor.CodeSearch.FocusSearchTextBox(CommandId);
     }
   }
 }

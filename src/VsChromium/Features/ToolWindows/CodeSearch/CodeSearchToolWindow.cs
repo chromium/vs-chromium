@@ -24,13 +24,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// implementation of the IVsUIElementPane interface.
   /// </summary>
   [Guid(GuidList.GuidSourceExplorerToolWindowString)]
-  public class SourceExplorerToolWindow : ToolWindowPane, IOleCommandTarget {
+  public class CodeSearchToolWindow : ToolWindowPane, IOleCommandTarget {
     private VsWindowFrameNotifyHandler _frameNotify;
 
     /// <summary>
     /// Standard constructor for the tool window.
     /// </summary>
-    public SourceExplorerToolWindow()
+    public CodeSearchToolWindow()
       : base(null) {
       // Set the window title reading it from the resources.
       Caption = Resources.SourceExplorerToolWindowTitle;

@@ -382,7 +382,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerToolWindow.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchToolWindow.cs" />
     <Compile Include="Views\IOpenDocumentHelper.cs" />
     <Compile Include="Views\OpenDocumentHelper.cs" />
     <Compile Include="Views\IViewHandler.cs" />

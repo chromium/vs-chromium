@@ -44,9 +44,9 @@ namespace VsChromium.Features.ToolWindows {
       return windowFrame;
     }
 
-    public SourceExplorerToolWindow SourceExplorer {
+    public CodeSearchToolWindow CodeSearch {
       get {
-        return GetToolWindow<SourceExplorerToolWindow>(GuidList.GuidSourceExplorerToolWindow);
+        return GetToolWindow<CodeSearchToolWindow>(GuidList.GuidSourceExplorerToolWindow);
       }
     }
 

@@ -25,7 +25,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public override void Execute(object sender, EventArgs e) {
-      _toolWindowAccessor.SourceExplorer.FocusSearchTextBox(CommandId);
+      _toolWindowAccessor.CodeSearch.FocusSearchTextBox(CommandId);
     }
   }
 }

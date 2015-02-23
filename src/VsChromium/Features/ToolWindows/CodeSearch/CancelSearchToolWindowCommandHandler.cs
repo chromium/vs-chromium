@@ -13,9 +13,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// instead of activating the default document
   /// </summary>
   public class CancelSearchToolWindowCommandHandler : PackageCommandHandlerBase {
-    private readonly SourceExplorerToolWindow _window;
+    private readonly CodeSearchToolWindow _window;
 
-    public CancelSearchToolWindowCommandHandler(SourceExplorerToolWindow window) {
+    public CancelSearchToolWindowCommandHandler(CodeSearchToolWindow window) {
       _window = window;
     }
 

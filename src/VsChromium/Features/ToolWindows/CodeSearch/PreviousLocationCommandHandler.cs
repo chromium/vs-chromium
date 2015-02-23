@@ -9,9 +9,9 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class PreviousLocationCommandHandler : PackageCommandHandlerBase {
-    private readonly SourceExplorerToolWindow _window;
+    private readonly CodeSearchToolWindow _window;
 
-    public PreviousLocationCommandHandler(SourceExplorerToolWindow window) {
+    public PreviousLocationCommandHandler(CodeSearchToolWindow window) {
       _window = window;
     }
 

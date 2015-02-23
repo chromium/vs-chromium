@@ -9,9 +9,9 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CancelSearchCommandHandler : PackageCommandHandlerBase {
-    private readonly SourceExplorerToolWindow _window;
+    private readonly CodeSearchToolWindow _window;
 
-    public CancelSearchCommandHandler(SourceExplorerToolWindow window) {
+    public CancelSearchCommandHandler(CodeSearchToolWindow window) {
       _window = window;
     }
 

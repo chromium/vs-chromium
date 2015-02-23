@@ -9,11 +9,11 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   [Export(typeof(IPackageCommandHandler))]
-  public class ShowSourceExplorerCommandHandler : ShowToolWindowCommandHandler<SourceExplorerToolWindow> {
+  public class ShowSourceExplorerCommandHandler : ShowToolWindowCommandHandler<CodeSearchToolWindow> {
 
     [ImportingConstructor]
     public ShowSourceExplorerCommandHandler(IVisualStudioPackageProvider provider)
-      : base(provider, (int) PkgCmdIdList.CmdidSourceExplorerToolWindow) {
+      : base(provider, (int) PkgCmdIdList.CmdidCodeSearchToolWindow) {
     }
   }
 }

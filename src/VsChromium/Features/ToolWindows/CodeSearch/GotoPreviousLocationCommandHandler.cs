@@ -27,7 +27,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public override bool Supported {
       get {
-        var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(SourceExplorerToolWindow), 0, false) as SourceExplorerToolWindow;
+        var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(CodeSearchToolWindow), 0, false) as CodeSearchToolWindow;
         if (window == null)
           return false;
         return window.HasPreviousLocation();
@@ -35,7 +35,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public override void Execute(object sender, EventArgs e) {
-      var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(SourceExplorerToolWindow), 0, false) as SourceExplorerToolWindow;
+      var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(CodeSearchToolWindow), 0, false) as CodeSearchToolWindow;
       if (window == null)
         return;
       window.NavigateToPreviousLocation();

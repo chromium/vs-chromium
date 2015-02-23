@@ -12,7 +12,7 @@ namespace VsChromium.Features.AutoUpdate {
     }
 
     public void NotifyUpdate(UpdateInfo updateInfo) {
-      _toolWindowAccessor.SourceExplorer.NotifyPackageUpdate(updateInfo);
+      _toolWindowAccessor.CodeSearch.NotifyPackageUpdate(updateInfo);
     }
   }
 }

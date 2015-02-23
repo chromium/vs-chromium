@@ -594,10 +594,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         OperationName = OperationsIds.FileNamesSearch,
         HintText = "Searching for matching file names...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
-        TypedRequest = new SearchFileNamesRequest {
+        TypedRequest = new SearchFilePathsRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = Settings.SearchFileNamesMaxResults,
+            MaxResults = Settings.SearchFilePathsMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -610,7 +610,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           ViewModel.SetFileNamesSearchResult(viewModel);
         },
         ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchFileNamesResponse)typedResponse);
+          var response = ((SearchFilePathsResponse)typedResponse);
           var msg = string.Format("Found {0:n0} file names among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
             response.HitCount,
             response.TotalCount,

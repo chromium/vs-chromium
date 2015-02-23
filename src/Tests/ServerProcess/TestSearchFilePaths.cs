@@ -14,7 +14,7 @@ using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
-  public class TestSearchFileNames : TestServerBase {
+  public class TestSearchFilePaths : TestServerBase {
     private static CompositionContainer _container;
     private static ITypedRequestProcessProxy _server;
     private static FileInfo _testFile;
@@ -35,7 +35,7 @@ namespace VsChromium.Tests.ServerProcess {
 
     [TestMethod]
     public void SingleOccurrenceWorks() {
-      VerifySearchFileNamesResponse(_server, _testFile.Name, _testFile.Directory, _testFile.Name, 1);
+      VerifySearchFilePathsResponse(_server, _testFile.Name, _testFile.Directory, _testFile.Name, 1);
     }
 
     [TestMethod]
@@ -43,7 +43,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string fileName = "file_present_three_times.txt";
       const string searchPattern = "file_present_three_times.txt";
 
-      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 3);
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 3);
     }
 
     [TestMethod]
@@ -51,7 +51,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string fileName = "file_present_three_times.txt";
       const string searchPattern = "file_present_*_times.*";
 
-      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 3);
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 3);
     }
 
     [TestMethod]
@@ -59,7 +59,7 @@ namespace VsChromium.Tests.ServerProcess {
       const string searchPattern = "*.txt;*.py";
       const string fileName = "";
 
-      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
     }
 
     [TestMethod]
@@ -67,16 +67,16 @@ namespace VsChromium.Tests.ServerProcess {
       const string searchPattern = ".txt;.py";
       const string fileName = "";
 
-      VerifySearchFileNamesResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
     }
 
-    private static void VerifySearchFileNamesResponse(
+    private static void VerifySearchFilePathsResponse(
       ITypedRequestProcessProxy server,
       string searchPattern,
       DirectoryInfo chromiumDirectory,
       string fileName,
       int occurrenceCount) {
-      var response = SendRequest<SearchFileNamesResponse>(server, new SearchFileNamesRequest {
+      var response = SendRequest<SearchFilePathsResponse>(server, new SearchFilePathsRequest {
         SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,

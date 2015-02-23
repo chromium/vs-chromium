@@ -13,7 +13,7 @@ namespace VsChromium.Server.Search {
   public interface ISearchEngine {
     IFileDatabase CurrentFileDatabase { get; }
 
-    SearchFileNamesResult SearchFileNames(SearchParams searchParams);
+    SearchFilePathsResult SearchFilePaths(SearchParams searchParams);
     SearchCodeResult SearchCode(SearchParams searchParams);
     IEnumerable<FileExtract> GetFileExtracts(FullPath filename, IEnumerable<FilePositionSpan> spans, int maxLength);
 

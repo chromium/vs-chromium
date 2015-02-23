@@ -10,15 +10,15 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   [Export(typeof(IPackageCommandHandler))]
-  public class SearchFileNamesCommandHandler : PackageCommandHandlerBase {
+  public class SearchFilePathsCommandHandler : PackageCommandHandlerBase {
     private readonly IToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public SearchFileNamesCommandHandler(IToolWindowAccessor toolWindowAccessor) {
+    public SearchFilePathsCommandHandler(IToolWindowAccessor toolWindowAccessor) {
       _toolWindowAccessor = toolWindowAccessor;
     }
 
-    public override CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchFileNames); } }
+    public override CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchFilePaths); } }
 
     public override void Execute(object sender, EventArgs e) {
       _toolWindowAccessor.CodeSearch.FocusSearchCodeBox(CommandId);

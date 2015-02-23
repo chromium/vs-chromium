@@ -52,7 +52,7 @@
     <Compile Include="ServerProcess\TestSearchCode.cs" />
     <Compile Include="ServerProcess\TestServerPerf.cs" />
     <Compile Include="ServerProcess\TestServerBase.cs" />
-    <Compile Include="ServerProcess\TestSearchFileNames.cs" />
+    <Compile Include="ServerProcess\TestSearchFilePaths.cs" />
     <Compile Include="Core\TestFileNameMatching.cs" />
     <Compile Include="Core\TestCollections.cs" />
     <Compile Include="NativeInterop\TestAsciiSearch.cs" />

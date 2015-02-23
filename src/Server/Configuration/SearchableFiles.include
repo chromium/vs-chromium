@@ -1,5 +1,5 @@
 ﻿#
-# This file is used to determine which files should be included in the "Search File Contents"
+# This file is used to determine which files should be included in the "Search Code"
 # feature.
 #
 # Note that the list of files considered is already pre-filtered by SearchFiles.ignore file.

@@ -226,7 +226,7 @@
           </Button>
           <!-- Row 1 -->
           <TextBlock Grid.Row="1" Grid.Column="0" Text="File path:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
-          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFileNamesCombo">
+          <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFilePathsCombo">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type file name pattern to search for. 
@@ -238,7 +238,7 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchFileNames_Click">
+          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchFilePaths_Click">
             <Button.ToolTip>
               <TextBlock Text="Search"/>
             </Button.ToolTip>

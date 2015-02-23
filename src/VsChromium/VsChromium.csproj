@@ -308,7 +308,7 @@
     <Compile Include="Views\IFileRegistrationRequestService.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\TextDocumentFactoryObserver.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\SearchCodeCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SearchFileNamesCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SearchFilePathsCommandHandler.cs" />
     <Compile Include="Views\FileRegistrationRequestService.cs" />
     <Compile Include="Features\FormatComment\CommentType.cs" />
     <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />

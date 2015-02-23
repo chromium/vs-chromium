@@ -54,10 +54,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       InitComboBox(SearchCodeCombo, new ComboBoxInfo {
         TextChanged = text => { ViewModel.SearchCodeValue = text; },
         SearchFunction = RefreshSearchResults,
-        NextElement = SearchFileNamesCombo,
+        NextElement = SearchFilePathsCombo,
       });
-      InitComboBox(SearchFileNamesCombo, new ComboBoxInfo {
-        TextChanged = text => { ViewModel.SearchFileNamesValue = text; },
+      InitComboBox(SearchFilePathsCombo, new ComboBoxInfo {
+        TextChanged = text => { ViewModel.SearchFilePathsValue = text; },
         SearchFunction = RefreshSearchResults,
         PreviousElement = SearchCodeCombo,
         NextElement = FileTreeView,
@@ -284,17 +284,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void RefreshSearchResults(bool immediate) {
       if (string.IsNullOrWhiteSpace(SearchCodeCombo.Text) &&
-          string.IsNullOrWhiteSpace(SearchFileNamesCombo.Text)) {
+          string.IsNullOrWhiteSpace(SearchFilePathsCombo.Text)) {
         Controller.CancelSearch();
         return;
       }
 
       if (string.IsNullOrWhiteSpace(SearchCodeCombo.Text)) {
-        Controller.SearchFilesNames(SearchFileNamesCombo.Text, immediate);
+        Controller.SearchFilesNames(SearchFilePathsCombo.Text, immediate);
         return;
       }
 
-      Controller.SearchCode(SearchCodeCombo.Text, SearchFileNamesCombo.Text, immediate);
+      Controller.SearchCode(SearchCodeCombo.Text, SearchFilePathsCombo.Text, immediate);
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -364,7 +364,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           var parent = item.ParentViewModel as RootTreeViewItemViewModel;
           if (parent != null) {
             if (item == parent.Children.FirstOrDefault()) {
-              SearchFileNamesCombo.Focus();
+              SearchFilePathsCombo.Focus();
               e.Handled = true;
             }
           }
@@ -411,12 +411,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       Controller.CancelSearch();
     }
 
-    private void SearchFileNames_Click(object sender, RoutedEventArgs e) {
+    private void SearchFilePaths_Click(object sender, RoutedEventArgs e) {
       RefreshSearchResults(true);
     }
 
     private void ClearFileNamesPattern_Click(object sender, RoutedEventArgs e) {
-      SearchFileNamesCombo.Text = "";
+      SearchFilePathsCombo.Text = "";
       RefreshSearchResults(true);
     }
 

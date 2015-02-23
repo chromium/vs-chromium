@@ -10,20 +10,20 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
-  public class SearchFileNamesRequestHandler : TypedMessageRequestHandler {
+  public class SearchFilePathsRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly ISearchEngine _searchEngine;
 
     [ImportingConstructor]
-    public SearchFileNamesRequestHandler(ISearchEngine searchEngine, IFileSystemNameFactory fileSystemNameFactory) {
+    public SearchFilePathsRequestHandler(ISearchEngine searchEngine, IFileSystemNameFactory fileSystemNameFactory) {
       _searchEngine = searchEngine;
       _fileSystemNameFactory = fileSystemNameFactory;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      var request = (SearchFileNamesRequest)typedRequest;
-      var result = _searchEngine.SearchFileNames(request.SearchParams);
-      return new SearchFileNamesResponse {
+      var request = (SearchFilePathsRequest)typedRequest;
+      var result = _searchEngine.SearchFilePaths(request.SearchParams);
+      return new SearchFilePathsResponse {
         SearchResult = FileSystemNameFactoryExtensions.ToFlatSearchResult(_fileSystemNameFactory, result.FileNames),
         HitCount = result.FileNames.Count,
         TotalCount = result.TotalCount

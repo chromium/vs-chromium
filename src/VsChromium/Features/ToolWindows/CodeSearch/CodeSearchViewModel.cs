@@ -21,7 +21,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _includeSymLinks;
     private string _statusText;
     private string _searchCodeValue;
-    private string _searchFileNamesValue;
+    private string _searchFilePathsValue;
 
     public enum DisplayKind {
       FileSystemTree,
@@ -210,7 +210,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public bool RefreshSearchResultsEnabled {
       get {
-        return !string.IsNullOrEmpty(SearchFileNamesValue) || !string.IsNullOrEmpty(SearchCodeValue);
+        return !string.IsNullOrEmpty(SearchFilePathsValue) || !string.IsNullOrEmpty(SearchCodeValue);
       }
     }
 
@@ -290,13 +290,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public string SearchFileNamesValue {
-      get { return _searchFileNamesValue; }
+    public string SearchFilePathsValue {
+      get { return _searchFilePathsValue; }
       set {
-        if (value == _searchFileNamesValue)
+        if (value == _searchFilePathsValue)
           return;
-        _searchFileNamesValue = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFileNamesValue));
+        _searchFilePathsValue = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFilePathsValue));
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
       }
     }

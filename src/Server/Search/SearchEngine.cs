@@ -73,7 +73,7 @@ namespace VsChromium.Server.Search {
 
     public IFileDatabase CurrentFileDatabase { get { return _currentFileDatabase; } }
 
-    public SearchFileNamesResult SearchFileNames(SearchParams searchParams) {
+    public SearchFilePathsResult SearchFilePaths(SearchParams searchParams) {
       // taskCancellation is used to make sure we cancel previous tasks as fast
       // as possible to avoid using too many CPU resources if the caller keeps
       // asking us to search for things. Note that this assumes the caller is
@@ -86,7 +86,7 @@ namespace VsChromium.Server.Search {
         MatchFileName,
         MatchFileRelativePath);
       if (preProcessResult == null)
-        return SearchFileNamesResult.Empty;
+        return SearchFilePathsResult.Empty;
 
       using (preProcessResult) {
         var searchedFileCount = 0;
@@ -107,7 +107,7 @@ namespace VsChromium.Server.Search {
           .Take(searchParams.MaxResults)
           .ToList();
 
-        return new SearchFileNamesResult {
+        return new SearchFilePathsResult {
           FileNames = matches,
           TotalCount = searchedFileCount
         };

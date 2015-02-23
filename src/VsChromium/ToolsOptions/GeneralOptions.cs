@@ -24,7 +24,7 @@ namespace VsChromium.ToolsOptions {
 
     private void SetDefaults() {
       SearchCodeMaxResults = 10 * 1000;
-      SearchFileNamesMaxResults = 2 * 1000;
+      SearchFilePathsMaxResults = 2 * 1000;
       MaxTextExtractLength = 120;
       AutoSearchDelayMsec = 20;
 
@@ -60,9 +60,9 @@ namespace VsChromium.ToolsOptions {
     public int SearchCodeMaxResults { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
-    [DisplayName("Maximum number of results for Find File Paths")]
-    [Description("Limit the numer of entries returned when searching for file names. Higher values may slow down the User Interface.")]
-    public int SearchFileNamesMaxResults { get; set; }
+    [DisplayName("Maximum number of results for Search File Paths")]
+    [Description("Limit the numer of entries returned when searching for file paths. Higher values may slow down the User Interface.")]
+    public int SearchFilePathsMaxResults { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of characters in text extracts")]
@@ -71,7 +71,7 @@ namespace VsChromium.ToolsOptions {
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Auto Search delay (milliseconds)")]
-    [Description("Time interval to wait after user input before displaying search results. Lower value may slow down the User Interface. Higher values may render the User Interface less responsive.")]
+    [Description("Time interval to wait after user input before displaying search results. Lower value may slow down the User Interface.")]
     public int AutoSearchDelayMsec { get; set; }
 
     [Category(CodeSearchOptionsCategory)]

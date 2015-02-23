@@ -9,7 +9,7 @@ namespace VsChromium.Settings {
   public class GlobalSettings : INotifyPropertyChanged {
     private bool _enableVsChromiumProjects;
     private int _maxTextExtractLength;
-    private int _searchFileNamesMaxResults;
+    private int _searchFilePathsMaxResults;
     private int _searchCodeMaxResults;
     private int _autoSearchDelayMsec;
     private bool _searchMatchCase;
@@ -64,15 +64,15 @@ namespace VsChromium.Settings {
       }
     }
 
-    public int SearchFileNamesMaxResults {
-      get { return _searchFileNamesMaxResults; }
+    public int SearchFilePathsMaxResults {
+      get { return _searchFilePathsMaxResults; }
       set {
         value = InRange(value, 100, 1000 * 1000);
-        if (value == _searchFileNamesMaxResults)
+        if (value == _searchFilePathsMaxResults)
           return;
 
-        _searchFileNamesMaxResults = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFileNamesMaxResults));
+        _searchFilePathsMaxResults = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFilePathsMaxResults));
 
       }
     }

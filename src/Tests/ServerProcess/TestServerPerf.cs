@@ -54,7 +54,7 @@ namespace VsChromium.Tests.ServerProcess {
 
     private static void TestSearch(ITypedRequestProcessProxy server) {
       while (true) {
-        var response = SendRequest<SearchFileNamesResponse>(server, new SearchFileNamesRequest {
+        var response = SendRequest<SearchFilePathsResponse>(server, new SearchFilePathsRequest {
           SearchParams = {
             SearchString = "histogram"
           }

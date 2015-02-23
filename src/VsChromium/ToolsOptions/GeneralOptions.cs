@@ -95,8 +95,8 @@ namespace VsChromium.ToolsOptions {
     public bool SearchIncludeSymLinks { get; set; }
 
     [Category("Solution Explorer Integration")]
-    [DisplayName("Enable \"VS Chromium Projects\" entry")]
-    [Description("Show the list of \"VS Chromium Projects\" and their files in Solution Explorer")]
+    [DisplayName("Enable \"VS Chromium Projects - Source Explorer\" entry")]
+    [Description("Show the list of indexed files and directories in Solution Explorer under a top level \"VS Chromium Projects - Source Explorer\" entry")]
     public bool EnableVsChromiumProjects { get; set; }
   }
 }

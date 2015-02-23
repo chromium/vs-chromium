@@ -167,7 +167,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void SetupRootNode(NodeViewModel root) {
-      var name = "VS Chromium Projects";
+      var name = "VS Chromium Projects - Source Explorer";
       root.Name = name;
       root.Caption = name;
       root.Template = _templateFactory.RootNodeTemplate;

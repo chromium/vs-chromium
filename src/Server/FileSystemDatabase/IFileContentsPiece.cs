@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using VsChromium.Core.Utility;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
@@ -17,6 +18,7 @@ namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileContentsPiece {
     FileName FileName { get; }
     int FileId { get; }
+    int ByteLength { get; }
 
     IList<TextRange> FindAll(
       CompiledTextSearchData compiledTextSearchData,

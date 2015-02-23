@@ -15,6 +15,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Features.ToolWindows.BuildExplorer;
 using VsChromium.Features.ToolWindows.SourceExplorer;
 using VsChromium.Package;
+using VsChromium.ToolsOptions;
 using IServiceProvider = System.IServiceProvider;
 
 namespace VsChromium {
@@ -27,10 +28,63 @@ namespace VsChromium {
   [ProvideToolWindow(typeof(SourceExplorerToolWindow))]
   [ProvideToolWindow(typeof(BuildExplorerToolWindow))]
   [Guid(GuidList.GuidVsChromiumPkgString)]
+  [ProvideOptionPage(
+    typeof(GeneralOptions), // Type of page to open
+    "VS Chromium", // Non localized version of the top level category
+    "General", // Non localized version of the page name within the category
+    210, // Localized resource id of the top level category 
+    211, // Loalized resource id of the page name within the category
+    true, // Support automation
+    // List of keywords for Tools|Options search
+    new []{"VS Chromium", "Chrome", "Code Search", "Solution Explorer", "Debugging", "Search", "Index"},
+    SupportsProfiles = true)
+  ]
+  [ProvideOptionPage(
+    typeof(DebuggingOptions), // Type of page to open
+    "VS Chromium", // Non localized version of the top level category
+    "Debugging", // Non localized version of the page name within the category
+    210, // Localized resource id of the top level category 
+    212, // Loalized resource id of the page name within the category
+    true, // Support automation
+    // List of keywords for Tools|Options search
+    new[] { "VS Chromium", "Chrome", "Debugging" },
+    SupportsProfiles = true)
+  ]
+  [ProvideOptionPage(
+    typeof(CodingStyleOptions), // Type of page to open
+    "VS Chromium", // Non localized version of the top level category
+    "Coding Style", // Non localized version of the page name within the category
+    210, // Localized resource id of the top level category 
+    213, // Loalized resource id of the page name within the category
+    true, // Support automation
+    // List of keywords for Tools|Options search
+    new[] { "VS Chromium", "Chrome", "Coding Style", "Style" },
+    SupportsProfiles = true)
+  ]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage, IOleCommandTarget {
     private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
 
     public VsPackage() {
+      Logger.LogInfo("{0} constructor.", this.GetType().FullName);
+    }
+
+    private static bool _loaded = false;
+    public static void EnsureLoaded() {
+      // Try loading only once since this is a heavy operation.
+      if (_loaded)
+        return;
+      _loaded = true;
+
+      Logger.WrapActionInvocation(
+        () => {
+          var shell = GetGlobalService(typeof (SVsShell)) as IVsShell;
+          if (shell == null)
+            return;
+
+          IVsPackage package;
+          var packageToBeLoadedGuid = new Guid(GuidList.GuidVsChromiumPkgString);
+          shell.LoadPackage(ref packageToBeLoadedGuid, out package);
+        });
     }
 
     public IComponentModel ComponentModel {
@@ -77,8 +131,13 @@ namespace VsChromium {
       get { return _disposeContainer; }
     }
 
+    public T GetToolsOptionsPage<T>() where T : DialogPage {
+      return (T)GetDialogPage(typeof(T));
+    }
+
     protected override void Dispose(bool disposing) {
       if (disposing) {
+        Logger.LogInfo("{0}.Dispose()", this.GetType().FullName);
         try {
           if (ComponentModel != null) {
             var exports = ComponentModel.DefaultExportProvider.GetExportedValues<IPackagePostDispose>();
@@ -97,6 +156,8 @@ namespace VsChromium {
     }
 
     protected override void Initialize() {
+      Logger.LogInfo("{0}.Initialize()", this.GetType().FullName);
+
       base.Initialize();
       try {
         PreInitialize();

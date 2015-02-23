@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Commands;
 using VsChromium.Views;
 
-namespace VsChromium {
+namespace VsChromium.Package {
   /// <summary>
   /// Ensure the VsPackage is initialized as soon as a view is created. We need
   /// this because we rely on ITextDocumentFactory observers to track document
@@ -25,8 +25,6 @@ namespace VsChromium {
     private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
     private readonly IFileRegistrationRequestService _fileRegistrationRequestService;
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;
-
-    private bool _loaded;
 
     [ImportingConstructor]
     public PackageInitializerViewHandler(
@@ -43,18 +41,7 @@ namespace VsChromium {
     public int Priority { get { return int.MaxValue; } }
 
     public void Attach(IVsTextView textViewAdapter) {
-      // Try loading only once since this is a heavy operation.
-      if (_loaded)
-        return;
-      _loaded = true;
-
-      var shell = _serviceProvider.GetService(typeof(SVsShell)) as IVsShell;
-      if (shell == null)
-        return;
-
-      IVsPackage package = null;
-      var packageToBeLoadedGuid = new Guid(GuidList.GuidVsChromiumPkgString);
-      shell.LoadPackage(ref packageToBeLoadedGuid, out package);
+      VsPackage.EnsureLoaded();
 
       // Ensure document is seen as loaded - This is necessary for the first
       // opened editor because the document is open before the package has a

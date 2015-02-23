@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Threads;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -38,6 +40,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IEventBus _eventBus;
+    private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly TaskCancellation _taskCancellation;
 
     /// <summary>
@@ -54,7 +57,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       IClipboard clipboard,
       ISynchronizationContextProvider synchronizationContextProvider,
       IOpenDocumentHelper openDocumentHelper,
-      IEventBus eventBus) {
+      IEventBus eventBus,
+      IGlobalSettingsProvider globalSettingsProvider) {
       _control = control;
       _uiRequestProcessor = uiRequestProcessor;
       _progressBarTracker = progressBarTracker;
@@ -64,7 +68,34 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _synchronizationContextProvider = synchronizationContextProvider;
       _openDocumentHelper = openDocumentHelper;
       _eventBus = eventBus;
+      _globalSettingsProvider = globalSettingsProvider;
       _taskCancellation = new TaskCancellation();
+
+      // Ensure initial values are in sync.
+      GlobalSettingsOnPropertyChanged(null, null);
+
+      // Ensure changes to ViewModel are synchronized to global settings
+      ViewModel.PropertyChanged += ViewModelOnPropertyChanged;
+
+      // Ensure changes to global settings are synchronized to ViewModel
+      _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
+    }
+
+    private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
+      var setting = _globalSettingsProvider.GlobalSettings;
+      ViewModel.MatchCase = setting.SearchMatchCase;
+      ViewModel.MatchWholeWord = setting.SearchMatchWholeWord;
+      ViewModel.UseRegex = setting.SearchUseRegEx;
+      ViewModel.IncludeSymLinks = setting.SearchIncludeSymLinks;
+    }
+
+    private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
+      var settings = _globalSettingsProvider.GlobalSettings;
+      var model = (SourceExplorerViewModel)sender;
+      settings.SearchMatchCase = model.MatchCase;
+      settings.SearchMatchWholeWord = model.MatchWholeWord;
+      settings.SearchUseRegEx = model.UseRegex;
+      settings.SearchIncludeSymLinks = model.IncludeSymLinks;
     }
 
     public SourceExplorerViewModel ViewModel { get { return _control.ViewModel; } }
@@ -72,6 +103,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
     public IClipboard Clipboard { get { return _clipboard; } }
     public IWindowsExplorer WindowsExplorer { get { return _windowsExplorer; } }
+    public GlobalSettings Settings { get { return _globalSettingsProvider.GlobalSettings; } }
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
@@ -549,21 +581,43 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
       // Set tree as the new active tree.
       ViewModel.SetFileSystemTree(viewModel);
+      FetchDatabaseStatistics();
     }
 
-    public void SearchFilesNames(string searchPattern) {
+    public void FilesLoaded() {
+      FetchDatabaseStatistics();
+    }
+
+    private void FetchDatabaseStatistics() {
+      _uiRequestProcessor.Post(
+        new UIRequest {
+          Id = "GetDatabaseStatisticsRequest",
+          Request = new GetDatabaseStatisticsRequest(),
+          OnSuccess = r => {
+            var response = (GetDatabaseStatisticsResponse) r;
+            var message =
+              String.Format(
+                "Index: {0:n0} files - {1:n0} MB",
+                response.IndexedFileCount,
+                response.IndexedFileSize / 1024L / 1024L);
+            ViewModel.StatusText = message;
+          }
+        });
+    }
+
+    public void SearchFilesNames(string searchPattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileNamesSearch,
         HintText = "Searching for matching file names...",
-        Delay = GlobalSettings.SearchFileNamesDelay,
+        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchFileNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = GlobalSettings.SearchFileNamesMaxResults,
+            MaxResults = Settings.SearchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = ViewModel.UseRe2Regex,
+            UseRe2Engine = true,
             Regex = ViewModel.UseRegex,
           }
         },
@@ -588,15 +642,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.DirectoryNamesSearch,
         HintText = "Searching for matching directory names...",
-        Delay = GlobalSettings.SearchDirectoryNamesDelay,
+        Delay = TimeSpan.FromMilliseconds(Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchDirectoryNamesRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            MaxResults = GlobalSettings.SearchDirectoryNamesMaxResults,
+            MaxResults = Settings.SearchFileNamesMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = ViewModel.UseRe2Regex,
+            UseRe2Engine = true,
             Regex = ViewModel.UseRegex,
           }
         },
@@ -617,20 +671,20 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       });
     }
 
-    public void SearchText(string searchPattern, string fileNamePattern) {
+    public void SearchText(string searchPattern, string fileNamePattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
         HintText = "Searching for matching text in files...",
-        Delay = GlobalSettings.SearchTextDelay,
+        Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchTextRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             FileNamePattern = fileNamePattern,
-            MaxResults = GlobalSettings.SearchTextMaxResults,
+            MaxResults = Settings.FindInFilesMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = ViewModel.UseRe2Regex,
+            UseRe2Engine = true,
             Regex = ViewModel.UseRegex,
           }
         },
@@ -645,7 +699,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
             response.SearchedFileCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
-          bool expandAll = response.HitCount < GlobalSettings.SearchTextExpandMaxResults;
+          bool expandAll = response.HitCount < HardCodedSettings.SearchTextExpandMaxResults;
           var viewModel = CreateTextSearchResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetTextSearchResult(viewModel);
         }

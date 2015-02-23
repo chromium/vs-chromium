@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
@@ -14,8 +15,10 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Package.CommandHandler;
@@ -32,6 +35,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IEventBus _eventBus;
+    private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
 
@@ -46,7 +50,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
       IUIRequestProcessor uiRequestProcessor,
-      IEventBus eventBus) {
+      IEventBus eventBus,
+      IGlobalSettingsProvider globalSettingsProvider) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -57,6 +62,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _windowsExplorer = windowsExplorer;
       _uiRequestProcessor = uiRequestProcessor;
       _eventBus = eventBus;
+      _globalSettingsProvider = globalSettingsProvider;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
@@ -70,9 +76,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       _fileSystemTreeSource.TreeReceived += OnTreeReceived;
       _fileSystemTreeSource.ErrorReceived += OnErrorReceived;
-
-      // Force getting the tree and refreshing the ui hierarchy.
-      _fileSystemTreeSource.Fetch();
 
       var mcs = _visualStudioPackageProvider.Package.OleMenuCommandService;
       if (mcs != null) {
@@ -122,57 +125,77 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPath),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.Path)
+        Execute = args => _clipboard.SetText(args.Node.FullPath)
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPathPosix),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.Path))
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyRelativePath),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.GetRelativePath())
+        Execute = args => _clipboard.SetText(args.Node.RelativePath)
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyRelativePathPosix),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.GetRelativePath()))
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.RelativePath))
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenFolderInExplorer),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _windowsExplorer.OpenFolder(args.Node.Path)
+        Execute = args => _windowsExplorer.OpenFolder(args.Node.FullPath)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPath),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.Path)
+        Execute = args => _clipboard.SetText(args.Node.FullPath)
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPathPosix),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.Path))
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePath),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.GetRelativePath())
+        Execute = args => _clipboard.SetText(args.Node.RelativePath)
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePathPosix),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.GetRelativePath()))
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.RelativePath))
       });
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenContainingFolder),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.Path)
+        Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.FullPath)
       });
 
       _nodeTemplateFactory.Activate();
       _eventBus.RegisterHandler("ShowInSolutionExplorer", ShowInSolutionExplorerHandler);
+
+      _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
+      SynchronizeHierarchy();
+    }
+
+    private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
+      var name = args.PropertyName;
+      var model = (GlobalSettings) sender;
+      if (name == ReflectionUtils.GetPropertyName(model, x => x.EnableVsChromiumProjects)) {
+        SynchronizeHierarchy();
+      }
+    }
+
+    private void SynchronizeHierarchy() {
+      // Force getting the tree and refreshing the ui hierarchy.
+      if (_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects) {
+        _fileSystemTreeSource.Fetch();
+      } else {
+        _hierarchy.Disable();
+      }
     }
 
     private void ShowInSolutionExplorerHandler(object sender, EventArgs eventArgs) {
@@ -238,12 +261,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private void OpenDocument(NodeViewModel node, bool openWith = false) {
       Logger.WrapActionInvocation(
         () => {
-          if (!_fileSystem.FileExists(new FullPath(node.Path)))
+          if (!_fileSystem.FileExists(new FullPath(node.FullPath)))
             return;
           if (openWith)
-            _openDocumentHelper.OpenDocumentWith(node.Path, _hierarchy, node.ItemId, view => null);
+            _openDocumentHelper.OpenDocumentWith(node.FullPath, _hierarchy, node.ItemId, view => null);
           else
-            _openDocumentHelper.OpenDocument(node.Path, view => null);
+            _openDocumentHelper.OpenDocument(node.FullPath, view => null);
         });
     }
 
@@ -289,6 +312,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// Note: This is executed on a background thred.
     /// </summary>
     private void OnTreeReceived(FileSystemTree fileSystemTree) {
+      if (!_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects)
+        return;
+
       var builder = new IncrementalHierarchyBuilder(_nodeTemplateFactory, _hierarchy.Nodes, fileSystemTree);
       var buildResult = builder.Run();
 
@@ -297,12 +323,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           // We need to load these images on the main UI thread
           buildResult.FileTemplatesToInitialize.ForAll(
             item => {
-              var icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
-              if (icon == null)
-                icon = _imageSourceFactory.GetFileExtensionIcon(".txt");
-              if (icon == null)
-                icon = _imageSourceFactory.GetIcon("TextDocument");
-              item.Value.Icon = icon;
+              item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
             });
 
           _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);

@@ -3,8 +3,12 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Utility {
   public static class ReflectionUtils {
@@ -94,6 +98,37 @@ namespace VsChromium.Core.Utility {
     public static string GetPropertyName<TProperty>(
       Expression<Func<TProperty>> propertyLambda) {
       return GetPropertyInfoImpl(null, propertyLambda).Name;
+    }
+    public static void CopyDeclaredPublicProperties(
+        object source,
+        string sourcePrefix,
+        object destination,
+        string destinationPrefix,
+        bool throwOnExtraProperty) {
+      sourcePrefix = sourcePrefix ?? "";
+      destinationPrefix = destinationPrefix ?? "";
+      var sourceProperties = source.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+      var destinationProperties = destination.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+      foreach (var sourceProperty in sourceProperties) {
+        var sourceValue = sourceProperty.GetValue(source);
+        var destName = destinationPrefix + sourceProperty.Name.Substring(sourcePrefix.Length);
+        var destinationProperty = destinationProperties.FirstOrDefault(x => x.Name == destName);
+        if (destinationProperty != null) {
+          destinationProperty.SetValue(destination, sourceValue);
+#if false
+          Logger.LogInfo("Copyging property value {0}-{5} from {1}.{2} to {3}.{4}",
+            sourceValue,
+            source.GetType().FullName, sourceProperty.Name,
+            destination.GetType().FullName, destinationProperty.Name,
+            destinationProperty.GetValue(destination));
+#endif
+        } else if (throwOnExtraProperty) {
+          throw new InvalidOperationException(string.Format(
+            "Property \"{0}\" in destination type \"{1}\" not found from property \"{2}\" in source type \"{3}\".", 
+            destName, destination.GetType().FullName,
+            sourceProperty.Name, source.GetType().FullName));
+        }
+      }
     }
   }
 }

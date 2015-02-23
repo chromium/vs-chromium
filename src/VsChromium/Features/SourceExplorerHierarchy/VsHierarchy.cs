@@ -26,7 +26,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
     private readonly VsHierarchyLogger _logger;
     private readonly Dictionary<CommandID, VsHierarchyCommandHandler> _commandHandlers = new Dictionary<CommandID, VsHierarchyCommandHandler>();
-
     private VsHierarchyNodes _nodes = new VsHierarchyNodes();
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
@@ -58,6 +57,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public void Dispose() {
       Close();
+    }
+
+    public void Disable() {
+      CloseVsHierarchy();
+      // Reset nodes to avoid holding onto memory if we had an active hierarchy.
+      _nodes = new VsHierarchyNodes();
     }
 
     public void Disconnect() {
@@ -112,7 +117,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           Debug.Assert(deletedNode != null);
           Debug.Assert(deletedNode.Parent != null);
           if (_logger.IsLogDiffEnabled) {
-            _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.Path);
+            _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.FullPath);
           }
 
           // PERF: avoid allocation
@@ -132,13 +137,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           Debug.Assert(addedNode != null);
           Debug.Assert(addedNode.Parent != null);
           if (_logger.IsLogDiffEnabled) {
-            _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.Path);
-            _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.Path);
+            _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.FullPath);
+            _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.FullPath);
             _logger.Log(
               "    next to {0,7}-\"{1}\"",
               previousSiblingItemId,
               (previousSiblingItemId != VSConstants.VSITEMID_NIL
-                ? nodes.GetNode(previousSiblingItemId).Path
+                ? nodes.GetNode(previousSiblingItemId).FullPath
                 : "nil"));
           }
 
@@ -260,13 +265,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public int GetCanonicalName(uint itemid, out string pbstrName) {
       _logger.LogHierarchy("GetCanonicalName({0})", (int)itemid);
       pbstrName = null;
+      return VSConstants.E_NOTIMPL;
+    }
 
-      NodeViewModel node;
-      if (!_nodes.FindNode(itemid, out node))
-        return VSConstants.E_FAIL;
-
-      pbstrName = node.Name;
-      return VSConstants.S_OK;
+    public int ParseCanonicalName(string pszName, out uint pitemid) {
+      _logger.LogHierarchy("ParseCanonicalName({0})", pszName);
+      pitemid = VSConstants.VSITEMID_NIL;
+      return VSConstants.E_NOTIMPL;
     }
 
     public int GetGuidProperty(uint itemid, int propid, out Guid pguid) {
@@ -316,12 +321,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _logger.LogHierarchy("GetSite()");
       site = _site;
       return 0;
-    }
-
-    public int ParseCanonicalName(string pszName, out uint pitemid) {
-      _logger.LogHierarchy("ParseCanonicalName({0})", pszName);
-      pitemid = 0U;
-      return VSConstants.E_NOTIMPL;
     }
 
     public int QueryClose(out int pfCanClose) {
@@ -450,12 +449,21 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int GetMkDocument(uint itemid, out string pbstrMkDocument) {
       _logger.LogHierarchy("GetMkDocument({0})", (int)itemid);
-      pbstrMkDocument = null;
-      NodeViewModel node;
-      if (!_nodes.FindNode(itemid, out node))
+
+      var node = _nodes.GetNode(itemid);
+      if (node == null) {
+        pbstrMkDocument = null;
         return VSConstants.E_FAIL;
-      pbstrMkDocument = node.GetMkDocument();
-      return 0;
+      }
+
+      var result = node.GetMkDocument();
+      if (string.IsNullOrEmpty(result)) {
+        pbstrMkDocument = null;
+        return VSConstants.E_FAIL;
+      }
+
+      pbstrMkDocument = result;
+      return VSConstants.S_OK;
     }
 
     public int IsDocumentInProject(string pszMkDocument, out int pfFound, VSDOCUMENTPRIORITY[] pdwPriority, out uint pitemid) {
@@ -477,21 +485,21 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;
 
-      if (string.IsNullOrEmpty(node.Path))
+      if (string.IsNullOrEmpty(node.FullPath))
         return VSConstants.E_NOTIMPL;
       IVsUIHierarchy hierarchy;
       int isDocInProj;
       uint itemid1;
 
-      if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.Path, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
+      if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.FullPath, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
         IVsHierarchy hierOpen = null;
-        IsDocumentInAnotherProject(node.Path, out hierOpen, out itemid1, out isDocInProj);
+        IsDocumentInAnotherProject(node.FullPath, out hierOpen, out itemid1, out isDocInProj);
         if (hierOpen == null) {
-          hresult = OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame);
+          hresult = OpenItemViaMiscellaneousProject(flags, node.FullPath, ref rguidLogicalView, out ppWindowFrame);
         } else {
           var vsProject3 = hierOpen as IVsProject3;
           hresult = vsProject3 == null
-            ? OpenItemViaMiscellaneousProject(flags, node.Path, ref rguidLogicalView, out ppWindowFrame)
+            ? OpenItemViaMiscellaneousProject(flags, node.FullPath, ref rguidLogicalView, out ppWindowFrame)
             : vsProject3.OpenItem(itemid1, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
         }
       }

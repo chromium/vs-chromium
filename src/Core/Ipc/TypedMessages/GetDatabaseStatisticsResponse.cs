@@ -6,14 +6,16 @@ using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
-  public class GetDirectoryStatisticsResponse : TypedResponse {
+  public class GetDatabaseStatisticsResponse : TypedResponse {
     [ProtoMember(1)]
-    public int DirectoryCount { get; set; }
+    public int ProjectCount { get; set; }
     [ProtoMember(2)]
-    public int FileCount { get; set; }
+    public long DirectoryCount { get; set; }
     [ProtoMember(3)]
-    public int IndexedFileCount { get; set; }
+    public long FileCount { get; set; }
     [ProtoMember(4)]
-    public long TotalIndexedFileSize { get; set; }
+    public long IndexedFileCount { get; set; }
+    [ProtoMember(5)]
+    public long IndexedFileSize { get; set; }
   }
 }

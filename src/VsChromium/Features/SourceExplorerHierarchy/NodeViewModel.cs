@@ -5,6 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.Text;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.Files;
@@ -59,18 +61,50 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       get { return _parent; }
     }
 
-    public string Path {
+    public string FullPath {
       get {
-        if (_parent == null)
-          return "";
-        return PathHelpers.CombinePaths(_parent.Path, Name);
+        var sb = new StringBuilder(260);
+        AppendFullPath(sb);
+        return sb.ToString();
       }
     }
 
-    public string GetRelativePath() {
-      if (_parent == null || _parent.IsRoot)
-        return "";
-      return PathHelpers.CombinePaths(_parent.GetRelativePath(), Name);
+    public string RelativePath {
+      get {
+        var sb = new StringBuilder(260);
+        AppendRelativePath(sb);
+        return sb.ToString();
+      }
+    }
+
+    private void AppendFullPath(StringBuilder sb) {
+      if (PathHelpers.IsAbsolutePath(this.Name)) {
+        sb.Append(this.Name);
+        return;
+      }
+
+      if (_parent == null)
+        return;
+
+      _parent.AppendFullPath(sb);
+      if (sb.Length > 0) {
+        sb.Append(Path.DirectorySeparatorChar);
+      }
+      sb.Append(this.Name);
+    }
+
+    private void AppendRelativePath(StringBuilder sb) {
+      if (PathHelpers.IsAbsolutePath(this.Name))
+        return;
+
+      if (_parent == null)
+        return;
+
+      _parent.AppendRelativePath(sb);
+      if (sb.Length > 0) {
+        sb.Append(Path.DirectorySeparatorChar);
+      }
+      sb.Append(this.Name);
     }
 
     public uint GetFirstChildItemId() {
@@ -149,7 +183,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (parentNode == null)
         return false;
 
-      if (SystemPathComparer.Instance.StringComparer.Equals(parentNode.Path, searchMoniker)) {
+      if (SystemPathComparer.Instance.StringComparer.Equals(parentNode.FullPath, searchMoniker)) {
         foundNode = parentNode;
         return true;
       }
@@ -170,12 +204,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public string GetMkDocument() {
-      return Path;
+      return FullPath;
     }
 
     public int SetProperty(int propid, object var) {
-      if (propid == (int) __VSHPROPID.VSHPROPID_Expanded) {
-        IsExpanded = (bool) var;
+      if (propid == (int)__VSHPROPID.VSHPROPID_Expanded) {
+        IsExpanded = (bool)var;
         return VSConstants.S_OK;
       }
 

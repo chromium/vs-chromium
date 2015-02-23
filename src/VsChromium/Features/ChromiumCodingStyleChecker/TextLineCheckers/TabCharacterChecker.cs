@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
 using VsChromium.Core.Files;
+using VsChromium.Settings;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -20,13 +21,20 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
     [Import]
     private IFileSystem _fileSystem = null; // Set by MEF
+    [Import]
+    private IGlobalSettingsProvider _globalSettingsProvider = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("code");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
+      if (!_globalSettingsProvider.GlobalSettings.CodingStyleTabCharacter)
+        yield break;
+
+      if (!_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line))
+        yield break;
+
         if (line.Length == 0) {
           yield break;
         }
@@ -39,7 +47,6 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
             };
           }
         }
-      }
     }
   }
 }

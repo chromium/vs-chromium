@@ -7,8 +7,9 @@ using System.Windows.Media;
 
 namespace VsChromium.Views {
   public interface IImageSourceFactory {
-    ImageSource GetImage(string resourceName);
+    ImageSource GetImageSource(string resourceName);
     Icon GetIcon(string resourceName);
+    ImageSource GetFileExtensionImageSource(string fileExtension);
     Icon GetFileExtensionIcon(string fileExtension);
   }
 }

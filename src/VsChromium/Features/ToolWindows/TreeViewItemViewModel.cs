@@ -8,6 +8,7 @@ using System.Linq;
 using System.Windows.Media;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
+using VsChromium.Settings;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
@@ -37,7 +38,7 @@ namespace VsChromium.Features.ToolWindows {
         bool lazyLoadChildren) {
       _imageSourceFactory = imageSourceFactory;
       _parentViewModel = parentViewModel;
-      _children = new LazyObservableCollection<TreeViewItemViewModel>(GlobalSettings.MaxExpandedTreeViewItemCount,
+      _children = new LazyObservableCollection<TreeViewItemViewModel>(HardCodedSettings.MaxExpandedTreeViewItemCount,
                                                                       CreateLazyItemViewModel);
       if (lazyLoadChildren)
         _children.Add(DummyChild);
@@ -192,7 +193,7 @@ namespace VsChromium.Features.ToolWindows {
       var result = new LazyItemViewModel(_imageSourceFactory, this);
       if (ChildrenCount != 0)
         result.Text = string.Format("(Click to expand {0:n0} additional items...)",
-                                    ChildrenCount - GlobalSettings.MaxExpandedTreeViewItemCount);
+                                    ChildrenCount - HardCodedSettings.MaxExpandedTreeViewItemCount);
       result.Selected += () => {
         var node = _children.ExpandLazyNode();
         node.IsSelected = true;

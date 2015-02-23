@@ -20,6 +20,7 @@ using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
+using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
@@ -40,7 +41,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
     private SourceExplorerController _controller;
-    private IVisualStudioPackageProvider _visualStudioPackageProvider;
     private IFileSystemTreeSource _fileSystemTreeSource;
 
     public SourceExplorerControl() {
@@ -53,10 +53,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
       InitComboBox(SearchTextCombo, new ComboBoxInfo {
+        TextChanged = text => { ViewModel.SearchTextValue = text; },
         SearchFunction = RefreshSearchResults,
         NextElement = SearchFileNamesCombo,
       });
       InitComboBox(SearchFileNamesCombo, new ComboBoxInfo {
+        TextChanged = text => { ViewModel.SearchFileNamesValue = text; },
         SearchFunction = RefreshSearchResults,
         PreviousElement = SearchTextCombo,
         NextElement = FileTreeView,
@@ -83,29 +85,24 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _fileSystemTreeSource = componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>();
-      _visualStudioPackageProvider = componentModel.DefaultExportProvider.GetExportedValue<IVisualStudioPackageProvider>();
 
       _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
-      _fileSystemTreeSource.TreeReceived += FileSystemTreeSourceOnTreeReceived;
-      _fileSystemTreeSource.ErrorReceived += FileSystemTreeSourceOnErrorReceived;
+      _fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
+      _fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
 
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
-      var clipboard = componentModel.DefaultExportProvider.GetExportedValue<IClipboard>();
-      var windowsExplorer = componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>();
-      var openDocumentHelper = componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>();
-      var synchronizationContextProvider = componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>();
-      var eventBus = componentModel.DefaultExportProvider.GetExportedValue<IEventBus>();
       _controller = new SourceExplorerController(
         this,
         _uiRequestProcessor,
         _progressBarTracker,
         standarImageSourceFactory,
-        windowsExplorer,
-        clipboard,
-        synchronizationContextProvider,
-        openDocumentHelper,
-        eventBus);
+        componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IClipboard>(),
+        componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IEventBus>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>());
 
       // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
       // exposes pictures from Visual Studio resources.
@@ -140,11 +137,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
 
     private void InitComboBox(EditableComboBox comboBox, ComboBoxInfo info) {
       comboBox.DataContext = new StringListViewModel(info.InitialItems);
-      comboBox.TextChanged += (s, e) => info.SearchFunction();
+      comboBox.TextChanged += (s, e) => {
+        info.TextChanged(comboBox.Text);
+        info.SearchFunction(false);
+      };
       comboBox.KeyDown += (s, e) => {
         if ((e.KeyboardDevice.Modifiers == ModifierKeys.None) &&
             (e.Key == Key.Return || e.Key == Key.Enter)) {
-          info.SearchFunction();
+          info.SearchFunction(true);
         }
       };
 
@@ -228,6 +228,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (@event != null) {
         WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
+          Controller.FilesLoaded();
           if (@event.Error != null) {
             Controller.SetFileSystemTreeError(@event.Error);
             return;
@@ -237,13 +238,13 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
-    private void FileSystemTreeSourceOnTreeReceived(FileSystemTree fileSystemTree) {
+    private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
       WpfUtilities.Post(this, () => {
         Controller.SetFileSystemTree(fileSystemTree);
       });
     }
 
-    private void FileSystemTreeSourceOnErrorReceived(ErrorResponse errorResponse) {
+    private void FileSystemTreeSource_OnErrorReceived(ErrorResponse errorResponse) {
       WpfUtilities.Post(this, () => {
         Controller.SetFileSystemTreeError(errorResponse);
       });
@@ -254,7 +255,8 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
         this.InitialItems = new List<string>();
       }
 
-      public Action SearchFunction { get; set; }
+      public Action<string> TextChanged { get; set; }
+      public Action<bool> SearchFunction { get; set; }
       public UIElement PreviousElement { get; set; }
       public UIElement NextElement { get; set; }
       public List<string> InitialItems { get; set; }
@@ -276,13 +278,12 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       if (e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchCase) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchWholeWord) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UseRegex) ||
-          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UseRe2Regex) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.IncludeSymLinks)) {
-        RefreshSearchResults();
+        RefreshSearchResults(true);
       }
     }
 
-    private void RefreshSearchResults() {
+    private void RefreshSearchResults(bool immediate) {
       if (string.IsNullOrWhiteSpace(SearchTextCombo.Text) &&
           string.IsNullOrWhiteSpace(SearchFileNamesCombo.Text)) {
         Controller.CancelSearch();
@@ -290,11 +291,11 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
 
       if (string.IsNullOrWhiteSpace(SearchTextCombo.Text)) {
-        Controller.SearchFilesNames(SearchFileNamesCombo.Text);
+        Controller.SearchFilesNames(SearchFileNamesCombo.Text, immediate);
         return;
       }
 
-      Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text);
+      Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text, immediate);
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -389,9 +390,14 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       e.Handled = true;
     }
 
+    private void RefreshSearchResultsButton_Click(object sender, RoutedEventArgs e) {
+      Logger.WrapActionInvocation(
+        () => RefreshSearchResults(true));
+    }
+
     private void RefreshFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(
-        () => RefreshSearchResults());
+        () => Controller.RefreshFileSystemTree());
     }
 
     private void GotoPrevious_Click(object sender, RoutedEventArgs e) {
@@ -407,24 +413,28 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     }
 
     private void SearchFileNames_Click(object sender, RoutedEventArgs e) {
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     private void ClearFileNamesPattern_Click(object sender, RoutedEventArgs e) {
       SearchFileNamesCombo.Text = "";
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     private void SearchText_Click(object sender, RoutedEventArgs e) {
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     private void ClearSearchText_Click(object sender, RoutedEventArgs e) {
       SearchTextCombo.Text = "";
-      RefreshSearchResults();
+      RefreshSearchResults(true);
     }
 
     #endregion
+
+    private void RefreshSearchFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
+
+    }
 
   }
 }

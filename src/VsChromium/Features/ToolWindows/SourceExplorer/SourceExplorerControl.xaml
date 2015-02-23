@@ -68,107 +68,114 @@
       </StackPanel>
     </Border>
 
-    <ToolBar DockPanel.Dock="Top" Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
-      <!--<Button IsTabStop="False" Click="SyncButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
-        <Button.ToolTip>
-          <TextBlock Text="Sync with Active Document"/>
-        </Button.ToolTip>
-        <Image Source="{Binding SyncButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
-      </Button>-->
-      <!--<Separator Width="2" />-->
-      <ToggleButton Content="Aa" IsChecked="{Binding MatchCase}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
-        <ToggleButton.ToolTip>
-          <TextBlock Text="{Binding MatchCaseToolTip}"/>
-        </ToggleButton.ToolTip>
-      </ToggleButton>
-      <ToggleButton Content="Word" IsChecked="{Binding MatchWholeWord}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
-        <ToggleButton.ToolTip>
-          <TextBlock Text="{Binding MatchWholeWordToolTip}"/>
-        </ToggleButton.ToolTip>
-      </ToggleButton>
-      <ToggleButton Content="Regex" IsChecked="{Binding UseRegex}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
-        <ToggleButton.ToolTip>
-          <TextBlock Text="{Binding UseRegexToolTip}"/>
-        </ToggleButton.ToolTip>
-      </ToggleButton>
-      <ToggleButton Content="Lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
-        <ToggleButton.ToolTip>
-          <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>
-        </ToggleButton.ToolTip>
-      </ToggleButton>
-      <Separator Width="2" />
-      <Button IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click" Foreground="{DynamicResource VsBrush.WindowText}">
-        <Button.ToolTip>
-          <TextBlock Text="Go to previous search result (Shift-F8 or Ctrl-Shift-F8)"/>
-        </Button.ToolTip>
-        <Image Source="{Binding GotoPreviousButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-          <Image.Style>
-            <Style TargetType="Image">
-              <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                  <Setter Property="Opacity" Value="0.5" />
-                </Trigger>
-              </Style.Triggers>
-            </Style>
-          </Image.Style>
-        </Image>
-      </Button>
-      <Button IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}" Click="GotoNext_Click" Foreground="{DynamicResource VsBrush.WindowText}">
-        <Button.ToolTip>
-          <TextBlock Text="Go to next search result (F8 or Ctrl-F8)"/>
-        </Button.ToolTip>
-        <Image Source="{Binding GotoNextButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-          <Image.Style>
-            <Style TargetType="Image">
-              <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                  <Setter Property="Opacity" Value="0.5" />
-                </Trigger>
-              </Style.Triggers>
-            </Style>
-          </Image.Style>
-        </Image>
-      </Button>
-      <Button IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click" Foreground="{DynamicResource VsBrush.WindowText}">
-        <Button.ToolTip>
-          <TextBlock Text="Clear current search and revert to File System view"/>
-        </Button.ToolTip>
-        <Image Source="{Binding CancelSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-          <Image.Style>
-            <Style TargetType="Image">
-              <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                  <Setter Property="Opacity" Value="0.5" />
-                </Trigger>
-              </Style.Triggers>
-            </Style>
-          </Image.Style>
-        </Image>
-      </Button>
-      <Button IsTabStop="False" IsEnabled="{Binding RefreshSearchResultEnabled}" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
-        <Button.ToolTip>
-          <TextBlock Text="Refresh search results"/>
-        </Button.ToolTip>
-        <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-          <Image.Style>
-            <Style TargetType="Image">
-              <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                  <Setter Property="Opacity" Value="0.5" />
-                </Trigger>
-              </Style.Triggers>
-            </Style>
-          </Image.Style>
-        </Image>
-      </Button>
-      <Separator Width="2" />
-      <ToggleButton IsChecked="{Binding EnableChildDebugging}" IsTabStop="False">
-        <ToggleButton.ToolTip>
-          <TextBlock Text="Enable child-process debugging for launch/attach scenarios other than those available through the Attach to Chrome dialog."/>
-        </ToggleButton.ToolTip>
-        <Image Source="{Binding LightningBoltImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None"/>
-      </ToggleButton>
-    </ToolBar>
+    <Grid DockPanel.Dock="Top" Margin="0" Background="{DynamicResource VsBrush.CommandBarGradient}" >
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <StackPanel Margin="2" Grid.Row="0" Grid.Column="0" Orientation="Horizontal"  Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
+        <!--<Separator Width="2" />-->
+        <ToggleButton Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" Content="Aa" IsChecked="{Binding MatchCase}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
+          <ToggleButton.ToolTip>
+            <TextBlock Text="{Binding MatchCaseToolTip}"/>
+          </ToggleButton.ToolTip>
+        </ToggleButton>
+        <ToggleButton Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" Content="Word" IsChecked="{Binding MatchWholeWord}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
+          <ToggleButton.ToolTip>
+            <TextBlock Text="{Binding MatchWholeWordToolTip}"/>
+          </ToggleButton.ToolTip>
+        </ToggleButton>
+        <ToggleButton Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" Content="Regex" IsChecked="{Binding UseRegex}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
+          <ToggleButton.ToolTip>
+            <TextBlock Text="{Binding UseRegexToolTip}"/>
+          </ToggleButton.ToolTip>
+        </ToggleButton>
+        <ToggleButton Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" Content="Lnk" IsChecked="{Binding IncludeSymLinks}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
+          <ToggleButton.ToolTip>
+            <TextBlock Text="{Binding IncludeSymLinksToolTip}"/>
+          </ToggleButton.ToolTip>
+        </ToggleButton>
+        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
+        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+          <Button.ToolTip>
+            <TextBlock Text="Go to previous search result (Shift-F8 or Ctrl-Shift-F8)"/>
+          </Button.ToolTip>
+          <Image Source="{Binding GotoPreviousButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+            <Image.Style>
+              <Style TargetType="Image">
+                <Style.Triggers>
+                  <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5" />
+                  </Trigger>
+                </Style.Triggers>
+              </Style>
+            </Image.Style>
+          </Image>
+        </Button>
+        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}" Click="GotoNext_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+          <Button.ToolTip>
+            <TextBlock Text="Go to next search result (F8 or Ctrl-F8)"/>
+          </Button.ToolTip>
+          <Image Source="{Binding GotoNextButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+            <Image.Style>
+              <Style TargetType="Image">
+                <Style.Triggers>
+                  <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5" />
+                  </Trigger>
+                </Style.Triggers>
+              </Style>
+            </Image.Style>
+          </Image>
+        </Button>
+        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+          <Button.ToolTip>
+            <TextBlock Text="Clear current search and revert to File System view"/>
+          </Button.ToolTip>
+          <Image Source="{Binding CancelSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+            <Image.Style>
+              <Style TargetType="Image">
+                <Style.Triggers>
+                  <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5" />
+                  </Trigger>
+                </Style.Triggers>
+              </Style>
+            </Image.Style>
+          </Image>
+        </Button>
+        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding RefreshSearchResultsEnabled}" Click="RefreshSearchResultsButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+          <Button.ToolTip>
+            <TextBlock Text="Refresh search results"/>
+          </Button.ToolTip>
+          <Image Source="{Binding RefreshSearchResultsButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+            <Image.Style>
+              <Style TargetType="Image">
+                <Style.Triggers>
+                  <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5" />
+                  </Trigger>
+                </Style.Triggers>
+              </Style>
+            </Image.Style>
+          </Image>
+        </Button>
+        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
+      </StackPanel>
+      <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" />
+        <Button VerticalAlignment="Center" HorizontalAlignment="Right" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+          <Button.ToolTip>
+            <TextBlock Text="Refresh index by rescanning directories"/>
+          </Button.ToolTip>
+          <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          </Image>
+        </Button>
+      </StackPanel>
+    </Grid>
 
     <!-- SEARCH AREA -->
     <Border DockPanel.Dock="Top" BorderBrush="Gray" BorderThickness="1,1,1,1">
@@ -430,7 +437,7 @@
                 <MenuItem Header="Copy Relative Path  with &quot;/&quot;" Command="{Binding CopyRelativePathPosixCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
@@ -449,7 +456,7 @@
                 <MenuItem Header="Copy Relative Path  with &quot;/&quot;" Command="{Binding CopyRelativePathPosixCommand}" />
               </ContextMenu>
             </StackPanel.ContextMenu>
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding DisplayText}" />
           </StackPanel>
         </HierarchicalDataTemplate>
@@ -466,7 +473,7 @@
                 <MenuItem Header="Copy" Command="{Binding CopyCommand}"/>
               </ContextMenu>
             </StackPanel.ContextMenu>
-            <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
+            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
             <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource SearchTextResult}"/>
             <TextBlock Text="{Binding MatchText}" Style="{StaticResource SearchTextResult}"
                        Foreground="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightForeground}}"

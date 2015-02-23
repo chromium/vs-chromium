@@ -16,7 +16,7 @@ namespace VsChromium.Server.FileSystemContents {
     private readonly int _fileId;
     private readonly TextRange _textRange;
 
-    public FileContentsPiece(FileName fileName, FileContents fileContents,int fileId, TextRange textRange) {
+    public FileContentsPiece(FileName fileName, FileContents fileContents, int fileId, TextRange textRange) {
       _fileName = fileName;
       _fileContents = fileContents;
       _fileId = fileId;
@@ -27,8 +27,16 @@ namespace VsChromium.Server.FileSystemContents {
       get { return _fileName; }
     }
 
+    public FileContents FileContents {
+      get { return _fileContents; }
+    }
+
     public int FileId {
       get { return _fileId; }
+    }
+
+    public int ByteLength {
+      get { return _textRange.Length * _fileContents.CharacterSize; }
     }
 
     public IList<TextRange> FindAll(

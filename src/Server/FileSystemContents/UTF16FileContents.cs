@@ -27,7 +27,7 @@ namespace VsChromium.Server.FileSystemContents {
       return new Utf16TextLineOffsets(Contents);
     }
 
-    protected override byte CharacterSize {
+    public override byte CharacterSize {
       get { return sizeof(char); }
     }
 

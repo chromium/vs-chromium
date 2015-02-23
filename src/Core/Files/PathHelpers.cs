@@ -5,7 +5,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Files {
   public static class PathHelpers {

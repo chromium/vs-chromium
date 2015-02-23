@@ -82,7 +82,7 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected abstract ITextLineOffsets GetFileOffsets();
 
-    protected abstract byte CharacterSize { get; }
+    public abstract byte CharacterSize { get; }
 
     protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container);
 

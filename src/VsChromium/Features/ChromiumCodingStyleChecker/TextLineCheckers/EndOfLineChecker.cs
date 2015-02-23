@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
 using VsChromium.ChromiumEnlistment;
 using VsChromium.Core.Files;
+using VsChromium.Settings;
 using VsChromium.Views;
 
 namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
@@ -20,13 +21,20 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
     private IChromiumSourceFiles _chromiumSourceFiles = null; // Set by MEF
     [Import]
     private IFileSystem _fileSystem = null; // Set by MEF
+    [Import]
+    private IGlobalSettingsProvider _globalSettingsProvider = null; // Set by MEF
 
     public bool AppliesToContentType(IContentType contentType) {
       return contentType.IsOfType("text");
     }
 
     public IEnumerable<TextLineCheckerError> CheckLine(ITextSnapshotLine line) {
-      if (_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line)) {
+      if (!_globalSettingsProvider.GlobalSettings.CodingStyleEndOfLineCharacter)
+        yield break;
+
+      if (!_chromiumSourceFiles.ApplyCodingStyle(_fileSystem, line))
+        yield break;
+
         var lineBreak = line.GetLineBreakText();
         if (lineBreak.Length > 0 && lineBreak != "\n") {
           var fragment = line.GetFragment(line.End.Position - 1, line.EndIncludingLineBreak.Position,
@@ -36,7 +44,6 @@ namespace VsChromium.Features.ChromiumCodingStyleChecker.TextLineCheckers {
             Message = "Line breaks should be \"unix\" (i.e. LF) style only.",
           };
         }
-      }
     }
   }
 }

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using VsChromium.Core.Configuration;
@@ -21,7 +20,9 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     private bool _matchWholeWord;
     private bool _useRegex;
     private bool _includeSymLinks;
-    private bool _useRe2Regex;
+    private string _statusText;
+    private string _searchTextValue;
+    private string _searchFileNamesValue;
 
     public enum DisplayKind {
       FileSystemTree,
@@ -33,7 +34,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     public SourceExplorerViewModel() {
       // Default values for options in toolbar.
       this.IncludeSymLinks = true;
-      this.UseRe2Regex = true;
     }
 
     public DisplayKind ActiveDisplay {
@@ -151,47 +151,6 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
     /// <summary>
     /// Databound!
     /// </summary>
-    public bool UseRe2Regex {
-      get { return _useRe2Regex; }
-      set {
-        if (_useRe2Regex != value) {
-          _useRe2Regex = value;
-          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UseRe2Regex));
-        }
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public string UseRe2RegexToolTip {
-      get {
-        return string.Format(
-          "Toggle usage of the RE2 regular expression engine as a replacement of the standard C++ library for improved performance. " +
-          "The RE2 engine is currently {0}.",
-          UseRe2Regex ? "enabled" : "disabled");
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public bool EnableChildDebugging { get; set; }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public ImageSource LightningBoltImage {
-      get {
-        if (ImageSourceFactory == null)
-          return null;
-        return ImageSourceFactory.LightningBolt;
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
     public string UpdateInfoText {
       get {
         if (_updateInfo == null)
@@ -253,13 +212,15 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       get { return ActiveDisplay != DisplayKind.FileSystemTree; }
     }
 
-    public bool RefreshSearchResultEnabled {
-      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+    public bool RefreshSearchResultsEnabled {
+      get {
+        return !string.IsNullOrEmpty(SearchFileNamesValue) || !string.IsNullOrEmpty(SearchTextValue);
+      }
     }
 
     private ImageSource GetImageFromResource(string name) {
       if (ImageSourceFactory == null) {
-        return Views.ImageSourceFactory.Instance.GetImage(name);
+        return Views.ImageSourceFactory.Instance.GetImageSource(name);
       }
       return ImageSourceFactory.GetImage(name);
     }
@@ -300,9 +261,47 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       }
     }
 
+    public ImageSource RefreshSearchResultsButtonImage {
+      get {
+        return GetImageFromResource("SearchLens");
+      }
+    }
+
     public ImageSource RefreshFileSystemTreeButtonImage {
       get {
         return GetImageFromResource("RefreshFileSystemTree");
+      }
+    }
+
+    public string StatusText {
+      get { return _statusText; }
+      set {
+        if (value == _statusText)
+          return;
+        _statusText = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.StatusText));
+      }
+    }
+
+    public string SearchTextValue {
+      get { return _searchTextValue; }
+      set {
+        if (value == _searchTextValue)
+          return;
+        _searchTextValue = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchTextValue));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
+      }
+    }
+
+    public string SearchFileNamesValue {
+      get { return _searchFileNamesValue; }
+      set {
+        if (value == _searchFileNamesValue)
+          return;
+        _searchFileNamesValue = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFileNamesValue));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
       }
     }
 
@@ -312,7 +311,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));
-      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultEnabled));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
     }
 
     public void SwitchToFileSystemTree() {

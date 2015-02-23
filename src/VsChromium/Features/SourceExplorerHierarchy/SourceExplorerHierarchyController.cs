@@ -36,8 +36,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
+    private readonly IDelayedOperationProcessor _delayedOperationProcessor;
     private readonly VsHierarchy _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
+    /// <summary>
+    /// Keeps track of the latest file system tree version received from the
+    /// server, so that we can ensure only the latest update wins in case of
+    /// concurrent updates.
+    /// </summary>
+    private int _latestFileSystemTreeVersion;
 
     public SourceExplorerHierarchyController(
       ISynchronizationContextProvider synchronizationContextProvider,
@@ -51,7 +58,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IWindowsExplorer windowsExplorer,
       IUIRequestProcessor uiRequestProcessor,
       IEventBus eventBus,
-      IGlobalSettingsProvider globalSettingsProvider) {
+      IGlobalSettingsProvider globalSettingsProvider,
+      IDelayedOperationProcessor delayedOperationProcessor) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -63,6 +71,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _uiRequestProcessor = uiRequestProcessor;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
+      _delayedOperationProcessor = delayedOperationProcessor;
       _hierarchy = new VsHierarchy(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService);
@@ -183,7 +192,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
       var name = args.PropertyName;
-      var model = (GlobalSettings) sender;
+      var model = (GlobalSettings)sender;
       if (name == ReflectionUtils.GetPropertyName(model, x => x.EnableVsChromiumProjects)) {
         SynchronizeHierarchy();
       }
@@ -315,18 +324,62 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (!_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects)
         return;
 
-      var builder = new IncrementalHierarchyBuilder(_nodeTemplateFactory, _hierarchy.Nodes, fileSystemTree);
+      _latestFileSystemTreeVersion = fileSystemTree.Version;
+      PostApplyFileSystemTreeToVsHierarchy(fileSystemTree);
+    }
+
+    private void PostApplyFileSystemTreeToVsHierarchy(FileSystemTree fileSystemTree) {
+      _delayedOperationProcessor.Post(
+        new DelayedOperation {
+          Id = "ApplyFileSystemTreeToVsHierarchy",
+          Action = () => ApplyFileSystemTreeToVsHierarchy(fileSystemTree),
+          Delay = TimeSpan.FromSeconds(0.1),
+        });
+    }
+
+    private void ApplyFileSystemTreeToVsHierarchy(FileSystemTree fileSystemTree) {
+      // Capture hierarchy version # for checking later that another
+      // thread did not beat us.
+      int hierarchyVersion = _hierarchy.Version;
+
+      var builder = new IncrementalHierarchyBuilder(
+        _nodeTemplateFactory,
+        _hierarchy.Nodes,
+        fileSystemTree);
       var buildResult = builder.Run();
 
       _synchronizationContextProvider.UIContext.Post(
         () => {
           // We need to load these images on the main UI thread
           buildResult.FileTemplatesToInitialize.ForAll(
-            item => {
-              item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
-            });
+            item => { item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key); });
 
-          _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);
+          // Apply if nobody bear us to is.
+          if (_hierarchy.Version == hierarchyVersion) {
+            Logger.LogInfo(
+              "Updating VsHierarchy nodes for version {0} and file system tree version {1}",
+              hierarchyVersion,
+              fileSystemTree.Version);
+            _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);
+            return;
+          }
+
+          Logger.LogInfo(
+            "VsHierarchy nodes have been updated concurrently, re-run or skip operation." +
+            " Node verions={0}-{1}, Tree versions:{2}-{3}.",
+            hierarchyVersion, _hierarchy.Version,
+            fileSystemTree.Version, _latestFileSystemTreeVersion);
+
+          // If the version of the hieararchy has changed since when we started,
+          // another thread has passed us.  This means the decisions we made
+          // about the changes to apply are incorrect at this point. So, we run
+          // again if we are processing the latest known version of the file
+          // system tree, as we should be the winner (eventually)
+          if (fileSystemTree.Version == _latestFileSystemTreeVersion) {
+            // Termination notes: We make this call only when the VsHierarchy
+            // version changes between the time we capture it and this point.
+            PostApplyFileSystemTreeToVsHierarchy(fileSystemTree);
+          }
         });
     }
 

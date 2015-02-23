@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -26,7 +27,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
     private readonly VsHierarchyLogger _logger;
     private readonly Dictionary<CommandID, VsHierarchyCommandHandler> _commandHandlers = new Dictionary<CommandID, VsHierarchyCommandHandler>();
+    private readonly int _threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
     private VsHierarchyNodes _nodes = new VsHierarchyNodes();
+    private int _nodesVersion = 0;
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
     private bool _vsHierarchyActive;
@@ -51,30 +54,38 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       get { return _nodes; }
     }
 
+    public int Version {
+      get { return _nodesVersion; }
+    }
+
     public void AddCommandHandler(VsHierarchyCommandHandler handler) {
       _commandHandlers.Add(handler.CommandId, handler);
     }
 
     public void Dispose() {
+      CheckOnUIThread();
       Close();
     }
 
     public void Disable() {
-      CloseVsHierarchy();
+      CheckOnUIThread();
       // Reset nodes to avoid holding onto memory if we had an active hierarchy.
-      _nodes = new VsHierarchyNodes();
+      SetNodes(new VsHierarchyNodes(), null);
     }
 
     public void Disconnect() {
+      CheckOnUIThread();
       CloseVsHierarchy();
     }
 
     public void Reconnect() {
+      CheckOnUIThread();
       CloseVsHierarchy();
       SetNodes(_nodes, null);
     }
 
     public void SetNodes(VsHierarchyNodes nodes, VsHierarchyChanges changes) {
+      CheckOnUIThread();
       var description = string.Format("SetNodes(node count={0}, added={1}, deleted={2})",
         nodes.Count,
         (changes == null ? -1 : changes.AddedItems.Count),
@@ -82,14 +93,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       using (new TimeElapsedLogger(description)) {
         // Simple case: empty hiererchy
         if (nodes.RootNode.GetChildrenCount() == 0) {
-          _nodes = nodes;
+          if (!ReferenceEquals(nodes, _nodes)) {
+            _nodes = nodes;
+            _nodesVersion++;
+          }
           CloseVsHierarchy();
           return;
         }
 
         // Simple case of unknwon changes or hierarchy is not active.
         if (changes == null || !_vsHierarchyActive) {
-          _nodes = nodes;
+          if (!ReferenceEquals(nodes, _nodes)) {
+            _nodes = nodes;
+            _nodesVersion++;
+          }
           OpenVsHierarchy();
           RefreshAll();
           return;
@@ -130,7 +147,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         // field to the new node collection, so that any query made by the
         // hierarchy host as a result of add events will be answered with the
         // right set of nodes (the new ones).
-        _nodes = nodes;
+        if (!ReferenceEquals(nodes, _nodes)) {
+          _nodes = nodes;
+          _nodesVersion++;
+        }
         foreach (var added in changes.AddedItems) {
           var addedNode = nodes.GetNode(added);
           var previousSiblingItemId = addedNode.GetPreviousSiblingItemId();
@@ -168,6 +188,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public void SelectNode(NodeViewModel node) {
+      CheckOnUIThread();
       var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(_serviceProvider);
       if (uiHierarchyWindow == null)
         return;
@@ -178,6 +199,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void RefreshAll() {
+      CheckOnUIThread();
       foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
         vsHierarchyEvents.OnInvalidateItems(_nodes.RootNode.ItemId);
       }
@@ -185,6 +207,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void ExpandNode(NodeViewModel node) {
+      CheckOnUIThread();
       var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(_serviceProvider);
       if (uiHierarchyWindow == null)
         return;
@@ -203,6 +226,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void OpenVsHierarchy() {
+      CheckOnUIThread();
       if (_vsHierarchyActive)
         return;
       var vsSolution2 = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
@@ -229,6 +253,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void CloseVsHierarchy() {
+      CheckOnUIThread();
       if (!_vsHierarchyActive)
         return;
       var vsSolution2 = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
@@ -238,12 +263,19 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void Open() {
+      CheckOnUIThread();
       if (!(this is IVsSelectionEvents))
         return;
       IVsMonitorSelection monitorSelection = this._serviceProvider.GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
       if (monitorSelection == null)
         return;
       monitorSelection.AdviseSelectionEvents(this as IVsSelectionEvents, out this._selectionEventsCookie);
+    }
+
+    private void CheckOnUIThread() {
+      if (Thread.CurrentThread.ManagedThreadId != _threadId) {
+        throw new InvalidOperationException("VsHierarchy method should have been called on UI thread.");
+      }
     }
 
     public int AdviseHierarchyEvents(IVsHierarchyEvents pEventSink, out uint pdwCookie) {
@@ -479,7 +511,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _logger.LogHierarchy("OpenItem({0})", (int)itemid);
       ppWindowFrame = null;
 
-      NodeViewModel node = null;
+      NodeViewModel node;
       uint flags = 536936448U;
       int hresult = 0;
       if (!_nodes.FindNode(itemid, out node))
@@ -488,11 +520,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (string.IsNullOrEmpty(node.FullPath))
         return VSConstants.E_NOTIMPL;
       IVsUIHierarchy hierarchy;
-      int isDocInProj;
       uint itemid1;
 
       if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.FullPath, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
-        IVsHierarchy hierOpen = null;
+        IVsHierarchy hierOpen;
+        int isDocInProj;
         IsDocumentInAnotherProject(node.FullPath, out hierOpen, out itemid1, out isDocInProj);
         if (hierOpen == null) {
           hresult = OpenItemViaMiscellaneousProject(flags, node.FullPath, ref rguidLogicalView, out ppWindowFrame);

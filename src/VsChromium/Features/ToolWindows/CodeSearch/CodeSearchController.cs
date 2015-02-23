@@ -144,6 +144,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.SwitchToInformationMessages();
     }
 
+    public bool IsSourceExplorerEnabled {
+      get { return _globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects; }
+    }
+
     public void FilesLoaded() {
       FetchDatabaseStatistics();
     }

@@ -91,9 +91,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public ICommand ShowInSourceExplorer {
+    public ICommand ShowInSourceExplorerCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.ShowInSourceExplorer(this));
+        return CommandDelegate.Create(
+          sender => Controller.ShowInSourceExplorer(this),
+          sender => Controller.IsSourceExplorerEnabled);
       }
     }
 

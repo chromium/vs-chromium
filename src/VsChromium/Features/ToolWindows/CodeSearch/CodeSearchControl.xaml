@@ -34,6 +34,14 @@
         </Trigger>
       </Style.Triggers>
     </Style>
+    <!-- Hide context menu items if they are not enabled -->
+    <Style TargetType="MenuItem">
+      <Style.Triggers>
+        <Trigger Property="IsEnabled" Value="False">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
     <Style TargetType="wpf:EditableComboBox" d:DataContext="{d:DesignInstance wpf:StringListViewModel}">
       <Style.Triggers>
         <!-- Override default template behavior which is hard-coded to set Foregroud
@@ -417,7 +425,7 @@
             <StackPanel.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Open" Command="{Binding OpenCommand}" FontWeight="Bold" />
-                <MenuItem Header="Show in Solution Explorer" Command="{Binding ShowInSourceExplorer}" />
+                <MenuItem Header="Show in Solution Explorer" Command="{Binding ShowInSourceExplorerCommand}" />
                 <MenuItem Header="Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" />
                 <Separator />
                 <MenuItem Header="Copy Full Path" Command="{Binding CopyFullPathCommand}" />

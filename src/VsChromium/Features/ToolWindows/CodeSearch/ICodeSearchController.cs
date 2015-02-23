@@ -41,5 +41,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void NavigateToNextLocation();
     void NavigateToPreviousLocation();
     void CancelSearch();
+
+    bool IsSourceExplorerEnabled { get; }
   }
 }

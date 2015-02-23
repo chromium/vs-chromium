@@ -3,15 +3,15 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
-using VsChromium.Core.Configuration;
 using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CodeSearchViewModel : ChromiumExplorerViewModelBase {
-    private List<TreeViewItemViewModel> _fileSystemTreeNodes = new List<TreeViewItemViewModel>();
+    private List<TreeViewItemViewModel> _informationMessagesNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _searchCodeResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _searchFilePathsResultNodes = new List<TreeViewItemViewModel>();
     private UpdateInfo _updateInfo;
@@ -24,7 +24,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string _searchFilePathsValue;
 
     public enum DisplayKind {
-      FileSystemTree,
+      InformationMessages,
       SearchFilePathsResult,
       SearchCodeResult,
     }
@@ -34,13 +34,38 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       this.IncludeSymLinks = true;
     }
 
+    public void SwitchToInformationMessages() {
+      SetRootNodes(_informationMessagesNodes);
+    }
+
+    public void SwitchToSearchFilePathsResult() {
+      SetRootNodes(_searchFilePathsResultNodes);
+    }
+
+    public void SwitchToSearchCodeResult() {
+      SetRootNodes(_searchCodeResultNodes);
+    }
+
+    public void SetInformationMessages(List<TreeViewItemViewModel> viewModel) {
+      _informationMessagesNodes = viewModel;
+    }
+
+    public void SetSearchFilePathsResult(List<TreeViewItemViewModel> viewModel) {
+      _searchFilePathsResultNodes = viewModel;
+    }
+
+    public void SetSearchCodeResult(List<TreeViewItemViewModel> viewModel) {
+      _searchCodeResultNodes = viewModel;
+    }
+
     public DisplayKind ActiveDisplay {
       get {
         if (ReferenceEquals(ActiveRootNodes, _searchCodeResultNodes))
           return DisplayKind.SearchCodeResult;
         if (ReferenceEquals(ActiveRootNodes, _searchFilePathsResultNodes))
           return DisplayKind.SearchFilePathsResult;
-        return DisplayKind.FileSystemTree;
+        Debug.Assert(ReferenceEquals(ActiveRootNodes, _informationMessagesNodes));
+        return DisplayKind.InformationMessages;
       }
     }
 
@@ -190,22 +215,21 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     /// <summary>
-    /// The root nodes representing the file system tree from the server.
+    /// Indicates if the server has entires in its file system tree, i.e. if
+    /// there are known project roots.
     /// </summary>
-    public List<TreeViewItemViewModel> FileSystemTreeNodes {
-      get { return _fileSystemTreeNodes; }
-    }
+    public bool FileSystemTreeAvailable { get; set; }
 
     public bool GotoPreviousEnabled {
-      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+      get { return ActiveDisplay != DisplayKind.InformationMessages; }
     }
 
     public bool GotoNextEnabled {
-      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+      get { return ActiveDisplay != DisplayKind.InformationMessages; }
     }
 
     public bool CancelSearchEnabled {
-      get { return ActiveDisplay != DisplayKind.FileSystemTree; }
+      get { return ActiveDisplay != DisplayKind.InformationMessages; }
     }
 
     public bool RefreshSearchResultsEnabled {
@@ -213,6 +237,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return !string.IsNullOrEmpty(SearchFilePathsValue) || !string.IsNullOrEmpty(SearchCodeValue);
       }
     }
+
+    #region ImageSource for UI
 
     private ImageSource GetImageFromResource(string name) {
       if (ImageSourceFactory == null) {
@@ -269,6 +295,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
+    #endregion
+
     public string StatusText {
       get { return _statusText; }
       set {
@@ -308,41 +336,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
-    }
-
-    public void SwitchToFileSystemTree() {
-      var msg1 = string.Format("Open a source file from a local Chromium enlistment or");
-      var msg2 = string.Format("from a directory containing a \"{0}\" file.", ConfigurationFileNames.ProjectFileName);
-      SetRootNodes(_fileSystemTreeNodes, msg1 + "\r\n" + msg2);
-    }
-
-    private void SwitchToSearchFilePathsResult() {
-      SetRootNodes(_searchFilePathsResultNodes);
-    }
-
-    private void SwitchToSearchCodeResult() {
-      SetRootNodes(_searchCodeResultNodes);
-    }
-
-    public void SetFileSystemTree(List<TreeViewItemViewModel> viewModel) {
-      _fileSystemTreeNodes = viewModel;
-      SwitchToFileSystemTree();
-    }
-
-    public void SetSearchFilePathsResult(List<TreeViewItemViewModel> viewModel) {
-      _searchFilePathsResultNodes = viewModel;
-      SwitchToSearchFilePathsResult();
-    }
-
-    public void SetSearchCodeResult(List<TreeViewItemViewModel> viewModel) {
-      _searchCodeResultNodes = viewModel;
-      SwitchToSearchCodeResult();
-    }
-
-    public void FileSystemTreeComputing() {
-      if (_fileSystemTreeNodes.Count <= 1) {
-        SetRootNodes(_fileSystemTreeNodes, "(Loading files from VS Chromium projects...)");
-      }
     }
   }
 }

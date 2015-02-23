@@ -193,7 +193,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           Logger.LogInfo("FileSystemTree is being computed on server.");
           _progressBarTracker.Start(OperationsIds.FileSystemTreeComputing,
                                     "Loading files and directory names from file system.");
-          ViewModel.FileSystemTreeComputing();
+          Controller.SetFileSystemTreeComputing();
         });
       }
     }
@@ -239,7 +239,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
       WpfUtilities.Post(this, () => {
-        Controller.SetFileSystemTree(fileSystemTree);
+        Controller.SetFileSystemTreeComputed(fileSystemTree);
       });
     }
 
@@ -394,7 +394,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         () => RefreshSearchResults(true));
     }
 
-    private void RefreshFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
+    private void RefreshIndexButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(
         () => Controller.RefreshFileSystemTree());
     }
@@ -411,7 +411,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       Controller.CancelSearch();
     }
 
-    private void ClearFileNamesPattern_Click(object sender, RoutedEventArgs e) {
+    private void ClearFilePathsPattern_Click(object sender, RoutedEventArgs e) {
       SearchFilePathsCombo.Text = "";
       RefreshSearchResults(true);
     }
@@ -422,10 +422,5 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     #endregion
-
-    private void RefreshSearchFileSystemTreeButton_Click(object sender, RoutedEventArgs e) {
-
-    }
-
   }
 }

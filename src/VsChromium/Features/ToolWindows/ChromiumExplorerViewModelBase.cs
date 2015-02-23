@@ -26,7 +26,7 @@ namespace VsChromium.Features.ToolWindows {
 
     public event EventHandler RootNodesChanged;
 
-    protected void SetRootNodes(List<TreeViewItemViewModel> newRootNodes, params string[] defaultText) {
+    protected void SetRootNodes(List<TreeViewItemViewModel> newRootNodes) {
       // Don't update if we are passed in the already active collection.
       if (object.ReferenceEquals(_activeRootNodes, newRootNodes))
         return;
@@ -35,21 +35,12 @@ namespace VsChromium.Features.ToolWindows {
       // Move the active root nodes into the observable collection so that
       // the TreeView is refreshed.
       _rootNodes.Clear();
-      if (_activeRootNodes.Count == 0) {
-        if (defaultText != null && defaultText.Length > 0) {
-          var rootNode = new RootTreeViewItemViewModel(ImageSourceFactory);
-          foreach (var text in defaultText) {
-            _rootNodes.Add(new TextItemViewModel(ImageSourceFactory, rootNode, text));
-          }
-          _rootNodes.ForAll(rootNode.AddChild);
-          TreeViewItemViewModel.ExpandNodes(_rootNodes, true);
-        }
-      } else {
-        _activeRootNodes.ForAll(x => _rootNodes.Add(x));
+      foreach (var child in _activeRootNodes) {
+        _rootNodes.Add(child);
       }
+
       this.OnRootNodesChanged();
     }
-
 
     protected virtual void OnRootNodesChanged() {
       var handler = RootNodesChanged;

@@ -21,13 +21,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     GlobalSettings Settings { get; }
 
     void RefreshFileSystemTree();
-    void SetFileSystemTree(FileSystemTree tree);
     void FilesLoaded();
 
     void SearchCode(string searchPattern, string filePathPattern, bool immediate);
     void SearchFilesPaths(string searchPattern, bool immediate);
 
+    void SetFileSystemTreeComputing();
     void SetFileSystemTreeError(ErrorResponse error);
+    void SetFileSystemTreeComputed(FileSystemTree tree);
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);

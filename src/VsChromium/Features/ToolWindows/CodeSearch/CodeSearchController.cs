@@ -6,12 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Files;
+using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
@@ -22,6 +21,7 @@ using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
+using TreeView = System.Windows.Controls.TreeView;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CodeSearchController : ICodeSearchController {
@@ -106,6 +106,58 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
+    public void SetFileSystemTreeComputing() {
+      var items = CreateInfromationMessages("Loading files from VS Chromium projects...)");
+      ViewModel.SetInformationMessages(items);
+
+      if (!ViewModel.FileSystemTreeAvailable || ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
+        ViewModel.SwitchToInformationMessages();
+      }
+    }
+
+    public void SetFileSystemTreeComputed(FileSystemTree tree) {
+      ViewModel.FileSystemTreeAvailable = (tree.Root.Entries.Count > 0);
+
+      if (ViewModel.FileSystemTreeAvailable) {
+        var items = CreateInfromationMessages(
+          "No search results available - Type text to search for in \"Search Code\" and/or \"File Path\"");
+        ViewModel.SetInformationMessages(items);
+        if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages)
+          ViewModel.SwitchToInformationMessages();
+      } else {
+        var items = CreateInfromationMessages(
+          string.Format("Open a source file from a local Chromium enlistment or") + "\r\n" +
+          string.Format("from a directory containing a \"{0}\" file.", ConfigurationFileNames.ProjectFileName));
+        ViewModel.SetInformationMessages(items);
+        ViewModel.SwitchToInformationMessages();
+      }
+
+      FetchDatabaseStatistics();
+    }
+
+    public void SetFileSystemTreeError(ErrorResponse error) {
+      var viewModel = CreateErrorResponseViewModel(error);
+      ViewModel.SetInformationMessages(viewModel);
+    }
+
+    public void CancelSearch() {
+      ViewModel.SwitchToInformationMessages();
+    }
+
+    public void FilesLoaded() {
+      FetchDatabaseStatistics();
+    }
+
+    public void RefreshFileSystemTree() {
+      var uiRequest = new UIRequest {
+        Request = new RefreshFileSystemTreeRequest(),
+        Id = "RefreshFileSystemTreeRequest",
+        Delay = TimeSpan.FromSeconds(0.0),
+      };
+
+      _uiRequestProcessor.Post(uiRequest);
+    }
+
     public void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
@@ -113,22 +165,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         OpenDocumentHelper.OpenDocument(fileEntry.Path, _ => span));
     }
 
-    public List<TreeViewItemViewModel> CreateFileSystemTreeViewModel(FileSystemTree tree) {
+    private List<TreeViewItemViewModel> CreateInfromationMessages(params string[] messages) {
+      var result = new List<TreeViewItemViewModel>();
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
-      var messages = new List<TreeViewItemViewModel>();
-      if (tree.Root.Entries.Count > 0) {
-        var rootError = new TextItemViewModel(
-          StandarImageSourceFactory,
-          rootNode,
-          "No search results available - Type text to search for in \"Search Code\" and/or \"File Path\"");
-        messages.Add(rootError);
+      foreach (var text in messages) {
+        result.Add(new TextItemViewModel(StandarImageSourceFactory, rootNode, text));
       }
-      messages.ForAll(rootNode.AddChild);
-      TreeViewItemViewModel.ExpandNodes(messages, false);
-      return messages;
+      TreeViewItemViewModel.ExpandNodes(result, true);
+      return result;
     }
 
-    public List<TreeViewItemViewModel> CreateSearchFilePathsResult(DirectoryEntry fileResults, string description, bool expandAll) {
+    private List<TreeViewItemViewModel> CreateSearchFilePathsResult(DirectoryEntry fileResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
       var result =
         new List<TreeViewItemViewModel> {
@@ -143,7 +190,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return result;
     }
 
-    public List<TreeViewItemViewModel> CreateSearchCodeResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
+    private List<TreeViewItemViewModel> CreateSearchCodeResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
       var result =
         new List<TreeViewItemViewModel> {
@@ -158,7 +205,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return result;
     }
 
-    public List<TreeViewItemViewModel> CreateErrorResponseViewModel(ErrorResponse errorResponse) {
+    private List<TreeViewItemViewModel> CreateErrorResponseViewModel(ErrorResponse errorResponse) {
       var messages = new List<TreeViewItemViewModel>();
       if (errorResponse.IsRecoverable()) {
         // For a recoverable error, the deepest exception contains the 
@@ -184,233 +231,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         }
       }
       return messages;
-    }
-
-    /// <summary>
-    /// Find the directory entry in the FileSystemTree corresponding to a directory
-    /// entry containing a relative path or a project root path.
-    /// </summary>
-    private static FileSystemEntryViewModel FindFileSystemEntryForRelativePath(
-      List<TreeViewItemViewModel> fileSystemTreeNodes,
-      FileSystemEntryViewModel relativePathEntry) {
-      // Find the top level entry of the relative path
-      var topLevelEntry = GetChromiumRoot(relativePathEntry);
-      Debug.Assert(topLevelEntry != null);
-
-      // Find the corresponding top level entry in the FileSystemTree nodes.
-      var fileSystemTreeEntry = fileSystemTreeNodes
-        .OfType<FileSystemEntryViewModel>()
-        .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, topLevelEntry.Name));
-      if (fileSystemTreeEntry == null)
-        return null;
-
-      // Special case: "relativePath" is actually a Root entry.
-      if (topLevelEntry == relativePathEntry) {
-        return fileSystemTreeEntry;
-      }
-
-      // Descend the FileSystemTree nodes hierarchy as we split the directory name.
-      foreach (var childName in relativePathEntry.Name.Split(Path.DirectorySeparatorChar)) {
-        // First try without forcing loading the lazy loaded entries.
-        var childViewModel = fileSystemTreeEntry
-          .Children
-          .OfType<FileSystemEntryViewModel>()
-          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
-
-        // Try again by forcing loading the lazy loaded entries.
-        if (childViewModel == null) {
-          fileSystemTreeEntry.EnsureAllChildrenLoaded();
-          childViewModel = fileSystemTreeEntry
-            .Children
-            .OfType<FileSystemEntryViewModel>()
-            .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
-          if (childViewModel == null)
-            return null;
-        }
-
-        fileSystemTreeEntry = childViewModel;
-      }
-      return fileSystemTreeEntry;
-    }
-
-    /// <summary>
-    /// Find the directory entry in the FileSystemTree corresponding to a directory
-    /// entry containing a relative path or a project root path.
-    /// </summary>
-    private static FileSystemEntryViewModel FindFileSystemEntryForPath(
-      List<TreeViewItemViewModel> fileSystemTreeNodes,
-      FullPath path) {
-      // Find the corresponding top level entry in the FileSystemTree nodes.
-      var fileSystemTreeEntry = fileSystemTreeNodes
-        .OfType<FileSystemEntryViewModel>()
-        .FirstOrDefault(x => PathHelpers.IsPrefix(path.Value, x.Name));
-      if (fileSystemTreeEntry == null)
-        return null;
-
-      var pair = PathHelpers.SplitPrefix(path.Value, fileSystemTreeEntry.Name);
-
-      // Special case: "path" is actually a Root entry.
-      if (string.IsNullOrEmpty(pair.Suffix)) {
-        return fileSystemTreeEntry;
-      }
-
-      // Descend the FileSystemTree nodes hierarchy as we split the directory name.
-      foreach (var childName in pair.Suffix.Split(Path.DirectorySeparatorChar)) {
-        // First try without forcing loading the lazy loaded entries.
-        var childViewModel = fileSystemTreeEntry
-          .Children
-          .OfType<FileSystemEntryViewModel>()
-          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
-
-        // Try again by forcing loading the lazy loaded entries.
-        if (childViewModel == null) {
-          fileSystemTreeEntry.EnsureAllChildrenLoaded();
-          childViewModel = fileSystemTreeEntry
-            .Children
-            .OfType<FileSystemEntryViewModel>()
-            .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.Name, childName));
-          if (childViewModel == null)
-            return null;
-        }
-
-        fileSystemTreeEntry = childViewModel;
-      }
-      return fileSystemTreeEntry;
-    }
-
-    /// <summary>
-    /// Returns the node contained in <paramref name="fileSystemTreeNodes"/>
-    /// that has the exact same path as <paramref name="node"/>. This method is
-    /// used to find equivalent nodes between different versions of the file
-    /// system tree.
-    /// </summary>
-    private static TreeViewItemViewModel FindSameNode(
-      List<TreeViewItemViewModel> fileSystemTreeNodes,
-      TreeViewItemViewModel node) {
-      var root = GetChromiumRoot(node);
-      if (root == null)
-        return null;
-
-      var newRoot = fileSystemTreeNodes.FirstOrDefault(x => x.DisplayText == root.DisplayText);
-      if (newRoot == null)
-        return null;
-
-      // Create stack of parent -> child for DFS search
-      var stack = new Stack<TreeViewItemViewModel>();
-      var item = node;
-      while (item != root) {
-        stack.Push(item);
-        item = item.ParentViewModel;
-      }
-
-      // Process all stack elements, looking for their equivalent in
-      // "fileSystemTreeEntry"
-      var fileSystemTreeEntry = newRoot;
-      while (stack.Count > 0) {
-        var child = stack.Pop();
-
-        // First try without forcing loading the lazy loaded entries.
-        var childViewModel = fileSystemTreeEntry
-          .Children
-          .FirstOrDefault(x => x.DisplayText == child.DisplayText);
-
-        // Try again by forcing loading the lazy loaded entries.
-        if (childViewModel == null) {
-          fileSystemTreeEntry.EnsureAllChildrenLoaded();
-          childViewModel = fileSystemTreeEntry
-            .Children
-            .FirstOrDefault(x => x.DisplayText == child.DisplayText);
-          if (childViewModel == null)
-            return null;
-        }
-
-        fileSystemTreeEntry = childViewModel;
-      }
-      return fileSystemTreeEntry;
-    }
-
-    /// <summary>
-    /// Transfer the "IsExpanded" and "IsSelected" state of the nodes from an
-    /// old file system tree to a new one.
-    /// </summary>
-    private static void TransferFileSystemTreeState(
-      List<TreeViewItemViewModel> oldFileSystemTree,
-      List<TreeViewItemViewModel> newFileSystemTree) {
-      var state = new FileSystemTreeState();
-      oldFileSystemTree.ForEach(x => state.ProcessNodes(x));
-      state.ExpandedNodes.ForAll(
-        x => {
-          var y = FindSameNode(newFileSystemTree, x);
-          if (y != null)
-            y.IsExpanded = true;
-        });
-      state.CollapsedParentNodes.ForAll(
-        x => {
-          var y = FindSameNode(newFileSystemTree, x);
-          if (y != null)
-            y.IsExpanded = false;
-        });
-      state.SelectedNodes.ForAll(
-        x => {
-          var y = FindSameNode(newFileSystemTree, x);
-          if (y != null)
-            y.IsSelected = true;
-        });
-    }
-
-    public class FileSystemTreeState {
-      private readonly List<TreeViewItemViewModel> _expandedNodes = new List<TreeViewItemViewModel>();
-      private readonly List<TreeViewItemViewModel> _selectedNodes = new List<TreeViewItemViewModel>();
-      private readonly List<TreeViewItemViewModel> _collapsedParentNodes = new List<TreeViewItemViewModel>();
-
-      public List<TreeViewItemViewModel> ExpandedNodes {
-        get { return _expandedNodes; }
-      }
-
-      public List<TreeViewItemViewModel> SelectedNodes {
-        get { return _selectedNodes; }
-      }
-
-      public List<TreeViewItemViewModel> CollapsedParentNodes {
-        get { return _collapsedParentNodes; }
-      }
-
-      public bool ProcessNodes(TreeViewItemViewModel x) {
-        if (x.IsSelected) {
-          SelectedNodes.Add(x);
-        }
-
-        var anyChildExpanded = false;
-        x.Children.ForAll(child => {
-          if (ProcessNodes(child))
-            anyChildExpanded = true;
-        });
-
-        var isExpanded = x.IsExpanded;
-        if (anyChildExpanded) {
-          if (!isExpanded) {
-            _collapsedParentNodes.Add(x);
-          }
-        } else {
-          if (isExpanded) {
-            _expandedNodes.Add(x);
-          }
-        }
-        return isExpanded;
-      }
-    }
-
-    /// <summary>
-    /// Return the top level entry parent of <paramref name="item"/>
-    /// </summary>
-    private static DirectoryEntryViewModel GetChromiumRoot(TreeViewItemViewModel item) {
-      for (TreeViewItemViewModel current = item; current != null; current = current.ParentViewModel) {
-        if (current.ParentViewModel is RootTreeViewItemViewModel) {
-          // Maybe "null" if top level node is not a directory.
-          return current as DirectoryEntryViewModel;
-        }
-      }
-      return null;
     }
 
     /// <summary>
@@ -547,31 +367,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _uiRequestProcessor.Post(request);
     }
 
-    public void RefreshFileSystemTree() {
-      var uiRequest = new UIRequest {
-        Request = new RefreshFileSystemTreeRequest(),
-        Id = "RefreshFileSystemTreeRequest",
-        Delay = TimeSpan.FromSeconds(0.0),
-      };
-
-      _uiRequestProcessor.Post(uiRequest);
-    }
-
-    public void SetFileSystemTree(FileSystemTree tree) {
-      var viewModel = CreateFileSystemTreeViewModel(tree);
-
-      // Transfer expanded and selected nodes from the old tree to the new one.
-      TransferFileSystemTreeState(ViewModel.FileSystemTreeNodes, viewModel);
-
-      // Set tree as the new active tree.
-      ViewModel.SetFileSystemTree(viewModel);
-      FetchDatabaseStatistics();
-    }
-
-    public void FilesLoaded() {
-      FetchDatabaseStatistics();
-    }
-
     private void FetchDatabaseStatistics() {
       _uiRequestProcessor.Post(
         new UIRequest {
@@ -608,6 +403,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchFilePathsResult(viewModel);
+          ViewModel.SwitchToSearchFilePathsResult();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFilePathsResponse)typedResponse);
@@ -642,6 +438,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchCodeResult(viewModel);
+          ViewModel.SwitchToSearchCodeResult();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchCodeResponse)typedResponse);
@@ -653,13 +450,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
           var viewModel = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetSearchCodeResult(viewModel);
+          ViewModel.SwitchToSearchCodeResult();
         }
       });
-    }
-
-    public void SetFileSystemTreeError(ErrorResponse error) {
-      var viewModel = CreateErrorResponseViewModel(error);
-      ViewModel.SetFileSystemTree(viewModel);
     }
 
     enum Direction {
@@ -716,10 +509,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public void NavigateToPreviousLocation() {
       var previousItem = GetNextLocationEntry(Direction.Previous);
       NavigateToTreeViewItem(previousItem);
-    }
-
-    public void CancelSearch() {
-      ViewModel.SwitchToFileSystemTree();
     }
 
     private void NavigateToTreeViewItem(TreeViewItemViewModel item) {

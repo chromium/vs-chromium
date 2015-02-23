@@ -167,7 +167,7 @@
       </StackPanel>
       <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" />
-        <Button VerticalAlignment="Center" HorizontalAlignment="Right" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" Click="RefreshFileSystemTreeButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button VerticalAlignment="Center" HorizontalAlignment="Right" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" Click="RefreshIndexButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
           <Button.ToolTip>
             <TextBlock Text="Refresh index by rescanning directories"/>
           </Button.ToolTip>
@@ -231,7 +231,7 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearFileNamesPattern_Click">
+          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearFilePathsPattern_Click">
             <Button.ToolTip>
               <TextBlock Text="Clear file path"/>
             </Button.ToolTip>

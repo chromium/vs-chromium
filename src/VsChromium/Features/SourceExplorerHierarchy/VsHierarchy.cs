@@ -265,13 +265,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public int GetCanonicalName(uint itemid, out string pbstrName) {
       _logger.LogHierarchy("GetCanonicalName({0})", (int)itemid);
       pbstrName = null;
+      return VSConstants.E_NOTIMPL;
+    }
 
-      NodeViewModel node;
-      if (!_nodes.FindNode(itemid, out node))
-        return VSConstants.E_FAIL;
-
-      pbstrName = node.Name;
-      return VSConstants.S_OK;
+    public int ParseCanonicalName(string pszName, out uint pitemid) {
+      _logger.LogHierarchy("ParseCanonicalName({0})", pszName);
+      pitemid = VSConstants.VSITEMID_NIL;
+      return VSConstants.E_NOTIMPL;
     }
 
     public int GetGuidProperty(uint itemid, int propid, out Guid pguid) {
@@ -321,12 +321,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _logger.LogHierarchy("GetSite()");
       site = _site;
       return 0;
-    }
-
-    public int ParseCanonicalName(string pszName, out uint pitemid) {
-      _logger.LogHierarchy("ParseCanonicalName({0})", pszName);
-      pitemid = 0U;
-      return VSConstants.E_NOTIMPL;
     }
 
     public int QueryClose(out int pfCanClose) {
@@ -455,12 +449,21 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int GetMkDocument(uint itemid, out string pbstrMkDocument) {
       _logger.LogHierarchy("GetMkDocument({0})", (int)itemid);
-      pbstrMkDocument = null;
-      NodeViewModel node;
-      if (!_nodes.FindNode(itemid, out node))
+
+      var node = _nodes.GetNode(itemid);
+      if (node == null) {
+        pbstrMkDocument = null;
         return VSConstants.E_FAIL;
-      pbstrMkDocument = node.GetMkDocument();
-      return 0;
+      }
+
+      var result = node.GetMkDocument();
+      if (string.IsNullOrEmpty(result)) {
+        pbstrMkDocument = null;
+        return VSConstants.E_FAIL;
+      }
+
+      pbstrMkDocument = result;
+      return VSConstants.S_OK;
     }
 
     public int IsDocumentInProject(string pszMkDocument, out int pfFound, VSDOCUMENTPRIORITY[] pdwPriority, out uint pitemid) {

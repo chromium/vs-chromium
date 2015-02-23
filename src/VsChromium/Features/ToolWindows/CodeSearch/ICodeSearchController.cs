@@ -23,8 +23,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void RefreshFileSystemTree();
     void FilesLoaded();
 
-    void SearchCode(string searchPattern, string filePathPattern, bool immediate);
-    void SearchFilesPaths(string searchPattern, bool immediate);
+    void PerformSearch(bool immediate);
 
     void SetFileSystemTreeComputing();
     void SetFileSystemTreeError(ErrorResponse error);

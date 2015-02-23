@@ -283,18 +283,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void RefreshSearchResults(bool immediate) {
-      if (string.IsNullOrWhiteSpace(SearchCodeCombo.Text) &&
-          string.IsNullOrWhiteSpace(SearchFilePathsCombo.Text)) {
-        Controller.CancelSearch();
-        return;
-      }
-
-      if (string.IsNullOrWhiteSpace(SearchCodeCombo.Text)) {
-        Controller.SearchFilesPaths(SearchFilePathsCombo.Text, immediate);
-        return;
-      }
-
-      Controller.SearchCode(SearchCodeCombo.Text, SearchFilePathsCombo.Text, immediate);
+      Controller.PerformSearch(immediate);
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {

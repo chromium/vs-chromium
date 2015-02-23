@@ -388,7 +388,26 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         });
     }
 
-    public void SearchFilesPaths(string searchPattern, bool immediate) {
+    public void PerformSearch(bool immediate) {
+      var searchCodeText = ViewModel.SearchCodeValue;
+      var searchFilePathsText = ViewModel.SearchFilePathsValue;
+
+      if (string.IsNullOrWhiteSpace(searchCodeText) &&
+          string.IsNullOrWhiteSpace(searchFilePathsText)) {
+        CancelSearch();
+        return;
+      }
+
+      if (string.IsNullOrWhiteSpace(searchCodeText)) {
+        SearchFilesPaths(searchFilePathsText, immediate);
+        return;
+      }
+
+      SearchCode(searchCodeText, searchFilePathsText, immediate);
+    }
+
+
+    private void SearchFilesPaths(string searchPattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchFilePaths,
         HintText = "Searching for matching file paths...",
@@ -421,7 +440,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       });
     }
 
-    public void SearchCode(string searchPattern, string filePathPattern, bool immediate) {
+    private void SearchCode(string searchPattern, string filePathPattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchCode,
         HintText = "Searching for matching text in files...",

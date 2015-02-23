@@ -295,10 +295,10 @@
     <Compile Include="Views\IWindowsExplorer.cs" />
     <Compile Include="Views\Clipboard.cs" />
     <Compile Include="Views\IClipboard.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\ISourceExplorerController.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\ICodeSearchController.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CommandDelegate.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerItemViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerController.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchItemViewModelBase.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />
@@ -351,13 +351,13 @@
     <Compile Include="Features\ToolWindows\CodeSearch\FileEntryViewModel.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\FileSystemEntryViewModel.cs" />
     <Compile Include="Wpf\ProgressBarTracker.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchViewModel.cs" />
     <Compile Include="Features\ToolWindows\TextItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\TreeViewItemViewModel.cs" />
     <Compile Include="Properties\GlobalSuppressions.cs" />
     <Compile Include="Commands\Guids.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerControl.xaml.cs">
-      <DependentUpon>SourceExplorerControl.xaml</DependentUpon>
+    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchControl.xaml.cs">
+      <DependentUpon>CodeSearchControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Commands\OleCommandTarget.cs" />
     <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
@@ -378,7 +378,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Features\ToolWindows\CodeSearch\SourceExplorerControl.xaml">
+    <Page Include="Features\ToolWindows\CodeSearch\CodeSearchControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

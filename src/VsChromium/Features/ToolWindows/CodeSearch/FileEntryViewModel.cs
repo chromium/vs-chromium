@@ -19,7 +19,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
     private bool _hasExpanded;
 
-    public FileEntryViewModel(ISourceExplorerController controller, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
+    public FileEntryViewModel(ICodeSearchController controller, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
       : base(controller, parentViewModel, fileEntry.Data != null) {
       _fileEntry = fileEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);

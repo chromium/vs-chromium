@@ -120,7 +120,7 @@
   <data name="BuildExplorerToolWindowTitle" xml:space="preserve">
     <value>Chromium Build Explorer</value>
   </data>
-  <data name="SourceExplorerToolWindowTitle" xml:space="preserve">
+  <data name="CodeSearchToolWindowTitle" xml:space="preserve">
     <value>Code Search</value>
   </data>
 </root>

@@ -17,7 +17,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
 
     public DirectoryEntryViewModel(
-        ISourceExplorerController controller,
+        ICodeSearchController controller,
         TreeViewItemViewModel parentViewModel,
         DirectoryEntry directoryEntry)
       : base(controller, parentViewModel, directoryEntry.Entries.Count > 0) {

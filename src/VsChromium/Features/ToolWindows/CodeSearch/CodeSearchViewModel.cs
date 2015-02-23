@@ -10,7 +10,7 @@ using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
-  public class SourceExplorerViewModel : ChromiumExplorerViewModelBase {
+  public class CodeSearchViewModel : ChromiumExplorerViewModelBase {
     private List<TreeViewItemViewModel> _fileSystemTreeNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
@@ -29,7 +29,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       TextSearchResult,
     }
 
-    public SourceExplorerViewModel() {
+    public CodeSearchViewModel() {
       // Default values for options in toolbar.
       this.IncludeSymLinks = true;
     }

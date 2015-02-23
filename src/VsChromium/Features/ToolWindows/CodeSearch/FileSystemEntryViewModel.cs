@@ -6,9 +6,9 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
-  public abstract class FileSystemEntryViewModel : SourceExplorerItemViewModelBase {
+  public abstract class FileSystemEntryViewModel : CodeSearchItemViewModelBase {
     protected FileSystemEntryViewModel(
-        ISourceExplorerController controller,
+        ICodeSearchController controller,
         TreeViewItemViewModel parentViewModel,
         bool lazyLoadChildren)
       : base(controller, parentViewModel, lazyLoadChildren) {
@@ -24,7 +24,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public static FileSystemEntryViewModel Create(ISourceExplorerController host, TreeViewItemViewModel parentViewModel, FileSystemEntry fileSystemEntry) {
+    public static FileSystemEntryViewModel Create(ICodeSearchController host, TreeViewItemViewModel parentViewModel, FileSystemEntry fileSystemEntry) {
       var fileEntry = fileSystemEntry as FileEntry;
       if (fileEntry != null)
         return new FileEntryViewModel(host, parentViewModel, fileEntry);

@@ -24,13 +24,13 @@ using VsChromium.Views;
 using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
-  public class SourceExplorerController : ISourceExplorerController {
+  public class CodeSearchController : ICodeSearchController {
     private static class OperationsIds {
       public const string FileContentsSearch = "files-contents-search";
       public const string FileNamesSearch = "file-names-search";
     }
 
-    private readonly SourceExplorerControl _control;
+    private readonly CodeSearchControl _control;
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IProgressBarTracker _progressBarTracker;
     private readonly IStandarImageSourceFactory _standarImageSourceFactory;
@@ -47,8 +47,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     /// </summary>
     private int _operationSequenceId;
 
-    public SourceExplorerController(
-      SourceExplorerControl control,
+    public CodeSearchController(
+      CodeSearchControl control,
       IUIRequestProcessor uiRequestProcessor,
       IProgressBarTracker progressBarTracker,
       IStandarImageSourceFactory standarImageSourceFactory,
@@ -90,14 +90,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
       var settings = _globalSettingsProvider.GlobalSettings;
-      var model = (SourceExplorerViewModel)sender;
+      var model = (CodeSearchViewModel)sender;
       settings.SearchMatchCase = model.MatchCase;
       settings.SearchMatchWholeWord = model.MatchWholeWord;
       settings.SearchUseRegEx = model.UseRegex;
       settings.SearchIncludeSymLinks = model.IncludeSymLinks;
     }
 
-    public SourceExplorerViewModel ViewModel { get { return _control.ViewModel; } }
+    public CodeSearchViewModel ViewModel { get { return _control.ViewModel; } }
     public IUIRequestProcessor UIRequestProcessor { get { return _uiRequestProcessor; } }
     public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
     public IClipboard Clipboard { get { return _clipboard; } }
@@ -668,7 +668,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private T GetNextLocationEntry<T>(Direction direction) where T : class, IHierarchyObject {
-      if (ViewModel.ActiveDisplay != SourceExplorerViewModel.DisplayKind.TextSearchResult)
+      if (ViewModel.ActiveDisplay != CodeSearchViewModel.DisplayKind.TextSearchResult)
         return null;
 
       var item = _control.FileTreeView.SelectedItem;

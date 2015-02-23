@@ -26,9 +26,9 @@ using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
-  /// Interaction logic for SourceExplorerControl.xaml
+  /// Interaction logic for CodeSearchControl.xaml
   /// </summary>
-  public partial class SourceExplorerControl : UserControl {
+  public partial class CodeSearchControl : UserControl {
     // For controlling scrolling inside tree view.
     private double _treeViewHorizScrollPos;
     private bool _treeViewResetHorizScroll;
@@ -39,15 +39,15 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
-    private SourceExplorerController _controller;
+    private CodeSearchController _controller;
     private IFileSystemTreeSource _fileSystemTreeSource;
 
-    public SourceExplorerControl() {
+    public CodeSearchControl() {
       InitializeComponent();
       // Add the "VsColors" brushes to the WPF resources of the control, so that the
       // resource keys used on the XAML file can be resolved dynamically.
       this.Resources.MergedDictionaries.Add(VsResources.BuildResourceDictionary());
-      base.DataContext = new SourceExplorerViewModel();
+      base.DataContext = new CodeSearchViewModel();
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
@@ -91,7 +91,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
-      _controller = new SourceExplorerController(
+      _controller = new CodeSearchController(
         this,
         _uiRequestProcessor,
         _progressBarTracker,
@@ -119,9 +119,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       //FileTreeView.UpdateLayout();
     }
 
-    public SourceExplorerViewModel ViewModel {
+    public CodeSearchViewModel ViewModel {
       get {
-        return (SourceExplorerViewModel)DataContext;
+        return (CodeSearchViewModel)DataContext;
       }
     }
 
@@ -130,7 +130,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       set { ViewModel.UpdateInfo = value; }
     }
 
-    public ISourceExplorerController Controller {
+    public ICodeSearchController Controller {
       get { return _controller; }
     }
 

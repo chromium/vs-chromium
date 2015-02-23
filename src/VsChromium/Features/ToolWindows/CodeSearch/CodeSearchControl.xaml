@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="VsChromium.Features.ToolWindows.CodeSearch.SourceExplorerControl"
+﻿<UserControl x:Class="VsChromium.Features.ToolWindows.CodeSearch.CodeSearchControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -8,10 +8,10 @@
              xmlns:wpf="clr-namespace:VsChromium.Wpf"
              xmlns:theme="clr-namespace:VsChromium.Views"
              xmlns:toolWindows="clr-namespace:VsChromium.Features.ToolWindows"
-             xmlns:sourceExplorer="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch"
+             xmlns:codesearch="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300"
-             d:DataContext="{d:DesignInstance sourceExplorer:SourceExplorerViewModel, IsDesignTimeCreatable=True}"
+             d:DataContext="{d:DesignInstance codesearch:CodeSearchViewModel, IsDesignTimeCreatable=True}"
              Name="FileExplorerToolWindow"
              Background="{DynamicResource VsBrush.ToolWindowBackground}"
              Foreground="{DynamicResource VsBrush.ToolWindowText}"
@@ -407,7 +407,7 @@
 
       <TreeView.Resources>
 
-        <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:DirectoryEntryViewModel}" ItemsSource="{Binding Children}">
+        <HierarchicalDataTemplate DataType="{x:Type codesearch:DirectoryEntryViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
             <StackPanel.ContextMenu>
               <ContextMenu>
@@ -425,7 +425,7 @@
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <HierarchicalDataTemplate DataType="{x:Type sourceExplorer:FileEntryViewModel}" ItemsSource="{Binding Children}">
+        <HierarchicalDataTemplate DataType="{x:Type codesearch:FileEntryViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal" >
             <StackPanel.ContextMenu>
               <ContextMenu>
@@ -448,7 +448,7 @@
           <Setter Property="FontFamily" Value="Consolas"/>
           <Setter Property="FontSize" Value="13"/>
         </Style>
-        <DataTemplate DataType="{x:Type sourceExplorer:FilePositionViewModel}">
+        <DataTemplate DataType="{x:Type codesearch:FilePositionViewModel}">
           <StackPanel Orientation="Horizontal">
             <StackPanel.ContextMenu>
               <ContextMenu>

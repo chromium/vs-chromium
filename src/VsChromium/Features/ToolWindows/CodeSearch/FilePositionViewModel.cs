@@ -9,12 +9,12 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
-  public class FilePositionViewModel : SourceExplorerItemViewModelBase {
+  public class FilePositionViewModel : CodeSearchItemViewModelBase {
     private readonly FileEntryViewModel _parentFile;
     private readonly FilePositionSpan _matchPosition;
     private FileExtract _extractPosition;
 
-    public FilePositionViewModel(ISourceExplorerController controller, FileEntryViewModel parentFile, FilePositionSpan matchPosition)
+    public FilePositionViewModel(ICodeSearchController controller, FileEntryViewModel parentFile, FilePositionSpan matchPosition)
       : base(controller, parentFile, false) {
       _parentFile = parentFile;
       _matchPosition = matchPosition;

@@ -54,7 +54,7 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidCodeSearchToolWindow" priority="0xF100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_VIEW_ORG_WINDOWS" />
-        <Icon guid="guidSourceExplorerImages" id="Icon" />
+        <Icon guid="guidCodeSearchImages" id="Icon" />
         <Strings>
           <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
               and is used as a default value for other entries if they are not specified-->
@@ -307,8 +307,7 @@
     <Bitmaps>
       <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows" />
       <Bitmap guid="guidPackageChromeDebugImages" href="Resources\ChromeDebugIcons.png" />
-      <Bitmap guid="guidSourceExplorerImages" href="Resources\VsChromiumIcon.png" />
-      <Bitmap guid="guidSourceExplorerImages" href="Resources\VsChromiumIcon.png" />
+      <Bitmap guid="guidCodeSearchImages" href="Resources\VsChromiumIcon.png" />
       <Bitmap guid="guidSyncToDocumentImage" href="Views\Images\SyncActiveDocument.png" />
     </Bitmaps>
   </Commands>
@@ -379,7 +378,7 @@
       <IDSymbol name="bmpAttachDescendants" value="3" />
       <IDSymbol name="bmpAttachChoose" value="4" />
     </GuidSymbol>
-    <GuidSymbol name="guidSourceExplorerImages" value="{29eec5ec-3d88-4bf4-ae57-c38a635ea373}">
+    <GuidSymbol name="guidCodeSearchImages" value="{29eec5ec-3d88-4bf4-ae57-c38a635ea373}">
       <IDSymbol name="Icon" value="1" />
     </GuidSymbol>
     <GuidSymbol name="guidSyncToDocumentImage" value="{00065DAD-60CB-4FD5-A85F-2DDFE0E116B8}">

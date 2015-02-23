@@ -3,17 +3,17 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
-  public class SourceExplorerItemViewModelBase : TreeViewItemViewModel {
-    private readonly ISourceExplorerController _controller;
+  public class CodeSearchItemViewModelBase : TreeViewItemViewModel {
+    private readonly ICodeSearchController _controller;
 
-    public SourceExplorerItemViewModelBase(
-        ISourceExplorerController controller,
+    public CodeSearchItemViewModelBase(
+        ICodeSearchController controller,
         TreeViewItemViewModel parent,
         bool lazyLoadChildren)
       : base(controller.StandarImageSourceFactory, parent, lazyLoadChildren) {
       _controller = controller;
     }
 
-    public ISourceExplorerController Controller { get { return _controller; } }
+    public ICodeSearchController Controller { get { return _controller; } }
   }
 }

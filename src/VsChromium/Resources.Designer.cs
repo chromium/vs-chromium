@@ -72,9 +72,9 @@ namespace VsChromium {
         /// <summary>
         ///   Looks up a localized string similar to Code Search.
         /// </summary>
-        internal static string SourceExplorerToolWindowTitle {
+        internal static string CodeSearchToolWindowTitle {
             get {
-                return ResourceManager.GetString("SourceExplorerToolWindowTitle", resourceCulture);
+                return ResourceManager.GetString("CodeSearchToolWindowTitle", resourceCulture);
             }
         }
     }

@@ -11,9 +11,9 @@ using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
-  /// Exposes services required by <see cref="SourceExplorerItemViewModelBase"/> instances.
+  /// Exposes services required by <see cref="CodeSearchItemViewModelBase"/> instances.
   /// </summary>
-  public interface ISourceExplorerController {
+  public interface ICodeSearchController {
     IUIRequestProcessor UIRequestProcessor { get; }
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IClipboard Clipboard { get; }

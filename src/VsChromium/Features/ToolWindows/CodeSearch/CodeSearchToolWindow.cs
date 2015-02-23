@@ -23,7 +23,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// This class derives from the ToolWindowPane class provided from the MPF in order to use its 
   /// implementation of the IVsUIElementPane interface.
   /// </summary>
-  [Guid(GuidList.GuidSourceExplorerToolWindowString)]
+  [Guid(GuidList.GuidCodeSearchToolWindowString)]
   public class CodeSearchToolWindow : ToolWindowPane, IOleCommandTarget {
     private VsWindowFrameNotifyHandler _frameNotify;
 
@@ -33,7 +33,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public CodeSearchToolWindow()
       : base(null) {
       // Set the window title reading it from the resources.
-      Caption = Resources.SourceExplorerToolWindowTitle;
+      Caption = Resources.CodeSearchToolWindowTitle;
       // Set the image that will appear on the tab of the window frame
       // when docked with an other window
       // The resource ID correspond to the one defined in the resx file
@@ -45,7 +45,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
       // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on 
       // the object returned by the Content property.
-      ExplorerControl = new SourceExplorerControl();
+      ExplorerControl = new CodeSearchControl();
     }
 
     public override void OnToolWindowCreated() {
@@ -73,8 +73,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           commandService.AddCommand(handler.ToOleMenuCommand()));
     }
 
-    public SourceExplorerControl ExplorerControl {
-      get { return Content as SourceExplorerControl; }
+    public CodeSearchControl ExplorerControl {
+      get { return Content as CodeSearchControl; }
       set { Content = value; }
     }
 
@@ -88,8 +88,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public bool IsCancelSearchEnabled {
       get {
         switch (ExplorerControl.ViewModel.ActiveDisplay) {
-          case SourceExplorerViewModel.DisplayKind.FileNameSearchResult:
-          case SourceExplorerViewModel.DisplayKind.TextSearchResult:
+          case CodeSearchViewModel.DisplayKind.FileNameSearchResult:
+          case CodeSearchViewModel.DisplayKind.TextSearchResult:
             return true;
           default:
             return false;

@@ -403,7 +403,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchFilePathsResult(viewModel);
-          ViewModel.SwitchToSearchFilePathsResult();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFilePathsResponse)typedResponse);
@@ -438,7 +437,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchCodeResult(viewModel);
-          ViewModel.SwitchToSearchCodeResult();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchCodeResponse)typedResponse);
@@ -450,7 +448,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
           var viewModel = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetSearchCodeResult(viewModel);
-          ViewModel.SwitchToSearchCodeResult();
         }
       });
     }

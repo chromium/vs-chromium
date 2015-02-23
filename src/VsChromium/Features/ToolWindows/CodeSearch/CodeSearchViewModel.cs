@@ -39,24 +39,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       SetRootNodes(_informationMessagesNodes);
     }
 
-    public void SwitchToSearchFilePathsResult() {
-      SetRootNodes(_searchFilePathsResultNodes);
-    }
-
-    public void SwitchToSearchCodeResult() {
-      SetRootNodes(_searchCodeResultNodes);
-    }
-
     public void SetInformationMessages(List<TreeViewItemViewModel> viewModel) {
       _informationMessagesNodes = viewModel;
     }
 
     public void SetSearchFilePathsResult(List<TreeViewItemViewModel> viewModel) {
       _searchFilePathsResultNodes = viewModel;
+      SetRootNodes(_searchFilePathsResultNodes);
     }
 
     public void SetSearchCodeResult(List<TreeViewItemViewModel> viewModel) {
       _searchCodeResultNodes = viewModel;
+      SetRootNodes(_searchCodeResultNodes);
     }
 
     public DisplayKind ActiveDisplay {
@@ -65,7 +59,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return DisplayKind.SearchCodeResult;
         if (ReferenceEquals(ActiveRootNodes, _searchFilePathsResultNodes))
           return DisplayKind.SearchFilePathsResult;
-        Debug.Assert(ReferenceEquals(ActiveRootNodes, _informationMessagesNodes));
         return DisplayKind.InformationMessages;
       }
     }

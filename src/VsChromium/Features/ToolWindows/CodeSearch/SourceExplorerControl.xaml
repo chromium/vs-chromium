@@ -171,8 +171,7 @@
           <Button.ToolTip>
             <TextBlock Text="Refresh index by rescanning directories"/>
           </Button.ToolTip>
-          <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-          </Image>
+          <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" />
         </Button>
       </StackPanel>
     </Grid>

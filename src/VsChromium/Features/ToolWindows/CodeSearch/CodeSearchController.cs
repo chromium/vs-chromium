@@ -160,7 +160,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return;
       }
 
-      // Add message only once.
+      // Add message only once. 
       if (ViewModel.RootNodes.Count > 0 &&
           ViewModel.RootNodes[0] is TextWarningItemViewModel) {
         return;

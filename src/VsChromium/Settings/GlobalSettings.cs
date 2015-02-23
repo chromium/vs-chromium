@@ -10,7 +10,7 @@ namespace VsChromium.Settings {
     private bool _enableVsChromiumProjects;
     private int _maxTextExtractLength;
     private int _searchFileNamesMaxResults;
-    private int _findInFilesMaxResults;
+    private int _searchCodeMaxResults;
     private int _autoSearchDelayMsec;
     private bool _searchMatchCase;
     private bool _searchMatchWholeWord;
@@ -77,15 +77,15 @@ namespace VsChromium.Settings {
       }
     }
 
-    public int FindInFilesMaxResults {
-      get { return _findInFilesMaxResults; }
+    public int SearchCodeMaxResults {
+      get { return _searchCodeMaxResults; }
       set {
         value = InRange(value, 1000, 1000 * 1000);
-        if (value == _findInFilesMaxResults)
+        if (value == _searchCodeMaxResults)
           return;
 
-        _findInFilesMaxResults = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.FindInFilesMaxResults));
+        _searchCodeMaxResults = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchCodeMaxResults));
 
       }
     }

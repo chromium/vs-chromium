@@ -66,7 +66,7 @@ namespace VsChromium.Tests.ServerProcess {
       }
 
       while (true) {
-        var response = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+        var response = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
           SearchParams = {
             SearchString = "histogram"
           }
@@ -78,32 +78,32 @@ namespace VsChromium.Tests.ServerProcess {
         Trace.WriteLine("It looks like the file indexer has not yet finished computing the new state.");
         Thread.Sleep(500);
       }
-      var response4 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+      var response4 = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response5 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+      var response5 = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response6 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+      var response6 = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response7 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+      var response7 = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response8 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+      var response8 = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
         SearchParams = {
           SearchString = "histogram"
         }
       }, TimeSpan.FromSeconds(0.01))();
-      var response9 = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+      var response9 = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
         SearchParams = {
           SearchString = "histogram"
         }

@@ -10,22 +10,22 @@ using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   [Export(typeof(IPackageCommandHandler))]
-  public class SearchTextCommandHandler : PackageCommandHandlerBase {
+  public class SearchCodeCommandHandler : PackageCommandHandlerBase {
     private readonly IToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public SearchTextCommandHandler(IToolWindowAccessor toolWindowAccessor) {
+    public SearchCodeCommandHandler(IToolWindowAccessor toolWindowAccessor) {
       _toolWindowAccessor = toolWindowAccessor;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchText);
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchCode);
       }
     }
 
     public override void Execute(object sender, EventArgs e) {
-      _toolWindowAccessor.CodeSearch.FocusSearchTextBox(CommandId);
+      _toolWindowAccessor.CodeSearch.FocusSearchCodeBox(CommandId);
     }
   }
 }

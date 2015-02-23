@@ -6,8 +6,8 @@ using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
-  public class SearchTextResponse : TypedResponse {
-    public SearchTextResponse() {
+  public class SearchCodeResponse : TypedResponse {
+    public SearchCodeResponse() {
       // To avoid getting "null" property if empty collection deserialized using protobuf.
       SearchResults = new DirectoryEntry();
     }

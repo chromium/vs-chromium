@@ -120,7 +120,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         var rootError = new TextItemViewModel(
           StandarImageSourceFactory,
           rootNode,
-          "No search results available - Type text to search for in \"Find in Files\" and/or \"File path\"");
+          "No search results available - Type text to search for in \"Search Code\" and/or \"File Path\"");
         messages.Add(rootError);
       }
       messages.ForAll(rootNode.AddChild);
@@ -622,16 +622,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       });
     }
 
-    public void SearchText(string searchPattern, string fileNamePattern, bool immediate) {
+    public void SearchCode(string searchPattern, string fileNamePattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.FileContentsSearch,
         HintText = "Searching for matching text in files...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
-        TypedRequest = new SearchTextRequest {
+        TypedRequest = new SearchCodeRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             FileNamePattern = fileNamePattern,
-            MaxResults = Settings.FindInFilesMaxResults,
+            MaxResults = Settings.SearchCodeMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -644,13 +644,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           ViewModel.SetTextSearchResult(viewModel);
         },
         ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchTextResponse)typedResponse);
+          var response = ((SearchCodeResponse)typedResponse);
           var msg = string.Format("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
             response.HitCount,
             response.SearchedFileCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
-          bool expandAll = response.HitCount < HardCodedSettings.SearchTextExpandMaxResults;
+          bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
           var viewModel = CreateTextSearchResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetTextSearchResult(viewModel);
         }

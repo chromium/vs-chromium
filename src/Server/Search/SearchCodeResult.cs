@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 
 namespace VsChromium.Server.Search {
-  public class SearchTextResult {
-    public static SearchTextResult Empty {
+  public class SearchCodeResult {
+    public static SearchCodeResult Empty {
       get {
-        return new SearchTextResult { Entries = new List<FileSearchResult>() };
+        return new SearchCodeResult { Entries = new List<FileSearchResult>() };
       }
     }
 

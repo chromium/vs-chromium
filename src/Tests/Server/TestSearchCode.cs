@@ -17,7 +17,7 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Tests.Server {
   [TestClass]
-  public class TestSearchText : MefTestBase {
+  public class TestSearchCode : MefTestBase {
     private static CompositionContainer _container;
     private static FileInfo _testFile;
     private static IFileSystemProcessor _registry;
@@ -43,126 +43,126 @@ namespace VsChromium.Tests.Server {
     public void SingleOccurrenceWorks() {
       const string searchPattern = "Test directory looking like";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1);
     }
 
     [TestMethod]
     public void MultipleOccurrenceWorks() {
       const string searchPattern = "Nothing here. Just making sure the directory exists.";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 3);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 3);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 3);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 3);
     }
 
     [TestMethod]
     public void SingleWildcardWorks() {
       const string searchPattern = "Test*looking";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1, 0, 22);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 0, 22);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1, 0, 22);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 0, 22);
     }
 
     [TestMethod]
     public void SingleWildcardWorks2() {
       const string searchPattern = "looking*like";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1, 15, 12);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 15, 12);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1, 15, 12);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 15, 12);
     }
 
     [TestMethod]
     public void MultipleWildcardsWorks() {
       const string searchPattern = "Test*looking*like";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1, 0, 27);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 0, 27);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1, 0, 27);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 0, 27);
     }
 
     [TestMethod]
     public void MultipleWildcardsWorks2() {
       const string searchPattern = "Test*directory*looking*like";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1, 0, 27);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 0, 27);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1, 0, 27);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 0, 27);
     }
 
     [TestMethod]
     public void MultipleWildcardsWorks3() {
       const string searchPattern = "directory*looking*like";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1, 5, 22);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 5, 22);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1, 5, 22);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 5, 22);
     }
 
     [TestMethod]
     public void EscapeWildcardWorks() {
       const string searchPattern = @"foo\* bar";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1, 7, 8);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 7, 8);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1, 7, 8);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 7, 8);
     }
 
     [TestMethod]
     public void EscapeWildcardWorks2() {
       const string searchPattern = @"foo\*\\bar";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase, 1, 39, 8);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 39, 8);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None, 1, 39, 8);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 39, 8);
     }
 
     [TestMethod]
     public void MultipleWholeWordWorks() {
       const string searchPattern = "directory";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase | Options.MatchWholeWord, 4);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase | Options.MatchWholeWord, 4);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None | Options.MatchWholeWord, 4);
+      VerifySearchCodeResponse(searchPatternLower, Options.None | Options.MatchWholeWord, 4);
     }
 
     [TestMethod]
     public void MultipleWholeWordWorks2() {
       const string searchPattern = "irectory";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase | Options.MatchWholeWord, 0);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase | Options.MatchWholeWord, 0);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(searchPatternLower, Options.None | Options.MatchWholeWord, 0);
+      VerifySearchCodeResponse(searchPatternLower, Options.None | Options.MatchWholeWord, 0);
     }
 
     [TestMethod]
     public void RegexWorks() {
       const string searchPattern = "Test directory looking like";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase | Options.Regex, 1);
-      VerifySearchTextResponse(searchPattern, Options.Regex, 1);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase | Options.Regex, 1);
+      VerifySearchCodeResponse(searchPattern, Options.Regex, 1);
     }
 
     [TestMethod]
     public void RegexWorks2() {
       const string searchPattern = "[a-z]+";
 
-      VerifySearchTextResponse(searchPattern, Options.MatchCase | Options.Regex, 102);
-      VerifySearchTextResponse(searchPattern, Options.Regex, 104);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase | Options.Regex, 102);
+      VerifySearchCodeResponse(searchPattern, Options.Regex, 104);
     }
 
     [Flags]
@@ -173,7 +173,7 @@ namespace VsChromium.Tests.Server {
       MatchWholeWord = 0x04,
     }
 
-    private static void VerifySearchTextResponse(
+    private static void VerifySearchCodeResponse(
       string searchPattern,
       Options options,
       int occurrenceCount,
@@ -191,7 +191,7 @@ namespace VsChromium.Tests.Server {
         UseRe2Engine = true,
       };
 
-      var searchResult = _searchEngine.SearchText(searchParams);
+      var searchResult = _searchEngine.SearchCode(searchParams);
       Assert.IsNotNull(searchResult);
 
       searchResult.Entries.ForAll((index, entry) => {

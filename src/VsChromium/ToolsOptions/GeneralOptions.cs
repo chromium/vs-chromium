@@ -23,7 +23,7 @@ namespace VsChromium.ToolsOptions {
     }
 
     private void SetDefaults() {
-      FindInFilesMaxResults = 10 * 1000;
+      SearchCodeMaxResults = 10 * 1000;
       SearchFileNamesMaxResults = 2 * 1000;
       MaxTextExtractLength = 120;
       AutoSearchDelayMsec = 20;
@@ -55,9 +55,9 @@ namespace VsChromium.ToolsOptions {
     }
 
     [Category(CodeSearchUserInterfaceCategory)]
-    [DisplayName("Maximum number of results for Find in Files")]
+    [DisplayName("Maximum number of results for Seach Code")]
     [Description("Limit the number of entries returned when searching for text in files. Higher values may slow down the User Interface.")]
-    public int FindInFilesMaxResults { get; set; }
+    public int SearchCodeMaxResults { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of results for Find File Paths")]

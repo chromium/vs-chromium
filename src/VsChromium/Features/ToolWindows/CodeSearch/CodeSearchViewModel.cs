@@ -20,7 +20,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _useRegex;
     private bool _includeSymLinks;
     private string _statusText;
-    private string _searchTextValue;
+    private string _searchCodeValue;
     private string _searchFileNamesValue;
 
     public enum DisplayKind {
@@ -210,7 +210,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public bool RefreshSearchResultsEnabled {
       get {
-        return !string.IsNullOrEmpty(SearchFileNamesValue) || !string.IsNullOrEmpty(SearchTextValue);
+        return !string.IsNullOrEmpty(SearchFileNamesValue) || !string.IsNullOrEmpty(SearchCodeValue);
       }
     }
 
@@ -279,13 +279,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public string SearchTextValue {
-      get { return _searchTextValue; }
+    public string SearchCodeValue {
+      get { return _searchCodeValue; }
       set {
-        if (value == _searchTextValue)
+        if (value == _searchCodeValue)
           return;
-        _searchTextValue = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchTextValue));
+        _searchCodeValue = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchCodeValue));
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
       }
     }

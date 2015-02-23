@@ -7,7 +7,7 @@ namespace VsChromium.Commands {
     CmdidFormatComment = 0x100,
     CmdidCodeSearchToolWindow = 0x101,
     CmdidSearchFileNames = 0x102,
-    CmdidSearchText = 0x104,
+    CmdidSearchCode = 0x104,
     CmdidGotoNextLocation = 0x105,
     CmdidGotoPreviousLocation = 0x106,
     CmdidCancelSearch = 0x107,

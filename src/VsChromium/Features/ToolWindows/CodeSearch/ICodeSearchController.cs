@@ -24,7 +24,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void SetFileSystemTree(FileSystemTree tree);
     void FilesLoaded();
 
-    void SearchText(string searchPattern, string fileNamePattern, bool immediate);
+    void SearchCode(string searchPattern, string fileNamePattern, bool immediate);
     void SearchFilesNames(string searchPattern, bool immediate);
 
     void SetFileSystemTreeError(ErrorResponse error);

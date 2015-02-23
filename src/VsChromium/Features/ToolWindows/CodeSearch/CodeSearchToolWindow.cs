@@ -97,13 +97,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public void FocusSearchTextBox(CommandID commandId) {
+    public void FocusSearchCodeBox(CommandID commandId) {
       switch (commandId.ID) {
         case (int)PkgCmdIdList.CmdidSearchFileNames:
           ExplorerControl.SearchFileNamesCombo.Focus();
           break;
-        case (int)PkgCmdIdList.CmdidSearchText:
-          ExplorerControl.SearchTextCombo.Focus();
+        case (int)PkgCmdIdList.CmdidSearchCode:
+          ExplorerControl.SearchCodeCombo.Focus();
           break;
       }
     }

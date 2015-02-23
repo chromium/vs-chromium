@@ -86,13 +86,13 @@
           <LocCanonicalName>VsChromium.FindFileNames</LocCanonicalName>
         </Strings>
       </Button>
-      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchText" priority="0x0100" type="Button">
+      <Button guid="guidVsChromiumCmdSet" id="cmdidSearchCode" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
-          <ButtonText>VsChromium Find In Files</ButtonText>
-          <CommandName>VsChromium - Find in files</CommandName>
-          <LocCanonicalName>VsChromium.FindInFiles</LocCanonicalName>
+          <ButtonText>VsChromium Search Code</ButtonText>
+          <CommandName>VsChromium - Search Code</CommandName>
+          <LocCanonicalName>VsChromium.SearchCode</LocCanonicalName>
         </Strings>
       </Button>
       <!-- Custom "Sync to document" command (in  Explorer toolbar) -->
@@ -317,7 +317,7 @@
   <KeyBindings>
     <!-- Note: VK_OEM_1 is the semicolon character on US keyboards. -->
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFileNames" editor="guidVSStd97" key1="VK_OEM_1" mod1="Alt" />
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchText" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchCode" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidCancelSearch" editor="guidVSStd97" key1="VK_ESCAPE" mod1="" />
@@ -339,7 +339,7 @@
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
       <IDSymbol name="cmdidCodeSearchToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFileNames" value="0x0102" />
-      <IDSymbol name="cmdidSearchText" value="0x0104" />
+      <IDSymbol name="cmdidSearchCode" value="0x0104" />
       <IDSymbol name="cmdidGotoNextLocation" value="0x0105" />
       <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />
       <IDSymbol name="cmdidCancelSearch" value="0x0107" />

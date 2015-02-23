@@ -4,7 +4,7 @@
 
 namespace VsChromium.Settings {
   public static class HardCodedSettings {
-    public static int SearchTextExpandMaxResults = 30;
+    public static int SearchCodeExpandMaxResults = 30;
     public static int MaxExpandedTreeViewItemCount = 100;
   }
 }

@@ -9,7 +9,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoInclude(10, typeof(DoneResponse))]
   [ProtoInclude(11, typeof(GetFileSystemResponse))]
   [ProtoInclude(12, typeof(SearchFileNamesResponse))]
-  [ProtoInclude(13, typeof(SearchTextResponse))]
+  [ProtoInclude(13, typeof(SearchCodeResponse))]
   [ProtoInclude(14, typeof(GetFileSystemVersionResponse))]
   [ProtoInclude(16, typeof(GetFileExtractsResponse))]
   [ProtoInclude(17, typeof(GetDirectoryStatisticsResponse))]

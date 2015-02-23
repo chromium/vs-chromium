@@ -15,7 +15,7 @@ using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   [TestClass]
-  public class TestSearchText : TestServerBase {
+  public class TestSearchCode : TestServerBase {
     private static CompositionContainer _container;
     private static ITypedRequestProcessProxy _server;
     private static FileInfo _testFile;
@@ -38,10 +38,10 @@ namespace VsChromium.Tests.ServerProcess {
     public void SingleOccurrenceWorks() {
       const string searchPattern = "Test directory looking like";
 
-      VerifySearchTextResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1);
+      VerifySearchCodeResponse(_server, searchPattern, Options.MatchCase, _testFile.Directory, 1);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchTextResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1);
+      VerifySearchCodeResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1);
     }
 
     [Flags]
@@ -51,14 +51,14 @@ namespace VsChromium.Tests.ServerProcess {
       Regex = 0x02,
     }
 
-    private static void VerifySearchTextResponse(
+    private static void VerifySearchCodeResponse(
         ITypedRequestProcessProxy server,
         string searchPattern,
         Options options,
         DirectoryInfo chromiumDirectory,
         int occurrenceCount,
         params int[] positionsAndLengths) {
-      var response = SendRequest<SearchTextResponse>(server, new SearchTextRequest {
+      var response = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
         SearchParams = new SearchParams {
           SearchString = searchPattern,
           MaxResults = 2000,

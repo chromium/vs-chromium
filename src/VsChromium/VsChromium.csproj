@@ -307,7 +307,7 @@
     <Compile Include="Threads\SynchronizationContextDelegate.cs" />
     <Compile Include="Views\IFileRegistrationRequestService.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\TextDocumentFactoryObserver.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SearchTextCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SearchCodeCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\SearchFileNamesCommandHandler.cs" />
     <Compile Include="Views\FileRegistrationRequestService.cs" />
     <Compile Include="Features\FormatComment\CommentType.cs" />

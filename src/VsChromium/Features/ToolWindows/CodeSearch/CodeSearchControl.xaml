@@ -199,8 +199,8 @@
             <ColumnDefinition Width="16"/>
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Find in Files:" VerticalAlignment="Center" />
-          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="SearchTextCombo">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Search Code:" VerticalAlignment="Center" />
+          <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="SearchCodeCombo">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
                 Type text pattern to search for.
@@ -212,13 +212,13 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="0" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchText_Click">
+          <Button Grid.Row="0" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="SearchCode_Click">
             <Button.ToolTip>
               <TextBlock Text="Search"/>
             </Button.ToolTip>
             <Image Source="{Binding SearchLensButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
           </Button>
-          <Button Grid.Row="0" Grid.Column="3" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearSearchText_Click">
+          <Button Grid.Row="0" Grid.Column="3" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearSearchCode_Click">
             <Button.ToolTip>
               <TextBlock Text="Clear text"/>
             </Button.ToolTip>
@@ -444,7 +444,7 @@
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <Style x:Key="SearchTextResult" TargetType="TextBlock">
+        <Style x:Key="SearchCodeResult" TargetType="TextBlock">
           <Setter Property="FontFamily" Value="Consolas"/>
           <Setter Property="FontSize" Value="13"/>
         </Style>
@@ -457,11 +457,11 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
-            <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource SearchTextResult}"/>
-            <TextBlock Text="{Binding MatchText}" Style="{StaticResource SearchTextResult}"
+            <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource SearchCodeResult}"/>
+            <TextBlock Text="{Binding MatchText}" Style="{StaticResource SearchCodeResult}"
                        Foreground="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightForeground}}"
                        Background="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightBackground}}" />
-            <TextBlock Text="{Binding TextAfterMatch}" Style="{StaticResource SearchTextResult}"/>
+            <TextBlock Text="{Binding TextAfterMatch}" Style="{StaticResource SearchCodeResult}"/>
           </StackPanel>
         </DataTemplate>
 

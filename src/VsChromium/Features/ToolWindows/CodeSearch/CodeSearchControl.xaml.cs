@@ -51,15 +51,15 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
-      InitComboBox(SearchTextCombo, new ComboBoxInfo {
-        TextChanged = text => { ViewModel.SearchTextValue = text; },
+      InitComboBox(SearchCodeCombo, new ComboBoxInfo {
+        TextChanged = text => { ViewModel.SearchCodeValue = text; },
         SearchFunction = RefreshSearchResults,
         NextElement = SearchFileNamesCombo,
       });
       InitComboBox(SearchFileNamesCombo, new ComboBoxInfo {
         TextChanged = text => { ViewModel.SearchFileNamesValue = text; },
         SearchFunction = RefreshSearchResults,
-        PreviousElement = SearchTextCombo,
+        PreviousElement = SearchCodeCombo,
         NextElement = FileTreeView,
         InitialItems = {
           "*",
@@ -283,18 +283,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void RefreshSearchResults(bool immediate) {
-      if (string.IsNullOrWhiteSpace(SearchTextCombo.Text) &&
+      if (string.IsNullOrWhiteSpace(SearchCodeCombo.Text) &&
           string.IsNullOrWhiteSpace(SearchFileNamesCombo.Text)) {
         Controller.CancelSearch();
         return;
       }
 
-      if (string.IsNullOrWhiteSpace(SearchTextCombo.Text)) {
+      if (string.IsNullOrWhiteSpace(SearchCodeCombo.Text)) {
         Controller.SearchFilesNames(SearchFileNamesCombo.Text, immediate);
         return;
       }
 
-      Controller.SearchText(SearchTextCombo.Text, SearchFileNamesCombo.Text, immediate);
+      Controller.SearchCode(SearchCodeCombo.Text, SearchFileNamesCombo.Text, immediate);
     }
 
     private void TreeViewItem_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -313,7 +313,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (_swallowsRequestBringIntoView) {
         // This prevents the tree view for scrolling horizontally to make the
         // selected item as visibile as possible. This is useful for
-        // "SearchText", as text extracts are usually wide enough to make tree
+        // "SearchCode", as text extracts are usually wide enough to make tree
         // view navigation annoying when they are selected.
         e.Handled = true;
         return;
@@ -420,12 +420,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       RefreshSearchResults(true);
     }
 
-    private void SearchText_Click(object sender, RoutedEventArgs e) {
+    private void SearchCode_Click(object sender, RoutedEventArgs e) {
       RefreshSearchResults(true);
     }
 
-    private void ClearSearchText_Click(object sender, RoutedEventArgs e) {
-      SearchTextCombo.Text = "";
+    private void ClearSearchCode_Click(object sender, RoutedEventArgs e) {
+      SearchCodeCombo.Text = "";
       RefreshSearchResults(true);
     }
 

@@ -32,6 +32,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public CodeSearchViewModel() {
       // Default values for options in toolbar.
       this.IncludeSymLinks = true;
+      SetRootNodes(_informationMessagesNodes);
     }
 
     public void SwitchToInformationMessages() {

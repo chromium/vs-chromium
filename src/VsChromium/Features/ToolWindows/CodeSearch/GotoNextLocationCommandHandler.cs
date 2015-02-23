@@ -9,7 +9,7 @@ using VsChromium.Commands;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   [Export(typeof(IPackageCommandHandler))]
   public class GotoNextLocationCommandHandler : PackageCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

@@ -7,7 +7,7 @@ using System.ComponentModel.Design;
 using Microsoft.VisualStudio;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
   /// Override the VS standard "ESC" key bevahior to cancel the current search
   /// instead of activating the default document

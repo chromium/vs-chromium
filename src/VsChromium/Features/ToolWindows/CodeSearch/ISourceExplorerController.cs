@@ -3,15 +3,13 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
-using VsChromium.Wpf;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
   /// Exposes services required by <see cref="SourceExplorerItemViewModelBase"/> instances.
   /// </summary>

@@ -13,7 +13,7 @@ using VsChromium.Features.AutoUpdate;
 using VsChromium.Package.CommandHandler;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
   /// This class implements the tool window exposed by this package and hosts a user control.
   ///

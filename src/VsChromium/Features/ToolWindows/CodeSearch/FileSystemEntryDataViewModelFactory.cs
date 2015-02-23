@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public static class FileSystemEntryDataViewModelFactory {
     public static IEnumerable<TreeViewItemViewModel> CreateViewModels(ISourceExplorerController host, FileEntryViewModel parent, FileSystemEntryData data) {
       var positionsData = data as FilePositionsData;

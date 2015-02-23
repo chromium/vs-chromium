@@ -6,7 +6,7 @@ using System;
 using System.Windows.Input;
 using VsChromium.Core.Logging;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CommandDelegate : ICommand {
     private readonly Action<object> _action;
 

@@ -5,7 +5,7 @@
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public abstract class FileSystemEntryViewModel : SourceExplorerItemViewModelBase {
     protected FileSystemEntryViewModel(
         ISourceExplorerController controller,

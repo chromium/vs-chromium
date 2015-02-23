@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
 using VsChromium.Features.ToolWindows.BuildExplorer;
-using VsChromium.Features.ToolWindows.SourceExplorer;
+using VsChromium.Features.ToolWindows.CodeSearch;
 using VsChromium.Package;
 using VsChromium.ToolsOptions;
 using IServiceProvider = System.IServiceProvider;

@@ -7,7 +7,7 @@ using System.ComponentModel.Design;
 using VsChromium.Commands;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CancelSearchCommandHandler : PackageCommandHandlerBase {
     private readonly SourceExplorerToolWindow _window;
 

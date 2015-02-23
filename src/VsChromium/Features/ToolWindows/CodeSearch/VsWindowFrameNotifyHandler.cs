@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.Logging;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class VsWindowFrameNotifyHandler : IVsWindowFrameNotify {
     private readonly IVsWindowFrame2 _frame;
     private uint _notifyCookie;

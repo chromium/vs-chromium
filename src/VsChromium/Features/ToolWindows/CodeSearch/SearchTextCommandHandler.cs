@@ -8,7 +8,7 @@ using System.ComponentModel.Design;
 using VsChromium.Commands;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   [Export(typeof(IPackageCommandHandler))]
   public class SearchTextCommandHandler : PackageCommandHandlerBase {
     private readonly IToolWindowAccessor _toolWindowAccessor;

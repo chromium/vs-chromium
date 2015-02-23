@@ -12,7 +12,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
-using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
@@ -25,7 +24,7 @@ using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
   /// Interaction logic for SourceExplorerControl.xaml
   /// </summary>

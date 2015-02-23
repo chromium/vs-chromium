@@ -11,7 +11,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class DirectoryEntryViewModel : FileSystemEntryViewModel {
     private readonly DirectoryEntry _directoryEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;

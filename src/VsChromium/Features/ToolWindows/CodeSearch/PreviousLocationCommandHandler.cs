@@ -7,7 +7,7 @@ using System.ComponentModel.Design;
 using Microsoft.VisualStudio;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class PreviousLocationCommandHandler : PackageCommandHandlerBase {
     private readonly SourceExplorerToolWindow _window;
 

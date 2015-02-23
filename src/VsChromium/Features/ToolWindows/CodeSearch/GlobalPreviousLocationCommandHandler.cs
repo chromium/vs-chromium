@@ -9,7 +9,7 @@ using Microsoft.VisualStudio;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   [Export(typeof(IPackagePriorityCommandHandler))]
   public class GlobalPreviousLocationCommandHandler : PackagePriorityCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;

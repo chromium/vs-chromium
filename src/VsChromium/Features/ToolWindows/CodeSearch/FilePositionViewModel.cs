@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class FilePositionViewModel : SourceExplorerItemViewModelBase {
     private readonly FileEntryViewModel _parentFile;
     private readonly FilePositionSpan _matchPosition;

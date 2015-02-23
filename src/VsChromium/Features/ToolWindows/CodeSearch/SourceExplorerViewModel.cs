@@ -9,7 +9,7 @@ using VsChromium.Core.Configuration;
 using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class SourceExplorerViewModel : ChromiumExplorerViewModelBase {
     private List<TreeViewItemViewModel> _fileSystemTreeNodes = new List<TreeViewItemViewModel>();
     private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();

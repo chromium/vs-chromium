@@ -7,7 +7,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Features.ToolWindows.BuildExplorer;
-using VsChromium.Features.ToolWindows.SourceExplorer;
+using VsChromium.Features.ToolWindows.CodeSearch;
 using VsChromium.Package;
 
 namespace VsChromium.Features.ToolWindows {

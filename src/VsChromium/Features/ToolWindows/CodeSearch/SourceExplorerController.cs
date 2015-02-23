@@ -23,7 +23,7 @@ using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class SourceExplorerController : ISourceExplorerController {
     private static class OperationsIds {
       public const string FileContentsSearch = "files-contents-search";

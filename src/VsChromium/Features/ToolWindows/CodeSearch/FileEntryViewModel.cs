@@ -13,7 +13,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
 using VsChromium.Threads;
 
-namespace VsChromium.Features.ToolWindows.SourceExplorer {
+namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class FileEntryViewModel : FileSystemEntryViewModel {
     private readonly FileEntry _fileEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;

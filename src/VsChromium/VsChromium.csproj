@@ -247,17 +247,17 @@
     <Compile Include="Features\ToolWindows\IToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\CancelSearchToolWindowCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\CancelSearchCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\GotoNextLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\GlobalPreviousLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\NextLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\PreviousLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\VsWindowFrameNotifyHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\CancelSearchToolWindowCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\CancelSearchCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\GotoNextLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\GlobalPreviousLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\NextLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\PreviousLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\VsWindowFrameNotifyHandler.cs" />
     <Compile Include="Features\ToolWindows\TextErrorItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\GlobalNextLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\GotoPreviousLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\GlobalNextLocationCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\GotoPreviousLocationCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
     <Compile Include="Settings\GlobalSettings.cs" />
     <Compile Include="Settings\GlobalSettingsProvider.cs" />
@@ -295,10 +295,10 @@
     <Compile Include="Views\IWindowsExplorer.cs" />
     <Compile Include="Views\Clipboard.cs" />
     <Compile Include="Views\IClipboard.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\ISourceExplorerController.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\CommandDelegate.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerItemViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerController.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\ISourceExplorerController.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\CommandDelegate.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerItemViewModelBase.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerController.cs" />
     <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
     <Compile Include="Package\IPackagePostDispose.cs" />
@@ -306,9 +306,9 @@
     <Compile Include="Threads\ISynchronizationContext.cs" />
     <Compile Include="Threads\SynchronizationContextDelegate.cs" />
     <Compile Include="Views\IFileRegistrationRequestService.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\TextDocumentFactoryObserver.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SearchTextCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SearchFileNamesCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\TextDocumentFactoryObserver.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SearchTextCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SearchFileNamesCommandHandler.cs" />
     <Compile Include="Views\FileRegistrationRequestService.cs" />
     <Compile Include="Features\FormatComment\CommentType.cs" />
     <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />
@@ -320,7 +320,7 @@
     <Compile Include="Package\IVisualStudioPackageProvider.cs" />
     <Compile Include="Package\VisualStudioPackageInitialize.cs" />
     <Compile Include="Package\VisualStudioPackageProvider.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\ShowSourceExplorerCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\ShowSourceExplorerCommandHandler.cs" />
     <Compile Include="Features\FormatComment\CommentFormatter.cs" />
     <Compile Include="Package\CommandHandler\IPackageCommandHandler.cs" />
     <Compile Include="Package\CommandHandler\PackageCommandHandlerRegistration.cs" />
@@ -340,23 +340,23 @@
     <Compile Include="Threads\DelayedOperationProcessor.cs" />
     <Compile Include="Threads\SynchronizationContextProvider.cs" />
     <Compile Include="Threads\UIRequestProcessor.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\FilePositionViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\FilePositionViewModel.cs" />
     <Compile Include="Threads\UIRequest.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\FileSystemEntryDataViewModelFactory.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\FileSystemEntryDataViewModelFactory.cs" />
     <Compile Include="Wpf\ILazyObservableCollection.cs" />
     <Compile Include="Wpf\IProgressBarTracker.cs" />
     <Compile Include="Features\ToolWindows\LazyItemViewModel.cs" />
     <Compile Include="Wpf\LazyObservableCollection.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\DirectoryEntryViewModel.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\FileEntryViewModel.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\FileSystemEntryViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\DirectoryEntryViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\FileEntryViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\FileSystemEntryViewModel.cs" />
     <Compile Include="Wpf\ProgressBarTracker.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerViewModel.cs" />
     <Compile Include="Features\ToolWindows\TextItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\TreeViewItemViewModel.cs" />
     <Compile Include="Properties\GlobalSuppressions.cs" />
     <Compile Include="Commands\Guids.cs" />
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerControl.xaml.cs">
+    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerControl.xaml.cs">
       <DependentUpon>SourceExplorerControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Commands\OleCommandTarget.cs" />
@@ -378,11 +378,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Features\ToolWindows\SourceExplorer\SourceExplorerControl.xaml">
+    <Page Include="Features\ToolWindows\CodeSearch\SourceExplorerControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Compile Include="Features\ToolWindows\SourceExplorer\SourceExplorerToolWindow.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\SourceExplorerToolWindow.cs" />
     <Compile Include="Views\IOpenDocumentHelper.cs" />
     <Compile Include="Views\OpenDocumentHelper.cs" />
     <Compile Include="Views\IViewHandler.cs" />

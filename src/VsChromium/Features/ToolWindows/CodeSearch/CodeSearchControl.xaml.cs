@@ -290,7 +290,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
 
       if (string.IsNullOrWhiteSpace(SearchCodeCombo.Text)) {
-        Controller.SearchFilesNames(SearchFilePathsCombo.Text, immediate);
+        Controller.SearchFilesPaths(SearchFilePathsCombo.Text, immediate);
         return;
       }
 

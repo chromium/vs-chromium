@@ -26,8 +26,8 @@ using VsChromium.Wpf;
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CodeSearchController : ICodeSearchController {
     private static class OperationsIds {
-      public const string FileContentsSearch = "files-contents-search";
-      public const string FileNamesSearch = "file-names-search";
+      public const string SearchCode = "files-contents-search";
+      public const string SearchFilePaths = "file-names-search";
     }
 
     private readonly CodeSearchControl _control;
@@ -128,7 +128,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return messages;
     }
 
-    public List<TreeViewItemViewModel> CreateFileNamesSearchResult(DirectoryEntry fileResults, string description, bool expandAll) {
+    public List<TreeViewItemViewModel> CreateSearchFilePathsResult(DirectoryEntry fileResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
       var result =
         new List<TreeViewItemViewModel> {
@@ -143,7 +143,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return result;
     }
 
-    public List<TreeViewItemViewModel> CreateTextSearchResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
+    public List<TreeViewItemViewModel> CreateSearchCodeResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
       var result =
         new List<TreeViewItemViewModel> {
@@ -589,10 +589,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         });
     }
 
-    public void SearchFilesNames(string searchPattern, bool immediate) {
+    public void SearchFilesPaths(string searchPattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
-        OperationName = OperationsIds.FileNamesSearch,
-        HintText = "Searching for matching file names...",
+        OperationName = OperationsIds.SearchFilePaths,
+        HintText = "Searching for matching file paths...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchFilePathsRequest {
           SearchParams = new SearchParams {
@@ -607,7 +607,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         },
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
-          ViewModel.SetFileNamesSearchResult(viewModel);
+          ViewModel.SetSearchFilePathsResult(viewModel);
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFilePathsResponse)typedResponse);
@@ -616,21 +616,21 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
-          var viewModel = CreateFileNamesSearchResult(response.SearchResult, msg, true);
-          ViewModel.SetFileNamesSearchResult(viewModel);
+          var viewModel = CreateSearchFilePathsResult(response.SearchResult, msg, true);
+          ViewModel.SetSearchFilePathsResult(viewModel);
         }
       });
     }
 
-    public void SearchCode(string searchPattern, string fileNamePattern, bool immediate) {
+    public void SearchCode(string searchPattern, string filePathPattern, bool immediate) {
       SearchWorker(new SearchWorkerParams {
-        OperationName = OperationsIds.FileContentsSearch,
+        OperationName = OperationsIds.SearchCode,
         HintText = "Searching for matching text in files...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : Settings.AutoSearchDelayMsec),
         TypedRequest = new SearchCodeRequest {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
-            FileNamePattern = fileNamePattern,
+            FilePathPattern = filePathPattern,
             MaxResults = Settings.SearchCodeMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
@@ -641,7 +641,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         },
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
-          ViewModel.SetTextSearchResult(viewModel);
+          ViewModel.SetSearchCodeResult(viewModel);
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchCodeResponse)typedResponse);
@@ -651,8 +651,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
-          var viewModel = CreateTextSearchResultViewModel(response.SearchResults, msg, expandAll);
-          ViewModel.SetTextSearchResult(viewModel);
+          var viewModel = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
+          ViewModel.SetSearchCodeResult(viewModel);
         }
       });
     }
@@ -668,7 +668,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private T GetNextLocationEntry<T>(Direction direction) where T : class, IHierarchyObject {
-      if (ViewModel.ActiveDisplay != CodeSearchViewModel.DisplayKind.TextSearchResult)
+      if (ViewModel.ActiveDisplay != CodeSearchViewModel.DisplayKind.SearchCodeResult &&
+          ViewModel.ActiveDisplay != CodeSearchViewModel.DisplayKind.SearchFilePathsResult)
         return null;
 
       var item = _control.FileTreeView.SelectedItem;

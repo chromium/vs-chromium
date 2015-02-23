@@ -12,8 +12,8 @@ using VsChromium.Features.AutoUpdate;
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CodeSearchViewModel : ChromiumExplorerViewModelBase {
     private List<TreeViewItemViewModel> _fileSystemTreeNodes = new List<TreeViewItemViewModel>();
-    private List<TreeViewItemViewModel> _textSearchResultNodes = new List<TreeViewItemViewModel>();
-    private List<TreeViewItemViewModel> _fileNameSearchResultNodes = new List<TreeViewItemViewModel>();
+    private List<TreeViewItemViewModel> _searchCodeResultNodes = new List<TreeViewItemViewModel>();
+    private List<TreeViewItemViewModel> _searchFilePathsResultNodes = new List<TreeViewItemViewModel>();
     private UpdateInfo _updateInfo;
     private bool _matchCase;
     private bool _matchWholeWord;
@@ -25,8 +25,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public enum DisplayKind {
       FileSystemTree,
-      FileNameSearchResult,
-      TextSearchResult,
+      SearchFilePathsResult,
+      SearchCodeResult,
     }
 
     public CodeSearchViewModel() {
@@ -36,10 +36,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public DisplayKind ActiveDisplay {
       get {
-        if (ReferenceEquals(ActiveRootNodes, _textSearchResultNodes))
-          return DisplayKind.TextSearchResult;
-        if (ReferenceEquals(ActiveRootNodes, _fileNameSearchResultNodes))
-          return DisplayKind.FileNameSearchResult;
+        if (ReferenceEquals(ActiveRootNodes, _searchCodeResultNodes))
+          return DisplayKind.SearchCodeResult;
+        if (ReferenceEquals(ActiveRootNodes, _searchFilePathsResultNodes))
+          return DisplayKind.SearchFilePathsResult;
         return DisplayKind.FileSystemTree;
       }
     }
@@ -316,12 +316,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       SetRootNodes(_fileSystemTreeNodes, msg1 + "\r\n" + msg2);
     }
 
-    private void SwitchToFileNamesSearchResult() {
-      SetRootNodes(_fileNameSearchResultNodes);
+    private void SwitchToSearchFilePathsResult() {
+      SetRootNodes(_searchFilePathsResultNodes);
     }
 
-    private void SwitchToTextSearchResult() {
-      SetRootNodes(_textSearchResultNodes);
+    private void SwitchToSearchCodeResult() {
+      SetRootNodes(_searchCodeResultNodes);
     }
 
     public void SetFileSystemTree(List<TreeViewItemViewModel> viewModel) {
@@ -329,14 +329,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       SwitchToFileSystemTree();
     }
 
-    public void SetFileNamesSearchResult(List<TreeViewItemViewModel> viewModel) {
-      _fileNameSearchResultNodes = viewModel;
-      SwitchToFileNamesSearchResult();
+    public void SetSearchFilePathsResult(List<TreeViewItemViewModel> viewModel) {
+      _searchFilePathsResultNodes = viewModel;
+      SwitchToSearchFilePathsResult();
     }
 
-    public void SetTextSearchResult(List<TreeViewItemViewModel> viewModel) {
-      _textSearchResultNodes = viewModel;
-      SwitchToTextSearchResult();
+    public void SetSearchCodeResult(List<TreeViewItemViewModel> viewModel) {
+      _searchCodeResultNodes = viewModel;
+      SwitchToSearchCodeResult();
     }
 
     public void FileSystemTreeComputing() {

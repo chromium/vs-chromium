@@ -15,7 +15,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public string SearchString { get; set; }
 
     [ProtoMember(2)]
-    public string FileNamePattern { get; set; }
+    public string FilePathPattern { get; set; }
 
     [ProtoMember(3)]
     public int MaxResults { get; set; }

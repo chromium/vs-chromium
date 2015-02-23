@@ -88,8 +88,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public bool IsCancelSearchEnabled {
       get {
         switch (ExplorerControl.ViewModel.ActiveDisplay) {
-          case CodeSearchViewModel.DisplayKind.FileNameSearchResult:
-          case CodeSearchViewModel.DisplayKind.TextSearchResult:
+          case CodeSearchViewModel.DisplayKind.SearchFilePathsResult:
+          case CodeSearchViewModel.DisplayKind.SearchCodeResult:
             return true;
           default:
             return false;

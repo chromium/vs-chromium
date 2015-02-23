@@ -123,9 +123,9 @@ namespace VsChromium.Server.Search {
       _taskCancellation.CancelAll();
 
       Func<FileName, bool> fileNameMatcher = x => true;
-      if (!string.IsNullOrEmpty(searchParams.FileNamePattern)) {
+      if (!string.IsNullOrEmpty(searchParams.FilePathPattern)) {
         var temp = searchParams.SearchString;
-        searchParams.SearchString = searchParams.FileNamePattern;
+        searchParams.SearchString = searchParams.FilePathPattern;
         var preProcessResult = PreProcessFileSystemNameSearch<FileName>(searchParams, MatchFileName, MatchFileRelativePath);
         if (preProcessResult != null) {
           fileNameMatcher = preProcessResult.Matcher;

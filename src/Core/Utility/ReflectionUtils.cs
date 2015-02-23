@@ -104,7 +104,7 @@ namespace VsChromium.Core.Utility {
         string sourcePrefix,
         object destination,
         string destinationPrefix,
-        bool throwOnDestinationPropertyNotFound) {
+        bool throwOnExtraProperty) {
       sourcePrefix = sourcePrefix ?? "";
       destinationPrefix = destinationPrefix ?? "";
       var sourceProperties = source.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
@@ -120,7 +120,7 @@ namespace VsChromium.Core.Utility {
             source.GetType().FullName, sourceProperty.Name,
             destination.GetType().FullName, destinationProperty.Name,
             destinationProperty.GetValue(destination));
-        } else if (throwOnDestinationPropertyNotFound) {
+        } else if (throwOnExtraProperty) {
           throw new InvalidOperationException(string.Format(
             "Property \"{0}\" in destination type \"{1}\" not found from property \"{2}\" in source type \"{3}\".", 
             destName, destination.GetType().FullName,

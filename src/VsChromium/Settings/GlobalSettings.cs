@@ -10,7 +10,7 @@ namespace VsChromium.Settings {
     private bool _enableVsChromiumProjects;
     private int _maxTextExtractLength;
     private int _searchFileNamesMaxResults;
-    private int _findInFilesMaxEntries;
+    private int _findInFilesMaxResults;
     private int _autoSearchDelayMsec;
     private bool _searchMatchCase;
     private bool _searchMatchWholeWord;
@@ -32,6 +32,14 @@ namespace VsChromium.Settings {
       if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
     }
 
+    private static int InRange(int value, int min, int max) {
+      if (value < min)
+        return min;
+      if (value > max)
+        return max;
+      return value;
+    }
+
     public bool EnableVsChromiumProjects {
       get { return _enableVsChromiumProjects; }
       set {
@@ -46,6 +54,7 @@ namespace VsChromium.Settings {
     public int MaxTextExtractLength {
       get { return _maxTextExtractLength; }
       set {
+        value = InRange(value, 10, 1024);
         if (value == _maxTextExtractLength)
           return;
 
@@ -58,6 +67,7 @@ namespace VsChromium.Settings {
     public int SearchFileNamesMaxResults {
       get { return _searchFileNamesMaxResults; }
       set {
+        value = InRange(value, 100, 1000 * 1000);
         if (value == _searchFileNamesMaxResults)
           return;
 
@@ -67,14 +77,15 @@ namespace VsChromium.Settings {
       }
     }
 
-    public int FindInFilesMaxEntries {
-      get { return _findInFilesMaxEntries; }
+    public int FindInFilesMaxResults {
+      get { return _findInFilesMaxResults; }
       set {
-        if (value == _findInFilesMaxEntries)
+        value = InRange(value, 1000, 1000 * 1000);
+        if (value == _findInFilesMaxResults)
           return;
 
-        _findInFilesMaxEntries = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.FindInFilesMaxEntries));
+        _findInFilesMaxResults = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.FindInFilesMaxResults));
 
       }
     }
@@ -82,6 +93,7 @@ namespace VsChromium.Settings {
     public int AutoSearchDelayMsec {
       get { return _autoSearchDelayMsec; }
       set {
+        value = InRange(value, 0, int.MaxValue);
         if (value == _autoSearchDelayMsec)
           return;
 

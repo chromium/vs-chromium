@@ -15,7 +15,7 @@ namespace VsChromium.ToolsOptions {
   //[CLSCompliant(false)]
   [ComVisible(true)]
   public class GeneralOptions : DialogPage {
-    private const string CodeSearchUserInterfaceCategory = "Code Search User Interface";
+    private const string CodeSearchUserInterfaceCategory = "Code Search Interface";
     private const string CodeSearchOptionsCategory = "Code Search Options";
 
     public GeneralOptions() {
@@ -23,8 +23,8 @@ namespace VsChromium.ToolsOptions {
     }
 
     private void SetDefaults() {
-      FindInFilesMaxEntries = 10 * 1000;
-      SearchFileNamesMaxEntries = 2 * 1000;
+      FindInFilesMaxResults = 10 * 1000;
+      SearchFileNamesMaxResults = 2 * 1000;
       MaxTextExtractLength = 120;
       AutoSearchDelayMsec = 20;
 
@@ -57,12 +57,12 @@ namespace VsChromium.ToolsOptions {
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of results for Find in Files")]
     [Description("Limit the number of entries returned when searching for text in files. Higher values may slow down the User Interface.")]
-    public int FindInFilesMaxEntries { get; set; }
+    public int FindInFilesMaxResults { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of results for Find File Paths")]
     [Description("Limit the numer of entries returned when searching for file names. Higher values may slow down the User Interface.")]
-    public int SearchFileNamesMaxEntries { get; set; }
+    public int SearchFileNamesMaxResults { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of characters in text extracts")]

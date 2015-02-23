@@ -680,7 +680,7 @@ namespace VsChromium.Features.ToolWindows.SourceExplorer {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             FileNamePattern = fileNamePattern,
-            MaxResults = Settings.FindInFilesMaxEntries,
+            MaxResults = Settings.FindInFilesMaxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,

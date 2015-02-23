@@ -122,8 +122,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         var items = CreateInfromationMessages(
           "No search results available - Type text to search for in \"Search Code\" and/or \"File Path\"");
         ViewModel.SetInformationMessages(items);
-        if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages)
+        if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
           ViewModel.SwitchToInformationMessages();
+        }
+
+        // Add top level nodes in search results explaining results may be outdated
+        AddResultsOutdateMessage();
       } else {
         var items = CreateInfromationMessages(
           string.Format("Open a source file from a local Chromium enlistment or") + "\r\n" +
@@ -140,12 +144,35 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.SetInformationMessages(viewModel);
     }
 
+    public void FilesLoaded() {
+      // Add top level nodes in search results explaining results may be outdated
+      AddResultsOutdateMessage();
+      FetchDatabaseStatistics();
+    }
+
     public void CancelSearch() {
       ViewModel.SwitchToInformationMessages();
     }
 
-    public void FilesLoaded() {
-      FetchDatabaseStatistics();
+    private void AddResultsOutdateMessage() {
+      // Add only if we have search results currently displayed.
+      if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
+        return;
+      }
+
+      // Add message only once.
+      if (ViewModel.RootNodes.Count > 0 &&
+          ViewModel.RootNodes[0] is TextWarningItemViewModel) {
+        return;
+      }
+
+      // Add message
+      var parent = ViewModel.RootNodes[0].ParentViewModel;
+      var item = new TextWarningItemViewModel(
+        StandarImageSourceFactory,
+        parent,
+        "Search results may be out of date as index has been updated. Run search again to display up-to-date results.");
+      ViewModel.RootNodes.Insert(0, item);
     }
 
     public void RefreshFileSystemTree() {
@@ -501,7 +528,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.SearchCodeResult) {
         return GetNextLocationEntry<FilePositionViewModel>(direction);
       }
-      
+
       if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.SearchFilePathsResult) {
         return GetNextLocationEntry<FileEntryViewModel>(direction);
       }

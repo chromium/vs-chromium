@@ -578,7 +578,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           Id = "GetDatabaseStatisticsRequest",
           Request = new GetDatabaseStatisticsRequest(),
           OnSuccess = r => {
-            var response = (GetDatabaseStatisticsResponse) r;
+            var response = (GetDatabaseStatisticsResponse)r;
             var message =
               String.Format(
                 "Index: {0:n0} files - {1:n0} MB",
@@ -668,10 +668,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private T GetNextLocationEntry<T>(Direction direction) where T : class, IHierarchyObject {
-      if (ViewModel.ActiveDisplay != CodeSearchViewModel.DisplayKind.SearchCodeResult &&
-          ViewModel.ActiveDisplay != CodeSearchViewModel.DisplayKind.SearchFilePathsResult)
-        return null;
-
       var item = _control.FileTreeView.SelectedItem;
       if (item == null) {
         if (ViewModel.ActiveRootNodes == null)
@@ -692,21 +688,33 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return nextItem;
     }
 
+    private TreeViewItemViewModel GetNextLocationEntry(Direction direction) {
+      if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.SearchCodeResult) {
+        return GetNextLocationEntry<FilePositionViewModel>(direction);
+      }
+      
+      if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.SearchFilePathsResult) {
+        return GetNextLocationEntry<FileEntryViewModel>(direction);
+      }
+
+      return null;
+    }
+
     public bool HasNextLocation() {
-      return GetNextLocationEntry<FilePositionViewModel>(Direction.Next) != null;
+      return GetNextLocationEntry(Direction.Next) != null;
     }
 
     public bool HasPreviousLocation() {
-      return GetNextLocationEntry<FilePositionViewModel>(Direction.Previous) != null;
+      return GetNextLocationEntry(Direction.Previous) != null;
     }
 
     public void NavigateToNextLocation() {
-      var nextItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Next);
+      var nextItem = GetNextLocationEntry(Direction.Next);
       NavigateToTreeViewItem(nextItem);
     }
 
     public void NavigateToPreviousLocation() {
-      var previousItem = GetNextLocationEntry<FilePositionViewModel>(Direction.Previous);
+      var previousItem = GetNextLocationEntry(Direction.Previous);
       NavigateToTreeViewItem(previousItem);
     }
 

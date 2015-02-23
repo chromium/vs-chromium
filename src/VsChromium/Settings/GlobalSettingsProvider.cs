@@ -38,10 +38,7 @@ namespace VsChromium.Settings {
     /// Invoked when any property of the "Tools|Options" page is modified.
     /// </summary>
     private void ToolsOptionsPageApplyHandler(object sender, EventArgs eventArgs) {
-      if (Thread.CurrentThread.ManagedThreadId != _writeThreadId) {
-        throw new InvalidOperationException(
-          "Global Settings can only be mofidied on the UI thread.");
-      }
+      CheckOnWriteThread();
 
       _swallowGlobalSettingsPropertyChangeNotifications = true;
       try {
@@ -56,10 +53,7 @@ namespace VsChromium.Settings {
     /// Invoked when any property of the "GlobalSettings" instance is modified.
     /// </summary>
     private void GlobalSettingsPropertyChangedHandler(object sender, PropertyChangedEventArgs args) {
-      if (Thread.CurrentThread.ManagedThreadId != _writeThreadId) {
-        throw new InvalidOperationException(
-          "Global Settings can only be mofidied on the UI thread.");
-      }
+      CheckOnWriteThread();
 
       if (_swallowGlobalSettingsPropertyChangeNotifications)
         return;
@@ -86,9 +80,7 @@ namespace VsChromium.Settings {
     /// name="globalSettings"/>.
     /// </summary>
     private void CopyOptionsPagesToGlobalSettings(GlobalSettings globalSettings) {
-      if (Thread.CurrentThread.ManagedThreadId != _writeThreadId) {
-        throw new InvalidOperationException("Global Settings can only be mofidied on the UI thread.");
-      }
+      CheckOnWriteThread();
 
       var page = _visualStudioPackageProvider.GetToolsOptionsPage<GeneralOptions>();
       ReflectionUtils.CopyDeclaredPublicProperties(page, "", globalSettings, "", throwOnExtraProperty: true);
@@ -102,9 +94,7 @@ namespace VsChromium.Settings {
     /// "Tools|Options" pages objects.
     /// </summary>
     private void CopyGlobalSettingsToOptionPages(GlobalSettings globalSettings) {
-      if (Thread.CurrentThread.ManagedThreadId != _writeThreadId) {
-        throw new InvalidOperationException("Global Settings can only be mofidied on the UI thread.");
-      }
+      CheckOnWriteThread();
 
       var page = _visualStudioPackageProvider.GetToolsOptionsPage<GeneralOptions>();
       ReflectionUtils.CopyDeclaredPublicProperties(globalSettings, "", page, "", throwOnExtraProperty: false);
@@ -113,6 +103,12 @@ namespace VsChromium.Settings {
       var page2 = _visualStudioPackageProvider.GetToolsOptionsPage<CodingStyleOptions>();
       ReflectionUtils.CopyDeclaredPublicProperties(globalSettings, "CodingStyle", page2, "", throwOnExtraProperty: false);
       page2.SaveSettingsToStorage();
+    }
+
+    private void CheckOnWriteThread() {
+      if (Thread.CurrentThread.ManagedThreadId != _writeThreadId) {
+        throw new InvalidOperationException("Global Settings can only be mofidied on the UI thread.");
+      }
     }
   }
 }

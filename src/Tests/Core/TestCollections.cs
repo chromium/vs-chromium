@@ -224,7 +224,7 @@ namespace VsChromium.Tests.Core {
         GabargeCollect();
         using (new TimeElapsedLogger(string.Format("{0,-20}", "ToEnum, List<T>:"))) {
           for (var i = 0; i < loopCount; i++) {
-            foreach (var item in items.ToEnumerator()) {
+            foreach (var item in items.ToForeachEnum()) {
             }
           }
         }
@@ -246,7 +246,7 @@ namespace VsChromium.Tests.Core {
         GabargeCollect();
         using (new TimeElapsedLogger(string.Format("{0,-20}", "ToEnum, IList<T>:"))) {
           for (var i = 0; i < loopCount; i++) {
-            foreach (var item in itemsAsIList.ToEnumerator()) {
+            foreach (var item in itemsAsIList.ToForeachEnum()) {
             }
           }
         }
@@ -268,7 +268,7 @@ namespace VsChromium.Tests.Core {
         GabargeCollect();
         using (new TimeElapsedLogger(string.Format("{0,-20}", "ToEnum, T[]:"))) {
           for (var i = 0; i < loopCount; i++) {
-            foreach (var item in itemsArray.ToEnumerator()) {
+            foreach (var item in itemsArray.ToForeachEnum()) {
             }
           }
         }

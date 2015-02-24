@@ -50,17 +50,17 @@ namespace VsChromium.Core.Linq {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ListEnumerable<T> ToEnumerator<T>(this IList<T> list) {
+    public static ListEnumerable<T> ToForeachEnum<T>(this IList<T> list) {
       return new ListEnumerable<T>(list);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<T> ToEnumerator<T>(this List<T> list) {
+    public static List<T> ToForeachEnum<T>(this List<T> list) {
       return list;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] ToEnumerator<T>(this T[] list) {
+    public static T[] ToForeachEnum<T>(this T[] list) {
       return list;
     }
 

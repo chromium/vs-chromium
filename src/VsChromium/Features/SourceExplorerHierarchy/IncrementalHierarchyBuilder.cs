@@ -115,7 +115,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // Create children nodes
       var directoryEntry = entry as DirectoryEntry;
       if (directoryEntry != null) {
-        foreach (var childEntry in directoryEntry.Entries.ToEnumerator()) {
+        foreach (var childEntry in directoryEntry.Entries.ToForeachEnum()) {
           var child = CreateNodeViewModel(childEntry, newParent);
           newParent.AddChild(child);
         }
@@ -132,11 +132,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         newParent.Children,
         NodeTypeAndNameComparer.Instance);
 
-      foreach (var item in diffs.LeftOnlyItems.ToEnumerator()) {
+      foreach (var item in diffs.LeftOnlyItems.ToForeachEnum()) {
         _changes.DeletedItems.Add(item.ItemId);
       }
 
-      foreach (var newChild in diffs.RightOnlyItems.ToEnumerator()) {
+      foreach (var newChild in diffs.RightOnlyItems.ToForeachEnum()) {
         newChild.ItemId = _newNodeNextItemId;
         _newNodeNextItemId++;
         newChild.IsExpanded = newParent.IsRoot;
@@ -147,7 +147,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         }
       }
 
-      foreach (var pair in diffs.CommonItems.ToEnumerator()) {
+      foreach (var pair in diffs.CommonItems.ToForeachEnum()) {
         pair.RigthtItem.ItemId = pair.LeftItem.ItemId;
         pair.RigthtItem.IsExpanded = pair.LeftItem.IsExpanded;
         _newNodes.AddNode(pair.RigthtItem);
@@ -171,7 +171,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return diffs.CommonItems[index].LeftItem;
       }
 
-      foreach (var pair in diffs.CommonItems.ToEnumerator()) {
+      foreach (var pair in diffs.CommonItems.ToForeachEnum()) {
         if (pair.RigthtItem == newChildNode)
           return pair.LeftItem;
       }

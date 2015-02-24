@@ -40,7 +40,7 @@ namespace VsChromium.Core.Files {
 
     public DirectoryChangeWatcher(IFileSystem fileSystem, IDateTimeProvider dateTimeProvider) {
       _fileSystem = fileSystem;
-      _simplePathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(10.0));
+      _simplePathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(10.0));
       _pathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(60.0));
       _checkRootsPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
     }
@@ -154,9 +154,11 @@ namespace VsChromium.Core.Files {
         // Post changes that belong to an expired polling interval.
         if (_simplePathChangesPolling.WaitTimeExpired()) {
           PostPathsChangedEvents(paths, x => x == PathChangeKind.Changed);
+          _simplePathChangesPolling.Restart();
         }
         if (_pathChangesPolling.WaitTimeExpired()) {
           PostPathsChangedEvents(paths, x => true);
+          _pathChangesPolling.Restart();
         }
 
         // If we are done, exit to waiting thread
@@ -376,32 +378,62 @@ namespace VsChromium.Core.Files {
 
     private class PollingDelayPolicy {
       private readonly IDateTimeProvider _dateTimeProvider;
-      private readonly TimeSpan _delay;
+      private readonly TimeSpan _checkpointDelay;
       private readonly TimeSpan _maxDelay;
       private DateTime _lastPollUtc;
       private DateTime _lastCheckpointUtc;
 
-      public PollingDelayPolicy(IDateTimeProvider dateTimeProvider, TimeSpan delay, TimeSpan maxDelay) {
+      private static class ClassLogger {
+        static ClassLogger() {
+#if DEBUG
+          //LogInfoEnabled = true;
+#endif
+        }
+        public static bool LogInfoEnabled { get; set; }
+      }
+
+      public PollingDelayPolicy(IDateTimeProvider dateTimeProvider, TimeSpan checkpointDelay, TimeSpan maxDelay) {
         _dateTimeProvider = dateTimeProvider;
-        _delay = delay;
+        _checkpointDelay = checkpointDelay;
         _maxDelay = maxDelay;
         Restart();
       }
 
+      /// <summary>
+      /// Called when all events have been flushed, resets all timers.
+      /// </summary>
       public void Restart() {
         _lastPollUtc = _lastCheckpointUtc = _dateTimeProvider.UtcNow;
       }
 
+      /// <summary>
+      /// Called when a new event instance occurred, resets the "checkpoint"
+      /// timer.
+      /// </summary>
       public void Checkpoint() {
         _lastCheckpointUtc = _dateTimeProvider.UtcNow;
       }
 
+      /// <summary>
+      /// Returns <code>true</code> when either the maxmium or checkpoint delay
+      /// has expired.
+      /// </summary>
       public bool WaitTimeExpired() {
         var now = _dateTimeProvider.UtcNow;
 
-        return 
-          (now - _lastPollUtc >= _maxDelay) ||
-          (now -_lastCheckpointUtc >= _delay);
+        var result = (now - _lastPollUtc >= _maxDelay) ||
+                     (now -_lastCheckpointUtc >= _checkpointDelay);
+        if (result) {
+          if (ClassLogger.LogInfoEnabled) {
+            Logger.LogInfo("Timer expired: now={0}, checkpoint={1} msec, start={2} msec, checkpointDelay={3:n0} msec, maxDelay={4:n0} msec",
+              now.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+              (now - _lastCheckpointUtc).TotalMilliseconds,
+              (now - _lastPollUtc).TotalMilliseconds,
+              _checkpointDelay.TotalMilliseconds,
+              _maxDelay.TotalMilliseconds);
+          }
+        }
+        return result;
       }
     }
   }

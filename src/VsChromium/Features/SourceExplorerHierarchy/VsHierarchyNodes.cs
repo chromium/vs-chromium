@@ -11,7 +11,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
   public class VsHierarchyNodes {
     public const uint RootNodeItemId = unchecked((uint)-2);
     private readonly Dictionary<uint, NodeViewModel> _itemIdMap = new Dictionary<uint, NodeViewModel>();
-    private readonly NodeViewModel _rootNode = new RootNodeViewModel();
+    private readonly NodeViewModel _rootNode = new DirectoryNodeViewModel();
     private uint _maxItemId = 5; // Arbitrary number not too close to 0.
 
     public VsHierarchyNodes() {

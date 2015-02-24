@@ -2,16 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using VsChromium.Core.Linq;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class VsHierarchyAggregate : IVsHierarchyImpl {
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IVsGlyphService _vsGlyphService;
     private readonly List<VsHierarchyCommandHandler> _commandHandlers = new List<VsHierarchyCommandHandler>();
-    private readonly List<VsHierarchy> _hierarchies = new List<VsHierarchy>(); 
+    private readonly List<VsHierarchy> _hierarchies = new List<VsHierarchy>();
+    private readonly object _hierarchiesLock = new object();
     private int _version;
 
-    public VsHierarchyAggregate() {
+    public VsHierarchyAggregate(
+      IServiceProvider serviceProvider,
+      IVsGlyphService vsGlyphService) {
+      _serviceProvider = serviceProvider;
+      _vsGlyphService = vsGlyphService;
       _version = 1;
     }
 
@@ -36,6 +45,28 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public void SelectNodeByFilePath(string filePath) {
       _hierarchies.ForAll(x => x.SelectNodeByFilePath(filePath));
+    }
+
+    public List<VsHierarchy> CloneHierarchyList() {
+      lock (_hierarchiesLock) {
+        return _hierarchies.ToList();
+      }
+    }
+
+    public void SetNewHierarchies(List<VsHierarchy> vsHierarchies) {
+      _version++;
+      lock (_hierarchiesLock) {
+        _hierarchies.Clear();
+        _hierarchies.AddRange(vsHierarchies);
+      }
+    }
+
+    public VsHierarchy CreateHierarchy() {
+      var result = new VsHierarchy(_serviceProvider, _vsGlyphService);
+      foreach (var handler in _commandHandlers) {
+        result.AddCommandHandler(handler);
+      }
+      return result;
     }
   }
 }

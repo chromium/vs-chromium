@@ -216,6 +216,7 @@
     <Compile Include="Features\SourceExplorerHierarchy\DirectoryNodeViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\FileNodeViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilder.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilderAggregate.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\INodeTemplateFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyControllerFactory.cs" />
@@ -224,7 +225,6 @@
     <Compile Include="Features\SourceExplorerHierarchy\IVsSolutionEventsHandler.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\NodeTemplateFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\NodeViewModelTemplate.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\RootNodeViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SolutionExplorerHierarchyInitializer.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />

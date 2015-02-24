@@ -48,41 +48,44 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       var buildResult = RunImpl();
 
       // Return the predicate to run on the main thread.
-      return latestFileSystemTreeVersion => {
-        // We need to load these images on the main UI thread
-        buildResult.FileTemplatesToInitialize.ForAll(item => {
-          item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
-        });
+      return latestFileSystemTreeVersion =>
+        ApplyChanges(buildResult, hierarchyVersion, latestFileSystemTreeVersion);
+    }
 
-        // Apply if nobody bear us to is.
-        if (_hierarchy.Version == hierarchyVersion) {
-          Logger.LogInfo(
-            "Updating VsHierarchy nodes for version {0} and file system tree version {1}",
-            hierarchyVersion,
-            _fileSystemTree.Version);
-          _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);
-          return ApplyChangesResult.Done;
-        }
+    private ApplyChangesResult ApplyChanges(IncrementalBuildResult buildResult, int hierarchyVersion, int latestFileSystemTreeVersion) {
+      // We need to load these images on the main UI thread
+      buildResult.FileTemplatesToInitialize.ForAll(item => {
+        item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
+      });
 
+      // Apply if nobody beat us to is.
+      if (_hierarchy.Version == hierarchyVersion) {
         Logger.LogInfo(
-          "VsHierarchy nodes have been updated concurrently, re-run or skip operation." +
-          " Node verions={0}-{1}, Tree versions:{2}-{3}.",
-          hierarchyVersion, _hierarchy.Version,
-          _fileSystemTree.Version, latestFileSystemTreeVersion);
+          "Updating VsHierarchy nodes for version {0} and file system tree version {1}",
+          hierarchyVersion,
+          _fileSystemTree.Version);
+        _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);
+        return ApplyChangesResult.Done;
+      }
 
-        // If the version of the hieararchy has changed since when we started,
-        // another thread has passed us.  This means the decisions we made
-        // about the changes to apply are incorrect at this point. So, we run
-        // again if we are processing the latest known version of the file
-        // system tree, as we should be the winner (eventually)
-        if (_fileSystemTree.Version == latestFileSystemTreeVersion) {
-          // Termination notes: We make this call only when the VsHierarchy
-          // version changes between the time we capture it and this point.
-          return ApplyChangesResult.Retry;
-        }
+      Logger.LogInfo(
+        "VsHierarchy nodes have been updated concurrently, re-run or skip operation." +
+        " Node verions={0}-{1}, Tree versions:{2}-{3}.",
+        hierarchyVersion, _hierarchy.Version,
+        _fileSystemTree.Version, latestFileSystemTreeVersion);
 
-        return ApplyChangesResult.Bail;
-      };
+      // If the version of the hieararchy has changed since when we started,
+      // another thread has passed us.  This means the decisions we made
+      // about the changes to apply are incorrect at this point. So, we run
+      // again if we are processing the latest known version of the file
+      // system tree, as we should be the winner (eventually)
+      if (_fileSystemTree.Version == latestFileSystemTreeVersion) {
+        // Termination notes: We make this call only when the VsHierarchy
+        // version changes between the time we capture it and this point.
+        return ApplyChangesResult.Retry;
+      }
+
+      return ApplyChangesResult.Bail;
     }
 
     private IncrementalBuildResult RunImpl() {

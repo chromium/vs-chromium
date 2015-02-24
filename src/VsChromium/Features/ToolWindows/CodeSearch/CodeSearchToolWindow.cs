@@ -64,7 +64,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         new PreviousLocationCommandHandler(this),
         new NextLocationCommandHandler(this),
         new CancelSearchCommandHandler(this),
-        new CancelSearchToolWindowCommandHandler(this),
+        //new CancelSearchToolWindowCommandHandler(this),
         // Add more here...
       };
 

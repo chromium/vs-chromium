@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// Note: This command handler is currently disabled, as it was more useful when
+// the "Code Search" toolwindow was a "Source Explorer" toolwindow. It would
+// ensure that pressing "Esc" while in the tool window would cancel the current
+// search and switch the active display back to source explorer hierarchy.
+#if false
 using System;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio;
@@ -38,3 +43,4 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
   }
 }
+#endif

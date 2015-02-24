@@ -21,6 +21,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public NodeViewModel RootNode { get { return _rootNode; } }
 
+    public bool IsEmpty {
+      get {
+        return _rootNode.GetChildrenCount() == 0;
+      }
+    }
+
     public uint MaxItemId { get { return _maxItemId; } }
     public int Count { get { return _itemIdMap.Count; } }
 

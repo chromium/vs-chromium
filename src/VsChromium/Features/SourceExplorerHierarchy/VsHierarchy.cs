@@ -61,7 +61,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public bool IsEmpty {
-      get { return Nodes.RootNode.GetChildrenCount() == 0; }
+      get { return Nodes.IsEmpty; }
     }
 
     public void SelectNodeByFilePath(string path) {
@@ -125,9 +125,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           RefreshAll();
           return;
         }
+        Debug.Assert(_vsHierarchyActive);
+
+        // PERF: Simple case of one of the collection empty, refresh all is
+        // faster than individual operations
+        if (nodes.IsEmpty || _nodes.IsEmpty) {
+          if (!ReferenceEquals(nodes, _nodes)) {
+            _nodes = nodes;
+            _nodesVersion++;
+          }
+          RefreshAll();
+          return;
+        }
 
         // Incremental case: Notify of add/remove items.
-        Debug.Assert(_vsHierarchyActive);
         Debug.Assert(changes != null);
 
         // Note: We want to avoid calling "OnItemAdded" in "IVsHierarchyEvents"

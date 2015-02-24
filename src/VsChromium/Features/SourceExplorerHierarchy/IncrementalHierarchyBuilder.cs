@@ -109,6 +109,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
             // Add children nodes
             AddNodeForChildren(rootEntry, _oldNodes.RootNode, _newNodes.RootNode);
           } else {
+            // Add all child directories of the file system tree
             AddNodeForChildren(_fileSystemTree.Root, _oldNodes.RootNode, _newNodes.RootNode);
           }
         }

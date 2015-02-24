@@ -10,29 +10,92 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
-  public class IncrementalHierarchyBuilder {
+  public interface IIncrementalHierarchyBuilder {
+    Func<int, ApplyChangesResult> ComputeChangeApplier();
+  }
+
+  public enum ApplyChangesResult {
+    Bail,
+    Retry,
+    Done
+  };
+
+  public class IncrementalHierarchyBuilder : IIncrementalHierarchyBuilder {
     private readonly INodeTemplateFactory _templateFactory;
+    private readonly VsHierarchy _hierarchy;
     private readonly VsHierarchyNodes _oldNodes;
     private readonly FileSystemTree _fileSystemTree;
+    private readonly IImageSourceFactory _imageSourceFactory;
     private readonly VsHierarchyNodes _newNodes = new VsHierarchyNodes();
     private readonly VsHierarchyChanges _changes = new VsHierarchyChanges();
     private readonly Dictionary<string, NodeViewModelTemplate> _fileTemplatesToInitialize =
-      new Dictionary<string, NodeViewModelTemplate>(SystemPathComparer.Instance.StringComparer); 
+      new Dictionary<string, NodeViewModelTemplate>(SystemPathComparer.Instance.StringComparer);
     private uint _newNodeNextItemId;
 
     public IncrementalHierarchyBuilder(
       INodeTemplateFactory nodeTemplateFactory,
-      VsHierarchyNodes oldNodes,
-      FileSystemTree fileSystemTree) {
+      VsHierarchy hierarchy,
+      FileSystemTree fileSystemTree,
+      IImageSourceFactory imageSourceFactory) {
       _templateFactory = nodeTemplateFactory;
-      _oldNodes = oldNodes;
+      _hierarchy = hierarchy;
+      _oldNodes = hierarchy.Nodes;
       _fileSystemTree = fileSystemTree;
+      _imageSourceFactory = imageSourceFactory;
     }
 
-    public IncrementalBuildResult Run() {
+    public Func<int, ApplyChangesResult> ComputeChangeApplier() {
+      // Capture hierarchy version # for checking later that another
+      // thread did not beat us.
+      int hierarchyVersion = _hierarchy.Version;
+
+      // Build the new nodes
+      var buildResult = RunImpl();
+
+      // Return the predicate to run on the main thread.
+      return latestFileSystemTreeVersion => {
+        // We need to load these images on the main UI thread
+        buildResult.FileTemplatesToInitialize.ForAll(item => {
+          item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
+        });
+
+        // Apply if nobody bear us to is.
+        if (_hierarchy.Version == hierarchyVersion) {
+          Logger.LogInfo(
+            "Updating VsHierarchy nodes for version {0} and file system tree version {1}",
+            hierarchyVersion,
+            _fileSystemTree.Version);
+          _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);
+          return ApplyChangesResult.Done;
+        }
+
+        Logger.LogInfo(
+          "VsHierarchy nodes have been updated concurrently, re-run or skip operation." +
+          " Node verions={0}-{1}, Tree versions:{2}-{3}.",
+          hierarchyVersion, _hierarchy.Version,
+          _fileSystemTree.Version, latestFileSystemTreeVersion);
+
+        // If the version of the hieararchy has changed since when we started,
+        // another thread has passed us.  This means the decisions we made
+        // about the changes to apply are incorrect at this point. So, we run
+        // again if we are processing the latest known version of the file
+        // system tree, as we should be the winner (eventually)
+        if (_fileSystemTree.Version == latestFileSystemTreeVersion) {
+          // Termination notes: We make this call only when the VsHierarchy
+          // version changes between the time we capture it and this point.
+          return ApplyChangesResult.Retry;
+        }
+
+        return ApplyChangesResult.Bail;
+      };
+    }
+
+    private IncrementalBuildResult RunImpl() {
       using (new TimeElapsedLogger("Computing NodesViewModel with diffs")) {
         _newNodeNextItemId = _oldNodes.MaxItemId + 1;
 
@@ -80,7 +143,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _changes.DeletedItems.Add(item.ItemId);
       }
 
-      foreach(var newChild in diffs.RightOnlyItems.ToEnumerator()) {
+      foreach (var newChild in diffs.RightOnlyItems.ToEnumerator()) {
         newChild.ItemId = _newNodeNextItemId;
         _newNodeNextItemId++;
         newChild.IsExpanded = newParent.IsRoot;

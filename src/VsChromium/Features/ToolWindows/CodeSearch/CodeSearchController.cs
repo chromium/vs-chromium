@@ -127,7 +127,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         }
 
         // Add top level nodes in search results explaining results may be outdated
-        AddResultsOutdateMessage();
+        AddResultsOutdatedMessage();
       } else {
         var items = CreateInfromationMessages(
           string.Format("Open a source file from a local Chromium enlistment or") + "\r\n" +
@@ -146,7 +146,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public void FilesLoaded() {
       // Add top level nodes in search results explaining results may be outdated
-      AddResultsOutdateMessage();
+      AddResultsOutdatedMessage();
       FetchDatabaseStatistics();
     }
 
@@ -154,7 +154,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.SwitchToInformationMessages();
     }
 
-    private void AddResultsOutdateMessage() {
+    private void AddResultsOutdatedMessage() {
+      // Don't do this for now because
+      // 1) the message tends to be annoying
+      // 2) there is an issue with "BringObjectToView" that assumes nodes list
+      //    have the same # of children, and we get an error 
+      //    "TreeView item data context is not the right data object."
+#if false
       // Add only if we have search results currently displayed.
       if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
         return;
@@ -173,6 +179,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         parent,
         "Search results may be out of date as index has been updated. Run search again to display up-to-date results.");
       ViewModel.RootNodes.Insert(0, item);
+#endif
     }
 
     public void RefreshFileSystemTree() {

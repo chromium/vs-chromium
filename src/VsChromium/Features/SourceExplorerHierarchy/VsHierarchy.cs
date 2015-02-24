@@ -151,6 +151,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
             _nodesVersion++;
           }
           RefreshAll();
+
+          if (_nodes.RootNode.ExpandByDefault) {
+            ExpandNode(_nodes.RootNode);
+          }
           return;
         }
 

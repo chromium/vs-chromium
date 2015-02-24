@@ -56,6 +56,7 @@
         <Parent guid="guidSHLMainMenu" id="IDG_VS_VIEW_ORG_WINDOWS" />
         <Icon guid="guidCodeSearchImages" id="Icon" />
         <Strings>
+          <!-- See http://goo.gl/mIKffC for explanation of all values -->
           <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
               and is used as a default value for other entries if they are not specified-->
           <ButtonText>Code Search</ButtonText>
@@ -102,13 +103,17 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <Strings>
+          <!-- See http://goo.gl/mIKffC for explanation of all values -->
           <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
               and is used as a default value for other entries if they are not specified-->
-          <ButtonText>VsChromium Sync To Active Document</ButtonText>
+          <ButtonText>Sync With Active Document</ButtonText>
           <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
-          <CommandName>VsChromium - Sync To Active Document</CommandName>
+          <CommandName>VsChromium - Sync With Active Document</CommandName>
           <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
-          <LocCanonicalName>VsChromium.SyncToActiveDocument</LocCanonicalName>
+          <LocCanonicalName>VsChromium.SyncWithActiveDocument</LocCanonicalName>
+          <!-- ToolTipText string is used when used in top level VS menu and in a toolbar
+               (in this case the keyboard shortcut, if any, is also displayed in the tooltip) -->
+          <ToolTipText>Sync Source Explorer With Active Document</ToolTipText>
         </Strings>
       </Button>
       <!-- Custom "Open Folder in File Explorer" command (in context menu of Vs Hierarhcy Folder) -->
@@ -324,6 +329,9 @@
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidCancelSearch" editor="guidVSStd97" key1="VK_ESCAPE" mod1="" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c" />
+    <!-- Ctrl-[, A is a close match to Ctrl-[, S, used for Solution Explorer. -->
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSyncToDocument" editor="guidVSStd97" mod1="Control" key1="VK_OEM_4" mod2="Control" key2="a"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSyncToDocument" editor="guidVSStd97" mod1="Control" key1="VK_OEM_4" key2="a"/>
   </KeyBindings>
   <Symbols>
     <!-- This is the package guid. -->

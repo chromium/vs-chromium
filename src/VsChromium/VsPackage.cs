@@ -61,6 +61,8 @@ namespace VsChromium {
     new[] { "VS Chromium", "Chrome", "Coding Style", "Style" },
     SupportsProfiles = true)
   ]
+  [ProvideAutoLoad(UIContextGuids80.EmptySolution)]
+  [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
   public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage, IOleCommandTarget {
     private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
 

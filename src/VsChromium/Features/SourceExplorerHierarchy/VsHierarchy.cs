@@ -117,14 +117,30 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
         // Simple case of unknwon changes or hierarchy is not active.
         if (changes == null || !_vsHierarchyActive) {
+          // PERF: WE first open the hierarchy with only a single root node,
+          // then we assign the nodes and refresh the root node children.
+          //
+          // This is to workaround a performance issue in Resharper: Resharper
+          // listens to "OnOpenProjects" event and scans the entire hierarchy
+          // (on the UI thread), which can "hang" Visual Studio for seconds. For
+          // example, when opening a Chromium enlistement with about 180,000
+          // files in the VsHierarchy, Resharper takes up to 20 seconds to scan
+          // all elements.
+          //
+          // One side effect is that Resharper won't know of any of the files in
+          // the hierarchy, so they won't show up in various "Navigate To"
+          // windows.
+          OpenVsHierarchy();
+
           if (!ReferenceEquals(nodes, _nodes)) {
             _nodes = nodes;
             _nodesVersion++;
           }
-          OpenVsHierarchy();
+
           RefreshAll();
           return;
         }
+
         Debug.Assert(_vsHierarchyActive);
 
         // PERF: Simple case of one of the collection empty, refresh all is

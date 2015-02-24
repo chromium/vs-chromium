@@ -95,99 +95,103 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         mcs.AddCommand(cmd.ToOleMenuCommand());
       }
 
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.VsHierarchy, args.Node)
-      });
-
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.VsHierarchy, args.Node)
-      });
-
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_RightClick),
-        IsEnabled = node => true,
-        Execute = args => ShowContextMenu(args.Node, args.VariantIn)
-      });
-
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.Open),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.VsHierarchy, args.Node)
-      });
-
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.OpenWith),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.VsHierarchy, args.Node, openWith: true)
-      });
-
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(VSConstants.VSStd2K, (int)VSConstants.VSStd2KCmdID.SLNREFRESH),
-        IsEnabled = node => true,
-        Execute = args => RefreshFileSystemTree()
-      });
-
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPath),
-        IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.FullPath)
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPathPosix),
-        IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyRelativePath),
-        IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.RelativePath)
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyRelativePathPosix),
-        IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.RelativePath))
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenFolderInExplorer),
-        IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _windowsExplorer.OpenFolder(args.Node.FullPath)
-      });
-
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPath),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.FullPath)
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPathPosix),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePath),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.RelativePath)
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePathPosix),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.RelativePath))
-      });
-      _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenContainingFolder),
-        IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.FullPath)
-      });
+      RegisterHierarchyCommands(_hierarchy);
 
       _nodeTemplateFactory.Activate();
       _eventBus.RegisterHandler("ShowInSolutionExplorer", ShowInSolutionExplorerHandler);
 
       _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
       SynchronizeHierarchy();
+    }
+
+    private void RegisterHierarchyCommands(VsHierarchy hierarchy) {
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int) VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => OpenDocument(args.Hierarchy, args.Node)
+      });
+
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int) VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => OpenDocument(args.Hierarchy, args.Node)
+      });
+
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int) VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_RightClick),
+        IsEnabled = node => true,
+        Execute = args => ShowContextMenu(args.Node, args.VariantIn)
+      });
+
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int) VSConstants.VSStd97CmdID.Open),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => OpenDocument(args.Hierarchy, args.Node)
+      });
+
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int) VSConstants.VSStd97CmdID.OpenWith),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => OpenDocument(args.Hierarchy, args.Node, openWith: true)
+      });
+
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(VSConstants.VSStd2K, (int) VSConstants.VSStd2KCmdID.SLNREFRESH),
+        IsEnabled = node => true,
+        Execute = args => RefreshFileSystemTree()
+      });
+
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyFullPath),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = args => _clipboard.SetText(args.Node.FullPath)
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyFullPathPosix),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyRelativePath),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = args => _clipboard.SetText(args.Node.RelativePath)
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyRelativePathPosix),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.RelativePath))
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidOpenFolderInExplorer),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = args => _windowsExplorer.OpenFolder(args.Node.FullPath)
+      });
+
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyFileFullPath),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => _clipboard.SetText(args.Node.FullPath)
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyFileFullPathPosix),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyFileRelativePath),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => _clipboard.SetText(args.Node.RelativePath)
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidCopyFileRelativePathPosix),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.RelativePath))
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidOpenContainingFolder),
+        IsEnabled = node => node is FileNodeViewModel,
+        Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.FullPath)
+      });
     }
 
     private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {

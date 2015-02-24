@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -18,11 +19,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     protected NodeViewModel() {
       DocCookie = uint.MaxValue;
+      ChildIndex = -1; // No set
       ItemId = VSConstants.VSITEMID_NIL;
       Template = NodeViewModelTemplate.Default;
     }
 
     public uint ItemId { get; set; }
+    /// <summary>Index in list of children of parent element</summary>
+    public int ChildIndex { get; set; }
     public string Name { get; set; }
     public string Caption { get; set; }
     public uint DocCookie { get; set; }
@@ -122,22 +126,22 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public uint GetNextSiblingItemId() {
-      // TODO(rpaquay): Perf?
       if (_parent == null)
         return VSConstants.VSITEMID_NIL;
 
-      var index = _parent.ChildrenImpl.IndexOf(this);
+      var index = ChildIndex;
+      Debug.Assert(0 <= index && index < _parent.ChildrenImpl.Count);
       if (index < 0 || index >= _parent.ChildrenImpl.Count - 1)
         return VSConstants.VSITEMID_NIL;
       return _parent.ChildrenImpl[index + 1].ItemId;
     }
 
     public uint GetPreviousSiblingItemId() {
-      // TODO(rpaquay): Perf?
       if (_parent == null)
         return VSConstants.VSITEMID_NIL;
 
-      var index = _parent.ChildrenImpl.IndexOf(this);
+      var index = ChildIndex;
+      Debug.Assert(0 <= index && index < _parent.ChildrenImpl.Count);
       if (index < 1)
         return VSConstants.VSITEMID_NIL;
       return _parent.ChildrenImpl[index - 1].ItemId;
@@ -145,6 +149,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public void AddChild(NodeViewModel node) {
       node._parent = this;
+      node.ChildIndex = ChildrenImpl.Count;
       ChildrenImpl.Add(node);
     }
 
@@ -264,7 +269,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
             pvar = (int)iconHandle;
             break;
           }
-        case (int)__VSHPROPID.VSHPROPID_ProjectName:
+        // BSTR. Name for project (VSITEMID_ROOT) or item.
+        case (int)__VSHPROPID.VSHPROPID_Name:
+        // File name specified on the File Save menu.
         case (int)__VSHPROPID.VSHPROPID_SaveName:
           pvar = Name;
           break;

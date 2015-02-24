@@ -18,10 +18,21 @@ using VsChromium.Core.Utility;
 using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
+  public interface IVsHierarchyImpl {
+    int Version { get; }
+    bool IsEmpty { get; }
+
+    void AddCommandHandler(VsHierarchyCommandHandler handler);
+    void Reconnect();
+    void Disconnect();
+    void Disable();
+    void SelectNodeByFilePath(string filePath);
+  }
+
   /// <summary>
   /// Implementation of <see cref="IVsUIHierarchy"/> for the virtual project.
   /// </summary>
-  public class VsHierarchy : IVsUIHierarchy, IVsProject3, IDisposable {
+  public class VsHierarchy : IVsHierarchyImpl, IVsUIHierarchy, IVsProject3, IDisposable {
     private readonly System.IServiceProvider _serviceProvider;
     private readonly IVsGlyphService _vsGlyphService;
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
@@ -56,6 +67,18 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public int Version {
       get { return _nodesVersion; }
+    }
+
+    public bool IsEmpty {
+      get { return Nodes.RootNode.GetChildrenCount() == 0; }
+    }
+
+    public void SelectNodeByFilePath(string path) {
+      // TODO(rpaquay): Make this more efficient?
+      NodeViewModel node;
+      if (Nodes.RootNode.FindNodeByMoniker(path, out node)) {
+        SelectNode(node);
+      }
     }
 
     public void AddCommandHandler(VsHierarchyCommandHandler handler) {

@@ -37,7 +37,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationProcessor _delayedOperationProcessor;
-    private readonly VsHierarchy _hierarchy;
+    private readonly IVsHierarchyImpl _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
     /// <summary>
     /// Keeps track of the latest file system tree version received from the
@@ -90,7 +90,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (mcs != null) {
         var cmd = new SimplePackageCommandHandler(
           new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSyncToDocument),
-          () => _hierarchy.Nodes.RootNode.GetChildrenCount() >= 1,
+          () => !_hierarchy.IsEmpty,
           (s, e) => SyncToActiveDocument());
         mcs.AddCommand(cmd.ToOleMenuCommand());
       }
@@ -104,7 +104,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       SynchronizeHierarchy();
     }
 
-    private void RegisterHierarchyCommands(VsHierarchy hierarchy) {
+    private void RegisterHierarchyCommands(IVsHierarchyImpl hierarchy) {
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int) VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),
         IsEnabled = node => node is FileNodeViewModel,
@@ -300,11 +300,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (!PathHelpers.IsValidBclPath(path))
         return;
 
-      // TODO(rpaquay): Make this more efficient?
-      NodeViewModel node;
-      if (_hierarchy.Nodes.RootNode.FindNodeByMoniker(path, out node)) {
-        _hierarchy.SelectNode(node);
-      }
+      _hierarchy.SelectNodeByFilePath(path);
     }
 
     /// <summary>

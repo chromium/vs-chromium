@@ -18,17 +18,6 @@ using VsChromium.Core.Utility;
 using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
-  public interface IVsHierarchyImpl {
-    int Version { get; }
-    bool IsEmpty { get; }
-
-    void AddCommandHandler(VsHierarchyCommandHandler handler);
-    void Reconnect();
-    void Disconnect();
-    void Disable();
-    void SelectNodeByFilePath(string filePath);
-  }
-
   /// <summary>
   /// Implementation of <see cref="IVsUIHierarchy"/> for the virtual project.
   /// </summary>

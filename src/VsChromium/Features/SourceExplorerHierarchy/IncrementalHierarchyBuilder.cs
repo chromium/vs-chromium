@@ -15,16 +15,6 @@ using VsChromium.Core.Utility;
 using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
-  public interface IIncrementalHierarchyBuilder {
-    Func<int, ApplyChangesResult> ComputeChangeApplier();
-  }
-
-  public enum ApplyChangesResult {
-    Bail,
-    Retry,
-    Done
-  };
-
   public class IncrementalHierarchyBuilder : IIncrementalHierarchyBuilder {
     private readonly INodeTemplateFactory _templateFactory;
     private readonly VsHierarchy _hierarchy;

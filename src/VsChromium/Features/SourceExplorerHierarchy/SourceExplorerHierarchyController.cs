@@ -14,7 +14,6 @@ using VsChromium.Commands;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Package;
@@ -356,6 +355,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return new IncrementalHierarchyBuilder(
           _nodeTemplateFactory,
           vsHierarchy,
+          fileSystemTree,
+          _imageSourceFactory);
+      }
+
+      var vsHierarchyAggregate = _hierarchy as VsHierarchyAggregate;
+      if (vsHierarchyAggregate != null) {
+        return new IncrementalHierarchyBuilderAggregate(
+          _nodeTemplateFactory,
+          vsHierarchyAggregate,
           fileSystemTree,
           _imageSourceFactory);
       }

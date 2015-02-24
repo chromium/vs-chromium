@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Threads;
 using Constants = Microsoft.VisualStudio.OLE.Interop.Constants;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -27,16 +28,17 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly EventSinkCollection _eventSinks = new EventSinkCollection();
     private readonly VsHierarchyLogger _logger;
     private readonly Dictionary<CommandID, VsHierarchyCommandHandler> _commandHandlers = new Dictionary<CommandID, VsHierarchyCommandHandler>();
-    private readonly int _threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+    private readonly int _threadId;
     private VsHierarchyNodes _nodes = new VsHierarchyNodes();
     private int _nodesVersion = 0;
     private Microsoft.VisualStudio.OLE.Interop.IServiceProvider _site;
     private uint _selectionEventsCookie;
     private bool _vsHierarchyActive;
 
-    public VsHierarchy(System.IServiceProvider serviceProvider, IVsGlyphService vsGlyphService) {
+    public VsHierarchy(System.IServiceProvider serviceProvider, IVsGlyphService vsGlyphService, IUIThread uiThread) {
       _serviceProvider = serviceProvider;
       _vsGlyphService = vsGlyphService;
+      _threadId = uiThread.ManagedThreadId;
       _logger = new VsHierarchyLogger(this);
     }
 

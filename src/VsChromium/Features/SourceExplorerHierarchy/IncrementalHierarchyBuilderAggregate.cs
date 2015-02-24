@@ -56,19 +56,23 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         // Apply if nobody beat us to is.
         if (_hierarchy.Version == hierarchyVersion) {
           Logger.LogInfo(
-            "Updating VsHierarchy nodes for version {0} and file system tree version {1}",
+            "Updating VsHierarchyAggregate nodes for version {0} and file system tree version {1}",
             hierarchyVersion,
             _fileSystemTree.Version);
           rootEntries.ForAll(entry => {
             var result = entry.ChangeApplier(latestFileSystemTreeVersion);
             Debug.Assert(result == ApplyChangesResult.Done);
           });
-          _hierarchy.SetNewHierarchies(rootEntries.Select(x => x.Hierarchy).ToList());
+          var newHierarchies = rootEntries
+            .Where(x => !x.Hierarchy.IsEmpty)
+            .Select(x => x.Hierarchy)
+            .ToList();
+          _hierarchy.SetNewHierarchies(newHierarchies);
           return ApplyChangesResult.Done;
         }
 
         Logger.LogInfo(
-          "VsHierarchy nodes have been updated concurrently, re-run or skip operation." +
+          "VsHierarchyAggregate nodes have been updated concurrently, re-run or skip operation." +
           " Node verions={0}-{1}, Tree versions:{2}-{3}.",
           hierarchyVersion, _hierarchy.Version,
           _fileSystemTree.Version, latestFileSystemTreeVersion);
@@ -91,12 +95,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     private IEnumerable<RootEntry> CreateRootEntries(List<VsHierarchy> oldHierarchies) {
       foreach (var hierarchy in oldHierarchies) {
-        Debug.Assert(hierarchy.Nodes.RootNode.Children.Count > 0);
         var rootPath = GetHierarchyRootPath(hierarchy);
 
         var directoryEntry = _fileSystemTree.Root.Entries.FirstOrDefault(x => x.Name == rootPath);
-        // Hierarchy should be deleted, as its root does not exist in new tree
         if (directoryEntry == null) {
+          // Hierarchy should be deleted, as its root does not exist in new tree
           var fakeTree = new FileSystemTree {
             Version = _fileSystemTree.Version,
             Root = new DirectoryEntry() {
@@ -111,6 +114,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
             Builder = new IncrementalHierarchyBuilder(_templateFactory, hierarchy, fakeTree, _imageSourceFactory)
           };
         } else {
+          // Hierarchy should be updated with new root entry
           var fakeTree = new FileSystemTree {
             Version = _fileSystemTree.Version,
             Root = new DirectoryEntry() {
@@ -132,6 +136,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         var rootPath = directoryEntry.Name;
         var hierarchy = oldHierarchies.FirstOrDefault(x => GetHierarchyRootPath(x) == rootPath);
         if (hierarchy == null) {
+          // A new hierarchy should be created
           var fakeTree = new FileSystemTree {
             Version = _fileSystemTree.Version,
             Root = new DirectoryEntry() {

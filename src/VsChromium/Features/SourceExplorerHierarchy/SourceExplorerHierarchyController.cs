@@ -37,6 +37,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationProcessor _delayedOperationProcessor;
+    private readonly IUIThread _uiThread;
     private readonly IVsHierarchyImpl _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
     /// <summary>
@@ -59,7 +60,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IUIRequestProcessor uiRequestProcessor,
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
-      IDelayedOperationProcessor delayedOperationProcessor) {
+      IDelayedOperationProcessor delayedOperationProcessor,
+      IUIThread uiThread) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -72,9 +74,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationProcessor = delayedOperationProcessor;
-      _hierarchy = new VsHierarchy(
+      _uiThread = uiThread;
+//      _hierarchy = new VsHierarchy(
+      _hierarchy = new VsHierarchyAggregate(
         visualStudioPackageProvider.Package.ServiceProvider,
-        vsGlyphService);
+        vsGlyphService,
+        _uiThread);
       _nodeTemplateFactory = new NodeTemplateFactory(vsGlyphService, imageSourceFactory);
     }
 

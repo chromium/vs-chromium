@@ -9,10 +9,14 @@ namespace VsChromium.Threads {
   [Export(typeof(ISynchronizationContextProvider))]
   public class SynchronizationContextProvider : ISynchronizationContextProvider {
     private readonly ISynchronizationContext _context;
+    private readonly int _threadId;
 
-    public SynchronizationContextProvider() {
+    [ImportingConstructor]
+    public SynchronizationContextProvider(IUIThread uiThread) {
       _context = new SynchronizationContextDelegate(SynchronizationContext.Current);
+      _threadId = uiThread.ManagedThreadId;
     }
+
     public ISynchronizationContext UIContext { get { return _context; } }
   }
 }

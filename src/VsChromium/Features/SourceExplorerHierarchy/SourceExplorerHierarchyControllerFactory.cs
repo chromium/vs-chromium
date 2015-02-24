@@ -26,6 +26,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationProcessor _delayedOperationProcessor;
+    private readonly IUIThread _uiThread;
 
     [ImportingConstructor]
     public SourceExplorerHierarchyControllerFactory(
@@ -41,7 +42,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IUIRequestProcessor uiRequestProcessor,
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
-      IDelayedOperationProcessor delayedOperationProcessor) {
+      IDelayedOperationProcessor delayedOperationProcessor,
+      IUIThread uiThread) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -55,6 +57,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationProcessor = delayedOperationProcessor;
+      _uiThread = uiThread;
     }
 
     public ISourceExplorerHierarchyController CreateController() {
@@ -71,7 +74,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _uiRequestProcessor,
         _eventBus,
         _globalSettingsProvider,
-        _delayedOperationProcessor);
+        _delayedOperationProcessor,
+        _uiThread);
     }
   }
 }

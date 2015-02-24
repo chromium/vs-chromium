@@ -280,7 +280,9 @@
     <Compile Include="ServerProxy\FileSystemTreeSource.cs" />
     <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />
     <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
+    <Compile Include="Threads\IUIThread.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
+    <Compile Include="Threads\UIThread.cs" />
     <Compile Include="ToolsOptions\IToolsOptionsPageProvider.cs" />
     <Compile Include="ToolsOptions\CodingStyleOptions.cs">
       <SubType>Component</SubType>

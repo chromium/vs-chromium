@@ -178,12 +178,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           var deletedNode = _nodes.GetNode(deleted);
           Debug.Assert(deletedNode != null);
           Debug.Assert(deletedNode.Parent != null);
-          if (_logger.IsLogDiffEnabled) {
+          if (_logger.LogNodeChangesActivity) {
             _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.FullPath);
           }
 
           // PERF: avoid allocation
-          for(var i = 0; i < events1.Count; i++){
+          for (var i = 0; i < events1.Count; i++) {
             events1[i].OnItemDeleted(deletedNode.ItemId);
           }
         }
@@ -201,7 +201,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           var previousSiblingItemId = addedNode.GetPreviousSiblingItemId();
           Debug.Assert(addedNode != null);
           Debug.Assert(addedNode.Parent != null);
-          if (_logger.IsLogDiffEnabled) {
+          if (_logger.LogNodeChangesActivity) {
             _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.FullPath);
             _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.FullPath);
             _logger.Log(
@@ -364,34 +364,38 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return VSConstants.E_FAIL;
     }
 
+    public int GetPropertyReturn(uint itemid, int propid, object value, out object pvar, int hresult) {
+      _logger.LogProperty("GetProperty", itemid, propid, value);
+      pvar = value;
+      return hresult;
+    }
+
     public int GetProperty(uint itemid, int propid, out object pvar) {
-      _logger.LogProperty("GetProperty", itemid, propid);
       if (itemid == _nodes.RootNode.ItemId && propid == (int)__VSHPROPID.VSHPROPID_ProjectDir) {
-        pvar = "";
-        return VSConstants.S_OK;
+        return GetPropertyReturn(itemid, propid, "", out pvar, VSConstants.S_OK);
       }
-      // Displat node before regular projects, but after "Solution Items".
+      // Display node before regular projects, but after "Solution Items".
       if (itemid == _nodes.RootNode.ItemId && propid == (int)__VSHPROPID.VSHPROPID_SortPriority) {
-        pvar = -1;
-        return VSConstants.S_OK;
-      }
-      NodeViewModel node;
-      if (_nodes.FindNode(itemid, out node)) {
-        switch (propid) {
-          case (int)__VSHPROPID.VSHPROPID_ParentHierarchyItemid:
-          case (int)__VSHPROPID.VSHPROPID_ParentHierarchy:
-            pvar = null;
-            return VSConstants.E_FAIL;
-          case (int)__VSHPROPID.VSHPROPID_IconImgList:
-            pvar = (int)ImageListPtr;
-            return 0;
-          default:
-            return node.GetProperty(propid, out pvar);
-        }
+        return GetPropertyReturn(itemid, propid, -1, out pvar, VSConstants.S_OK);
       }
 
-      pvar = null;
-      return VSConstants.E_NOTIMPL;
+      NodeViewModel node = _nodes.GetNode(itemid);
+      if (node == null) {
+        return GetPropertyReturn(itemid, propid, null, out pvar, VSConstants.E_NOTIMPL);
+      }
+
+      switch (propid) {
+        case (int)__VSHPROPID.VSHPROPID_ParentHierarchyItemid:
+        case (int)__VSHPROPID.VSHPROPID_ParentHierarchy:
+          return GetPropertyReturn(itemid, propid, null, out pvar, VSConstants.E_FAIL);
+
+        case (int)__VSHPROPID.VSHPROPID_IconImgList:
+          return GetPropertyReturn(itemid, propid, (int)ImageListPtr, out pvar, VSConstants.S_OK);
+
+        default:
+          int hresult = node.GetProperty(propid, out pvar);
+          return GetPropertyReturn(itemid, propid, pvar, out pvar, hresult);
+      }
     }
 
     public int GetSite(out Microsoft.VisualStudio.OLE.Interop.IServiceProvider site) {
@@ -406,12 +410,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public int SetGuidProperty(uint itemid, int propid, ref Guid rguid) {
-      _logger.LogProperty("SetGuidProperty - ", itemid, propid);
+      _logger.LogPropertyGuid("SetGuidProperty - ", itemid, propid);
       return VSConstants.E_NOTIMPL;
     }
 
     public int SetProperty(uint itemid, int propid, object var) {
-      _logger.LogProperty("SetProperty - ", itemid, propid);
+      _logger.LogProperty("SetProperty - ", itemid, propid, var);
       NodeViewModel node;
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;

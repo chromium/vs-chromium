@@ -15,6 +15,24 @@ using VsChromium.Core.Utility;
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class VsHierarchyLogger {
     private readonly VsHierarchy _vsHierarchy;
+
+    public VsHierarchyLogger(VsHierarchy vsHierarchy) {
+      _vsHierarchy = vsHierarchy;
+      //Enabled = true;
+      //LogHierarchyActivity = true;
+      //LogPropertyIdActivity = true;
+      //LogPropteryGuidActivity = true;
+      //LogCommandTargetActivity = true;
+      //LogNodeChangesActivity2 = true;
+    }
+
+    public bool Enabled { get; set; }
+    public bool LogHierarchyActivity { get; set; }
+    public bool LogPropertyIdActivity { get; set; }
+    public bool LogPropteryGuidActivity { get; set; }
+    public bool LogCommandTargetActivity { get; set; }
+    public bool LogNodeChangesActivity { get; set; }
+
     private static readonly Type[] VshPropTypes = {
       typeof(__VSHPROPID),
       typeof(__VSHPROPID2), 
@@ -134,23 +152,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       CustomGroupGuids.guidVenusCmdId,
     };
 
-    public VsHierarchyLogger(VsHierarchy vsHierarchy) {
-      _vsHierarchy = vsHierarchy;
-      Enabled = true;
-      //LogHierarchyActivity = true;
-      //LogPropertyIdActivity = true;
-      //LogPropteryGuidActivity = true;
-      //LogCommandTargetActivity = true;
-      //IsLogDiffEnabled = true;
-    }
-
-    public bool Enabled { get; set; }
-    public bool LogHierarchyActivity { get; set; }
-    public bool LogPropertyIdActivity { get; set; }
-    public bool LogPropteryGuidActivity { get; set; }
-    public bool LogCommandTargetActivity { get; set; }
-    public bool IsLogDiffEnabled { get; set; }
-
     public void Log(string format, params object[] args) {
       if (!Enabled)
         return;
@@ -165,11 +166,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       Log("VsHierarchy: {0}", string.Format(format, args));
     }
 
-    public void LogProperty(string message, uint itemid, int propid) {
+    public void LogProperty(string message, uint itemid, int propid, object value) {
       if (!LogPropertyIdActivity)
         return;
 
-      Log("{0}({1}) - {2}", message, unchecked((int)itemid), GetEnumName(propid, VshPropTypes));
+      Log("{0}({1}) - {2} = {3}", message, unchecked((int)itemid), GetEnumName(propid, VshPropTypes), value ?? "<null>");
     }
 
     public void LogPropertyGuid(string message, uint itemid, int propid) {

@@ -14,7 +14,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
   }
 
   public class CommandArgs {
-    public CommandArgs(CommandID commandId, NodeViewModel node, IntPtr variantIn, IntPtr variantOut) {
+    public CommandArgs(CommandID commandId, VsHierarchy vsHierarchy, NodeViewModel node, IntPtr variantIn, IntPtr variantOut) {
+      VsHierarchy = vsHierarchy;
       CommandId = commandId;
       Node = node;
       VariantIn = variantIn;
@@ -22,6 +23,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public CommandID CommandId { get; private set; }
+    public VsHierarchy VsHierarchy { get; private set; }
     public NodeViewModel Node { get; private set; }
     public IntPtr VariantIn { get; private set; }
     public IntPtr VariantOut { get; private set; }

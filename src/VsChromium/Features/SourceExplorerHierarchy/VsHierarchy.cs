@@ -444,7 +444,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         if (!handler.IsEnabled(node)) {
           return (int)Constants.OLECMDERR_E_NOTSUPPORTED;
         }
-        handler.Execute(new CommandArgs(commandId, node, pvaIn, pvaOut));
+        handler.Execute(new CommandArgs(commandId, this, node, pvaIn, pvaOut));
         return VSConstants.S_OK;
       }
 

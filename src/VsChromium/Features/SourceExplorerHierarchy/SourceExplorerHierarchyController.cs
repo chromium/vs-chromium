@@ -98,13 +98,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_DoubleClick),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node)
+        Execute = args => OpenDocument(args.VsHierarchy, args.Node)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VsUIHierarchyWindowCmds, (int)VSConstants.VsUIHierarchyWindowCmdIds.UIHWCMDID_EnterKey),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node)
+        Execute = args => OpenDocument(args.VsHierarchy, args.Node)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
@@ -116,13 +116,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.Open),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node)
+        Execute = args => OpenDocument(args.VsHierarchy, args.Node)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.OpenWith),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => OpenDocument(args.Node, openWith: true)
+        Execute = args => OpenDocument(args.VsHierarchy, args.Node, openWith: true)
       });
 
       _hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
@@ -267,13 +267,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void OpenDocument(NodeViewModel node, bool openWith = false) {
+    private void OpenDocument(VsHierarchy hierarchy, NodeViewModel node, bool openWith = false) {
       Logger.WrapActionInvocation(
         () => {
           if (!_fileSystem.FileExists(new FullPath(node.FullPath)))
             return;
           if (openWith)
-            _openDocumentHelper.OpenDocumentWith(node.FullPath, _hierarchy, node.ItemId, view => null);
+            _openDocumentHelper.OpenDocumentWith(node.FullPath, hierarchy, node.ItemId, view => null);
           else
             _openDocumentHelper.OpenDocument(node.FullPath, view => null);
         });

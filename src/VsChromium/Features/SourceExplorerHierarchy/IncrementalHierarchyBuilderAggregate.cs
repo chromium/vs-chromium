@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
@@ -156,8 +157,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private static string GetHierarchyRootPath(VsHierarchy hierarchy) {
-      Debug.Assert(hierarchy.Nodes.RootNode.Children.Count > 0);
-      return hierarchy.Nodes.RootNode.Children[0].FullPath;
+      var rootNode = hierarchy.Nodes.RootNode;
+      if (PathHelpers.IsAbsolutePath(rootNode.Name)) {
+        return rootNode.Name;
+      } else {
+        Debug.Assert(rootNode.Children.Count > 0);
+        return rootNode.Children[0].FullPath;
+      }
     }
   }
 }

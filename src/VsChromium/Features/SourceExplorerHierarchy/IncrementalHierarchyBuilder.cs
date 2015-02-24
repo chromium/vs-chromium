@@ -95,7 +95,22 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         SetupRootNode(_newNodes.RootNode);
 
         if (_fileSystemTree != null) {
-          AddNodeForChildren(_fileSystemTree.Root, _oldNodes.RootNode, _newNodes.RootNode);
+          // If only 1 child, merge root node and root path entries
+          if (_fileSystemTree.Root.Entries.Count == 1) {
+            var rootEntry = _fileSystemTree.Root.Entries[0] as DirectoryEntry;
+            Debug.Assert(rootEntry != null);
+
+            // Update root node
+            var rootNode = _newNodes.RootNode;
+            rootNode.Name = rootEntry.Name;
+            rootNode.Caption = string.Format("Source Explorer - {0}", rootEntry.Name);
+            rootNode.Template = _templateFactory.ProjectTemplate;
+
+            // Add children nodes
+            AddNodeForChildren(rootEntry, _oldNodes.RootNode, _newNodes.RootNode);
+          } else {
+            AddNodeForChildren(_fileSystemTree.Root, _oldNodes.RootNode, _newNodes.RootNode);
+          }
         }
 
         return new IncrementalBuildResult {
@@ -190,7 +205,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       node.Caption = entry.Name;
       node.Name = entry.Name;
-      if (parent.IsRoot) {
+      if (PathHelpers.IsAbsolutePath(node.Name)) {
         node.Template = _templateFactory.ProjectTemplate;
       } else if (directoryEntry != null) {
         node.Template = _templateFactory.DirectoryTemplate;

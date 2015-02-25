@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
@@ -188,7 +189,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         var childSnapshot = CreateDirectorySnapshot(fileSystemNameFactory, project, progress, name, info.IsSymLink);
         childDirectories.Add(childSnapshot);
       }
-      childDirectories = childDirectories.OrderBy(x => x.DirectoryName).ToList();
+      childDirectories.Sort((x, y) => StringComparer.Ordinal.Compare(x.DirectoryName.RelativePath.FileName, y.DirectoryName.RelativePath.FileName));
 
       // Match non deleted files
       var childFiles = oldDirectory.ChildFiles
@@ -200,7 +201,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
         var name = fileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
         childFiles.Add(name);
       }
-      childFiles = childFiles.OrderBy(x => x).ToList();
+      childFiles.Sort((x, y) => StringComparer.Ordinal.Compare(x.RelativePath.FileName, y.RelativePath.FileName));
 
       var data = new DirectoryData(oldDirectory.DirectoryName, oldDirectory.IsSymLink);
 

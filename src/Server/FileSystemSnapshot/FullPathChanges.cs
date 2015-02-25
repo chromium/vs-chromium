@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
-using VsChromium.Core.Linq;
 
 namespace VsChromium.Server.FileSystemSnapshot {
+  /// <summary>
+  /// Note: This class is thread safe
+  /// </summary>
   public class FullPathChanges {
     private readonly Dictionary<FullPath, PathChangeKind> _map;
     private readonly Dictionary<FullPath, List<FullPath>> _createdChildren;
@@ -17,10 +19,12 @@ namespace VsChromium.Server.FileSystemSnapshot {
     public FullPathChanges(IList<PathChangeEntry> entries) {
       _map = entries.
         ToDictionary(x => x.Path, x => x.Kind);
+
       _createdChildren = entries
         .Where(x => x.Kind == PathChangeKind.Created)
         .GroupBy(x => x.Path.Parent)
         .ToDictionary(g => g.Key, g => g.Select(x => x.Path).ToList());
+
       _deletedChildren = entries
         .Where(x => x.Kind == PathChangeKind.Deleted)
         .GroupBy(x => x.Path.Parent)

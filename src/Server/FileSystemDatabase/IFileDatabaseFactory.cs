@@ -11,7 +11,11 @@ namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabaseFactory {
     IFileDatabase CreateEmpty();
 
-    IFileDatabase CreateIncremental(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot);
+    IFileDatabase CreateIncremental(
+      IFileDatabase previousFileDatabase,
+      FileSystemTreeSnapshot previousSnapshot,
+      FileSystemTreeSnapshot newSnapshot,
+      FullPathChanges fullPathChanges);
 
     IFileDatabase CreateWithChangedFiles(
       IFileDatabase previousFileDatabase,

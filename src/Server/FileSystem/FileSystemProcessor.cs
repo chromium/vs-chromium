@@ -268,6 +268,7 @@ namespace VsChromium.Server.FileSystem {
           OnSnapshotComputed(new SnapshotComputedResult {
             OperationInfo = info,
             PreviousSnapshot = oldSnapshot,
+            FullPathChanges = pathChanges,
             NewSnapshot = newSnapshot
           });
         }

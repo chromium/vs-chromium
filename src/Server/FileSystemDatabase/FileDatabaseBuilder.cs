@@ -40,8 +40,9 @@ namespace VsChromium.Server.FileSystemDatabase {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabase Build(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot) {
+    public IFileDatabase Build(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot, FullPathChanges fullPathChanges) {
       using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
+
         var fileDatabase = (FileDatabase)previousFileDatabase;
         // Compute list of files from tree
         ComputeFileCollection(newSnapshot);
@@ -51,7 +52,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         IFileContentsMemoization fileContentsMemoization = new NullFileContentsMemoization();
 
         // Merge old state in new state
-        TransferUnchangedFileContents(fileDatabase, fileContentsMemoization);
+        TransferUnchangedFileContents(fileDatabase, fullPathChanges, fileContentsMemoization);
 
         // Load file contents into newState
         ReadMissingFileContents(fileContentsMemoization);
@@ -263,7 +264,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
-    private void TransferUnchangedFileContents(FileDatabase oldState, IFileContentsMemoization fileContentsMemoization) {
+    private void TransferUnchangedFileContents(FileDatabase oldState, FullPathChanges fullPathChanges, IFileContentsMemoization fileContentsMemoization) {
       using (new TimeElapsedLogger("Looking for out of date files")) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
           var commonSearchableFiles = GetCommonFiles(oldState)
@@ -290,7 +291,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
               // If the file has changed since the previous snapshot, it should
               // be ignored too.
-              return IsFileContentsUpToDate(oldFileData);
+              return IsFileContentsUpToDate(fullPathChanges, oldFileData);
             });
 
           commonSearchableFiles.ForAll(kvp => {
@@ -342,20 +343,25 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
-    private bool IsFileContentsUpToDate(FileData oldFileData) {
+    private bool IsFileContentsUpToDate(FullPathChanges fullPathChanges, FileData oldFileData) {
       Debug.Assert(oldFileData.Contents != null);
-      // TODO(rpaquay): The following File.Exists and File.GetLastWriteTimUtc
-      // are expensive operations. Given we have FileSystemChanged events when
-      // files change on disk, we could be smarter here and avoid 99% of these
-      // checks in common cases.
-      // Note that this could be tricky, because we don't get file change events
-      // for files that are contained in symbolic link directories for example.
-      // This means we would have to be absolutely sure about what happend to
-      // the chain of parent directories before being able to make a "smarter"
-      // decision on when to check the filesystem (or skip the check).
-      var fi = _fileSystem.GetFileInfoSnapshot(oldFileData.FileName.FullPath);
+
+      var fullPath = oldFileData.FileName.FullPath;
+
+      if (fullPathChanges != null) {
+        // We don't get file change events for file in symlinks, so we can't
+        // rely on fullPathChanges contents for our heuristic of avoiding file
+        // system access.
+        if (!FileDatabase.IsContainedInSymLinkHelper(_directories, oldFileData.FileName)) {
+          return fullPathChanges.GetPathChangeKind(fullPath) == PathChangeKind.None;
+        }
+      }
+
+      // Do the "expensive" check by going to the file system.
+      var fi = _fileSystem.GetFileInfoSnapshot(fullPath);
       return
         (fi.Exists) &&
+        (fi.IsFile) &&
         (fi.LastWriteTimeUtc == oldFileData.Contents.UtcLastModified);
     }
 

@@ -250,7 +250,8 @@ namespace VsChromium.Server.Search {
       if (e.Error != null)
         return;
 
-      _taskQueue.Enqueue(ComputeNewStatedId, () => ComputeNewState(e.NewSnapshot));
+      _taskQueue.Enqueue(ComputeNewStatedId, () => 
+        ComputeNewState(e.PreviousSnapshot, e.NewSnapshot, e.FullPathChanges));
 
       // Enqueue a GC at this point makes sense as there might be a lot of
       // garbage to reclaim from previous file contents stored in native heap.
@@ -419,7 +420,11 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private void ComputeNewState(FileSystemTreeSnapshot newSnapshot) {
+    private void ComputeNewState(
+      FileSystemTreeSnapshot previousSnapshot,
+      FileSystemTreeSnapshot newSnapshot,
+      FullPathChanges fullPathChanges) {
+
       _operationProcessor.Execute(new OperationHandlers {
         OnBeforeExecute = info => OnFilesLoading(info),
         OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
@@ -428,7 +433,7 @@ namespace VsChromium.Server.Search {
           var sw = Stopwatch.StartNew();
 
           var oldState = _currentFileDatabase;
-          var newState = _fileDatabaseFactory.CreateIncremental(oldState, newSnapshot);
+          var newState = _fileDatabaseFactory.CreateIncremental(oldState, previousSnapshot, newSnapshot, fullPathChanges);
 
           sw.Stop();
           Logger.LogInfo(">>>>>>>> Done computing new state of file database from file system tree in {0:n0} msec.",

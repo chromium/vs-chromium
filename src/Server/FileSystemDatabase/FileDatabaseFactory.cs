@@ -46,9 +46,12 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase CreateIncremental(
       IFileDatabase previousFileDatabase,
-      FileSystemTreeSnapshot newSnapshot) {
+      FileSystemTreeSnapshot previousSnapshot,
+      FileSystemTreeSnapshot newSnapshot,
+      FullPathChanges fullPathChanges) {
+
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-          .Build(previousFileDatabase, newSnapshot);
+          .Build(previousFileDatabase, newSnapshot, fullPathChanges);
     }
 
     /// <summary>

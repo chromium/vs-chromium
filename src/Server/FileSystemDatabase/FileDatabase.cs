@@ -71,12 +71,16 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public bool IsContainedInSymLink(FileSystemName name) {
+      return IsContainedInSymLinkHelper(_directories, name);
+    }
+
+    public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, FileSystemName name) {
       var directoryName = (name as DirectoryName) ?? name.Parent;
       if (directoryName == null)
         return false;
 
       DirectoryData directoryData;
-      if (!_directories.TryGetValue(directoryName, out directoryData))
+      if (!directories.TryGetValue(directoryName, out directoryData))
         return false;
 
       if (directoryData.IsSymLink)
@@ -86,7 +90,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       if (parent == null)
         return false;
 
-      return IsContainedInSymLink(parent);
+      return IsContainedInSymLinkHelper(directories, parent);
     }
 
     /// <summary>

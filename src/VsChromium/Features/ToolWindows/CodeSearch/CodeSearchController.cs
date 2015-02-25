@@ -462,11 +462,20 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFilePathsResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} file names among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
+          var msg = string.Format("Found {0:n0} file names among {1:n0} ({2:0.00} seconds) matching File Paths \"{3}\"",
             response.HitCount,
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
+          if (ViewModel.MatchCase) {
+            msg += ", Match case";
+          }
+          if (ViewModel.MatchWholeWord) {
+            msg += ", Whole word";
+          }
+          if (ViewModel.UseRegex) {
+            msg += ", Regular expression";
+          }
           var viewModel = CreateSearchFilePathsResult(response.SearchResult, msg, true);
           ViewModel.SetSearchFilePathsResult(viewModel);
         }
@@ -501,6 +510,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             response.SearchedFileCount,
             stopwatch.Elapsed.TotalSeconds,
             searchPattern);
+          if (ViewModel.MatchCase) {
+            msg += ", Match case";
+          }
+          if (ViewModel.MatchWholeWord) {
+            msg += ", Whole word";
+          }
+          if (ViewModel.UseRegex) {
+            msg += ", Regular expression";
+          }
+          if (!string.IsNullOrEmpty(filePathPattern)) {
+            msg += string.Format(", File Paths: \"{0}\"", filePathPattern);
+          }
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
           var viewModel = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetSearchCodeResult(viewModel);

@@ -11,10 +11,10 @@ namespace VsChromium.Server.FileSystemSnapshot {
   /// </summary>
   public struct DirectoryData {
     private readonly DirectoryName _directoryName;
-    private readonly DirectoryEntry _directoryEntry;
+    private readonly bool _isSymLink;
 
-    public DirectoryData(DirectoryName directoryName, DirectoryEntry directoryEntry) {
-      _directoryEntry = directoryEntry;
+    public DirectoryData(DirectoryName directoryName, bool isSymLink) {
+      _isSymLink = isSymLink;
       _directoryName = directoryName;
     }
 
@@ -22,8 +22,8 @@ namespace VsChromium.Server.FileSystemSnapshot {
       get { return _directoryName; }
     }
 
-    public DirectoryEntry DirectoryEntry {
-      get { return _directoryEntry; }
+    public bool IsSymLink {
+      get { return _isSymLink; }
     }
   }
 }

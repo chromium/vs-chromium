@@ -245,7 +245,7 @@ namespace VsChromium.Server.FileSystemDatabase {
           // names are contructed unique.
           .ToDictionary(
             x => x.Value.DirectoryName,
-            x => x.Value.DirectoryData,
+            x => new DirectoryData(x.Value.DirectoryName, x.Value.IsSymLink),
             new ReferenceEqualityComparer<DirectoryName>());
 
         var files = directories

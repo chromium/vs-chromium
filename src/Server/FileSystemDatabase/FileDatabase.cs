@@ -79,7 +79,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       if (!_directories.TryGetValue(directoryName, out directoryData))
         return false;
 
-      if (directoryData.DirectoryEntry.IsSymLink)
+      if (directoryData.IsSymLink)
         return true;
 
       var parent = directoryName.Parent;

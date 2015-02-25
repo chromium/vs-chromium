@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using VsChromium.Server.FileSystemNames;
 
@@ -22,19 +23,28 @@ namespace VsChromium.Server.FileSystemSnapshot {
       _childFiles = childFiles;
     }
 
-    public DirectoryData DirectoryData { get { return _directoryData; } }
-
     /// <summary>
     /// The directory name
     /// </summary>
-    public DirectoryName DirectoryName { get { return DirectoryData.DirectoryName; } }
+    public DirectoryName DirectoryName {
+      get { return _directoryData.DirectoryName; }
+    }
+
+    public bool IsSymLink {
+      get { return _directoryData.IsSymLink; }
+    }
     /// <summary>
     /// The list of sub-directories.
     /// </summary>
-    public ReadOnlyCollection<DirectorySnapshot> ChildDirectories { get { return _childDirectories; } }
+    public IList<DirectorySnapshot> ChildDirectories {
+      get { return _childDirectories; }
+    }
+
     /// <summary>
     /// The list of files contained in this directory.
     /// </summary>
-    public ReadOnlyCollection<FileName> ChildFiles { get { return _childFiles; } }
+    public IList<FileName> ChildFiles {
+      get { return _childFiles; }
+    }
   }
 }

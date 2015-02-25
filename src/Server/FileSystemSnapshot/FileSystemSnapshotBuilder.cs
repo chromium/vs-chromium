@@ -147,7 +147,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     private static IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(IFileSystem fileSystem, IFileSystemNameFactory fileNameFactory, IProject project, DirectoryName projectPath) {
       Debug.Assert(projectPath.IsAbsoluteName);
       var stack = new Stack<DirectoryData>();
-      stack.Push(new DirectoryData(projectPath, default(DirectoryEntry)));
+      stack.Push(new DirectoryData(projectPath, isSymLink: false));
       while (stack.Count > 0) {
         var head = stack.Pop();
         if (head.DirectoryName.IsAbsoluteName || project.DirectoryFilter.Include(head.DirectoryName.RelativePath)) {
@@ -157,7 +157,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
           for (var i = 0; i < childEntries.Count; i++) {
             DirectoryEntry entry = childEntries[i];
             if (entry.IsDirectory) {
-              stack.Push(new DirectoryData(fileNameFactory.CreateDirectoryName(head.DirectoryName, entry.Name), entry));
+              stack.Push(new DirectoryData(fileNameFactory.CreateDirectoryName(head.DirectoryName, entry.Name), entry.IsSymLink));
             } else if (entry.IsFile) {
               childFileNames.Add(fileNameFactory.CreateFileName(head.DirectoryName, entry.Name));
             }

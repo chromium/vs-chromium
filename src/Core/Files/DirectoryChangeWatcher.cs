@@ -45,6 +45,15 @@ namespace VsChromium.Core.Files {
       _checkRootsPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
     }
 
+    private static void LogPath(string path, PathChangeKind kind) {
+#if false
+      var pathToLog = @"";
+      if (SystemPathComparer.Instance.IndexOf(path, pathToLog, 0, path.Length) == 0) {
+        Logger.LogInfo("*************************** {0}: {1} *******************", path, kind);
+      }
+#endif
+    }
+
     public void WatchDirectories(IEnumerable<FullPath> directories) {
       lock (_watchersLock) {
         var oldSet = new HashSet<FullPath>(_watchers.Keys);
@@ -241,12 +250,6 @@ namespace VsChromium.Core.Files {
       temp.RemoveWhere(x => !IncludeChange(x.Key, x.Value));
     }
 
-    private void WatcherOnError(object sender, ErrorEventArgs errorEventArgs) {
-      // TODO(rpaquay): Try to recover?
-      Logger.LogError(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
-                          ((FileSystemWatcher)sender).Path);
-    }
-
     private void EnqueueChangeEvent(FullPath path, PathChangeKind changeKind) {
       //Logger.LogInfo("Enqueue change event: {0}, {1}", path, changeKind);
       lock (_changedPathsLock) {
@@ -325,38 +328,49 @@ namespace VsChromium.Core.Files {
       return false;
     }
 
-    private void WatcherOnRenamed(object sender, RenamedEventArgs renamedEventArgs) {
-      if (SkipPath(renamedEventArgs.OldFullPath))
+    private void WatcherOnError(object sender, ErrorEventArgs errorEventArgs) {
+      // TODO(rpaquay): Try to recover?
+      Logger.LogError(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
+                          ((FileSystemWatcher)sender).Path);
+    }
+
+    private void WatcherOnRenamed(object sender, RenamedEventArgs args) {
+      LogPath(args.OldFullPath, PathChangeKind.Deleted);
+      LogPath(args.FullPath, PathChangeKind.Created);
+      if (SkipPath(args.OldFullPath))
         return;
-      if (SkipPath(renamedEventArgs.FullPath))
+      if (SkipPath(args.FullPath))
         return;
 
-      EnqueueChangeEvent(new FullPath(renamedEventArgs.OldFullPath), PathChangeKind.Deleted);
-      EnqueueChangeEvent(new FullPath(renamedEventArgs.FullPath), PathChangeKind.Created);
+      EnqueueChangeEvent(new FullPath(args.OldFullPath), PathChangeKind.Deleted);
+      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Created);
       _eventReceived.Set();
     }
 
-    private void WatcherOnDeleted(object sender, FileSystemEventArgs fileSystemEventArgs) {
-      if (SkipPath(fileSystemEventArgs.FullPath))
+    private void WatcherOnDeleted(object sender, FileSystemEventArgs args) {
+      LogPath(args.FullPath, PathChangeKind.Deleted);
+      if (SkipPath(args.FullPath))
         return;
 
-      EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Deleted);
+      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Deleted);
       _eventReceived.Set();
     }
 
-    private void WatcherOnCreated(object sender, FileSystemEventArgs fileSystemEventArgs) {
-      if (SkipPath(fileSystemEventArgs.FullPath))
+    private void WatcherOnCreated(object sender, FileSystemEventArgs args) {
+      LogPath(args.FullPath, PathChangeKind.Created);
+      if (SkipPath(args.FullPath))
         return;
 
-      EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Created);
+      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Created);
       _eventReceived.Set();
     }
 
-    private void WatcherOnChanged(object sender, FileSystemEventArgs fileSystemEventArgs) {
-      if (SkipPath(fileSystemEventArgs.FullPath))
+    private void WatcherOnChanged(object sender, FileSystemEventArgs args) {
+      LogPath(args.FullPath, PathChangeKind.Changed);
+      if (SkipPath(args.FullPath))
         return;
 
-      EnqueueChangeEvent(new FullPath(fileSystemEventArgs.FullPath), PathChangeKind.Changed);
+      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Changed);
       _eventReceived.Set();
     }
 

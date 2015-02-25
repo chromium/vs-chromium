@@ -189,6 +189,15 @@ namespace VsChromium.Server.FileSystemSnapshot {
         foreach (var info in createDirs.ToForeachEnum()) {
           var name = fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
           var childSnapshot = CreateDirectorySnapshot(fileSystemNameFactory, project, progress, name, info.IsSymLink);
+
+          // Note: File system change notifications are not always 100%
+          // reliable. We may get a "create" event for directory we already know
+          // about.
+          var index = childDirectories.FindIndex(x =>
+              SystemPathComparer.Instance.StringComparer.Equals(x.DirectoryName.RelativePath.FileName, name.RelativePath.FileName));
+          if (index >= 0) {
+            childDirectories.RemoveAt(index);
+          }
           childDirectories.Add(childSnapshot);
         }
 
@@ -211,6 +220,14 @@ namespace VsChromium.Server.FileSystemSnapshot {
         if (createdFiles != null) {
           foreach (var info in createdFiles) {
             var name = fileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
+            // Note: File system change notifications are not always 100%
+            // reliable. We may get a "create" event for directory we already know
+            // about.
+            var index = childDirectories.FindIndex(x => 
+              SystemPathComparer.Instance.StringComparer.Equals(x.DirectoryName.RelativePath.FileName, name.RelativePath.FileName));
+            if (index >= 0) {
+              childDirectories.RemoveAt(index);
+            }
             childFiles.Add(name);
           }
 

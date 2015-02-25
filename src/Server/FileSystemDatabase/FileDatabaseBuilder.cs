@@ -264,10 +264,9 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     private void TransferUnchangedFileContents(FileDatabase oldState, IFileContentsMemoization fileContentsMemoization) {
-      using (new TimeElapsedLogger("Checking for out of date files")) {
-        IList<KeyValuePair<FileData, ProjectFileData>> commonOldFiles = GetCommonFiles(oldState).ToArray();
-        using (var progress = _progressTrackerFactory.CreateTracker(commonOldFiles.Count)) {
-          var commonSearchableFiles = commonOldFiles
+      using (new TimeElapsedLogger("Looking for out of date files")) {
+        using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
+          var commonSearchableFiles = GetCommonFiles(oldState)
             .AsParallel()
             .Where(kvp => {
               var oldFileData = kvp.Key;

@@ -103,14 +103,12 @@ namespace VsChromium.Server.FileSystemSnapshot {
           return KeyValuePair.Create(traversedDirectoryEntry.DirectoryData, fileNames);
         })
         .ToList();
-      ssw.Step(sw => Logger.LogInfo("Done traversing file system in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // We sort entries by directory name *descending* to make sure we process
       // directories bottom up, so that we know
       // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
       // 2) we create instances of child directories before their parent.
       directoriesWithFiles.Sort((x, y) => -x.Key.DirectoryName.RelativePath.CompareTo(y.Key.DirectoryName.RelativePath));
-      ssw.Step(sw => Logger.LogInfo("Done sorting list of directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Build map from parent directory -> list of child directories
       var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
@@ -123,7 +121,6 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
         GetOrCreateList(directoriesToChildDirectories, directoryName.DirectoryName.Parent).Add(directoryName.DirectoryName);
       });
-      ssw.Step(sw => Logger.LogInfo("Done creating children directories in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Build directory snapshots for each directory entry, using an
       // intermediate map to enable connecting snapshots to their parent.
@@ -148,7 +145,6 @@ namespace VsChromium.Server.FileSystemSnapshot {
         return result;
       })
         .ToList();
-      ssw.Step(sw => Logger.LogInfo("Done creating directory snapshots in {0:n0} msec.", sw.ElapsedMilliseconds));
 
       // Since we sort directories by name descending, the last entry is always the
       // entry correcsponding to the project root.
@@ -164,18 +160,23 @@ namespace VsChromium.Server.FileSystemSnapshot {
       DirectorySnapshot oldDirectory,
       FullPathChanges pathChanges) {
 
-      var createDirs = new List<IFileInfoSnapshot>();
-      var createdFiles = new List<IFileInfoSnapshot>();
+      var oldDirectoryPath = oldDirectory.DirectoryName.FullPath;
 
-      pathChanges
-        .GetCreatedEntries(oldDirectory.DirectoryName.FullPath)
-        .Select(x => _fileSystem.GetFileInfoSnapshot(x))
-        .ForAll(info => {
-          if (info.IsDirectory)
-            createDirs.Add(info);
-          else if (info.IsFile)
-            createdFiles.Add(info);
-        });
+      // Create lists of created dirs and files.
+      List<IFileInfoSnapshot> createDirs = null;
+      List<IFileInfoSnapshot> createdFiles = null;
+      foreach (var path in pathChanges.GetCreatedEntries(oldDirectoryPath).ToForeachEnum()) {
+        var info = _fileSystem.GetFileInfoSnapshot(path);
+        if (info.IsDirectory) {
+          if (createDirs == null)
+            createDirs = new List<IFileInfoSnapshot>();
+          createDirs.Add(info);
+        } else if (info.IsFile) {
+          if (createdFiles == null)
+            createdFiles = new List<IFileInfoSnapshot>();
+          createdFiles.Add(info);
+        }
+      }
 
       // Match non deleted directories
       var childDirectories = oldDirectory.ChildDirectories
@@ -184,24 +185,39 @@ namespace VsChromium.Server.FileSystemSnapshot {
         .ToList();
 
       // Add created directories
-      foreach (var info in createDirs) {
-        var name = fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
-        var childSnapshot = CreateDirectorySnapshot(fileSystemNameFactory, project, progress, name, info.IsSymLink);
-        childDirectories.Add(childSnapshot);
+      if (createDirs != null) {
+        foreach (var info in createDirs.ToForeachEnum()) {
+          var name = fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
+          var childSnapshot = CreateDirectorySnapshot(fileSystemNameFactory, project, progress, name, info.IsSymLink);
+          childDirectories.Add(childSnapshot);
+        }
+
+        // We need to re-sort the array since we added new entries
+        childDirectories.Sort((x, y) => 
+          StringComparer.Ordinal.Compare(x.DirectoryName.RelativePath.FileName, y.DirectoryName.RelativePath.FileName));
       }
-      childDirectories.Sort((x, y) => StringComparer.Ordinal.Compare(x.DirectoryName.RelativePath.FileName, y.DirectoryName.RelativePath.FileName));
 
       // Match non deleted files
-      var childFiles = oldDirectory.ChildFiles
-        .Where(x => !pathChanges.IsDeleted(x.FullPath))
-        .ToList();
+      // Sepcial case:
+      IList<FileName> childFiles;
+      if (pathChanges.GetDeletedEntries(oldDirectoryPath).Count == 0 && createdFiles == null) {
+        childFiles = oldDirectory.ChildFiles;
+      } else {
+        childFiles = oldDirectory.ChildFiles
+          .Where(x => !pathChanges.IsDeleted(x.FullPath))
+          .ToList();
 
-      // Add created files
-      foreach (var info in createdFiles) {
-        var name = fileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
-        childFiles.Add(name);
+        // Add created files
+        if (createdFiles != null) {
+          foreach (var info in createdFiles) {
+            var name = fileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
+            childFiles.Add(name);
+          }
+
+          // We need to re-sort the array since we added new entries
+          childFiles = childFiles.OrderBy(x => x.RelativePath.FileName, StringComparer.Ordinal).ToList();
+        }
       }
-      childFiles.Sort((x, y) => StringComparer.Ordinal.Compare(x.RelativePath.FileName, y.RelativePath.FileName));
 
       var data = new DirectoryData(oldDirectory.DirectoryName, oldDirectory.IsSymLink);
 

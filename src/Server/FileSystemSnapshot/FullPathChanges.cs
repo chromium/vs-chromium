@@ -4,18 +4,25 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
+using VsChromium.Core.Linq;
 
 namespace VsChromium.Server.FileSystemSnapshot {
   public class FullPathChanges {
     private readonly Dictionary<FullPath, PathChangeKind> _map;
-    private readonly Dictionary<FullPath, List<FullPath>> _createdChildren; 
+    private readonly Dictionary<FullPath, List<FullPath>> _createdChildren;
+    private readonly Dictionary<FullPath, List<FullPath>> _deletedChildren; 
 
     public FullPathChanges(IList<PathChangeEntry> entries) {
       _map = entries.
         ToDictionary(x => x.Path, x => x.Kind);
       _createdChildren = entries
         .Where(x => x.Kind == PathChangeKind.Created)
+        .GroupBy(x => x.Path.Parent)
+        .ToDictionary(g => g.Key, g => g.Select(x => x.Path).ToList());
+      _deletedChildren = entries
+        .Where(x => x.Kind == PathChangeKind.Deleted)
         .GroupBy(x => x.Path.Parent)
         .ToDictionary(g => g.Key, g => g.Select(x => x.Path).ToList());
     }
@@ -40,12 +47,19 @@ namespace VsChromium.Server.FileSystemSnapshot {
       return GetPathChangeKind(path) == PathChangeKind.Changed;
     }
 
-    public IEnumerable<FullPath> GetCreatedEntries(FullPath parentPath) {
+    public IList<FullPath> GetCreatedEntries(FullPath parentPath) {
       List<FullPath> result;
       if (_createdChildren.TryGetValue(parentPath, out result)) {
         return result;
       }
-      return Enumerable.Empty<FullPath>();
+      return ArrayUtilities.EmptyList<FullPath>.Instance;
+    }
+    public IList<FullPath> GetDeletedEntries(FullPath parentPath) {
+      List<FullPath> result;
+      if (_deletedChildren.TryGetValue(parentPath, out result)) {
+        return result;
+      }
+      return ArrayUtilities.EmptyList<FullPath>.Instance;
     }
   }
 }

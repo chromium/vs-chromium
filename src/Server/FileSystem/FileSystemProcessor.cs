@@ -69,6 +69,7 @@ namespace VsChromium.Server.FileSystem {
       _fileSystemSnapshot = FileSystemTreeSnapshot.Empty;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
+      _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
     }
 
     public FileSystemTreeSnapshot GetCurrentSnapshot() {
@@ -115,9 +116,21 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
     }
 
+    private void DirectoryChangeWatcherOnError(Exception exception) {
+      _taskQueue.Enqueue(FlushPathsChangedQueueTaskId, DirectoryChangeWatcherErrorTask);
+    }
+
     private void RefreshTask() {
       ValidateKnownFiles();
       RecomputeGraph(null /* Force refresh all*/);
+    }
+
+    private void DirectoryChangeWatcherErrorTask() {
+      // Ingore all changes
+      _pathsChangedQueue.DequeueAll();
+
+      // Rescan all projects from scratch.
+      RecomputeGraph(null /* force rescan*/);
     }
 
     private void FlushPathsChangedQueueTask() {

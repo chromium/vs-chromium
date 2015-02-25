@@ -10,5 +10,6 @@ namespace VsChromium.Core.Files {
     void WatchDirectories(IEnumerable<FullPath> directories);
 
     event Action<IList<PathChangeEntry>> PathsChanged;
+    event Action<Exception> Error;
   }
 }

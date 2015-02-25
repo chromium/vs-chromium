@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,6 +16,7 @@ using VsChromium.Core.Threads;
 namespace VsChromium.Core.Files {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
     private readonly IFileSystem _fileSystem;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
     private readonly PollingDelayPolicy _pathChangesPolling;
     private readonly PollingDelayPolicy _simplePathChangesPolling;
@@ -40,6 +42,7 @@ namespace VsChromium.Core.Files {
 
     public DirectoryChangeWatcher(IFileSystem fileSystem, IDateTimeProvider dateTimeProvider) {
       _fileSystem = fileSystem;
+      _dateTimeProvider = dateTimeProvider;
       _simplePathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(10.0));
       _pathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(60.0));
       _checkRootsPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
@@ -71,6 +74,12 @@ namespace VsChromium.Core.Files {
     }
 
     public event Action<IList<PathChangeEntry>> PathsChanged;
+    public event Action<Exception> Error;
+
+    protected virtual void OnError(Exception obj) {
+      var handler = Error;
+      if (handler != null) handler(obj);
+    }
 
     private void AddDirectory(FullPath directory) {
       FileSystemWatcher watcher;
@@ -252,6 +261,11 @@ namespace VsChromium.Core.Files {
 
     private void EnqueueChangeEvent(FullPath path, PathChangeKind changeKind) {
       //Logger.LogInfo("Enqueue change event: {0}, {1}", path, changeKind);
+      LogLastChange(new ChangeLog {
+        Entry = new PathChangeEntry(path, changeKind),
+        TimeStampUtc = _dateTimeProvider.UtcNow,
+      });
+
       lock (_changedPathsLock) {
         MergePathChange(_changedPaths, path, changeKind);
       }
@@ -332,6 +346,7 @@ namespace VsChromium.Core.Files {
       // TODO(rpaquay): Try to recover?
       Logger.LogError(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
                           ((FileSystemWatcher)sender).Path);
+      OnError(errorEventArgs.GetException());
     }
 
     private void WatcherOnRenamed(object sender, RenamedEventArgs args) {
@@ -436,7 +451,7 @@ namespace VsChromium.Core.Files {
         var now = _dateTimeProvider.UtcNow;
 
         var result = (now - _lastPollUtc >= _maxDelay) ||
-                     (now -_lastCheckpointUtc >= _checkpointDelay);
+                     (now - _lastCheckpointUtc >= _checkpointDelay);
         if (result) {
           if (ClassLogger.LogInfoEnabled) {
             Logger.LogInfo("Timer expired: now={0}, checkpoint={1} msec, start={2} msec, checkpointDelay={3:n0} msec, maxDelay={4:n0} msec",
@@ -449,6 +464,22 @@ namespace VsChromium.Core.Files {
         }
         return result;
       }
+    }
+
+    // For debugging only
+    public static ConcurrentQueue<ChangeLog> LastChanges = new ConcurrentQueue<ChangeLog>();
+
+    public static void LogLastChange(ChangeLog entry) {
+      if (LastChanges.Count >= 100) {
+        ChangeLog temp;
+        LastChanges.TryDequeue(out temp);
+      }
+      LastChanges.Enqueue(entry);
+    }
+
+    public class ChangeLog {
+      public PathChangeEntry Entry { get; set; }
+      public DateTime TimeStampUtc { get; set; }
     }
   }
 }

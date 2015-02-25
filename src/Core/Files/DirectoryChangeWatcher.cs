@@ -218,10 +218,10 @@ namespace VsChromium.Core.Files {
       if (changeKind == PathChangeKind.None)
         return false;
 
-      // Creation/changes to a directory entry are irrelevant (we will get notifications
+      // Changes to a directory entry are irrelevant (we will get notifications
       // for files inside the directory is anything relevant occured.)
       if (_fileSystem.DirectoryExists(path)) {
-        if (changeKind == PathChangeKind.Changed || changeKind == PathChangeKind.Created)
+        if (changeKind == PathChangeKind.Changed)
           return false;
       }
 

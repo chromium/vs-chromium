@@ -96,6 +96,7 @@ namespace VsChromium.Tests.Mocks {
       public bool Exists { get; set; }
       public bool IsFile { get; set; }
       public bool IsDirectory { get; set; }
+      public bool IsSymLink { get; set; }
       public DateTime LastWriteTimeUtc { get; set; }
       public long Length { get; set; }
     }

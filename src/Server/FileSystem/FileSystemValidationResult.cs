@@ -3,18 +3,16 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
+using VsChromium.Server.FileSystemSnapshot;
 
 namespace VsChromium.Server.FileSystem {
   public class FileSystemValidationResult {
     public FileSystemValidationResult() {
       ChangedFiles = new List<ProjectFileName>();
-      AddedFiles = new List<ProjectFileName>();
-      DeletedFiles = new List<ProjectFileName>();
     }
 
     public bool RecomputeGraph { get; set; }
     public IList<ProjectFileName> ChangedFiles { get; set; }
-    public IList<ProjectFileName> AddedFiles { get; set; }
-    public IList<ProjectFileName> DeletedFiles { get; set; }
+    public FullPathChanges FullPathChanges { get; set; }
   }
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using VsChromium.Core.Linq;
@@ -20,8 +21,13 @@ namespace VsChromium.Server.FileSystemSnapshot {
       _projectRoots = projectRoots;
     }
 
-    public int Version { get { return _version; } }
-    public ReadOnlyCollection<ProjectRootSnapshot> ProjectRoots { get { return _projectRoots; } }
+    public int Version {
+      get { return _version; }
+    }
+
+    public IList<ProjectRootSnapshot> ProjectRoots {
+      get { return _projectRoots; }
+    }
 
     public static FileSystemTreeSnapshot Empty {
       get {

@@ -34,6 +34,8 @@ namespace VsChromium.Core.Files {
     /// </summary>
     bool IsDirectory { get; }
 
+    bool IsSymLink { get; }
+
     /// <summary>
     /// Returns the UTC <see cref="DateTime"/> of the last access to the entry.
     /// Throws an exception if the file does not exist or cannot be accessed.

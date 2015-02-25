@@ -43,6 +43,7 @@
     <Compile Include="FileSystemNames\FileSystemNameComparer.cs" />
     <Compile Include="FileSystemNames\FileSystemNameFactory.cs" />
     <Compile Include="FileSystemNames\IFileSystemNameFactory.cs" />
+    <Compile Include="FileSystemSnapshot\FullPathChanges.cs" />
     <Compile Include="FileSystemSnapshot\ProjectRootSnapshot.cs" />
     <Compile Include="FileSystemSnapshot\DirectorySnapshot.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshot.cs" />

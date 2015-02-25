@@ -116,7 +116,7 @@ namespace VsChromium.Server.FileSystem {
 
     private void RefreshTask() {
       ValidateKnownFiles();
-      RecomputeGraph();
+      RecomputeGraph(null);
     }
 
     private void FlushPathsChangedQueueTask() {
@@ -128,13 +128,13 @@ namespace VsChromium.Server.FileSystem {
       var validationResult =
         new FileSystemChangesValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
       if (validationResult.RecomputeGraph) {
-        RecomputeGraph();
+        RecomputeGraph(validationResult.FullPathChanges);
       } else if (validationResult.ChangedFiles.Any()) {
         OnFilesChanged(new FilesChangedEventArgs {
           ChangedFiles = validationResult.ChangedFiles.ToReadOnlyCollection()
         });
       }
-    } 
+    }
 
     private void FlushFileRegistrationQueueTask() {
       var entries = _fileRegistrationQueue.DequeueAll();
@@ -173,8 +173,10 @@ namespace VsChromium.Server.FileSystem {
         }
       }
 
+      // TODO(rpaquay): Be smarter here, don't recompute directory roots
+      // that have not been affected.
       if (recompute)
-        RecomputeGraph();
+        RecomputeGraph(null);
     }
 
     private IEnumerable<FullPath> CollectKnownProjectPathsSorted(IEnumerable<FullPath> knownFileNames) {
@@ -217,40 +219,52 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private void RecomputeGraph() {
+    private void RecomputeGraph(FullPathChanges pathChanges) {
       _operationProcessor.Execute(new OperationHandlers {
-        OnBeforeExecute = info => OnSnapshotComputing(info),
-        OnError = (info, error) => OnSnapshotComputed(new SnapshotComputedResult { OperationInfo = info, Error = error }),
+        OnBeforeExecute = info =>
+          OnSnapshotComputing(info),
+        OnError = (info, error) =>
+          OnSnapshotComputed(new SnapshotComputedResult {
+            OperationInfo = info,
+            Error = error
+          }),
         Execute = info => {
-          Logger.LogInfo("Collecting list of files from file system.");
+          Logger.LogInfo("Computing snapshot delta from list of file changes");
           Logger.LogMemoryStats();
           var sw = Stopwatch.StartNew();
 
-          var files = new List<FullPath>();
+          // Get list of currently registered files.
+          var rootFiles = new List<FullPath>();
           lock (_lock) {
             ValidateKnownFiles();
-            files.AddRange(_registeredFiles);
+            rootFiles.AddRange(_registeredFiles);
           }
 
-          IFileSystemNameFactory fileNameFactory = _fileSystemNameFactory;
+          // file name factory
+          var fileNameFactory = _fileSystemNameFactory;
           if (ReuseFileNameInstances) {
             if (_fileSystemSnapshot.ProjectRoots.Count > 0) {
               fileNameFactory = new FileSystemTreeSnapshotNameFactory(_fileSystemSnapshot, fileNameFactory);
             }
           }
-          var newSnapshot = _fileSystemSnapshotBuilder.Compute(fileNameFactory, files, Interlocked.Increment(ref _version));
+
+          // Compute new snapshot
+          var oldSnapshot = _fileSystemSnapshot;
+          var newSnapshot = _fileSystemSnapshotBuilder.Compute(
+            fileNameFactory, 
+            oldSnapshot,
+            pathChanges,
+            rootFiles, 
+            Interlocked.Increment(ref _version));
 
           // Monitor all the Chromium directories for changes.
           var newRoots = newSnapshot.ProjectRoots
             .Select(entry => entry.Directory.DirectoryName.FullPath);
           _directoryChangeWatcher.WatchDirectories(newRoots);
 
-          // Update current tree atomically
-          FileSystemTreeSnapshot previousSnapshot;
-          lock (_lock) {
-            previousSnapshot = _fileSystemSnapshot;
-            _fileSystemSnapshot = newSnapshot;
-          }
+          // Update ot new tree (assert calls are serialized).
+          Debug.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
+          _fileSystemSnapshot = newSnapshot;
 
           sw.Stop();
           Logger.LogInfo(">>>>>>>> Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
@@ -261,7 +275,7 @@ namespace VsChromium.Server.FileSystem {
 
           OnSnapshotComputed(new SnapshotComputedResult {
             OperationInfo = info,
-            PreviousSnapshot = previousSnapshot,
+            PreviousSnapshot = oldSnapshot,
             NewSnapshot = newSnapshot
           });
         }

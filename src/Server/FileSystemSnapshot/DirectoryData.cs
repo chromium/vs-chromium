@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemSnapshot {
@@ -14,8 +13,8 @@ namespace VsChromium.Server.FileSystemSnapshot {
     private readonly bool _isSymLink;
 
     public DirectoryData(DirectoryName directoryName, bool isSymLink) {
-      _isSymLink = isSymLink;
       _directoryName = directoryName;
+      _isSymLink = isSymLink;
     }
 
     public DirectoryName DirectoryName {

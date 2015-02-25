@@ -11,6 +11,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {
@@ -52,21 +53,7 @@ namespace VsChromium.Server.FileSystem {
           Logger.LogInfo("Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
           return new FileSystemValidationResult {
             RecomputeGraph = true,
-            AddedFiles = filteredChanges
-              .Where(x => x.Kind == PathChangeKind.Created)
-              .Select(change => GetProjectFileName(change.Path))
-              .Where(name => !name.IsNull)
-              .ToList(),
-           ChangedFiles = filteredChanges
-              .Where(x => x.Kind == PathChangeKind.Changed)
-              .Select(change => GetProjectFileName(change.Path))
-              .Where(name => !name.IsNull)
-              .ToList(),
-            DeletedFiles = filteredChanges
-              .Where(x => x.Kind == PathChangeKind.Deleted)
-              .Select(change => GetProjectFileName(change.Path))
-              .Where(name => !name.IsNull)
-              .ToList(),
+            FullPathChanges = new FullPathChanges(filteredChanges)
           };
         }
       }

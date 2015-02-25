@@ -17,6 +17,7 @@ namespace VsChromium.Core.Files {
 
     public bool IsFile { get { return _fileInfo.IsFile; } }
     public bool IsDirectory { get { return _fileInfo.IsDirectory; } }
+    public bool IsSymLink { get { return _fileInfo.IsSymLink; } }
     public bool Exists { get { return _fileInfo.Exists; } }
     public FullPath Path { get { return _fileInfo.FullPath; } }
     public DateTime LastWriteTimeUtc { get { return _fileInfo.LastWriteTimeUtc; } }

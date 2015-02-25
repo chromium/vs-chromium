@@ -38,6 +38,13 @@ namespace VsChromium.Core.Win32.Files {
       }
     }
 
+    public bool IsSymLink {
+      get {
+        return _win32Error == 0 &&
+          IsSymLinkImpl((FILE_ATTRIBUTE)_data.fileAttributes);
+      }
+    }
+
     public bool Exists {
       get {
         return _win32Error == 0;
@@ -91,6 +98,10 @@ namespace VsChromium.Core.Win32.Files {
 
     private static bool IsDirectoryImpl(FILE_ATTRIBUTE data) {
       return (data & FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) != 0;
+    }
+
+    private static bool IsSymLinkImpl(FILE_ATTRIBUTE data) {
+      return (data & FILE_ATTRIBUTE.FILE_ATTRIBUTE_REPARSE_POINT) != 0;
     }
   }
 }

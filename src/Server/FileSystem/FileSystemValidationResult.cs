@@ -8,11 +8,17 @@ using VsChromium.Server.FileSystemSnapshot;
 namespace VsChromium.Server.FileSystem {
   public class FileSystemValidationResult {
     public FileSystemValidationResult() {
-      ChangedFiles = new List<ProjectFileName>();
+      ModifiedFiles = new List<ProjectFileName>();
     }
 
-    public bool RecomputeGraph { get; set; }
-    public IList<ProjectFileName> ChangedFiles { get; set; }
-    public FullPathChanges FullPathChanges { get; set; }
+    public bool NoChanges { get; set; }
+
+    public bool FileModificationsOnly { get; set; }
+    public IList<ProjectFileName> ModifiedFiles { get; set; }
+
+    public bool VariousFileChanges { get; set; }
+    public FullPathChanges FileChanges { get; set; }
+
+    public bool UnknownChanges { get; set; }
   }
 }

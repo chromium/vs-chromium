@@ -17,88 +17,115 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystem {
   public class FileSystemChangesValidator {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
+    private readonly IFileSystem _fileSystem;
     private readonly IProjectDiscovery _projectDiscovery;
 
     public FileSystemChangesValidator(
       IFileSystemNameFactory fileSystemNameFactory,
+      IFileSystem fileSystem,
       IProjectDiscovery projectDiscovery) {
       _fileSystemNameFactory = fileSystemNameFactory;
+      _fileSystem = fileSystem;
       _projectDiscovery = projectDiscovery;
     }
 
     public FileSystemValidationResult ProcessPathsChangedEvent(IList<PathChangeEntry> changes) {
       // Skip files from filtered out directories
       var filteredChanges = changes
-        .Where(x => !PathIsExcluded(x.Path))
+        .Where(x => !PathIsExcluded(x))
         .ToList();
 
-      Logger.LogInfo("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering (showing max 5 below).",
-                 filteredChanges.Count, changes.Count);
-      filteredChanges.Take(5).ForAll(x =>
-        Logger.LogInfo("  Path changed: \"{0}\", kind={1}", x.Path, x.Kind));
-
-      if (filteredChanges.Any()) {
-        // If the only changes we see are file modification, don't recompute the graph, just 
-        // raise a "files changes event". Note that we also watch for any "special" filename.
-        if (filteredChanges.All(IsIncrementalChange)) {
-          Logger.LogInfo("All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
-          var fileNames = filteredChanges
-            .Select(change => GetProjectFileName(change.Path))
-            .Where(name => !name.IsNull);
-          return new FileSystemValidationResult {
-            ChangedFiles = fileNames.ToList()
-          };
-        } else {
-          // TODO(rpaquay): Could we be smarter here?
-          Logger.LogInfo("Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
-          return new FileSystemValidationResult {
-            RecomputeGraph = true,
-            FullPathChanges = new FullPathChanges(filteredChanges)
-          };
-        }
+      if (Logger.Info) {
+        Logger.LogInfo("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering (showing max 5 below).",
+          filteredChanges.Count, changes.Count);
+        filteredChanges
+          .Take(5)
+          .ForAll(x =>
+            Logger.LogInfo("  Path changed: \"{0}\", kind={1}", x.Path, x.Kind));
       }
 
-      return new FileSystemValidationResult();
+      if (filteredChanges.Count == 0) {
+        return new FileSystemValidationResult {
+          NoChanges = true,
+        };
+      }
+
+      if (filteredChanges.Any(x => IsProjectFileChange(x))) {
+        return new FileSystemValidationResult {
+          UnknownChanges = true,
+        };
+      }
+
+      if (filteredChanges.All(x => x.Kind == PathChangeKind.Changed)) {
+        Logger.LogInfo("All file change events are file modifications.");
+
+        var fileNames = filteredChanges
+          .Select(change => GetProjectFileName(change.Path))
+          .Where(name => !name.IsNull);
+
+        return new FileSystemValidationResult {
+          FileModificationsOnly = true,
+          ModifiedFiles = fileNames.ToList()
+        };
+      }
+
+      // All kinds of file changes
+      Logger.LogInfo("Some file change events are create or delete events.");
+      return new FileSystemValidationResult {
+        VariousFileChanges = true,
+        FileChanges = new FullPathChanges(filteredChanges)
+      };
     }
 
-    private static bool IsIncrementalChange(PathChangeEntry change) {
-      return (change.Kind == PathChangeKind.Changed) &&
-            (!SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileNameObsolete)) &&
-            (!SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileName));
+    private static bool IsProjectFileChange(PathChangeEntry change) {
+      return 
+        SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileNameObsolete) ||
+        SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileName);
     }
 
-    private bool PathIsExcluded(FullPath path) {
+    private bool PathIsExcluded(PathChangeEntry change) {
+      var path = change.Path;
       var project = _projectDiscovery.GetProject(path);
       if (project == null)
         return true;
 
-      var rootPath = project.RootPath;
-
       // If path is root itself, it is never excluded.
-      if (rootPath.Value.Length == path.Value.Length)
+      if (path == project.RootPath)
         return false;
 
-      var rootLength = rootPath.Value.Length + 1; // Move past '\\' character.
-      if (rootPath.Value.Last() == Path.DirectorySeparatorChar)
-        rootLength--;
+      // Split relative part into list of name components.
+      var split = PathHelpers.SplitPrefix(path.Value, project.RootPath.Value);
+      var relativePath = split.Suffix;
+      var names = relativePath.Split(Path.DirectorySeparatorChar);
 
-      var relativePath = path.Value.Substring(rootLength);
-      var items = relativePath.Split(new char[] {
-        Path.DirectorySeparatorChar
-      });
+      // Check each relative path from root path to full path.
       var pathToItem = new RelativePath();
-      foreach (var item in items) {
+      foreach (var item in names) {
         var relativePathToItem = pathToItem.CreateChild(item);
 
-        if (!project.DirectoryFilter.Include(relativePathToItem))
-          return true;
-
-        // For the last component, we don't know if it is a file or directory.
-        // Be conservative and try both.
-        if (item == items.Last()) {
-          if (!project.FileFilter.Include(relativePathToItem))
-            return true;
+        bool exclude;
+        // For the last component, we might not if it is a file or directory.
+        // Check depending on the change kind.
+        if (item == names.Last()) {
+          if (change.Kind == PathChangeKind.Deleted) {
+            exclude = false;
+          } else {
+            var info = _fileSystem.GetFileInfoSnapshot(path);
+            if (info.IsFile) {
+              exclude = !project.FileFilter.Include(relativePathToItem);
+            } else if (info.IsDirectory) {
+              exclude = !project.DirectoryFilter.Include(relativePathToItem);
+            } else {
+              // We don't know... Be conservative.
+              exclude = false;
+            }
+          }
+        } else {
+          exclude = !project.DirectoryFilter.Include(relativePathToItem);
         }
+
+        if (exclude)
+          return true;
 
         pathToItem = relativePathToItem;
       }

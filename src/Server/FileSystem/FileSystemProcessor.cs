@@ -126,15 +126,31 @@ namespace VsChromium.Server.FileSystem {
         .SelectMany(x => x)
         .ToList();
 
-      var validationResult =
-        new FileSystemChangesValidator(_fileSystemNameFactory, _projectDiscovery).ProcessPathsChangedEvent(changes);
-      if (validationResult.RecomputeGraph) {
-        RecomputeGraph(validationResult.FullPathChanges);
-      } else if (validationResult.ChangedFiles.Any()) {
-        OnFilesChanged(new FilesChangedEventArgs {
-          ChangedFiles = validationResult.ChangedFiles.ToReadOnlyCollection()
-        });
+      var validationResult = new FileSystemChangesValidator(_fileSystemNameFactory, _fileSystem, _projectDiscovery)
+        .ProcessPathsChangedEvent(changes);
+
+      if (validationResult.NoChanges) {
+        return;
       }
+
+      if (validationResult.FileModificationsOnly) {
+        OnFilesChanged(new FilesChangedEventArgs {
+          ChangedFiles = validationResult.ModifiedFiles.ToReadOnlyCollection()
+        });
+        return;
+      }
+
+      if (validationResult.VariousFileChanges) {
+        RecomputeGraph(validationResult.FileChanges);
+        return;
+      }
+
+      if (validationResult.UnknownChanges) {
+        RecomputeGraph(null /* force rescan*/);
+        return;
+      }
+
+      Debug.Assert(false, "What kind of validation result is this?");
     }
 
     private void FlushFileRegistrationQueueTask() {

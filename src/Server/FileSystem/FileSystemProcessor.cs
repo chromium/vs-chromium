@@ -12,6 +12,7 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
 using VsChromium.Server.Operations;
@@ -116,7 +117,7 @@ namespace VsChromium.Server.FileSystem {
 
     private void RefreshTask() {
       ValidateKnownFiles();
-      RecomputeGraph(null);
+      RecomputeGraph(null /* Force refresh all*/);
     }
 
     private void FlushPathsChangedQueueTask() {
@@ -175,8 +176,13 @@ namespace VsChromium.Server.FileSystem {
 
       // TODO(rpaquay): Be smarter here, don't recompute directory roots
       // that have not been affected.
-      if (recompute)
-        RecomputeGraph(null);
+      if (recompute) {
+        // Pass empty changes, as we don't know of any file system changes for
+        // existing entries. For new entries, they don't exist in the snapshot,
+        // so they will be read form disk
+        var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
+        RecomputeGraph(emptyChanges);
+      }
     }
 
     private IEnumerable<FullPath> CollectKnownProjectPathsSorted(IEnumerable<FullPath> knownFileNames) {
@@ -229,50 +235,20 @@ namespace VsChromium.Server.FileSystem {
             Error = error
           }),
         Execute = info => {
-          Logger.LogInfo("Computing snapshot delta from list of file changes");
-          Logger.LogMemoryStats();
-          var sw = Stopwatch.StartNew();
-
-          // Get list of currently registered files.
-          var rootFiles = new List<FullPath>();
-          lock (_lock) {
-            ValidateKnownFiles();
-            rootFiles.AddRange(_registeredFiles);
-          }
-
-          // file name factory
-          var fileNameFactory = _fileSystemNameFactory;
-          if (ReuseFileNameInstances) {
-            if (_fileSystemSnapshot.ProjectRoots.Count > 0) {
-              fileNameFactory = new FileSystemTreeSnapshotNameFactory(_fileSystemSnapshot, fileNameFactory);
-            }
-          }
-
-          // Compute new snapshot
+          // Compute and assign new snapshot
           var oldSnapshot = _fileSystemSnapshot;
-          var newSnapshot = _fileSystemSnapshotBuilder.Compute(
-            fileNameFactory, 
-            oldSnapshot,
-            pathChanges,
-            rootFiles, 
-            Interlocked.Increment(ref _version));
-
-          // Monitor all the Chromium directories for changes.
-          var newRoots = newSnapshot.ProjectRoots
-            .Select(entry => entry.Directory.DirectoryName.FullPath);
-          _directoryChangeWatcher.WatchDirectories(newRoots);
-
-          // Update ot new tree (assert calls are serialized).
+          var newSnapshot = ComputeNewSnapshot(oldSnapshot, pathChanges);
+          // Update of new tree (assert calls are serialized).
           Debug.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
           _fileSystemSnapshot = newSnapshot;
 
-          sw.Stop();
-          Logger.LogInfo(">>>>>>>> Done collecting list of files: {0:n0} files in {1:n0} directories collected in {2:n0} msec.",
-            newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
-            newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)),
-            sw.ElapsedMilliseconds);
-          Logger.LogMemoryStats();
+          if (Logger.Info) {
+            Logger.LogInfo("+++++++++++ Collected {0:n0} files in {1:n0} directories",
+              newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
+              newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)));
+          }
 
+          // Post event
           OnSnapshotComputed(new SnapshotComputedResult {
             OperationInfo = info,
             PreviousSnapshot = oldSnapshot,
@@ -280,6 +256,40 @@ namespace VsChromium.Server.FileSystem {
           });
         }
       });
+    }
+
+    private FileSystemTreeSnapshot ComputeNewSnapshot(FileSystemTreeSnapshot oldSnapshot, FullPathChanges pathChanges) {
+      using (new TimeElapsedLogger("Computing snapshot delta from list of file changes")) {
+        // Get list of currently registered files.
+        var rootFiles = new List<FullPath>();
+        lock (_lock) {
+          ValidateKnownFiles();
+          rootFiles.AddRange(_registeredFiles);
+        }
+
+        // file name factory
+        var fileNameFactory = _fileSystemNameFactory;
+        if (ReuseFileNameInstances) {
+          if (_fileSystemSnapshot.ProjectRoots.Count > 0) {
+            fileNameFactory = new FileSystemTreeSnapshotNameFactory(_fileSystemSnapshot, fileNameFactory);
+          }
+        }
+
+        // Compute new snapshot
+        var newSnapshot = _fileSystemSnapshotBuilder.Compute(
+          fileNameFactory,
+          oldSnapshot,
+          pathChanges,
+          rootFiles,
+          Interlocked.Increment(ref _version));
+
+        // Monitor all the Chromium directories for changes.
+        var newRoots = newSnapshot.ProjectRoots
+          .Select(entry => entry.Directory.DirectoryName.FullPath);
+        _directoryChangeWatcher.WatchDirectories(newRoots);
+
+        return newSnapshot;
+      }
     }
 
     private int CountFileEntries(DirectorySnapshot entry) {

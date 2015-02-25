@@ -45,12 +45,16 @@ namespace VsChromium.Server.FileSystem {
       }
 
       if (filteredChanges.Count == 0) {
+        Logger.LogInfo("All changes have been filtered out.");
+
         return new FileSystemValidationResult {
           NoChanges = true,
         };
       }
 
       if (filteredChanges.Any(x => IsProjectFileChange(x))) {
+        Logger.LogInfo("At least one change is a project file.");
+
         return new FileSystemValidationResult {
           UnknownChanges = true,
         };

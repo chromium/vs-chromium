@@ -56,6 +56,7 @@
     <Compile Include="FileSystem\IFileSystemProcessor.cs" />
     <Compile Include="FileSystemSnapshot\IFileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
+    <Compile Include="FileSystem\ProjectFileName.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotComputedResult.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDatabaseStatisticsRequestHandler.cs" />

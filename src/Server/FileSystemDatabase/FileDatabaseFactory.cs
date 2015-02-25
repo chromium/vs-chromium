@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
+using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
@@ -58,7 +59,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// </summary>
     public IFileDatabase CreateWithChangedFiles(
       IFileDatabase previousFileDatabase,
-      IEnumerable<Tuple<IProject, FileName>> changedFiles,
+      IEnumerable<ProjectFileName> changedFiles,
       Action onLoading,
       Action onLoaded) {
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)

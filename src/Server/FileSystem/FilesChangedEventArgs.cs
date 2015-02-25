@@ -1,10 +1,12 @@
-﻿using System;
+﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using System.Collections.ObjectModel;
-using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {
   public class FilesChangedEventArgs : EventArgs {
-    public ReadOnlyCollection<Tuple<IProject, FileName>> ChangedFiles { get; set; }
+    public ReadOnlyCollection<ProjectFileName> ChangedFiles { get; set; }
   }
 }

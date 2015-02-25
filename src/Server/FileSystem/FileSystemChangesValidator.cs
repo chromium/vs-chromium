@@ -33,7 +33,7 @@ namespace VsChromium.Server.FileSystem {
 
       Logger.LogInfo("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering (showing max 5 below).",
                  filteredChanges.Count, changes.Count);
-      filteredChanges.Take(5).ForAll(x => 
+      filteredChanges.Take(5).ForAll(x =>
         Logger.LogInfo("  Path changed: \"{0}\", kind={1}", x.Path, x.Kind));
 
       if (filteredChanges.Any()) {
@@ -41,7 +41,9 @@ namespace VsChromium.Server.FileSystem {
         // raise a "files changes event". Note that we also watch for any "special" filename.
         if (filteredChanges.All(IsIncrementalChange)) {
           Logger.LogInfo("All changes are file modifications, so we don't update the FileSystemTree, but we notify our consumers.");
-          var fileNames = filteredChanges.Select(change => GetProjectFileName(change.Path)).Where(name => name != null);
+          var fileNames = filteredChanges
+            .Select(change => GetProjectFileName(change.Path))
+            .Where(name => !name.IsNull);
           return new FileSystemValidationResult {
             ChangedFiles = fileNames.ToList()
           };
@@ -49,7 +51,22 @@ namespace VsChromium.Server.FileSystem {
           // TODO(rpaquay): Could we be smarter here?
           Logger.LogInfo("Some changes are *not* file modifications: Use hammer approach and update the whole FileSystemTree.");
           return new FileSystemValidationResult {
-            RecomputeGraph = true
+            RecomputeGraph = true,
+            AddedFiles = filteredChanges
+              .Where(x => x.Kind == PathChangeKind.Created)
+              .Select(change => GetProjectFileName(change.Path))
+              .Where(name => !name.IsNull)
+              .ToList(),
+           ChangedFiles = filteredChanges
+              .Where(x => x.Kind == PathChangeKind.Changed)
+              .Select(change => GetProjectFileName(change.Path))
+              .Where(name => !name.IsNull)
+              .ToList(),
+            DeletedFiles = filteredChanges
+              .Where(x => x.Kind == PathChangeKind.Deleted)
+              .Select(change => GetProjectFileName(change.Path))
+              .Where(name => !name.IsNull)
+              .ToList(),
           };
         }
       }
@@ -101,7 +118,7 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private Tuple<IProject, FileName> GetProjectFileName(FullPath path) {
+    private ProjectFileName GetProjectFileName(FullPath path) {
       return FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
     }
   }

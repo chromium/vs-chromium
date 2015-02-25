@@ -67,7 +67,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase BuildWithChangedFiles(
       IFileDatabase previousFileDatabase,
-      IEnumerable<Tuple<IProject, FileName>> changedFiles,
+      IEnumerable<ProjectFileName> changedFiles,
       Action onLoading,
       Action onLoaded) {
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
@@ -75,7 +75,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
         // Update file contents of file data entries of changed files.
         var filesToRead = changedFiles
-          .Where(x => x.Item1.IsFileSearchable(x.Item2) && fileDatabase.Files.ContainsKey(x.Item2))
+          .Where(x => x.Project.IsFileSearchable(x.FileName) && fileDatabase.Files.ContainsKey(x.FileName))
           .ToList();
 
         if (filesToRead.Count == 0)
@@ -85,8 +85,8 @@ namespace VsChromium.Server.FileSystemDatabase {
         // Read file contents.
         onLoading();
         filesToRead.ForAll(x => {
-          var newContents = _fileContentsFactory.GetFileContents(x.Item2.FullPath);
-          fileDatabase.Files[x.Item2].UpdateContents(newContents);
+          var newContents = _fileContentsFactory.GetFileContents(x.FileName.FullPath);
+          fileDatabase.Files[x.FileName].UpdateContents(newContents);
         });
         onLoaded();
 

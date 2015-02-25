@@ -201,10 +201,10 @@ namespace VsChromium.Server.Search {
 
     public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans, int maxLength) {
       var filename = FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
-      if (filename == null)
+      if (filename.IsNull)
         return Enumerable.Empty<FileExtract>();
 
-      return _currentFileDatabase.GetFileExtracts(filename.Item2, spans, maxLength);
+      return _currentFileDatabase.GetFileExtracts(filename.FileName, spans, maxLength);
     }
 
     public event EventHandler<OperationInfo> FilesLoading;
@@ -222,10 +222,12 @@ namespace VsChromium.Server.Search {
     }
 
     private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
-      _taskQueue.Enqueue(new TaskId("FileSystemProcessorOnFilesChanged"), () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
+      _taskQueue.Enqueue(
+        new TaskId("FileSystemProcessorOnFilesChanged"), 
+        () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
     }
 
-    private void UpdateFileContents(IEnumerable<Tuple<IProject, FileName>> files) {
+    private void UpdateFileContents(IEnumerable<ProjectFileName> files) {
       OperationInfo operationInfo = null;
       _operationProcessor.Execute(new OperationHandlers {
         OnBeforeExecute = info =>

@@ -84,31 +84,27 @@ namespace VsChromium.Server.FileSystem {
     }
 
     /// <summary>
-    /// Return the |FileName| instance corresponding to the full path |path|. Returns |null| if |path| 
-    /// is invalid or not part of a project.
+    /// Return the |FileName| instance corresponding to the full path |path|.
+    /// Returns |null| if |path| is invalid or not part of a project.
     /// </summary>
-    public static Tuple<IProject, FileName> GetProjectFileName(IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, FullPath path) {
+    public static ProjectFileName GetProjectFileName(IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, FullPath path) {
       var project = projectDiscovery.GetProject(path);
       if (project == null)
-        return null;
+        return default(ProjectFileName);
 
-      var rootPath = project.RootPath;
-      var rootLength = rootPath.Value.Length + 1;
-      if (rootPath.Value.Last() == Path.DirectorySeparatorChar)
-        rootLength--;
+      var split = PathHelpers.SplitPrefix(path.Value, project.RootPath.Value);
+      var relativePath = split.Suffix;
 
-      var directoryName = fileSystemNameFactory.CreateAbsoluteDirectoryName(rootPath);
-      var relativePath = path.Value.Substring(rootLength);
-      var items = relativePath.Split(new char[] {
-        Path.DirectorySeparatorChar
-      });
-      foreach (var item in items) {
-        if (item == items.Last())
-          return Tuple.Create(project, fileSystemNameFactory.CreateFileName(directoryName, item));
+      var directoryName = fileSystemNameFactory.CreateAbsoluteDirectoryName(project.RootPath);
+      var names = relativePath.Split(Path.DirectorySeparatorChar);
 
-        directoryName = fileSystemNameFactory.CreateDirectoryName(directoryName, item);
+      foreach (var name in names) {
+        if (name == names.Last())
+          return new ProjectFileName(project, fileSystemNameFactory.CreateFileName(directoryName, name));
+
+        directoryName = fileSystemNameFactory.CreateDirectoryName(directoryName, name);
       }
-      return null;
+      return default(ProjectFileName);
     }
   }
 }

@@ -82,9 +82,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string MatchCaseToolTip {
       get {
         return string.Format(
-          "Toggle case matching for all searches. " +
-          "Searches are currently case {0}.",
-          MatchCase ? "sensitive" : "insensitive");
+          "Toggle \"Match Case\" when searching text and file paths. " +
+          "\"Match case\" is currently {0}.",
+          MatchCase ? "enabled" : "disabled");
       }
     }
 
@@ -107,8 +107,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string MatchWholeWordToolTip {
       get {
         return string.Format(
-          "Toggle matching whole words only for all searches. " +
-          "Match whole word is currently {0}.",
+          "Toggle \"Match whold word\" when searching text and file paths. " +
+          "\"Match whole word\" is currently {0}.",
           MatchWholeWord ? "enabled" : "disabled");
       }
     }
@@ -132,7 +132,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string UseRegexToolTip {
       get {
         return string.Format(
-          "Toggle usage of regular expressions for all searches. " +
+          "Toggle usage of regular expressions when searching text and file paths. " +
           "Regular expressions are currently {0}.",
           UseRegex ? "enabled" : "disabled");
       }
@@ -157,7 +157,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string IncludeSymLinksToolTip {
       get {
         return string.Format(
-          "Toggle searching inside symbolic links for all searches. " +
+          "Toggle searching inside symbolic linkswhen searching text and file paths. " +
           "Symbolic links are currently {0} in search results.",
           IncludeSymLinks ? "included" : "excluded");
       }
@@ -170,7 +170,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       get {
         if (_updateInfo == null)
           return "";
-        return string.Format("A new version ({0}) of VsChromium is available: ", _updateInfo.Version);
+        return string.Format("A new version ({0}) of VS Chromium is available: ", _updateInfo.Version);
       }
     }
 

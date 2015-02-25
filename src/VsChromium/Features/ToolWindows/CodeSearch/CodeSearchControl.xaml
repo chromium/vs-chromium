@@ -141,7 +141,7 @@
         </Button>
         <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click" Foreground="{DynamicResource VsBrush.WindowText}">
           <Button.ToolTip>
-            <TextBlock Text="Clear current search and revert to File System view"/>
+            <TextBlock Text="Clear search results"/>
           </Button.ToolTip>
           <Image Source="{Binding CancelSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
             <Image.Style>
@@ -174,10 +174,14 @@
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
       </StackPanel>
       <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" />
+        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0">
+          <TextBlock.ToolTip>
+            <TextBlock Text="Resource usage of the Index maintained by the VS Chromium Server process"/>
+          </TextBlock.ToolTip>
+        </TextBlock>
         <Button VerticalAlignment="Center" HorizontalAlignment="Right" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" Click="RefreshIndexButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
           <Button.ToolTip>
-            <TextBlock Text="Refresh index by rescanning directories"/>
+            <TextBlock Text="Refresh index"/>
           </Button.ToolTip>
           <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" />
         </Button>
@@ -230,10 +234,11 @@
           <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFilePathsCombo">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
-                Type file name pattern to search for. 
+                Type file path pattern to search for. 
                 <LineBreak/>
-                For simple searches, the pattern may include wildcards and directory separators, e.g. &quot;bar&quot;,
-                &quot;bar.*&quot;, &quot;foo/bar*&quot;, &quot;foo/**/bar.*&quot;.
+                For non regular expression searches, the pattern follows rules similar to glob patterns:
+                it may include '*', '**', '/' and '\' special characters. For multiple patterns, use the ';' separator.
+                For example, '*.txt', '**/foo.txt', 'foo/*', '*.txt;*.log'.
                 <LineBreak/>
                 For regular expression searches, the pattern is a regular expression.
               </TextBlock>

@@ -15,8 +15,8 @@ namespace VsChromium.Core.Configuration {
     private readonly Lazy<IPathMatcher> _matcher;
     private readonly Lazy<List<PathMatcher>> _matcherLines;
 
-    public FilePatternsPathMatcherProvider(IConfigurationSectionProvider configurationSectionProvider, string sectionName) {
-      _sectionContents = configurationSectionProvider.GetSection(sectionName, FilterDirectories);
+    public FilePatternsPathMatcherProvider(IConfigurationSectionContents contents) {
+      _sectionContents = contents;
       _matcherLines = new Lazy<List<PathMatcher>>(CreateMatcherLines, LazyThreadSafetyMode.PublicationOnly);
       _matcher = new Lazy<IPathMatcher>(CreateMatcher, LazyThreadSafetyMode.PublicationOnly);
     }
@@ -36,18 +36,6 @@ namespace VsChromium.Core.Configuration {
 
     private IPathMatcher CreateMatcher() {
       return new AnyPathMatcher(_matcherLines.Value);
-    }
-
-    private IEnumerable<string> FilterDirectories(IEnumerable<string> arg) {
-      // Note: The file is user input, so we need to replace "/" with "\".
-      return arg
-        .Where(line => !IsCommentLine(line))
-        .Where(line => !string.IsNullOrWhiteSpace(line))
-        .Select(line => line.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar));
-    }
-
-    private static bool IsCommentLine(string x) {
-      return x.TrimStart().StartsWith("#");
     }
   }
 }

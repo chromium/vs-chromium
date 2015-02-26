@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using System.Security.Cryptography;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.FileSystemContents {
   public class FileContentsHash : IEquatable<FileContentsHash> {
@@ -20,11 +20,8 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     private static string CreateHash(FileContentsMemory memory) {
-      using (var md5 = MD5.Create()) {
-        using (var stream = memory.CreateSteam()) {
-          byte[] hash = md5.ComputeHash(stream);
-          return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-        }
+      using (var stream = memory.CreateSteam()) {
+        return MD5Hash.CreateHash(stream);
       }
     }
 

@@ -170,6 +170,7 @@
     <Compile Include="Ipc\IpcRequest.cs" />
     <Compile Include="Debugger\DebuggerThread.cs" />
     <Compile Include="DkmShared\PackageServices.cs" />
+    <Compile Include="Utility\MD5Hash.cs" />
     <Compile Include="Win32\Shell\SafeIconHandle.cs" />
     <Compile Include="Win32\Pointers.cs" />
     <Compile Include="Processes\ExtensionMethods.cs" />

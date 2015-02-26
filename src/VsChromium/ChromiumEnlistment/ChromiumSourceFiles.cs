@@ -21,7 +21,8 @@ namespace VsChromium.ChromiumEnlistment {
     [ImportingConstructor]
     public ChromiumSourceFiles(IConfigurationFileLocator configurationFileLocator, IFileSystem fileSystem) {
       var configurationSectionProvider = new ConfigurationFileConfigurationSectionProvider(configurationFileLocator);
-      _chromiumCodingStyleFilePatterns = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationStyleFilenames.ChromiumCodingStyleIgnore);
+      var contents = ConfigurationSectionContents.Create(configurationSectionProvider, ConfigurationStyleFilenames.ChromiumCodingStyleIgnore);
+      _chromiumCodingStyleFilePatterns = new FilePatternsPathMatcherProvider(contents);
       _chromiumDiscoveryProvider = new ChromiumDiscoveryWithCache<FullPath>(configurationSectionProvider, fileSystem);
     }
 

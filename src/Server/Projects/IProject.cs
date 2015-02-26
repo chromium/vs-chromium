@@ -11,5 +11,10 @@ namespace VsChromium.Server.Projects {
     IDirectoryFilter DirectoryFilter { get; }
     IFileFilter FileFilter { get; }
     ISearchableFilesFilter SearchableFilesFilter { get; }
+
+    /// <summary>
+    /// An opaque string unique to the project configuration.
+    /// </summary>
+    string VersionHash { get; }
   }
 }

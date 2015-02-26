@@ -7,6 +7,7 @@ using System.Linq;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Server.Projects.ProjectFile {
   /// <summary>
@@ -88,22 +89,25 @@ namespace VsChromium.Server.Projects.ProjectFile {
     /// Return <code>null</code> if there is no project file.
     /// </summary>
     private Project CreateProject(FullPath rootPath) {
-      var path = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileName));
+      var projectFilePath = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileName));
       var sectionName = ConfigurationSectionNames.SourceExplorerIgnore;
-      if (!_fileSystem.FileExists(path)) {
-        path = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameObsolete));
+      if (!_fileSystem.FileExists(projectFilePath)) {
+        projectFilePath = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameObsolete));
         sectionName = ConfigurationSectionNames.SourceExplorerIgnoreObsolete;
-        if (!_fileSystem.FileExists(path)) {
+        if (!_fileSystem.FileExists(projectFilePath)) {
           return null;
         }
       }
 
-      var fileWithSections = new FileWithSections(_fileSystem, path);
+      var fileWithSections = new FileWithSections(_fileSystem, projectFilePath);
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
-      var fileFilter = new FileFilter(configurationProvider, sectionName);
-      var directoryFilter = new DirectoryFilter(configurationProvider, sectionName);
-      var searchableFilesFilter = new SearchableFilesFilter(configurationProvider);
-      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter);
+      var s1 = ConfigurationSectionContents.Create(configurationProvider, sectionName);
+      var s2 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesIgnore);
+      var s3 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesInclude);
+      var fileFilter = new FileFilter(s1);
+      var directoryFilter = new DirectoryFilter(s1);
+      var searchableFilesFilter = new SearchableFilesFilter(s2, s3);
+      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter, fileWithSections.Hash);
     }
   }
 }

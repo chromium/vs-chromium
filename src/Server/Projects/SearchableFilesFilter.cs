@@ -10,9 +10,9 @@ namespace VsChromium.Server.Projects {
     private readonly FilePatternsPathMatcherProvider _ignoreMatcherProvider;
     private readonly FilePatternsPathMatcherProvider _includeMatcherProvider;
 
-    public SearchableFilesFilter(IConfigurationSectionProvider configurationSectionProvider) {
-      _ignoreMatcherProvider = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesIgnore);
-      _includeMatcherProvider = new FilePatternsPathMatcherProvider(configurationSectionProvider, ConfigurationSectionNames.SearchableFilesInclude);
+    public SearchableFilesFilter(IConfigurationSectionContents s1, IConfigurationSectionContents s2) {
+      _ignoreMatcherProvider = new FilePatternsPathMatcherProvider(s1);
+      _includeMatcherProvider = new FilePatternsPathMatcherProvider(s2);
     }
 
     public bool Include(RelativePath fileName) {

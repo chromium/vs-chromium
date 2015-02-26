@@ -2,10 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Linq;
 using VsChromium.Core.Chromium;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.Projects.Chromium {
   /// <summary>
@@ -38,10 +42,15 @@ namespace VsChromium.Server.Projects.Chromium {
     }
 
     private Project CreateProject(FullPath rootPath) {
-      var fileFilter = new FileFilter(_configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnoreObsolete);
-      var directoryFilter = new DirectoryFilter(_configurationSectionProvider, ConfigurationSectionNames.SourceExplorerIgnoreObsolete);
-      var searchableFilesFilter = new SearchableFilesFilter(_configurationSectionProvider);
-      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter);
+      var configurationProvider = _configurationSectionProvider;
+      var section1 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SourceExplorerIgnoreObsolete);
+      var section2 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesIgnore);
+      var section3 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesInclude);
+      var fileFilter = new FileFilter(section1);
+      var directoryFilter = new DirectoryFilter(section1);
+      var searchableFilesFilter = new SearchableFilesFilter(section2, section3);
+      var hash = MD5Hash.CreateHash(section1.Contents.Concat(section2.Contents).Concat(section3.Contents));
+      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter, hash);
     }
   }
 }

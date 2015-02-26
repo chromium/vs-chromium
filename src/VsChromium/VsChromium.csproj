@@ -210,6 +210,7 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
+    <Compile Include="Features\QuickSearch\QuickSearchCodeHandler.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\FilePathEventArgs.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IIncrementalHierarchyBuilder.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalBuildResult.cs" />

@@ -25,6 +25,9 @@ namespace VsChromium.Commands {
     /// </summary>
     public IOleCommandTarget NextCommandTarget;
 
+    /// <summary>
+    /// Note: description is for debugging purposes only.
+    /// </summary>
     public OleCommandTarget(string description, ICommandTarget commandTarget) {
       _description = description;
       _commandTarget = commandTarget;

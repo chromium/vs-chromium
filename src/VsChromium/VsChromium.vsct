@@ -87,6 +87,19 @@
           <LocCanonicalName>VsChromium.FindFileNames</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidQuickSearchFilePaths" priority="0x0101" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <!-- ButtonText is mandatory, is used when the command is visible in a menu controller,
+              and is used as a default value for other entries if they are not specified-->
+          <ButtonText>VsChromium Quick Find File Names</ButtonText>
+          <!-- The Command name is dispalyed in the "Customize | Commands" and in the "Add Command" dialog. -->
+          <CommandName>VsChromium - Quick Find File Names</CommandName>
+          <!-- LocCanonicalName is used to display the command name in the "Options | Keyboard" dialog -->
+          <LocCanonicalName>VsChromium.QuickFindFileNames</LocCanonicalName>
+        </Strings>
+      </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidSearchCode" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -94,6 +107,15 @@
           <ButtonText>VsChromium Search Code</ButtonText>
           <CommandName>VsChromium - Search Code</CommandName>
           <LocCanonicalName>VsChromium.SearchCode</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidQuickSearchCode" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Quick Search Code</ButtonText>
+          <CommandName>VsChromium - Quick Search Code</CommandName>
+          <LocCanonicalName>VsChromium.QuickSearchCode</LocCanonicalName>
         </Strings>
       </Button>
       <!-- Custom "Sync With Active document" command (in Solution Explorer toolbar) -->
@@ -326,8 +348,10 @@
     <!-- Note: VK_OEM_1 is the 'colon/semicolon' key on US keyboards. -->
     <!-- Note: VK_OEM_7 is the 'single-quote/double-quote' key on US keyboards. -->
     <!-- See https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx -->
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchCode" editor="guidVSStd97" key1="VK_OEM_1" mod1="Control Shift" />
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFilePaths" editor="guidVSStd97" key1="VK_OEM_7" mod1="Control Shift" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchFilePaths" editor="guidVSStd97" mod1="Control Alt" key1="VK_OEM_7"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchCode" editor="guidVSStd97" mod1="Control Alt" key1="VK_OEM_1"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidQuickSearchFilePaths" editor="guidVSStd97" mod1="Control Shift" key1="VK_OEM_7"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidQuickSearchCode" editor="guidVSStd97" mod1="Control Shift" key1="VK_OEM_1"/>
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidCancelSearch" editor="guidVSStd97" key1="VK_ESCAPE" mod1="" />
@@ -352,7 +376,9 @@
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
       <IDSymbol name="cmdidCodeSearchToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFilePaths" value="0x0102" />
+      <IDSymbol name="cmdidQuickSearchFilePaths" value="0x0108" />
       <IDSymbol name="cmdidSearchCode" value="0x0104" />
+      <IDSymbol name="cmdidQuickSearchCode" value="0x0109" />
       <IDSymbol name="cmdidGotoNextLocation" value="0x0105" />
       <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />
       <IDSymbol name="cmdidCancelSearch" value="0x0107" />

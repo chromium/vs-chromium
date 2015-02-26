@@ -142,5 +142,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public void CancelSearch() {
       ExplorerControl.Controller.CancelSearch();
     }
+
+    public void SearchCode(string searchText) {
+      ExplorerControl.SearchCodeCombo.Text = searchText;
+      ExplorerControl.SearchFilePathsCombo.Text = "";
+      ExplorerControl.SearchCodeCombo.Focus();
+      ExplorerControl.Controller.PerformSearch(true);
+    }
   }
 }

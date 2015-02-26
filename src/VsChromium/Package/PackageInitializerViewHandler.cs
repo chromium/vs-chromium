@@ -51,7 +51,7 @@ namespace VsChromium.Package {
         foreach (var buffer in textView.BufferGraph.GetTextBuffers(x => true)) {
           ITextDocument textDocument;
           if (_textDocumentFactoryService.TryGetTextDocument(buffer, out textDocument)) {
-            _fileRegistrationRequestService.RegisterFile(textDocument.FilePath);
+            _fileRegistrationRequestService.RegisterTextDocument(textDocument);
           }
         }
       }

@@ -28,7 +28,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, TextDocumentEventArgs textDocumentEventArgs) {
       if (textDocumentEventArgs.TextDocument != null) {
-        _fileRegistrationRequestService.RegisterFile(textDocumentEventArgs.TextDocument.FilePath);
+        _fileRegistrationRequestService.RegisterTextDocument(textDocumentEventArgs.TextDocument);
         textDocumentEventArgs.TextDocument.FileActionOccurred += (o, args) => {
           if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
             var document = (ITextDocument)o;
@@ -41,7 +41,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, TextDocumentEventArgs textDocumentEventArgs) {
       if (textDocumentEventArgs.TextDocument != null) {
-        _fileRegistrationRequestService.UnregisterFile(textDocumentEventArgs.TextDocument.FilePath);
+        _fileRegistrationRequestService.UnregisterTextDocument(textDocumentEventArgs.TextDocument);
       }
     }
   }

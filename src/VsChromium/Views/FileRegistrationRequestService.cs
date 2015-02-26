@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Package;
 using VsChromium.Threads;
 
 namespace VsChromium.Views {
@@ -13,13 +15,30 @@ namespace VsChromium.Views {
   public class FileRegistrationRequestService : IFileRegistrationRequestService {
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IFileSystem _fileSystem;
+    private readonly IEventBus _eventBus;
 
     [ImportingConstructor]
     public FileRegistrationRequestService(
       IUIRequestProcessor uiRequestProcessor,
-      IFileSystem fileSystem) {
+      IFileSystem fileSystem,
+      IEventBus eventBus) {
       _uiRequestProcessor = uiRequestProcessor;
       _fileSystem = fileSystem;
+      _eventBus = eventBus;
+    }
+
+    public void RegisterTextDocument(ITextDocument document) {
+      SendRegisterFileRequest(document.FilePath);
+      document.TextBuffer.ChangedLowPriority += TextBufferOnChangedLowPriority;
+    }
+
+    public void UnregisterTextDocument(ITextDocument document) {
+      SendUnregisterFileRequest(document.FilePath);
+      document.TextBuffer.ChangedLowPriority -= TextBufferOnChangedLowPriority;
+    }
+
+    private void TextBufferOnChangedLowPriority(object sender, TextContentChangedEventArgs args) {
+      _eventBus.Fire("TextDocumentChanged", sender, args);
     }
 
     public void RegisterFile(string path) {
@@ -27,7 +46,7 @@ namespace VsChromium.Views {
     }
 
     public void UnregisterFile(string path) {
-      SentUnregisterFileRequest(path);
+      SendUnregisterFileRequest(path);
     }
 
     private void SendRegisterFileRequest(string path) {
@@ -44,7 +63,7 @@ namespace VsChromium.Views {
       _uiRequestProcessor.Post(request);
     }
 
-    private void SentUnregisterFileRequest(string path) {
+    private void SendUnregisterFileRequest(string path) {
       if (!IsValidPath(path))
         return;
 

@@ -9,9 +9,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
@@ -43,7 +43,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly TaskCancellation _taskCancellation;
-    private readonly TextDocumentChangeTracker _textDocumentChangeTracker = new TextDocumentChangeTracker();
+    private readonly TextDocumentChangeTracker _searchResultDocumentChangeTracker;
     private readonly object _eventBusCookie1;
     private readonly object _eventBusCookie2;
     private readonly object _eventBusCookie3;
@@ -57,6 +57,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public CodeSearchController(
       CodeSearchControl control,
       IUIRequestProcessor uiRequestProcessor,
+      IUIDelayedOperationProcessor uiDelayedOperationProcessor,
       IProgressBarTracker progressBarTracker,
       IStandarImageSourceFactory standarImageSourceFactory,
       IWindowsExplorer windowsExplorer,
@@ -75,6 +76,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _openDocumentHelper = openDocumentHelper;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
+      _searchResultDocumentChangeTracker = new TextDocumentChangeTracker(uiDelayedOperationProcessor);
       _taskCancellation = new TaskCancellation();
 
       // Ensure initial values are in sync.
@@ -106,13 +108,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void TextDocumentOpenHandler(object sender, EventArgs eventArgs) {
       var doc = (ITextDocument) sender;
       var args = (EventArgs)eventArgs;
-      _textDocumentChangeTracker.DocumentOpen(doc, args);
+      _searchResultDocumentChangeTracker.DocumentOpen(doc, args);
     }
 
     private void TextDocumentClosedHandler(object sender, EventArgs eventArgs) {
       var doc = (ITextDocument)sender;
       var args = (EventArgs)eventArgs;
-      _textDocumentChangeTracker.DocumentClose(doc, args);
+      _searchResultDocumentChangeTracker.DocumentClose(doc, args);
     }
 
 
@@ -135,7 +137,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var doc = (ITextDocument)sender;
       var args = (TextDocumentFileActionEventArgs)eventArgs;
       Logger.LogInfo("  FileActionOccurred \"{0}\": {1}", doc.FilePath, args.FileActionType);
-      _textDocumentChangeTracker.FileActionOccurred(doc, args);
+      _searchResultDocumentChangeTracker.FileActionOccurred(doc, args);
     }
 
     private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
@@ -169,6 +171,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.SetInformationMessages(items);
 
       if (!ViewModel.FileSystemTreeAvailable || ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
+        _searchResultDocumentChangeTracker.Disable();
         ViewModel.SwitchToInformationMessages();
       }
     }
@@ -181,6 +184,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           "No search results available - Type text to search for in \"Search Code\" and/or \"File Path\"");
         ViewModel.SetInformationMessages(items);
         if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
+          _searchResultDocumentChangeTracker.Disable();
           ViewModel.SwitchToInformationMessages();
         }
 
@@ -191,6 +195,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           string.Format("Open a source file from a local Chromium enlistment or") + "\r\n" +
           string.Format("from a directory containing a \"{0}\" file.", ConfigurationFileNames.ProjectFileName));
         ViewModel.SetInformationMessages(items);
+        _searchResultDocumentChangeTracker.Disable();
         ViewModel.SwitchToInformationMessages();
       }
 
@@ -209,6 +214,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void CancelSearch() {
+      _searchResultDocumentChangeTracker.Disable();
       ViewModel.SwitchToInformationMessages();
     }
 
@@ -257,7 +263,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         // Note: This has to run on the UI thread!
         OpenDocumentHelper.OpenDocument(fileEntry.Path, vsTextView => {
           // TODO(rpaquay): Find buffer for vsTextView.
-          return _textDocumentChangeTracker.TranslateSpan(fileEntry.GetFullPath(), span);
+          return _searchResultDocumentChangeTracker.TranslateSpan(fileEntry.GetFullPath(), span);
         });
       });
     }
@@ -521,8 +527,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         },
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
+          _searchResultDocumentChangeTracker.Disable();
           ViewModel.SetSearchFilePathsResult(viewModel);
-          _textDocumentChangeTracker.Disable();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFilePathsResponse)typedResponse);
@@ -541,8 +547,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             msg += ", Regular expression";
           }
           var viewModel = CreateSearchFilePathsResult(response.SearchResult, msg, true);
+          _searchResultDocumentChangeTracker.Disable();
           ViewModel.SetSearchFilePathsResult(viewModel);
-          _textDocumentChangeTracker.Disable();
         }
       });
     }
@@ -567,7 +573,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchCodeResult(viewModel);
-          _textDocumentChangeTracker.Disable();
+          _searchResultDocumentChangeTracker.Disable();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchCodeResponse)typedResponse);
@@ -591,7 +597,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
           var result = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
           ViewModel.SetSearchCodeResult(result);
-          _textDocumentChangeTracker.Enable(response.SearchResults);
+          _searchResultDocumentChangeTracker.Enable(response.SearchResults);
         }
       });
     }
@@ -657,146 +663,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return;
       BringItemViewModelToView(item);
       ExecuteOpenCommandForItem(item);
-    }
-  }
-
-  public class TextDocumentChangeTracker {
-    private readonly Dictionary<FullPath, ITextDocument> _openDocuments = new Dictionary<FullPath, ITextDocument>();
-    private readonly Dictionary<FullPath, Entry> _entries = new Dictionary<FullPath, Entry>();
-    private bool _enabled;
-
-    private class Entry {
-      private readonly FullPath _path;
-      private readonly Dictionary<Tuple<int, int>, ITrackingSpan> _trackingSpans = new Dictionary<Tuple<int, int>, ITrackingSpan>();
-
-      public Entry(FullPath path) {
-        _path = path;
-      }
-
-      public FilePositionsData PositionsData { get; set; }
-
-      public void CreateSpans(ITextBuffer buffer) {
-        if (PositionsData == null)
-          return;
-
-        // Limit to 1,000 spans to avoid overloading the editor.
-        foreach (var position in PositionsData.Positions.Take(1000)) {
-          var version = buffer.CurrentSnapshot.Version;
-          var span = version.CreateTrackingSpan(new Span(position.Position, position.Length), SpanTrackingMode.EdgeExclusive);
-          _trackingSpans.Add(Tuple.Create(position.Position, position.Length), span);
-        }
-      }
-
-      public void DeleteSpans(ITextBuffer textBuffer) {
-        _trackingSpans.Clear();
-      }
-
-      public Span TranslateSpan(Span value) {
-        var key = Tuple.Create(value.Start, value.Length);
-        var span = _trackingSpans.GetValue(key);
-        if (span == null)
-          return value;
-
-        var newSpan = span.GetSpan(span.TextBuffer.CurrentSnapshot);
-        return new Span(newSpan.Start, newSpan.Length);
-      }
-    }
-
-    public void DocumentOpen(ITextDocument document, EventArgs args) {
-      if (!FullPath.IsValid(document.FilePath))
-        return;
-      var path = new FullPath(document.FilePath);
-
-      _openDocuments[path] = document;
-
-      if (!_enabled)
-        return;
-
-      var entry = _entries.GetValue(path);
-      if (entry == null)
-        return;
-      entry.CreateSpans(document.TextBuffer);
-    }
-
-    public void DocumentClose(ITextDocument document, EventArgs args) {
-      if (!FullPath.IsValid(document.FilePath))
-        return;
-      var path = new FullPath(document.FilePath);
-
-      _openDocuments.Remove(path);
-
-      if (!_enabled)
-        return;
-
-      var entry = _entries.GetValue(path);
-      if (entry == null)
-        return;
-      entry.DeleteSpans(document.TextBuffer);
-    }
-
-    public void FileActionOccurred(ITextDocument document, TextDocumentFileActionEventArgs args) {
-      if (!FullPath.IsValid(document.FilePath))
-        return;
-      var path = new FullPath(document.FilePath);
-
-      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
-        _openDocuments[new FullPath(args.FilePath)] = document;
-        _openDocuments.Remove(path);
-      }
-      
-      if (!_enabled)
-        return;
-
-      if (args.FileActionType.HasFlag(FileActionTypes.ContentLoadedFromDisk)) {
-        _entries.Remove(path);
-      }
-
-      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
-        _openDocuments[new FullPath(args.FilePath)] = document;
-        _openDocuments.Remove(path);
-        _entries.Remove(path);
-      }
-    }
-
-    public void Enable(DirectoryEntry searchResults) {
-      _entries.Clear();
-      _enabled = true;
-
-      // TODO(rpaquay): Safer casts?
-      // TODO(rpaquay): Defer this computation.
-      foreach (DirectoryEntry projectRoot in searchResults.Entries) {
-        foreach (FileEntry fileEntry in projectRoot.Entries) {
-          var path = new FullPath(projectRoot.Name).Combine(new RelativePath(fileEntry.Name));
-
-          var entry = new Entry(path) {
-            PositionsData = fileEntry.Data as FilePositionsData
-          };
-          _entries.Add(path, entry);
-
-          var document = _openDocuments.GetValue(path);
-          if (document != null) {
-             entry.CreateSpans(document.TextBuffer);
-          }
-        }
-      }
-    }
-
-    public void Disable() {
-      _entries.Clear();
-      _enabled = false;
-    }
-
-    public Span? TranslateSpan(string filePath, Span? span) {
-      if (!_enabled)
-        return span;
-      if (span == null)
-        return null;
-      var path = new FullPath(filePath);
-      var entry = _entries.GetValue(path);
-      if (entry == null)
-        return span;
-
-      return entry.TranslateSpan(span.Value);
     }
   }
 }

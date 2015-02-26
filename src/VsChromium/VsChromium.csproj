@@ -251,6 +251,8 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchCodeCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\TextDocumentChangeTracker.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\TextDocumentChangeTrackerEntry.cs" />
     <Compile Include="Features\ToolWindows\IToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />

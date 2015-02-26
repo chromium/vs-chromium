@@ -94,6 +94,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _controller = new CodeSearchController(
         this,
         _uiRequestProcessor,
+        componentModel.DefaultExportProvider.GetExportedValue<IUIDelayedOperationProcessor>(),
         _progressBarTracker,
         standarImageSourceFactory,
         componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>(),

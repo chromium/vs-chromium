@@ -316,12 +316,12 @@
       <Bitmap guid="guidSyncWithActiveDocumentImage" href="Views\Images\SyncActiveDocument.png" />
     </Bitmaps>
   </Commands>
-  <VisibilityConstraints>
-    <!-- Note: Enabling the line above prevents our command handler to be invoked for 
+  <!-- Note: Enabling the line above prevents our command handler to be invoked for 
         "Visible" and "Enabled" state of the command. We want programmatic control
         of the state of the control. -->
-    <!--<VisibilityItem guid="guidVsChromiumCmdSet" id="cmdidSyncWithActiveDocument" context="UICONTEXT_SolutionExists" />-->
-  </VisibilityConstraints>
+  <!--<VisibilityConstraints>
+    <VisibilityItem guid="guidVsChromiumCmdSet" id="cmdidSyncWithActiveDocument" context="UICONTEXT_SolutionExists" />
+  </VisibilityConstraints>-->
   <KeyBindings>
     <!-- Note: VK_OEM_1 is the 'colon/semicolon' key on US keyboards. -->
     <!-- Note: VK_OEM_7 is the 'single-quote/double-quote' key on US keyboards. -->
@@ -398,8 +398,16 @@
       <IDSymbol name="Icon" value="1" />
     </GuidSymbol>
   </Symbols>
-  <UsedCommands>
+  <!--Note: From https://github.com/techtalk/SpecFlow/blob/master/lib/VS2010SDK/VSCTInclude/RazorCmdUsed.vsct
+    By adding a command to the <UsedCommands> element, a VSPackage informs the Visual Studio 
+    environment that although a command is implemented by other code, when the current VSPackage is active, 
+    it provides the command implementation. In this case, when any of the windows of the current VSPackage has focus, 
+    the current VSPackage's implementations of the QueryStatus and Exec methods take precedence over implementations defined 
+    elsewhere. For more information about command routing see Command Routing in VSPackages. -->
+  <!-- In our case though, we wanted to override the command when *any* window is active, 
+       so we used the IVsRegisterPriorityCommandTarget interface. -->
+  <!--<UsedCommands>
     <UsedCommand guid="guidVSStd97" id="cmdidNextLocation"/>
     <UsedCommand guid="guidVSStd97" id="cmdidPreviousLocation"/>
-  </UsedCommands>
+  </UsedCommands>-->
 </CommandTable>

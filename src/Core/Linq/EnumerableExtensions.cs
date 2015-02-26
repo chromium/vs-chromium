@@ -194,6 +194,16 @@ namespace VsChromium.Core.Linq {
       return new ReadOnlyCollection<TSource>(source.ToArray());
     }
 
+    /// <summary>
+    /// Returns <code>null</code> when not found.
+    /// </summary>
+    public static TValue GetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) where TValue : class {
+      TValue result;
+      if (!dictionary.TryGetValue(key, out result))
+        return null;
+      return result;
+    }
+
     public static void RemoveWhere<TKey, TValue>(
       this IDictionary<TKey, TValue> source,
       Func<KeyValuePair<TKey, TValue>, bool> predicate) {

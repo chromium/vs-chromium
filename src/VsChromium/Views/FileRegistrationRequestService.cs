@@ -43,9 +43,11 @@ namespace VsChromium.Views {
       // Add various event handlers 
       var handlers = new TextDocumentEventHandlers {
         ChangedHandler = (s, e) => TextBufferOnChangedLowPriority(document, e),
-        FileActionOccurred = FileActionOccurred
+        FileActionOccurred = FileActionOccurred,
       };
-      if (_documents.TryAdd(document, handlers)) { 
+
+      if (_documents.TryAdd(document, handlers)) {
+        TextDocumentOnOpen(document, new EventArgs());
         document.TextBuffer.ChangedLowPriority += handlers.ChangedHandler;
         document.FileActionOccurred += handlers.FileActionOccurred;
       }
@@ -58,7 +60,16 @@ namespace VsChromium.Views {
       if (_documents.TryRemove(document, out handlers)) {
         document.TextBuffer.ChangedLowPriority -= handlers.ChangedHandler;
         document.FileActionOccurred -= handlers.FileActionOccurred;
+        TextDocumentOnClosed(document, new EventArgs());
       }
+    }
+
+    private void TextDocumentOnOpen(ITextDocument textDocument, EventArgs args) {
+      _eventBus.Fire("TextDocument-Open", textDocument, args);
+    }
+
+    private void TextDocumentOnClosed(ITextDocument textDocument, EventArgs args) {
+      _eventBus.Fire("TextDocument-Closed", textDocument, args);
     }
 
     private void TextBufferOnChangedLowPriority(ITextDocument textDocument, TextContentChangedEventArgs args) {

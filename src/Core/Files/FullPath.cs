@@ -19,6 +19,10 @@ namespace VsChromium.Core.Files {
       _path = path;
     }
 
+    public static bool IsValid(string path) {
+      return PathHelpers.IsAbsolutePath(path);
+    }
+
     private static void ThrowInvalidPath(string path) {
       throw new ArgumentException(string.Format("Path must be absolute: \"{0}\".", path), "path");
     }

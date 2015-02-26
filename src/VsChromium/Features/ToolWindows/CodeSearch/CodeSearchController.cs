@@ -11,6 +11,7 @@ using System.Threading;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Configuration;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
@@ -42,7 +43,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly TaskCancellation _taskCancellation;
+    private readonly TextDocumentChangeTracker _textDocumentChangeTracker = new TextDocumentChangeTracker();
     private readonly object _eventBusCookie;
+    private readonly object _eventBusCookie2;
 
     /// <summary>
     /// For generating unique id n progress bar tracker.
@@ -81,7 +84,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       // Ensure changes to global settings are synchronized to ViewModel
       _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
 
-      _eventBusCookie = _eventBus.RegisterHandler("TextBufferChanged", TextDocumentChangedHandler);
+      _eventBusCookie = _eventBus.RegisterHandler("TextDocument-Changed", TextDocumentChangedHandler);
+      _eventBusCookie2 = _eventBus.RegisterHandler("TextDocumentFile-FileActionOccurred", TextDocumentFileActionOccurred);
     }
 
     public void Dispose() {
@@ -89,22 +93,31 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       _globalSettingsProvider.GlobalSettings.PropertyChanged -= GlobalSettingsOnPropertyChanged;
       _eventBus.UnregisterHandler(_eventBusCookie);
+      _eventBus.UnregisterHandler(_eventBusCookie2);
     }
 
+
     private void TextDocumentChangedHandler(object sender, EventArgs eventArgs) {
-      var doc = (ITextDocument) sender;
-      var args = (TextContentChangedEventArgs) eventArgs;
+      var doc = (ITextDocument)sender;
+      var args = (TextContentChangedEventArgs)eventArgs;
       foreach (var change in args.Changes) {
         Logger.LogInfo("  Change \"{0}\": ({1},{2},{3}) - ({4},{5},{6})",
           doc.FilePath,
           change.OldPosition,
-          change.OldEnd, 
-          change.OldLength, 
+          change.OldEnd,
+          change.OldLength,
           change.NewPosition,
-          change.NewEnd, 
-          change.NewLength
-          );
+          change.NewEnd,
+          change.NewLength);
+        _textDocumentChangeTracker.DocumentChanged(doc, args);
       }
+    }
+
+    private void TextDocumentFileActionOccurred(object sender, EventArgs eventArgs) {
+      var doc = (ITextDocument)sender;
+      var args = (TextDocumentFileActionEventArgs)eventArgs;
+      Logger.LogInfo("  FileActionOccurred \"{0}\": {1}", doc.FilePath, args.FileActionType);
+      _textDocumentChangeTracker.FileActionOccurred(doc, args);
     }
 
     private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
@@ -486,6 +499,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchFilePathsResult(viewModel);
+          _textDocumentChangeTracker.Disable();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFilePathsResponse)typedResponse);
@@ -505,6 +519,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           }
           var viewModel = CreateSearchFilePathsResult(response.SearchResult, msg, true);
           ViewModel.SetSearchFilePathsResult(viewModel);
+          _textDocumentChangeTracker.Disable();
         }
       });
     }
@@ -529,6 +544,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchCodeResult(viewModel);
+          _textDocumentChangeTracker.Disable();
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchCodeResponse)typedResponse);
@@ -550,8 +566,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             msg += string.Format(", File Paths: \"{0}\"", filePathPattern);
           }
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
-          var viewModel = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
-          ViewModel.SetSearchCodeResult(viewModel);
+          var result = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
+          ViewModel.SetSearchCodeResult(result);
+          _textDocumentChangeTracker.Enable();
         }
       });
     }
@@ -617,6 +634,41 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return;
       BringItemViewModelToView(item);
       ExecuteOpenCommandForItem(item);
+    }
+  }
+
+  public class TextDocumentChangeTracker {
+    private readonly Dictionary<FullPath, Entry>  _entries = new Dictionary<FullPath, Entry>();
+    private bool _enabled;
+
+    private class Entry {
+      private readonly FullPath _path;
+
+      public Entry(FullPath path) {
+        _path = path;
+      }
+    }
+
+    public void DocumentChanged(ITextDocument document, TextContentChangedEventArgs args) {
+      if (!_enabled)
+        return;
+      // TODO(rpaquay)
+    }
+
+    public void FileActionOccurred(ITextDocument document, TextDocumentFileActionEventArgs args) {
+      if (!_enabled)
+        return;
+      // TODO(rpaquay)
+    }
+
+    public void Enable() {
+      _entries.Clear();
+      _enabled = true;
+    }
+
+    public void Disable() {
+      _entries.Clear();
+      _enabled = false;
     }
   }
 }

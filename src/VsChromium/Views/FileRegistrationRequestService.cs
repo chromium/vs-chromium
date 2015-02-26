@@ -19,9 +19,14 @@ namespace VsChromium.Views {
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IFileSystem _fileSystem;
     private readonly IEventBus _eventBus;
-    private readonly ConcurrentDictionary<ITextDocument, EventHandler<TextContentChangedEventArgs>> _documents =
-      new ConcurrentDictionary<ITextDocument, EventHandler<TextContentChangedEventArgs>>(ReferenceEqualityComparer<ITextDocument>.Instance);
-      
+    private readonly ConcurrentDictionary<ITextDocument, TextDocumentEventHandlers> _documents =
+      new ConcurrentDictionary<ITextDocument, TextDocumentEventHandlers>(ReferenceEqualityComparer<ITextDocument>.Instance);
+
+    private class TextDocumentEventHandlers {
+      public EventHandler<TextContentChangedEventArgs> ChangedHandler { get; set; }
+      public EventHandler<TextDocumentFileActionEventArgs> FileActionOccurred { get; set; }
+    }
+
     [ImportingConstructor]
     public FileRegistrationRequestService(
       IUIRequestProcessor uiRequestProcessor,
@@ -34,24 +39,34 @@ namespace VsChromium.Views {
 
     public void RegisterTextDocument(ITextDocument document) {
       SendRegisterFileRequest(document.FilePath);
-      if (!_documents.ContainsKey(document)) {
-        var handler = _documents.GetOrAdd(document, (s, e) => 
-          TextBufferOnChangedLowPriority(document, e));
-        document.TextBuffer.ChangedLowPriority += handler;
+
+      // Add various event handlers 
+      var handlers = new TextDocumentEventHandlers {
+        ChangedHandler = (s, e) => TextBufferOnChangedLowPriority(document, e),
+        FileActionOccurred = FileActionOccurred
+      };
+      if (_documents.TryAdd(document, handlers)) { 
+        document.TextBuffer.ChangedLowPriority += handlers.ChangedHandler;
+        document.FileActionOccurred += handlers.FileActionOccurred;
       }
     }
 
     public void UnregisterTextDocument(ITextDocument document) {
       SendUnregisterFileRequest(document.FilePath);
 
-      EventHandler<TextContentChangedEventArgs> handler;
-      if (_documents.TryRemove(document, out handler)) {
-        document.TextBuffer.ChangedLowPriority -= handler;
+      TextDocumentEventHandlers handlers;
+      if (_documents.TryRemove(document, out handlers)) {
+        document.TextBuffer.ChangedLowPriority -= handlers.ChangedHandler;
+        document.FileActionOccurred -= handlers.FileActionOccurred;
       }
     }
 
     private void TextBufferOnChangedLowPriority(ITextDocument textDocument, TextContentChangedEventArgs args) {
-      _eventBus.Fire("TextBufferChanged", textDocument, args);
+      _eventBus.Fire("TextDocument-Changed", textDocument, args);
+    }
+
+    private void FileActionOccurred(object sender, TextDocumentFileActionEventArgs args) {
+      _eventBus.Fire("TextDocumentFile-FileActionOccurred", sender, args);
     }
 
     public void RegisterFile(string path) {

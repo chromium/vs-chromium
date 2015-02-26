@@ -61,11 +61,16 @@ namespace VsChromium.Server.FileSystemDatabase {
         //IFileContentsMemoization fileContentsMemoization = new FileContentsMemoization();
         IFileContentsMemoization fileContentsMemoization = new NullFileContentsMemoization();
 
-        // Merge old state in new state
-        TransferUnchangedFileContents(fileDatabase, fullPathChanges, fileContentsMemoization, unchangedProjectSet);
+        var loadingInfo = new FileContentsLoadingInfo {
+          FileContentsMemoization = fileContentsMemoization,
+          FullPathChanges = fullPathChanges,
+          LoadedCount = 0,
+          OldFileDatabase = fileDatabase,
+          UnchangedProjects = unchangedProjectSet
+        };
 
-        // Load file contents into newState
-        ReadMissingFileContents(fileContentsMemoization, fullPathChanges, unchangedProjectSet);
+        // Merge old state in new state and load all missing files
+        ComputeFileContents(loadingInfo);
 
         Logger.LogInfo("{0}{1:n0} unique file contents remaining in memory after memoization of {2:n0} files.",
             logger.Indent,
@@ -279,112 +284,103 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
-    private void TransferUnchangedFileContents(
-      FileDatabase oldState,
-      FullPathChanges fullPathChanges,
-      IFileContentsMemoization fileContentsMemoization,
-      ISet<IProject> unchangedProjects) {
-      using (new TimeElapsedLogger("Looking for out of date files")) {
-        using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
-          var list = new List<KeyValuePair<FileData, ProjectFileData>>(oldState.Files.Count);
-          list.AddRange(GetCommonFiles(oldState));
+    private class FileContentsLoadingInfo {
+      public FileDatabase OldFileDatabase;
+      public FullPathChanges FullPathChanges;
+      public IFileContentsMemoization FileContentsMemoization;
+      public ISet<IProject> UnchangedProjects;
+      public int LoadedCount;
+    }
 
-          var commonSearchableFiles = list
-            .AsParallel()
-            .Where(kvp => {
-              var oldFileData = kvp.Key;
-              var projectFileData = kvp.Value;
-              if (progress.Step()) {
-                progress.DisplayProgress(
-                  (i, n) =>
-                    string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPath));
-              }
+    private void ComputeFileContents(FileContentsLoadingInfo loadingInfo) {
 
-              // If file was not previously searchable, it is certainly not a
-              // "common searchable" file.
-              if (oldFileData.Contents == null)
-                return false;
+      using (var logger = new TimeElapsedLogger("Loading file contents from disk")) {
+        using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
+          _files.AsParallel().ForAll(fileEntry => {
+            Debug.Assert(fileEntry.Value.FileData.Contents == null);
 
-              // If the project configuration is unchanged from the previous
-              // file database (and the file was present in it), then it is
-              // certainly searchable, so no need to make an expensive call to
-              // "IsSearchable" again.
-              if (unchangedProjects.Contains(projectFileData.Project)) {
-                //projectFileData.FileData.UpdateContents(oldFileData.Contents);
-              } else {
-                // If the file is not searchable in the current project, it
-                // should be ignored too. Note that "IsSearachable" is a
-                // somewhat expensive operation, as the filename is checked
-                // against potentially many glob patterns.
-                if (!projectFileData.IsSearchable)
-                  return false;
-              }
+            if (progress.Step()) {
+              progress.DisplayProgress(
+                (i, n) =>
+                  string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
+            }
 
-              // If the file has changed since the previous snapshot, it should
-              // be ignored too.
-              return IsFileContentsUpToDate(fullPathChanges, oldFileData);
-            });
-
-          commonSearchableFiles.ForAll(kvp => {
-            var oldFileData = kvp.Key;
-            var projectFileData = kvp.Value;
-
-            Debug.Assert(oldFileData.Contents != null);
-
-            var contents = fileContentsMemoization.Get(projectFileData.FileName, oldFileData.Contents);
-            Debug.Assert(contents != null);
-
-            Debug.Assert(projectFileData.FileData.Contents == null);
-            projectFileData.FileData.UpdateContents(contents);
+            var contents = ComputeSingleFileContents(loadingInfo, fileEntry.Value);
+            if (contents != null) {
+              fileEntry.Value.FileData.UpdateContents(contents);
+            }
           });
         }
+        Logger.LogInfo("{0}Loaded {1:n0} files", logger.Indent, loadingInfo.LoadedCount);
+        Logger.LogMemoryStats(logger.Indent);
       }
     }
 
-    /// <summary>
-    /// Reads the content of all file entries that have no content (yet). Returns the # of files read from disk.
-    /// </summary>
-    private void ReadMissingFileContents(
-      IFileContentsMemoization fileContentsMemoization,
-      FullPathChanges fullPathChanges,
-      ISet<IProject> unchangedProjects) {
-      using (var logger = new TimeElapsedLogger("Loading file contents from disk")) {
-        int loadedFileCount = 0;
-        using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
-          _files.Values
-            .AsParallel()
-            .ForAll(projectFileData => {
-              if (progress.Step()) {
-                progress.DisplayProgress(
-                  (i, n) =>
-                    string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, projectFileData.FileName.FullPath));
-              }
-              // Load the file only if 1) it has no contents yet (from a
-              // previous snapshot) and 2) it is searchable
-              if (projectFileData.FileData.Contents == null) {
-                if (fullPathChanges != null) {
-                  if (fullPathChanges.GetPathChangeKind(projectFileData.FileName.FullPath) == PathChangeKind.None) {
-                    // If project configuration has not changed, the file is still not searchable,
-                    // irrelevant to calling "IsSearchable".
-                    if (unchangedProjects.Contains(projectFileData.Project))
-                      return;
-                  }
-                }
-                if (projectFileData.IsSearchable) {
-                  var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
-                  if (!(fileContents is BinaryFileContents)) {
-                    Interlocked.Increment(ref loadedFileCount);
-                  }
-                  fileContents = fileContentsMemoization.Get(projectFileData.FileName, fileContents);
-                  projectFileData.FileData.UpdateContents(fileContents);
-                }
-              }
-            });
-        }
+    private FileContents ComputeSingleFileContents(
+      FileContentsLoadingInfo loadingInfo,
+      ProjectFileData projectFileData) {
 
-        Logger.LogInfo("{0}Loaded {1:n0} files", logger.Indent, loadedFileCount);
-        Logger.LogMemoryStats(logger.Indent);
+      var fileName = projectFileData.FileName;
+
+      FileData oldFileData;
+      if (!loadingInfo.OldFileDatabase.Files.TryGetValue(fileName, out oldFileData)) {
+        oldFileData = null;
       }
+
+      // If the file was never loaded before, just load it
+      if (oldFileData == null || oldFileData.Contents == null) {
+        return LoadSingleFileContents(loadingInfo, projectFileData);
+      }
+
+      bool isSearchable;
+      // If the project configuration is unchanged from the previous file
+      // database (and the file was present in it), then it is certainly
+      // searchable, so no need to make an expensive call to "IsSearchable"
+      // again.
+      if (loadingInfo.UnchangedProjects.Contains(projectFileData.Project)) {
+        isSearchable = true;
+      } else {
+        // If the file is not searchable in the current project, it should be
+        // ignored too. Note that "IsSearachable" is a somewhat expensive
+        // operation, as the filename is checked against potentially many glob
+        // patterns.
+        isSearchable = projectFileData.IsSearchable;
+      }
+
+      if (!isSearchable)
+        return null;
+
+      // If the file has not changed since the previous snapshot, we can re-use
+      // the former file contents snapshot.
+      if (IsFileContentsUpToDate(loadingInfo.FullPathChanges, oldFileData)) {
+        return oldFileData.Contents;
+      }
+
+      return LoadSingleFileContents(loadingInfo, projectFileData);
+    }
+
+    private FileContents LoadSingleFileContents(
+      FileContentsLoadingInfo loadingInfo,
+      ProjectFileData projectFileData) {
+
+      // If project configuration has not changed, the file is still not
+      // searchable, irrelevant to calling "IsSearchable".
+      if (loadingInfo.FullPathChanges != null) {
+        if (loadingInfo.FullPathChanges.GetPathChangeKind(projectFileData.FileName.FullPath) == PathChangeKind.None) {
+          if (loadingInfo.UnchangedProjects.Contains(projectFileData.Project))
+            return null;
+        }
+      }
+
+      // This is an expensive call, hopefully avoided by the code above.
+      if (!projectFileData.IsSearchable)
+        return null;
+
+      var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
+      if (!(fileContents is BinaryFileContents)) {
+        Interlocked.Increment(ref loadingInfo.LoadedCount);
+      }
+      return loadingInfo.FileContentsMemoization.Get(projectFileData.FileName, fileContents);
     }
 
     private bool IsFileContentsUpToDate(FullPathChanges fullPathChanges, FileData oldFileData) {
@@ -407,18 +403,6 @@ namespace VsChromium.Server.FileSystemDatabase {
         (fi.Exists) &&
         (fi.IsFile) &&
         (fi.LastWriteTimeUtc == oldFileData.Contents.UtcLastModified);
-    }
-
-    private IEnumerable<KeyValuePair<FileData, ProjectFileData>> GetCommonFiles(FileDatabase oldState) {
-      if (_files.Count == 0 || oldState.Files.Count == 0)
-        yield break;
-
-      foreach (var newFile in _files) {
-        FileData oldFileData;
-        if (oldState.Files.TryGetValue(newFile.Key, out oldFileData)) {
-          yield return KeyValuePair.Create(oldFileData, newFile.Value);
-        }
-      }
     }
 
     /// <summary>

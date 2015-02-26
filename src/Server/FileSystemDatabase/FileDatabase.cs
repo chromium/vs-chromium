@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.FileSystemSnapshot;
@@ -14,22 +15,29 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// and file contents for a given <see cref="FileSystemTreeSnapshot"/> snapshot.
   /// </summary>
   public class FileDatabase : IFileDatabase {
+    private readonly IDictionary<FullPath, string> _projectHashes;
     private readonly IDictionary<FileName, FileData> _files;
     private readonly IList<FileName> _fileNames;
     private readonly IDictionary<DirectoryName, DirectoryData> _directories;
     private readonly IList<IFileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
-    public FileDatabase(IDictionary<FileName, FileData> files,
+    public FileDatabase(IDictionary<FullPath, string> projectHashes,
+                        IDictionary<FileName, FileData> files,
                         IList<FileName> fileNames,
                         IDictionary<DirectoryName, DirectoryData> directories,
                         IList<IFileContentsPiece> fileContentsPieces,
                         long searchableFileCount) {
+      _projectHashes = projectHashes;
       _files = files;
       _fileNames = fileNames;
       _directories = directories;
       _fileContentsPieces = fileContentsPieces;
       _searchableFileCount = searchableFileCount;
+    }
+
+    public IDictionary<FullPath, string> ProjectHashes {
+      get { return _projectHashes; }
     }
 
     public IDictionary<FileName, FileData> Files {

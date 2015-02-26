@@ -30,6 +30,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private Dictionary<FileName, ProjectFileData> _files;
     private Dictionary<DirectoryName, DirectoryData> _directories;
+    private Dictionary<FullPath, string> _projectHashes;
 
     public FileDatabaseBuilder(
       IFileSystem fileSystem,
@@ -44,18 +45,27 @@ namespace VsChromium.Server.FileSystemDatabase {
       using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
 
         var fileDatabase = (FileDatabase)previousFileDatabase;
+
         // Compute list of files from tree
         ComputeFileCollection(newSnapshot);
+
+        var unchangedProjects = newSnapshot
+          .ProjectRoots.Where(x =>
+            fileDatabase.ProjectHashes.ContainsKey(x.Project.RootPath) &&
+            fileDatabase.ProjectHashes[x.Project.RootPath] == x.Project.VersionHash)
+          .Select(x => x.Project);
+
+        var unchangedProjectSet = new HashSet<IProject>(unchangedProjects, new ReferenceEqualityComparer<IProject>());
 
         // Don't use file memoization for now, as benefit is dubvious.
         //IFileContentsMemoization fileContentsMemoization = new FileContentsMemoization();
         IFileContentsMemoization fileContentsMemoization = new NullFileContentsMemoization();
 
         // Merge old state in new state
-        TransferUnchangedFileContents(fileDatabase, fullPathChanges, fileContentsMemoization);
+        TransferUnchangedFileContents(fileDatabase, fullPathChanges, fileContentsMemoization, unchangedProjectSet);
 
         // Load file contents into newState
-        ReadMissingFileContents(fileContentsMemoization);
+        ReadMissingFileContents(fileContentsMemoization, fullPathChanges, unchangedProjectSet);
 
         Logger.LogInfo("{0}{1:n0} unique file contents remaining in memory after memoization of {2:n0} files.",
             logger.Indent,
@@ -94,6 +104,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         // Return new file database with updated file contents.
         var filesWithContents = FilterFilesWithContents(fileDatabase.Files.Values);
         return new FileDatabase(
+          fileDatabase.ProjectHashes,
           fileDatabase.Files,
           fileDatabase.FileNames,
           fileDatabase.Directories,
@@ -134,6 +145,7 @@ namespace VsChromium.Server.FileSystemDatabase {
           });
         }
         return new FileDatabase(
+          _projectHashes,
           files,
           files.Keys.ToArray(),
           directories,
@@ -261,13 +273,23 @@ namespace VsChromium.Server.FileSystemDatabase {
 
         _files = files;
         _directories = directoryNames;
+        _projectHashes = snapshot.ProjectRoots.ToDictionary(
+          x => x.Project.RootPath,
+          x => x.Project.VersionHash);
       }
     }
 
-    private void TransferUnchangedFileContents(FileDatabase oldState, FullPathChanges fullPathChanges, IFileContentsMemoization fileContentsMemoization) {
+    private void TransferUnchangedFileContents(
+      FileDatabase oldState,
+      FullPathChanges fullPathChanges,
+      IFileContentsMemoization fileContentsMemoization,
+      ISet<IProject> unchangedProjects) {
       using (new TimeElapsedLogger("Looking for out of date files")) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
-          var commonSearchableFiles = GetCommonFiles(oldState)
+          var list = new List<KeyValuePair<FileData, ProjectFileData>>(oldState.Files.Count);
+          list.AddRange(GetCommonFiles(oldState));
+
+          var commonSearchableFiles = list
             .AsParallel()
             .Where(kvp => {
               var oldFileData = kvp.Key;
@@ -277,17 +299,26 @@ namespace VsChromium.Server.FileSystemDatabase {
                   (i, n) =>
                     string.Format("Checking file timestamp {0:n0} of {1:n0}: {2}", i, n, oldFileData.FileName.FullPath));
               }
+
               // If file was not previously searchable, it is certainly not a
               // "common searchable" file.
               if (oldFileData.Contents == null)
                 return false;
 
-              // If the file is not searchable in the current project, it should
-              // be ignored too. Note that "IsSearachable" is a somewhat
-              // expensive operation, as the filename is checked against
-              // potentially many glob patterns.
-              if (!projectFileData.IsSearchable)
-                return false;
+              // If the project configuration is unchanged from the previous
+              // file database (and the file was present in it), then it is
+              // certainly searchable, so no need to make an expensive call to
+              // "IsSearchable" again.
+              if (unchangedProjects.Contains(projectFileData.Project)) {
+                //projectFileData.FileData.UpdateContents(oldFileData.Contents);
+              } else {
+                // If the file is not searchable in the current project, it
+                // should be ignored too. Note that "IsSearachable" is a
+                // somewhat expensive operation, as the filename is checked
+                // against potentially many glob patterns.
+                if (!projectFileData.IsSearchable)
+                  return false;
+              }
 
               // If the file has changed since the previous snapshot, it should
               // be ignored too.
@@ -313,7 +344,10 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// <summary>
     /// Reads the content of all file entries that have no content (yet). Returns the # of files read from disk.
     /// </summary>
-    private void ReadMissingFileContents(IFileContentsMemoization fileContentsMemoization) {
+    private void ReadMissingFileContents(
+      IFileContentsMemoization fileContentsMemoization,
+      FullPathChanges fullPathChanges,
+      ISet<IProject> unchangedProjects) {
       using (var logger = new TimeElapsedLogger("Loading file contents from disk")) {
         int loadedFileCount = 0;
         using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
@@ -327,13 +361,23 @@ namespace VsChromium.Server.FileSystemDatabase {
               }
               // Load the file only if 1) it has no contents yet (from a
               // previous snapshot) and 2) it is searchable
-              if (projectFileData.FileData.Contents == null && projectFileData.IsSearchable) {
-                var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
-                if (!(fileContents is BinaryFileContents)) {
-                  Interlocked.Increment(ref loadedFileCount);
+              if (projectFileData.FileData.Contents == null) {
+                if (fullPathChanges != null) {
+                  if (fullPathChanges.GetPathChangeKind(projectFileData.FileName.FullPath) == PathChangeKind.None) {
+                    // If project configuration has not changed, the file is still not searchable,
+                    // irrelevant to calling "IsSearchable".
+                    if (unchangedProjects.Contains(projectFileData.Project))
+                      return;
+                  }
                 }
-                fileContents = fileContentsMemoization.Get(projectFileData.FileName, fileContents);
-                projectFileData.FileData.UpdateContents(fileContents);
+                if (projectFileData.IsSearchable) {
+                  var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
+                  if (!(fileContents is BinaryFileContents)) {
+                    Interlocked.Increment(ref loadedFileCount);
+                  }
+                  fileContents = fileContentsMemoization.Get(projectFileData.FileName, fileContents);
+                  projectFileData.FileData.UpdateContents(fileContents);
+                }
               }
             });
         }

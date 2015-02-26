@@ -37,6 +37,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase CreateEmpty() {
       return new FileDatabase(
+          new Dictionary<FullPath, string>(), 
           new Dictionary<FileName, FileData>(),
           new List<FileName>(), 
           new Dictionary<DirectoryName, DirectoryData>(),

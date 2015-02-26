@@ -156,5 +156,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ExplorerControl.SearchFilePathsCombo.Focus();
       ExplorerControl.Controller.PerformSearch(true);
     }
+
+    public void FocusQuickSearchCode() {
+      ExplorerControl.SearchFilePathsCombo.Text = "";
+      ExplorerControl.SearchCodeCombo.Focus();
+      ExplorerControl.Controller.PerformSearch(true);
+    }
+
+    public void FocusQuickSearchFilePaths() {
+      ExplorerControl.SearchCodeCombo.Text = "";
+      ExplorerControl.SearchFilePathsCombo.Focus();
+      ExplorerControl.Controller.PerformSearch(true);
+    }
   }
 }

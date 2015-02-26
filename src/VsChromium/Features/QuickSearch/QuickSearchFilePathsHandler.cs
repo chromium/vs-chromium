@@ -64,6 +64,21 @@ namespace VsChromium.Features.QuickSearch {
 
         // Extend "start" backward as long as it points to a valid word character
         var start = snapshotSpan.Start;
+        // If character at "start" is not a word character, try moving back one and check again.
+        // If still not, start is in the middle of nowhere.
+        // This is to handle cases like this:
+        //   foo bar  <= caret at space between foo and bar, we should select "foo"
+        //   foo : test  <= caret at ":", we should not select anything
+        if (!IsWordCharacter(start.GetChar())) {
+          if (start == line.Start)
+            return "";
+
+          start = start - 1;
+          if (!IsWordCharacter(start.GetChar()))
+            return "";
+        }
+        var adjustedStart = start;
+
         while (start > line.Start) {
           var ch = (start - 1).GetChar();
           if (!IsWordCharacter(ch))
@@ -72,7 +87,7 @@ namespace VsChromium.Features.QuickSearch {
         }
 
         // Extend "end" forward as long as it points to a valid word character
-        var end = snapshotSpan.Start;
+        var end = adjustedStart;
         while (end < line.End - 1) {
           var ch = (end + 1).GetChar();
           if (!IsWordCharacter(ch))

@@ -73,6 +73,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           commandService.AddCommand(handler.ToOleMenuCommand()));
     }
 
+    protected override void Dispose(bool disposing) {
+      base.Dispose(disposing);
+
+      if (disposing) {
+        if (ExplorerControl.Controller != null) {
+          ExplorerControl.Controller.Dispose();
+        }
+      }
+    }
+
     public CodeSearchControl ExplorerControl {
       get { return Content as CodeSearchControl; }
       set { Content = value; }

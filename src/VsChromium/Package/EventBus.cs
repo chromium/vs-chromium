@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Package {
   [Export(typeof(IEventBus))]
@@ -68,7 +69,8 @@ namespace VsChromium.Package {
       }
 
       foreach (var item in temp) {
-        item.Handler(sender, args);
+        var localItem = item;
+        Logger.WrapActionInvocation(() => localItem.Handler(sender, args));
       }
     }
   }

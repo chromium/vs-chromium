@@ -3,8 +3,11 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Package;
@@ -16,7 +19,9 @@ namespace VsChromium.Views {
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IFileSystem _fileSystem;
     private readonly IEventBus _eventBus;
-
+    private readonly ConcurrentDictionary<ITextDocument, EventHandler<TextContentChangedEventArgs>> _documents =
+      new ConcurrentDictionary<ITextDocument, EventHandler<TextContentChangedEventArgs>>(ReferenceEqualityComparer<ITextDocument>.Instance);
+      
     [ImportingConstructor]
     public FileRegistrationRequestService(
       IUIRequestProcessor uiRequestProcessor,
@@ -29,16 +34,24 @@ namespace VsChromium.Views {
 
     public void RegisterTextDocument(ITextDocument document) {
       SendRegisterFileRequest(document.FilePath);
-      document.TextBuffer.ChangedLowPriority += TextBufferOnChangedLowPriority;
+      if (!_documents.ContainsKey(document)) {
+        var handler = _documents.GetOrAdd(document, (s, e) => 
+          TextBufferOnChangedLowPriority(document, e));
+        document.TextBuffer.ChangedLowPriority += handler;
+      }
     }
 
     public void UnregisterTextDocument(ITextDocument document) {
       SendUnregisterFileRequest(document.FilePath);
-      document.TextBuffer.ChangedLowPriority -= TextBufferOnChangedLowPriority;
+
+      EventHandler<TextContentChangedEventArgs> handler;
+      if (_documents.TryRemove(document, out handler)) {
+        document.TextBuffer.ChangedLowPriority -= handler;
+      }
     }
 
-    private void TextBufferOnChangedLowPriority(object sender, TextContentChangedEventArgs args) {
-      _eventBus.Fire("TextDocumentChanged", sender, args);
+    private void TextBufferOnChangedLowPriority(ITextDocument textDocument, TextContentChangedEventArgs args) {
+      _eventBus.Fire("TextBufferChanged", textDocument, args);
     }
 
     public void RegisterFile(string path) {

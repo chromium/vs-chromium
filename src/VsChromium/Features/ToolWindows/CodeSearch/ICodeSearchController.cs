@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -13,7 +14,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
   /// Exposes services required by <see cref="CodeSearchItemViewModelBase"/> instances.
   /// </summary>
-  public interface ICodeSearchController {
+  public interface ICodeSearchController : IDisposable {
     IUIRequestProcessor UIRequestProcessor { get; }
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IClipboard Clipboard { get; }

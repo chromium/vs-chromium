@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
@@ -427,20 +427,6 @@ namespace VsChromium.Server.FileSystemDatabase {
         get {
           return _project.IsFileSearchable(_fileData.FileName);
         }
-      }
-    }
-
-    /// <summary>
-    /// Implementation of IEqualityComparer where object references is the
-    /// identity.
-    /// </summary>
-    private class ReferenceEqualityComparer<T> : IEqualityComparer<T> where T : class {
-      public bool Equals(T x, T y) {
-        return object.ReferenceEquals(x, y);
-      }
-
-      public int GetHashCode(T obj) {
-        return RuntimeHelpers.GetHashCode(obj);
       }
     }
 

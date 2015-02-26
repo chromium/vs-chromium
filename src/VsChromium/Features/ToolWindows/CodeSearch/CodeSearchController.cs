@@ -14,6 +14,7 @@ using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
@@ -41,6 +42,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly TaskCancellation _taskCancellation;
+    private readonly object _eventBusCookie;
 
     /// <summary>
     /// For generating unique id n progress bar tracker.
@@ -78,6 +80,31 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       // Ensure changes to global settings are synchronized to ViewModel
       _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
+
+      _eventBusCookie = _eventBus.RegisterHandler("TextBufferChanged", TextDocumentChangedHandler);
+    }
+
+    public void Dispose() {
+      Logger.LogInfo("{0} disposed.", this.GetType().FullName);
+
+      _globalSettingsProvider.GlobalSettings.PropertyChanged -= GlobalSettingsOnPropertyChanged;
+      _eventBus.UnregisterHandler(_eventBusCookie);
+    }
+
+    private void TextDocumentChangedHandler(object sender, EventArgs eventArgs) {
+      var doc = (ITextDocument) sender;
+      var args = (TextContentChangedEventArgs) eventArgs;
+      foreach (var change in args.Changes) {
+        Logger.LogInfo("  Change \"{0}\": ({1},{2},{3}) - ({4},{5},{6})",
+          doc.FilePath,
+          change.OldPosition,
+          change.OldEnd, 
+          change.OldLength, 
+          change.NewPosition,
+          change.NewEnd, 
+          change.NewLength
+          );
+      }
     }
 
     private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {

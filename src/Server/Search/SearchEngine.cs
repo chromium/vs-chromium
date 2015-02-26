@@ -223,7 +223,7 @@ namespace VsChromium.Server.Search {
 
     private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
       _taskQueue.Enqueue(
-        new TaskId("FileSystemProcessorOnFilesChanged"), 
+        new TaskId("FileSystemProcessorOnFilesChanged"),
         () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
     }
 
@@ -250,7 +250,7 @@ namespace VsChromium.Server.Search {
       if (e.Error != null)
         return;
 
-      _taskQueue.Enqueue(ComputeNewStatedId, () => 
+      _taskQueue.Enqueue(ComputeNewStatedId, () =>
         ComputeNewState(e.PreviousSnapshot, e.NewSnapshot, e.FullPathChanges));
 
       // Enqueue a GC at this point makes sense as there might be a lot of
@@ -426,22 +426,19 @@ namespace VsChromium.Server.Search {
       FullPathChanges fullPathChanges) {
 
       _operationProcessor.Execute(new OperationHandlers {
-        OnBeforeExecute = info => OnFilesLoading(info),
-        OnError = (info, error) => OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
+        OnBeforeExecute = info =>
+          OnFilesLoading(info),
+
+        OnError = (info, error) =>
+          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
+
         Execute = info => {
-          Logger.LogInfo("Computing new state of file database from file system tree.");
-          var sw = Stopwatch.StartNew();
-
-          var oldState = _currentFileDatabase;
-          var newState = _fileDatabaseFactory.CreateIncremental(oldState, previousSnapshot, newSnapshot, fullPathChanges);
-
-          sw.Stop();
-          Logger.LogInfo(">>>>>>>> Done computing new state of file database from file system tree in {0:n0} msec.",
-            sw.ElapsedMilliseconds);
-          Logger.LogMemoryStats();
-
-          // Store and activate new state (atomic operation).
-          _currentFileDatabase = newState;
+          using (new TimeElapsedLogger("Computing new state of file database")) {
+            var oldState = _currentFileDatabase;
+            var newState = _fileDatabaseFactory.CreateIncremental(oldState, previousSnapshot, newSnapshot, fullPathChanges);
+            // Store and activate new state (atomic operation).
+            _currentFileDatabase = newState;
+          }
           OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });
         }
       });

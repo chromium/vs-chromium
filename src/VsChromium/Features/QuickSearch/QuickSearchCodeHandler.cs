@@ -9,7 +9,6 @@ using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Commands;
-using VsChromium.Features.FormatComment;
 using VsChromium.Features.ToolWindows;
 using VsChromium.Views;
 
@@ -51,8 +50,10 @@ namespace VsChromium.Features.QuickSearch {
       if (codeSearch == null)
         return;
 
-      var selection = _textView.Selection.StreamSelectionSpan.SnapshotSpan;
-      codeSearch.SearchCode(selection.GetText());
+      var selection = QuickSearchFilePathsHandler.SelectWordOnly(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
+      if (string.IsNullOrEmpty(selection))
+        return;
+      codeSearch.SearchCode(selection);
     }
   }
 }

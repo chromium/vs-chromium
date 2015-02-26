@@ -317,7 +317,10 @@
     </Bitmaps>
   </Commands>
   <VisibilityConstraints>
-    <VisibilityItem guid="guidVsChromiumCmdSet" id="cmdidSyncToDocument" context="UICONTEXT_SolutionExists" />
+    <!-- Note: Enabling the line above prevents our command handler to be invoked for 
+        "Visible" and "Enabled" state of the command. We want programmatic control
+        of the state of the control. -->
+    <!--<VisibilityItem guid="guidVsChromiumCmdSet" id="cmdidSyncToDocument" context="UICONTEXT_SolutionExists" />-->
   </VisibilityConstraints>
   <KeyBindings>
     <!-- Note: VK_OEM_1 is the 'colon/semicolon' key on US keyboards. -->

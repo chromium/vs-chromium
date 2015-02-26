@@ -95,8 +95,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (mcs != null) {
         var cmd = new SimplePackageCommandHandler(
           new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSyncToDocument),
-          () => !_hierarchy.IsEmpty,
-          (s, e) => SyncToActiveDocument());
+          enabled: () => !_hierarchy.IsEmpty,
+          visible: () => _globalSettingsProvider.GlobalSettings.EnableSourceExplorerHierarchy && !_hierarchy.IsEmpty,
+          execute: (s, e) => SyncToActiveDocument());
         mcs.AddCommand(cmd.ToOleMenuCommand());
       }
 

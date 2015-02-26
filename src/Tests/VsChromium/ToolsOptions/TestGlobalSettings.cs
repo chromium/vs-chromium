@@ -20,10 +20,10 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
         new EventBus());
 
       // Force reading settings from empty tools|options pages.
-      var x = provider.GlobalSettings.EnableVsChromiumProjects;
+      var x = provider.GlobalSettings.EnableSourceExplorerHierarchy;
 
       // Force writing settings to tools|options page.
-      provider.GlobalSettings.EnableVsChromiumProjects = !x;
+      provider.GlobalSettings.EnableSourceExplorerHierarchy = !x;
     }
 
     [TestMethod]

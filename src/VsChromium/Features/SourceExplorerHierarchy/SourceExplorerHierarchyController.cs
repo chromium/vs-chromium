@@ -202,14 +202,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private void GlobalSettingsOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
       var name = args.PropertyName;
       var model = (GlobalSettings)sender;
-      if (name == ReflectionUtils.GetPropertyName(model, x => x.EnableVsChromiumProjects)) {
+      if (name == ReflectionUtils.GetPropertyName(model, x => x.EnableSourceExplorerHierarchy)) {
         SynchronizeHierarchy();
       }
     }
 
     private void SynchronizeHierarchy() {
       // Force getting the tree and refreshing the ui hierarchy.
-      if (_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects) {
+      if (_globalSettingsProvider.GlobalSettings.EnableSourceExplorerHierarchy) {
         _fileSystemTreeSource.Fetch();
       } else {
         _hierarchy.Disable();
@@ -326,7 +326,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// Note: This is executed on a background thred.
     /// </summary>
     private void OnTreeReceived(FileSystemTree fileSystemTree) {
-      if (!_globalSettingsProvider.GlobalSettings.EnableVsChromiumProjects)
+      if (!_globalSettingsProvider.GlobalSettings.EnableSourceExplorerHierarchy)
         return;
 
       _latestFileSystemTreeVersion = fileSystemTree.Version;

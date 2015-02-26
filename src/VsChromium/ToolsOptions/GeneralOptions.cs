@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Text.Differencing;
 using VsChromium.Core.Logging;
 using VsChromium.Package;
 
@@ -30,7 +31,7 @@ namespace VsChromium.ToolsOptions {
 
       SearchIncludeSymLinks = true;
 
-      EnableVsChromiumProjects = true;
+      EnableSourceExplorerHierarchy = true;
     }
 
     public override void ResetSettings() {
@@ -57,46 +58,55 @@ namespace VsChromium.ToolsOptions {
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of results for Seach Code")]
     [Description("Limit the number of entries returned when searching for text in files. Higher values may slow down the User Interface.")]
+    [DefaultValue(10 * 1000)]
     public int SearchCodeMaxResults { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of results for Search File Paths")]
     [Description("Limit the numer of entries returned when searching for file paths. Higher values may slow down the User Interface.")]
+    [DefaultValue(2 * 1000)]
     public int SearchFilePathsMaxResults { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Maximum number of characters in text extracts")]
     [Description("Limit the numer of characters displayed per text line in search results. Higher values may slow down the User Interface.")]
+    [DefaultValue(120)]
     public int MaxTextExtractLength { get; set; }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Auto Search delay (milliseconds)")]
     [Description("Time interval to wait after user input before displaying search results. Lower value may slow down the User Interface.")]
+    [DefaultValue(20)]
     public int AutoSearchDelayMsec { get; set; }
 
     [Category(CodeSearchOptionsCategory)]
     [DisplayName("Match case")]
-    [Description("Search are case sensitive by default.")]
+    [Description("Enable the \"Match Case\" option at startup.")]
+    [DefaultValue(false)]
     public bool SearchMatchCase { get; set; }
 
     [Category(CodeSearchOptionsCategory)]
     [DisplayName("Match whole word")]
-    [Description("Match whole word by default.")]
+    [Description("Enable the \"Match whole word\" option at startup.")]
+    [DefaultValue(false)]
     public bool SearchMatchWholeWord { get; set; }
 
     [Category(CodeSearchOptionsCategory)]
     [DisplayName("Use Regular Expression")]
-    [Description("Search patterns are regular expression by default.")]
+    [Description("Enable the \"Use regular option\" option at startup.")]
+    [DefaultValue(false)]
     public bool SearchUseRegEx { get; set; }
 
     [Category(CodeSearchOptionsCategory)]
     [DisplayName("Search through Symbolic Links")]
-    [Description("Search looks at files in symbolic link by default.")]
+    [Description("Enable the \"Include Symbolic Links\" option at startup.")]
+    [DefaultValue(true)]
     public bool SearchIncludeSymLinks { get; set; }
 
     [Category("Solution Explorer Integration")]
-    [DisplayName("Enable \"VS Chromium Projects - Source Explorer\" entry")]
-    [Description("Show the list of indexed files and directories in Solution Explorer under a top level \"VS Chromium Projects - Source Explorer\" entry")]
-    public bool EnableVsChromiumProjects { get; set; }
+    [DisplayName("Enable \"Source Explorer\" entries in Solution Explorer")]
+    [Description("Show the list of indexed files and directories in Solution Explorer under one or more \"Source Explorer\" entries")]
+    [DefaultValue(true)]
+    public bool EnableSourceExplorerHierarchy { get; set; }
   }
 }

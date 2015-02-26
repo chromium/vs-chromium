@@ -95,7 +95,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       get {
         return CommandDelegate.Create(
           sender => Controller.ShowInSourceExplorer(this),
-          sender => Controller.GlobalSettings.EnableVsChromiumProjects);
+          sender => Controller.GlobalSettings.EnableSourceExplorerHierarchy);
       }
     }
 

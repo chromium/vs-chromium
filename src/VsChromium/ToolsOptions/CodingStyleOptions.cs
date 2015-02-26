@@ -57,41 +57,49 @@ namespace VsChromium.ToolsOptions {
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check class access modifiers indentation")]
     [Description("Check class access modifiers indentation is 1 character less than memebers")]
+    [DefaultValue(true)]
     public bool AccessorIndent { get; set; }
 
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check for \"else if\" at start of line")]
     [Description("Check for \"else if\" at start of line")]
+    [DefaultValue(true)]
     public bool ElseIfOnNewLine { get; set; }
 
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check line endings are Unix style")]
     [Description("Check line endings are Unix style ('\n' character only)")]
+    [DefaultValue(true)]
     public bool EndOfLineCharacter { get; set; }
 
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check lines are 80 characters or less")]
     [Description("Check lines are 80 characters or less")]
+    [DefaultValue(true)]
     public bool LongLine { get; set; }
 
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check for open curly brace at start of line")]
     [Description("Check for open curly brace at start of line")]
+    [DefaultValue(true)]
     public bool OpenBraceAfterNewLine { get; set; }
 
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check for space after \"for\" keyword")]
     [Description("Check for space after \"for\" keyword")]
+    [DefaultValue(true)]
     public bool SpaceAfterForKeyword { get; set; }
 
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check for tab characters")]
     [Description("Check for tab characters")]
+    [DefaultValue(true)]
     public bool TabCharacter { get; set; }
 
     [Category(ChromiumCodingStyleCategory)]
     [DisplayName("Check for trailing spaces at end of line")]
     [Description("Check for trailing spaces at end of line")]
+    [DefaultValue(true)]
     public bool TrailingSpace { get; set; }
   }
 }

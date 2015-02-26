@@ -7,7 +7,7 @@ using VsChromium.Core.Utility;
 
 namespace VsChromium.Settings {
   public class GlobalSettings : INotifyPropertyChanged {
-    private bool _enableVsChromiumProjects;
+    private bool _enableSourceExplorerHierarchy;
     private int _maxTextExtractLength;
     private int _searchFilePathsMaxResults;
     private int _searchCodeMaxResults;
@@ -40,14 +40,14 @@ namespace VsChromium.Settings {
       return value;
     }
 
-    public bool EnableVsChromiumProjects {
-      get { return _enableVsChromiumProjects; }
+    public bool EnableSourceExplorerHierarchy {
+      get { return _enableSourceExplorerHierarchy; }
       set {
-        if (value == _enableVsChromiumProjects)
+        if (value == _enableSourceExplorerHierarchy)
           return;
 
-        _enableVsChromiumProjects = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x=> x.EnableVsChromiumProjects));
+        _enableSourceExplorerHierarchy = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x=> x.EnableSourceExplorerHierarchy));
       }
     }
 

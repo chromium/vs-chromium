@@ -28,6 +28,7 @@ namespace VsChromium.ToolsOptions {
     [Category("Chrome Debugging")]
     [DisplayName("Enable Child Process Debugging")]
     [Description("Enable child-process debugging for launch/attach scenarios other than those available through the Attach to Chrome dialog.")]
+    [DefaultValue(false)]
     public bool EnableChildDebugging { get; set; }
   }
 }

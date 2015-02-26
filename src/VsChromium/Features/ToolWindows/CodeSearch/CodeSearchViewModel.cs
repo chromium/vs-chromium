@@ -157,7 +157,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string IncludeSymLinksToolTip {
       get {
         return string.Format(
-          "Toggle searching inside symbolic linkswhen searching text and file paths. " +
+          "Toggle searching inside symbolic links when searching text and file paths. " +
           "Symbolic links are currently {0} in search results.",
           IncludeSymLinks ? "included" : "excluded");
       }

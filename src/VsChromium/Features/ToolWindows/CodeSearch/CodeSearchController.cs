@@ -47,7 +47,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly object _eventBusCookie1;
     private readonly object _eventBusCookie2;
     private readonly object _eventBusCookie3;
-    private readonly object _eventBusCookie4;
 
     /// <summary>
     /// For generating unique id n progress bar tracker.
@@ -90,8 +89,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       _eventBusCookie1 = _eventBus.RegisterHandler("TextDocument-Open", TextDocumentOpenHandler);
       _eventBusCookie2 = _eventBus.RegisterHandler("TextDocument-Closed", TextDocumentClosedHandler);
-      _eventBusCookie3 = _eventBus.RegisterHandler("TextDocument-Changed", TextDocumentChangedHandler);
-      _eventBusCookie4 = _eventBus.RegisterHandler("TextDocumentFile-FileActionOccurred", TextDocumentFileActionOccurred);
+      _eventBusCookie3 = _eventBus.RegisterHandler("TextDocumentFile-FileActionOccurred", TextDocumentFileActionOccurred);
     }
 
     public void Dispose() {
@@ -101,7 +99,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBus.UnregisterHandler(_eventBusCookie1);
       _eventBus.UnregisterHandler(_eventBusCookie2);
       _eventBus.UnregisterHandler(_eventBusCookie3);
-      _eventBus.UnregisterHandler(_eventBusCookie4);
     }
 
 
@@ -117,26 +114,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _searchResultDocumentChangeTracker.DocumentClose(doc, args);
     }
 
-
-    private void TextDocumentChangedHandler(object sender, EventArgs eventArgs) {
-      var doc = (ITextDocument)sender;
-      var args = (TextContentChangedEventArgs)eventArgs;
-      foreach (var change in args.Changes) {
-        Logger.LogInfo("  Change \"{0}\": ({1},{2},{3}) - ({4},{5},{6})",
-          doc.FilePath,
-          change.OldPosition,
-          change.OldEnd,
-          change.OldLength,
-          change.NewPosition,
-          change.NewEnd,
-          change.NewLength);
-      }
-    }
-
     private void TextDocumentFileActionOccurred(object sender, EventArgs eventArgs) {
       var doc = (ITextDocument)sender;
       var args = (TextDocumentFileActionEventArgs)eventArgs;
-      Logger.LogInfo("  FileActionOccurred \"{0}\": {1}", doc.FilePath, args.FileActionType);
+      //Logger.LogInfo("  FileActionOccurred \"{0}\": {1}", doc.FilePath, args.FileActionType);
       _searchResultDocumentChangeTracker.FileActionOccurred(doc, args);
     }
 

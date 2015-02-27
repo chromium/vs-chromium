@@ -256,25 +256,33 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
       using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree")) {
-        var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot).ToList();
 
-        var directoryNames = directories
+        var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
+
+        var directoryNames = new Dictionary<DirectoryName, DirectoryData>(
+          directories.Count,
           // Note: We can use reference equality here because the directory
           // names are contructed unique.
-          .ToDictionary(
-            x => x.Value.DirectoryName,
-            x => new DirectoryData(x.Value.DirectoryName, x.Value.IsSymLink),
-            new ReferenceEqualityComparer<DirectoryName>());
+          new ReferenceEqualityComparer<DirectoryName>());
 
-        var files = directories
-          .AsParallel()
-          .SelectMany(x => x.Value.ChildFiles.Select(y => new ProjectFileData(x.Key, new FileData(y, null))))
+        foreach (var kvp in directories.ToForeachEnum()) {
+          directoryNames.Add(
+            kvp.Value.DirectoryName,
+            new DirectoryData(kvp.Value.DirectoryName, kvp.Value.IsSymLink));
+        }
+
+        var files = new Dictionary<FileName,ProjectFileData>(
+          directories.Count * 4,
           // Note: We can use reference equality here because the file names are
           // constructed unique and the dictionary will be discarded once we are
           // done building this snapshot.
-          .ToDictionary(
-            x => x.FileName,
-            new ReferenceEqualityComparer<FileName>());
+          new ReferenceEqualityComparer<FileName>());
+
+        foreach (var directory in directories.ToForeachEnum()) {
+          foreach (var fileName in directory.Value.ChildFiles.ToForeachEnum()) {
+            files.Add(fileName, new ProjectFileData(directory.Key, new FileData(fileName, null)));
+          }
+        }
 
         _files = files;
         _directories = directoryNames;

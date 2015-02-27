@@ -50,10 +50,8 @@ namespace VsChromium.Features.QuickSearch {
       if (codeSearch == null)
         return;
 
-      var selection = QuickSearchFilePathsHandler.SelectWordOnly(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
-      if (string.IsNullOrEmpty(selection))
-        return;
-      codeSearch.SearchCode(selection);
+      var selection = SelectionHelpers.SelectWordOnly(_textView.Selection.StreamSelectionSpan.SnapshotSpan);
+      codeSearch.QuickSearchCode(selection);
     }
   }
 }

@@ -212,6 +212,7 @@
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
     <Compile Include="Features\QuickSearch\QuickSearchFilePathsHandler.cs" />
     <Compile Include="Features\QuickSearch\QuickSearchCodeHandler.cs" />
+    <Compile Include="Features\QuickSearch\SelectionHelpers.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\FilePathEventArgs.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IIncrementalHierarchyBuilder.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalBuildResult.cs" />

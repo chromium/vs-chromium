@@ -43,7 +43,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly TaskCancellation _taskCancellation;
-    private readonly TextDocumentChangeTracker _searchResultDocumentChangeTracker;
+    private readonly SearchResultsDocumentChangeTracker _searchResultDocumentChangeTracker;
     private readonly object _eventBusCookie1;
     private readonly object _eventBusCookie2;
     private readonly object _eventBusCookie3;
@@ -76,7 +76,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _openDocumentHelper = openDocumentHelper;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
-      _searchResultDocumentChangeTracker = new TextDocumentChangeTracker(uiDelayedOperationProcessor);
+      _searchResultDocumentChangeTracker = new SearchResultsDocumentChangeTracker(uiDelayedOperationProcessor);
       _taskCancellation = new TaskCancellation();
 
       // Ensure initial values are in sync.

@@ -6,7 +6,7 @@ using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
-  public struct FilePositionSpan {
+  public class FilePositionSpan {
     /// <summary>
     /// The position, in character offset, of the first character of the span.
     /// </summary>

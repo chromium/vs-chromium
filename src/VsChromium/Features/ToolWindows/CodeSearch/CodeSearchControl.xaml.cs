@@ -101,6 +101,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         componentModel.DefaultExportProvider.GetExportedValue<IClipboard>(),
         componentModel.DefaultExportProvider.GetExportedValue<ISynchronizationContextProvider>(),
         componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>(),
+        componentModel.DefaultExportProvider.GetExportedValue<ITextDocumentTable>(),
         componentModel.DefaultExportProvider.GetExportedValue<IEventBus>(),
         componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>());
 

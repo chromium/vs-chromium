@@ -10,18 +10,22 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
 using VsChromium.Threads;
+using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class SearchResultsDocumentChangeTracker {
     private readonly IUIDelayedOperationProcessor _uiRequestProcessor;
+    private readonly ITextDocumentTable _textDocumentTable;
     private readonly string _requestId = typeof(SearchResultsDocumentChangeTracker).Name + Guid.NewGuid();
-    private readonly Dictionary<FullPath, ITextDocument> _openDocuments = new Dictionary<FullPath, ITextDocument>();
     private readonly Dictionary<FullPath, DocumentChangeTrackingEntry> _trackingEntries = new Dictionary<FullPath, DocumentChangeTrackingEntry>();
     private readonly Dictionary<FullPath, FilePositionsData> _searchResults = new Dictionary<FullPath, FilePositionsData>();
     private bool _enabled;
 
-    public SearchResultsDocumentChangeTracker(IUIDelayedOperationProcessor uiRequestProcessor) {
+    public SearchResultsDocumentChangeTracker(
+      IUIDelayedOperationProcessor uiRequestProcessor,
+      ITextDocumentTable textDocumentTable) {
       _uiRequestProcessor = uiRequestProcessor;
+      _textDocumentTable = textDocumentTable;
     }
 
     public void Enable(DirectoryEntry searchResults) {
@@ -53,7 +57,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
               _searchResults[path] = spans;
 
               // If the document is open, create the tracking spans now.
-              var document = _openDocuments.GetValue(path);
+              var document = _textDocumentTable.GetOpenDocument(path);
               if (document != null) {
                 var entry = new DocumentChangeTrackingEntry(spans);
                 _trackingEntries[path] = entry;
@@ -79,6 +83,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return null;
 
       var path = new FullPath(filePath);
+
       var entry = _trackingEntries.GetValue(path);
       if (entry == null)
         return span;
@@ -87,58 +92,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void DocumentOpen(ITextDocument document, EventArgs args) {
-      // Keep track of opened document in any case.
-      if (!FullPath.IsValid(document.FilePath))
-        return;
-      var path = new FullPath(document.FilePath);
-      _openDocuments[path] = document;
-
-      // If search results enabled, deal with the tracking spans.
-      OnDocumentOpen(document, path);
-    }
-
-    public void DocumentClose(ITextDocument document, EventArgs args) {
-      if (!FullPath.IsValid(document.FilePath))
-        return;
-      var path = new FullPath(document.FilePath);
-      _openDocuments.Remove(path);
-
-      // If search results enabled, deal with the tracking spans.
-      OnDocumentClose(document, path);
-    }
-
-    public void FileActionOccurred(ITextDocument document, TextDocumentFileActionEventArgs args) {
-      if (!FullPath.IsValid(document.FilePath))
-        return;
-      var path = new FullPath(document.FilePath);
-
-      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
-        _openDocuments[new FullPath(args.FilePath)] = document;
-        _openDocuments.Remove(path);
-      }
-
       if (!_enabled)
         return;
-
-      if (args.FileActionType.HasFlag(FileActionTypes.ContentSavedToDisk)) {
-        OnDocumentSaved(document, path);
-      }
-
-      if (args.FileActionType.HasFlag(FileActionTypes.ContentLoadedFromDisk)) {
-        _trackingEntries.Remove(path);
-      }
-
-      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
-        _trackingEntries.Remove(path);
-      }
-    }
-
-    /// <summary>
-    /// Create the tracking spsn when document opens.
-    /// </summary>
-    private void OnDocumentOpen(ITextDocument document, FullPath path) {
-      if (!_enabled)
+      if (!FullPath.IsValid(document.FilePath))
         return;
+      var path = new FullPath(document.FilePath);
 
       // Lookup or create the tracking entry for this document
       var entry = _trackingEntries.GetValue(path);
@@ -157,27 +115,42 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    /// <summary>
-    /// Update the tracking spans to the lastesr version on document saved (so
-    /// that the spans are valid when the document is open again).
-    /// </summary>
-    private void OnDocumentSaved(ITextDocument document, FullPath path) {
-      var entry = _trackingEntries.GetValue(path);
-      if (entry != null) {
-        entry.UpdateSpansToLatestVersion(document.TextBuffer);
-      }
-    }
-
-    /// <summary>
-    /// Remove the tracking spans when the document is closed.
-    /// </summary>
-    private void OnDocumentClose(ITextDocument document, FullPath path) {
+    public void DocumentClose(ITextDocument document, EventArgs args) {
       if (!_enabled)
         return;
+      if (!FullPath.IsValid(document.FilePath))
+        return;
+      var path = new FullPath(document.FilePath);
 
+      // If search results enabled, deal with the tracking spans.
       var entry = _trackingEntries.GetValue(path);
       if (entry != null) {
         entry.DeleteTrackingSpans(document.TextBuffer);
+      }
+    }
+
+    public void FileActionOccurred(ITextDocument document, TextDocumentFileActionEventArgs args) {
+      if (!_enabled)
+        return;
+      if (!FullPath.IsValid(document.FilePath))
+        return;
+      var path = new FullPath(document.FilePath);
+
+      if (args.FileActionType.HasFlag(FileActionTypes.ContentSavedToDisk)) {
+        var entry = _trackingEntries.GetValue(path);
+        if (entry != null) {
+          entry.UpdateSpansToLatestVersion(document.TextBuffer);
+        }
+      }
+
+      if (args.FileActionType.HasFlag(FileActionTypes.ContentLoadedFromDisk)) {
+        // TODO(rpaquay): Maybe the tracking spans are still valid?
+        _trackingEntries.Remove(path);
+      }
+
+      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
+        // TODO(rpaquay): Support for redirecting to another file name?
+        _trackingEntries.Remove(path);
       }
     }
   }

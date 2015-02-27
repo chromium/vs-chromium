@@ -63,6 +63,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IClipboard clipboard,
       ISynchronizationContextProvider synchronizationContextProvider,
       IOpenDocumentHelper openDocumentHelper,
+      ITextDocumentTable textDocumentTable,
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider) {
       _control = control;
@@ -75,7 +76,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _openDocumentHelper = openDocumentHelper;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
-      _searchResultDocumentChangeTracker = new SearchResultsDocumentChangeTracker(uiDelayedOperationProcessor);
+      _searchResultDocumentChangeTracker = new SearchResultsDocumentChangeTracker(
+        uiDelayedOperationProcessor,
+        textDocumentTable);
       _taskCancellation = new TaskCancellation();
 
       // Ensure initial values are in sync.

@@ -250,10 +250,12 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\InstalledBuildViewModel.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\ShowBuildExplorerCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
+    <Compile Include="Views\ITextDocumentTable.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchCodeCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\SearchResultsDocumentChangeTracker.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\DocumentChangeTrackingEntry.cs" />
+    <Compile Include="Views\TextDocumentTable.cs" />
     <Compile Include="Features\ToolWindows\IToolWindowAccessor.cs" />
     <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
     <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
@@ -318,7 +320,7 @@
     <Compile Include="Threads\ISynchronizationContext.cs" />
     <Compile Include="Threads\SynchronizationContextDelegate.cs" />
     <Compile Include="Views\IFileRegistrationRequestService.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\TextDocumentFactoryObserver.cs" />
+    <Compile Include="Views\TextDocumentFactoryObserver.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\SearchCodeCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\SearchFilePathsCommandHandler.cs" />
     <Compile Include="Views\FileRegistrationRequestService.cs" />

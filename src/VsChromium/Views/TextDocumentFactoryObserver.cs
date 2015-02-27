@@ -5,9 +5,8 @@
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Package;
-using VsChromium.Views;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
+namespace VsChromium.Views {
   [Export(typeof(IPackagePostInitializer))]
   public class TextDocumentFactoryObserver : IPackagePostInitializer {
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;

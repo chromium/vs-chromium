@@ -6,7 +6,6 @@ using System;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using VsChromium.ToolsOptions;
 
 namespace VsChromium.Package {
   public interface IVisualStudioPackage {

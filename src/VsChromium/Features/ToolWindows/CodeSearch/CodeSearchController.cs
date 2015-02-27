@@ -181,7 +181,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       if (ViewModel.FileSystemTreeAvailable) {
         var items = CreateInfromationMessages(
-          "No search results available - Type text to search for in \"Search Code\" and/or \"File Path\"");
+          "No search results available - Type text to search for in the \"Search Code\" or \"File Paths\" text box.");
         ViewModel.SetInformationMessages(items);
         if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
           _searchResultDocumentChangeTracker.Disable();

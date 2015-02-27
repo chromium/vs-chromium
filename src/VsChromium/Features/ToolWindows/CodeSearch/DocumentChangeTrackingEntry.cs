@@ -64,7 +64,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private ITrackingSpan CreateTrackingSpan(ITextVersion version, int position, int length) {
       // Check range of span is ok (we don't know what happen to the files
       // on disk, so we have to be safe)
-      if ((0 <= position) && (position + position <= version.Length)) {
+      if ((0 <= position) && (position + length <= version.Length)) {
         // See http://blogs.msdn.com/b/noahric/archive/2009/06/06/editor-perf-markers-vs-tracking-spans.aspx
         // Never grows the tracking span.
         const SpanTrackingMode mode = SpanTrackingMode.EdgeExclusive;

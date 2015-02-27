@@ -101,7 +101,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBus.UnregisterHandler(_eventBusCookie3);
     }
 
-
     private void TextDocumentOpenHandler(object sender, EventArgs eventArgs) {
       var doc = (ITextDocument) sender;
       var args = (EventArgs)eventArgs;

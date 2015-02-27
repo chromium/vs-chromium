@@ -177,7 +177,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       var entry = _trackingEntries.GetValue(path);
       if (entry != null) {
-        entry.DeleteSpans(document.TextBuffer);
+        entry.DeleteTrackingSpans(document.TextBuffer);
       }
     }
   }

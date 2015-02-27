@@ -154,27 +154,31 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void QuickSearchCode(string searchPattern) {
-      ExplorerControl.SearchCodeCombo.Text = searchPattern;
-      ExplorerControl.SearchFilePathsCombo.Text = "";
+      if (!string.IsNullOrEmpty(searchPattern)) {
+        ExplorerControl.SearchCodeCombo.Text = searchPattern;
+      }
+      //ExplorerControl.SearchFilePathsCombo.Text = "";
       ExplorerControl.SearchCodeCombo.Focus();
       ExplorerControl.Controller.PerformSearch(true);
     }
 
     public void QuickSearchFilePaths(string searchPattern) {
-      ExplorerControl.SearchCodeCombo.Text = "";
-      ExplorerControl.SearchFilePathsCombo.Text = searchPattern;
+      //ExplorerControl.SearchCodeCombo.Text = "";
+      if (!string.IsNullOrEmpty(searchPattern)) {
+        ExplorerControl.SearchFilePathsCombo.Text = searchPattern;
+      }
       ExplorerControl.SearchFilePathsCombo.Focus();
       ExplorerControl.Controller.PerformSearch(true);
     }
 
     public void FocusQuickSearchCode() {
-      ExplorerControl.SearchFilePathsCombo.Text = "";
+      //ExplorerControl.SearchFilePathsCombo.Text = "";
       ExplorerControl.SearchCodeCombo.Focus();
       ExplorerControl.Controller.PerformSearch(true);
     }
 
     public void FocusQuickSearchFilePaths() {
-      ExplorerControl.SearchCodeCombo.Text = "";
+      //ExplorerControl.SearchCodeCombo.Text = "";
       ExplorerControl.SearchFilePathsCombo.Focus();
       ExplorerControl.Controller.PerformSearch(true);
     }

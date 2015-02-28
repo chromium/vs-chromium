@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
                 Project = project,
                 Progress = progress,
                 OldSnapshot = oldSnapshot,
-                PathChanges = new ProjectPathChanges(project.RootPath, pathChanges.Entries),
+                PathChanges = (pathChanges == null ? null : new ProjectPathChanges(project.RootPath, pathChanges.Entries)),
               };
               var rootSnapshot = ProcessProject(data);
               return new ProjectRootSnapshot(project, rootSnapshot);

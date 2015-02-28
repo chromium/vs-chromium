@@ -7,14 +7,38 @@ using Microsoft.VisualStudio.Text;
 namespace VsChromium.Features.QuickSearch {
   public static class SelectionHelpers {
     public static string SelectWordOnly(SnapshotSpan snapshotSpan) {
+      // Note: snapshotSpan.Start *and* End may point one character past the end
+      // of the snapshot (i.e. Start == Length).
+      
+      // Note: Same remark for "line" if the span is at the last (empty) line of
+      // the snapshot.
+
       if (snapshotSpan.IsEmpty) {
         var line = snapshotSpan.Snapshot.GetLineFromPosition(snapshotSpan.Start);
 
-        // Extend "start" backward as long as it points to a valid word character
+        // Give up is empty line.
+        if (line.End == line.Start)
+          return "";
+
+        // Extend "start" backward as long as it points to a valid word
+        // character.
         var start = snapshotSpan.Start;
-        // If character at "start" is not a word character, try moving back one and check again.
-        // If still not, start is in the middle of nowhere.
+
+        // Move back 1 if we are at end of line (it is safe, as line is not
+        // empty).
+        if (start >= line.End) {
+          start = line.End - 1;
+          // Give up if we are a on non-word character, to deal with this:
+          // foo)[eol]   <= carect is after the ")" character, which is end of
+          // line.
+          if (!IsWordCharacter(start.GetChar()))
+            return "";
+        }
+
+        // If character at "start" is not a word character, try moving back one
+        // and check again. If still not, start is in the middle of nowhere.
         // This is to handle cases like this:
+        //
         //   foo bar  <= caret at space between foo and bar, we should select "foo"
         //   foo : test  <= caret at ":", we should not select anything
         if (!IsWordCharacter(start.GetChar())) {
@@ -42,7 +66,7 @@ namespace VsChromium.Features.QuickSearch {
             break;
           end = end + 1;
         }
-        end = end + 1;
+        end = end + 1; // end is always exclusive, so + 1.
 
         return start.Snapshot.GetText(start, end - start);
       } else {

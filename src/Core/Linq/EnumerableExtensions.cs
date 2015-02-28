@@ -188,6 +188,9 @@ namespace VsChromium.Core.Linq {
     }
 
     public static ReadOnlyCollection<TSource> ToReadOnlyCollection<TSource>(this IEnumerable<TSource> source) {
+      var coll = source as ReadOnlyCollection<TSource>;
+      if (coll != null)
+        return coll;
       var list = source as IList<TSource>;
       if (list != null)
         return new ReadOnlyCollection<TSource>(list);

@@ -59,13 +59,15 @@ namespace VsChromium.Server.FileSystemNames {
     /// Return the <see cref="FullPath"/> of the parent name.
     /// </summary>
     protected FullPath GetParentAbsolutePathName() {
-      if (Parent == null)
-        throw new InvalidOperationException("Name does not have a parent with an absolute path.");
+      for (var currentParent = Parent; currentParent != null; currentParent = currentParent.Parent) {
+        if (currentParent.IsAbsoluteName)
+          return currentParent.FullPath;
+      }
+      return ThrowNoParent();
+    }
 
-      if (Parent.IsAbsoluteName)
-        return Parent.FullPath;
-
-      return Parent.GetParentAbsolutePathName();
+    private FullPath ThrowNoParent() {
+      throw new InvalidOperationException("Name does not have a parent with an absolute path.");
     }
 
     public override string ToString() {

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -199,5 +200,23 @@ namespace VsChromium.Core.Collections {
       Debug.Assert(result >= 0);
       return result;
     }
+
+    public static void RemoveDuplicates<T>(IList<T> sortedList, Func<T, T, bool> comparer) {
+      if (sortedList.Count <= 1)
+        return;
+
+      var previousItem = sortedList[0];
+      for (var i = 1; i < sortedList.Count; ) {
+        var item = sortedList[i];
+        if (comparer(previousItem, item)) {
+          sortedList.RemoveAt(i);
+          continue;
+        }
+        previousItem = item;
+        i++;
+      }
+    }
+
+
   }
 }

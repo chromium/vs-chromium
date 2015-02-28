@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
@@ -85,7 +86,6 @@ namespace VsChromium.Server.FileSystemSnapshot {
       DirectoryName directory,
       bool isSymLink) {
 
-      var ssw = new MultiStepStopWatch();
       // Create list of pairs (DirectoryName, List[FileNames])
       var directoriesWithFiles = TraverseFileSystem(_fileSystem, fileNameFactory, project, directory, isSymLink)
         .AsParallel()
@@ -162,7 +162,8 @@ namespace VsChromium.Server.FileSystemSnapshot {
 
       var oldDirectoryPath = oldDirectory.DirectoryName.FullPath;
 
-      // Create lists of created dirs and files.
+      // Create lists of created dirs and files. We havet to access the file system to know
+      // if each path is a file or a directory.
       List<IFileInfoSnapshot> createDirs = null;
       List<IFileInfoSnapshot> createdFiles = null;
       foreach (var path in pathChanges.GetCreatedEntries(oldDirectoryPath).ToForeachEnum()) {
@@ -178,7 +179,8 @@ namespace VsChromium.Server.FileSystemSnapshot {
         }
       }
 
-      // Match non deleted directories
+      // Recursively create new directory entires for previous (non deleted)
+      // entries.
       var childDirectories = oldDirectory.ChildDirectories
         .Where(x => !pathChanges.IsDeleted(x.DirectoryName.FullPath))
         .Select(x => ApplyDirectorySnapshotDelta(fileSystemNameFactory, project, progress, x, pathChanges))
@@ -202,38 +204,39 @@ namespace VsChromium.Server.FileSystemSnapshot {
         }
 
         // We need to re-sort the array since we added new entries
-        childDirectories.Sort((x, y) => 
-          StringComparer.Ordinal.Compare(x.DirectoryName.RelativePath.FileName, y.DirectoryName.RelativePath.FileName));
+        childDirectories.Sort((x, y) =>
+          SystemPathComparer.Instance.StringComparer.Compare(x.DirectoryName.RelativePath.FileName, y.DirectoryName.RelativePath.FileName));
       }
 
       // Match non deleted files
-      // Sepcial case:
-      IList<FileName> childFiles;
+      // Sepcial case: if no file deleted or created, just re-use the list.
+      IList<FileName> newFileList;
       if (pathChanges.GetDeletedEntries(oldDirectoryPath).Count == 0 && createdFiles == null) {
-        childFiles = oldDirectory.ChildFiles;
+        newFileList = oldDirectory.ChildFiles;
       } else {
-        childFiles = oldDirectory.ChildFiles
+        // Copy the list of previous children, minus deleted files.
+        var newFileListTemp = oldDirectory.ChildFiles
           .Where(x => !pathChanges.IsDeleted(x.FullPath))
           .ToList();
 
         // Add created files
         if (createdFiles != null) {
-          foreach (var info in createdFiles) {
+          foreach (var info in createdFiles.ToForeachEnum()) {
             var name = fileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
-            // Note: File system change notifications are not always 100%
-            // reliable. We may get a "create" event for directory we already know
-            // about.
-            var index = childDirectories.FindIndex(x => 
-              SystemPathComparer.Instance.StringComparer.Equals(x.DirectoryName.RelativePath.FileName, name.RelativePath.FileName));
-            if (index >= 0) {
-              childDirectories.RemoveAt(index);
-            }
-            childFiles.Add(name);
+            newFileListTemp.Add(name);
           }
 
           // We need to re-sort the array since we added new entries
-          childFiles = childFiles.OrderBy(x => x.RelativePath.FileName, StringComparer.Ordinal).ToList();
+          newFileListTemp.Sort((x, y) =>
+            SystemPathComparer.Instance.StringComparer.Compare(x.RelativePath.FileName, y.RelativePath.FileName));
+
+          // Note: File system change notifications are not always 100%
+          // reliable. We may get a "create" event for files we already know
+          // about.
+          ArrayUtilities.RemoveDuplicates(newFileListTemp, (x, y) =>
+            SystemPathComparer.Instance.StringComparer.Equals(x.RelativePath.FileName, y.RelativePath.FileName));
         }
+        newFileList = newFileListTemp;
       }
 
       var data = new DirectoryData(oldDirectory.DirectoryName, oldDirectory.IsSymLink);
@@ -241,7 +244,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       return new DirectorySnapshot(
         data,
         childDirectories.ToReadOnlyCollection(),
-        childFiles.ToReadOnlyCollection());
+        newFileList.ToReadOnlyCollection());
     }
 
     private static List<TValue> GetOrCreateList<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {

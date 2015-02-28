@@ -34,6 +34,10 @@ namespace VsChromium.Core.Files {
     /// </summary>
     bool IsDirectory { get; }
 
+    /// <summary>
+    /// Returns "true" if the entry is a "junction point" directory.
+    /// Returns "false" if the entry does not exist or cannot be accessed.
+    /// </summary>
     bool IsSymLink { get; }
 
     /// <summary>

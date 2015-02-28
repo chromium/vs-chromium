@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
+using VsChromium.Core.Linq;
 
 namespace VsChromium.Server.FileSystemSnapshot {
   /// <summary>
@@ -52,18 +53,11 @@ namespace VsChromium.Server.FileSystemSnapshot {
     }
 
     public IList<FullPath> GetCreatedEntries(FullPath parentPath) {
-      List<FullPath> result;
-      if (_createdChildren.TryGetValue(parentPath, out result)) {
-        return result;
-      }
-      return ArrayUtilities.EmptyList<FullPath>.Instance;
+      return _createdChildren.GetValue(parentPath) ?? ArrayUtilities.EmptyList<FullPath>.Instance;
     }
+
     public IList<FullPath> GetDeletedEntries(FullPath parentPath) {
-      List<FullPath> result;
-      if (_deletedChildren.TryGetValue(parentPath, out result)) {
-        return result;
-      }
-      return ArrayUtilities.EmptyList<FullPath>.Instance;
+      return _deletedChildren.GetValue(parentPath) ?? ArrayUtilities.EmptyList<FullPath>.Instance;
     }
   }
 }

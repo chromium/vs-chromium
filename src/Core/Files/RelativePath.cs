@@ -91,6 +91,17 @@ namespace VsChromium.Core.Files {
         return name.Substring(index);
       }
     }
+
+    /// <summary>
+    /// Returns the parent path or null if this is a root path.
+    /// </summary>
+    public RelativePath Parent {
+      get {
+        var parent = PathHelpers.GetParent(_relativePath);
+        return parent == null ? default(RelativePath) : new RelativePath(parent);
+      }
+    }
+
     public override string ToString() {
       return this.Value;
     }

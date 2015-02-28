@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
                 Project = project,
                 Progress = progress,
                 OldSnapshot = oldSnapshot,
-                PathChanges = pathChanges,
+                PathChanges = new ProjectPathChanges(project.RootPath, pathChanges.Entries),
               };
               var rootSnapshot = ProcessProject(data);
               return new ProjectRootSnapshot(project, rootSnapshot);
@@ -70,7 +70,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       public FileSystemTreeSnapshot OldSnapshot;
       public IProject Project;
       public IProgressTracker Progress;
-      public FullPathChanges PathChanges;
+      public ProjectPathChanges PathChanges;
     }
 
     private DirectorySnapshot ProcessProject(ProjectProcessingData data) {
@@ -165,14 +165,14 @@ namespace VsChromium.Server.FileSystemSnapshot {
       ProjectProcessingData data, 
       DirectorySnapshot oldDirectory) {
 
-      var oldDirectoryPath = oldDirectory.DirectoryName.FullPath;
+      var oldDirectoryPath = oldDirectory.DirectoryName.RelativePath;
 
       // Create lists of created dirs and files. We havet to access the file system to know
       // if each path is a file or a directory.
       List<IFileInfoSnapshot> createDirs = null;
       List<IFileInfoSnapshot> createdFiles = null;
       foreach (var path in data.PathChanges.GetCreatedEntries(oldDirectoryPath).ToForeachEnum()) {
-        var info = _fileSystem.GetFileInfoSnapshot(path);
+        var info = _fileSystem.GetFileInfoSnapshot(data.Project.RootPath.Combine(path));
         if (info.IsDirectory) {
           if (createDirs == null)
             createDirs = new List<IFileInfoSnapshot>();
@@ -187,7 +187,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       // Recursively create new directory entires for previous (non deleted)
       // entries.
       var childDirectories = oldDirectory.ChildDirectories
-        .Where(dir => !data.PathChanges.IsDeleted(dir.DirectoryName.FullPath))
+        .Where(dir => !data.PathChanges.IsDeleted(dir.DirectoryName.RelativePath))
         .Select(dir => ApplyDirectorySnapshotDelta(data, dir))
         .ToList();
 
@@ -221,7 +221,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       } else {
         // Copy the list of previous children, minus deleted files.
         var newFileListTemp = oldDirectory.ChildFiles
-          .Where(x => !data.PathChanges.IsDeleted(x.FullPath))
+          .Where(x => !data.PathChanges.IsDeleted(x.RelativePath))
           .ToList();
 
         // Add created files

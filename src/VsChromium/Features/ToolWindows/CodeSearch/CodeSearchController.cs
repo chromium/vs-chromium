@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
-using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;

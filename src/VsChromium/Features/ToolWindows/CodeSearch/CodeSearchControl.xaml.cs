@@ -35,7 +35,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private ScrollViewer _treeViewScrollViewer;
 
     private readonly IProgressBarTracker _progressBarTracker;
-    private IStatusBar _statusBar;
     private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
@@ -81,7 +80,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
-      _statusBar = componentModel.DefaultExportProvider.GetExportedValue<IStatusBar>();
       _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
       _fileSystemTreeSource = componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>();
 
@@ -177,15 +175,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       DispatchFileSystemTreeComputed(typedEvent);
       DispatchSearchEngineFilesLoading(typedEvent);
       DispatchSearchEngineFilesLoaded(typedEvent);
-      DispatchProgressReport(typedEvent);
-    }
-
-    private void DispatchProgressReport(TypedEvent typedEvent) {
-      var @event = typedEvent as ProgressReportEvent;
-      if (@event != null) {
-        WpfUtilities.Post(this, () =>
-          _statusBar.ReportProgress(@event.DisplayText, @event.Completed, @event.Total));
-      }
     }
 
     private void DispatchFileSystemTreeComputing(TypedEvent typedEvent) {

@@ -58,10 +58,10 @@ namespace VsChromium.Server.FileSystemNames {
     /// <summary>
     /// Return the <see cref="FullPath"/> of the parent name.
     /// </summary>
-    protected FullPath GetParentAbsolutePathName() {
-      for (var currentParent = Parent; currentParent != null; currentParent = currentParent.Parent) {
-        if (currentParent.IsAbsoluteName)
-          return currentParent.FullPath;
+    public FullPath GetAbsolutePath() {
+      for (var current = this; current != null; current = current.Parent) {
+        if (current.IsAbsoluteName)
+          return current.FullPath;
       }
       return ThrowNoParent();
     }

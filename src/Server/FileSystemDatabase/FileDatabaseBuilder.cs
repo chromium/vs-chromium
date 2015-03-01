@@ -24,6 +24,9 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
     private static bool LogStats = false;
+    /// <summary>
+    /// Split large files in chunks of maximum <code>ChunkSize</code> bytes.
+    /// </summary>
     private const int ChunkSize = 100 * 1024;
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
@@ -55,7 +58,10 @@ namespace VsChromium.Server.FileSystemDatabase {
             fileDatabase.ProjectHashes[x.Project.RootPath] == x.Project.VersionHash)
           .Select(x => x.Project);
 
-        var unchangedProjectSet = new HashSet<IProject>(unchangedProjects, new ReferenceEqualityComparer<IProject>());
+        var unchangedProjectSet = new HashSet<IProject>(unchangedProjects, 
+          // Use reference equality for IProject is safe, as we keep this
+          // dictionary only for the duration of this "Build" call.
+          new ReferenceEqualityComparer<IProject>());
 
         // Don't use file memoization for now, as benefit is dubvious.
         //IFileContentsMemoization fileContentsMemoization = new FileContentsMemoization();
@@ -70,7 +76,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         };
 
         // Merge old state in new state and load all missing files
-        ComputeFileContents(loadingInfo);
+        LoadFileContents(loadingInfo);
 
         Logger.LogInfo("{0}{1:n0} unique file contents remaining in memory after memoization of {2:n0} files.",
             logger.Indent,
@@ -96,7 +102,6 @@ namespace VsChromium.Server.FileSystemDatabase {
 
         if (filesToRead.Count == 0)
           return previousFileDatabase;
-
 
         // Read file contents.
         onLoading();
@@ -127,28 +132,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         var directories = _directories;
         var filesWithContents = FilterFilesWithContents(files.Values);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
-        if (LogStats) {
-          var filesByExtensions = filesWithContents
-            .GroupBy(x => {
-              var ext = Path.GetExtension(x.FileName.FullPath.Value);
-              if (ext == "" || x.Contents.ByteLength >= 500 * 1024)
-                return Path.GetFileName(x.FileName.FullPath.Value);
-              return ext;
-            })
-            .Select(g => {
-              var count = g.Count();
-              var size = g.Aggregate(0L, (c, x) => c + x.Contents.ByteLength);
-              return Tuple.Create(g.Key, count, size);
-            })
-            .OrderByDescending(x => x.Item3);
-          filesByExtensions.ForAll(g => {
-            var count = g.Item2;
-            var size = g.Item3;
-            if (size > 1024L) {
-              Logger.LogInfo("{0}: {1:n0} files, {2:n0} bytes", g.Item1, count, size);
-            }
-          });
-        }
+        LogFileContentsStats(filesWithContents);
         return new FileDatabase(
           _projectHashes,
           files,
@@ -156,6 +140,31 @@ namespace VsChromium.Server.FileSystemDatabase {
           directories,
           searchableContentsCollection,
           filesWithContents.Count);
+      }
+    }
+
+    private static void LogFileContentsStats(List<FileData> filesWithContents) {
+      if (LogStats) {
+        var filesByExtensions = filesWithContents
+          .GroupBy(x => {
+            var ext = Path.GetExtension(x.FileName.FullPath.Value);
+            if (ext == "" || x.Contents.ByteLength >= 500 * 1024)
+              return Path.GetFileName(x.FileName.FullPath.Value);
+            return ext;
+          })
+          .Select(g => {
+            var count = g.Count();
+            var size = g.Aggregate(0L, (c, x) => c + x.Contents.ByteLength);
+            return Tuple.Create(g.Key, count, size);
+          })
+          .OrderByDescending(x => x.Item3);
+        filesByExtensions.ForAll(g => {
+          var count = g.Item2;
+          var size = g.Item3;
+          if (size > 1024L) {
+            Logger.LogInfo("{0}: {1:n0} files, {2:n0} bytes", g.Item1, count, size);
+          }
+        });
       }
     }
 
@@ -300,7 +309,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       public int LoadedCount;
     }
 
-    private void ComputeFileContents(FileContentsLoadingInfo loadingInfo) {
+    private void LoadFileContents(FileContentsLoadingInfo loadingInfo) {
 
       using (var logger = new TimeElapsedLogger("Loading file contents from disk")) {
         using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
@@ -313,7 +322,7 @@ namespace VsChromium.Server.FileSystemDatabase {
                   string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
             }
 
-            var contents = ComputeSingleFileContents(loadingInfo, fileEntry.Value);
+            var contents = LoadSingleFileContents(loadingInfo, fileEntry.Value);
             if (contents != null) {
               fileEntry.Value.FileData.UpdateContents(contents);
             }
@@ -324,7 +333,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
-    private FileContents ComputeSingleFileContents(
+    private FileContents LoadSingleFileContents(
       FileContentsLoadingInfo loadingInfo,
       ProjectFileData projectFileData) {
 
@@ -337,7 +346,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
       // If the file was never loaded before, just load it
       if (oldFileData == null || oldFileData.Contents == null) {
-        return LoadSingleFileContents(loadingInfo, projectFileData);
+        return LoadSingleFileContentsWorker(loadingInfo, projectFileData);
       }
 
       bool isSearchable;
@@ -364,10 +373,10 @@ namespace VsChromium.Server.FileSystemDatabase {
         return oldFileData.Contents;
       }
 
-      return LoadSingleFileContents(loadingInfo, projectFileData);
+      return LoadSingleFileContentsWorker(loadingInfo, projectFileData);
     }
 
-    private FileContents LoadSingleFileContents(
+    private FileContents LoadSingleFileContentsWorker(
       FileContentsLoadingInfo loadingInfo,
       ProjectFileData projectFileData) {
 

@@ -84,6 +84,7 @@
     <Compile Include="Operations\OperationIdFactory.cs" />
     <Compile Include="Operations\OperationHandlers.cs" />
     <Compile Include="Operations\OperationProcessor.cs" />
+    <Compile Include="ProgressTracking\PartialProgressReporter.cs" />
     <Compile Include="Search\CompiledTextSearchDataFactory.cs" />
     <Compile Include="Search\CompiledTextSearchProviderFactory.cs" />
     <Compile Include="Search\FilesLoadedResult.cs" />

@@ -23,7 +23,8 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
-    private static bool LogStats = false;
+    private static bool LogContentsStats = false;
+    private static bool LogPiecesStats = false;
     /// <summary>
     /// Split large files in chunks of maximum <code>ChunkSize</code> bytes.
     /// </summary>
@@ -62,7 +63,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             fileDatabase.ProjectHashes[x.Project.RootPath] == x.Project.VersionHash)
           .Select(x => x.Project);
 
-        var unchangedProjectSet = new HashSet<IProject>(unchangedProjects, 
+        var unchangedProjectSet = new HashSet<IProject>(unchangedProjects,
           // Use reference equality for IProject is safe, as we keep this
           // dictionary only for the duration of this "Build" call.
           new ReferenceEqualityComparer<IProject>());
@@ -77,7 +78,13 @@ namespace VsChromium.Server.FileSystemDatabase {
           LoadedCount = 0,
           OldFileDatabase = fileDatabase,
           UnchangedProjects = unchangedProjectSet,
-          OnIntermadiateResult = onIntermadiateResult,
+          PartialProgressReporter = new PartialProgressReporter(
+            TimeSpan.FromSeconds(5.0),
+            () => {
+              Logger.LogInfo("Reporting intermedidate file database");
+              var database = this.CreateFileDatabse();
+              onIntermadiateResult(database);
+            })
         };
 
         // Merge old state in new state and load all missing files
@@ -159,7 +166,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     private static void LogFileContentsStats(IList<FileData> filesWithContents) {
-      if (LogStats) {
+      if (LogContentsStats) {
         var filesByExtensions = filesWithContents
           .GroupBy(x => {
             var ext = Path.GetExtension(x.FileName.FullPath.Value);
@@ -239,20 +246,20 @@ namespace VsChromium.Server.FileSystemDatabase {
         }
       }
 
-#if false
-      Debug.Assert(fileContents.All(x => x != null));
-      Debug.Assert(fileContents.Aggregate(0L, (c, x) => c + x.ByteLength) ==
-        filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
-      fileContents.GetPartitionRanges(partitionCount).ForAll(
-        (index, range) => {
-          Logger.LogInfo("Partition {0} has a weight of {1:n0}",
-            index,
-            fileContents
-              .Skip(range.Key)
-              .Take(range.Value)
-              .Aggregate(0L, (c, x) => c + x.ByteLength));
-        });
-#endif
+      if (LogPiecesStats) {
+        Debug.Assert(fileContents.All(x => x != null));
+        Debug.Assert(fileContents.Aggregate(0L, (c, x) => c + x.ByteLength) ==
+          filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
+        fileContents.GetPartitionRanges(partitionCount).ForAll(
+          (index, range) => {
+            Logger.LogInfo("Partition {0} has a weight of {1:n0}",
+              index,
+              fileContents
+                .Skip(range.Key)
+                .Take(range.Value)
+                .Aggregate(0L, (c, x) => c + x.ByteLength));
+          });
+      }
       return fileContents;
     }
 
@@ -295,7 +302,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             new DirectoryData(kvp.Value.DirectoryName, kvp.Value.IsSymLink));
         }
 
-        var files = new Dictionary<FileName,ProjectFileData>(
+        var files = new Dictionary<FileName, ProjectFileData>(
           directories.Count * 4,
           // Note: We can use reference equality here because the file names are
           // constructed unique and the dictionary will be discarded once we are
@@ -322,7 +329,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       public IFileContentsMemoization FileContentsMemoization;
       public ISet<IProject> UnchangedProjects;
       public int LoadedCount;
-      public Action<IFileDatabase> OnIntermadiateResult;
+      public PartialProgressReporter PartialProgressReporter;
     }
 
     private void LoadFileContents(FileContentsLoadingInfo loadingInfo) {
@@ -408,6 +415,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       // This is an expensive call, hopefully avoided by the code above.
       if (!projectFileData.IsSearchable)
         return null;
+
+      loadingInfo.PartialProgressReporter.ReportProgress();
 
       var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
       if (!(fileContents is BinaryFileContents)) {

@@ -75,7 +75,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         var loadingInfo = new FileContentsLoadingInfo {
           FileContentsMemoization = fileContentsMemoization,
           FullPathChanges = fullPathChanges,
-          LoadedCount = 0,
+          LoadedTextFileCount = 0,
           OldFileDatabase = fileDatabase,
           UnchangedProjects = unchangedProjectSet,
           PartialProgressReporter = new PartialProgressReporter(
@@ -323,7 +323,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       public FullPathChanges FullPathChanges;
       public IFileContentsMemoization FileContentsMemoization;
       public ISet<IProject> UnchangedProjects;
-      public int LoadedCount;
+      public int LoadedTextFileCount;
+      public int LoadedBinaryFileCount;
       public PartialProgressReporter PartialProgressReporter;
     }
 
@@ -335,8 +336,7 @@ namespace VsChromium.Server.FileSystemDatabase {
             Debug.Assert(fileEntry.Value.FileData.Contents == null);
 
             if (progress.Step()) {
-              progress.DisplayProgress(
-                (i, n) =>
+              progress.DisplayProgress((i, n) =>
                   string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
             }
 
@@ -346,9 +346,10 @@ namespace VsChromium.Server.FileSystemDatabase {
             }
           });
         }
-        Logger.LogInfo("{0}Loaded {1:n0} files", logger.Indent, loadingInfo.LoadedCount);
-        Logger.LogMemoryStats(logger.Indent);
       }
+      Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files.",
+        loadingInfo.LoadedTextFileCount,
+        loadingInfo.LoadedBinaryFileCount);
     }
 
     private FileContents LoadSingleFileContents(
@@ -356,11 +357,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       ProjectFileData projectFileData) {
 
       var fileName = projectFileData.FileName;
-
-      FileData oldFileData;
-      if (!loadingInfo.OldFileDatabase.Files.TryGetValue(fileName, out oldFileData)) {
-        oldFileData = null;
-      }
+      var oldFileData = loadingInfo.OldFileDatabase.Files.GetValue(fileName);
 
       // If the file was never loaded before, just load it
       if (oldFileData == null || oldFileData.Contents == null) {
@@ -414,8 +411,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       loadingInfo.PartialProgressReporter.ReportProgress();
 
       var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
-      if (!(fileContents is BinaryFileContents)) {
-        Interlocked.Increment(ref loadingInfo.LoadedCount);
+      if (fileContents is BinaryFileContents) {
+        Interlocked.Increment(ref loadingInfo.LoadedBinaryFileCount);
+      }
+      else {
+        Interlocked.Increment(ref loadingInfo.LoadedTextFileCount);
       }
       return loadingInfo.FileContentsMemoization.Get(projectFileData.FileName, fileContents);
     }

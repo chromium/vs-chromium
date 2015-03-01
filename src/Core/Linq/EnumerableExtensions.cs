@@ -201,9 +201,16 @@ namespace VsChromium.Core.Linq {
     /// Returns <code>null</code> when not found.
     /// </summary>
     public static TValue GetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) where TValue : class {
+      return dictionary.GetValue(key, null);
+    }
+
+    /// <summary>
+    /// Returns <code>defaultValue</code> when not found.
+    /// </summary>
+    public static TValue GetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue) {
       TValue result;
       if (!dictionary.TryGetValue(key, out result))
-        return null;
+        return defaultValue;
       return result;
     }
 

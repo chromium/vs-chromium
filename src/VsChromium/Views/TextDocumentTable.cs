@@ -42,6 +42,8 @@ namespace VsChromium.Views {
           continue;
 
         var path = new FullPath(info.Moniker);
+        if (_openDocuments.ContainsKey(path))
+          continue;
 
         // Get vs buffer
         var docData = info.DocData as IVsTextBuffer;
@@ -57,7 +59,7 @@ namespace VsChromium.Views {
         if (!_textDocumentFactoryService.TryGetTextDocument(textBuffer, out document))
           continue;
 
-        _openDocuments.Add(path, document);
+        _openDocuments[path] = document;
       }
       return true;
     }
@@ -68,7 +70,7 @@ namespace VsChromium.Views {
 
         if (FullPath.IsValid(args.FilePath)) {
           var newPath = new FullPath(args.FilePath);
-          _openDocuments.Add(newPath, document);
+          _openDocuments[newPath] = document;
         }
 
         if (FullPath.IsValid(document.FilePath)) {
@@ -83,7 +85,7 @@ namespace VsChromium.Views {
       document.FileActionOccurred += TextDocumentOnFileActionOccurred;
       if (FullPath.IsValid(document.FilePath)) {
         var path = new FullPath(document.FilePath);
-        _openDocuments.Add(path, document);
+        _openDocuments[path] = document;
       }
     }
 

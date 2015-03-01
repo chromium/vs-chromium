@@ -9,7 +9,7 @@ using VsChromium.Server.Ipc.TypedEvents;
 namespace VsChromium.Server.ProgressTracking {
   public abstract class ProgressTrackerBase : IProgressTracker {
     private readonly object _lock = new object();
-    private readonly long  _millisecondsBetweenRefresh = 50;
+    private readonly long  _millisecondsBetweenRefresh = 100;
     private readonly ITypedEventSender _typedEventSender;
     private readonly ITickCountProvider _tickCountProvider = new EnvironmentTickCountProvider();
     private int _currentStep;

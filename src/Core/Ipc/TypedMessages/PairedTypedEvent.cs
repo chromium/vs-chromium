@@ -9,7 +9,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoInclude(10, typeof(FileSystemTreeComputing))]
   [ProtoInclude(11, typeof(FileSystemTreeComputed))]
   [ProtoInclude(12, typeof(SearchEngineFilesLoading))]
-  [ProtoInclude(13, typeof(SearchEngineFilesLoaded))]
+  [ProtoInclude(13, typeof(SearchEngineFilesLoadingProgress))]
+  [ProtoInclude(14, typeof(SearchEngineFilesLoaded))]
   public class PairedTypedEvent : TypedEvent {
     [ProtoMember(1)]
     public long OperationId { get; set; }

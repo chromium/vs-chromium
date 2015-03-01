@@ -31,6 +31,7 @@ namespace VsChromium.Server.Ipc.TypedEvents {
       _fileSystemProcessor.SnapshotComputed += FileSystemProcessorOnSnapshotComputed;
 
       _searchEngine.FilesLoading += SearchEngineOnFilesLoading;
+      _searchEngine.FilesLoadingProgress += SearchEngineOnFilesLoadingProgress;
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
@@ -56,6 +57,12 @@ namespace VsChromium.Server.Ipc.TypedEvents {
 
     private void SearchEngineOnFilesLoading(object sender, OperationInfo args) {
       _typedEventSender.SendEventAsync(new SearchEngineFilesLoading {
+        OperationId = args.OperationId
+      });
+    }
+
+    private void SearchEngineOnFilesLoadingProgress(object sender, OperationInfo args) {
+      _typedEventSender.SendEventAsync(new SearchEngineFilesLoadingProgress {
         OperationId = args.OperationId
       });
     }

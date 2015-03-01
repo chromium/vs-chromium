@@ -26,10 +26,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void PerformSearch(bool immediate);
 
     // Callbacks from server about updates to the index database
-    void SetFileSystemTreeComputing();
-    void SetFileSystemTreeComputed(FileSystemTree tree);
-    void SetFileSystemTreeError(ErrorResponse error);
-    void FilesLoaded();
+    void OnFileSystemTreeComputing();
+    void OnFileSystemTreeComputed(FileSystemTree tree);
+    void OnFileSystemTreeError(ErrorResponse error);
+    void OnFilesLoading();
+    void OnFilesLoadingProgress();
+    void OnFilesLoaded();
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);

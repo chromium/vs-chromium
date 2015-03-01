@@ -148,7 +148,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
-    public void SetFileSystemTreeComputing() {
+    public void OnFileSystemTreeComputing() {
       var items = CreateInfromationMessages("Loading files from VS Chromium projects...)");
       ViewModel.SetInformationMessages(items);
 
@@ -158,7 +158,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public void SetFileSystemTreeComputed(FileSystemTree tree) {
+    public void OnFileSystemTreeComputed(FileSystemTree tree) {
       ViewModel.FileSystemTreeAvailable = (tree.Root.Entries.Count > 0);
 
       if (ViewModel.FileSystemTreeAvailable) {
@@ -184,12 +184,20 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       FetchDatabaseStatistics();
     }
 
-    public void SetFileSystemTreeError(ErrorResponse error) {
+    public void OnFileSystemTreeError(ErrorResponse error) {
       var viewModel = CreateErrorResponseViewModel(error);
       ViewModel.SetInformationMessages(viewModel);
     }
 
-    public void FilesLoaded() {
+    public void OnFilesLoading() {
+      // Nothing to do.
+    }
+
+    public void OnFilesLoadingProgress() {
+      OnFilesLoaded();
+    }
+
+    public void OnFilesLoaded() {
       // Add top level nodes in search results explaining results may be outdated
       AddResultsOutdatedMessage();
       FetchDatabaseStatistics();

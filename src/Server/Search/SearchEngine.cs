@@ -209,10 +209,17 @@ namespace VsChromium.Server.Search {
 
     public event EventHandler<OperationInfo> FilesLoading;
 
+    public event EventHandler<OperationInfo> FilesLoadingProgress;
+
     public event EventHandler<FilesLoadedResult> FilesLoaded;
 
     protected virtual void OnFilesLoading(OperationInfo e) {
       EventHandler<OperationInfo> handler = FilesLoading;
+      if (handler != null) handler(this, e);
+    }
+
+    protected virtual void OnFilesLoadingProgress(OperationInfo e) {
+      EventHandler<OperationInfo> handler = FilesLoadingProgress;
       if (handler != null) handler(this, e);
     }
 
@@ -440,8 +447,12 @@ namespace VsChromium.Server.Search {
               previousSnapshot,
               newSnapshot,
               fullPathChanges,
-              fileDatabase => _currentFileDatabase = fileDatabase);
-            // Store and activate new state (atomic operation).
+              fileDatabase => {
+                // Store and activate intermediate new state (atomic operation).
+                _currentFileDatabase = fileDatabase;
+                OnFilesLoadingProgress(info);
+              });
+            // Store and activate final new state (atomic operation).
             _currentFileDatabase = newState;
           }
           OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });

@@ -174,6 +174,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       DispatchFileSystemTreeComputing(typedEvent);
       DispatchFileSystemTreeComputed(typedEvent);
       DispatchSearchEngineFilesLoading(typedEvent);
+      DispatchSearchEngineFilesLoadingProgress(typedEvent);
       DispatchSearchEngineFilesLoaded(typedEvent);
     }
 
@@ -184,7 +185,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           Logger.LogInfo("FileSystemTree is being computed on server.");
           _progressBarTracker.Start(OperationsIds.FileSystemTreeComputing,
                                     "Loading files and directory names from file system.");
-          Controller.SetFileSystemTreeComputing();
+          Controller.OnFileSystemTreeComputing();
         });
       }
     }
@@ -195,7 +196,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FileSystemTreeComputing);
           if (@event.Error != null) {
-            Controller.SetFileSystemTreeError(@event.Error);
+            Controller.OnFileSystemTreeError(@event.Error);
             return;
           }
           Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
@@ -207,8 +208,19 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var @event = typedEvent as SearchEngineFilesLoading;
       if (@event != null) {
         Wpf.WpfUtilities.Post(this, () => {
-          Logger.LogInfo("Search engine is loading files on server.");
+          Controller.OnFilesLoading();
+          Logger.LogInfo("Search engine is loading file database on server.");
           _progressBarTracker.Start(OperationsIds.FilesLoading, "Loading files contents from file system.");
+        });
+      }
+    }
+
+    private void DispatchSearchEngineFilesLoadingProgress(TypedEvent typedEvent) {
+      var @event = typedEvent as SearchEngineFilesLoadingProgress;
+      if (@event != null) {
+        Wpf.WpfUtilities.Post(this, () => {
+          Controller.OnFilesLoadingProgress();
+          Logger.LogInfo("Search engine has produced intermediate file database index on server.");
         });
       }
     }
@@ -218,25 +230,25 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (@event != null) {
         WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
-          Controller.FilesLoaded();
+          Controller.OnFilesLoaded();
           if (@event.Error != null) {
-            Controller.SetFileSystemTreeError(@event.Error);
+            Controller.OnFileSystemTreeError(@event.Error);
             return;
           }
-          Logger.LogInfo("Search engine is done loading files on server.");
+          Logger.LogInfo("Search engine is done loading file database on server.");
         });
       }
     }
 
     private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
       WpfUtilities.Post(this, () => {
-        Controller.SetFileSystemTreeComputed(fileSystemTree);
+        Controller.OnFileSystemTreeComputed(fileSystemTree);
       });
     }
 
     private void FileSystemTreeSource_OnErrorReceived(ErrorResponse errorResponse) {
       WpfUtilities.Post(this, () => {
-        Controller.SetFileSystemTreeError(errorResponse);
+        Controller.OnFileSystemTreeError(errorResponse);
       });
     }
 

@@ -81,7 +81,7 @@ namespace VsChromium.Server.FileSystemDatabase {
           PartialProgressReporter = new PartialProgressReporter(
             TimeSpan.FromSeconds(5.0),
             () => {
-              Logger.LogInfo("Reporting intermedidate file database");
+              Logger.LogInfo("Creating intermedidate file database");
               var database = this.CreateFileDatabse();
               onIntermadiateResult(database);
             })
@@ -89,11 +89,6 @@ namespace VsChromium.Server.FileSystemDatabase {
 
         // Merge old state in new state and load all missing files
         LoadFileContents(loadingInfo);
-
-        Logger.LogInfo("{0}{1:n0} unique file contents remaining in memory after memoization of {2:n0} files.",
-            logger.Indent,
-            fileContentsMemoization.Count,
-            _files.Values.Count(x => x.FileData.Contents != null));
 
         return CreateFileDatabse();
       }

@@ -18,6 +18,7 @@ namespace VsChromium.Server.Search {
     IEnumerable<FileExtract> GetFileExtracts(FullPath filename, IEnumerable<FilePositionSpan> spans, int maxLength);
 
     event EventHandler<OperationInfo> FilesLoading;
+    event EventHandler<OperationInfo> FilesLoadingProgress;
     event EventHandler<FilesLoadedResult> FilesLoaded;
   }
 }

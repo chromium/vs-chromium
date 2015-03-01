@@ -7,6 +7,10 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace VsChromium.Core.Collections {
+  /// <summary>
+  /// Expose a segment of an <see cref="IList{T}"/> as an <see cref="IList{T}"/>.
+  /// </summary>
+  /// <typeparam name="T"></typeparam>
   public class ListSegment<T> : IList<T> {
     private readonly IList<T> _list;
     private readonly int _offset;

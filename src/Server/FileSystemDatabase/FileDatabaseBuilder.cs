@@ -125,14 +125,24 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private FileDatabase CreateFileDatabse() {
       using (new TimeElapsedLogger("Freezing FileDatabase state")) {
+        var directories = _directories;
         // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
         // the dictionary will be used in incremental updates where FileName instances
         // may be new instances from a complete file system enumeration.
-        var files = _files.ToDictionary(x => x.Key, x => x.Value.FileData);
-        var directories = _directories;
-        var filesWithContents = FilterFilesWithContents(files.Values);
+        var files = new Dictionary<FileName, FileData>(_files.Count);
+        var filesWithContentsArray = new FileData[_files.Count];
+        int filesWithContentsIndex = 0;
+        foreach (var kvp in _files) {
+          var fileData = kvp.Value.FileData;
+          files.Add(kvp.Key, fileData);
+          if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
+            filesWithContentsArray[filesWithContentsIndex++] = fileData;
+          }
+        }
+        var filesWithContents = new ListSegment<FileData>(filesWithContentsArray, 0, filesWithContentsIndex);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
         LogFileContentsStats(filesWithContents);
+
         return new FileDatabase(
           _projectHashes,
           files,
@@ -143,7 +153,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
-    private static void LogFileContentsStats(List<FileData> filesWithContents) {
+    private static void LogFileContentsStats(IList<FileData> filesWithContents) {
       if (LogStats) {
         var filesByExtensions = filesWithContents
           .GroupBy(x => {

@@ -29,6 +29,11 @@ namespace VsChromium.Server.FileSystemNames {
   /// </summary>
   public abstract class FileSystemName : IComparable<FileSystemName>, IEquatable<FileSystemName> {
     /// <summary>
+    /// HashCode cache.
+    /// </summary>
+    private int _hashCode;
+
+    /// <summary>
     /// Returns the parent directory, or null if <see cref="IsAbsoluteName"/> is true.
     /// </summary>
     public abstract DirectoryName Parent { get; }
@@ -85,7 +90,9 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public override int GetHashCode() {
-      return FileSystemNameComparer.Instance.GetHashCode(this);
+      if (_hashCode == 0)
+         _hashCode = FileSystemNameComparer.Instance.GetHashCode(this);
+      return _hashCode;
     }
 
     public override bool Equals(object other) {

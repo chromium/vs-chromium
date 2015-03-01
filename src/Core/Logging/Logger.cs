@@ -17,7 +17,7 @@ namespace VsChromium.Core.Logging {
       Info = true;
       Perf = true;
 #endif
-      Perf = true;
+      //Perf = true;
       Warning = true;
       Error = true;
     }

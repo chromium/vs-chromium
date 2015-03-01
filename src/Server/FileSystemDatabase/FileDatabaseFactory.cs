@@ -49,10 +49,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       IFileDatabase previousFileDatabase,
       FileSystemTreeSnapshot previousSnapshot,
       FileSystemTreeSnapshot newSnapshot,
-      FullPathChanges fullPathChanges) {
+      FullPathChanges fullPathChanges,
+      Action<IFileDatabase> onIntermadiateResult) {
 
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-          .Build(previousFileDatabase, newSnapshot, fullPathChanges);
+          .Build(previousFileDatabase, newSnapshot, fullPathChanges, onIntermadiateResult);
     }
 
     /// <summary>

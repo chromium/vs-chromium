@@ -44,7 +44,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabase Build(IFileDatabase previousFileDatabase, FileSystemTreeSnapshot newSnapshot, FullPathChanges fullPathChanges) {
+    public IFileDatabase Build(
+      IFileDatabase previousFileDatabase,
+      FileSystemTreeSnapshot newSnapshot,
+      FullPathChanges fullPathChanges,
+      Action<IFileDatabase> onIntermadiateResult) {
       using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
 
         var fileDatabase = (FileDatabase)previousFileDatabase;
@@ -72,7 +76,8 @@ namespace VsChromium.Server.FileSystemDatabase {
           FullPathChanges = fullPathChanges,
           LoadedCount = 0,
           OldFileDatabase = fileDatabase,
-          UnchangedProjects = unchangedProjectSet
+          UnchangedProjects = unchangedProjectSet,
+          OnIntermadiateResult = onIntermadiateResult,
         };
 
         // Merge old state in new state and load all missing files
@@ -124,7 +129,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     private FileDatabase CreateFileDatabse() {
-      using (new TimeElapsedLogger("Freezing FileDatabase state")) {
+      using (new TimeElapsedLogger("Freezing file database state")) {
         var directories = _directories;
         // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
         // the dictionary will be used in incremental updates where FileName instances
@@ -317,6 +322,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       public IFileContentsMemoization FileContentsMemoization;
       public ISet<IProject> UnchangedProjects;
       public int LoadedCount;
+      public Action<IFileDatabase> OnIntermadiateResult;
     }
 
     private void LoadFileContents(FileContentsLoadingInfo loadingInfo) {

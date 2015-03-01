@@ -15,7 +15,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       IFileDatabase previousFileDatabase,
       FileSystemTreeSnapshot previousSnapshot,
       FileSystemTreeSnapshot newSnapshot,
-      FullPathChanges fullPathChanges);
+      FullPathChanges fullPathChanges,
+      Action<IFileDatabase> onIntermadiateResult);
 
     IFileDatabase CreateWithChangedFiles(
       IFileDatabase previousFileDatabase,

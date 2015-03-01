@@ -435,7 +435,12 @@ namespace VsChromium.Server.Search {
         Execute = info => {
           using (new TimeElapsedLogger("Computing new state of file database")) {
             var oldState = _currentFileDatabase;
-            var newState = _fileDatabaseFactory.CreateIncremental(oldState, previousSnapshot, newSnapshot, fullPathChanges);
+            var newState = _fileDatabaseFactory.CreateIncremental(
+              oldState,
+              previousSnapshot,
+              newSnapshot,
+              fullPathChanges,
+              fileDatabase => _currentFileDatabase = fileDatabase);
             // Store and activate new state (atomic operation).
             _currentFileDatabase = newState;
           }

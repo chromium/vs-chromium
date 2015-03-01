@@ -514,7 +514,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         },
         ProcessResponse = (typedResponse, stopwatch) => {
           var response = ((SearchFilePathsResponse)typedResponse);
-          var msg = string.Format("Found {0:n0} file names among {1:n0} ({2:0.00} seconds) matching File Paths \"{3}\"",
+          var msg = string.Format("Found {0:n0} paths among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
             response.HitCount,
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,

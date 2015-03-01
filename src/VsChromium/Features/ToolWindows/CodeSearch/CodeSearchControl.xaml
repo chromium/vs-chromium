@@ -234,11 +234,12 @@
           <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFilePathsCombo">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
-                Type file path pattern to search for. 
+                Type path patterns to filter code search results, or to display matching know paths.
                 <LineBreak/>
-                For non regular expression searches, the pattern follows rules similar to glob patterns:
-                it may include '*', '**', '/' and '\' special characters. For multiple patterns, use the ';' separator.
-                For example, '*.txt', '**/foo.txt', 'foo/*', '*.txt;*.log'.
+                For non regular expression searches, the pattern(s) specifies file or directory paths 
+                using glob patterns, including the '*', '**', '/' and '\' special characters. 
+                For example, '*.txt', '**/foo.txt', '/src', 'foo/*', '*.txt;*.log'.
+                For multiple patterns, use the ';' separator.
                 <LineBreak/>
                 For regular expression searches, the pattern is a regular expression.
               </TextBlock>
@@ -246,7 +247,7 @@
           </wpf:EditableComboBox>
           <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearFilePathsPattern_Click">
             <Button.ToolTip>
-              <TextBlock Text="Clear file path"/>
+              <TextBlock Text="Clear file paths"/>
             </Button.ToolTip>
             <Image Source="{Binding ClearSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
           </Button>

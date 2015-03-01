@@ -38,11 +38,18 @@ namespace VsChromium.Wpf {
     }
 
     private void ApplyCustomBrushes() {
-      this.Border.Background = this.BorderBackgroundBrush;
+      if (this.Border != null)
+        this.Border.Background = this.BorderBackgroundBrush;
+
       if (this.ArrowBorder != null)
         this.ArrowBorder.Background = this.BorderBackgroundBrush;
-      this.DropDownBorder.Background = DropDownBackgroundBrush;
-      this.EditableTextBox.Background = this.CursorBrush;
+
+      if (this.DropDownBorder != null)
+        this.DropDownBorder.Background = this.DropDownBackgroundBrush;
+
+      if (this.EditableTextBox != null)
+        this.EditableTextBox.Background = this.CursorBrush;
+
       if (this.ArrowPath != null)
         this.ArrowPath.Fill = this.ArrowBrush;
     }

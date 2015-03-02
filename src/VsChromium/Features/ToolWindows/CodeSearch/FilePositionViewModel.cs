@@ -100,6 +100,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
+    public ICommand OpenWithCommand {
+      get {
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(ParentFile, new Span(Position, Length)));
+      }
+    }
+
     public ICommand CopyCommand {
       get {
         return CommandDelegate.Create(sender => Controller.Clipboard.SetText(DisplayText));

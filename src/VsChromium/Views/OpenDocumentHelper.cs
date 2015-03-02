@@ -82,6 +82,10 @@ namespace VsChromium.Views {
           pitemid = itemid;
         }
 
+        if (ppUIH == null) {
+          return OpenDocument(path, spanProvider);
+        }
+
         var flags = __VSOSEFLAGS.OSE_UseOpenWithDialog;
         //Guid viewGuid = VSConstants.LOGVIEWID_TextView;
         Guid viewGuid = Guid.Empty;

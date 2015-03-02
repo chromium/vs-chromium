@@ -61,6 +61,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
+    public ICommand OpenWithCommand {
+      get {
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditorWith(this, null));
+      }
+    }
+
     public ICommand CopyFullPathCommand {
       get {
         return CommandDelegate.Create(sender => Controller.Clipboard.SetText(GetFullPath()));

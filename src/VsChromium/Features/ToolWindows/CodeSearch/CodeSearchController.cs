@@ -258,6 +258,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       });
     }
 
+    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, Span? span) {
+      // Using "Post" is important: it allows the newly opened document to
+      // receive the focus.
+      SynchronizationContextProvider.UIContext.Post(() => {
+        // Note: This has to run on the UI thread!
+        OpenDocumentHelper.OpenDocumentWith(fileEntry.Path, null, 0, vsTextView => {
+          // TODO(rpaquay): Find buffer for vsTextView.
+          return _searchResultDocumentChangeTracker.TranslateSpan(fileEntry.GetFullPath(), span);
+        });
+      });
+    }
+
     private List<TreeViewItemViewModel> CreateInfromationMessages(params string[] messages) {
       var result = new List<TreeViewItemViewModel>();
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);

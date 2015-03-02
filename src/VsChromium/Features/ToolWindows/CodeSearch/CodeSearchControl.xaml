@@ -431,6 +431,7 @@
             <StackPanel.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Open" Command="{Binding OpenCommand}" FontWeight="Bold" />
+                <MenuItem Header="Open With..." Command="{Binding OpenWithCommand}" />
                 <MenuItem Header="Show in Solution Explorer" Command="{Binding ShowInSourceExplorerCommand}" />
                 <MenuItem Header="Open Containing Folder" Command="{Binding OpenContainingFolderCommand}" />
                 <Separator />
@@ -454,6 +455,7 @@
             <StackPanel.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Open" Command="{Binding OpenCommand}" FontWeight="Bold" />
+                <MenuItem Header="Open With..." Command="{Binding OpenWithCommand}" />
                 <MenuItem Header="Copy" Command="{Binding CopyCommand}"/>
               </ContextMenu>
             </StackPanel.ContextMenu>

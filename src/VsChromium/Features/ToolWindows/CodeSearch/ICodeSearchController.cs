@@ -34,6 +34,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void OnFilesLoaded();
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
+    void OpenFileInEditorWith(FileEntryViewModel fileEntry, Span? span);
     void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry);
     void BringItemViewModelToView(TreeViewItemViewModel item);
     bool ExecuteOpenCommandForItem(TreeViewItemViewModel item);

@@ -234,14 +234,13 @@
           <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFilePathsCombo">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
-                Type path patterns to filter code search results, or to display matching know paths.
+                Type pattern(s) for filtering search results. For multiple
+                patterns, use the ';' separator.
                 <LineBreak/>
-                For non regular expression searches, the pattern(s) specifies file or directory paths 
-                using glob patterns, including the '*', '**', '/' and '\' special characters. 
-                For example, '*.txt', '**/foo.txt', '/src', 'foo/*', '*.txt;*.log'.
-                For multiple patterns, use the ';' separator.
-                <LineBreak/>
-                For regular expression searches, the pattern is a regular expression.
+                For simple file name matches, type '*' and letters only.
+                For full path matches, type "glob" patterns using the supported
+                special characters '*', '**', '/' and '\'. For example, 
+                '*.txt', '**/foo.txt', '/src', 'foo/*', '*.txt;*.log'.
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>

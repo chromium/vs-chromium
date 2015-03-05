@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -92,7 +91,8 @@ namespace VsChromium.Server.Search {
         var searchedFileCount = 0;
         var matches = _currentFileDatabase.FileNames
           .AsParallel()
-          // We need the line below because of "Take" (.net 4.0 PLinq limitation)
+          // We need the line below because of "Take" (.net 4.0 PLinq
+          // limitation)
           .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
           .WithCancellation(_taskCancellation.GetNewToken())
           .Where(
@@ -115,23 +115,29 @@ namespace VsChromium.Server.Search {
     }
 
     public SearchCodeResult SearchCode(SearchParams searchParams) {
-      // taskCancellation is used to make sure we cancel previous tasks as
-      // fast as possible to avoid using too many CPU resources if the caller
-      // keeps asking us to search for things. Note that this assumes the
-      // caller is only interested in the result of the *last* query, while
-      // the previous queries will throw an OperationCanceled exception.
+      // taskCancellation is used to make sure we cancel previous tasks as fast
+      // as possible to avoid using too many CPU resources if the caller keeps
+      // asking us to search for things. Note that this assumes the caller is
+      // only interested in the result of the *last* query, while the previous
+      // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
+      // Setup the file name/path filter.
       Func<FileName, bool> fileNameMatcher = x => true;
       if (!string.IsNullOrEmpty(searchParams.FilePathPattern)) {
-        var temp = searchParams.SearchString;
-        searchParams.SearchString = searchParams.FilePathPattern;
-        var preProcessResult = PreProcessFileSystemNameSearch<FileName>(searchParams, MatchFileName, MatchFileRelativePath);
+        // Don't include match case, etc.
+        var tempSearch = new SearchParams {
+          SearchString = searchParams.FilePathPattern,
+          IncludeSymLinks = true
+        };
+        var preProcessResult = PreProcessFileSystemNameSearch<FileName>(
+          tempSearch, MatchFileName, MatchFileRelativePath);
         if (preProcessResult != null) {
           fileNameMatcher = preProcessResult.Matcher;
         }
-        searchParams.SearchString = temp;
       }
+
+      // Perform the text search
       using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams, fileNameMatcher)) {
         var cancellationToken = _taskCancellation.GetNewToken();
         return SearchCodeWorker(

@@ -81,7 +81,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string MatchCaseToolTip {
       get {
         return string.Format(
-          "Toggle \"Match Case\" when searching text and file paths. " +
+          "Toggle \"Match Case\" when searching text. " +
           "\"Match case\" is currently {0}.",
           MatchCase ? "enabled" : "disabled");
       }
@@ -106,7 +106,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string MatchWholeWordToolTip {
       get {
         return string.Format(
-          "Toggle \"Match whold word\" when searching text and file paths. " +
+          "Toggle \"Match whold word\" when searching text. " +
           "\"Match whole word\" is currently {0}.",
           MatchWholeWord ? "enabled" : "disabled");
       }
@@ -131,7 +131,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string UseRegexToolTip {
       get {
         return string.Format(
-          "Toggle usage of regular expressions when searching text and file paths. " +
+          "Toggle usage of regular expressions when searching text. " +
           "Regular expressions are currently {0}.",
           UseRegex ? "enabled" : "disabled");
       }
@@ -156,7 +156,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public string IncludeSymLinksToolTip {
       get {
         return string.Format(
-          "Toggle searching inside symbolic links when searching text and file paths. " +
+          "Toggle searching files inside symbolic links directories. " +
           "Symbolic links are currently {0} in search results.",
           IncludeSymLinks ? "included" : "excluded");
       }
@@ -227,7 +227,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public bool RefreshSearchResultsEnabled {
       get {
-        return !string.IsNullOrEmpty(SearchFilePathsValue) || !string.IsNullOrEmpty(SearchCodeValue);
+        return !string.IsNullOrEmpty(SearchFilePathsValue) ||
+          !string.IsNullOrEmpty(SearchCodeValue);
       }
     }
 

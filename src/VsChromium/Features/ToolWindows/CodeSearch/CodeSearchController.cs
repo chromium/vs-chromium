@@ -520,11 +520,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             MaxResults = GlobalSettings.SearchFilePathsMaxResults,
-            MatchCase = ViewModel.MatchCase,
-            MatchWholeWord = ViewModel.MatchWholeWord,
+            MatchCase = false, //ViewModel.MatchCase,
+            MatchWholeWord = false, //ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
             UseRe2Engine = true,
-            Regex = ViewModel.UseRegex,
+            Regex = false, //ViewModel.UseRegex,
           }
         },
         ProcessError = (errorResponse, stopwatch) => {

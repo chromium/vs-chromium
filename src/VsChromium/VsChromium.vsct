@@ -52,8 +52,8 @@
           <ButtonText>Format Comment</ButtonText>
         </Strings>
       </Button>
-      <Button guid="guidVsChromiumCmdSet" id="cmdidCodeSearchToolWindow" priority="0xF100" type="Button">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_VIEW_ORG_WINDOWS" />
+      <Button guid="guidVsChromiumCmdSet" id="cmdidCodeSearchToolWindow" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
         <Icon guid="guidCodeSearchImages" id="Icon" />
         <Strings>
           <!-- See http://goo.gl/mIKffC for explanation of all values -->

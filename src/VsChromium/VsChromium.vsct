@@ -290,7 +290,9 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
-        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <!-- Dont cache the result of QueryStatus (enabled state changes dynamically) -->
+        <CommandFlag>DontCache</CommandFlag>
         <Strings>
           <ButtonText>VsChromium Goto Next Location</ButtonText>
           <CommandName>VsChromium - Goto Next Location</CommandName>
@@ -299,11 +301,71 @@
       </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" priority="0x0100" type="Button">
         <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
-        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <!-- Dont cache the result of QueryStatus (enabled state changes dynamically) -->
+        <CommandFlag>DontCache</CommandFlag>
         <Strings>
           <ButtonText>VsChromium Goto Previous Location</ButtonText>
           <CommandName>VsChromium - Goto Previous Location</CommandName>
           <LocCanonicalName>VsChromium.GotoPreviousLocation</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidCancelSearch" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <!-- Dont cache the result of QueryStatus (enabled state changes dynamically) -->
+        <CommandFlag>DontCache</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Cancel Search</ButtonText>
+          <CommandName>VsChromium - Cancel Search</CommandName>
+          <LocCanonicalName>VsChromium.CancelSearch</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidPerformSearch" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <!-- Dont cache the result of QueryStatus (enabled state changes dynamically) -->
+        <CommandFlag>DontCache</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Perform Search</ButtonText>
+          <CommandName>VsChromium - Perform Search</CommandName>
+          <LocCanonicalName>VsChromium.PerformSearch</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidMatchCase" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Match case</ButtonText>
+          <CommandName>VsChromium - Match case</CommandName>
+          <LocCanonicalName>VsChromium.MatchCase</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidMatchWholeWord" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Match whole word</ButtonText>
+          <CommandName>VsChromium - Match whole word</CommandName>
+          <LocCanonicalName>VsChromium.MatchWholeWord</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidUseRegularExpressions" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Use Regular Expressions</ButtonText>
+          <CommandName>VsChromium - Use Regular Expressions</CommandName>
+          <LocCanonicalName>VsChromium.UseRegularExpressions</LocCanonicalName>
+        </Strings>
+      </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidIncludeSymlinks" priority="0x0100" type="Button">
+        <Parent guid="guidVsChromiumCmdSet" id="MyMenuGroup" />
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>VsChromium Include Symlinks</ButtonText>
+          <CommandName>VsChromium - Include Symlinks</CommandName>
+          <LocCanonicalName>VsChromium.IncludeSymlinks</LocCanonicalName>
         </Strings>
       </Button>
       <Button guid="guidChromeDebugCmdSet" id="cmdidAttachToChromeDialog" priority="0x0002" type="Button">
@@ -352,9 +414,14 @@
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSearchCode" editor="guidVSStd97" mod1="Control Alt" key1="VK_OEM_1"/>
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidQuickSearchFilePaths" editor="guidVSStd97" mod1="Control Shift" key1="VK_OEM_7"/>
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidQuickSearchCode" editor="guidVSStd97" mod1="Control Shift" key1="VK_OEM_1"/>
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidMatchCase" editor="guidVSStd97" key1="c" mod1="Alt" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidMatchWholeWord" editor="guidVSStd97" key1="w" mod1="Alt" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidUseRegularExpressions" editor="guidVSStd97" key1="e" mod1="Alt" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidIncludeSymlinks" editor="guidVSStd97" key1="l" mod1="Alt" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoNextLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidGotoPreviousLocation" editor="guidVSStd97" key1="VK_F8" mod1="Control Shift" />
-    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidCancelSearch" editor="guidVSStd97" key1="VK_ESCAPE" mod1="" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidCancelSearch" editor="guidVSStd97" key1="x" mod1="Control" />
+    <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidPerformSearch" editor="guidVSStd97" key1="VK_F3" />
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidFormatComment" editor="guidVSStd97" key1="k" mod1="Control" key2="c" />
     <!-- Ctrl-[, A is a close match to Ctrl-[, S, used for Solution Explorer. -->
     <KeyBinding guid="guidVsChromiumCmdSet" id="cmdidSyncWithActiveDocument" editor="guidVSStd97" mod1="Control" key1="VK_OEM_4" mod2="Control" key2="a"/>
@@ -376,12 +443,17 @@
       <IDSymbol name="cmdidFormatComment" value="0x0100" />
       <IDSymbol name="cmdidCodeSearchToolWindow" value="0x0101" />
       <IDSymbol name="cmdidSearchFilePaths" value="0x0102" />
-      <IDSymbol name="cmdidQuickSearchFilePaths" value="0x0108" />
+      <IDSymbol name="cmdidQuickSearchFilePaths" value="0x0103" />
       <IDSymbol name="cmdidSearchCode" value="0x0104" />
-      <IDSymbol name="cmdidQuickSearchCode" value="0x0109" />
-      <IDSymbol name="cmdidGotoNextLocation" value="0x0105" />
-      <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />
-      <IDSymbol name="cmdidCancelSearch" value="0x0107" />
+      <IDSymbol name="cmdidQuickSearchCode" value="0x0105" />
+      <IDSymbol name="cmdidGotoNextLocation" value="0x0106" />
+      <IDSymbol name="cmdidGotoPreviousLocation" value="0x0107" />
+      <IDSymbol name="cmdidCancelSearch" value="0x0108" />
+      <IDSymbol name="cmdidPerformSearch" value="0x0109" />
+      <IDSymbol name="cmdidMatchCase" value="0x010a" />
+      <IDSymbol name="cmdidMatchWholeWord" value="0x010b" />
+      <IDSymbol name="cmdidUseRegularExpressions" value="0x010c" />
+      <IDSymbol name="cmdidIncludeSymlinks" value="0x010d" />
       <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0110" />
       <IDSymbol name="cmdidSyncWithActiveDocument" value="0x0120" />
       <IDSymbol name="cmdidCopyFullPath" value="0x0130" />

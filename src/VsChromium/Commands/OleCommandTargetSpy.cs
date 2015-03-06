@@ -23,6 +23,8 @@ namespace VsChromium.Commands {
     private static bool LogCommand(CommandID commandId) {
       //if (commandId.Equals(new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.NextLocation)))
       //  return true;
+      if (commandId.Equals(new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCancelSearch)))
+        return true;
 
       return false;
     }

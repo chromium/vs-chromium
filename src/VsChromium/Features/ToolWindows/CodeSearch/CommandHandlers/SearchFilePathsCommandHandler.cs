@@ -8,7 +8,7 @@ using System.ComponentModel.Design;
 using VsChromium.Commands;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
+namespace VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers {
   [Export(typeof(IPackageCommandHandler))]
   public class SearchFilePathsCommandHandler : PackageCommandHandlerBase {
     private readonly IToolWindowAccessor _toolWindowAccessor;
@@ -18,7 +18,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _toolWindowAccessor = toolWindowAccessor;
     }
 
-    public override CommandID CommandId { get { return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchFilePaths); } }
+    public override CommandID CommandId {
+      get {
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int) PkgCmdIdList.CmdidSearchFilePaths);
+      }
+    }
 
     public override void Execute(object sender, EventArgs e) {
       _toolWindowAccessor.CodeSearch.FocusSearchCodeBox(CommandId);

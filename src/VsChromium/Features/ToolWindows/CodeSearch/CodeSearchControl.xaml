@@ -155,11 +155,11 @@
             </Image.Style>
           </Image>
         </Button>
-        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding RefreshSearchResultsEnabled}" Click="RefreshSearchResultsButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding PerformSearchEnabled}" Click="PerformSearchButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
           <Button.ToolTip>
             <TextBlock Text="Refresh search results"/>
           </Button.ToolTip>
-          <Image Source="{Binding RefreshSearchResultsButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
+          <Image Source="{Binding PerformSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
             <Image.Style>
               <Style TargetType="Image">
                 <Style.Triggers>

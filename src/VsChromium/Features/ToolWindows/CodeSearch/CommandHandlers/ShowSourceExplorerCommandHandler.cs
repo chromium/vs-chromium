@@ -7,7 +7,7 @@ using VsChromium.Commands;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
+namespace VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers {
   [Export(typeof(IPackageCommandHandler))]
   public class ShowSourceExplorerCommandHandler : ShowToolWindowCommandHandler<CodeSearchToolWindow> {
 

@@ -4,35 +4,29 @@
 
 using System;
 using System.ComponentModel.Design;
-using Microsoft.VisualStudio;
+using VsChromium.Commands;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
-  public class NextLocationCommandHandler : PackageCommandHandlerBase {
+namespace VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers {
+  public class PerformSearchCommandHandler : PackageCommandHandlerBase {
     private readonly CodeSearchToolWindow _window;
 
-    public NextLocationCommandHandler(CodeSearchToolWindow window) {
+    public PerformSearchCommandHandler(CodeSearchToolWindow window) {
       _window = window;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(
-          VSConstants.GUID_VSStandardCommandSet97,
-          (int)VSConstants.VSStd97CmdID.NextLocation);
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidPerformSearch);
       }
     }
 
-    public override bool Supported {
-      get { return this.Enabled; }
-    }
-
     public override bool Enabled {
-      get { return _window.HasNextLocation(); }
+      get { return _window.IsPerformSearchEnabled; }
     }
 
     public override void Execute(object sender, EventArgs e) {
-      _window.NavigateToNextLocation();
+      _window.PerformSearch();
     }
   }
 }

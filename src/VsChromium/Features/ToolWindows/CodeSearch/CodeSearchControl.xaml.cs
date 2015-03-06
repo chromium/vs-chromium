@@ -52,12 +52,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       InitComboBox(SearchCodeCombo, new ComboBoxInfo {
         TextChanged = text => { ViewModel.SearchCodeValue = text; },
-        SearchFunction = RefreshSearchResults,
+        SearchFunction = PerformSearch,
         NextElement = SearchFilePathsCombo,
       });
       InitComboBox(SearchFilePathsCombo, new ComboBoxInfo {
         TextChanged = text => { ViewModel.SearchFilePathsValue = text; },
-        SearchFunction = RefreshSearchResults,
+        SearchFunction = PerformSearch,
         PreviousElement = SearchCodeCombo,
         NextElement = FileTreeView,
         InitialItems = {
@@ -281,11 +281,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchWholeWord) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UseRegex) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.IncludeSymLinks)) {
-        RefreshSearchResults(true);
+        PerformSearch(true);
       }
     }
 
-    private void RefreshSearchResults(bool immediate) {
+    private void PerformSearch(bool immediate) {
       Controller.PerformSearch(immediate);
     }
 
@@ -381,9 +381,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       e.Handled = true;
     }
 
-    private void RefreshSearchResultsButton_Click(object sender, RoutedEventArgs e) {
+    private void PerformSearchButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(
-        () => RefreshSearchResults(true));
+        () => PerformSearch(true));
     }
 
     private void RefreshIndexButton_Click(object sender, RoutedEventArgs e) {
@@ -405,12 +405,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void ClearFilePathsPattern_Click(object sender, RoutedEventArgs e) {
       SearchFilePathsCombo.Text = "";
-      RefreshSearchResults(true);
+      PerformSearch(true);
     }
 
     private void ClearSearchCode_Click(object sender, RoutedEventArgs e) {
       SearchCodeCombo.Text = "";
-      RefreshSearchResults(true);
+      PerformSearch(true);
     }
 
     #endregion

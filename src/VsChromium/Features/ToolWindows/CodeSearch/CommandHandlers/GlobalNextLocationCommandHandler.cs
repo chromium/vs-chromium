@@ -5,23 +5,23 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using VsChromium.Commands;
+using Microsoft.VisualStudio;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
-  [Export(typeof(IPackageCommandHandler))]
-  public class GotoPreviousLocationCommandHandler : PackageCommandHandlerBase {
+namespace VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers {
+  [Export(typeof(IPackagePriorityCommandHandler))]
+  public class GlobalNextLocationCommandHandler : PackagePriorityCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
-    public GotoPreviousLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public GlobalNextLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidGotoPreviousLocation);
+        return new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.NextLocation);
       }
     }
 
@@ -30,7 +30,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(CodeSearchToolWindow), 0, false) as CodeSearchToolWindow;
         if (window == null)
           return false;
-        return window.HasPreviousLocation();
+        if (!window.IsVisible)
+          return false;
+        return window.HasNextLocation();
       }
     }
 
@@ -38,7 +40,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(CodeSearchToolWindow), 0, false) as CodeSearchToolWindow;
       if (window == null)
         return;
-      window.NavigateToPreviousLocation();
+      window.NavigateToNextLocation();
     }
   }
 }

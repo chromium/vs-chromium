@@ -9,19 +9,19 @@ using VsChromium.Commands;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
+namespace VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers {
   [Export(typeof(IPackageCommandHandler))]
-  public class GotoNextLocationCommandHandler : PackageCommandHandlerBase {
+  public class GotoPreviousLocationCommandHandler : PackageCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
-    public GotoNextLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public GotoPreviousLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidGotoNextLocation);
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidGotoPreviousLocation);
       }
     }
 
@@ -30,7 +30,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(CodeSearchToolWindow), 0, false) as CodeSearchToolWindow;
         if (window == null)
           return false;
-        return window.HasNextLocation();
+        return window.HasPreviousLocation();
       }
     }
 
@@ -38,7 +38,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(CodeSearchToolWindow), 0, false) as CodeSearchToolWindow;
       if (window == null)
         return;
-      window.NavigateToNextLocation();
+      window.NavigateToPreviousLocation();
     }
   }
 }

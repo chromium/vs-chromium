@@ -225,7 +225,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       get { return ActiveDisplay != DisplayKind.InformationMessages; }
     }
 
-    public bool RefreshSearchResultsEnabled {
+    public bool PerformSearchEnabled {
       get {
         return !string.IsNullOrEmpty(SearchFilePathsValue) ||
           !string.IsNullOrEmpty(SearchCodeValue);
@@ -277,7 +277,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public ImageSource RefreshSearchResultsButtonImage {
+    public ImageSource PerformSearchButtonImage {
       get {
         return GetImageFromResource("SearchLens");
       }
@@ -308,7 +308,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         _searchCodeValue = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchCodeValue));
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.PerformSearchEnabled));
       }
     }
 
@@ -319,7 +319,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         _searchFilePathsValue = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFilePathsValue));
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.PerformSearchEnabled));
       }
     }
 
@@ -329,7 +329,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoNextEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.GotoPreviousEnabled));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.CancelSearchEnabled));
-      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.PerformSearchEnabled));
     }
   }
 }

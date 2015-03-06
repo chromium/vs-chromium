@@ -8,24 +8,24 @@ using System.ComponentModel.Design;
 using VsChromium.Commands;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
+namespace VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers {
   [Export(typeof(IPackageCommandHandler))]
-  public class QuickSearchFilePathsCommandHandler : PackageCommandHandlerBase {
+  public class SearchCodeCommandHandler : PackageCommandHandlerBase {
     private readonly IToolWindowAccessor _toolWindowAccessor;
 
     [ImportingConstructor]
-    public QuickSearchFilePathsCommandHandler(IToolWindowAccessor toolWindowAccessor) {
+    public SearchCodeCommandHandler(IToolWindowAccessor toolWindowAccessor) {
       _toolWindowAccessor = toolWindowAccessor;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidQuickSearchFilePaths);
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidSearchCode);
       }
     }
 
     public override void Execute(object sender, EventArgs e) {
-      _toolWindowAccessor.CodeSearch.FocusQuickSearchFilePaths();
+      _toolWindowAccessor.CodeSearch.FocusSearchCodeBox(CommandId);
     }
   }
 }

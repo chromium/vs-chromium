@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Features.AutoUpdate;
+using VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers;
 using VsChromium.Package.CommandHandler;
 using VsChromium.Wpf;
 
@@ -64,7 +65,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         new PreviousLocationCommandHandler(this),
         new NextLocationCommandHandler(this),
         new CancelSearchCommandHandler(this),
-        //new CancelSearchToolWindowCommandHandler(this),
+        new PerformSearchCommandHandler(this),
+        new MatchCaseCommandHandler(this),
+        new MatchWholeWordCommandHandler(this),
+        new UseRegularExpressionsCommandHandler(this),
+        new IncludeSymlinksCommandHandler(this),
         // Add more here...
       };
 
@@ -96,15 +101,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public bool IsCancelSearchEnabled {
-      get {
-        switch (ExplorerControl.ViewModel.ActiveDisplay) {
-          case CodeSearchViewModel.DisplayKind.SearchFilePathsResult:
-          case CodeSearchViewModel.DisplayKind.SearchCodeResult:
-            return true;
-          default:
-            return false;
-        }
-      }
+      get { return ExplorerControl.ViewModel.CancelSearchEnabled; }
+    }
+
+    public bool IsPerformSearchEnabled {
+      get { return ExplorerControl.ViewModel.PerformSearchEnabled; }
     }
 
     public void FocusSearchCodeBox(CommandID commandId) {
@@ -151,6 +152,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public void CancelSearch() {
       ExplorerControl.Controller.CancelSearch();
+    }
+
+    public void PerformSearch() {
+      ExplorerControl.Controller.PerformSearch(true);
     }
 
     public void QuickSearchCode(string searchPattern) {

@@ -5,23 +5,23 @@
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
-using Microsoft.VisualStudio;
+using VsChromium.Commands;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch {
-  [Export(typeof(IPackagePriorityCommandHandler))]
-  public class GlobalNextLocationCommandHandler : PackagePriorityCommandHandlerBase {
+namespace VsChromium.Features.ToolWindows.CodeSearch.CommandHandlers {
+  [Export(typeof(IPackageCommandHandler))]
+  public class GotoNextLocationCommandHandler : PackageCommandHandlerBase {
     private readonly IVisualStudioPackageProvider _visualStudioPackageProvider;
 
     [ImportingConstructor]
-    public GlobalNextLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
+    public GotoNextLocationCommandHandler(IVisualStudioPackageProvider visualStudioPackageProvider) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
     }
 
     public override CommandID CommandId {
       get {
-        return new CommandID(VSConstants.GUID_VSStandardCommandSet97, (int)VSConstants.VSStd97CmdID.NextLocation);
+        return new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidGotoNextLocation);
       }
     }
 
@@ -29,8 +29,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       get {
         var window = _visualStudioPackageProvider.Package.FindToolWindow(typeof(CodeSearchToolWindow), 0, false) as CodeSearchToolWindow;
         if (window == null)
-          return false;
-        if (!window.IsVisible)
           return false;
         return window.HasNextLocation();
       }

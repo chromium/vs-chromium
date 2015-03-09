@@ -5,12 +5,24 @@ body {
   padding: 0;
 }
 
+#container {
+height: auto;
+margin-top: 2em;
+margin: auto;
+max-width: 1160px;
+padding: 0 50px;
+}
+
 div {
   display: block;
 }
 
 h1 {
-padding-top: 10px;
+  padding-top: 10px;
+}
+
+h2 {
+  padding-top: 10px;
 }
 
 div.example {
@@ -18,10 +30,6 @@ font-weight: bold;
 }
 
 div.example-text {
-margin-left: 2em;
-}
-
-ul.ul-second {
 margin-left: 2em;
 }
 
@@ -49,14 +57,6 @@ display: block;
   font-family: 'Courier New' , Courier, monospace;
 }
 
-#container {
-height: auto;
-margin-top: 2em;
-margin: auto;
-max-width: 1160px;
-padding: 0 50px;
-}
-
 #sidebar {
 width: 180px;
 float: left;
@@ -71,26 +71,73 @@ color: black;
 }
 
 #sidebar ul {
-list-style: none;
-/*margin: 0;*/
-padding: 0;
+  list-style: none;
+  /*margin: 0;*/
+  padding: 0;
+}
+
+#sidebar ul.ul-second {
+  margin-left: 2em;
+  padding-top: 4px;
 }
 
 #sidebar li {
-line-height: 150%;
-border-bottom: 1px solid #F5F5F5;
-margin: 0;
-padding: 8px 0;
+  line-height: 100%;
+  margin: 0;
+  padding-bottom: 6px;
+  padding-top: 6px;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+#sidebar ul.ul-second li {
+  border-bottom: 0;
+  padding-top: 0;
 }
 
 #content {
-margin: 0 0 100px 250px;
+  margin: 0 0 100px 250px;
 }
 
-table{
+.keyboard-shortcut, .highlight-inline {
+  border: solid black;
+  border-width: 1px;
+  border-radius: 4px;
+  padding: 1px;
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  padding: 0.2em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(0,0,0,0.04);
+  border-radius: 3px;
+  white-space:nowrap;
+}
+
+table {
   border-collapse: collapse;
   border: 1px solid black;
 }
-table td{
+table td {
   border: 1px solid black;
+}
+
+#features-table {
+  display: table;
+  border-spacing: 10px 20px;
+}
+
+#features-table img {
+  margin: 0;
+}
+
+.row {
+  display: table-row;
+}
+
+.cell {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.column {
+  display: table-column;
 }

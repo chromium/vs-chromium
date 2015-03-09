@@ -12,11 +12,22 @@
 <div id="sidebar" class="floating">
   <ul>
     <li><a href="#index">Overview</a></li>
-    <li><a href="#chromium-explorer">Chromium Explorer</a></li>
+      <ul class="ul-second">
+        <li><a href="#feature-summary">Feature summary</a></li>
+      </ul>
+    <li><a href="#getting-started">Getting started</a></li>
     <li>
       <ul class="ul-second">
-        <li><a href="#chromium-explorer-indexing">Opening files</a></li>
-        <li><a href="#chromium-explorer-navigating">Navigating</a></li>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#getting-started-project-file">Existing Visual Studio Solution</a></li>
+        <li><a href="#getting-started-chromium">Chromium enlistment</a></li>
+      </ul>
+    </li>
+    <li><a href="#code-search">Code Search and Source Explorer</a></li>
+    <li>
+      <ul class="ul-second">
+        <li><a href="#code-search-indexing">Opening files</a></li>
+        <li><a href="#source-explorer">Navigating</a></li>
         <li><a href="#chromium-explorer-search-filenames">File name search</a></li>
         <li><a href="#chromium-explorer-search-directorynames">Directory name search</a></li>
         <li><a href="#chromium-explorer-search-filecontents">Text search</a></li>
@@ -41,94 +52,289 @@
     </li>
     <li><a href="#whatsnew">What's new</a></li>
     <li><a href="#configuration">Configuration</a></li>
-    <li><a href="#installation">Installation Instructions</a></li>
     <li><a href="#requirements">Requirements</a></li>
     <li><a href="#tech-specs">Technical Specifications</a></li>
   </ul>
 </div> <!-- sidebar -->
 
 <div id="content">
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id ="index">
     <h1>Overview</h1>
     <p>
       VsChromium is a Visual Studio Extension containing a collection of tools
-      to help contributing code to the Chromium project when using Visual Studio
-      as code editor.
+      useful for editing, navigating and debugging code.
     </p>
-    <p>Currently, VsChromium offers three distinct sets of features:</p>
-    <ul>
-      <li>
-        Source code navigation and <b>instant</b> search capabilities in a new
-        tool window called <a href="#chromium-explorer">Chromium Explorer</a>.
-      </li>
-      <li>
-        Highlighting in the Visual Studio text editor of a (currently small) subset of
-        <a href="#chromium-style-checker">Chromium Coding Style checker</a>.
-      </li>
-      <li>
-        Debugger features, such as <a href="#attach-to-chrome">Attach to Chrome</a>.
-      </li>
-    </ul>
+    <p>
+      VsChromium was originally developed to help when contributing code to the
+      <a href="http:/www.chromium.org" target="_blank">Chromium project</a>, but has evolved over
+      time to become a more general purpose extension that can be useful for
+      any project. See the <a href="#getting-started">Getting started</a> section
+      for more information.
+    </p>
 
-    <div class="example">Example</div>
-    <div class="example-text">
-      In the picture below, a developer opened the
-      "Chromium Explorer" Tool Window and searched for the "class SocketPermission"
-      text in a local Chromium enlistment (3 matches were found in 0.07s). The
-      developer then clicked the first match to open the "socker_permission.h" file
-      in the editor. At that point, the Chromium Coding Style checker started
-      highlighting (in red background color) coding style violations in the file.
-      In this case, usage of TAB characters, indented "public:" accessor, invalid
-      CRLF end of line, and trailing spaces.
+    <h2 id="feature-summary">Feature summary</h2>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+        <p>
+        VsChromium comes with a built-in full text search engine, fast and scalable to hundred of
+        thousands of text files. The <a href="#code-search">Code Search</a> tool window that provides
+        an alternative to Visual Studio's build-int Find In Files. It uses VsChromium search engine
+        to provide search results in typically less than 0.1 sec even for the largest code bases, such
+        as Chromium.</p>
+        <p>Code Search is always one keystroke away, as typing
+        <span class="keyboard-shortcut">Ctrl-Shift-;</span> will start a text search
+        with either the current selection, or the word at the caret location in the editor.</p>
+        </div>
+        <div class="cell">
+          <img src="Screenshots/0.1-CodeSearch.png"></img>
+        </div>
+      </div>
     </div>
-    <img src="Screenshots/Overview.png" />
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+          <img src="Screenshots/0.11-FilePaths.png"></img>
+        </div>
+        <div class="cell">
+        <p>The scope of the search - &quot;File Paths&quot; - can be refined at any time using
+        a <a href="#filepath-syntax">flexible syntax</a> for defining file name patterns.</p>
+        <p>Search options include <span class="highlight-inline">Match&nbsp;Case</span>,
+        <span class="highlight-inline">Match&nbsp;Whole&nbsp;Word</span> and
+        <span class="highlight-inline">Use&nbsp;Regular&nbsp;Expressions</span>.
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+        <p>In addition to automatically recognizing Chromium enlistments,
+        <a href="#code-search">Code Search</a> can now be enabled on any directory, project
+        or solution by creating a <a href="#custom-enlistments">custom project file</a>
+        <span class="highlight-inline">vs-chromium-project.txt</span> anywhere on disk.</p>
+        <p>The indexing engine looks at the contents of each section to decide which files to index,
+        automatically skipping binary files .</p>
+        <p>When a <span class="highlight-inline">vs-chromium-project.txt</span> file is located in
+        the same directory (or parent) as a Visual Studio Solution file (.sln), VsChromium
+        automatically loads and activate the Search Engine when the solution is loaded in
+        Visual Studio.
+        </div>
+        <div class="cell">
+          <img src="Screenshots/0.2-ProjectFile.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+          <img src="Screenshots/0.3-SourceExplorer.png"></img>
+        </div>
+        <div class="cell">
+        <p><a href="#source-explorer">Source Explorer</a> offers a view of files and directories
+        indexed by the VsChromium search engine. Source Explorer integrates with Visual Studio
+        Solution Explorer as a custom &quot;virtual project&quot;, so there is no need to create
+        and maintain an additional Visual Studio project file</p>
+        <p>Source explorer automatically updates when files are added or deleted on disk.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+        <p>VsChromium features can be enabled, disabled and customized through custom
+        <a href="#tools-options">Tools|Options</a> pages.</p>
+        </div>
+        <div class="cell">
+          <img src="Screenshots/0.5-ToolsOptions.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+          <img src="Screenshots/0.6-FormatComments.png"></img>
+        </div>
+        <div class="cell">
+        <a href="#format-comment">Format C# and C++ comments</a> to 80 columns using the
+        <span class="keyboard-shortcut">Ctrl-K, C</span> keyboard shortcut.
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+        <p>Highlight common <a href="#chromium-style-checker">Chromium Coding Style</a> violation
+        in c++ source and header files.</p>.
+        </div>
+        <div class="cell">
+          <img src="Screenshots/0.7-CodingStyle.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+          <img src="Screenshots/0.8-AttachToChrome.png"></img>
+        </div>
+        <div class="cell">
+        <p><a href="#attach-to-chrome">Attach to Chrome</a> shows the list of running Chrome processed
+        and allows debugging any of them. During debugging, custom Visual Studio Visualizers are defined
+        to display common Chromium data structures in a user friendly format.
+        </div>
+      </div>
+    </div>
+
+  <hr />
+
+  <!--============================================================================-->
+  <div id="getting-started">
+    <h1>Getting started</h1>
+
+    <h2 id="installation">Installation</h2>
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell" style="vertical-align: top">
+          <ul>
+            <li>Download the latest release of
+              <a href="https://github.com/chromium/vs-chromium/releases/latest" target="_blank">VsChromium.vsix</a>
+            </li>
+            <li>Open the file (double click) to open the VSIX Installer dialog.</li>
+            <li>Click "Install"</li>
+            <li>Start Visual Studio 2013</li>
+            <li>Go to "Tools | Extensions Manager..."</li>
+            <li>Check the "VsChromium" extension is present and enabled.</li>
+          </ul>
+        </div>
+        <div class="cell">
+          <img src="Screenshots/VsixInstall.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <img src="Screenshots/VsixEnable.png" /></li>
+
+    <h2 id="getting-started-project-file">Getting started with new or existing Visual Studio projects</h2>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell" style="vertical-align: top">
+          <ul>
+          <li>Install VsChromium</li>
+          <li>Create a new text file and create the 3 sections
+          <span class="highlight-inline">[SourceExplorer.ignore]</span>,
+          <span class="highlight-inline">[SearchableFiles.ignore]</span> and
+          <span class="highlight-inline">[SearchableFiles.include]</span>
+          to filter which files to show in <a href="#source-explorer">Source Explorer</a> and
+          <a href="#code-search">Code Search</a></li>
+          <li>Save the text file in the directory to index and name it
+          <span class="highlight-inline">vs-chromium-project.txt</span></li>
+          <li>Note: If you want Code Search and Source Explorer to be enabled automatically
+          with a Visual Studio Solution, save the file next to the ".sln" file, or in any
+          parent directory.</li>
+          <li>Open the Code Search tool window or Solution Explorer</li>
+          </ul>
+        </div>
+        <div class="cell">
+          <img src="Screenshots/0.2-ProjectFile.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <img src="Screenshots/1.5-GettingStarted.png"></img>
+
+  <hr />
+
+  <!--============================================================================-->
+    <h2 id="getting-started-chromium">Getting started with Chromium enlistment</h2>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell" style="vertical-align: top">
+          <ul>
+            <li>Install VsChromium</li>
+            <li>Open a source file from the Chromium enlistment</li>
+            <li>Open the Code Search tool window or Solution Explorer. VsChromium starts
+            building the search index automatically and will keep it up to date as
+            files/directories change on disk.</li>
+            <li>Open the Code Search tool window or Solution Explorer</li>
+          </ul>
+        </div>
+        <div class="cell">
+          <img src="Screenshots/2.2-GettingStartedChromium.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <img src="Screenshots/2.4-GettingStartedChromium.png"></img>
+
+  </div>
+
+  <hr/>
+
+  <!--============================================================================-->
+  <div id="code-search">
+    <h1>Code Search and Source Explorer</h1>
+    <p>VsChromium has a built-in full text search engine that is available through a couple
+    of Visual Studio features:</p>
+    <ul>
+    <li><span class="highlight-inline">Source Explorer</span> integrates in Visual Studio's
+    build-in Solution Explorer and shows the hierarchy of directories and files loaded in
+    the search engine. The contents updates automatically as files are changed on disk.</li>
+    <li><span class="highlight-inline">Code Search</span> is a Visual Studio Tool Window
+    similar to 'Find in Files'. It allows looking for any text using simple text patterns
+    or regular expressions. Code Search is available through the 'View | Other Windows'
+    top level menu.</li>
+    </ul>
+
+    <img src="Screenshots/OVerview.png"></img>
+
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
-  <div id="chromium-explorer">
-    <h1>Chromium Explorer</h1>
+  <!--============================================================================-->
+  <div id="code-search-indexing">
+    <h1>Code Search - Opening files and indexing</h1>
     <p>
-      "Chromium Explorer" is a custom Tool Window aimed at making it easy and
-      <b>fast</b> to navigate and search a Chromium local enlistment.  The tool
-      window is accessible from the "View | Other Windows | Chromium Explorer"
-      menu entry.
-    </p>
-    <img src="Screenshots/ToolWindowMenuItem.png"></img>
-
-    <ul>
-      <li><a href="#chromium-explorer-indexing">Opening files and indexing</a></li>
-      <li><a href="#chromium-explorer-navigating">Navigating</a></li>
-    </ul>
-    <p>
-      At the top of the window, there are 3 search boxes that allow searching files
-      and folders of the Chromium enlistement. As noted above, the main focus here is
-      to enable <b>precise</b>, <b>powerful</b> and <b>fast</b> searches.
-    </p>
-    <ul>
-      <li><a href="#chromium-explorer-search-filenames">File name search</a></li>
-      <li><a href="#chromium-explorer-search-directorynames">Directory name search</a></li>
-      <li><a href="#chromium-explorer-search-filecontents">Text search</a></li>
-    </ul>
-  </div>
-  <hr />
-
-  <!-------------------------------------------------------------------------------->
-  <div id="chromium-explorer-indexing">
-    <h1>Chromium Explorer - Opening files and indexing</h1>
-    <p>
-      Once the Chromium Explorer tool winow is active, it detects when a source
-      file from a local Chromium enlistment is opened in the Visual Studio
-      editor and starts indexing <bold>all</bold> source files from that enlistement.
-      The indexing process typically takes only about 10 seconds on a modern
-      multi-core machine with an SSD drive.
-    </p>
+      When the search engine is activated (see <a href="getting-started">Getting Started</a> section),
+      is starts loading files in memory in the background, in a separate Operating System Process
+      to avoid using resources of the Visual Studio Process.
+      Depending on the # of files to load, the initial load can take from less than 1 second
+      to a few minutes. The search engine is optimized for computes with fast SSD and many cores,
+      so that loading 100,000+ files usually takes less than 10 seconds.</p>
     <p class="warning">
-      Warning: The indexing process can take significantly
-      longer if the enlistment is located on an HDD drive. This is expected, as
-      the indexing process has to read 90,000+ source files from disk.
-      An HDD makes this process a lot slower due to disk seek times.
+      Warning: The indexing process can take significantly longer if the enlistment is
+      located on an HDD drive as disk seek times are much slower.
     </p>
     <p class="warning">
       Warning: We also saw significant performance degradation on a SSD
@@ -136,41 +342,32 @@
       active. This can be easily worked around by configuring the Anti Virus software
       to exclude the directory containing the local Chromium enlistment.
     </p>
-    <p class="note">
-      Note: The "indexing" process is technically very straighforward: after
-      enumerating all the files and directories of the Chromium enlistement, relevant
-      source files are all loaded in memory so they can be searched extremely
-      efficiently later on. This process assumes there is enough memory
-      available to keep all files in physical memory. With a recent (as of October
-      2013) Chromium enlistment, this requires about 1.5GB of memory.
-    </p>
-    <p class="note">
-      Note: Similar to the coding style checkers, there is no requirement to have
-      a Chromium solution/project open, although having one doesn't hurt either.
+    <p>
+      After the initial loading process, the search engine incrementally updates its database
+      as files and directories change on disk. This usually takes less than 1 second.
     </p>
     <p>
-      Once the indexing process is over (there are progress indicators in the UI),
-      the Chromium Explorer tool window displays a tree containing the files and
-      directories of the enlistment.
+      Once the indexing process is over the list of directories and files is shown in
+      Visual Studio Solution Explorer, and the Code Search tool window is ready for performing
+      full text searches.
     </p>
     <img src="Screenshots/ChromiumExplorerIndexing.png"></img>
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
-  <div id="chromium-explorer-navigating">
-    <h1>Chromium Explorer - Navigating</h1>
+  <!--============================================================================-->
+  <div id="source-explorer">
+    <h1>Source Explorer</h1>
     <p>
-      The explorer tree is similar to a Windows File Explorer, except that opening
-      files (by double clicking an entry) happens directly in the Visual Studio editor.
+      Source Explorer integrates with Visual Studio Solution Explorer, allows navigating any files,
+      has contextual menu and integrates with Solution Explorer search capabilities.
     </p>
     <img src="Screenshots/ChromiumExplorerOpeningFile.png"></img>
 
-    <p>Note: There is curretly not support for a Context Menu with advanced options.</p>
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="chromium-explorer-search-filenames">
     <h1>Chromium Explorer - File name search</h1>
     <p>
@@ -208,7 +405,7 @@
     </ul>
     <p>Examples</p>
 
-    <table>
+    <table id="filepath-syntax">
       <thead>
         <tr><th style="text-align: left">Pattern</th><th style="text-align: left">Matches</th></tr>
       </thead>
@@ -238,7 +435,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="chromium-explorer-search-directorynames">
     <h1>Chromium Explorer - Directory name search</h1>
     <p>
@@ -250,7 +447,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="chromium-explorer-search-filecontents">
     <h1>Chromium Explorer - Text search</h1>
     <p>
@@ -287,7 +484,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="chromium-explorer-keyboard-shortcuts">
     <h1>Chromium Explorer - Keyboard shortcuts</h1>
     <table>
@@ -301,7 +498,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="custom-enlistments">
     <h1>Chromium Explorer - Custom enlistments</h1>
     <p>
@@ -334,12 +531,12 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="editor-features">
     <h1>Editor features</h1>
   </div>
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="chromium-style-checker">
     <h1>Chromium Coding Style checker</h1>
     <p>
@@ -378,7 +575,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="format-comment">
     <h1>Format comment</h1>
     <p>
@@ -394,7 +591,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="pmconsole">
     <h1>Navigate to Build Error</h1>
     <p>
@@ -407,13 +604,13 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="debugger-features">
     <h1>Debugger features</h1>
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="attach-to-chrome">
     <h1>Attach to Chrome</h1>
     <p>
@@ -464,7 +661,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="whatsnew">
     <h1>What's new</h1>
     <h2 id="whatsnew-0-9-9">v0.9.9</h2>
@@ -531,7 +728,7 @@
    </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="configuration">
     <h1>Configuration files</h1>
     <p>
@@ -622,25 +819,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
-  <div id="installation">
-    <h1>Installation Instructions</h1>
-    <ul>
-      <li>Download <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.9">VsChromium.vsix</a></li>
-      <li>Open the file: this will open a Visual Studio Installation dialog.
-      <img src="Screenshots/VsixInstall.png" />
-      </li>
-      
-      <li>Click "Install"</li>
-      <li>Start Visual Studio</li>
-      <li>Go to "Tools | Extensions Manager..."</li>
-      <li>Ensure "VsChromium" is present and enabled.
-      <img src="Screenshots/VsixEnable.png" /></li>
-    </ul>
-  </div>
-  <hr />
-
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="requirements">
     <h1>Requirements</h1>
     <ul>
@@ -656,7 +835,7 @@
   </div>
   <hr />
 
-  <!-------------------------------------------------------------------------------->
+  <!--============================================================================-->
   <div id="tech-specs">
     <h1>Technical specifications</h1>
     <p>
@@ -685,7 +864,7 @@
         into 32 equally sized partitions, runs a search query accross 32 threads,
         then merge the results before sending back to the VsChromium package. Using
         efficient string search algorithms (<a href="http://www-igm.univ-mlv.fr/~lecroq/string/bndm.html">
-        bndm</a> and 
+        bndm</a> and
         <a href="http://en.wikipedia.org/wiki/Boyer-Moore_string_search_algorithm">Boyer-Moore</a>),
         the search engine achieves throughputs of 15+GB/s, meaning a text search
         usually takes less than 0.1s with 1.2GB of source files.

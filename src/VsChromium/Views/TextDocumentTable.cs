@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Views {
   [Export(typeof(ITextDocumentTable))]
@@ -46,7 +47,13 @@ namespace VsChromium.Views {
           continue;
 
         // Get vs buffer
-        var docData = info.DocData as IVsTextBuffer;
+        IVsTextBuffer docData = null;
+        try {
+          docData = info.DocData as IVsTextBuffer;
+        }
+        catch (Exception e) {
+          Logger.LogWarning(e, "Error getting IVsTextBuffer for document {0}, skipping document", path);
+        }
         if (docData == null)
           continue;
 

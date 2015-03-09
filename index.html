@@ -14,25 +14,23 @@
     <li><a href="#index">Overview</a></li>
       <ul class="ul-second">
         <li><a href="#feature-summary">Feature summary</a></li>
+        <li><a href="#requirements">Requirements</a></li>
+        <li><a href="#installation">Installation</a></li>
       </ul>
     <li><a href="#getting-started">Getting started</a></li>
     <li>
       <ul class="ul-second">
-        <li><a href="#installation">Installation</a></li>
-        <li><a href="#getting-started-project-file">Existing Visual Studio Solution</a></li>
-        <li><a href="#getting-started-chromium">Chromium enlistment</a></li>
+        <li><a href="#getting-started-project-file">Existing projects</a></li>
+        <li><a href="#getting-started-chromium">Chromium enlistments</a></li>
       </ul>
     </li>
-    <li><a href="#code-search">Code Search and Source Explorer</a></li>
+    <li><a href="#search-engine">Search engine</a></li>
     <li>
       <ul class="ul-second">
-        <li><a href="#code-search-indexing">Opening files</a></li>
-        <li><a href="#source-explorer">Navigating</a></li>
-        <li><a href="#chromium-explorer-search-filenames">File name search</a></li>
-        <li><a href="#chromium-explorer-search-directorynames">Directory name search</a></li>
-        <li><a href="#chromium-explorer-search-filecontents">Text search</a></li>
-        <li><a href="#chromium-explorer-keyboard-shortcuts">Keyboard shortcuts</a></li>
-        <li><a href="#custom-enlistments">Custom Enlistments</a></li>
+        <li><a href="#source-explorer">Source Explorer</a></li>
+        <li><a href="#code-search">Code Search</a></li>
+        <li><a href="#code-search-search-code">Search Code syntax</a></li>
+        <li><a href="#code-search-file-paths">File Paths syntax</a></li>
       </ul>
     </li>
     <li><a href="#editor-features">Editor features</a></li>
@@ -51,8 +49,8 @@
       </ul>
     </li>
     <li><a href="#whatsnew">What's new</a></li>
+    <li><a href="#keyboard-shortcuts">Keyboard shortcuts</a></li>
     <li><a href="#configuration">Configuration</a></li>
-    <li><a href="#requirements">Requirements</a></li>
     <li><a href="#tech-specs">Technical Specifications</a></li>
   </ul>
 </div> <!-- sidebar -->
@@ -69,10 +67,11 @@
       VsChromium was originally developed to help when contributing code to the
       <a href="http:/www.chromium.org" target="_blank">Chromium project</a>, but has evolved over
       time to become a more general purpose extension that can be useful for
-      any project. See the <a href="#getting-started">Getting started</a> section
-      for more information.
+      any project. See the <a href="#feature-summary">Feature summary</a> and
+      <a href="#getting-started">Getting started</a> sections for more information.
     </p>
 
+    <!--============================================================================-->
     <h2 id="feature-summary">Feature summary</h2>
 
     <div id="features-table">
@@ -81,14 +80,16 @@
       <div class="row">
         <div class="cell">
         <p>
-        VsChromium comes with a built-in full text search engine, fast and scalable to hundred of
-        thousands of text files. The <a href="#code-search">Code Search</a> tool window that provides
-        an alternative to Visual Studio's build-int Find In Files. It uses VsChromium search engine
-        to provide search results in typically less than 0.1 sec even for the largest code bases, such
-        as Chromium.</p>
-        <p>Code Search is always one keystroke away, as typing
-        <span class="keyboard-shortcut">Ctrl-Shift-;</span> will start a text search
-        with either the current selection, or the word at the caret location in the editor.</p>
+        VsChromium comes with a built-in <a href="#search-engine">full text search
+        engine</a>, fast and scalable to hundred of thousands of text files.
+        The <a href="#code-search">Code Search</a> tool window provides
+        an alternative to Visual Studio's build-int Find In Files. It uses
+        VsChromium search engine to provide search results in typically less
+        than 0.1 sec even for the largest code bases, such as Chromium.</p>
+        <p>Code Search is always one keystroke away, as hitting
+        <span class="keyboard-shortcut">Ctrl-Shift-;</span> immediately starts
+        a full text search with either the current editor selection, or the
+        word at the current caret location.</p>
         </div>
         <div class="cell">
           <img src="Screenshots/0.1-CodeSearch.png"></img>
@@ -121,9 +122,11 @@
         <p>In addition to automatically recognizing Chromium enlistments,
         <a href="#code-search">Code Search</a> can now be enabled on any directory, project
         or solution by creating a <a href="#custom-enlistments">custom project file</a>
-        <span class="highlight-inline">vs-chromium-project.txt</span> anywhere on disk.</p>
-        <p>The indexing engine looks at the contents of each section to decide which files to index,
-        automatically skipping binary files .</p>
+        <span class="highlight-inline">vs-chromium-project.txt</span> anywhere on disk
+        (see <a href="https://github.com/chromium/vs-chromium/blob/master/vs-chromium-project.txt"
+        target="_blank">here</a> for an example).</p>
+        <p>The <a href="#search-engine">search engine</a> looks at the contents of each section to decide
+        which files to load and index, automatically skipping binary files .</p>
         <p>When a <span class="highlight-inline">vs-chromium-project.txt</span> file is located in
         the same directory (or parent) as a Visual Studio Solution file (.sln), VsChromium
         automatically loads and activate the Search Engine when the solution is loaded in
@@ -143,11 +146,14 @@
           <img src="Screenshots/0.3-SourceExplorer.png"></img>
         </div>
         <div class="cell">
-        <p><a href="#source-explorer">Source Explorer</a> offers a view of files and directories
-        indexed by the VsChromium search engine. Source Explorer integrates with Visual Studio
-        Solution Explorer as a custom &quot;virtual project&quot;, so there is no need to create
-        and maintain an additional Visual Studio project file</p>
-        <p>Source explorer automatically updates when files are added or deleted on disk.</p>
+        <p><a href="#source-explorer">Source Explorer</a> offers a hierarchical
+        view of the files and directories indexed by the
+        <a href="#search-engine">search engine</a>.</p>
+
+        <p>Source Explorer integrates with Visual Studio Solution Explorer as
+        a custom project node, refreshed dynamically as files and directories
+        change on disk, so there is no need to create and maintain an
+        additional Visual Studio project file</p>
         </div>
       </div>
     </div>
@@ -209,12 +215,21 @@
       </div>
     </div>
 
-  <hr />
+    <!--============================================================================-->
+    <h2 id="requirements">Requirements</h1>
+    <ul>
+      <li>VsChromium is compatible with Visual Studio Pro 2013 and up, including
+      the free <a href="https://www.visualstudio.com/en-us/products/visual-studio-community-vs.aspx" target="_blank">Visual Studio Community 2013</a>.</li>
+      <li>A Windows 64-bit operating system is required.  Certain features are
+        disabled for versions of Windows less than Windows 7.
+      </li>
+      <li>
+        Express editions of Visual Studio are <b>not</b> supported due to
+        limitations of VS extensibility framework for Express.
+      </li>
+    </ul>
 
-  <!--============================================================================-->
-  <div id="getting-started">
-    <h1>Getting started</h1>
-
+    <!--============================================================================-->
     <h2 id="installation">Installation</h2>
     <div id="features-table">
       <div class="column"></div>
@@ -240,7 +255,23 @@
 
     <img src="Screenshots/VsixEnable.png" /></li>
 
-    <h2 id="getting-started-project-file">Getting started with new or existing Visual Studio projects</h2>
+  <hr />
+
+  <!--============================================================================-->
+  <div id="getting-started">
+    <h1>Getting started</h1>
+
+    <p>Although the VsChromium search engine was initially implemented to work
+    exclusively with Chromium enlistments, it has been extended to support
+    any directory or Visual Studio project on disk.
+
+  <!--============================================================================-->
+    <h2 id="getting-started-project-file">Getting started with existing projects</h2>
+
+    <p>The VsChromium <a href="#search-engine">Code Search</a> features can be
+    enabled for any existing project or directory on disk by creating a custom
+    configuration file
+    <span class="highlight-inline">vs-chromium-project.text</span>.<p>
 
     <div id="features-table">
       <div class="column"></div>
@@ -248,19 +279,25 @@
       <div class="row">
         <div class="cell" style="vertical-align: top">
           <ul>
-          <li>Install VsChromium</li>
-          <li>Create a new text file and create the 3 sections
-          <span class="highlight-inline">[SourceExplorer.ignore]</span>,
-          <span class="highlight-inline">[SearchableFiles.ignore]</span> and
-          <span class="highlight-inline">[SearchableFiles.include]</span>
-          to filter which files to show in <a href="#source-explorer">Source Explorer</a> and
-          <a href="#code-search">Code Search</a></li>
-          <li>Save the text file in the directory to index and name it
-          <span class="highlight-inline">vs-chromium-project.txt</span></li>
-          <li>Note: If you want Code Search and Source Explorer to be enabled automatically
-          with a Visual Studio Solution, save the file next to the ".sln" file, or in any
-          parent directory.</li>
-          <li>Open the Code Search tool window or Solution Explorer</li>
+            <li>Install VsChromium and start Visual Studio</li>
+            <li>Create a new text file and create the 3 sections
+            <span class="highlight-inline">[SourceExplorer.ignore]</span>,
+            <span class="highlight-inline">[SearchableFiles.ignore]</span> and
+            <span class="highlight-inline">[SearchableFiles.include]</span>.
+            These sections define which files and directories are loaded by the
+            search engine, and will show up in <a href="#source-explorer">Source Explorer</a> and
+            <a href="#code-search">Code Search</a>. The sections contents follows
+            the same format as a <a href="http://git-scm.com/docs/gitignore#_pattern_format"
+            target="_blank">.gitignore</a> file</li>
+            <li>Save the text file in the directory of the project to index and
+            name it <span class="highlight-inline">vs-chromium-project.txt</span></li>
+            <li>Note: If you want Code Search and Source Explorer to be enabled automatically
+            with a Visual Studio Solution, save the file next to the ".sln" file, or in any
+            parent directory.</li>
+            <li>The search engine should start loading files right away, and
+            both <a href="#solution-explorer">Solution Explorer</a> and
+            <a href="#code-search">Code Search</a> will be available shortly
+            afterward.</li>
           </ul>
         </div>
         <div class="cell">
@@ -274,7 +311,7 @@
   <hr />
 
   <!--============================================================================-->
-    <h2 id="getting-started-chromium">Getting started with Chromium enlistment</h2>
+    <h2 id="getting-started-chromium">Getting started with Chromium enlistments</h2>
 
     <div id="features-table">
       <div class="column"></div>
@@ -282,12 +319,12 @@
       <div class="row">
         <div class="cell" style="vertical-align: top">
           <ul>
-            <li>Install VsChromium</li>
-            <li>Open a source file from the Chromium enlistment</li>
-            <li>Open the Code Search tool window or Solution Explorer. VsChromium starts
-            building the search index automatically and will keep it up to date as
-            files/directories change on disk.</li>
-            <li>Open the Code Search tool window or Solution Explorer</li>
+            <li>Install VsChromium and start Visual Studio</li>
+            <li>Open a source file from a Chromium enlistment on disk</li>
+            <li>The search engine should start loading files right away, and
+            both <a href="#solution-explorer">Solution Explorer</a> and
+            <a href="#code-search">Code Search</a> will be available shortly
+            afterward.</li>
           </ul>
         </div>
         <div class="cell">
@@ -303,231 +340,206 @@
   <hr/>
 
   <!--============================================================================-->
-  <div id="code-search">
+  <div id="search-engine">
     <h1>Code Search and Source Explorer</h1>
-    <p>VsChromium has a built-in full text search engine that is available through a couple
-    of Visual Studio features:</p>
+    <p>VsChromium has a built-in full text search engine that serves as the basis
+    for both the Source Explorer and Code Search features:</p>
+
+    <!--============================================================================-->
+    <h2 id="source-explorer">Source explorer</h2>
+
+    <p><span class="highlight-inline">Source Explorer</span> integrates in
+    Visual Studio's build-in Solution Explorer and shows the hierarchy of
+    directories and files loaded in the search engine. The contents
+    updates automatically as files are changed on disk.</p>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+          <img src="Screenshots/0.3-SourceExplorer.png"></img>
+        </div>
+        <div class="cell">
+        <p><a href="#source-explorer">Source Explorer</a> offers a hierarchical
+        view of the files and directories indexed by the
+        <a href="#search-engine">search engine</a>.</p>
+
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+        <p>Source Explorer supports many built-in Visual Studio features, such
+        as searching the project for matching files and directories, and
+        contextual menus.</p>
+        </div>
+        <div class="cell">
+          <img src="Screenshots/SourceExplorerContextMenu.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <!--============================================================================-->
+    <h2 id="code-search">Code Search</h2>
+
+    <p><span class="highlight-inline">Code Search</span> is a
+    Visual Studio Tool Window offering functionality similar to 'Find in Files',
+    but with faster results. Code Search allows looking for any text using
+    simple text patterns or regular expressions. Code Search is available
+    through the <span class="highlight-inline">View | Other Windows</span>
+    top level menu.</p>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+        <p>Code Search is always one keystroke away, as hitting
+        <span class="keyboard-shortcut">Ctrl-Shift-;</span> immediately starts
+        a full text search with either the current editor selection, or the
+        word at the current caret location.</p>
+        </div>
+        <div class="cell">
+          <img src="Screenshots/0.1-CodeSearch.png"></img>
+        </div>
+      </div>
+    </div>
+
+    <div id="features-table">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="row">
+        <div class="cell">
+          <img src="Screenshots/0.11-FilePaths.png"></img>
+        </div>
+        <div class="cell">
+        <p>The scope of the search - &quot;File Paths&quot; - can be refined at any time using
+        a <a href="#filepath-syntax">flexible syntax</a> for defining file name patterns.</p>
+        <p>Search options include <span class="highlight-inline">Match&nbsp;Case</span>,
+        <span class="highlight-inline">Match&nbsp;Whole&nbsp;Word</span> and
+        <span class="highlight-inline">Use&nbsp;Regular&nbsp;Expressions</span>.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!--============================================================================-->
+  <div id="code-search-search-code">
+    <h2>Search Code syntax</h2>
+    <p>
+      The <span class="highlight-inline">Search Code</span> search box supports
+      two syntax format, depending on the state of the
+      <span class="highlight-inline">regex</span> option in the toolbar.
+    </p>
     <ul>
-    <li><span class="highlight-inline">Source Explorer</span> integrates in Visual Studio's
-    build-in Solution Explorer and shows the hierarchy of directories and files loaded in
-    the search engine. The contents updates automatically as files are changed on disk.</li>
-    <li><span class="highlight-inline">Code Search</span> is a Visual Studio Tool Window
-    similar to 'Find in Files'. It allows looking for any text using simple text patterns
-    or regular expressions. Code Search is available through the 'View | Other Windows'
-    top level menu.</li>
+      <li>For simple text search, the search pattern will be matched "as-is"
+      when doing full text search, including white spaces, with the exception of</li>
+        <ul>
+          <li><span class="highlight-inline">*</span> matches a sequence of zero or
+          more characters on the same line</li>
+          <li><span class="highlight-inline">\</span> serves as an escape character
+          for <span class="highlight-inline">\</span> and
+          <span class="highlight-inline">*</span>.</li>
+        </ul>
+      <li>For regular expression searches, the search pattern follows the
+      regular expressions permitted by the
+      <a href="https://code.google.com/p/re2/wiki/Syntax"
+      target="_blank">Google RE2</a> engine.</li>
+    </ul>
+  </div>
+
+  <!--============================================================================-->
+  <div id="code-search-file-paths">
+    <h2>File Paths syntax</h2>
+    <p>
+      The <span class="highlight-inline">File Paths</span> search box has two
+      purposes:
+    </p>
+    <ul>
+    <li>When the Code Search box is empty, it is used to show the list of
+    files matching the specified patten.</li>
+    <li>When the Code Search box is not empty, it is used to filter the list of
+    files considered for the full text search.</li>
     </ul>
 
-    <img src="Screenshots/OVerview.png"></img>
-
-  </div>
-  <hr />
-
-  <!--============================================================================-->
-  <div id="code-search-indexing">
-    <h1>Code Search - Opening files and indexing</h1>
-    <p>
-      When the search engine is activated (see <a href="getting-started">Getting Started</a> section),
-      is starts loading files in memory in the background, in a separate Operating System Process
-      to avoid using resources of the Visual Studio Process.
-      Depending on the # of files to load, the initial load can take from less than 1 second
-      to a few minutes. The search engine is optimized for computes with fast SSD and many cores,
-      so that loading 100,000+ files usually takes less than 10 seconds.</p>
-    <p class="warning">
-      Warning: The indexing process can take significantly longer if the enlistment is
-      located on an HDD drive as disk seek times are much slower.
-    </p>
-    <p class="warning">
-      Warning: We also saw significant performance degradation on a SSD
-      when "Real Time" disk activity monitoring of certain Anti Virus programs is
-      active. This can be easily worked around by configuring the Anti Virus software
-      to exclude the directory containing the local Chromium enlistment.
-    </p>
-    <p>
-      After the initial loading process, the search engine incrementally updates its database
-      as files and directories change on disk. This usually takes less than 1 second.
-    </p>
-    <p>
-      Once the indexing process is over the list of directories and files is shown in
-      Visual Studio Solution Explorer, and the Code Search tool window is ready for performing
-      full text searches.
-    </p>
-    <img src="Screenshots/ChromiumExplorerIndexing.png"></img>
-  </div>
-  <hr />
-
-  <!--============================================================================-->
-  <div id="source-explorer">
-    <h1>Source Explorer</h1>
-    <p>
-      Source Explorer integrates with Visual Studio Solution Explorer, allows navigating any files,
-      has contextual menu and integrates with Solution Explorer search capabilities.
-    </p>
-    <img src="Screenshots/ChromiumExplorerOpeningFile.png"></img>
-
-  </div>
-  <hr />
-
-  <!--============================================================================-->
-  <div id="chromium-explorer-search-filenames">
-    <h1>Chromium Explorer - File name search</h1>
-    <p>
-      The top search box can be used to search for file names matching a given
-      pattern. As shown in the picture below, a "file name" search should take at most a few
-      milliseconds on a typical developer machine:
-    </p>
-    <img src="Screenshots/SearchFileNames.png"></img>
-
-    <h2>Search pattern format</h2>
+    <h3 id="filepath-syntax">Syntax</h3>
 
     <p>
-      The rules for "pattern" are similar to the syntax used in .gitignore
-      files, except for the first rule below.
+      The rules for "File Paths" are follow a subset of commonly used glob
+      patterns (e.g. <a href="https://github.com/isaacs/node-glob#glob-primer"
+      target="_blank">node-glob</a> or <a
+      href="http://git-scm.com/docs/gitignore#_pattern_format"
+      target="_blank">.gitignore</a>).
     </p>
+
     <ul>
-      <li>
-        A simple string without the "/", "\" or "*" characters matches any file
-        name <b>containing</b> the simple string. This rule enables making the
-        "common case" faster to type, as without the wildcards, the pattern
-        would only match full file names (including the extension).
-      </li>
-      <li>
-        The pattern can contain one or many "*" character to perform wildcard
-        matching.
-      </li>
-      <li>
-        The pattern may contain "/" or "\" characters to match part of the path
-        forming the file name.
-      </li>
-      <li>
-        The pattern may start with "**/" or contain "/**/" characters to match
-        zero or more directories of the path forming the file name.
-      </li>
-    </ul>
+      <li>Path separators can be expressed as either
+      <span class="highlight-inline">/</span> or
+      <span class="highlight-inline">\</span></li>
+      <li>Matching is performed against the file name portion of a path
+      (e.g.<span class="highlight-inline">foo.txt</span> for the path
+      <span class="highlight-inline">src/blah/boo/foo.txt</span>),
+      unless a path separator is present.</li>
+      <li><span class="highlight-inline">*</span> matches 0 or more characters
+      in a single path portion.</li>
+      <li><span class="highlight-inline">/</span> at the beginning of the path
+      indicates a path relative to the root of the VsChromium project.</li>
+      <li><span class="highlight-inline">/</span> at the end of the path
+      indicates that portion of the path must be a directory name.</li>
+      <li><span class="highlight-inline">**/</span> or
+      <span class="highlight-inline">/**/</span> matches zero or more
+      directories of a path</li>
+      <li>If the path does not contain any <span class="highlight-inline">/</span>
+      and <span class="highlight-inline">*</span>, a
+      <span class="highlight-inline">*</span> is automatically added at the start
+      and at the end of the pattern, to match sub-strings inside the file name
+      portion of the path.
+    <ul>
+
     <p>Examples</p>
-
-    <table id="filepath-syntax">
+    <table>
       <thead>
         <tr><th style="text-align: left">Pattern</th><th style="text-align: left">Matches</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>foo</td>
-          <td>"foobar.cc", "afoobar.txt", etc. anywhere in folder hierarchy.</td>
+          <td><span class="highlight-inline">foo</span></td>
+          <td>any file named "foobar.cc", "afoobar.txt", etc. anywhere in the
+          project directory.</td>
         </tr>
         <tr>
-          <td>f*oo*.txt</td>
-          <td>"foo.txt", "f123oo.txt", "f123oo4bar.txt" etc. anywhere in folder hierarchy.</td>
+          <td><span class="highlight-inline">f*oo*.txt</span></td>
+          <td>any file named "foo.txt", "f123oo.txt", "f123oo4bar.txt" etc.
+          anywhere in project directory.</td>
         </tr>
         <tr>
-          <td>foo/bar.txt</td>
-          <td>any file named "bar.txt" inside a "foo" directory anywhere in folder hierarchy.</td>
+          <td><span class="highlight-inline">foo/bar.txt</span></td>
+          <td>any file named "bar.txt" inside a "foo" directory anywhere in the
+           project directory.</td>
         </tr>
         <tr>
-          <td>foo/</td>
-          <td>All files under a "foo" directory (recursively) anywhere in folder hierarchy.</td>
+          <td><span class="highlight-inline">foo/</span></td>
+          <td>All files under a "foo" directory (recursively) anywhere in
+          project directory.</td>
         </tr>
         <tr>
-          <td>foo/**/bar.txt</td>
-          <td>any file named "bar.txt" residing in any sub-directory of "foo" anywhere in folder hierarchy.</td>
+          <td><span class="highlight-inline">/foo</span></td>
+          <td>All files under the "foo" directory at the first level of the
+          project directory.</td>
+        </tr>
+        <tr>
+          <td><span class="highlight-inline">foo/**/bar.txt</span></td>
+          <td>Any file named "bar.txt" inside a directory or sub-directory of
+          "foo" anywhere in project directory.</td>
         </tr>
       </tbody>
     </table>
-  </div>
-  <hr />
-
-  <!--============================================================================-->
-  <div id="chromium-explorer-search-directorynames">
-    <h1>Chromium Explorer - Directory name search</h1>
-    <p>
-      The middle search box can be used to search for directory names matching a
-      given pattern. The rules for "pattern" are similar to the rules for file name
-      search.
-    </p>
-    <img src="Screenshots/SearchDirectoryNames.png"></img>
-  </div>
-  <hr />
-
-  <!--============================================================================-->
-  <div id="chromium-explorer-search-filecontents">
-    <h1>Chromium Explorer - Text search</h1>
-    <p>
-      The "Text search" feature is equivalent to the "Find in files" built-in feature of
-      Visual Studio with the difference that it performs <b>much</b> faster due to the
-      indexing process. On a typical developer machine, a text search takes about 100 milliseconds,
-      where as the equivalent "Find in files" search takes 30+ seconds.
-    </p>
-
-    <h2>Search pattern format</h2>
-
-    <p>
-      The search engine performs a "raw" string search in the text of the files, so the search pattern
-      can be any combination of characters (including space, tabs and special characters such as
-      &lt;, &gt;, &amp;, etc This can be useful to search for specific C++ constructs. For example,
-      to look for all classes derived from <span class="inline-code">"Foo"</span>, search for the pattern
-      <span class="inline-code">"public Foo"</span> or <span class="inline-code">": public Foo"</span>
-    </p>
-
-    <p>
-      The "*" character is used as a wildcard matching any characters between two strings.
-      The "\" character is used to escape the "*" or "\" characters.
-      By default, the search is not case sensitive, but this this can be altered by clicking the "Aa" button in the toolbar.
-    </p>
-    <p>Note that there is currently no support for wildcards and the search is always case <b>sensitive</b>.</p>
-
-    <p>
-      The search results contain one entry per file, and one sub-entry per match in the file. Both can be clicked
-      in the Tree View to navigate to the corresponding location.
-    </p>
-
-    <img src="Screenshots/SearchFileContents.png"></img>
-
-  </div>
-  <hr />
-
-  <!--============================================================================-->
-  <div id="chromium-explorer-keyboard-shortcuts">
-    <h1>Chromium Explorer - Keyboard shortcuts</h1>
-    <table>
-      <thead><tr><th>Feature</th><th>Shortcut</th></tr></thead>
-      <tbody>
-        <tr><td><a href="#chromium-explorer-search-filenames">File name search</a></td><td><span class="keyboard-shortcut">Alt-;</span></td></tr>
-        <tr><td><a href="#chromium-explorer-search-directorynames">Directory name search</a></td><td><span class="keyboard-shortcut">Alt-Shift-;</span></td></tr>
-        <tr><td><a href="#chromium-explorer-search-filecontents">Text search</a></td><td><span class="keyboard-shortcut">Ctrl-Shift-;</span></td></tr>
-      </tbody>
-    </table>
-  </div>
-  <hr />
-
-  <!--============================================================================-->
-  <div id="custom-enlistments">
-    <h1>Chromium Explorer - Custom enlistments</h1>
-    <p>
-      By default, VsChromium automatically recognizes files from a Chromium enlistment. However, it is
-      sometimes useful to enable some of VsChromium features in directories not part of a Chromium enlistment.
-      For example, the search capabilities of VsChromium apply to any directory containing text files.
-    </p>
-    <p>
-      This can easily be achieved by creating a special text file, called "project.vs-chromium-project",
-      in any directory. Once a file contained in that directory is open in the Visual Studio Text Editor,
-      VsChromium starts indexing all text files in that directory and enables the various search capabilities of
-      <a href="#chromium-explorer">Chromium Explorer</a>.
-    </p>
-    <p>
-      Each "project.vs-chromium-project" is a text files containing named sections (i.e. single text lines
-      surrounded by "[" and "]" characters) defining the behavior of  the indexer, i.e. what files to
-      show in Chromium Explorer, and what files to index.
-    </p>
-    <p>For example:</p>
-    <pre style="text-align: left; padding-left: 4px; border: outset">
-[ChromiumExplorer.ignore]
-.git/
-[SearchableFiles.ignore]
-*.pak
-*.zip
-*.exe
-[SearchableFiles.include]
-*
-</pre>
   </div>
   <hr />
 
@@ -540,16 +552,11 @@
   <div id="chromium-style-checker">
     <h1>Chromium Coding Style checker</h1>
     <p>
-      When a source file belonging to a Chromium enlistement is opened in the
+      When a source file belonging to a Chromium enlistment is opened in the
       Visual studio editor, a few custom "classifiers" (or "colorizers") kick off
       and inspect the code for <a href="http://www.chromium.org/developers/coding-style">Coding Style</a>
       violations. Each violation is indicated with a red background highlighing the text
       violating a rule.
-    </p>
-    <p class="note">
-      Note: There is no requirement to have a Chromium solution open, as the
-      discovery is based on the content of the file system, not on the list of
-      projects/solutions opened in Visual Studio.
     </p>
     <p>List of supported style violations</p>
     <ul>
@@ -588,6 +595,7 @@
       <li>If there is a text selection active, Format Comment formats only the
       block comment covered by the selection start and end lines.</li>
     </ul>
+    <p><img src="Screenshots/0.6-FormatComments.png"/></p>
   </div>
   <hr />
 
@@ -595,9 +603,10 @@
   <div id="pmconsole">
     <h1>Navigate to Build Error</h1>
     <p>
-      When using the "Package Manager Console" tool window as an integrated command
-      prompt, for example to build Chromium using "ninja", build errors from various
-      tools are shown as hyperlinks that can be clicked to open the corresponding file
+      When using the <span class="highlight-inline">Package Manager Console</span>
+      tool window as an integrated command prompt, for example to build
+      Chromium using "ninja", build errors from various tools are shown as
+      hyperlinks that can be clicked to open the corresponding file
       in the editor, as illustrated in the picture below.
     </p>
     <p><img src="Screenshots/PmConsoleBuildError.png"/></p>
@@ -608,11 +617,10 @@
   <div id="debugger-features">
     <h1>Debugger features</h1>
   </div>
-  <hr />
 
   <!--============================================================================-->
   <div id="attach-to-chrome">
-    <h1>Attach to Chrome</h1>
+    <h2>Attach to Chrome</h2>
     <p>
       The Attach to Chrome dialog is a replacement for the Attach to Process dialog,
       showing all the chrome processes running on the local machine, grouped by
@@ -646,7 +654,7 @@
     </p>
   </div>
   <div id="advanced-visualizers">
-    <h1>Advanced Debug Visualizers</h1>
+    <h2>Advanced Debug Visualizers</h2>
     <p>
       Custom visualizers for visualizing complex Chromium specific data-types.
       Visualizers are included for the following types:
@@ -664,6 +672,9 @@
   <!--============================================================================-->
   <div id="whatsnew">
     <h1>What's new</h1>
+    <h2 id="whatsnew-0-9-9">v0.9.14</h2>
+    <p>See <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.14"
+    target="_blank">v0.9.14 release nodes</a></p>
     <h2 id="whatsnew-0-9-9">v0.9.9</h2>
     <h3>Source Exporer features</h3>
     <ul>
@@ -820,18 +831,39 @@
   <hr />
 
   <!--============================================================================-->
-  <div id="requirements">
-    <h1>Requirements</h1>
-    <ul>
-      <li>VsChromium is compatible with Visual Studio Pro 2013 and up.</li>
-      <li>A Windows 64-bit operating system is required.  Certain features are
-        disabled for versions of Windows less than Windows 7.
-      </li>
-      <li>
-        Express editions of Visual Studio are <b>not</b> supported due to
-        limitations of VS extensibility framework for Express.
-      </li>
-    </ul>
+  <div id="keyboard-shortcuts">
+    <h1>Keyboard shortcuts</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th><th>Shortcut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="#code-search-search-code">Code Search</a></td>
+          <td><span class="keyboard-shortcut">Ctrl-Shift-;</span></td>
+        </tr>
+        <tr>
+          <td><a href="#code-search-filepaths">File Paths search</a></td>
+          <td><span class="keyboard-shortcut">Ctrl-Shift-'</span></td>
+        </tr>
+        <tr>
+          <td>Navigate to next search result</td>
+          <td><span class="keyboard-shortcut">F8</span> or
+          <span class="keyboard-shortcut">Ctrl-F8</span></td>
+        </tr>
+        <tr>
+          <td>Navigate to previous search result</td>
+          <td><span class="keyboard-shortcut">Shift-F8</span> or
+          <span class="keyboard-shortcut">Ctrl-Shift-F8</span></td>
+        </tr>
+        <tr>
+          <td>Format comment</td>
+          <td><span class="keyboard-shortcut">Ctrl-K, C</span></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
   <hr />
 
@@ -858,16 +890,28 @@
         During initial file loading from an SSD, the engine loads 90,000+ files in
         parrallel and achieves ~80% CPU utilization. All files are usually loaded in
         less than 10 sec.
+        <p class="warning">
+          Warning: The indexing process can take significantly longer if the enlistment is
+          located on an HDD drive as disk seek times are much slower.
+        </p>
+        <p class="warning">
+          Warning: We also saw significant performance degradation on a SSD
+          when "Real Time" disk activity monitoring of certain Anti Virus programs is
+          active. This can be easily worked around by configuring the Anti Virus software
+          to exclude the directory containing the local Chromium enlistment.
+        </p>
       </li>
       <li>
-        During a "Text Search" operation, the engine paritions the files to search
-        into 32 equally sized partitions, runs a search query accross 32 threads,
-        then merge the results before sending back to the VsChromium package. Using
-        efficient string search algorithms (<a href="http://www-igm.univ-mlv.fr/~lecroq/string/bndm.html">
-        bndm</a> and
-        <a href="http://en.wikipedia.org/wiki/Boyer-Moore_string_search_algorithm">Boyer-Moore</a>),
-        the search engine achieves throughputs of 15+GB/s, meaning a text search
-        usually takes less than 0.1s with 1.2GB of source files.
+        During a "Code Search" operation, the search engine partitions the set
+        files to search into 32 equally sized partitions, runs a search query
+        across as many threads as logical processors are available, then merge
+        the results before sending back to the VsChromium package. Using
+        efficient native c++ string search algorithms (
+        <a href="http://www-igm.univ-mlv.fr/~lecroq/string/bndm.html">bndm</a>,
+        <a href="http://en.wikipedia.org/wiki/Boyer-Moore_string_search_algorithm">Boyer-Moore</a>
+        and <a href="https://code.google.com/p/re2/">Google's RE2 engine</a>),
+        the search engine achieves throughputs of 15+GB/s, meaning a text
+        search usually takes less than 0.1s with 1.2GB of source files.
       </li>
     </ul>
     <h2>Server process</h2>

@@ -59,17 +59,23 @@
   <!--============================================================================-->
   <div id ="index">
     <h1>Overview</h1>
-    <p>
-      VsChromium is a Visual Studio Extension containing a collection of tools
-      useful for editing, navigating and debugging code.
-    </p>
-    <p>
-      VsChromium was originally developed to help when contributing code to the
-      <a href="http:/www.chromium.org" target="_blank">Chromium project</a>, but has evolved over
-      time to become a more general purpose extension that can be useful for
-      any project. See the <a href="#feature-summary">Feature summary</a> and
-      <a href="#getting-started">Getting started</a> sections for more information.
-    </p>
+
+    <p>VsChromium is a Visual Studio Extension containing a collection of tools
+      useful for editing, navigating and debugging code.</p>
+
+    <p>VsChromium was originally developed to help when contributing code to the
+      <a href="http:/www.chromium.org" target="_blank">Chromium project</a>, but
+      has evolved over time to become a more general purpose extension that can
+      be useful for any project.</p>
+
+    <p>Amongst other things, VsChromium offers full text search engine, a fast
+      and scalable alternative to the built-in "Find in Files" Visual Studio
+      feature that can provide search results in less than 0.1 seconds
+      for 100,000+ files.</p>
+
+    <p>See the <a href="#feature-summary">Feature summary</a> and
+      <a href="#getting-started">Getting started</a> sections for more
+      information.</p>
 
     <!--============================================================================-->
     <h2 id="feature-summary">Feature summary</h2>
@@ -105,11 +111,14 @@
           <img src="Screenshots/0.11-FilePaths.png"></img>
         </div>
         <div class="cell">
-        <p>The scope of the search - &quot;File Paths&quot; - can be refined at any time using
-        a <a href="#filepath-syntax">flexible syntax</a> for defining file name patterns.</p>
-        <p>Search options include <span class="highlight-inline">Match&nbsp;Case</span>,
-        <span class="highlight-inline">Match&nbsp;Whole&nbsp;Word</span> and
-        <span class="highlight-inline">Use&nbsp;Regular&nbsp;Expressions</span>.
+        <p>Search options include <span class="highlight-inline">Match Case</span>,
+        <span class="highlight-inline">Match Whole Word</span>,
+        <span class="highlight-inline">Use Regular Expressions</span>
+        and <span class="highlight-inline">Include Symlinks</span>.</p>
+        <p>The scope of the search -
+        <span class="highlight-inline">File Paths</span> - can be refined
+        at any time using a <a href="#filepath-syntax">flexible syntax</a>
+        for defining file name patterns.</p>
         </div>
       </div>
     </div>
@@ -471,7 +480,7 @@
     <h3 id="filepath-syntax">Syntax</h3>
 
     <p>
-      The rules for "File Paths" are follow a subset of commonly used glob
+      The syntax for "File Paths" follow a subset of commonly used glob
       patterns (e.g. <a href="https://github.com/isaacs/node-glob#glob-primer"
       target="_blank">node-glob</a> or <a
       href="http://git-scm.com/docs/gitignore#_pattern_format"
@@ -479,6 +488,8 @@
     </p>
 
     <ul>
+      <li><span class="highlight-inline">;</span> is the separator for multiple
+      entries (e.g. <span class="highlight-inline">*.txt;*.log</span>).
       <li>Path separators can be expressed as either
       <span class="highlight-inline">/</span> or
       <span class="highlight-inline">\</span></li>
@@ -489,49 +500,59 @@
       <li><span class="highlight-inline">*</span> matches 0 or more characters
       in a single path portion.</li>
       <li><span class="highlight-inline">/</span> at the beginning of the path
-      indicates a path relative to the root of the VsChromium project.</li>
+      indicates a path relative to the top level directory of the project.</li>
       <li><span class="highlight-inline">/</span> at the end of the path
       indicates that portion of the path must be a directory name.</li>
       <li><span class="highlight-inline">**/</span> or
       <span class="highlight-inline">/**/</span> matches zero or more
       directories of a path</li>
       <li>If the path does not contain any <span class="highlight-inline">/</span>
-      and <span class="highlight-inline">*</span>, a
+      or <span class="highlight-inline">*</span>, a
       <span class="highlight-inline">*</span> is automatically added at the start
       and at the end of the pattern, to match sub-strings inside the file name
-      portion of the path.
+      portion of the path (e.g. <span class="highlight-inline">foo</span>
+      matches <span class="highlight-inline">afoo1.txt</span>,
+      <span class="highlight-inline">foo.txt</span>, etc).
     <ul>
 
     <p>Examples</p>
     <table>
       <thead>
-        <tr><th style="text-align: left">Pattern</th><th style="text-align: left">Matches</th></tr>
+        <tr>
+          <th style="text-align: left">Pattern</th>
+          <th style="text-align: left">Matches</th>
+          </tr>
       </thead>
       <tbody>
         <tr>
           <td><span class="highlight-inline">foo</span></td>
-          <td>any file named "foobar.cc", "afoobar.txt", etc. anywhere in the
-          project directory.</td>
+          <td>Any file named "foobar.cc", "afoobar.txt", etc. in any
+          directory of the project.</td>
         </tr>
         <tr>
           <td><span class="highlight-inline">f*oo*.txt</span></td>
-          <td>any file named "foo.txt", "f123oo.txt", "f123oo4bar.txt" etc.
-          anywhere in project directory.</td>
+          <td>Any file named "foo.txt", "f123oo.txt", "f123oo4bar.txt" etc.
+          in any directory of the project.</td>
         </tr>
         <tr>
           <td><span class="highlight-inline">foo/bar.txt</span></td>
-          <td>any file named "bar.txt" inside a "foo" directory anywhere in the
-           project directory.</td>
+          <td>Any file named "bar.txt" inside a "foo" directory in any
+          directory of the project.</td>
         </tr>
         <tr>
           <td><span class="highlight-inline">foo/</span></td>
-          <td>All files under a "foo" directory (recursively) anywhere in
-          project directory.</td>
+          <td>All files under a "foo" directory (recursively) in any directory
+          of the project.</td>
         </tr>
         <tr>
           <td><span class="highlight-inline">/foo</span></td>
-          <td>All files under the "foo" directory at the first level of the
-          project directory.</td>
+          <td>All files under the "foo" directory in the top level directory
+          of the project.</td>
+        </tr>
+        <tr>
+          <td><span class="highlight-inline">/foo;/bar</span></td>
+          <td>All files under the "foo" or "bar" directory in the top level
+          directory of the project.</td>
         </tr>
         <tr>
           <td><span class="highlight-inline">foo/**/bar.txt</span></td>

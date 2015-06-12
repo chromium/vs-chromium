@@ -10,11 +10,13 @@ REM Detect location of VSIXInstaller.exe
 set VSIX_INSTALLER_PATH_2010=C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE
 set VSIX_INSTALLER_PATH_2012=C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE
 set VSIX_INSTALLER_PATH_2013=C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE
+set VSIX_INSTALLER_PATH_2015=C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE
 set VSIX_INSTALLER_NAME=VSIXInstaller.exe
 
 if exist "%VSIX_INSTALLER_PATH_2010%\%VSIX_INSTALLER_NAME%" set VSIX_INSTALLER=%VSIX_INSTALLER_PATH_2010%\%VSIX_INSTALLER_NAME%
 if exist "%VSIX_INSTALLER_PATH_2012%\%VSIX_INSTALLER_NAME%" set VSIX_INSTALLER=%VSIX_INSTALLER_PATH_2012%\%VSIX_INSTALLER_NAME%
 if exist "%VSIX_INSTALLER_PATH_2013%\%VSIX_INSTALLER_NAME%" set VSIX_INSTALLER=%VSIX_INSTALLER_PATH_2013%\%VSIX_INSTALLER_NAME%
+if exist "%VSIX_INSTALLER_PATH_2015%\%VSIX_INSTALLER_NAME%" set VSIX_INSTALLER=%VSIX_INSTALLER_PATH_2015%\%VSIX_INSTALLER_NAME%
 
 if "%VSIX_INSTALLER%"=="" goto installer_not_found
 
@@ -27,7 +29,9 @@ if "%1"x==x goto noconfig
 set CONFIG_NAME=%1
 
 if "%2"x==x goto nosku
-set SKU_VERSION=%2
+if "%3"x==x goto nosku
+set SKU_NAME=%2
+set SKU_VERSION=%3
 goto install
 
 REM ---------------------------------------------------
@@ -50,8 +54,8 @@ set PROJECT_LOCATION=%~dp0
 if exist "%PROJECT_LOCATION%Binaries\%CONFIG_NAME%\VsChromium.vsix" set VSIX_FILE="%PROJECT_LOCATION%Binaries\%CONFIG_NAME%\%VSIX_FILENAME%"
 if "%VSIX_FILE%"=="" goto vsix_file_not_found
 
-"%VSIX_INSTALLER%" /skuName:Pro /skuVersion:%SKU_VERSION% /u:%VSIX_ID% 
-"%VSIX_INSTALLER%" /skuName:Pro /skuVersion:%SKU_VERSION% %VSIX_FILE%
+"%VSIX_INSTALLER%" /skuName:%SKU_NAME% /skuVersion:%SKU_VERSION% /u:%VSIX_ID% 
+"%VSIX_INSTALLER%" /skuName:%SKU_NAME% /skuVersion:%SKU_VERSION% %VSIX_FILE%
 goto end
 
 :noconfig
@@ -59,7 +63,7 @@ echo "You must specify Debug or Release as the config name."
 goto end
 
 :nosku
-echo "You must specify Visual Studio SKU version (10.0 for VS 2010, 11.0 for VS 2012, 12.0 for VS 2013)."
+echo "You must specify Visual Studio SKU name and version (10.0 for VS 2010, 11.0 for VS 2012, 12.0 for VS 2013)."
 goto end
 
 :installer_not_found

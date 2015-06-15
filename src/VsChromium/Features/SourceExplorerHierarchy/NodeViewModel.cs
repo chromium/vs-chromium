@@ -82,6 +82,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void AppendFullPath(StringBuilder sb) {
+      if (string.IsNullOrEmpty(this.Name))
+        return;
+
       if (PathHelpers.IsAbsolutePath(this.Name)) {
         sb.Append(this.Name);
         return;
@@ -98,6 +101,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void AppendRelativePath(StringBuilder sb) {
+      if (string.IsNullOrEmpty(this.Name))
+        return;
+
       if (PathHelpers.IsAbsolutePath(this.Name))
         return;
 

@@ -446,8 +446,8 @@
         </HierarchicalDataTemplate>
 
         <Style x:Key="SearchCodeResult" TargetType="TextBlock">
-          <Setter Property="FontFamily" Value="Consolas"/>
-          <Setter Property="FontSize" Value="13"/>
+          <Setter Property="FontFamily" Value="{Binding DataContext.TextExtractFontFamily, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+          <Setter Property="FontSize" Value="{Binding DataContext.TextExtractFontSize, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/> 
         </Style>
         <DataTemplate DataType="{x:Type codesearch:FilePositionViewModel}">
           <StackPanel Orientation="Horizontal">

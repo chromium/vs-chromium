@@ -128,6 +128,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.MatchWholeWord = setting.SearchMatchWholeWord;
       ViewModel.UseRegex = setting.SearchUseRegEx;
       ViewModel.IncludeSymLinks = setting.SearchIncludeSymLinks;
+      ViewModel.TextExtractFontFamily = setting.TextExtractFont.FontFamily.Name;
+      ViewModel.TextExtractFontSize = setting.TextExtractFont.Size;
     }
 
     private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs args) {

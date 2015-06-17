@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
@@ -21,6 +22,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string _statusText;
     private string _searchCodeValue;
     private string _searchFilePathsValue;
+    private string _textExtractFontFamily;
+    private double _textExtractFontSize;
 
     public enum DisplayKind {
       InformationMessages,
@@ -134,6 +137,32 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           "Toggle usage of regular expressions when searching text. " +
           "Regular expressions are currently {0}.",
           UseRegex ? "enabled" : "disabled");
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string TextExtractFontFamily {
+      get { return _textExtractFontFamily; }
+      set {
+        if (!Equals(_textExtractFontFamily, value)) {
+          _textExtractFontFamily = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextExtractFontFamily));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public double TextExtractFontSize {
+      get { return _textExtractFontSize; }
+      set {
+        if (Math.Abs(_textExtractFontSize - value) > 0.001) {
+          _textExtractFontSize = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextExtractFontSize));
+        }
       }
     }
 

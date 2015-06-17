@@ -406,6 +406,20 @@
       </TreeView.ItemContainerStyle>
 
       <TreeView.Resources>
+        <Style x:Key="TextExtractTextStyle" TargetType="TextBlock">
+          <Setter Property="FontFamily" Value="{Binding DataContext.TextExtractFontFamily, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+          <Setter Property="FontSize" Value="{Binding DataContext.TextExtractFontSize, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+        </Style>
+
+        <Style x:Key="PathTextStyle" TargetType="TextBlock">
+          <Setter Property="FontFamily" Value="{Binding DataContext.PathFontFamily, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+          <Setter Property="FontSize" Value="{Binding DataContext.PathFontSize, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+        </Style>
+
+        <Style x:Key="DisplayTextStyle" TargetType="TextBlock">
+          <Setter Property="FontFamily" Value="{Binding DataContext.DisplayFontFamily, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+          <Setter Property="FontSize" Value="{Binding DataContext.DisplayFontSize, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
+        </Style>
 
         <HierarchicalDataTemplate DataType="{x:Type codesearch:DirectoryEntryViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
@@ -421,7 +435,7 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding DisplayText}" />
+            <TextBlock Text="{Binding DisplayText}" Style="{StaticResource PathTextStyle}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
@@ -441,14 +455,10 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding DisplayText}" />
+            <TextBlock Text="{Binding DisplayText}" Style="{StaticResource PathTextStyle}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
-        <Style x:Key="SearchCodeResult" TargetType="TextBlock">
-          <Setter Property="FontFamily" Value="{Binding DataContext.TextExtractFontFamily, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/>
-          <Setter Property="FontSize" Value="{Binding DataContext.TextExtractFontSize, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}"/> 
-        </Style>
         <DataTemplate DataType="{x:Type codesearch:FilePositionViewModel}">
           <StackPanel Orientation="Horizontal">
             <StackPanel.ContextMenu>
@@ -459,25 +469,25 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
-            <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource SearchCodeResult}"/>
-            <TextBlock Text="{Binding MatchText}" Style="{StaticResource SearchCodeResult}"
+            <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource TextExtractTextStyle}"/>
+            <TextBlock Text="{Binding MatchText}" Style="{StaticResource TextExtractTextStyle}"
                        Foreground="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightForeground}}"
                        Background="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightBackground}}" />
-            <TextBlock Text="{Binding TextAfterMatch}" Style="{StaticResource SearchCodeResult}"/>
+            <TextBlock Text="{Binding TextAfterMatch}" Style="{StaticResource TextExtractTextStyle}"/>
           </StackPanel>
         </DataTemplate>
 
         <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextErrorItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding Text}" />
+            <TextBlock Text="{Binding Text}" Style="{StaticResource DisplayTextStyle}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
         <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextWarningItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding Text}" />
+            <TextBlock Text="{Binding Text}" Style="{StaticResource DisplayTextStyle}" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
@@ -485,7 +495,7 @@
         <DataTemplate DataType="{x:Type toolWindows:LazyItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding Text}" />
+            <TextBlock Text="{Binding Text}" Style="{StaticResource DisplayTextStyle}" />
           </StackPanel>
         </DataTemplate>
 
@@ -493,7 +503,7 @@
         <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
-            <TextBlock Text="{Binding Text}" />
+            <TextBlock Text="{Binding Text}" Style="{StaticResource DisplayTextStyle}" />
           </StackPanel>
         </DataTemplate>
 

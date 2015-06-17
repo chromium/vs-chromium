@@ -24,6 +24,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string _searchFilePathsValue;
     private string _textExtractFontFamily;
     private double _textExtractFontSize;
+    private string _pathFontFamily;
+    private double _pathFontSize;
+    private string _displayFontFamily;
+    private double _displayFontSize;
 
     public enum DisplayKind {
       InformationMessages,
@@ -162,6 +166,58 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         if (Math.Abs(_textExtractFontSize - value) > 0.001) {
           _textExtractFontSize = value;
           OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextExtractFontSize));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string PathFontFamily {
+      get { return _pathFontFamily; }
+      set {
+        if (!Equals(_pathFontFamily, value)) {
+          _pathFontFamily = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.PathFontFamily));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public double PathFontSize {
+      get { return _pathFontSize; }
+      set {
+        if (Math.Abs(_pathFontSize - value) > 0.001) {
+          _pathFontSize = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.PathFontSize));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string DisplayFontFamily {
+      get { return _displayFontFamily; }
+      set {
+        if (!Equals(_displayFontFamily, value)) {
+          _displayFontFamily = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.DisplayFontFamily));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public double DisplayFontSize {
+      get { return _displayFontSize; }
+      set {
+        if (Math.Abs(_displayFontSize - value) > 0.001) {
+          _displayFontSize = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.DisplayFontSize));
         }
       }
     }

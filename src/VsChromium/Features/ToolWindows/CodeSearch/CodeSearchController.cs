@@ -130,6 +130,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.IncludeSymLinks = setting.SearchIncludeSymLinks;
       ViewModel.TextExtractFontFamily = setting.TextExtractFont.FontFamily.Name;
       ViewModel.TextExtractFontSize = setting.TextExtractFont.Size;
+      ViewModel.DisplayFontFamily = setting.DisplayFont.FontFamily.Name;
+      ViewModel.DisplayFontSize = setting.DisplayFont.Size;
+      ViewModel.PathFontFamily = setting.PathFont.FontFamily.Name;
+      ViewModel.PathFontSize = setting.PathFont.Size;
     }
 
     private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs args) {

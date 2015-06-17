@@ -20,6 +20,7 @@ namespace VsChromium.ToolsOptions {
   public class GeneralOptions : DialogPage {
     private Font _textExtractFont;
     private Font _displayFont;
+    private Font _pathFont;
     private const string CodeSearchUserInterfaceCategory = "Code Search Interface";
     private const string CodeSearchOptionsCategory = "Code Search Options";
     private const BindingFlags PropertyBindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
@@ -119,6 +120,19 @@ namespace VsChromium.ToolsOptions {
         if (value == null)
           value = GetDefaultValueFromAttribute(x => x.TextExtractFont);
         _textExtractFont = value;
+      }
+    }
+
+    [Category(CodeSearchUserInterfaceCategory)]
+    [DisplayName("Path font")]
+    [Description("Font used to display file system paths entries in the Code Search tool window.")]
+    [DefaultValue(typeof(Font), "Segoe UI, 12pt")]
+    public Font PathFont {
+      get { return _pathFont; }
+      set {
+        if (value == null)
+          value = GetDefaultValueFromAttribute(x => x.PathFont);
+        _pathFont = value;
       }
     }
 

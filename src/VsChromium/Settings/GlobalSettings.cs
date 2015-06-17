@@ -27,6 +27,7 @@ namespace VsChromium.Settings {
     private bool _codingStyleElseIfOnNewLine;
     private Font _displayFont;
     private Font _textExtractFont;
+    private Font _pathFont;
 
     public event PropertyChangedEventHandler PropertyChanged;
 
@@ -124,6 +125,17 @@ namespace VsChromium.Settings {
 
         _textExtractFont = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextExtractFont));
+      }
+    }
+
+    public Font PathFont {
+      get { return _pathFont; }
+      set {
+        if (object.Equals(value, _pathFont))
+          return;
+
+        _pathFont = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.PathFont));
       }
     }
 

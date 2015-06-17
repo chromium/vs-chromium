@@ -5,34 +5,50 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 using VsChromium.Package;
 
 namespace VsChromium.ToolsOptions {
   [ClassInterface(ClassInterfaceType.AutoDual)]
   [ComVisible(true)]
   public class GeneralOptions : DialogPage {
+    private Font _textExtractFont;
+    private Font _displayFont;
     private const string CodeSearchUserInterfaceCategory = "Code Search Interface";
     private const string CodeSearchOptionsCategory = "Code Search Options";
+    private const BindingFlags PropertyBindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
 
     public GeneralOptions() {
       SetDefaults();
     }
 
     private void SetDefaults() {
-      SearchCodeMaxResults = 10 * 1000;
-      SearchFilePathsMaxResults = 2 * 1000;
-      MaxTextExtractLength = 120;
-      AutoSearchDelayMsec = 20;
-      DisplayFont = new Font(new FontFamily("Segoe UI"), 12);
-      TextExtractFont = new Font(new FontFamily("Consolas"), 13);
-      
-      SearchIncludeSymLinks = true;
+      var properties = this.GetType().GetProperties(PropertyBindingFlags);
+      foreach (var property in properties) {
+        property.SetValue(this, GetDefaultValueFromAttribute(property));
+      }
+    }
 
-      EnableSourceExplorerHierarchy = true;
+    private TProperty GetDefaultValueFromAttribute<TProperty>(Expression<Func<GeneralOptions, TProperty>> propertyLambda) {
+      var name = ReflectionUtils.GetPropertyName(this, propertyLambda);
+      var p = this.GetType().GetProperty(name, PropertyBindingFlags);
+      return (TProperty)GetDefaultValueFromAttribute(p);
+    }
+
+    private object GetDefaultValueFromAttribute(PropertyInfo property) {
+      foreach (var attr in property.GetCustomAttributes(true)) {
+        var dv = attr as DefaultValueAttribute;
+        if (dv != null) {
+          return dv.Value;
+        }
+      }
+      return ReflectionUtils.GetTypeDefaultValue(property.PropertyType);
     }
 
     public override void ResetSettings() {
@@ -83,14 +99,28 @@ namespace VsChromium.ToolsOptions {
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Display font")]
     [Description("Font used to display entries in the Code Search tool window.")]
-    [DefaultValue(typeof(Font), "Segoe UI, 12pt")]
-    public Font DisplayFont { get; set; }
+    [DefaultValue(typeof (Font), "Segoe UI, 12pt")]
+    public Font DisplayFont {
+      get { return _displayFont; }
+      set {
+        if (value == null)
+          value = GetDefaultValueFromAttribute(x => x.DisplayFont);
+        _displayFont = value;
+      }
+    }
 
     [Category(CodeSearchUserInterfaceCategory)]
     [DisplayName("Text extracts font")]
     [Description("Font used to display text extracts entries in the Code Search tool window.")]
     [DefaultValue(typeof(Font), "Consolas, 13pt")]
-    public Font TextExtractFont { get; set; }
+    public Font TextExtractFont {
+      get { return _textExtractFont; }
+      set {
+        if (value == null)
+          value = GetDefaultValueFromAttribute(x => x.TextExtractFont);
+        _textExtractFont = value;
+      }
+    }
 
     [Category(CodeSearchOptionsCategory)]
     [DisplayName("Match case")]

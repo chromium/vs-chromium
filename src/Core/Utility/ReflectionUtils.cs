@@ -3,15 +3,14 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Utility {
   public static class ReflectionUtils {
+    
+    
     private static MemberInfo GetMemberInfoImpl(Type type, LambdaExpression lambda) {
       var member = lambda.Body as MemberExpression;
       if (member == null)
@@ -99,6 +98,18 @@ namespace VsChromium.Core.Utility {
       Expression<Func<TProperty>> propertyLambda) {
       return GetPropertyInfoImpl(null, propertyLambda).Name;
     }
+
+    /// <summary>
+    /// Return the default value of a <see cref="Type"/> value.
+    /// Runtime equivalent of <code>default(T)</code>.
+    /// </summary>
+    public static object GetTypeDefaultValue(Type type) {
+      if (type.IsValueType) {
+        return Activator.CreateInstance(type);
+      }
+      return null;
+    }
+
     public static void CopyDeclaredPublicProperties(
         object source,
         string sourcePrefix,
@@ -115,13 +126,6 @@ namespace VsChromium.Core.Utility {
         var destinationProperty = destinationProperties.FirstOrDefault(x => x.Name == destName);
         if (destinationProperty != null) {
           destinationProperty.SetValue(destination, sourceValue);
-#if false
-          Logger.LogInfo("Copyging property value {0}-{5} from {1}.{2} to {3}.{4}",
-            sourceValue,
-            source.GetType().FullName, sourceProperty.Name,
-            destination.GetType().FullName, destinationProperty.Name,
-            destinationProperty.GetValue(destination));
-#endif
         } else if (throwOnExtraProperty) {
           throw new InvalidOperationException(string.Format(
             "Property \"{0}\" in destination type \"{1}\" not found from property \"{2}\" in source type \"{3}\".", 

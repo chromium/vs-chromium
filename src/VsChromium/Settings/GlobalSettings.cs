@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel;
+using System.Drawing;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Settings {
@@ -24,6 +25,8 @@ namespace VsChromium.Settings {
     private bool _codingStyleLongLine;
     private bool _codingStyleEndOfLineCharacter;
     private bool _codingStyleElseIfOnNewLine;
+    private Font _displayFont;
+    private Font _textExtractFont;
 
     public event PropertyChangedEventHandler PropertyChanged;
 
@@ -99,6 +102,28 @@ namespace VsChromium.Settings {
 
         _autoSearchDelayMsec = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.AutoSearchDelayMsec));
+      }
+    }
+
+    public Font DisplayFont {
+      get { return _displayFont; }
+      set {
+        if (object.Equals(value, _displayFont))
+          return;
+
+        _displayFont = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.DisplayFont));
+      }
+    }
+
+    public Font TextExtractFont {
+      get { return _textExtractFont; }
+      set {
+        if (object.Equals(value, _textExtractFont))
+          return;
+
+        _textExtractFont = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextExtractFont));
       }
     }
 

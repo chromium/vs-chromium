@@ -4,16 +4,15 @@
 
 using System;
 using System.ComponentModel;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Text.Differencing;
 using VsChromium.Core.Logging;
 using VsChromium.Package;
 
 namespace VsChromium.ToolsOptions {
   [ClassInterface(ClassInterfaceType.AutoDual)]
-  //[CLSCompliant(false)]
   [ComVisible(true)]
   public class GeneralOptions : DialogPage {
     private const string CodeSearchUserInterfaceCategory = "Code Search Interface";
@@ -28,7 +27,9 @@ namespace VsChromium.ToolsOptions {
       SearchFilePathsMaxResults = 2 * 1000;
       MaxTextExtractLength = 120;
       AutoSearchDelayMsec = 20;
-
+      DisplayFont = new Font(new FontFamily("Segoe UI"), 12);
+      TextExtractFont = new Font(new FontFamily("Consolas"), 13);
+      
       SearchIncludeSymLinks = true;
 
       EnableSourceExplorerHierarchy = true;
@@ -78,6 +79,18 @@ namespace VsChromium.ToolsOptions {
     [Description("Time interval to wait after user input before displaying search results. Lower value may slow down the User Interface.")]
     [DefaultValue(20)]
     public int AutoSearchDelayMsec { get; set; }
+
+    [Category(CodeSearchUserInterfaceCategory)]
+    [DisplayName("Display font")]
+    [Description("Font used to display entries in the Code Search tool window.")]
+    [DefaultValue(typeof(Font), "Segoe UI, 12pt")]
+    public Font DisplayFont { get; set; }
+
+    [Category(CodeSearchUserInterfaceCategory)]
+    [DisplayName("Text extracts font")]
+    [Description("Font used to display text extracts entries in the Code Search tool window.")]
+    [DefaultValue(typeof(Font), "Consolas, 13pt")]
+    public Font TextExtractFont { get; set; }
 
     [Category(CodeSearchOptionsCategory)]
     [DisplayName("Match case")]

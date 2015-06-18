@@ -7,5 +7,9 @@ using ProtoBuf;
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class SearchEngineFilesLoaded : PairedTypedEvent {
+    /// <summary>
+    /// The version of the file system tree for which files have been loaded.
+    /// </summary>
+    public long TreeVersion { get; set; }
   }
 }

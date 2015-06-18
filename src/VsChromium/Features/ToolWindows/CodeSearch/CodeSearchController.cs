@@ -47,10 +47,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly object _eventBusCookie2;
     private readonly object _eventBusCookie3;
 
+    private long _currentFileSystemTreeVersion = - 1;
+    private bool _performSearchOnNextRefresh;
+
     /// <summary>
     /// For generating unique id n progress bar tracker.
     /// </summary>
     private int _operationSequenceId;
+
 
     public CodeSearchController(
       CodeSearchControl control,
@@ -166,6 +170,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public void OnFileSystemTreeComputed(FileSystemTree tree) {
       ViewModel.FileSystemTreeAvailable = (tree.Root.Entries.Count > 0);
+      this._currentFileSystemTreeVersion = tree.Version;
 
       if (ViewModel.FileSystemTreeAvailable) {
         var items = CreateInfromationMessages(
@@ -176,8 +181,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           ViewModel.SwitchToInformationMessages();
         }
 
-        // Add top level nodes in search results explaining results may be outdated
-        AddResultsOutdatedMessage();
+        RefreshView(tree.Version);
       } else {
         var items = CreateInfromationMessages(
           string.Format("Open a source file from a local Chromium enlistment or") + "\r\n" +
@@ -185,9 +189,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ViewModel.SetInformationMessages(items);
         _searchResultDocumentChangeTracker.Disable();
         ViewModel.SwitchToInformationMessages();
+        FetchDatabaseStatistics();
       }
-
-      FetchDatabaseStatistics();
     }
 
     public void OnFileSystemTreeError(ErrorResponse error) {
@@ -200,12 +203,30 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void OnFilesLoadingProgress() {
-      OnFilesLoaded();
+      RefreshView(-1);
     }
 
-    public void OnFilesLoaded() {
-      // Add top level nodes in search results explaining results may be outdated
-      AddResultsOutdatedMessage();
+    public void OnFilesLoaded(long treeVersion) {
+      RefreshView(treeVersion);
+    }
+
+    /// <summary>
+    /// Refresh the view model after a significant event (such as a new file
+    /// system tree, files loaded, etc.)
+    /// </summary>
+    private void RefreshView(long treeVersion) {
+      // We'll get an update soon enough.
+      if (treeVersion != _currentFileSystemTreeVersion)
+        return;
+
+      // Perform a new search if the user forced an index refresh
+      if (_performSearchOnNextRefresh) {
+        _performSearchOnNextRefresh = false;
+        PerformSearch(true);
+      } else {
+        // Add top level nodes in search results explaining results may be outdated
+        AddResultsOutdatedMessage();
+      }
       FetchDatabaseStatistics();
     }
 
@@ -247,6 +268,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         Request = new RefreshFileSystemTreeRequest(),
         Id = "RefreshFileSystemTreeRequest",
         Delay = TimeSpan.FromSeconds(0.0),
+        OnSend = () => {
+          this._performSearchOnNextRefresh = true;
+        }
       };
 
       _uiRequestProcessor.Post(uiRequest);

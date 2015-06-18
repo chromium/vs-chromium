@@ -230,7 +230,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (@event != null) {
         WpfUtilities.Post(this, () => {
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
-          Controller.OnFilesLoaded();
+          Controller.OnFilesLoaded(@event.TreeVersion);
           if (@event.Error != null) {
             Controller.OnFileSystemTreeError(@event.Error);
             return;

@@ -31,7 +31,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void OnFileSystemTreeError(ErrorResponse error);
     void OnFilesLoading();
     void OnFilesLoadingProgress();
-    void OnFilesLoaded();
+    void OnFilesLoaded(long treeVersion);
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void OpenFileInEditorWith(FileEntryViewModel fileEntry, Span? span);

@@ -70,7 +70,8 @@ namespace VsChromium.Server.Ipc.TypedEvents {
     private void SearchEngineOnFilesLoaded(object sender, FilesLoadedResult args) {
       _typedEventSender.SendEventAsync(new SearchEngineFilesLoaded {
         OperationId = args.OperationInfo.OperationId,
-        Error = ErrorResponseHelper.CreateErrorResponse(args.Error)
+        Error = ErrorResponseHelper.CreateErrorResponse(args.Error),
+        TreeVersion = args.TreeVersion,
       });
     }
   }

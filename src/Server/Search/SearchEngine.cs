@@ -45,6 +45,7 @@ namespace VsChromium.Server.Search {
     /// </summary>
     private readonly ITaskQueue _taskQueue;
     private volatile IFileDatabase _currentFileDatabase;
+    private long _currentTreeVersion = -1;
 
     [ImportingConstructor]
     public SearchEngine(
@@ -247,14 +248,21 @@ namespace VsChromium.Server.Search {
           operationInfo = info,
         OnError = (info, error) => {
           OnFilesLoading(info);
-          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error });
+          OnFilesLoaded(new FilesLoadedResult {
+            OperationInfo = info, 
+            Error = error,
+            TreeVersion = _currentTreeVersion,
+          });
         },
         Execute = info => {
           _currentFileDatabase = _fileDatabaseFactory.CreateWithChangedFiles(
             _currentFileDatabase,
             files,
             onLoading: () => OnFilesLoading(operationInfo),
-            onLoaded: () => OnFilesLoaded(new FilesLoadedResult { OperationInfo = operationInfo }));
+            onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
+              OperationInfo = operationInfo,
+              TreeVersion = _currentTreeVersion,
+            }));
         }
       });
     }
@@ -442,8 +450,14 @@ namespace VsChromium.Server.Search {
         OnBeforeExecute = info =>
           OnFilesLoading(info),
 
-        OnError = (info, error) =>
-          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info, Error = error }),
+        OnError = (info, error) => {
+          _currentTreeVersion = newSnapshot.Version;
+          OnFilesLoaded(new FilesLoadedResult {
+            OperationInfo = info,
+            Error = error,
+            TreeVersion = newSnapshot.Version
+          });
+        },
 
         Execute = info => {
           using (new TimeElapsedLogger("Computing new state of file database")) {
@@ -461,7 +475,11 @@ namespace VsChromium.Server.Search {
             // Store and activate final new state (atomic operation).
             _currentFileDatabase = newState;
           }
-          OnFilesLoaded(new FilesLoadedResult { OperationInfo = info });
+          _currentTreeVersion = newSnapshot.Version;
+          OnFilesLoaded(new FilesLoadedResult {
+            OperationInfo = info,
+            TreeVersion = newSnapshot.Version
+          });
         }
       });
     }

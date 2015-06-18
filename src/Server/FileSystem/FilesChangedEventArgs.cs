@@ -7,6 +7,9 @@ using System.Collections.ObjectModel;
 
 namespace VsChromium.Server.FileSystem {
   public class FilesChangedEventArgs : EventArgs {
+    /// <summary>
+    /// The list of changed files.
+    /// </summary>
     public ReadOnlyCollection<ProjectFileName> ChangedFiles { get; set; }
   }
 }

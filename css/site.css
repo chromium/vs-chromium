@@ -127,12 +127,12 @@ table td {
   padding: 10px;
 }
 
-#features-table {
+.table {
   display: table;
   border-spacing: 10px 20px;
 }
 
-#features-table img {
+.table img {
   margin: 0;
 }
 

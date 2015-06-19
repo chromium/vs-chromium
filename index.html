@@ -51,185 +51,225 @@
     <li><a href="#whatsnew">What's new</a></li>
     <li><a href="#keyboard-shortcuts">Keyboard shortcuts</a></li>
     <li><a href="#configuration">Configuration</a></li>
+    <li>
+      <ul class="ul-second">
+        <li><a href="#tools-options">Tools&nbsp;|&nbsp;Options pages</a></li>
+        <li><a href="#configuration-files">Configuration files</a></li>
+      </ul>
+    </li>
     <li><a href="#tech-specs">Technical Specifications</a></li>
   </ul>
 </div> <!-- sidebar -->
 
 <div id="content">
   <!--============================================================================-->
-  <div id ="index">
+  <div id="index">
     <h1>Overview</h1>
 
-    <p>VsChromium is a Visual Studio Extension containing a collection of tools
-      useful for editing, navigating and debugging code.</p>
+    <p>
+      VsChromium is a Visual Studio Extension containing a collection of tools
+      useful for editing, navigating and debugging code.
+    </p>
 
-    <p>VsChromium was originally developed to help when contributing code to the
+    <p>
+      VsChromium was originally developed to help when contributing code to the
       <a href="http:/www.chromium.org" target="_blank">Chromium project</a>, but
       has evolved over time to become a more general purpose extension that can
-      be useful for any project.</p>
+      be useful for any project.
+    </p>
 
-    <p>Amongst other things, VsChromium offers full text search engine, a fast
+    <p>
+      Amongst other things, VsChromium offers full text search engine, a fast
       and scalable alternative to the built-in "Find in Files" Visual Studio
       feature that can provide search results in less than 0.1 seconds
-      for 100,000+ files.</p>
+      for 100,000+ files.
+    </p>
 
-    <p>See the <a href="#feature-summary">Feature summary</a> and
+    <p>
+      See the <a href="#feature-summary">Feature summary</a> and
       <a href="#getting-started">Getting started</a> sections for more
-      information.</p>
+      information.
+    </p>
 
     <!--============================================================================-->
     <h2 id="feature-summary">Feature summary</h2>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-        <p>
-        VsChromium comes with a built-in <a href="#search-engine">full text search
-        engine</a>, fast and scalable to hundred of thousands of text files.
-        The <a href="#code-search">Code Search</a> tool window provides
-        an alternative to Visual Studio's build-int Find In Files. It uses
-        VsChromium search engine to provide search results in typically less
-        than 0.1 sec even for the largest code bases, such as Chromium.</p>
-        <p>Code Search is always one keystroke away, as hitting
-        <span class="keyboard-shortcut">Ctrl-Shift-;</span> immediately starts
-        a full text search with either the current editor selection, or the
-        word at the current caret location.</p>
+          <p>
+            VsChromium comes with a built-in <a href="#search-engine">
+              full text search
+              engine
+            </a>, fast and scalable to hundred of thousands of text files.
+            The <a href="#code-search">Code Search</a> tool window provides
+            an alternative to Visual Studio's build-int Find In Files. It uses
+            VsChromium search engine to provide search results in typically less
+            than 0.1 sec even for the largest code bases, such as Chromium.
+          </p>
+          <p>
+            Code Search is always one keystroke away, as hitting
+            <span class="keyboard-shortcut">Ctrl-Shift-;</span> immediately starts
+            a full text search with either the current editor selection, or the
+            word at the current caret location.
+          </p>
         </div>
         <div class="cell">
-          <img src="Screenshots/0.1-CodeSearch.png"></img>
+          <img src="Screenshots/0.1-CodeSearch.png"/>
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-          <img src="Screenshots/0.11-FilePaths.png"></img>
+          <img src="Screenshots/0.11-FilePaths.png"/>
         </div>
         <div class="cell">
-        <p>Search options include <span class="highlight-inline">Match Case</span>,
-        <span class="highlight-inline">Match Whole Word</span>,
-        <span class="highlight-inline">Use Regular Expressions</span>
-        and <span class="highlight-inline">Include Symlinks</span>.</p>
-        <p>The scope of the search -
-        <span class="highlight-inline">File Paths</span> - can be refined
-        at any time using a <a href="#filepath-syntax">flexible syntax</a>
-        for defining file name patterns.</p>
+          <p>
+            Search options include <span class="highlight-inline">Match Case</span>,
+            <span class="highlight-inline">Match Whole Word</span>,
+            <span class="highlight-inline">Use Regular Expressions</span>
+            and <span class="highlight-inline">Include Symlinks</span>.
+          </p>
+          <p>
+            The scope of the search -
+            <span class="highlight-inline">File Paths</span> - can be refined
+            at any time using a <a href="#filepath-syntax">flexible syntax</a>
+            for defining file name patterns.
+          </p>
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-        <p>In addition to automatically recognizing Chromium enlistments,
-        <a href="#code-search">Code Search</a> can now be enabled on any directory, project
-        or solution by creating a <a href="#custom-enlistments">custom project file</a>
-        <span class="highlight-inline">vs-chromium-project.txt</span> anywhere on disk
-        (see <a href="https://github.com/chromium/vs-chromium/blob/master/vs-chromium-project.txt"
-        target="_blank">here</a> for an example).</p>
-        <p>The <a href="#search-engine">search engine</a> looks at the contents of each section to decide
-        which files to load and index, automatically skipping binary files .</p>
-        <p>When a <span class="highlight-inline">vs-chromium-project.txt</span> file is located in
-        the same directory (or parent) as a Visual Studio Solution file (.sln), VsChromium
-        automatically loads and activate the Search Engine when the solution is loaded in
-        Visual Studio.
+          <p>
+            In addition to automatically recognizing Chromium enlistments,
+            <a href="#code-search">Code Search</a> can now be enabled on any directory, project
+            or solution by creating a <a href="#getting-started-project-file">custom project file</a>
+            <span class="highlight-inline">vs-chromium-project.txt</span> anywhere on disk
+            (see <a href="https://github.com/chromium/vs-chromium/blob/master/vs-chromium-project.txt"
+                    target="_blank">here</a> for an example).
+          </p>
+          <p>
+            The <a href="#search-engine">search engine</a> looks at the contents of each section to decide
+            which files to load and index, automatically skipping binary files .
+          </p>
+          <p>
+            When a <span class="highlight-inline">vs-chromium-project.txt</span> file is located in
+            the same directory (or parent) as a Visual Studio Solution file (.sln), VsChromium
+            automatically loads and activate the Search Engine when the solution is loaded in
+            Visual Studio.
         </div>
         <div class="cell">
-          <img src="Screenshots/0.2-ProjectFile.png"></img>
+          <img src="Screenshots/0.2-ProjectFile.png"/>
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-          <img src="Screenshots/0.3-SourceExplorer.png"></img>
+          <img src="Screenshots/0.3-SourceExplorer.png"/>
         </div>
         <div class="cell">
-        <p><a href="#source-explorer">Source Explorer</a> offers a hierarchical
-        view of the files and directories indexed by the
-        <a href="#search-engine">search engine</a>.</p>
+          <p>
+            <a href="#source-explorer">Source Explorer</a> offers a hierarchical
+            view of the files and directories indexed by the
+            <a href="#search-engine">search engine</a>.
+          </p>
 
-        <p>Source Explorer integrates with Visual Studio Solution Explorer as
-        a custom project node, refreshed dynamically as files and directories
-        change on disk, so there is no need to create and maintain an
-        additional Visual Studio project file</p>
+          <p>
+            Source Explorer integrates with Visual Studio Solution Explorer as
+            a custom project node, refreshed dynamically as files and directories
+            change on disk, so there is no need to create and maintain an
+            additional Visual Studio project file
+          </p>
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-        <p>VsChromium features can be enabled, disabled and customized through custom
-        <a href="#tools-options">Tools|Options</a> pages.</p>
+          <p>
+            VsChromium features can be enabled, disabled and customized through custom
+            <a href="#tools-options">Tools&nbsp;|&nbsp;Options</a> pages.
+          </p>
         </div>
         <div class="cell">
-          <img src="Screenshots/0.5-ToolsOptions.png"></img>
+          <img src="Screenshots/0.5-ToolsOptions.png"/>
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-          <img src="Screenshots/0.6-FormatComments.png"></img>
+          <img src="Screenshots/0.6-FormatComments.png"/>
         </div>
         <div class="cell">
-        <a href="#format-comment">Format C# and C++ comments</a> to 80 columns using the
-        <span class="keyboard-shortcut">Ctrl-K, C</span> keyboard shortcut.
+          <a href="#format-comment">Format C# and C++ comments</a> to 80 columns using the
+          <span class="keyboard-shortcut">Ctrl-K, C</span> keyboard shortcut.
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-        <p>Highlight common <a href="#chromium-style-checker">Chromium Coding Style</a> violation
-        in c++ source and header files.</p>.
+          <p>
+            Highlight common <a href="#chromium-style-checker">Chromium Coding Style</a> violation
+            in c++ source and header files.
+          </p>.
         </div>
         <div class="cell">
-          <img src="Screenshots/0.7-CodingStyle.png"></img>
+          <img src="Screenshots/0.7-CodingStyle.png"/>
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-          <img src="Screenshots/0.8-AttachToChrome.png"></img>
+          <img src="Screenshots/0.8-AttachToChrome.png"/>
         </div>
         <div class="cell">
-        <p><a href="#attach-to-chrome">Attach to Chrome</a> shows the list of running Chrome processed
-        and allows debugging any of them. During debugging, custom Visual Studio Visualizers are defined
-        to display common Chromium data structures in a user friendly format.
+          <p>
+            <a href="#attach-to-chrome">Attach to Chrome</a> shows the list of running Chrome processed
+            and allows debugging any of them. During debugging, custom Visual Studio Visualizers are defined
+            to display common Chromium data structures in a user friendly format.
         </div>
       </div>
     </div>
 
     <!--============================================================================-->
-    <h2 id="requirements">Requirements</h1>
+    <h2 id="requirements">Requirements</h2>
     <ul>
-      <li>VsChromium is compatible with Visual Studio Pro 2013 and up, including
-      the free <a href="https://www.visualstudio.com/en-us/products/visual-studio-community-vs.aspx" target="_blank">Visual Studio Community 2013</a>.</li>
-      <li>A Windows 64-bit operating system is required.  Certain features are
+      <li>
+        VsChromium is compatible with Visual Studio Pro 2013 and up, including
+        the free <a href="https://www.visualstudio.com/en-us/products/visual-studio-community-vs.aspx" target="_blank">Visual Studio Community 2013</a>.
+      </li>
+      <li>
+        A Windows 64-bit operating system is required.  Certain features are
         disabled for versions of Windows less than Windows 7.
       </li>
       <li>
@@ -240,13 +280,14 @@
 
     <!--============================================================================-->
     <h2 id="installation">Installation</h2>
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell" style="vertical-align: top">
           <ul>
-            <li>Download the latest release of
+            <li>
+              Download the latest release of
               <a href="https://github.com/chromium/vs-chromium/releases/latest" target="_blank">VsChromium.vsix</a>
             </li>
             <li>Open the file (double click) to open the VSIX Installer dialog.</li>
@@ -257,14 +298,15 @@
           </ul>
         </div>
         <div class="cell">
-          <img src="Screenshots/VsixInstall.png"></img>
+          <img src="Screenshots/VsixInstall.png"/>
         </div>
       </div>
     </div>
 
-    <img src="Screenshots/VsixEnable.png" /></li>
+    <img src="Screenshots/VsixEnable.png" />
 
-  <hr />
+  </div>
+  <hr/>
 
   <!--============================================================================-->
   <div id="getting-started">
@@ -282,7 +324,11 @@
     configuration file
     <span class="highlight-inline">vs-chromium-project.txt</span>.<p>
 
-    <div id="features-table">
+    <p>A <span class="highlight-inline">vs-chromium-project.txt</span> defines
+      the files and directories to include in the Source Explorer window, as well
+      as the files added to the index used by the Code Search window.</p>
+
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
@@ -304,25 +350,30 @@
             with a Visual Studio Solution, save the file next to the ".sln" file, or in any
             parent directory.</li>
             <li>The search engine should start loading files right away, and
-            both <a href="#solution-explorer">Solution Explorer</a> and
+            both <a href="#source-explorer">Source Explorer</a> and
             <a href="#code-search">Code Search</a> will be available shortly
             afterward.</li>
           </ul>
         </div>
-        <div class="cell">
-          <img src="Screenshots/0.2-ProjectFile.png"></img>
+        <div class="cell" style="border: black; border-width: 1px; border-style: solid; margin: 5px; padding: 5px; vertical-align: top">
+          <div>
+            <code>
+              [SearchableFiles.include]<br />*
+            </code>
+          </div>
+          <!-- <img src="Screenshots/0.2-ProjectFile.png"></img> -->
         </div>
       </div>
     </div>
 
-    <img src="Screenshots/1.5-GettingStarted.png"></img>
+    <img src="Screenshots/1.5-GettingStarted.png"/>
 
   <hr />
 
   <!--============================================================================-->
     <h2 id="getting-started-chromium">Getting started with Chromium enlistments</h2>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
@@ -331,21 +382,20 @@
             <li>Install VsChromium and start Visual Studio</li>
             <li>Open a source file from a Chromium enlistment on disk</li>
             <li>The search engine should start loading files right away, and
-            both <a href="#solution-explorer">Solution Explorer</a> and
+            both <a href="#source-explorer">Source Explorer</a> and
             <a href="#code-search">Code Search</a> will be available shortly
             afterward.</li>
           </ul>
         </div>
         <div class="cell">
-          <img src="Screenshots/2.2-GettingStartedChromium.png"></img>
+          <img src="Screenshots/2.2-GettingStartedChromium.png"/>
         </div>
       </div>
     </div>
 
-    <img src="Screenshots/2.4-GettingStartedChromium.png"></img>
+    <img src="Screenshots/2.4-GettingStartedChromium.png"/>
 
   </div>
-
   <hr/>
 
   <!--============================================================================-->
@@ -362,23 +412,25 @@
     directories and files loaded in the search engine. The contents
     updates automatically as files are changed on disk.</p>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-          <img src="Screenshots/0.3-SourceExplorer.png"></img>
+          <img src="Screenshots/0.3-SourceExplorer.png"/>
         </div>
         <div class="cell">
-        <p><a href="#source-explorer">Source Explorer</a> offers a hierarchical
-        view of the files and directories indexed by the
-        <a href="#search-engine">search engine</a>.</p>
+          <p>
+            <a href="#source-explorer">Source Explorer</a> offers a hierarchical
+            view of the files and directories indexed by the
+            <a href="#search-engine">search engine</a>.
+          </p>
 
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
@@ -388,7 +440,7 @@
         contextual menus.</p>
         </div>
         <div class="cell">
-          <img src="Screenshots/SourceExplorerContextMenu.png"></img>
+          <img src="Screenshots/SourceExplorerContextMenu.png"/>
         </div>
       </div>
     </div>
@@ -403,35 +455,40 @@
     through the <span class="highlight-inline">View | Other Windows</span>
     top level menu.</p>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-        <p>Code Search is always one keystroke away, as hitting
-        <span class="keyboard-shortcut">Ctrl-Shift-;</span> immediately starts
-        a full text search with either the current editor selection, or the
-        word at the current caret location.</p>
+          <p>
+            Code Search is always one keystroke away, as hitting
+            <span class="keyboard-shortcut">Ctrl-Shift-;</span> immediately starts
+            a full text search with either the current editor selection, or the
+            word at the current caret location.
+          </p>
         </div>
         <div class="cell">
-          <img src="Screenshots/0.1-CodeSearch.png"></img>
+          <img src="Screenshots/0.1-CodeSearch.png"/>
         </div>
       </div>
     </div>
 
-    <div id="features-table">
+    <div class="table">
       <div class="column"></div>
       <div class="column"></div>
       <div class="row">
         <div class="cell">
-          <img src="Screenshots/0.11-FilePaths.png"></img>
+          <img src="Screenshots/0.11-FilePaths.png"/>
         </div>
         <div class="cell">
-        <p>The scope of the search - &quot;File Paths&quot; - can be refined at any time using
-        a <a href="#filepath-syntax">flexible syntax</a> for defining file name patterns.</p>
-        <p>Search options include <span class="highlight-inline">Match&nbsp;Case</span>,
-        <span class="highlight-inline">Match&nbsp;Whole&nbsp;Word</span> and
-        <span class="highlight-inline">Use&nbsp;Regular&nbsp;Expressions</span>.
+          <p>
+            The scope of the search - &quot;File Paths&quot; - can be refined at any time using
+            a <a href="#filepath-syntax">flexible syntax</a> for defining file name patterns.
+          </p>
+          <p>
+            Search options include <span class="highlight-inline">Match&nbsp;Case</span>,
+            <span class="highlight-inline">Match&nbsp;Whole&nbsp;Word</span> and
+            <span class="highlight-inline">Use&nbsp;Regular&nbsp;Expressions</span>.
         </div>
       </div>
     </div>
@@ -513,7 +570,7 @@
       portion of the path (e.g. <span class="highlight-inline">foo</span>
       matches <span class="highlight-inline">afoo1.txt</span>,
       <span class="highlight-inline">foo.txt</span>, etc).
-    <ul>
+    </ul>
 
     <p>Examples</p>
     <table>
@@ -693,7 +750,7 @@
   <!--============================================================================-->
   <div id="whatsnew">
     <h1>What's new</h1>
-    <h2 id="whatsnew-0-9-9">v0.9.14</h2>
+    <h2 id="whatsnew-0-9-14">v0.9.14</h2>
     <p>See <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.14"
     target="_blank">v0.9.14 release nodes</a></p>
     <h2 id="whatsnew-0-9-9">v0.9.9</h2>
@@ -727,7 +784,6 @@
       <li>Custom visualizers for base::Time and base::TimeDelta</li>
     </ul>
     <h4>Current limitations of Auto attach to Child Processes:</h4>
-    </p>
     <ul>
       <li>
         Only works for processes attached through the Attach to Chrome dialog.
@@ -762,7 +818,16 @@
 
   <!--============================================================================-->
   <div id="configuration">
-    <h1>Configuration files</h1>
+
+    <h1 id="tools-options">Tools&nbsp;|&nbsp;Options pages</h1>
+    <p>
+      VsChromium features can be enabled, disabled and customized through custom
+      <a href="#tools-options">Tools&nbsp;|&nbsp;Options</a> pages.
+    </p>
+
+    <img src="Screenshots/0.5-ToolsOptions.png" />
+
+    <h1 id="configuration-files">Configuration files</h1>
     <p>
       One of the goals of VsChromium is to work "out of the box". To enable this,
       a certain number of assumptions had to be made. Most of these assumptions
@@ -866,7 +931,7 @@
           <td><span class="keyboard-shortcut">Ctrl-Shift-;</span></td>
         </tr>
         <tr>
-          <td><a href="#code-search-filepaths">File Paths search</a></td>
+          <td><a href="#code-search-file-paths">File Paths search</a></td>
           <td><span class="keyboard-shortcut">Ctrl-Shift-'</span></td>
         </tr>
         <tr>
@@ -963,6 +1028,7 @@
   </div>
 
 </div> <!-- content -->
+
 </div> <!-- container -->
 
 </body>

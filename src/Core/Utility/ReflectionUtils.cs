@@ -110,6 +110,13 @@ namespace VsChromium.Core.Utility {
       return null;
     }
 
+    /// <summary>
+    /// Copy properties from one object instance to another. The property names
+    /// must match exactly, or match according to the source/destination
+    /// prefix. <paramref name="throwOnExtraProperty"/> is true if the method
+    /// throws when the source instance contains public properties not present
+    /// in the destination instance.
+    /// </summary>
     public static void CopyDeclaredPublicProperties(
         object source,
         string sourcePrefix,
@@ -118,21 +125,34 @@ namespace VsChromium.Core.Utility {
         bool throwOnExtraProperty) {
       sourcePrefix = sourcePrefix ?? "";
       destinationPrefix = destinationPrefix ?? "";
-      var sourceProperties = source.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-      var destinationProperties = destination.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+      const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
+      var sourceProperties = source.GetType().GetProperties(bindingFlags);
+      var destinationProperties = destination.GetType().GetProperties(bindingFlags);
       foreach (var sourceProperty in sourceProperties) {
-        var sourceValue = sourceProperty.GetValue(source);
-        var destName = destinationPrefix + sourceProperty.Name.Substring(sourcePrefix.Length);
-        var destinationProperty = destinationProperties.FirstOrDefault(x => x.Name == destName);
+        var destinationPropertyName = 
+          GetDestinationPropertyName(sourcePrefix, destinationPrefix, sourceProperty);
+        var destinationProperty = destinationProperties
+          .FirstOrDefault(x => x.Name == destinationPropertyName);
         if (destinationProperty != null) {
+          var sourceValue = sourceProperty.GetValue(source);
           destinationProperty.SetValue(destination, sourceValue);
         } else if (throwOnExtraProperty) {
           throw new InvalidOperationException(string.Format(
-            "Property \"{0}\" in destination type \"{1}\" not found from property \"{2}\" in source type \"{3}\".", 
-            destName, destination.GetType().FullName,
-            sourceProperty.Name, source.GetType().FullName));
+            "Property \"{0}\" in source type \"{1}\" does not have an " + 
+            "equivalent property in destination type \"{2}\".", 
+            sourceProperty.Name,
+            source.GetType().FullName,
+            destination.GetType().FullName));
         }
       }
+    }
+
+    private static string GetDestinationPropertyName(string sourcePrefix, string destinationPrefix, PropertyInfo sourceProperty) {
+      // The source property may not exist...
+      if (sourceProperty.Name.Length < sourcePrefix.Length)
+        return "";
+
+      return destinationPrefix + sourceProperty.Name.Substring(sourcePrefix.Length);
     }
   }
 }

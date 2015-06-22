@@ -31,6 +31,7 @@
         <li><a href="#code-search">Code Search</a></li>
         <li><a href="#code-search-search-code">Search Code syntax</a></li>
         <li><a href="#code-search-file-paths">File Paths syntax</a></li>
+        <li><a href="#project-file-format">Project file format</a></li>
       </ul>
     </li>
     <li><a href="#editor-features">Editor features</a></li>
@@ -312,65 +313,70 @@
   <div id="getting-started">
     <h1>Getting started</h1>
 
-    <p>Although the VsChromium search engine was initially implemented to work
-    exclusively with Chromium enlistments, it has been extended to support
-    any directory or Visual Studio project on disk.
+    <p>
+      Although the VsChromium search engine was initially implemented to work
+      exclusively with Chromium enlistments, it has been extended to support
+      any directory or Visual Studio project on disk.</p>
 
-  <!--============================================================================-->
+    <!--============================================================================-->
     <h2 id="getting-started-project-file">Getting started with existing projects</h2>
 
-    <p>The VsChromium <a href="#search-engine">Code Search</a> features can be
-    enabled for any existing project or directory on disk by creating a custom
-    configuration file
-    <span class="highlight-inline">vs-chromium-project.txt</span>.<p>
+    <p>
+      The VsChromium <a href="#source-explorer">Source Explorer</a> and
+      <a href="#search-engine">Code Search</a> features can be enabled for any
+      existing project or directory on disk by creating a custom configuration file
+      <span class="highlight-inline">vs-chromium-project.txt</span> in the top-level
+      directory of the project.
+    </p>
 
-    <p>A <span class="highlight-inline">vs-chromium-project.txt</span> defines
-      the files and directories to include in the Source Explorer window, as well
-      as the files added to the index used by the Code Search window.</p>
-
-    <div class="table">
-      <div class="column"></div>
-      <div class="column"></div>
-      <div class="row">
-        <div class="cell" style="vertical-align: top">
-          <ul>
-            <li>Install VsChromium and start Visual Studio</li>
-            <li>Create a new text file and create the 3 sections
-            <span class="highlight-inline">[SourceExplorer.ignore]</span>,
-            <span class="highlight-inline">[SearchableFiles.ignore]</span> and
-            <span class="highlight-inline">[SearchableFiles.include]</span>.
-            These sections define which files and directories are loaded by the
-            search engine, and will show up in <a href="#source-explorer">Source Explorer</a> and
-            <a href="#code-search">Code Search</a>. The sections contents follows
-            the same format as a <a href="http://git-scm.com/docs/gitignore#_pattern_format"
-            target="_blank">.gitignore</a> file</li>
-            <li>Save the text file in the directory of the project to index and
-            name it <span class="highlight-inline">vs-chromium-project.txt</span></li>
-            <li>Note: If you want Code Search and Source Explorer to be enabled automatically
-            with a Visual Studio Solution, save the file next to the ".sln" file, or in any
-            parent directory.</li>
-            <li>The search engine should start loading files right away, and
-            both <a href="#source-explorer">Source Explorer</a> and
-            <a href="#code-search">Code Search</a> will be available shortly
-            afterward.</li>
-          </ul>
-        </div>
-        <div class="cell" style="border: black; border-width: 1px; border-style: solid; margin: 5px; padding: 5px; vertical-align: top">
-          <div>
-            <code>
-              [SearchableFiles.include]<br />*
-            </code>
-          </div>
-          <!-- <img src="Screenshots/0.2-ProjectFile.png"></img> -->
+   <ul>
+    <li>
+      <p>Install VsChromium and start Visual Studio</p>
+    </li>
+    <li>
+      <p>Create a new empty text file and paste the following text in it:</p>
+      <div style="border: black; border-width: 1px; border-style: solid;">
+        <div>
+          <code>
+            <b>
+              [SearchableFiles.include]<br />
+              *
+            </b>
+          </code>
         </div>
       </div>
-    </div>
+      <p>
+        Note: The single section above indicates that all files and sub directories should
+        be included in the <a href="#source-explorer">Source Explorer</a> feature,
+        and that all text files should be indexed for the
+        <a href="#search-engine">Code Search</a> feature. See
+        <a href="#project-file-format">Project file format</a> for a complete description.
+      </p>
+    </li>
+    <li>
+      <p>
+        Save the text file in the top level directory of the project to index and
+        name it <span class="highlight-inline">vs-chromium-project.txt</span>
+      </p>
+      <p>
+        Note: If you want Code Search and Source Explorer to be enabled automatically
+        with a Visual Studio Solution, save the file next to the ".sln" file, or in any
+        parent directory.
+      </p>
+    </li>
+    <li>
+      <p>
+        The search engine should start loading files right away, and
+        both <a href="#source-explorer">Source Explorer</a> and
+        <a href="#code-search">Code Search</a> will be available shortly
+        afterward.
+      </p>
+    </li>
+    </ul>
 
-    <img src="Screenshots/1.5-GettingStarted.png"/>
+    <img src="Screenshots/1.5-GettingStarted.png" />
 
-  <hr />
-
-  <!--============================================================================-->
+    <!--============================================================================-->
     <h2 id="getting-started-chromium">Getting started with Chromium enlistments</h2>
 
     <div class="table">
@@ -619,6 +625,104 @@
       </tbody>
     </table>
   </div>
+
+  <!--============================================================================-->
+  <div id="project-file-format">
+    <h2>Project file format</h2>
+
+    <p>
+      In general, a <span class="highlight-inline">vs-chromium-project.txt</span>
+      can contain three sections.
+    </p>
+
+    <table>
+      <tr>
+        <td valign="top"><b>[SourceExplorer.ignore]</b></td>
+        <td valign="top">
+          This section contains zero or more file path patterns, one per line,
+          using the <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax, to filter the list of files and
+          directories to include in the Source Explorer window.<br />
+          Note that by default, all files and sub-directories are included
+          in the Source Explorer window, so this section is optional.
+          It is however sometimes convenient to exclude files and/or
+          directories that don't contains interesting files (e.g. a .git
+          directory).<br />
+          Note this file is also implicitly used to filter the files and
+          directories included in the index used by the Code Search feature.
+        </td>
+        <td valign="top">
+          <div>Example</div>
+          <div>
+            <code>
+              <b>
+                [SourceExplorer.ignore]<br />
+                .git/<br />
+                *.suo
+              </b>
+            </code>
+          </div>
+          <p>
+            Indicates that no directory named <em>.git</em> and no file with
+            the <em>.suo</em> extension should be shown in the
+            <a href="#source-explorer">Source Explorer</a> window.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>[SearchableFiles.include]</b></td>
+        <td valign="top">
+          This section contains zero or more file path patterns, one per line,
+          using the <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax, to specify which files to
+          <bold>include</bold> in the index used by the Code Search feaure.<br />
+          Ntoe that if this section is empty, no file is included in the index.
+        </td>
+        <td valign="top">
+          <div>Example</div>
+          <div>
+            <code>
+              <b>
+                [SearchableFiles.include]<br />
+                *
+              </b>
+            </code>
+          </div>
+          <p>
+            Indicates that all files and directories should be included shown
+            in the <a href="#source-explorer">Code Search</a> index.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"><b>[SearchableFiles.ignore]</b></td>
+        <td valign="top">
+          This section uses a <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax to exclude files from the
+          index used by the Code Seatrch feature.<br />
+          Adding entries to this section can be useful to decrease the size
+          of the index by filtering out files that don't contain relevant
+          text (e.g binary files).<br />
+          Note that since version 0.9.14, binary files are automatically
+          excluded during index creation.
+        </td>
+        <td valign="top">
+          <div>Example</div>
+          <div>
+            <code>
+              <b>
+                [SearchableFiles.ignore]<br />
+                Debug/<br />
+                Release/<br />
+                *.pdb<br />
+                *.exe<br />
+                *.dll<br />
+              </b>
+            </code>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+
   <hr />
 
   <!--============================================================================-->
@@ -888,6 +992,7 @@
         </td>
       </tr>
     </table>
+
     <h2>Configuration files related to Coding Style checkers</h2>
     <table>
       <tr>

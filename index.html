@@ -11,54 +11,62 @@
 
 <div id="sidebar" class="floating">
   <ul>
-    <li><a href="#index">Overview</a></li>
+    <li>
+      <div class="first"><a href="#index">Overview</a></div>
       <ul class="ul-second">
         <li><a href="#feature-summary">Feature summary</a></li>
         <li><a href="#requirements">Requirements</a></li>
-        <li><a href="#installation">Installation</a></li>
       </ul>
-    <li><a href="#getting-started">Getting started</a></li>
+    </li>
     <li>
+      <div class="first"><a href="#getting-started">Getting started</a></div>
       <ul class="ul-second">
+        <li><a href="#installation">Installation</a></li>
         <li><a href="#getting-started-project-file">Existing projects</a></li>
         <li><a href="#getting-started-chromium">Chromium enlistments</a></li>
       </ul>
     </li>
-    <li><a href="#search-engine">Search engine</a></li>
     <li>
+      <div class="first"><a href="#search-engine">Search engine</a></div>
       <ul class="ul-second">
         <li><a href="#source-explorer">Source Explorer</a></li>
         <li><a href="#code-search">Code Search</a></li>
         <li><a href="#code-search-search-code">Search Code syntax</a></li>
         <li><a href="#code-search-file-paths">File Paths syntax</a></li>
-        <li><a href="#project-file-format">Project file format</a></li>
       </ul>
     </li>
-    <li><a href="#editor-features">Editor features</a></li>
     <li>
+      <div class="first"><a href="#editor-features">Editor features</a></div>
       <ul class="ul-second">
-        <li><a href="#chromium-style-checker">Chromium Coding Style checker</a></li>
+        <li><a href="#chromium-style-checker">Coding Style checker</a></li>
         <li><a href="#format-comment">Format comment</a></li>
-        <li><a href="#pmconsole">Navigate to Build Errors</a></li>
+        <li><a href="#pmconsole">Navigate to Errors</a></li>
       </ul>
     </li>
-    <li><a href="#debugger-features">Debugger Features</a></li>
     <li>
+      <div class="first"><a href="#debugger-features">Debugger Features</a></div>
       <ul class="ul-second">
         <li><a href="#attach-to-chrome">Attach to Chrome</a></li>
         <li><a href="#advanced-visualizers">Advanced Debug Visualizers</a></li>
       </ul>
     </li>
-    <li><a href="#whatsnew">What's new</a></li>
-    <li><a href="#keyboard-shortcuts">Keyboard shortcuts</a></li>
-    <li><a href="#configuration">Configuration</a></li>
     <li>
+      <div class="first"><a href="#whatsnew">What's new</a></div>
+    </li>
+    <li>
+      <div class="first"><a href="#keyboard-shortcuts">Keyboard shortcuts</a></div>
+    </li>
+    <li>
+      <div class="first"><a href="#configuration">Configuration</a></div>
       <ul class="ul-second">
+        <li><a href="#project-files">Project files</a></li>
         <li><a href="#tools-options">Tools&nbsp;|&nbsp;Options pages</a></li>
-        <li><a href="#configuration-files">Configuration files</a></li>
+        <li><a href="#configuration-files">Global configuration files</a></li>
       </ul>
     </li>
-    <li><a href="#tech-specs">Technical Specifications</a></li>
+    <li>
+      <div class="first"><a href="#tech-specs">Technical Specifications</a></div>
+    </li>
   </ul>
 </div> <!-- sidebar -->
 
@@ -68,8 +76,9 @@
     <h1>Overview</h1>
 
     <p>
-      VsChromium is a Visual Studio Extension containing a collection of tools
-      useful for editing, navigating and debugging code.
+      VsChromium is a <a href="#installation">Visual Studio Extension</a>
+      containing a collection of tools useful for editing, navigating and
+      debugging code.
     </p>
 
     <p>
@@ -80,16 +89,16 @@
     </p>
 
     <p>
-      Amongst other things, VsChromium offers full text search engine, a fast
+      Amongst other things, VsChromium offers full text 
+      <a href="#search-engine">search engine</a>, a fast
       and scalable alternative to the built-in "Find in Files" Visual Studio
       feature that can provide search results in less than 0.1 seconds
       for 100,000+ files.
     </p>
 
     <p>
-      See the <a href="#feature-summary">Feature summary</a> and
-      <a href="#getting-started">Getting started</a> sections for more
-      information.
+      Refer to <a href="#getting-started">Getting started</a> section for
+      installation and getting started instructions.
     </p>
 
     <!--============================================================================-->
@@ -101,10 +110,9 @@
       <div class="row">
         <div class="cell">
           <p>
-            VsChromium comes with a built-in <a href="#search-engine">
-              full text search
-              engine
-            </a>, fast and scalable to hundred of thousands of text files.
+            VsChromium comes with a built-in
+            <a href="#search-engine">full text search engine</a>, fast and
+            scalable to hundred of thousands of text files.
             The <a href="#code-search">Code Search</a> tool window provides
             an alternative to Visual Studio's build-int Find In Files. It uses
             VsChromium search engine to provide search results in typically less
@@ -279,6 +287,13 @@
       </li>
     </ul>
 
+  </div>
+  <hr/>
+
+  <!--============================================================================-->
+  <div id="getting-started">
+    <h1>Getting started</h1>
+
     <!--============================================================================-->
     <h2 id="installation">Installation</h2>
     <div class="table">
@@ -299,24 +314,12 @@
           </ul>
         </div>
         <div class="cell">
-          <img src="Screenshots/VsixInstall.png"/>
+          <img src="Screenshots/VsixInstall.png" />
         </div>
       </div>
     </div>
 
     <img src="Screenshots/VsixEnable.png" />
-
-  </div>
-  <hr/>
-
-  <!--============================================================================-->
-  <div id="getting-started">
-    <h1>Getting started</h1>
-
-    <p>
-      Although the VsChromium search engine was initially implemented to work
-      exclusively with Chromium enlistments, it has been extended to support
-      any directory or Visual Studio project on disk.</p>
 
     <!--============================================================================-->
     <h2 id="getting-started-project-file">Getting started with existing projects</h2>
@@ -329,52 +332,50 @@
       directory of the project.
     </p>
 
-   <ul>
-    <li>
-      <p>Install VsChromium and start Visual Studio</p>
-    </li>
-    <li>
-      <p>Create a new empty text file and paste the following text in it:</p>
-      <div style="border: black; border-width: 1px; border-style: solid;">
-        <div>
-          <code>
-            <b>
-              [SearchableFiles.include]<br />
-              *
-            </b>
-          </code>
+    <ul>
+      <li>
+        <p>Create a new empty text file and paste the following text in it:</p>
+        <div style="border: black; border-width: 1px; border-style: solid;">
+          <div>
+            <code>
+              <b>
+                [SearchableFiles.include]<br/>
+                *
+              </b>
+            </code>
+          </div>
         </div>
-      </div>
-      <p>
-        Note: The single section above indicates that all files and sub directories should
-        be included in the <a href="#source-explorer">Source Explorer</a> feature,
-        and that all text files should be indexed for the
-        <a href="#search-engine">Code Search</a> feature. See
-        <a href="#project-file-format">Project file format</a> for a complete description.
-      </p>
-    </li>
-    <li>
-      <p>
-        Save the text file in the top level directory of the project to index and
-        name it <span class="highlight-inline">vs-chromium-project.txt</span>
-      </p>
-      <p>
-        Note: If you want Code Search and Source Explorer to be enabled automatically
-        with a Visual Studio Solution, save the file next to the ".sln" file, or in any
-        parent directory.
-      </p>
-    </li>
-    <li>
-      <p>
-        The search engine should start loading files right away, and
-        both <a href="#source-explorer">Source Explorer</a> and
-        <a href="#code-search">Code Search</a> will be available shortly
-        afterward.
-      </p>
-    </li>
+        <p>
+          Note: The single section above indicates that all files and sub directories should
+          be included in the <a href="#source-explorer">Source Explorer</a> feature,
+          and that all text files should be indexed for the
+          <a href="#search-engine">Code Search</a> feature.
+        </p>
+      </li>
+      <li>
+        <p>
+          Save the text file in the top level directory of the project to index and
+          name it <span class="highlight-inline">vs-chromium-project.txt</span>
+        </p>
+        <p>
+          Note: If you want Code Search and Source Explorer to be enabled automatically
+          with a Visual Studio Solution, save the file next to the ".sln" file, or in any
+          parent directory.
+        </p>
+      </li>
+      <li>
+        <p>
+          The search engine should start loading files right away, and
+          both <a href="#source-explorer">Source Explorer</a> and
+          <a href="#code-search">Code Search</a> will be available shortly
+          afterward.
+        </p>
+      </li>
     </ul>
 
-    <img src="Screenshots/1.5-GettingStarted.png" />
+    <p>See <a href="#project-files">Project file format</a> for a complete
+      description of the supported syntax inside
+      <span class="highlight-inline">vs-chromium-project.txt</span> files.</p>
 
     <!--============================================================================-->
     <h2 id="getting-started-chromium">Getting started with Chromium enlistments</h2>
@@ -385,8 +386,7 @@
       <div class="row">
         <div class="cell" style="vertical-align: top">
           <ul>
-            <li>Install VsChromium and start Visual Studio</li>
-            <li>Open a source file from a Chromium enlistment on disk</li>
+            <li>Open a source file fromd a Chromium enlistment on disk</li>
             <li>The search engine should start loading files right away, and
             both <a href="#source-explorer">Source Explorer</a> and
             <a href="#code-search">Code Search</a> will be available shortly
@@ -626,102 +626,6 @@
     </table>
   </div>
 
-  <!--============================================================================-->
-  <div id="project-file-format">
-    <h2>Project file format</h2>
-
-    <p>
-      In general, a <span class="highlight-inline">vs-chromium-project.txt</span>
-      can contain three sections.
-    </p>
-
-    <table>
-      <tr>
-        <td valign="top"><b>[SourceExplorer.ignore]</b></td>
-        <td valign="top">
-          This section contains zero or more file path patterns, one per line,
-          using the <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax, to filter the list of files and
-          directories to include in the Source Explorer window.<br />
-          Note that by default, all files and sub-directories are included
-          in the Source Explorer window, so this section is optional.
-          It is however sometimes convenient to exclude files and/or
-          directories that don't contains interesting files (e.g. a .git
-          directory).<br />
-          Note this file is also implicitly used to filter the files and
-          directories included in the index used by the Code Search feature.
-        </td>
-        <td valign="top">
-          <div>Example</div>
-          <div>
-            <code>
-              <b>
-                [SourceExplorer.ignore]<br />
-                .git/<br />
-                *.suo
-              </b>
-            </code>
-          </div>
-          <p>
-            Indicates that no directory named <em>.git</em> and no file with
-            the <em>.suo</em> extension should be shown in the
-            <a href="#source-explorer">Source Explorer</a> window.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>[SearchableFiles.include]</b></td>
-        <td valign="top">
-          This section contains zero or more file path patterns, one per line,
-          using the <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax, to specify which files to
-          <bold>include</bold> in the index used by the Code Search feaure.<br />
-          Ntoe that if this section is empty, no file is included in the index.
-        </td>
-        <td valign="top">
-          <div>Example</div>
-          <div>
-            <code>
-              <b>
-                [SearchableFiles.include]<br />
-                *
-              </b>
-            </code>
-          </div>
-          <p>
-            Indicates that all files and directories should be included shown
-            in the <a href="#source-explorer">Code Search</a> index.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>[SearchableFiles.ignore]</b></td>
-        <td valign="top">
-          This section uses a <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax to exclude files from the
-          index used by the Code Seatrch feature.<br />
-          Adding entries to this section can be useful to decrease the size
-          of the index by filtering out files that don't contain relevant
-          text (e.g binary files).<br />
-          Note that since version 0.9.14, binary files are automatically
-          excluded during index creation.
-        </td>
-        <td valign="top">
-          <div>Example</div>
-          <div>
-            <code>
-              <b>
-                [SearchableFiles.ignore]<br />
-                Debug/<br />
-                Release/<br />
-                *.pdb<br />
-                *.exe<br />
-                *.dll<br />
-              </b>
-            </code>
-          </div>
-        </td>
-      </tr>
-    </table>
-
-  </div>
 
   <hr />
 
@@ -762,7 +666,6 @@
     </div>
     <p><img src="Screenshots/InvalidCharactersHighlight.png"/></p>
   </div>
-  <hr />
 
   <!--============================================================================-->
   <div id="format-comment">
@@ -779,7 +682,6 @@
     </ul>
     <p><img src="Screenshots/0.6-FormatComments.png"/></p>
   </div>
-  <hr />
 
   <!--============================================================================-->
   <div id="pmconsole">
@@ -793,6 +695,7 @@
     </p>
     <p><img src="Screenshots/PmConsoleBuildError.png"/></p>
   </div>
+
   <hr />
 
   <!--============================================================================-->
@@ -835,6 +738,8 @@
       by default when using auto attach to children.
     </p>
   </div>
+
+  <!--============================================================================-->
   <div id="advanced-visualizers">
     <h2>Advanced Debug Visualizers</h2>
     <p>
@@ -849,14 +754,24 @@
       Other, simpler visualizers are available in src\tools\win\DebugVisualizers.
     </p>
   </div>
+
   <hr />
 
   <!--============================================================================-->
   <div id="whatsnew">
     <h1>What's new</h1>
+    <h2 id="whatsnew-0-9-15">v0.9.15</h2>
+    <p>
+      See <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.15"
+             target="_blank">v0.9.15 release notes</a>
+    </p>
+
     <h2 id="whatsnew-0-9-14">v0.9.14</h2>
-    <p>See <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.14"
-    target="_blank">v0.9.14 release nodes</a></p>
+    <p>
+      See <a href="https://github.com/chromium/vs-chromium/releases/tag/v0.9.14"
+             target="_blank">v0.9.14 release notes</a>
+    </p>
+
     <h2 id="whatsnew-0-9-9">v0.9.9</h2>
     <h3>Source Exporer features</h3>
     <ul>
@@ -918,107 +833,216 @@
       <li>Minor stability and performance improvements.</li>
     </ul>
    </div>
+
   <hr />
 
   <!--============================================================================-->
   <div id="configuration">
+    <h1>Configuration</h1>
 
-    <h1 id="tools-options">Tools&nbsp;|&nbsp;Options pages</h1>
-    <p>
-      VsChromium features can be enabled, disabled and customized through custom
-      <a href="#tools-options">Tools&nbsp;|&nbsp;Options</a> pages.
-    </p>
+    <!--============================================================================-->
+    <div id="project-files">
+      <h2>Project file format</h2>
 
-    <img src="Screenshots/0.5-ToolsOptions.png" />
+      <p>
+        A <span class="highlight-inline">vs-chromium-project.txt</span> can
+        contain up to three sections, defining the list of files and directories
+        to include in the <a href="#source-explorer">Source Explorer</a> window
+         and in the <a href="#code-search">Code Search</a></p>
+      <table>
+        <tr>
+          <td valign="top"><b>[SourceExplorer.ignore]</b></td>
+          <td valign="top">
+            This section contains zero or more file path patterns, one per line,
+            using the <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a>
+            syntax, to filter the list of files and
+            directories to include in the <a href="#source-explorer">Source Explorer</a> window.<br />
+            Note that by default, all files and sub-directories are included
+            in the <a href="#source-explorer">Source Explorer</a> window, so this section is optional.
+            It is however sometimes convenient to exclude files and/or
+            directories that don't contain interesting files (e.g. a .git
+            directory).<br />
+            Note this file is also implicitly used to filter the files and
+            directories included in the index used by the <a href="#code-search">Code Search</a> feature.
+          </td>
+          <td valign="top">
+            <div>Example</div>
+            <div>
+              <code>
+                <b>
+                  [SourceExplorer.ignore]<br />
+                  .git/<br />
+                  *.suo
+                </b>
+              </code>
+            </div>
+            <p>
+              Indicates that no directory named <em>.git</em> and no file with
+              the <em>.suo</em> extension should be shown in the
+              <a href="#source-explorer">Source Explorer</a> window.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><b>[SearchableFiles.include]</b></td>
+          <td valign="top">
+            This section contains zero or more file path patterns, one per line,
+            using the <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax, to specify which files to
+            <bold>include</bold> in the index used by the <a href="#code-search">Code Search</a>  feature.<br />
+            Ntoe that if this section is empty, no file is included in the index.
+          </td>
+          <td valign="top">
+            <div>Example</div>
+            <div>
+              <code>
+                <b>
+                  [SearchableFiles.include]<br />
+                  *
+                </b>
+              </code>
+            </div>
+            <p>
+              Indicates that all files and directories should be included shown
+              in the <a href="#source-explorer">Code Search</a> index.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><b>[SearchableFiles.ignore]</b></td>
+          <td valign="top">
+            This section uses a <a href="http://git-scm.com/docs/gitignore#_pattern_format" target="_blank">.gitignore</a> syntax to exclude files from the
+            index used by the <a href="#code-search">Code Search</a> feature.<br />
+            Adding entries to this section can be useful to decrease the size
+            of the index by filtering out files that don't contain relevant
+            text (e.g binary files).<br />
+            Note that starting with version 0.9.14 of VsChromium, binary files
+            are automatically excluded during index creation.
+          </td>
+          <td valign="top">
+            <div>Example</div>
+            <div>
+              <code>
+                <b>
+                  [SearchableFiles.ignore]<br />
+                  Debug/<br />
+                  Release/<br />
+                  *.pdb<br />
+                  *.exe<br />
+                  *.dll<br />
+                </b>
+              </code>
+            </div>
+          </td>
+        </tr>
+      </table>
 
-    <h1 id="configuration-files">Configuration files</h1>
-    <p>
-      One of the goals of VsChromium is to work "out of the box". To enable this,
-      a certain number of assumptions had to be made. Most of these assumptions
-      are customizable through text based configuration files.
-    </p>
-    <p>
-      By default, configuration files are installed and stored in the "Configuration"
-      sub directory of the VsChromium installtion directory, typically the Visual Studio
-      extension directory. Overriding a configuration file is as easy as creating a
-      ".VsChromium" directory in the Windows' user folder ("c:\users\username"),
-      make a copy of the relevant configuration file below, and edit it.
-    </p>
-    <p>
-      After changing one or more configuration files, it is required to restart
-      Visual Studio for the changes to take effect.
-    </p>
+      <img src="Screenshots/1.5-GettingStarted.png" />
 
-    <h2>Configuration files related to Chromium Explorer and indexing</h2>
-    <table>
-      <tr>
-        <td valign="top"><b>ChromiumEnlistmentDetection.patterns</b></td>
-        <td>
-          This file is used to determine whether file belongs to a Chromium enlistment.
-          It is simply a list of directory and files names to look for when looking at
-          the parent directories of a file. There should be no need to customize this
-          file unless the Chromium enlistement significanly changes.
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>ChromiumExplorer.ignore</b></td>
-        <td>
-          This file uses a ".gitignore" syntax to filter the list fo directories
-          and files to display in the Chromium Explorer tool window. The file could be
-          in theory empty, but it is sometimes useful to ignore files/directories that
-          don't contains files meaningful to day to day development (e.g. *.pdb, *.obj,
-          etc. files).
-          Note this file is also implicitly used to filter the results
-          of "search file names" and "search directory names".
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>SearchableFiles.ignore</b></td>
-        <td>
-          This file uses a ".gitignore" syntax to exclude files from the
-          "text search" feature. This is required to avoid loading GBs of irrelevant
-          files in memory (e.g. build output files such as .obj, .exe, etc. fiels).
-          This allows decreasing the amount of files loaded in memory from 30+GB
-          typically found in a local Chromium enlistement directory to a more reasonable
-          ~1.2GB of relevant source files.
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>SearchableFiles.include</b></td>
-        <td>
-          This file uses a (reverse) ".gitignore" syntax to include files into
-          the "text seach" feature. This file is used as a 2nd pass after
-          "SearchableFile.ignore" to filter out even more using inclusion rules.
-        </td>
-      </tr>
-    </table>
+    </div>
 
-    <h2>Configuration files related to Coding Style checkers</h2>
-    <table>
-      <tr>
-        <td valign="top"><b>ChromiumEnlistmentDetection.patterns</b></td>
-        <td>
-          Same as above.
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>ChromiumStyleCheckers.disabled</b></td>
-        <td>
-          This file can be used to disable various style checkers. Simply un-comment
-          the corresponding line.
-        </td>
-      </tr>
-      <tr>
-        <td valign="top"><b>ChromiumCodingStyle.ignore</b></td>
-        <td>
-          This file uses a ".gitignore" syntax to determine which files should
-          <b>not</b> be validated by the Chromium Coding Style checker. This is needed
-          because a Chromium enlistment contains third party libraries and generated
-          files that don't always follow the Chromium Coding Style conventions.
-        </td>
-      </tr>
-    </table>
-  </div>
+    <!--============================================================================-->
+    <div id="tools-options">
+      <h2>Tools&nbsp;|&nbsp;Options pages</h2>
+      <p>
+        VsChromium features can be enabled, disabled and customized through custom
+        <a href="#tools-options">Tools&nbsp;|&nbsp;Options</a> pages.
+      </p>
+
+      <img src="Screenshots/0.5-ToolsOptions.png"/>
+    </div>
+
+    <!--============================================================================-->
+    <div id="configuration-files">
+      <h2>Configuration files</h2>
+      <p>
+        One of the goals of VsChromium is to work "out of the box". To enable this,
+        a certain number of assumptions had to be made. Most of these assumptions
+        are customizable through text based configuration files.
+      </p>
+      <p>
+        By default, configuration files are installed and stored in the "Configuration"
+        sub directory of the VsChromium installtion directory, typically the Visual Studio
+        extension directory. Overriding a configuration file is as easy as creating a
+        ".VsChromium" directory in the Windows' user folder ("c:\users\username"),
+        make a copy of the relevant configuration file below, and edit it.
+      </p>
+      <p>
+        After changing one or more configuration files, it is required to restart
+        Visual Studio for the changes to take effect.
+      </p>
+
+      <h2>Configuration files related to Chromium Explorer and indexing</h2>
+      <table>
+        <tr>
+          <td valign="top"><b>ChromiumEnlistmentDetection.patterns</b></td>
+          <td>
+            This file is used to determine whether file belongs to a Chromium enlistment.
+            It is simply a list of directory and files names to look for when looking at
+            the parent directories of a file. There should be no need to customize this
+            file unless the Chromium enlistement significanly changes.
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><b>ChromiumExplorer.ignore</b></td>
+          <td>
+            This file uses a ".gitignore" syntax to filter the list fo directories
+            and files to display in the Chromium Explorer tool window. The file could be
+            in theory empty, but it is sometimes useful to ignore files/directories that
+            don't contains files meaningful to day to day development (e.g. *.pdb, *.obj,
+            etc. files).
+            Note this file is also implicitly used to filter the results
+            of "search file names" and "search directory names".
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><b>SearchableFiles.ignore</b></td>
+          <td>
+            This file uses a ".gitignore" syntax to exclude files from the
+            "text search" feature. This is required to avoid loading GBs of irrelevant
+            files in memory (e.g. build output files such as .obj, .exe, etc. fiels).
+            This allows decreasing the amount of files loaded in memory from 30+GB
+            typically found in a local Chromium enlistement directory to a more reasonable
+            ~1.2GB of relevant source files.
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><b>SearchableFiles.include</b></td>
+          <td>
+            This file uses a (reverse) ".gitignore" syntax to include files into
+            the "text seach" feature. This file is used as a 2nd pass after
+            "SearchableFile.ignore" to filter out even more using inclusion rules.
+          </td>
+        </tr>
+      </table>
+
+      <h2>Configuration files related to Coding Style checkers</h2>
+      <table>
+        <tr>
+          <td valign="top"><b>ChromiumEnlistmentDetection.patterns</b></td>
+          <td>
+            Same as above.
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><b>ChromiumStyleCheckers.disabled</b></td>
+          <td>
+            This file can be used to disable various style checkers. Simply un-comment
+            the corresponding line.
+          </td>
+        </tr>
+        <tr>
+          <td valign="top"><b>ChromiumCodingStyle.ignore</b></td>
+          <td>
+            This file uses a ".gitignore" syntax to determine which files should
+            <b>not</b> be validated by the Chromium Coding Style checker. This is needed
+            because a Chromium enlistment contains third party libraries and generated
+            files that don't always follow the Chromium Coding Style conventions.
+          </td>
+        </tr>
+      </table>
+      </div>
+    </div>
+
   <hr />
 
   <!--============================================================================-->
@@ -1056,6 +1080,7 @@
       </tbody>
     </table>
   </div>
+
   <hr />
 
   <!--============================================================================-->

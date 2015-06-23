@@ -9,8 +9,8 @@ body {
 height: auto;
 margin-top: 2em;
 margin: auto;
-max-width: 1160px;
-padding: 0 50px;
+/*max-width: 1160px;*/
+padding: 0 10px;
 }
 
 div {
@@ -58,10 +58,11 @@ display: block;
 }
 
 #sidebar {
-width: 180px;
-float: left;
-font-weight: bold;
-color: black;
+  left: 2em;
+  width: 14em;
+  float: left;
+  font-weight: bold;
+  color: black;
 }
 
 #sidebar.floating {
@@ -78,24 +79,27 @@ color: black;
 
 #sidebar ul.ul-second {
   margin-left: 2em;
-  padding-top: 4px;
+  padding-top: 6px;
 }
 
 #sidebar li {
   line-height: 100%;
   margin: 0;
-  padding-bottom: 6px;
-  padding-top: 6px;
+  padding-top: 10px;
+}
+
+#sidebar .first {
   border-bottom: 1px solid #F5F5F5;
 }
 
 #sidebar ul.ul-second li {
   border-bottom: 0;
   padding-top: 0;
+  padding-bottom: 4px;
 }
 
 #content {
-  margin: 0 0 100px 250px;
+  margin: 0 0 0 17em;
 }
 
 .keyboard-shortcut, .highlight-inline {

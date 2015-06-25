@@ -159,12 +159,19 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
     public void OnFileSystemTreeComputing() {
-      var items = CreateInfromationMessages("Loading files from VS Chromium projects...)");
-      ViewModel.SetInformationMessages(items);
+      // Display a generic "loading" message the first time a file system tree
+      // is loaded.
+      if (!ViewModel.FileSystemTreeAvailable) {
+        var items = CreateInfromationMessages(
+          "Loading files from VS Chromium projects...");
+        ViewModel.SetInformationMessages(items);
 
-      if (!ViewModel.FileSystemTreeAvailable || ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
-        _searchResultDocumentChangeTracker.Disable();
-        ViewModel.SwitchToInformationMessages();
+        // Display the new info messages, except if there is an active search
+        // result.
+        if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
+          _searchResultDocumentChangeTracker.Disable();
+          ViewModel.SwitchToInformationMessages();
+        }
       }
     }
 
@@ -174,7 +181,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       if (ViewModel.FileSystemTreeAvailable) {
         var items = CreateInfromationMessages(
-          "No search results available - Type text to search for in the \"Search Code\" or \"File Paths\" text box.");
+          "No search results available - Type text to search for " + 
+          "in the \"Search Code\" or \"File Paths\" text box.");
         ViewModel.SetInformationMessages(items);
         if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
           _searchResultDocumentChangeTracker.Disable();
@@ -182,9 +190,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         }
 
         RefreshView(tree.Version);
+        FetchDatabaseStatistics();
       } else {
         var items = CreateInfromationMessages(
-          string.Format("Open a source file from a local Chromium enlistment or") + "\r\n" +
+          "Open a source file from a local Chromium enlistment or" + "\r\n" +
           string.Format("from a directory containing a \"{0}\" file.", ConfigurationFileNames.ProjectFileName));
         ViewModel.SetInformationMessages(items);
         _searchResultDocumentChangeTracker.Disable();
@@ -203,11 +212,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void OnFilesLoadingProgress() {
-      RefreshView(-1);
+      FetchDatabaseStatistics();
     }
 
     public void OnFilesLoaded(long treeVersion) {
       RefreshView(treeVersion);
+      FetchDatabaseStatistics();
     }
 
     /// <summary>
@@ -227,7 +237,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         // Add top level nodes in search results explaining results may be outdated
         AddResultsOutdatedMessage();
       }
-      FetchDatabaseStatistics();
     }
 
     public void CancelSearch() {

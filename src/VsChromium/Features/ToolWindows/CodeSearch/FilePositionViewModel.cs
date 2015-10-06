@@ -35,7 +35,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public override string DisplayText {
       get {
         if (_extractPosition != null) {
-          return string.Format("{0} ({1}, {2})", _extractPosition.Text.Trim(), _extractPosition.LineNumber + 1, _extractPosition.ColumnNumber + 1);
+          return string.Format("({0},{1}) {2}", _extractPosition.LineNumber + 1, _extractPosition.ColumnNumber + 1, _extractPosition.Text.Trim());
         } else {
           return string.Format("File offset {0}", Position);
         }
@@ -72,11 +72,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         // [extract - match - extract]
         var offset = _matchPosition.Position + _matchPosition.Length - _extractPosition.Offset;
         var length = _extractPosition.Length - offset;
-        var text = _extractPosition.Text.Substring(offset, length).TrimEnd();
-        return string.Format("{0} ({1}, {2})", text, _extractPosition.LineNumber + 1, _extractPosition.ColumnNumber + 1);
+        return _extractPosition.Text.Substring(offset, length).TrimEnd();
       }
     }
 
+    public string LineColumnText {
+      get {
+        if (_extractPosition == null)
+          return "";
+        return string.Format("({0},{1}) ", _extractPosition.LineNumber + 1, _extractPosition.ColumnNumber + 1);
+      }
+    }
 
     public override ImageSource ImageSourcePath {
       get {
@@ -87,6 +93,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public void SetTextExtract(FileExtract value) {
       _extractPosition = value;
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.DisplayText));
+      OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.LineColumnText));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextBeforeMatch));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.MatchText));
       OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.TextAfterMatch));

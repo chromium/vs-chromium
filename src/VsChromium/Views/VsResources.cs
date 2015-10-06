@@ -45,6 +45,13 @@ namespace VsChromium.Views {
       }
     }
 
+    public static ThemeResourceKey LineColumnForeground {
+      get {
+        // Some sort of light blue/teal, works in all themes.
+        return EnvironmentColors.CommandBarMenuLinkTextHoverBrushKey;
+      }
+    }
+
     public static ThemeResourceKey SelectedItemBackground {
       get { return EnvironmentColors.ToolTipBorderBrushKey; }
     }

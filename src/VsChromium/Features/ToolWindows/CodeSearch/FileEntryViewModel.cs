@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media;
-using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
@@ -39,15 +37,33 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public string Path { get { return GetFullPath(); } }
 
-    public override string DisplayText
-    {
-      get
-      {
-        if (ChildrenCount > 0) {
-          return string.Format("{0} ({1})", base.DisplayText, ChildrenCount);
-        } else {
-          return base.DisplayText;
-        }
+    /// <summary>
+    /// Databound! Return text representing  of items (if children are present)
+    /// </summary>
+    public string LineColumnText {
+      get {
+        if (_lineNumber < 0)
+          return "";
+        
+        if (_columnNumber < 0)
+          return string.Format("({0}) ", _lineNumber + 1);
+
+        return string.Format("({0},{1}) ", _lineNumber + 1, _columnNumber + 1);
+      }
+    }
+
+    /// <summary>
+    /// Databound! Return text representing  of items (if children are present)
+    /// </summary>
+    public string ItemCountText {
+      get {
+        if (ChildrenCount == 0)
+          return "";
+
+        if (ChildrenCount == 1)
+          return " (1 item)";
+
+        return string.Format(" ({0} items)", ChildrenCount);
       }
     }
 

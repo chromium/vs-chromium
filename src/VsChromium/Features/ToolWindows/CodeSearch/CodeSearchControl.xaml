@@ -455,7 +455,10 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
+            <TextBlock Text="{Binding LineColumnText}" Style="{StaticResource PathTextStyle}"
+                       Foreground="{DynamicResource {x:Static theme:VsResources.LineColumnForeground}}"  />
             <TextBlock Text="{Binding DisplayText}" Style="{StaticResource PathTextStyle}" />
+            <TextBlock Text="{Binding ItemCountText}" Style="{StaticResource PathTextStyle}" FontStyle="Italic" />
           </StackPanel>
         </HierarchicalDataTemplate>
 
@@ -469,7 +472,9 @@
               </ContextMenu>
             </StackPanel.ContextMenu>
             <Image HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}"/>
-            <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource TextExtractTextStyle}"/>
+            <TextBlock Text="{Binding LineColumnText}" Style="{StaticResource TextExtractTextStyle}"
+                       Foreground="{DynamicResource {x:Static theme:VsResources.LineColumnForeground}}"  />
+            <TextBlock Text="{Binding TextBeforeMatch}" Style="{StaticResource TextExtractTextStyle}" />
             <TextBlock Text="{Binding MatchText}" Style="{StaticResource TextExtractTextStyle}"
                        Foreground="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightForeground}}"
                        Background="{DynamicResource {x:Static theme:VsResources.SearchMatchHighlightBackground}}" />

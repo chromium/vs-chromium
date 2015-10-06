@@ -14,23 +14,25 @@ using VsChromium.Core.Utility;
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class DirectoryEntryViewModel : FileSystemEntryViewModel {
     private readonly DirectoryEntry _directoryEntry;
+    private readonly Action<FileSystemEntryViewModel> _postCreate;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
 
     public DirectoryEntryViewModel(
-        ICodeSearchController controller,
-        TreeViewItemViewModel parentViewModel,
-        DirectoryEntry directoryEntry)
+      ICodeSearchController controller, 
+      TreeViewItemViewModel parentViewModel, 
+      DirectoryEntry directoryEntry, 
+      Action<FileSystemEntryViewModel> postCreate)
       : base(controller, parentViewModel, directoryEntry.Entries.Count > 0) {
       _directoryEntry = directoryEntry;
+      _postCreate = postCreate;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
 
     private IList<TreeViewItemViewModel> CreateChildren() {
-      return _directoryEntry.Entries
-        .Select(x => (TreeViewItemViewModel)FileSystemEntryViewModel.Create(
-            this.Controller,
-            this, 
-            x))
+      return _directoryEntry
+        .Entries
+        .Select(entry => Create(Controller, this, entry, _postCreate))
+        .Cast<TreeViewItemViewModel>()
         .ToList();
     }
 

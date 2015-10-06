@@ -12,11 +12,13 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Editor;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
+using VsChromium.Features.BuildOutputAnalyzer;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
@@ -101,7 +103,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         componentModel.DefaultExportProvider.GetExportedValue<IOpenDocumentHelper>(),
         componentModel.DefaultExportProvider.GetExportedValue<ITextDocumentTable>(),
         componentModel.DefaultExportProvider.GetExportedValue<IEventBus>(),
-        componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>());
+        componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IBuildOutputParser>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>());
 
       // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
       // exposes pictures from Visual Studio resources.
@@ -280,7 +284,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchCase) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.MatchWholeWord) ||
           e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UseRegex) ||
-          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.IncludeSymLinks)) {
+          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.IncludeSymLinks) ||
+          e.PropertyName == ReflectionUtils.GetPropertyName(ViewModel, x => x.UnderstandBuildOutputPaths))  {
         RefreshSearchResults(true);
       }
     }

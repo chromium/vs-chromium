@@ -9,13 +9,16 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
+using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
+using VsChromium.Features.BuildOutputAnalyzer;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
 using VsChromium.Settings;
@@ -41,13 +44,15 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IOpenDocumentHelper _openDocumentHelper;
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
+    private readonly IBuildOutputParser _buildOutputParser;
+    private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
     private readonly TaskCancellation _taskCancellation;
     private readonly SearchResultsDocumentChangeTracker _searchResultDocumentChangeTracker;
     private readonly object _eventBusCookie1;
     private readonly object _eventBusCookie2;
     private readonly object _eventBusCookie3;
 
-    private long _currentFileSystemTreeVersion = - 1;
+    private long _currentFileSystemTreeVersion = -1;
     private bool _performSearchOnNextRefresh;
 
     /// <summary>
@@ -68,7 +73,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IOpenDocumentHelper openDocumentHelper,
       ITextDocumentTable textDocumentTable,
       IEventBus eventBus,
-      IGlobalSettingsProvider globalSettingsProvider) {
+      IGlobalSettingsProvider globalSettingsProvider,
+      IBuildOutputParser buildOutputParser,
+      IVsEditorAdaptersFactoryService adaptersFactoryService) {
       _control = control;
       _uiRequestProcessor = uiRequestProcessor;
       _progressBarTracker = progressBarTracker;
@@ -79,6 +86,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _openDocumentHelper = openDocumentHelper;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
+      _buildOutputParser = buildOutputParser;
+      _adaptersFactoryService = adaptersFactoryService;
       _searchResultDocumentChangeTracker = new SearchResultsDocumentChangeTracker(
         uiDelayedOperationProcessor,
         textDocumentTable);
@@ -108,7 +117,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void TextDocumentOpenHandler(object sender, EventArgs eventArgs) {
-      var doc = (ITextDocument) sender;
+      var doc = (ITextDocument)sender;
       var args = (EventArgs)eventArgs;
       _searchResultDocumentChangeTracker.DocumentOpen(doc, args);
     }
@@ -132,6 +141,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.MatchWholeWord = setting.SearchMatchWholeWord;
       ViewModel.UseRegex = setting.SearchUseRegEx;
       ViewModel.IncludeSymLinks = setting.SearchIncludeSymLinks;
+      ViewModel.UnderstandBuildOutputPaths = setting.SearchUnderstandBuildOutputPaths;
       ViewModel.TextExtractFontFamily = setting.TextExtractFont.FontFamily.Name;
       ViewModel.TextExtractFontSize = setting.TextExtractFont.Size;
       ViewModel.DisplayFontFamily = setting.DisplayFont.FontFamily.Name;
@@ -181,7 +191,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       if (ViewModel.FileSystemTreeAvailable) {
         var items = CreateInfromationMessages(
-          "No search results available - Type text to search for " + 
+          "No search results available - Type text to search for " +
           "in the \"Search Code\" or \"File Paths\" text box.");
         ViewModel.SetInformationMessages(items);
         if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.InformationMessages) {
@@ -285,25 +295,60 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _uiRequestProcessor.Post(uiRequest);
     }
 
+    private Span? TranslateLineColumnToSpan(IVsTextView vsTextView, int lineNumber, int columnNumber) {
+      if (lineNumber < 0)
+        return null;
+
+      var textView = _adaptersFactoryService.GetWpfTextView(vsTextView);
+      if (textView == null)
+        return null;
+
+      var snapshot = textView.TextBuffer.CurrentSnapshot;
+      if (lineNumber < 0 || lineNumber >= snapshot.LineCount)
+        return null;
+
+      var line = snapshot.GetLineFromLineNumber(lineNumber);
+      if (columnNumber < 0 || columnNumber >= line.Length)
+        return new Span(line.Start, 0);
+
+      return new Span(line.Start + columnNumber, 0);
+    }
+
+    public void OpenFileInEditor(FileEntryViewModel fileEntry, int lineNumber, int columnNumber) {
+      OpenFileInEditorWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber));
+    }
+
     public void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span) {
+      OpenFileInEditorWorker(fileEntry, _ => span);
+    }
+
+    private void OpenFileInEditorWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
       SynchronizationContextProvider.UIContext.Post(() => {
         // Note: This has to run on the UI thread!
         OpenDocumentHelper.OpenDocument(fileEntry.Path, vsTextView => {
-          // TODO(rpaquay): Find buffer for vsTextView.
+          var span = spanProvider(vsTextView);
           return _searchResultDocumentChangeTracker.TranslateSpan(fileEntry.GetFullPath(), span);
         });
       });
     }
 
+    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, int lineNumber, int columnNumber) {
+      OpenFileInEditorWithWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber));
+    }
+
     public void OpenFileInEditorWith(FileEntryViewModel fileEntry, Span? span) {
+      OpenFileInEditorWithWorker(fileEntry, _ => span);
+    }
+
+    public void OpenFileInEditorWithWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
       SynchronizationContextProvider.UIContext.Post(() => {
         // Note: This has to run on the UI thread!
         OpenDocumentHelper.OpenDocumentWith(fileEntry.Path, null, 0, vsTextView => {
-          // TODO(rpaquay): Find buffer for vsTextView.
+          var span = spanProvider(vsTextView);
           return _searchResultDocumentChangeTracker.TranslateSpan(fileEntry.GetFullPath(), span);
         });
       });
@@ -319,16 +364,25 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return result;
     }
 
-    private List<TreeViewItemViewModel> CreateSearchFilePathsResult(DirectoryEntry fileResults, string description, bool expandAll) {
+    private List<TreeViewItemViewModel> CreateSearchFilePathsResult(
+      FilePathSearchInfo searchInfo,
+      DirectoryEntry fileResults,
+      string description,
+      bool expandAll) {
+
+      Action<FileSystemEntryViewModel> setLineColumn = entry => {
+        var fileEntry = entry as FileEntryViewModel;
+        if (fileEntry != null && searchInfo.LineNumber >= 0)
+          fileEntry.SetLineColumn(searchInfo.LineNumber, searchInfo.ColumnNumber);
+      };
+
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
       var result =
         new List<TreeViewItemViewModel> {
           new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
-        }.Concat(
-          fileResults
-            .Entries
-            .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
-          .ToList();
+        }
+        .Concat(fileResults.Entries.Select(x => FileSystemEntryViewModel.Create(this, rootNode, x, setLineColumn)))
+        .ToList();
       result.ForAll(rootNode.AddChild);
       TreeViewItemViewModel.ExpandNodes(result, expandAll);
       return result;
@@ -339,11 +393,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var result =
         new List<TreeViewItemViewModel> {
             new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
-          }.Concat(
-          searchResults
-            .Entries
-            .Select(x => FileSystemEntryViewModel.Create(this, rootNode, x)))
-          .ToList();
+          }
+        .Concat(searchResults.Entries.Select(x => FileSystemEntryViewModel.Create(this, rootNode, x, _ => { })))
+        .ToList();
       result.ForAll(rootNode.AddChild);
       TreeViewItemViewModel.ExpandNodes(result, expandAll);
       return result;
@@ -549,15 +601,44 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       SearchCode(searchCodeText, searchFilePathsText, immediate);
     }
 
+    class FilePathSearchInfo {
+      public string RawSearchPattern { get; set; }
+      public string SearchPattern { get; set; }
+      public int LineNumber { get; set; }
+      public int ColumnNumber { get; set; }
+    }
+
+    private FilePathSearchInfo PreprocessFilePathSearchPattern(string searchPattern) {
+      var result = _globalSettingsProvider.GlobalSettings.SearchUnderstandBuildOutputPaths
+        ? _buildOutputParser.ParseFullOrRelativePath(searchPattern)
+        : null;
+
+      if (result == null || result.LineNumber < 0) {
+        return new FilePathSearchInfo {
+          RawSearchPattern = searchPattern,
+          SearchPattern = searchPattern,
+          LineNumber = -1,
+          ColumnNumber = -1
+        };
+      }
+
+      return new FilePathSearchInfo {
+        RawSearchPattern = searchPattern,
+        SearchPattern = result.FileName,
+        LineNumber = result.LineNumber,
+        ColumnNumber = result.ColumnNumber
+      };
+    }
 
     private void SearchFilesPaths(string searchPattern, bool immediate) {
+      var searchInfo = PreprocessFilePathSearchPattern(searchPattern);
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchFilePaths,
         HintText = "Searching for matching file paths...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : GlobalSettings.AutoSearchDelayMsec),
         TypedRequest = new SearchFilePathsRequest {
           SearchParams = new SearchParams {
-            SearchString = searchPattern,
+            SearchString = searchInfo.SearchPattern,
             MaxResults = GlobalSettings.SearchFilePathsMaxResults,
             MatchCase = false, //ViewModel.MatchCase,
             MatchWholeWord = false, //ViewModel.MatchWholeWord,
@@ -577,17 +658,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             response.HitCount,
             response.TotalCount,
             stopwatch.Elapsed.TotalSeconds,
-            searchPattern);
-          if (ViewModel.MatchCase) {
-            msg += ", Match case";
+            searchInfo.SearchPattern);
+          if (searchInfo.LineNumber >= 0) {
+            msg += ", Line " + (searchInfo.LineNumber + 1);
           }
-          if (ViewModel.MatchWholeWord) {
-            msg += ", Whole word";
+          if (searchInfo.ColumnNumber >= 0) {
+            msg += ", Column " + (searchInfo.ColumnNumber + 1);
           }
-          if (ViewModel.UseRegex) {
-            msg += ", Regular expression";
-          }
-          var viewModel = CreateSearchFilePathsResult(response.SearchResult, msg, true);
+          var viewModel = CreateSearchFilePathsResult(searchInfo, response.SearchResult, msg, true);
           _searchResultDocumentChangeTracker.Disable();
           ViewModel.SetSearchFilePathsResult(viewModel);
         }

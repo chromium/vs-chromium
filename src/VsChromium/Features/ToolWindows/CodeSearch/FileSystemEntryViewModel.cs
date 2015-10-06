@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 
@@ -24,12 +25,21 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public static FileSystemEntryViewModel Create(ICodeSearchController host, TreeViewItemViewModel parentViewModel, FileSystemEntry fileSystemEntry) {
+    public static FileSystemEntryViewModel Create(
+      ICodeSearchController host,
+      TreeViewItemViewModel parentViewModel,
+      FileSystemEntry fileSystemEntry, Action<FileSystemEntryViewModel> postCreate) {
       var fileEntry = fileSystemEntry as FileEntry;
-      if (fileEntry != null)
-        return new FileEntryViewModel(host, parentViewModel, fileEntry);
-      else
-        return new DirectoryEntryViewModel(host, parentViewModel, (DirectoryEntry)fileSystemEntry);
+      if (fileEntry != null) {
+        var result = new FileEntryViewModel(host, parentViewModel, fileEntry);
+        postCreate(result);
+        return result;
+      }
+      else {
+        var result = new DirectoryEntryViewModel(host, parentViewModel, (DirectoryEntry) fileSystemEntry, postCreate);
+        postCreate(result);
+        return result;
+      }
     }
 
     public string GetFullPath() {

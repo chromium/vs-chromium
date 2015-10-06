@@ -77,7 +77,7 @@ namespace VsChromium.Features.BuildOutputAnalyzer {
 
       var line = caret.ContainingTextViewLine;
       var extent = line.Extent;
-      var result = _buildOutputParser.ParseLine(extent.GetText());
+      var result = _buildOutputParser.ParseFullPath(extent.GetText());
       if (result == null)
         return null;
 

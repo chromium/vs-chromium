@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
@@ -17,6 +19,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class FileEntryViewModel : FileSystemEntryViewModel {
     private readonly FileEntry _fileEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
+    private int _lineNumber = -1;
+    private int _columnNumber = -1;
     private bool _hasExpanded;
 
     public FileEntryViewModel(ICodeSearchController controller, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
@@ -57,13 +61,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(this, null));
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(this, _lineNumber, _columnNumber));
       }
     }
 
     public ICommand OpenWithCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.OpenFileInEditorWith(this, null));
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditorWith(this, _lineNumber, _columnNumber));
       }
     }
 
@@ -156,6 +160,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     protected override IEnumerable<TreeViewItemViewModel> GetChildren() {
       return _children.Value;
+    }
+
+    public void SetLineColumn(int lineNumber, int columnNumber) {
+      _lineNumber = lineNumber;
+      _columnNumber = columnNumber;
     }
   }
 }

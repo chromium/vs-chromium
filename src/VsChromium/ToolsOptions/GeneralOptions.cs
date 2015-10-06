@@ -160,6 +160,12 @@ namespace VsChromium.ToolsOptions {
     [DefaultValue(true)]
     public bool SearchIncludeSymLinks { get; set; }
 
+    [Category(CodeSearchOptionsCategory)]
+    [DisplayName("Understand paths from build output")]
+    [Description("Extract line and column info from \"File Paths\" search text, for example \"foo/bar/foo.txt(19,18)\"")]
+    [DefaultValue(true)]
+    public bool SearchUnderstandBuildOutputPaths { get; set; }
+
     [Category("Solution Explorer Integration")]
     [DisplayName("Enable \"Source Explorer\" entries in Solution Explorer")]
     [Description("Show the list of indexed files and directories in Solution Explorer under one or more \"Source Explorer\" entries")]

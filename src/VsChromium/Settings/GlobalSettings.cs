@@ -17,6 +17,7 @@ namespace VsChromium.Settings {
     private bool _searchMatchWholeWord;
     private bool _searchUseRegEx;
     private bool _searchIncludeSymLinks;
+    private bool _searchUnderstandBuildOutputPaths;
     private bool _codingStyleAccessorIndent;
     private bool _codingStyleTrailingSpace;
     private bool _codingStyleTabCharacter;
@@ -180,6 +181,17 @@ namespace VsChromium.Settings {
 
         _searchIncludeSymLinks = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchIncludeSymLinks));
+      }
+    }
+
+    public bool SearchUnderstandBuildOutputPaths {
+      get { return _searchUnderstandBuildOutputPaths; }
+      set {
+        if (value == _searchUnderstandBuildOutputPaths)
+          return;
+
+        _searchUnderstandBuildOutputPaths = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchUnderstandBuildOutputPaths));
       }
     }
 

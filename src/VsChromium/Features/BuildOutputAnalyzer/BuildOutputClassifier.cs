@@ -42,7 +42,7 @@ namespace VsChromium.Features.BuildOutputAnalyzer {
     }
 
     private BuildOutputSpan ParseBuildOutput(ITextSnapshotLine line) {
-      return _buildOutputParser.ParseLine(line.GetText());
+      return _buildOutputParser.ParseFullPath(line.GetText());
     }
 
     private ClassificationSpan CreateClassification(ITextSnapshotLine line, BuildOutputSpan buildOutputSpan) {

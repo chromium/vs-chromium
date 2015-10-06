@@ -19,6 +19,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _matchWholeWord;
     private bool _useRegex;
     private bool _includeSymLinks;
+    private bool _understandBuildOutputPaths;
     private string _statusText;
     private string _searchCodeValue;
     private string _searchFilePathsValue;
@@ -147,6 +148,44 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     /// <summary>
     /// Databound!
     /// </summary>
+    public bool IncludeSymLinks {
+      get { return _includeSymLinks; }
+      set {
+        if (_includeSymLinks != value) {
+          _includeSymLinks = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IncludeSymLinks));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string IncludeSymLinksToolTip {
+      get {
+        return string.Format(
+          "Toggle searching files inside symbolic links directories. " +
+          "Symbolic links are currently {0} in search results.",
+          IncludeSymLinks ? "included" : "excluded");
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool UnderstandBuildOutputPaths {
+      get { return _understandBuildOutputPaths; }
+      set {
+        if (_understandBuildOutputPaths != value) {
+          _understandBuildOutputPaths = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.UnderstandBuildOutputPaths));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
     public string TextExtractFontFamily {
       get { return _textExtractFontFamily; }
       set {
@@ -219,31 +258,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           _displayFontSize = value;
           OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.DisplayFontSize));
         }
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public bool IncludeSymLinks {
-      get { return _includeSymLinks; }
-      set {
-        if (_includeSymLinks != value) {
-          _includeSymLinks = value;
-          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IncludeSymLinks));
-        }
-      }
-    }
-
-    /// <summary>
-    /// Databound!
-    /// </summary>
-    public string IncludeSymLinksToolTip {
-      get {
-        return string.Format(
-          "Toggle searching files inside symbolic links directories. " +
-          "Symbolic links are currently {0} in search results.",
-          IncludeSymLinks ? "included" : "excluded");
       }
     }
 

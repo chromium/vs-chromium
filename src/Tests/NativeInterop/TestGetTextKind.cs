@@ -72,11 +72,7 @@ namespace VsChromium.Tests.NativeInterop {
     public void GetTextKindForBinaryFileWithSomeAsciiWorks() {
       // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
       // of about 60% ascii and 40% binary.
-      var bytes = new byte[] {
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xbb, 0xbb, 0xbe, 0xbe,
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xbb, 0xbb, 0xbe, 0xbe,
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xbb, 0xbb, 0xbe, 0xbe,
-      };
+      var bytes = CreateArray(100, 0.60);
       CheckKind(bytes, NativeMethods.TextKind.TextKind_ProbablyBinary);
     }
 
@@ -84,11 +80,7 @@ namespace VsChromium.Tests.NativeInterop {
     public void GetTextKindForBinaryFileWithMostlyAsciiWorks() {
       // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
       // of about 80% ascii and 20% binary.
-      var bytes = new byte[] {
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xbe, 0xbe,
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xbe, 0xbe,
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xbe, 0xbe,
-      };
+      var bytes = CreateArray(100, 0.80);
       CheckKind(bytes, NativeMethods.TextKind.TextKind_ProbablyBinary);
     }
 
@@ -96,11 +88,7 @@ namespace VsChromium.Tests.NativeInterop {
     public void GetTextKindForBinaryFileWithAlmostOnlyAsciiWorks() {
       // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
       // of about 95% ascii and 5% binary.
-      var bytes = new byte[] {
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xbe, 0xbe,
-      };
+      var bytes = CreateArray(100, 0.95);
       CheckKind(bytes, NativeMethods.TextKind.TextKind_Ascii);
     }
 
@@ -108,14 +96,20 @@ namespace VsChromium.Tests.NativeInterop {
     public void GetTextKindForBinaryFileWithMostlyBinaryWorks() {
       // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
       // of about 5% ascii and 9% binary.
-      var bytes = new byte[] {
-        0x20, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbe, 0xbe,
-        0x20, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbe, 0xbe,
-        0x20, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbb, 0xbe, 0xbe,
-      };
+      var bytes = CreateArray(50, 0.05);
       CheckKind(bytes, NativeMethods.TextKind.TextKind_ProbablyBinary);
     }
 
+    private static byte[] CreateArray(int size, double asciiPercentage) {
+      var result = new byte[size];
+
+      int sliceSize = Math.Min(size / 5, 100);
+      int threshold = (int)Math.Round(asciiPercentage * sliceSize);
+      for (var i = 0; i < size; i++) {
+        result[i] = ((i % sliceSize) >= threshold) ? (byte)0xbb : (byte)0x20;
+      }
+      return result;
+    }
 
     private static unsafe void CheckKind(byte[] bytes, NativeMethods.TextKind expectedKind) {
       fixed (byte* array = bytes) {

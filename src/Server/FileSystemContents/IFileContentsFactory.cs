@@ -6,6 +6,6 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Server.FileSystemContents {
   public interface IFileContentsFactory {
-    FileContents GetFileContents(FullPath path);
+    FileContents ReadFileContents(FullPath path);
   }
 }

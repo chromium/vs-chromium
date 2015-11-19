@@ -19,10 +19,10 @@ namespace VsChromium.Server.FileSystemContents {
       _fileSystem = fileSystem;
     }
 
-    public FileContents GetFileContents(FullPath path) {
+    public FileContents ReadFileContents(FullPath path) {
       try {
         var fileInfo = _fileSystem.GetFileInfoSnapshot(path);
-        return ReadFileContents(fileInfo);
+        return ReadFileContentsWorker(fileInfo);
       }
       catch (Exception e) {
         Logger.LogWarning(e, "Error reading content of text file \"{0}\", skipping file.", path);
@@ -30,7 +30,7 @@ namespace VsChromium.Server.FileSystemContents {
       }
     }
 
-    private FileContents ReadFileContents(IFileInfoSnapshot fileInfo) {
+    private FileContents ReadFileContentsWorker(IFileInfoSnapshot fileInfo) {
       const int trailingByteCount = 2;
       var block = _fileSystem.ReadFileNulTerminated(fileInfo, trailingByteCount);
       var contentsByteCount = block.ByteLength - trailingByteCount; // Padding added by ReadFileNulTerminated

@@ -113,7 +113,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         // Read file contents.
         onLoading();
         filesToRead.ForAll(x => {
-          var newContents = _fileContentsFactory.GetFileContents(x.FileName.FullPath);
+          var newContents = _fileContentsFactory.ReadFileContents(x.FileName.FullPath);
           fileDatabase.Files[x.FileName].UpdateContents(newContents);
         });
         onLoaded();
@@ -410,7 +410,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
       loadingInfo.PartialProgressReporter.ReportProgress();
 
-      var fileContents = _fileContentsFactory.GetFileContents(projectFileData.FileName.FullPath);
+      var fileContents = _fileContentsFactory.ReadFileContents(projectFileData.FileName.FullPath);
       if (fileContents is BinaryFileContents) {
         Interlocked.Increment(ref loadingInfo.LoadedBinaryFileCount);
       }

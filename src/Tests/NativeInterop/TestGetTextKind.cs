@@ -85,6 +85,14 @@ namespace VsChromium.Tests.NativeInterop {
     }
 
     [TestMethod]
+    public void GetTextKindForMediumBinaryFileWithSomeAsciiWorks() {
+      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
+      // of about 60% ascii and 40% binary.
+      var bytes = CreateArray(180 * 1024 /* 180 KB */, 0.60);
+      CheckKind(bytes, NativeMethods.TextKind.TextKind_ProbablyBinary);
+    }
+
+    [TestMethod]
     public void GetTextKindForBinaryFileWithMostlyAsciiWorks() {
       // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
       // of about 80% ascii and 20% binary.

@@ -22,6 +22,8 @@
 
 #define EXPORT __declspec(dllexport)
 
+namespace {
+
 template<class CharType>
 bool GetLineExtentFromPosition(
     const CharType* text,
@@ -71,6 +73,161 @@ bool char_equal_icase(wchar_t x , wchar_t y) {
   static const std::locale& loc(std::locale::classic());
   return std::tolower(x, loc) == std::tolower(y, loc);
 }
+
+bool Text_HasUtf8Bom(const char *text, int textLen) {
+  return textLen >= 3 &&
+    static_cast<uint8_t>(text[0]) == static_cast<uint8_t>(0xEF) &&
+    static_cast<uint8_t>(text[1]) == static_cast<uint8_t>(0xBB) &&
+    static_cast<uint8_t>(text[2]) == static_cast<uint8_t>(0xBF);
+}
+
+enum ContentKindResult {
+  ResultAscii,
+  ResultUtf8,
+  ResultBinary
+};
+
+const uint8_t maskSeq2 = 0xE0; // 111x-xxxx
+const uint8_t maskSeq3 = 0xF0; // 1111-xxxx
+const uint8_t maskSeq4 = 0xF8; // 1111-1xxx
+const uint8_t maskRest = 0xC0; // 11xx-xxxx
+
+const uint8_t valueSeq2 = 0xC0; // 110x-xxxx
+const uint8_t valueSeq3 = 0xE0; // 1110-xxxx
+const uint8_t valueSeq4 = 0xF0; // 1111-0xxx
+const uint8_t valueRest = 0x80; // 10xx-xxxx
+
+bool isSeq(const uint8_t* ch, uint8_t mask, uint8_t value) {
+  return (*ch & mask) == value;
+}
+
+bool isRest(const uint8_t* ch) {
+  return (*ch & maskRest) == valueRest;
+}
+
+bool IsUtf8Rune(const uint8_t** pch, int* len) {
+  const uint8_t* text = *pch;
+  uint8_t ch = *text;
+  if (isSeq(text, maskSeq4, valueSeq4) && (*len >= 4)) {
+    if (isRest(text + 1) && isRest(text + 2) && isRest(text + 3)) {
+      (*pch) = text + 4;
+      (*len) -= 4;
+      return true;
+    }
+  }
+  else if (isSeq(text, maskSeq3, valueSeq3) && (*len >= 3)) {
+    if (isRest(text + 1) && isRest(text + 2)) {
+      (*pch) = text + 3;
+      (*len) -= 3;
+      return true;
+    }
+  }
+  else if (isSeq(text, maskSeq2, valueSeq2) && (*len >= 2)) {
+    if (isRest(text + 1)) {
+      (*pch) = text + 2;
+      (*len) -= 2;
+      return true;
+    }
+  }
+  return false;
+}
+
+struct ContentResult {
+  ContentResult() {
+    asciiCount = 0;
+    utf8Count = 0;
+    otherCount = 0;
+  }
+  // Count simple (i.e. readable) ascii characters
+  int asciiCount;
+  // Count extended UTF8 characters
+  int utf8Count;
+  // Count others (i.e. not in previous 2 categories)
+  int otherCount;
+};
+
+void Text_ContentKindFull(const char* text, int textLen, ContentResult& result) {
+  const uint8_t* textPtr = (const uint8_t *)text;
+  while (textLen > 0) {
+    uint8_t ch = *textPtr;
+
+    // See http://www.asciitable.com/
+    if ((ch >= 32 && ch <= 126) || ch == '\t' || ch == '\r' || ch == '\n') {
+      result.asciiCount++;
+      textPtr++;
+      textLen--;
+    }
+    else if (IsUtf8Rune(&textPtr, &textLen)) {
+      result.utf8Count++;
+    }
+    else {
+      result.otherCount++;
+      textPtr++;
+      textLen--;
+    }
+  }
+}
+
+void Text_ContentKindSlices(const char* text, int textLen, ContentResult& result) {
+  // Instead of going through the whole file contents (which can be big), we
+  // limit ourselves to 50 slices of 4K each. This means we examine a maximum of
+  // 200KB per file, whatever the size. For files smaller than 200KB, we still
+  // examine the whole content.
+  const int sliceCount = 50;
+  const int sliceSize = 4 * 1024;
+  int betweenSlicesCount = (textLen - sliceSize * sliceCount) / sliceCount;
+  if (betweenSlicesCount <= 0) {
+    Text_ContentKindFull(text, textLen, result);
+    return;
+  }
+
+  const char* textLimit = text + textLen;
+  while (textLen > 0) {
+    int sliceLen = min(sliceSize, textLen);
+    Text_ContentKindFull(text, sliceLen, result);
+
+    text += (sliceLen + betweenSlicesCount);
+    textLen -= (sliceLen + betweenSlicesCount);
+  }
+}
+
+ContentKindResult ContentResultToContentKindResult(ContentResult contentResult) {
+  int total = contentResult.asciiCount + contentResult.utf8Count + contentResult.otherCount;
+  double otherRatio = (double)contentResult.otherCount / (double)total;
+
+  // Content is considered "binary" if more than 10% of characters are non human readable
+  if (otherRatio >= 0.1) {
+    return ResultBinary;
+  } else {
+    // Content is considered "Text", choose between pure ascii or mix of ascii/utf8
+    if (contentResult.utf8Count == 0.0)
+      return ResultAscii;
+    else
+      return ResultUtf8;
+  }
+}
+
+ContentKindResult Text_ContentKind(const char* text, int textLen) {
+#if 1
+  ContentResult contentResult;
+  Text_ContentKindSlices(text, textLen, contentResult);
+  return ContentResultToContentKindResult(contentResult);
+#else
+  ContentResult contentResult1;
+  Text_ContentKindFull(text, textLen, contentResult1);
+  ContentResult contentResult2;
+  Text_ContentKindSlices(text, textLen, contentResult2);
+
+  ContentKindResult result1 = ContentResultToContentKindResult(contentResult1);
+  ContentKindResult result2 = ContentResultToContentKindResult(contentResult2);
+  if (result1 != result2) {
+    int x = contentResult1.asciiCount;
+  }
+  return result1;
+#endif
+}
+
+}  // namespace
 
 extern "C" {
 
@@ -160,108 +317,6 @@ enum TextKind {
   TextKind_Utf8WithBom,
   TextKind_ProbablyBinary,
 };
-
-namespace {
-
-bool Text_HasUtf8Bom(const char *text, int textLen) {
-  return textLen >= 3 &&
-    static_cast<uint8_t>(text[0]) == static_cast<uint8_t>(0xEF) &&
-    static_cast<uint8_t>(text[1]) == static_cast<uint8_t>(0xBB) &&
-    static_cast<uint8_t>(text[2]) == static_cast<uint8_t>(0xBF);
-}
-
-namespace {
-
-enum ContentKindResult {
-  ResultAscii,
-  ResultUtf8,
-  ResultBinary
-};
-
-const uint8_t maskSeq2 = 0xE0; // 111x-xxxx
-const uint8_t maskSeq3 = 0xF0; // 1111-xxxx
-const uint8_t maskSeq4 = 0xF8; // 1111-1xxx
-const uint8_t maskRest = 0xC0; // 11xx-xxxx
-
-const uint8_t valueSeq2 = 0xC0; // 110x-xxxx
-const uint8_t valueSeq3 = 0xE0; // 1110-xxxx
-const uint8_t valueSeq4 = 0xF0; // 1111-0xxx
-const uint8_t valueRest = 0x80; // 10xx-xxxx
-
-bool isSeq(const uint8_t* ch, uint8_t mask, uint8_t value) {
-  return (*ch & mask) == value;
-}
-
-bool isRest(const uint8_t* ch) {
-  return (*ch & maskRest) == valueRest;
-}
-
-bool IsUtf8Rune(const uint8_t** pch, int* len) {
-  const uint8_t* text = *pch;
-  uint8_t ch = *text;
-  if (isSeq(text, maskSeq4, valueSeq4) && (*len >= 4)) {
-    if (isRest(text + 1) && isRest(text + 2) && isRest(text + 3)) {
-      (*pch) = text + 4;
-      (*len) -= 4;
-      return true;
-    }
-  } else if (isSeq(text, maskSeq3, valueSeq3) && (*len >= 3)) {
-    if (isRest(text + 1) && isRest(text + 2)) {
-      (*pch) = text + 3;
-      (*len) -= 3;
-      return true;
-    }
-  } else if (isSeq(text, maskSeq2, valueSeq2) && (*len >= 2)) {
-    if (isRest(text + 1)) {
-      (*pch) = text + 2;
-      (*len) -= 2;
-      return true;
-    }
-  }
-  return false;
-}
-
-}  // namespace
-
-ContentKindResult Text_ContentKind(const char* text, int textLen) {
-  int asciiCount = 0; // Count simple (i.e. readable) ascii characters
-  int utf8Count = 0; // Count extended UTF8 characters
-  int otherCount = 0; // Count others (i.e. not in previous 2 categories)
-
-  const uint8_t* textPtr = (const uint8_t *)text;
-  while(textLen > 0) {
-    uint8_t ch = *textPtr;
-
-    // See http://www.asciitable.com/
-    if ((ch >= 32 && ch <= 126) || ch == '\t' || ch == '\r' || ch == '\n') {
-      asciiCount++;
-      textPtr++;
-      textLen--;
-    }
-    else if (IsUtf8Rune(&textPtr, &textLen)) {
-      utf8Count++;
-    }
-    else {
-      otherCount++;
-      textPtr++;
-      textLen--;
-    }
-  }
-
-  if (otherCount == 0) {
-    if (utf8Count == 0)
-      return ResultAscii;
-    else
-      return ResultUtf8;
-  }
-  double asciiToOtherRatio = (double)asciiCount / (double)(asciiCount + otherCount);
-  if ((asciiToOtherRatio >= 0.9) && (asciiCount > otherCount))
-    return ResultAscii;
-  else
-    return ResultBinary;
-}
-
-}
 
 EXPORT TextKind __stdcall Text_GetKind(const char* text, int textLen) {
   bool utf8 = Text_HasUtf8Bom(text, textLen);

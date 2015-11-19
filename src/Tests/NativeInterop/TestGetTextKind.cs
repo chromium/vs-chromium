@@ -77,6 +77,14 @@ namespace VsChromium.Tests.NativeInterop {
     }
 
     [TestMethod]
+    public void GetTextKindForLargeBinaryFileWithSomeAsciiWorks() {
+      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
+      // of about 60% ascii and 40% binary.
+      var bytes = CreateArray(1 * 1024 * 1024 /*1 MB*/, 0.60);
+      CheckKind(bytes, NativeMethods.TextKind.TextKind_ProbablyBinary);
+    }
+
+    [TestMethod]
     public void GetTextKindForBinaryFileWithMostlyAsciiWorks() {
       // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
       // of about 80% ascii and 20% binary.
@@ -96,7 +104,7 @@ namespace VsChromium.Tests.NativeInterop {
     public void GetTextKindForBinaryFileWithMostlyBinaryWorks() {
       // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
       // of about 5% ascii and 9% binary.
-      var bytes = CreateArray(50, 0.05);
+      var bytes = CreateArray(100, 0.05);
       CheckKind(bytes, NativeMethods.TextKind.TextKind_ProbablyBinary);
     }
 

@@ -224,9 +224,9 @@ bool IsUtf8Rune(const uint8_t** pch, int* len) {
 }  // namespace
 
 ContentKindResult Text_ContentKind(const char* text, int textLen) {
-  int asciiCount = 0;
-  int utf8Count = 0;
-  int otherCount = 0;
+  int asciiCount = 0; // Count simple (i.e. readable) ascii characters
+  int utf8Count = 0; // Count extended UTF8 characters
+  int otherCount = 0; // Count others (i.e. not in previous 2 categories)
 
   const uint8_t* textPtr = (const uint8_t *)text;
   while(textLen > 0) {
@@ -254,7 +254,7 @@ ContentKindResult Text_ContentKind(const char* text, int textLen) {
     else
       return ResultUtf8;
   }
-  double asciiToOtherRatio = (double)asciiCount / (double)otherCount;
+  double asciiToOtherRatio = (double)asciiCount / (double)(asciiCount + otherCount);
   if ((asciiToOtherRatio >= 0.9) && (asciiCount > otherCount))
     return ResultAscii;
   else

@@ -4,7 +4,6 @@
 
 using System.Collections.Generic;
 using VsChromium.Core.Utility;
-using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
@@ -16,10 +15,27 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// there may be more than one if the file is large enough.
   /// </summary>
   public interface IFileContentsPiece {
+    /// <summary>
+    /// The file name of the file this piece if part of.
+    /// </summary>
     FileName FileName { get; }
+    /// <summary>
+    /// A unique identifier of the file this piece is part of. This ID is
+    /// redundant with <see cref="FileName"/>, it is only needed for
+    /// performance, as comparing integers for equality is faster than comparing
+    /// filenames.
+    /// </summary>
     int FileId { get; }
+    /// <summary>
+    /// The number of bytes in this piece. This is used for debugging only (i.e.
+    /// displaying # of bytes allocated).
+    /// </summary>
     int ByteLength { get; }
 
+    /// <summary>
+    /// Find all occurrences of a search term passed in <paramref
+    /// name="compiledTextSearchData"/>.
+    /// </summary>
     IList<TextRange> FindAll(
       CompiledTextSearchData compiledTextSearchData,
       IOperationProgressTracker progressTracker);

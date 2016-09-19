@@ -52,5 +52,43 @@ namespace VsChromium.Tests.Core {
       Assert.AreEqual(@"d:\ooo", result.Root);
       Assert.AreEqual(@"bar.txt", result.Suffix);
     }
+
+    [TestMethod]
+    public void CombinePathsAcceptsNullArgument() {
+      var path = @"d:\ooo\bar.txt";
+      var result = PathHelpers.CombinePaths(path, null);
+      Assert.AreEqual(path, result);
+    }
+
+    [TestMethod]
+    public void CombinePathsAcceptsEmptyArgument() {
+      var path = @"d:\ooo\bar.txt";
+      var result = PathHelpers.CombinePaths(path, "");
+      Assert.AreEqual(path, result);
+    }
+
+    [TestMethod]
+    public void CombinePathsAcceptsNullFirstArgument() {
+      var path = @"d:\ooo\bar.txt";
+      var result = PathHelpers.CombinePaths(null, path);
+      Assert.AreEqual(path, result);
+    }
+
+    [TestMethod]
+    public void CombinePathsAcceptsEmptyFirstArgument() {
+      var path = @"d:\ooo\bar.txt";
+      var result = PathHelpers.CombinePaths("", path);
+      Assert.AreEqual(path, result);
+    }
+
+    [TestMethod]
+    public void CombinePathsAllowsLongPaths() {
+      var path = @"d:\ooo\bar.txt";
+      while (path.Length < 300) {
+        path = path + @"\dirname";
+      }
+      var result = PathHelpers.CombinePaths(path, "myfile.txt");
+      Assert.AreEqual(path + @"\myfile.txt", result);
+    }
   }
 }

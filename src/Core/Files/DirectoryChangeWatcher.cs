@@ -99,7 +99,7 @@ namespace VsChromium.Core.Files {
       watcher.Path = directory.Value;
       watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
       watcher.IncludeSubdirectories = true;
-      watcher.InternalBufferSize = 50 * 1024; // 50KB sounds more reasonable than 8KB
+      watcher.InternalBufferSize = 60 * 1024; // 50KB sounds more reasonable than 8KB
       watcher.Changed += WatcherOnChanged;
       watcher.Created += WatcherOnCreated;
       watcher.Deleted += WatcherOnDeleted;
@@ -128,8 +128,7 @@ namespace VsChromium.Core.Files {
           CheckDeletedRoots();
           PostPathsChangedEvents();
         }
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
         Logger.LogError(e, "Error in DirectoryChangeWatcher.");
       }
     }
@@ -343,50 +342,74 @@ namespace VsChromium.Core.Files {
     }
 
     private void WatcherOnError(object sender, ErrorEventArgs errorEventArgs) {
-      // TODO(rpaquay): Try to recover?
-      Logger.LogError(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
-                          ((FileSystemWatcher)sender).Path);
-      OnError(errorEventArgs.GetException());
+      Logger.WrapActionInvocation(() => {
+        // TODO(rpaquay): Try to recover?
+        Logger.LogError(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
+          ((FileSystemWatcher)sender).Path);
+        OnError(errorEventArgs.GetException());
+      });
     }
 
     private void WatcherOnRenamed(object sender, RenamedEventArgs args) {
-      LogPath(args.OldFullPath, PathChangeKind.Deleted);
-      LogPath(args.FullPath, PathChangeKind.Created);
-      if (SkipPath(args.OldFullPath))
-        return;
-      if (SkipPath(args.FullPath))
-        return;
+      Logger.WrapActionInvocation(() => {
+        var watcher = (FileSystemWatcher)sender;
 
-      EnqueueChangeEvent(new FullPath(args.OldFullPath), PathChangeKind.Deleted);
-      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Created);
-      _eventReceived.Set();
+        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        LogPath(path, PathChangeKind.Created);
+        if (SkipPath(path))
+          return;
+
+        var oldPath = PathHelpers.CombinePaths(watcher.Path, args.OldName);
+        LogPath(oldPath, PathChangeKind.Deleted);
+        if (SkipPath(oldPath))
+          return;
+
+        EnqueueChangeEvent(new FullPath(oldPath), PathChangeKind.Deleted);
+        EnqueueChangeEvent(new FullPath(path), PathChangeKind.Created);
+        _eventReceived.Set();
+      });
     }
 
     private void WatcherOnDeleted(object sender, FileSystemEventArgs args) {
-      LogPath(args.FullPath, PathChangeKind.Deleted);
-      if (SkipPath(args.FullPath))
-        return;
+      Logger.WrapActionInvocation(() => {
+        var watcher = (FileSystemWatcher)sender;
 
-      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Deleted);
-      _eventReceived.Set();
+        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        LogPath(path, PathChangeKind.Deleted);
+        if (SkipPath(path))
+          return;
+
+        EnqueueChangeEvent(new FullPath(path), PathChangeKind.Deleted);
+        _eventReceived.Set();
+      });
     }
 
     private void WatcherOnCreated(object sender, FileSystemEventArgs args) {
-      LogPath(args.FullPath, PathChangeKind.Created);
-      if (SkipPath(args.FullPath))
-        return;
+      Logger.WrapActionInvocation(() => {
+        var watcher = (FileSystemWatcher)sender;
 
-      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Created);
-      _eventReceived.Set();
+        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        LogPath(path, PathChangeKind.Created);
+        if (SkipPath(path))
+          return;
+
+        EnqueueChangeEvent(new FullPath(path), PathChangeKind.Created);
+        _eventReceived.Set();
+      });
     }
 
     private void WatcherOnChanged(object sender, FileSystemEventArgs args) {
-      LogPath(args.FullPath, PathChangeKind.Changed);
-      if (SkipPath(args.FullPath))
-        return;
+      Logger.WrapActionInvocation(() => {
+        var watcher = (FileSystemWatcher)sender;
 
-      EnqueueChangeEvent(new FullPath(args.FullPath), PathChangeKind.Changed);
-      _eventReceived.Set();
+        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        LogPath(path, PathChangeKind.Changed);
+        if (SkipPath(path))
+          return;
+
+        EnqueueChangeEvent(new FullPath(path), PathChangeKind.Changed);
+        _eventReceived.Set();
+      });
     }
 
     /// <summary>

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.CodeDom;
 using System.IO;
 using System.Linq;
 
@@ -18,16 +19,11 @@ namespace VsChromium.Core.Files {
     /// "Path.DirectorySeparatorChar"
     /// </summary>
     public static string CombinePaths(string path1, string path2) {
-      if (path1 == null)
-        throw new ArgumentNullException("path1");
-      if (path2 == null)
-        throw new ArgumentNullException("path2");
-
-      if (path2.Length == 0)
-        return path1;
-
-      if (path1.Length == 0)
+      if (string.IsNullOrEmpty(path1))
         return path2;
+
+      if (string.IsNullOrEmpty(path2))
+        return path1;
 
       var c = path1[path1.Length - 1];
       if (c != Path.DirectorySeparatorChar && c != Path.AltDirectorySeparatorChar && c != Path.VolumeSeparatorChar) {

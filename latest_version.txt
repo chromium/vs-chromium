@@ -1,3 +1,3 @@
-version: 0.9.18
-url: https://github.com/chromium/vs-chromium/releases/tag/v0.9.18
+version: 0.9.19
+url: https://github.com/chromium/vs-chromium/releases/tag/v0.9.19
 

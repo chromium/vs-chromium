@@ -368,6 +368,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       FilePathSearchInfo searchInfo,
       DirectoryEntry fileResults,
       string description,
+      string additionalWarning,
       bool expandAll) {
 
       Action<FileSystemEntryViewModel> setLineColumn = entry => {
@@ -377,10 +378,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       };
 
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
-      var result =
-        new List<TreeViewItemViewModel> {
-          new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
-        }
+      var result = Enumerable
+        .Empty<TreeViewItemViewModel>()
+        .ConcatSingle(new TextItemViewModel(StandarImageSourceFactory, rootNode, description))
+        .ConcatSingle(new TextWarningItemViewModel(StandarImageSourceFactory, rootNode, additionalWarning), () => !string.IsNullOrEmpty(additionalWarning))
         .Concat(fileResults.Entries.Select(x => FileSystemEntryViewModel.Create(this, rootNode, x, setLineColumn)))
         .ToList();
       result.ForAll(rootNode.AddChild);
@@ -388,12 +389,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return result;
     }
 
-    private List<TreeViewItemViewModel> CreateSearchCodeResultViewModel(DirectoryEntry searchResults, string description, bool expandAll) {
+    private List<TreeViewItemViewModel> CreateSearchCodeResultViewModel(
+        DirectoryEntry searchResults,
+        string description,
+        string additionalWarning,
+        bool expandAll) {
       var rootNode = new RootTreeViewItemViewModel(StandarImageSourceFactory);
-      var result =
-        new List<TreeViewItemViewModel> {
-            new TextItemViewModel(StandarImageSourceFactory, rootNode, description)
-          }
+      var result = Enumerable
+        .Empty<TreeViewItemViewModel>()
+        .ConcatSingle(new TextItemViewModel(StandarImageSourceFactory, rootNode, description))
+        .ConcatSingle(new TextWarningItemViewModel(StandarImageSourceFactory, rootNode, additionalWarning), () => !string.IsNullOrEmpty(additionalWarning))
         .Concat(searchResults.Entries.Select(x => FileSystemEntryViewModel.Create(this, rootNode, x, _ => { })))
         .ToList();
       result.ForAll(rootNode.AddChild);
@@ -632,6 +637,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void SearchFilesPaths(string searchPattern, bool immediate) {
       var searchInfo = PreprocessFilePathSearchPattern(searchPattern);
+      var maxResults = GlobalSettings.SearchFilePathsMaxResults;
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchFilePaths,
         HintText = "Searching for matching file paths...",
@@ -639,7 +645,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         TypedRequest = new SearchFilePathsRequest {
           SearchParams = new SearchParams {
             SearchString = searchInfo.SearchPattern,
-            MaxResults = GlobalSettings.SearchFilePathsMaxResults,
+            MaxResults = maxResults,
             MatchCase = false, //ViewModel.MatchCase,
             MatchWholeWord = false, //ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -665,7 +671,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           if (searchInfo.ColumnNumber >= 0) {
             msg += ", Column " + (searchInfo.ColumnNumber + 1);
           }
-          var viewModel = CreateSearchFilePathsResult(searchInfo, response.SearchResult, msg, true);
+          var limitMsg = CreateMaxResultsHitMessage(response.HitCount, maxResults);
+          var viewModel = CreateSearchFilePathsResult(searchInfo, response.SearchResult, msg, limitMsg, true);
           _searchResultDocumentChangeTracker.Disable();
           ViewModel.SetSearchFilePathsResult(viewModel);
         }
@@ -673,6 +680,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void SearchCode(string searchPattern, string filePathPattern, bool immediate) {
+      var maxResults = GlobalSettings.SearchCodeMaxResults;
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchCode,
         HintText = "Searching for matching text in files...",
@@ -681,7 +689,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           SearchParams = new SearchParams {
             SearchString = searchPattern,
             FilePathPattern = filePathPattern,
-            MaxResults = GlobalSettings.SearchCodeMaxResults,
+            MaxResults = maxResults,
             MatchCase = ViewModel.MatchCase,
             MatchWholeWord = ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
@@ -713,12 +721,24 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           if (!string.IsNullOrEmpty(filePathPattern)) {
             msg += string.Format(", File Paths: \"{0}\"", filePathPattern);
           }
+          var limitMsg = CreateMaxResultsHitMessage(response.HitCount, maxResults);
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
-          var result = CreateSearchCodeResultViewModel(response.SearchResults, msg, expandAll);
+          var result = CreateSearchCodeResultViewModel(response.SearchResults, msg, limitMsg, expandAll);
           ViewModel.SetSearchCodeResult(result);
           _searchResultDocumentChangeTracker.Enable(response.SearchResults);
         }
       });
+    }
+
+    private string CreateMaxResultsHitMessage(long hitCount, long maxResults) {
+      if (hitCount >= maxResults) {
+        return string.Format(
+          "Maximum number of results ({0:n0}) hit - some results omitted. " +
+          "Use Tools-> Options -> VsChromium -> General to increase the limit, " + 
+          "or change your query to exclude more results.",
+          maxResults);
+      }
+      return "";
     }
 
     enum Direction {

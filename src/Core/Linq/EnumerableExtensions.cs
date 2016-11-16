@@ -187,6 +187,21 @@ namespace VsChromium.Core.Linq {
       }
     }
 
+    public static IEnumerable<T> ConcatSingle<T>(this IEnumerable<T> source, T item) {
+      return source.Concat(Single(item));
+    }
+
+    public static IEnumerable<T> ConcatSingle<T>(this IEnumerable<T> source, T item, Func<bool> filter) {
+      if (filter())
+        return source.ConcatSingle(item);
+      else
+        return source;
+    }
+
+    public static IEnumerable<T> Single<T>(T item) {
+      return Enumerable.Repeat(item, 1);
+    }
+
     public static ReadOnlyCollection<TSource> ToReadOnlyCollection<TSource>(this IEnumerable<TSource> source) {
       var coll = source as ReadOnlyCollection<TSource>;
       if (coll != null)

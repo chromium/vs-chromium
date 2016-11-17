@@ -77,13 +77,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(this, _lineNumber, _columnNumber));
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(this, _lineNumber, _columnNumber, 0));
       }
     }
 
     public ICommand OpenWithCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.OpenFileInEditorWith(this, _lineNumber, _columnNumber));
+        return CommandDelegate.Create(sender => Controller.OpenFileInEditorWith(this, _lineNumber, _columnNumber, 0));
       }
     }
 

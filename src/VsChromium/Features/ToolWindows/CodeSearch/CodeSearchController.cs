@@ -295,7 +295,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _uiRequestProcessor.Post(uiRequest);
     }
 
-    private Span? TranslateLineColumnToSpan(IVsTextView vsTextView, int lineNumber, int columnNumber) {
+    private Span? TranslateLineColumnToSpan(IVsTextView vsTextView, int lineNumber, int columnNumber, int length) {
       if (lineNumber < 0)
         return null;
 
@@ -308,14 +308,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return null;
 
       var line = snapshot.GetLineFromLineNumber(lineNumber);
-      if (columnNumber < 0 || columnNumber >= line.Length)
-        return new Span(line.Start, 0);
 
-      return new Span(line.Start + columnNumber, 0);
+      // Ensure columnNumber and length are in the line bounds
+      columnNumber = Math.Max(columnNumber, 0);
+      columnNumber = Math.Min(columnNumber, line.Length);
+      length = Math.Max(0, length);
+      length = Math.Min(length, line.Length - columnNumber);
+
+      return new Span(line.Start + columnNumber, length);
     }
 
-    public void OpenFileInEditor(FileEntryViewModel fileEntry, int lineNumber, int columnNumber) {
-      OpenFileInEditorWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber));
+    public void OpenFileInEditor(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length) {
+      OpenFileInEditorWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber, length));
     }
 
     public void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span) {
@@ -334,8 +338,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       });
     }
 
-    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, int lineNumber, int columnNumber) {
-      OpenFileInEditorWithWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber));
+    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length) {
+      OpenFileInEditorWithWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber, length));
     }
 
     public void OpenFileInEditorWith(FileEntryViewModel fileEntry, Span? span) {

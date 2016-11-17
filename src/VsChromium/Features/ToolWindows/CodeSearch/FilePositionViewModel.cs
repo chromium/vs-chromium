@@ -103,13 +103,27 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public ICommand OpenCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(ParentFile, new Span(Position, Length)));
+        return CommandDelegate.Create(sender => {
+          if (_extractPosition != null) {
+            Controller.OpenFileInEditor(ParentFile, _extractPosition.LineNumber, _extractPosition.ColumnNumber, Length);
+          }
+          else {
+            Controller.OpenFileInEditor(ParentFile, new Span(Position, Length));
+          }
+        });
       }
     }
 
     public ICommand OpenWithCommand {
       get {
-        return CommandDelegate.Create(sender => Controller.OpenFileInEditor(ParentFile, new Span(Position, Length)));
+        return CommandDelegate.Create(sender => {
+          if (_extractPosition != null) {
+            Controller.OpenFileInEditorWith(ParentFile, _extractPosition.LineNumber, _extractPosition.ColumnNumber, Length);
+          }
+          else {
+            Controller.OpenFileInEditorWith(ParentFile, new Span(Position, Length));
+          }
+        });
       }
     }
 

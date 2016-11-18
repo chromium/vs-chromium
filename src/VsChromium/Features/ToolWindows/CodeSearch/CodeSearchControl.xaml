@@ -505,12 +505,12 @@
         </DataTemplate>
 
         <!-- Simple text string item -->
-        <DataTemplate DataType="{x:Type toolWindows:TextItemViewModel}">
+        <HierarchicalDataTemplate DataType="{x:Type toolWindows:TextItemViewModel}" ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
             <Image Width="16" Height="16" Margin="3,0" Source="{Binding ImageSourcePath}" />
             <TextBlock Text="{Binding Text}" Style="{StaticResource DisplayTextStyle}" />
           </StackPanel>
-        </DataTemplate>
+        </HierarchicalDataTemplate>
 
       </TreeView.Resources>
     </TreeView>

@@ -685,22 +685,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void SearchCode(string searchPattern, string filePathPattern, bool immediate) {
       var maxResults = GlobalSettings.SearchCodeMaxResults;
+      var request = CreateSearchCodeRequest(searchPattern, filePathPattern, maxResults);
       SearchWorker(new SearchWorkerParams {
         OperationName = OperationsIds.SearchCode,
         HintText = "Searching for matching text in files...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : GlobalSettings.AutoSearchDelayMsec),
-        TypedRequest = new SearchCodeRequest {
-          SearchParams = new SearchParams {
-            SearchString = searchPattern,
-            FilePathPattern = filePathPattern,
-            MaxResults = maxResults,
-            MatchCase = ViewModel.MatchCase,
-            MatchWholeWord = ViewModel.MatchWholeWord,
-            IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = true,
-            Regex = ViewModel.UseRegex,
-          }
-        },
+        TypedRequest = request,
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchCodeResult(viewModel);
@@ -730,8 +720,63 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           var result = CreateSearchCodeResultViewModel(response.SearchResults, msg, limitMsg, expandAll);
           ViewModel.SetSearchCodeResult(result);
           _searchResultDocumentChangeTracker.Enable(response.SearchResults);
+
+          // Perform additional search if few results and search was restrictive
+          if (response.HitCount <= HardCodedSettings.LowHitCountWarrantingAdditionalSearch) {
+            if (request.SearchParams.MatchCase || request.SearchParams.MatchWholeWord) {
+              SearchCodeLessRestrictive(searchPattern, filePathPattern, response.HitCount);
+            }
+          }
         }
       });
+    }
+
+    private void SearchCodeLessRestrictive(string searchPattern, string filePathPattern, long previousHitCount) {
+      var maxResults = GlobalSettings.SearchCodeMaxResults;
+      var request = CreateSearchCodeRequest(searchPattern, filePathPattern, maxResults);
+      request.SearchParams.MatchCase = false;
+      request.SearchParams.MatchWholeWord = false;
+
+      SearchWorker(new SearchWorkerParams {
+        OperationName = OperationsIds.SearchCode,
+        HintText = "Searching for matching text in files...",
+        Delay = TimeSpan.FromMilliseconds(0),
+        TypedRequest = request,
+        ProcessError = (errorResponse, stopwatch) => {
+          // Nothing to do, ignore
+          Logger.LogError(errorResponse.CreateException(), "Error running less restrictive search request");
+        },
+        ProcessResponse = (typedResponse, stopwatch) => {
+          var response = ((SearchCodeResponse)typedResponse);
+          // If same # of hits, no addional message
+          if (response.HitCount <= previousHitCount) {
+            return;
+          }
+
+          if (ViewModel.ActiveDisplay == CodeSearchViewModel.DisplayKind.SearchCodeResult) {
+            if (ViewModel.RootNodes.Count > 0) {
+              var parent = ViewModel.RootNodes[0];
+              var msg = string.Format("{0:n0} results would be available with both Match case and Match word disabled", response.HitCount);
+              parent.Children.Add(new TextItemViewModel(StandarImageSourceFactory, parent, msg));
+            }
+          }
+        }
+      });
+    }
+
+    private SearchCodeRequest CreateSearchCodeRequest(string searchPattern, string filePathPattern, int maxResults) {
+      return new SearchCodeRequest {
+        SearchParams = new SearchParams {
+          SearchString = searchPattern,
+          FilePathPattern = filePathPattern,
+          MaxResults = maxResults,
+          MatchCase = ViewModel.MatchCase,
+          MatchWholeWord = ViewModel.MatchWholeWord,
+          IncludeSymLinks = ViewModel.IncludeSymLinks,
+          UseRe2Engine = true,
+          Regex = ViewModel.UseRegex,
+        }
+      };
     }
 
     private string CreateMaxResultsHitMessage(long hitCount, long maxResults) {

@@ -16,7 +16,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("The Chromium Authors")]
 [assembly: AssemblyProduct("VsChromium")]
-[assembly: AssemblyCopyright("Copyright 2013 The Chromium Authors. All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright 2016 The Chromium Authors. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

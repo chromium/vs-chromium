@@ -1,4 +1,4 @@
-#VsChromium
+# VsChromium
 
 VsChromium is a Visual Studio Extension containing a collection of tools
 useful for editing, navigating and debugging code.

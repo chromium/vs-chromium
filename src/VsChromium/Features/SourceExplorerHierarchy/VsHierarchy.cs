@@ -378,6 +378,17 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (itemid == _nodes.RootNode.ItemId && propid == (int)__VSHPROPID.VSHPROPID_SortPriority) {
         return GetPropertyReturn(itemid, propid, -1, out pvar, VSConstants.S_OK);
       }
+      // Returning "true" for VSHPROPID_HasEnumerationSideEffects tells (some?) consumers that
+      // they should not enumerate all elements of the hierarchy. This helps with slowdown in
+      // Visual Studio stepping C++ code when 1) Source Explorer contains a large number of elements
+      // (hundred of thousands) and 2) the PDB of the debuggee process contains paths that don't match
+      // paths on the debugger machine. When both these conditions are verified, the VsDebug package
+      // enumerates all items of the hierarchy and calls "GetMkDocument" on each element, which
+      // can takes seconds because of the sheer number of elements.
+      // By returning "true", we tell the VsDebug package to not bother enumerating our elements.
+      if (itemid == _nodes.RootNode.ItemId && propid == (int)__VSHPROPID.VSHPROPID_HasEnumerationSideEffects) {
+        return GetPropertyReturn(itemid, propid, true, out pvar, VSConstants.S_OK);
+      }
 
       NodeViewModel node = _nodes.GetNode(itemid);
       if (node == null) {

@@ -102,9 +102,13 @@ build/Release/gen/webkit/bindings/
 #
 *.pdb
 *.obj
+# clang compiler (see https://reviews.llvm.org/D36238)
+*.obj-*
 *.pack
 *.rsp
 *.pch
+# clang compiler (see https://reviews.llvm.org/D36238)
+*.pch-*
 *.lib
 *.ilk
 *.exe

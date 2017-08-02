@@ -1,0 +1,1 @@
+Test directory looking like a local Chromium enlistment.

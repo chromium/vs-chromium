@@ -23,7 +23,9 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
-    private static bool LogContentsStats = false;
+    private static bool LogContentsStats = true;
+    private static int LogContentsStats_LargeFile_Threshold = 500 * 1024;
+    private static int LogContentsStats_FilesByExtensions_Threshold = 100 * 1024;
     private static bool LogPiecesStats = false;
     /// <summary>
     /// Split large files in chunks of maximum <code>ChunkSize</code> bytes.
@@ -162,26 +164,39 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private static void LogFileContentsStats(IList<FileData> filesWithContents) {
       if (LogContentsStats) {
+        Logger.LogInfo("=========================================================================");
+        Logger.LogInfo("Index statistics");
+
+        Logger.LogInfo("=========================================================================");
+        Logger.LogInfo("  Part 1: Files larger than {0:n0} bytes", LogContentsStats_LargeFile_Threshold);
+
+        var bigFiles = filesWithContents
+          .Where(x => x.Contents.ByteLength >= LogContentsStats_LargeFile_Threshold)
+          .OrderByDescending(x => x.Contents.ByteLength);
+
+        var bigFilesReport = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
+        bigFilesReport.AddColumn("Path", 100, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.ForString);
+        bigFilesReport.AddColumn("Size", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.ForFormattedNumber);
+        bigFilesReport.GenerateReport(bigFiles.Select(g => new List<object> { g.FileName.RelativePath, g.Contents.ByteLength }));
+
+        Logger.LogInfo("=========================================================================");
+        Logger.LogInfo("  Part 2: File extensions that occupy more than {0:n0} bytes", LogContentsStats_FilesByExtensions_Threshold);
         var filesByExtensions = filesWithContents
-          .GroupBy(x => {
-            var ext = Path.GetExtension(x.FileName.FullPath.Value);
-            if (ext == "" || x.Contents.ByteLength >= 500 * 1024)
-              return Path.GetFileName(x.FileName.FullPath.Value);
-            return ext;
-          })
+          .Where(x => !string.IsNullOrEmpty(Path.GetExtension(x.FileName.FullPath.Value)))
+          .GroupBy(x => Path.GetExtension(x.FileName.FullPath.Value))
           .Select(g => {
             var count = g.Count();
             var size = g.Aggregate(0L, (c, x) => c + x.Contents.ByteLength);
             return Tuple.Create(g.Key, count, size);
           })
+          .Where(x => x.Item3 >= LogContentsStats_FilesByExtensions_Threshold)
           .OrderByDescending(x => x.Item3);
-        filesByExtensions.ForAll(g => {
-          var count = g.Item2;
-          var size = g.Item3;
-          if (size > 1024L) {
-            Logger.LogInfo("{0}: {1:n0} files, {2:n0} bytes", g.Item1, count, size);
-          }
-        });
+
+        var filesByExtensionsReport = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
+        filesByExtensionsReport.AddColumn("Extension", 70, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.ForString);
+        filesByExtensionsReport.AddColumn("File Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.ForFormattedNumber);
+        filesByExtensionsReport.AddColumn("Byte Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.ForFormattedNumber);
+        filesByExtensionsReport.GenerateReport(filesByExtensions.Select(g => new List<object> { g.Item1, g.Item2, g.Item3 }));
       }
     }
 

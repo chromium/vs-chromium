@@ -53,7 +53,7 @@ REM Install
 :install
 REM ---------------------------------------------------
 REM Detect location of VSIX file
-set PROJECT_LOCATION=%~dp0
+set PROJECT_LOCATION=%~dp0..\
 if exist "%PROJECT_LOCATION%Binaries\%CONFIG_NAME%\VsChromium.vsix" set VSIX_FILE="%PROJECT_LOCATION%Binaries\%CONFIG_NAME%\%VSIX_FILENAME%"
 if "%VSIX_FILE%"=="" goto vsix_file_not_found
 

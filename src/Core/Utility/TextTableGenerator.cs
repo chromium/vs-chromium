@@ -24,11 +24,56 @@ namespace VsChromium.Core.Utility {
   /// 
   /// </summary>
   public class TextTableGenerator {
+    private readonly Action<string> _printer;
     private readonly List<ColumnInfo> _columns = new List<ColumnInfo>();
-    private Action<string> _outputer;
 
-    public TextTableGenerator(Action<string> outputer) {
-      _outputer = outputer;
+    public TextTableGenerator(Action<string> printer) {
+      if (printer == null)
+        throw new ArgumentNullException("printer");
+
+      _printer = printer;
+    }
+
+    public void AddColumn(string header, int width, Align align, Stringifier stringifier) {
+      if (header == null)
+        throw new ArgumentNullException("header");
+
+      if (width <= 0)
+        throw new ArgumentException("Width should be a positive number", "width");
+
+      if (!Enum.IsDefined(typeof(Align), align))
+        throw new ArgumentException("Invalid alignment value", "align");
+
+      if (stringifier == null)
+        throw new ArgumentNullException("stringifier");
+
+      _columns.Add(new ColumnInfo {
+        Header = header,
+        Width = width,
+        Align = align,
+        Stringifier = stringifier,
+      });
+    }
+
+    public void GenerateReport(IEnumerable<IEnumerable<object>> valueProvider) {
+      if (valueProvider == null)
+        throw new ArgumentNullException("valueProvider");
+
+      _printer(RowSeparator);
+      _printer(RowHeader);
+      _printer(RowSeparator);
+      foreach (var rowValues in valueProvider) {
+        var e = rowValues.GetEnumerator();
+        string rowText = ProduceRow((i, c) => {
+          if (e.MoveNext()) { 
+            return c.Stringifier(c, e.Current);
+          }
+          // This is really a contract violation
+          return "";
+        });
+        _printer(rowText);
+      }
+      _printer(RowSeparator);
     }
 
     /// <summary>
@@ -52,32 +97,6 @@ namespace VsChromium.Core.Utility {
       public int Width { get; set; }
       public Align Align { get; set; }
       public Stringifier Stringifier { get; set; }
-    }
-
-    public void AddColumn(string header, int width, Align align, Stringifier stringifier) {
-      _columns.Add(new ColumnInfo {
-        Header = header,
-        Width = width,
-        Align = align,
-        Stringifier = stringifier,
-      });
-    }
-
-    public void GenerateReport(IEnumerable<List<object>> valueProvider) {
-      _outputer(RowSeparator);
-      _outputer(RowHeader);
-      _outputer(RowSeparator);
-      foreach (var list in valueProvider) {
-        string rowText = ProduceRow((i, c) => {
-          if (i < list.Count) {
-            return c.Stringifier(c, list[i]);
-          }
-          // This is really a contract violation
-          return "";
-        });
-        _outputer(rowText);
-      }
-      _outputer(RowSeparator);
     }
 
     public static class Stringifiers {

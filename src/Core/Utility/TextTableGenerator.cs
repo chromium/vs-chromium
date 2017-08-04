@@ -31,19 +31,30 @@ namespace VsChromium.Core.Utility {
       _outputer = outputer;
     }
 
-    public class ColumnInfo {
-      public string Header { get; set; }
-      public int Width { get; set; }
-      public Align Align { get; set; }
-      public Func<object, string> Stringifier { get; set; }
-    }
+    /// <summary>
+    /// Function that produces a string representation of a column value
+    /// </summary>
+    public delegate string Stringifier(ColumnInfo columnInfo, object value);
 
+    /// <summary>
+    /// Column alignment
+    /// </summary>
     public enum Align {
       Left,
       Right,
     }
 
-    public void AddColumn(string header, int width, Align align, Func<object, string> stringifier) {
+    /// <summary>
+    /// Characteristics of a column of the table
+    /// </summary>
+    public class ColumnInfo {
+      public string Header { get; set; }
+      public int Width { get; set; }
+      public Align Align { get; set; }
+      public Stringifier Stringifier { get; set; }
+    }
+
+    public void AddColumn(string header, int width, Align align, Stringifier stringifier) {
       _columns.Add(new ColumnInfo {
         Header = header,
         Width = width,
@@ -57,14 +68,55 @@ namespace VsChromium.Core.Utility {
       _outputer(RowHeader);
       _outputer(RowSeparator);
       foreach (var list in valueProvider) {
-        _outputer(ProduceRow((i, c) => c.Stringifier(list[i])));
+        string rowText = ProduceRow((i, c) => {
+          if (i < list.Count) {
+            return c.Stringifier(c, list[i]);
+          }
+          // This is really a contract violation
+          return "";
+        });
+        _outputer(rowText);
       }
       _outputer(RowSeparator);
     }
 
     public static class Stringifiers {
-      public static Func<Object, string> ForString { get { return x => x.ToString(); } }
-      public static Func<Object, string> ForFormattedNumber { get { return x => string.Format("{0:n0}", x); } }
+
+      public static Stringifier RegularString {
+        get {
+          return (c, x) => x == null ? "" : x.ToString();
+        }
+      }
+
+      public static Stringifier EllipsisString {
+        get {
+          return (c, x) => {
+            string text = RegularString(c, x);
+            if (text.Length > c.Width && c.Width >= 5 && text.Length >= 5) {
+              int count = (c.Width - 3) / 2;
+              return Left(text, count) + "..." + Right(text, c.Width - count - 3);
+            }
+            return x.ToString();
+          };
+        }
+      }
+
+      /// <summary>
+      /// See https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings#NFormatString
+      /// </summary>
+      public static Stringifier DecimalGroupedInteger {
+        get {
+          return (c, x) => x == null ? "" : string.Format("{0:n0}", x);
+        }
+      }
+
+      private static string Left(string value, int count) {
+        return value.Substring(0, count);
+      }
+
+      private static string Right(string value, int count) {
+        return value.Substring(value.Length - count);
+      }
     }
 
     private string RowHeader {

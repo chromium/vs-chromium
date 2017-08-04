@@ -163,7 +163,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     private static void LogFileContentsStats(IList<FileData> filesWithContents) {
-      if (LogContentsStats) {
+      if (LogContentsStats && Logger.Info) {
         Logger.LogInfo("=========================================================================");
         Logger.LogInfo("Index statistics");
 
@@ -175,8 +175,8 @@ namespace VsChromium.Server.FileSystemDatabase {
           .OrderByDescending(x => x.FileName);
 
         var bigFilesReport = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
-        bigFilesReport.AddColumn("Path", 100, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.ForString);
-        bigFilesReport.AddColumn("Size", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.ForFormattedNumber);
+        bigFilesReport.AddColumn("Path", 100, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.EllipsisString);
+        bigFilesReport.AddColumn("Size", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.DecimalGroupedInteger);
         bigFilesReport.GenerateReport(bigFiles.Select(g => new List<object> { g.FileName.RelativePath, g.Contents.ByteLength }));
 
         Logger.LogInfo("=========================================================================");
@@ -193,9 +193,9 @@ namespace VsChromium.Server.FileSystemDatabase {
           .OrderByDescending(x => x.Item3);
 
         var filesByExtensionsReport = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
-        filesByExtensionsReport.AddColumn("Extension", 70, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.ForString);
-        filesByExtensionsReport.AddColumn("File Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.ForFormattedNumber);
-        filesByExtensionsReport.AddColumn("Byte Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.ForFormattedNumber);
+        filesByExtensionsReport.AddColumn("Extension", 70, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.RegularString);
+        filesByExtensionsReport.AddColumn("File Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.DecimalGroupedInteger);
+        filesByExtensionsReport.AddColumn("Byte Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.DecimalGroupedInteger);
         filesByExtensionsReport.GenerateReport(filesByExtensions.Select(g => new List<object> { g.Item1, g.Item2, g.Item3 }));
       }
     }

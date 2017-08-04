@@ -3,10 +3,12 @@ When making a new release
 Master branch
 =============
 1. Update version # in all files:
-  * src\Core\VsChromiumVersion.cs
-  * Find in files (case-insensitive): FILEVERSION (*.rc)
-  * Find in files (case-insensitive): PRODUCTVERSION (*.rc)
-  * src\VsChromium\source.extension.vsixmanifest (PackageManifest\Metadata\Identity\@Version)
+  * "Find In Files": "0.9.xx", "Entire Solution"
+    * src\Core\VsChromiumVersion.cs
+    * src\VsChromium\source.extension.vsixmanifest (PackageManifest\Metadata\Identity\@Version)
+    * src\Native\version.rc
+  * "Find In Files": "0,9,xx", "Entire Solution"
+    * src\Native\version.rc
 
 2. Build
 

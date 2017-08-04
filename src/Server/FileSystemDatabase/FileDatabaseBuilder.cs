@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Collections;
@@ -23,12 +22,6 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseBuilder {
-    private static bool LogContentsStats = true;
-    private static int LogContentsStats_LargeFile_Threshold = 500 * 1024;
-    private static int LogContentsStats_FilesByExtensions_Threshold = 100 * 1024;
-    private static int LogContentsStats_ExtensionsList_Count = 10;
-    private static int LogContentsStats_ExtensionsList_File_Count = 100;
-    private static bool LogPiecesStats = false;
     /// <summary>
     /// Split large files in chunks of maximum <code>ChunkSize</code> bytes.
     /// </summary>
@@ -152,7 +145,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         }
         var filesWithContents = new ListSegment<FileData>(filesWithContentsArray, 0, filesWithContentsIndex);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
-        LogFileContentsStats(filesWithContents);
+        FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
         return new FileDatabase(
           _projectHashes,
@@ -161,73 +154,6 @@ namespace VsChromium.Server.FileSystemDatabase {
           directories,
           searchableContentsCollection,
           filesWithContents.Count);
-      }
-    }
-
-    private static void LogFileContentsStats(IList<FileData> filesWithContents) {
-      if (LogContentsStats && Logger.Info) {
-        var sectionSeparator = new string('=', 180);
-        TextTableGenerator.Stringifier formatKb = (c, v) => {
-          return string.Format("{0:n0} KB", Convert.ToInt64(v));
-        };
-        Logger.LogInfo("{0}", sectionSeparator);
-        Logger.LogInfo("Index statistics");
-
-        Logger.LogInfo("  {0}", sectionSeparator);
-        Logger.LogInfo("  Part 1: Files larger than {0:n0} KB",
-          LogContentsStats_LargeFile_Threshold / 1024);
-
-        var bigFiles = filesWithContents
-          .Where(x => x.Contents.ByteLength >= LogContentsStats_LargeFile_Threshold)
-          .OrderBy(x => x.FileName);
-
-        LogFileContentsByPath(bigFiles);
-
-        Logger.LogInfo("  {0}", sectionSeparator);
-        Logger.LogInfo("  Part 2: File extensions that occupy more than {0:n0} KB",
-          LogContentsStats_FilesByExtensions_Threshold / 1024);
-        var filesByExtensions = filesWithContents
-          .GroupBy(x => x.FileName.RelativePath.Extension)
-          .Select(g => {
-            var count = g.Count();
-            var size = g.Aggregate(0L, (c, x) => c + x.Contents.ByteLength);
-            return Tuple.Create(g.Key, count, size);
-          })
-          .Where(x => x.Item3 >= LogContentsStats_FilesByExtensions_Threshold)
-          .OrderByDescending(x => x.Item3)
-          .ToList();
-
-        var filesByExtensionsReport = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
-        filesByExtensionsReport.AddColumn("Extension", 70, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.RegularString);
-        filesByExtensionsReport.AddColumn("File Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.DecimalGroupedInteger);
-        filesByExtensionsReport.AddColumn("Size (KB)", 16, TextTableGenerator.Align.Right, formatKb);
-        filesByExtensionsReport.GenerateReport(filesByExtensions.Select(g => new List<object> { g.Item1, g.Item2, g.Item3 / 1024 }));
-
-        for (var i = 0; i < Math.Min(LogContentsStats_ExtensionsList_Count, filesByExtensions.Count); i++) {
-          var extension = filesByExtensions[i].Item1;
-
-          Logger.LogInfo("  {0}", sectionSeparator);
-          Logger.LogInfo("  Part {0}: Larget files for file extension \"{1}\"", i + 3, extension);
-          var extensionFiles = filesWithContents
-            .Where(f => f.FileName.RelativePath.Extension == extension)
-            .OrderByDescending(f => f.Contents.ByteLength)
-            .Take(LogContentsStats_ExtensionsList_File_Count);
-          LogFileContentsByPath(extensionFiles);
-        }
-      }
-    }
-
-    private static void LogFileContentsByPath(IEnumerable<FileData> bigFiles) {
-      if (LogContentsStats && Logger.Info) {
-        var table = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
-        table.AddColumn("Path", 100, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.EllipsisString);
-        table.AddColumn("Size (KB)", 16, TextTableGenerator.Align.Right, formatKb);
-        var files = bigFiles
-          .Select(file => new List<object> {
-            file.FileName.FullPath,
-            file.Contents.ByteLength / 1024
-          });
-        table.GenerateReport(files);
       }
     }
 
@@ -257,7 +183,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
           smallFilesCount++;
-        } else {
+        }
+        else {
           var splitFileContents = SplitFileContents(fileData, fileIdFactory());
           largeFiles.AddRange(splitFileContents);
         }
@@ -266,15 +193,13 @@ namespace VsChromium.Server.FileSystemDatabase {
 
       // Store elements in their partitions
       // # of partitions = # of logical processors
-      var fileContents = new FileContentsPiece[totalFileCount];
+      var filePieces = new FileContentsPiece[totalFileCount];
       var partitionCount = Environment.ProcessorCount;
-      var generator = new PartitionIndicesGenerator(
-        totalFileCount,
-        partitionCount);
+      var generator = new PartitionIndicesGenerator(totalFileCount, partitionCount);
 
       // Store large files
       foreach (var item in largeFiles) {
-        fileContents[generator.Next()] = item;
+        filePieces[generator.Next()] = item;
       }
       // Store small files
       foreach (var fileData in filesWithContents) {
@@ -283,25 +208,12 @@ namespace VsChromium.Server.FileSystemDatabase {
             fileData.FileName,
             fileIdFactory(),
             fileData.Contents.TextRange);
-          fileContents[generator.Next()] = item;
+          filePieces[generator.Next()] = item;
         }
       }
 
-      if (LogPiecesStats) {
-        Debug.Assert(fileContents.All(x => x != null));
-        Debug.Assert(fileContents.Aggregate(0L, (c, x) => c + x.ByteLength) ==
-          filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
-        fileContents.GetPartitionRanges(partitionCount).ForAll(
-          (index, range) => {
-            Logger.LogInfo("Partition {0} has a weight of {1:n0}",
-              index,
-              fileContents
-                .Skip(range.Key)
-                .Take(range.Value)
-                .Aggregate(0L, (c, x) => c + x.ByteLength));
-          });
-      }
-      return fileContents;
+      FileDatabaseDebugLogger.LogFilePieces(filesWithContents, filePieces, partitionCount);
+      return filePieces;
     }
 
     private static List<FileData> FilterFilesWithContents(ICollection<FileData> files) {

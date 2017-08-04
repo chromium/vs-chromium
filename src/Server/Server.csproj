@@ -28,6 +28,7 @@
     <Compile Include="FileSystemContents\FileContentsHash.cs" />
     <Compile Include="FileSystemContents\ITextLineOffsets.cs" />
     <Compile Include="FileSystemContents\TextLineOffsetsImpl.cs" />
+    <Compile Include="FileSystemDatabase\FileDatabaseDebugLogger.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\FileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\IFileContentsPiece.cs" />

@@ -49,8 +49,14 @@ out/*/gen/webkit/bindings/
 
 # pnacl and nacl stuff
 /out/*/obj/ppapi/
-
 /out/*/nacl_test_data/
+
+# VK tables (150+MB)
+third_party/deqp/src/**/master.txt
+third_party/deqp/src/**/*-master.txt
+third_party/deqp/src/**/vk-default.txt
+third_party/deqp/src/**/es30-lmp*.txt
+third_party/deqp/src/**/es31-lmp*.txt
 
 #
 # File extensions of files to ignore.

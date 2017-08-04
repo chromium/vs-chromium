@@ -172,7 +172,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
         var bigFiles = filesWithContents
           .Where(x => x.Contents.ByteLength >= LogContentsStats_LargeFile_Threshold)
-          .OrderByDescending(x => x.Contents.ByteLength);
+          .OrderByDescending(x => x.FileName);
 
         var bigFilesReport = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
         bigFilesReport.AddColumn("Path", 100, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.ForString);

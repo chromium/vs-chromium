@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       IFileSystemNameFactory fileNameFactory,
       FileSystemTreeSnapshot oldSnapshot,
       FullPathChanges pathChanges/* may be null */,
-      List<FullPath> rootFiles,
+      IList<FullPath> rootFiles,
       int version) {
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var projectRoots =
@@ -48,14 +48,14 @@ namespace VsChromium.Server.FileSystemSnapshot {
             .Where(project => project != null)
             .Distinct(new ProjectPathComparer())
             .Select(project => {
-              var data = new ProjectProcessingData {
+              var processingContext = new ProjectProcessingContext {
                 FileSystemNameFactory = fileNameFactory,
                 Project = project,
                 Progress = progress,
                 OldSnapshot = oldSnapshot,
                 PathChanges = (pathChanges == null ? null : new ProjectPathChanges(project.RootPath, pathChanges.Entries)),
               };
-              var rootSnapshot = ProcessProject(data);
+              var rootSnapshot = ProcessProject(processingContext);
               return new ProjectRootSnapshot(project, rootSnapshot);
             })
             .OrderBy(projectRoot => projectRoot.Directory.DirectoryName)
@@ -65,46 +65,46 @@ namespace VsChromium.Server.FileSystemSnapshot {
       }
     }
 
-    private class ProjectProcessingData {
-      public IFileSystemNameFactory FileSystemNameFactory;
-      public FileSystemTreeSnapshot OldSnapshot;
-      public IProject Project;
-      public IProgressTracker Progress;
-      public ProjectPathChanges PathChanges;
+    private class ProjectProcessingContext {
+      public IFileSystemNameFactory FileSystemNameFactory { get; set; }
+      public FileSystemTreeSnapshot OldSnapshot { get; set; }
+      public IProject Project { get; set; }
+      public IProgressTracker Progress { get; set; }
+      public ProjectPathChanges PathChanges { get; set; }
     }
 
-    private DirectorySnapshot ProcessProject(ProjectProcessingData data) {
+    private DirectorySnapshot ProcessProject(ProjectProcessingContext context) {
 
-      if (data.PathChanges != null) {
+      if (context.PathChanges != null) {
         // If we have a project with the same root in the old snapshot, use that
         // snapshot instead of traversing the file system.
-        var oldRoot = data.OldSnapshot.ProjectRoots
-          .FirstOrDefault(x => x.Project.RootPath.Equals(data.Project.RootPath));
+        var oldRoot = context.OldSnapshot.ProjectRoots
+          .FirstOrDefault(x => x.Project.RootPath.Equals(context.Project.RootPath));
         if (oldRoot != null) {
-          return ApplyDirectorySnapshotDelta(data, oldRoot.Directory);
+          return ApplyDirectorySnapshotDelta(context, oldRoot.Directory);
         }
       }
 
-      var projectPath = data.FileSystemNameFactory.CreateAbsoluteDirectoryName(data.Project.RootPath);
-      return CreateDirectorySnapshot(data, projectPath, false);
+      var projectPath = context.FileSystemNameFactory.CreateAbsoluteDirectoryName(context.Project.RootPath);
+      return CreateDirectorySnapshot(context, projectPath, false);
     }
 
     private DirectorySnapshot CreateDirectorySnapshot(
-      ProjectProcessingData data,
+      ProjectProcessingContext context,
       DirectoryName directory,
       bool isSymLink) {
 
       // Create list of pairs (DirectoryName, List[FileNames])
-      var directoriesWithFiles = TraverseFileSystem(data, directory, isSymLink)
+      var directoriesWithFiles = TraverseFileSystem(context, directory, isSymLink)
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .Select(traversedDirectoryEntry => {
           var directoryName = traversedDirectoryEntry.DirectoryData.DirectoryName;
-          if (data.Progress.Step()) {
-            data.Progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", data.Project.RootPath.Value, directoryName.RelativePath.Value));
+          if (context.Progress.Step()) {
+            context.Progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}", context.Project.RootPath.Value, directoryName.RelativePath.Value));
           }
           var fileNames = traversedDirectoryEntry.ChildFileNames
-            .Where(childFilename => data.Project.FileFilter.Include(childFilename.RelativePath))
+            .Where(childFilename => context.Project.FileFilter.Include(childFilename.RelativePath))
             .OrderBy(x => x.RelativePath)
             .ToReadOnlyCollection();
 
@@ -162,7 +162,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     }
 
     private DirectorySnapshot ApplyDirectorySnapshotDelta(
-      ProjectProcessingData data, 
+      ProjectProcessingContext context, 
       DirectorySnapshot oldDirectory) {
 
       var oldDirectoryPath = oldDirectory.DirectoryName.RelativePath;
@@ -171,8 +171,8 @@ namespace VsChromium.Server.FileSystemSnapshot {
       // if each path is a file or a directory.
       List<IFileInfoSnapshot> createDirs = null;
       List<IFileInfoSnapshot> createdFiles = null;
-      foreach (var path in data.PathChanges.GetCreatedEntries(oldDirectoryPath).ToForeachEnum()) {
-        var info = _fileSystem.GetFileInfoSnapshot(data.Project.RootPath.Combine(path));
+      foreach (var path in context.PathChanges.GetCreatedEntries(oldDirectoryPath).ToForeachEnum()) {
+        var info = _fileSystem.GetFileInfoSnapshot(context.Project.RootPath.Combine(path));
         if (info.IsDirectory) {
           if (createDirs == null)
             createDirs = new List<IFileInfoSnapshot>();
@@ -187,15 +187,15 @@ namespace VsChromium.Server.FileSystemSnapshot {
       // Recursively create new directory entires for previous (non deleted)
       // entries.
       var childDirectories = oldDirectory.ChildDirectories
-        .Where(dir => !data.PathChanges.IsDeleted(dir.DirectoryName.RelativePath))
-        .Select(dir => ApplyDirectorySnapshotDelta(data, dir))
+        .Where(dir => !context.PathChanges.IsDeleted(dir.DirectoryName.RelativePath))
+        .Select(dir => ApplyDirectorySnapshotDelta(context, dir))
         .ToList();
 
       // Add created directories
       if (createDirs != null) {
         foreach (var info in createDirs.ToForeachEnum()) {
-          var name = data.FileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
-          var childSnapshot = CreateDirectorySnapshot(data, name, info.IsSymLink);
+          var name = context.FileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
+          var childSnapshot = CreateDirectorySnapshot(context, name, info.IsSymLink);
 
           // Note: File system change notifications are not always 100%
           // reliable. We may get a "create" event for directory we already know
@@ -216,18 +216,18 @@ namespace VsChromium.Server.FileSystemSnapshot {
       // Match non deleted files
       // Sepcial case: if no file deleted or created, just re-use the list.
       IList<FileName> newFileList;
-      if (data.PathChanges.GetDeletedEntries(oldDirectoryPath).Count == 0 && createdFiles == null) {
+      if (context.PathChanges.GetDeletedEntries(oldDirectoryPath).Count == 0 && createdFiles == null) {
         newFileList = oldDirectory.ChildFiles;
       } else {
         // Copy the list of previous children, minus deleted files.
         var newFileListTemp = oldDirectory.ChildFiles
-          .Where(x => !data.PathChanges.IsDeleted(x.RelativePath))
+          .Where(x => !context.PathChanges.IsDeleted(x.RelativePath))
           .ToList();
 
         // Add created files
         if (createdFiles != null) {
           foreach (var info in createdFiles.ToForeachEnum()) {
-            var name = data.FileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
+            var name = context.FileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
             newFileListTemp.Add(name);
           }
 
@@ -274,7 +274,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
     private IEnumerable<TraversedDirectoryEntry> TraverseFileSystem(
-      ProjectProcessingData data,
+      ProjectProcessingContext context,
       DirectoryName startDirectoryName,
       bool isSymLink) {
 
@@ -282,16 +282,16 @@ namespace VsChromium.Server.FileSystemSnapshot {
       stack.Push(new DirectoryData(startDirectoryName, isSymLink));
       while (stack.Count > 0) {
         var head = stack.Pop();
-        if (head.DirectoryName.IsAbsoluteName || data.Project.DirectoryFilter.Include(head.DirectoryName.RelativePath)) {
-          var childEntries = _fileSystem.GetDirectoryEntries(data.Project.RootPath.Combine(head.DirectoryName.RelativePath));
+        if (head.DirectoryName.IsAbsoluteName || context.Project.DirectoryFilter.Include(head.DirectoryName.RelativePath)) {
+          var childEntries = _fileSystem.GetDirectoryEntries(context.Project.RootPath.Combine(head.DirectoryName.RelativePath));
           var childFileNames = new List<FileName>();
           // Note: Use "for" loop to avoid memory allocations.
           for (var i = 0; i < childEntries.Count; i++) {
             DirectoryEntry entry = childEntries[i];
             if (entry.IsDirectory) {
-              stack.Push(new DirectoryData(data.FileSystemNameFactory.CreateDirectoryName(head.DirectoryName, entry.Name), entry.IsSymLink));
+              stack.Push(new DirectoryData(context.FileSystemNameFactory.CreateDirectoryName(head.DirectoryName, entry.Name), entry.IsSymLink));
             } else if (entry.IsFile) {
-              childFileNames.Add(data.FileSystemNameFactory.CreateFileName(head.DirectoryName, entry.Name));
+              childFileNames.Add(context.FileSystemNameFactory.CreateFileName(head.DirectoryName, entry.Name));
             }
           }
           yield return new TraversedDirectoryEntry(head, childFileNames);

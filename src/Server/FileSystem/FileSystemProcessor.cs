@@ -313,7 +313,7 @@ namespace VsChromium.Server.FileSystem {
           rootFiles,
           Interlocked.Increment(ref _version));
 
-        // Monitor all the Chromium directories for changes.
+        // Monitor all project roots for file changes.
         var newRoots = newSnapshot.ProjectRoots
           .Select(entry => entry.Directory.DirectoryName.FullPath);
         _directoryChangeWatcher.WatchDirectories(newRoots);

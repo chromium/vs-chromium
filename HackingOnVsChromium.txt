@@ -6,7 +6,7 @@ guide and hit trouble, please try to fix what you see -- as you (the newbie) are
 a better position than anyone else to do so.
 
 === Prereqs
-    Obtain a Professional or better edition of Visual Studio 2013. The
+    Obtain a Community, Professional or better edition of Visual Studio 2013. The
     Express edition does not support vs-chromium.
 
     Download and install the Visual Studio 2013 SDK
@@ -51,3 +51,15 @@ a better position than anyone else to do so.
          Attach to it.
 
       3. Now your breakpoints in the child process will work too.
+
+=== Debugging the server process
+    1. Setup the solution as in the previous section
+    2. Rename the "PROFILE_SERVER2" "Conditional compilation symbol" in the
+       "Properties" of the VsChromium project to "PROFILE_SERVER"
+    3. Run the VsChromium project (with Ctrl-F5)
+    4. Look at the message in DebugView:
+       Run server executable with argument (i.e. tcp port number) xxxxx
+    5. (You now have 120 seconds to start the server process at port "xxxxx")
+    6. Update the project properties of the "Server" project and set "xxxxx"
+       (without the quotes) as the command line argument
+    7. Hit "F5", to debug the server process

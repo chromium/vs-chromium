@@ -12,7 +12,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       IFileSystemNameFactory fileNameFactory, 
       FileSystemTreeSnapshot oldSnapshot,
       FullPathChanges pathChanges /* may be null */,
-      List<FullPath> rootFiles, 
+      IList<FullPath> rootFiles, 
       int version);
   }
 }

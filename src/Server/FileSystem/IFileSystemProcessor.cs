@@ -4,7 +4,7 @@
 
 using System;
 using VsChromium.Core.Files;
-using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.FileSystemScanSnapshot;
 using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.FileSystem {

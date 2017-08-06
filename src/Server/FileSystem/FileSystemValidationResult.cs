@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.FileSystemScanSnapshot;
 
 namespace VsChromium.Server.FileSystem {
   public class FileSystemValidationResult {

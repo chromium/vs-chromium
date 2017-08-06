@@ -14,7 +14,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.FileSystemScanSnapshot;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;

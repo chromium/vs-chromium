@@ -10,16 +10,16 @@ using VsChromium.Server.FileSystemScanSnapshot;
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class GetFileSystemRequestHandler : TypedMessageRequestHandler {
-    private readonly IFileSystemProcessor _processor;
+    private readonly IFileSystemSnapshotManager _snapshotManager;
 
     [ImportingConstructor]
-    public GetFileSystemRequestHandler(IFileSystemProcessor processor) {
-      _processor = processor;
+    public GetFileSystemRequestHandler(IFileSystemSnapshotManager snapshotManager) {
+      _snapshotManager = snapshotManager;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       return new GetFileSystemResponse {
-        Tree = _processor.CurrentSnapshot.ToIpcFileSystemTree()
+        Tree = _snapshotManager.CurrentSnapshot.ToIpcFileSystemTree()
       };
     }
   }

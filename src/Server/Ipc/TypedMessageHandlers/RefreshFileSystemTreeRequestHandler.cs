@@ -5,15 +5,15 @@ using VsChromium.Server.FileSystem;
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class RefreshFileSystemTreeRequestHandler : TypedMessageRequestHandler {
-    private readonly IFileSystemProcessor _processor;
+    private readonly IFileSystemSnapshotManager _snapshotManager;
 
     [ImportingConstructor]
-    public RefreshFileSystemTreeRequestHandler(IFileSystemProcessor processor) {
-      _processor = processor;
+    public RefreshFileSystemTreeRequestHandler(IFileSystemSnapshotManager snapshotManager) {
+      _snapshotManager = snapshotManager;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      _processor.Refresh();
+      _snapshotManager.Refresh();
       return new RefreshFileSystemTreeResponse();
     }
   }

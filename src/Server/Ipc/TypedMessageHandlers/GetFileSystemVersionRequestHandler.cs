@@ -9,15 +9,15 @@ using VsChromium.Server.FileSystem;
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class GetFileSystemVersionRequestHandler : TypedMessageRequestHandler {
-    private readonly IFileSystemProcessor _processor;
+    private readonly IFileSystemSnapshotManager _snapshotManager;
 
     [ImportingConstructor]
-    public GetFileSystemVersionRequestHandler(IFileSystemProcessor processor) {
-      _processor = processor;
+    public GetFileSystemVersionRequestHandler(IFileSystemSnapshotManager snapshotManager) {
+      _snapshotManager = snapshotManager;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      var tree = _processor.CurrentSnapshot;
+      var tree = _snapshotManager.CurrentSnapshot;
       return new GetFileSystemVersionResponse {
         Version = tree.Version
       };

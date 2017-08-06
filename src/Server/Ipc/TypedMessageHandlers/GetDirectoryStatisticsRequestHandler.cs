@@ -9,11 +9,11 @@ using VsChromium.Server.FileSystem;
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class GetDirectoryStatisticsRequestHandler : TypedMessageRequestHandler {
-    private readonly IFileSystemProcessor _processor;
+    private readonly IFileSystemSnapshotManager _snapshotManager;
 
     [ImportingConstructor]
-    public GetDirectoryStatisticsRequestHandler(IFileSystemProcessor processor) {
-      _processor = processor;
+    public GetDirectoryStatisticsRequestHandler(IFileSystemSnapshotManager snapshotManager) {
+      _snapshotManager = snapshotManager;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {

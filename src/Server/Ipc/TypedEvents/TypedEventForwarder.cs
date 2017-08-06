@@ -46,7 +46,6 @@ namespace VsChromium.Server.Ipc.TypedEvents {
       var fileSystemTreeComputed = new FileSystemScanFinished {
         OperationId = e.OperationInfo.OperationId,
         Error = ErrorResponseHelper.CreateErrorResponse(e.Error),
-        IsCancelled = e.Error is OperationCanceledException,
       };
 
       if (e.PreviousSnapshot != null) {

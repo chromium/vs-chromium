@@ -77,9 +77,9 @@ namespace VsChromium.Server.Threads {
         task.Id.Description,
         task.StopWatch.ElapsedMilliseconds);
 
-      TaskEntry nextTask = null;
+      TaskEntry nextTask;
       lock (_lock) {
-        Debug.Assert(object.ReferenceEquals(_runningTask, task));
+        Debug.Assert(ReferenceEquals(_runningTask, task));
         nextTask = _runningTask = _tasks.Dequeue();
       }
 
@@ -88,7 +88,9 @@ namespace VsChromium.Server.Threads {
     }
 
     private class TaskEntryQueue {
-      private readonly Dictionary<object, LinkedListNode<TaskEntry>> _map = new Dictionary<object, LinkedListNode<TaskEntry>>();
+      private readonly Dictionary<object, LinkedListNode<TaskEntry>> _map =
+        new Dictionary<object, LinkedListNode<TaskEntry>>();
+
       private readonly LinkedList<TaskEntry> _queue = new LinkedList<TaskEntry>();
 
       public void Enqueue(TaskEntry entry) {

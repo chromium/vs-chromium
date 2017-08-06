@@ -135,8 +135,10 @@
     <Compile Include="Search\TextSourceTextSearch.cs" />
     <Compile Include="Search\ParsedSearchString.cs" />
     <Compile Include="Search\SearchStringParser.cs" />
+    <Compile Include="Threads\ILongRunningFileSystemTaskQueue.cs" />
     <Compile Include="Threads\ITaskQueue.cs" />
     <Compile Include="Threads\ITaskQueueFactory.cs" />
+    <Compile Include="Threads\LongRunningFileSystemTaskQueue.cs" />
     <Compile Include="Threads\TaskQueue.cs" />
     <Compile Include="Threads\TaskQueueFactory.cs" />
     <Compile Include="FileSystemContents\FileContentsFactory.cs" />

@@ -20,15 +20,17 @@ namespace VsChromium.Server.FileSystem {
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly ITaskQueue _taskQueue;
     private readonly FileRegistrationQueue _pendingFileRegistrations = new FileRegistrationQueue();
+
     /// <summary>
     /// Access to this field is serialized through tasks executed on the _taskQueue
     /// </summary>
     private readonly HashSet<FullPath> _registeredFiles = new HashSet<FullPath>();
 
-    public FileRegistrationTracker(IFileSystem fileSystem, IProjectDiscovery projectDiscovery, ITaskQueueFactory taskQueueFactory) {
+    public FileRegistrationTracker(IFileSystem fileSystem, IProjectDiscovery projectDiscovery,
+      ITaskQueueFactory taskQueueFactory) {
       _fileSystem = fileSystem;
       _projectDiscovery = projectDiscovery;
-      _taskQueue = taskQueueFactory.CreateQueue("FileRegistrationTracker Task Queue");
+      _taskQueue = taskQueueFactory.CreateQueue("File Registration Tracker Task Queue");
     }
 
     public event EventHandler<IList<IProject>> ProjectListChanged;

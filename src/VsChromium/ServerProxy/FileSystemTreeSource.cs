@@ -29,10 +29,10 @@ namespace VsChromium.ServerProxy {
     public event Action<ErrorResponse> ErrorReceived;
 
     private void ProxyOnEventReceived(TypedEvent typedEvent) {
-      var @event = typedEvent as FileSystemScanFinished;
-      if (@event != null) {
+      var evt = typedEvent as FileSystemScanFinished;
+      if (evt != null) {
         // Don't fetch new tree if the operation was cancelled
-        if (!@event.IsCancelled) {
+        if (evt.Error != null && !evt.Error.IsOperationCanceled()) {
           _delayedOperationProcessor.Post(new DelayedOperation {
             Id = "FetchFileSystemTree",
             Delay = TimeSpan.FromSeconds(0.1),

@@ -23,6 +23,7 @@ namespace VsChromium.Server.FileSystem {
   [Export(typeof(IFileSystemProcessor))]
   public class FileSystemProcessor : IFileSystemProcessor {
     private static readonly TaskId FlushPathsChangedQueueTaskId = new TaskId("FlushPathsChangedQueueTaskId");
+    private static readonly TaskId FilesChangedTaskId = new TaskId("FilesChangedTaskId");
     private static readonly TaskId ProjectListChangedTaskId = new TaskId("ProjectListChangedTaskId");
     private static readonly TaskId FullRescanRequiredTaskId = new TaskId("FullRescanRequiredTaskId");
 
@@ -43,7 +44,8 @@ namespace VsChromium.Server.FileSystem {
     private readonly IFileSystem _fileSystem;
     private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
     private readonly IOperationProcessor _operationProcessor;
-    private readonly ITaskQueue _taskQueue;
+    private readonly ITaskQueue _longRunningFileSystemTaskQueue;
+    private readonly ITaskQueue _flushPathChangesTaskQueue;
 
     private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue =
       new SimpleConcurrentQueue<IList<PathChangeEntry>>();
@@ -51,12 +53,12 @@ namespace VsChromium.Server.FileSystem {
     private readonly FileRegistrationTracker _fileRegistrationTracker;
 
     /// <summary>
-    /// Access to this field is serialized through tasks executed on the _taskQueue
+    /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
     /// </summary>
     private IList<IProject> _registeredProjects = new List<IProject>();
 
     /// <summary>
-    /// Access to this field is serialized through tasks executed on the _taskQueue
+    /// Access to this field is serialized through tasks executed on the  <see cref="_longRunningFileSystemTaskQueue"/>
     /// </summary>
     private FileSystemTreeSnapshot _fileSystemSnapshot;
 
@@ -70,15 +72,17 @@ namespace VsChromium.Server.FileSystem {
       IOperationProcessor operationProcessor,
       IProjectDiscovery projectDiscovery,
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
-      ITaskQueueFactory taskQueueFactory) {
+      ITaskQueueFactory taskQueueFactory,
+      ILongRunningFileSystemTaskQueue longRunningFileSystemTaskQueue) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _fileSystem = fileSystem;
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
       _operationProcessor = operationProcessor;
       _projectDiscovery = projectDiscovery;
+      _longRunningFileSystemTaskQueue = longRunningFileSystemTaskQueue;
       _fileRegistrationTracker = new FileRegistrationTracker(fileSystem, projectDiscovery, taskQueueFactory);
 
-      _taskQueue = taskQueueFactory.CreateQueue("FileSystemProcessor Task Queue");
+      _flushPathChangesTaskQueue = taskQueueFactory.CreateQueue("FileSystemProcessor Path Changes Task Queue");
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
       _fileRegistrationTracker.FullRescanRequired += FileRegistrationTrackerOnFullRescanRequired;
       _fileSystemSnapshot = FileSystemTreeSnapshot.Empty;
@@ -122,9 +126,14 @@ namespace VsChromium.Server.FileSystem {
       if (handler != null) handler(this, e);
     }
 
-    private void FileRegistrationTrackerOnProjectListChanged(object o, IList<IProject> projects) {
+    private void FileRegistrationTrackerOnProjectListChanged(object sender, IList<IProject> projects) {
       Logger.LogInfo("List of projects changed: Enqueuing a partial file system scan");
-      _taskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
+
+      // If we are queuing a task that requires rescanning the entire file system,
+      // cancel existing tasks (should be only one really) to avoid wasting time
+      _longRunningFileSystemTaskQueue.CancelCurrentTask();
+
+      _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
         // Pass empty changes, as we don't know of any file system changes for
         // existing entries. For new entries, they don't exist in the snapshot,
         // so they will be read form disk
@@ -135,11 +144,12 @@ namespace VsChromium.Server.FileSystem {
 
     private void FileRegistrationTrackerOnFullRescanRequired(object sender, IList<IProject> projects) {
       Logger.LogInfo("List of projects changed dramatically: Enqueuing a full file system scan");
+
       // If we are queuing a task that requires rescanning the entire file system,
       // cancel existing tasks (should be only one really) to avoid wasting time
-      _taskQueue.CancelCurrentTask();
+      _longRunningFileSystemTaskQueue.CancelCurrentTask();
 
-      _taskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
+      _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
         RescanFileSystem(projects, null, cancellationToken);
       });
     }
@@ -147,7 +157,7 @@ namespace VsChromium.Server.FileSystem {
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       Logger.LogInfo("File change events: enqueuing an incremental file system rescan");
       _pathsChangedQueue.Enqueue(changes);
-      _taskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
+      _flushPathChangesTaskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
     }
 
     private void DirectoryChangeWatcherOnError(Exception exception) {
@@ -161,7 +171,10 @@ namespace VsChromium.Server.FileSystem {
 
     private void FlushPathsChangedQueueTask(CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested();
+      ProcessPendingPathChanges();
+    }
 
+    private void ProcessPendingPathChanges() {
       var changes = _pathsChangedQueue
         .DequeueAll()
         .SelectMany(x => x)
@@ -181,7 +194,9 @@ namespace VsChromium.Server.FileSystem {
           return;
 
         case FileSystemValidationResultKind.VariousFileChanges:
-          RescanFileSystem(_registeredProjects, validationResult.FileChanges, cancellationToken);
+          _longRunningFileSystemTaskQueue.Enqueue(FilesChangedTaskId, cancellationToken => {
+            RescanFileSystem(_registeredProjects, validationResult.FileChanges, cancellationToken);
+          });
           return;
 
         case FileSystemValidationResultKind.UnknownChanges:
@@ -243,8 +258,8 @@ namespace VsChromium.Server.FileSystem {
         // file name factory
         var fileNameFactory = _fileSystemNameFactory;
         if (ReuseFileNameInstances) {
-          if (_fileSystemSnapshot.ProjectRoots.Count > 0) {
-            fileNameFactory = new FileSystemTreeSnapshotNameFactory(_fileSystemSnapshot, fileNameFactory);
+          if (oldSnapshot.ProjectRoots.Count > 0) {
+            fileNameFactory = new FileSystemTreeSnapshotNameFactory(oldSnapshot, fileNameFactory);
           }
         }
 

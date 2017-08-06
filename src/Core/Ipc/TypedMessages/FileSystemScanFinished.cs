@@ -8,12 +8,9 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class FileSystemScanFinished : PairedTypedEvent {
     [ProtoMember(1)]
-    public bool IsCancelled { get; set; }
-
-    [ProtoMember(2)]
     public int OldVersion { get; set; }
 
-    [ProtoMember(3)]
+    [ProtoMember(2)]
     public int NewVersion { get; set; }
   }
 }

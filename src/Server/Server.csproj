@@ -34,7 +34,7 @@
     <Compile Include="FileSystemDatabase\Builder\FileDatabaseDebugLogger.cs" />
     <Compile Include="FileSystemDatabase\Builder\IFileContentsMemoization.cs" />
     <Compile Include="FileSystemDatabase\Builder\FileContentsMemoization.cs" />
-    <Compile Include="FileSystemDatabase\IFileContentsPiece.cs" />
+    <Compile Include="FileSystemContents\IFileContentsPiece.cs" />
     <Compile Include="FileSystemContents\FileContentsPiece.cs" />
     <Compile Include="FileSystemDatabase\Builder\NullFileContentsMemoization.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
@@ -122,7 +122,7 @@
     <Compile Include="FileSystemContents\FileContentsMemory.cs" />
     <Compile Include="FileSystemDatabase\Builder\FileDatabaseBuilder.cs" />
     <Compile Include="FileSystemDatabase\FileDatabaseFactory.cs" />
-    <Compile Include="FileSystemDatabase\IFileDatabase.cs" />
+    <Compile Include="FileSystemDatabase\IFileDatabaseSnapshot.cs" />
     <Compile Include="FileSystemDatabase\IFileDatabaseFactory.cs" />
     <Compile Include="Search\ICompiledTextSearchDataFactory.cs" />
     <Compile Include="Search\ICompiledTextSearchContainer.cs" />
@@ -152,7 +152,7 @@
     <Compile Include="FileSystemContents\Utf16FileContents.cs" />
     <Compile Include="FileSystemContents\AsciiFileContents.cs" />
     <Compile Include="FileSystemContents\FileContents.cs" />
-    <Compile Include="FileSystemDatabase\FileDatabase.cs" />
+    <Compile Include="FileSystemDatabase\FileDatabaseSnapshot.cs" />
     <Compile Include="FileSystemDatabase\FileData.cs" />
     <Compile Include="Search\SearchEngine.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetFileSystemRequestHandler.cs" />

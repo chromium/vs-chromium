@@ -8,17 +8,17 @@ using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabaseFactory {
-    IFileDatabase CreateEmpty();
+    IFileDatabaseSnapshot CreateEmpty();
 
-    IFileDatabase CreateIncremental(
-      IFileDatabase previousFileDatabase,
+    IFileDatabaseSnapshot CreateIncremental(
+      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
       FileSystemSnapshot previousSnapshot,
       FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges,
-      Action<IFileDatabase> onIntermadiateResult);
+      Action<IFileDatabaseSnapshot> onIntermadiateResult);
 
-    IFileDatabase CreateWithChangedFiles(
-      IFileDatabase previousFileDatabase,
+    IFileDatabaseSnapshot CreateWithChangedFiles(
+      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
       IEnumerable<ProjectFileName> changedFiles,
       Action onLoading,
       Action onLoaded);

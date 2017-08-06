@@ -42,14 +42,14 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabase Build(
-      IFileDatabase previousFileDatabase,
+    public IFileDatabaseSnapshot Build(
+      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
       FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges,
-      Action<IFileDatabase> onIntermadiateResult) {
+      Action<IFileDatabaseSnapshot> onIntermadiateResult) {
       using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
 
-        var fileDatabase = (FileDatabase)previousFileDatabase;
+        var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
 
         // Compute list of files from tree
         ComputeFileCollection(newSnapshot);
@@ -73,7 +73,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           FileContentsMemoization = fileContentsMemoization,
           FullPathChanges = fullPathChanges,
           LoadedTextFileCount = 0,
-          OldFileDatabase = fileDatabase,
+          OldFileDatabaseSnapshot = fileDatabase,
           UnchangedProjects = unchangedProjectSet,
           PartialProgressReporter = new PartialProgressReporter(
             TimeSpan.FromSeconds(5.0),
@@ -91,13 +91,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    public IFileDatabase BuildWithChangedFiles(
-      IFileDatabase previousFileDatabase,
+    public IFileDatabaseSnapshot BuildWithChangedFiles(
+      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
       IEnumerable<ProjectFileName> changedFiles,
       Action onLoading,
       Action onLoaded) {
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
-        var fileDatabase = (FileDatabase)previousFileDatabase;
+        var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.
         var filesToRead = changedFiles
@@ -105,7 +105,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           .ToList();
 
         if (filesToRead.Count == 0)
-          return previousFileDatabase;
+          return previousFileDatabaseSnapshot;
 
         // Read file contents.
         onLoading();
@@ -117,7 +117,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         // Return new file database with updated file contents.
         var filesWithContents = FilterFilesWithContents(fileDatabase.Files.Values);
-        return new FileDatabase(
+        return new FileDatabaseSnapshot(
           fileDatabase.ProjectHashes,
           fileDatabase.Files,
           fileDatabase.FileNames,
@@ -127,7 +127,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    private FileDatabase CreateFileDatabse() {
+    private FileDatabaseSnapshot CreateFileDatabse() {
       using (new TimeElapsedLogger("Freezing file database state")) {
         var directories = _directories;
         // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
@@ -147,7 +147,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
         FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
-        return new FileDatabase(
+        return new FileDatabaseSnapshot(
           _projectHashes,
           files,
           files.Keys.ToArray(),
@@ -277,7 +277,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     private class FileContentsLoadingInfo {
-      public FileDatabase OldFileDatabase;
+      public FileDatabaseSnapshot OldFileDatabaseSnapshot;
       public FullPathChanges FullPathChanges;
       public IFileContentsMemoization FileContentsMemoization;
       public ISet<IProject> UnchangedProjects;
@@ -315,7 +315,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       ProjectFileData projectFileData) {
 
       var fileName = projectFileData.FileName;
-      var oldFileData = loadingInfo.OldFileDatabase.Files.GetValue(fileName);
+      var oldFileData = loadingInfo.OldFileDatabaseSnapshot.Files.GetValue(fileName);
 
       // If the file was never loaded before, just load it
       if (oldFileData == null || oldFileData.Contents == null) {
@@ -387,7 +387,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         // We don't get file change events for file in symlinks, so we can't
         // rely on fullPathChanges contents for our heuristic of avoiding file
         // system access.
-        if (!FileDatabase.IsContainedInSymLinkHelper(_directories, oldFileData.FileName)) {
+        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(_directories, oldFileData.FileName)) {
           return fullPathChanges.GetPathChangeKind(fullPath) == PathChangeKind.None;
         }
       }

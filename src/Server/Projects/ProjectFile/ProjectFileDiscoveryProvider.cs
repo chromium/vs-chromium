@@ -7,7 +7,6 @@ using System.Linq;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
-using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Server.Projects.ProjectFile {
   /// <summary>

@@ -11,7 +11,6 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase.Builder;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
-using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
@@ -35,8 +34,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabase CreateEmpty() {
-      return new FileDatabase(
+    public IFileDatabaseSnapshot CreateEmpty() {
+      return new FileDatabaseSnapshot(
           new Dictionary<FullPath, string>(), 
           new Dictionary<FileName, FileData>(),
           new List<FileName>(), 
@@ -45,15 +44,15 @@ namespace VsChromium.Server.FileSystemDatabase {
           0);
     }
 
-    public IFileDatabase CreateIncremental(
-      IFileDatabase previousFileDatabase,
+    public IFileDatabaseSnapshot CreateIncremental(
+      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
       FileSystemSnapshot previousSnapshot,
       FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges,
-      Action<IFileDatabase> onIntermadiateResult) {
+      Action<IFileDatabaseSnapshot> onIntermadiateResult) {
 
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-          .Build(previousFileDatabase, newSnapshot, fullPathChanges, onIntermadiateResult);
+          .Build(previousFileDatabaseSnapshot, newSnapshot, fullPathChanges, onIntermadiateResult);
     }
 
     /// <summary>
@@ -62,13 +61,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// snapshot" semantics but enables efficient updates for the most common
     /// type of file change events.
     /// </summary>
-    public IFileDatabase CreateWithChangedFiles(
-      IFileDatabase previousFileDatabase,
+    public IFileDatabaseSnapshot CreateWithChangedFiles(
+      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
       IEnumerable<ProjectFileName> changedFiles,
       Action onLoading,
       Action onLoaded) {
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-        .BuildWithChangedFiles(previousFileDatabase, changedFiles, onLoading, onLoaded);
+        .BuildWithChangedFiles(previousFileDatabaseSnapshot, changedFiles, onLoading, onLoaded);
     }
   }
 }

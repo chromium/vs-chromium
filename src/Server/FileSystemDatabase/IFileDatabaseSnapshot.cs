@@ -4,10 +4,11 @@
 
 using System.Collections.Generic;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemDatabase {
-  public interface IFileDatabase {
+  public interface IFileDatabaseSnapshot {
     /// <summary>
     /// Returns the list of filenames suitable for file name search.
     /// 

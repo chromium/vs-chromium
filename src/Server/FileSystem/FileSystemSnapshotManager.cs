@@ -50,7 +50,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue =
       new SimpleConcurrentQueue<IList<PathChangeEntry>>();
 
-    private readonly FileRegistrationTracker _fileRegistrationTracker;
+    private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
     /// <summary>
     /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>

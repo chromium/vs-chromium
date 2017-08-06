@@ -3,7 +3,7 @@ using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem {
   public static class FileSystemSnapshotExtensions {
     public static  FileSystemTree ToIpcFileSystemTree(this FileSystemSnapshot tree) {
       return new FileSystemTree {

@@ -7,7 +7,7 @@ using System.Threading;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem {
   public interface IFileSystemSnapshotBuilder {
     FileSystemSnapshot Compute(
       IFileSystemNameFactory fileNameFactory, 

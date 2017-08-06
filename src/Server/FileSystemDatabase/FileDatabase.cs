@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemScanSnapshot;
 
 namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>

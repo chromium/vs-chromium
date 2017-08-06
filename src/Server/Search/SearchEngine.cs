@@ -442,7 +442,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private void ComputeNewState(FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot,
+    private void ComputeNewState(FileSystemSnapshot previousSnapshot, FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges) {
 
       _operationProcessor.Execute(new OperationHandlers {

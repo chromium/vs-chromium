@@ -10,7 +10,7 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystemScanSnapshot {
   public class FileSystemSnapshotVisitor {
 
-    public static List<KeyValuePair<IProject, DirectorySnapshot>> GetDirectories(FileSystemTreeSnapshot snapshot) {
+    public static List<KeyValuePair<IProject, DirectorySnapshot>> GetDirectories(FileSystemSnapshot snapshot) {
       var result = new List<KeyValuePair<IProject, DirectorySnapshot>>();
       VisitDirectories(snapshot, (project, directory) => {
         result.Add(new KeyValuePair<IProject, DirectorySnapshot>(project, directory));
@@ -19,7 +19,7 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
     }
 
     public static void VisitDirectories(
-      FileSystemTreeSnapshot snapshot,
+      FileSystemSnapshot snapshot,
       Action<IProject, DirectorySnapshot> callback) {
       foreach (var project in snapshot.ProjectRoots.ToForeachEnum()) {
         VisitDirectory(project.Project, project.Directory, callback);

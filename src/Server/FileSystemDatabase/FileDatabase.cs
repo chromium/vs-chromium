@@ -12,7 +12,7 @@ using VsChromium.Server.FileSystemScanSnapshot;
 namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
   /// Exposes am in-memory snapshot of the list of file names, directory names
-  /// and file contents for a given <see cref="FileSystemTreeSnapshot"/> snapshot.
+  /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
   /// </summary>
   public class FileDatabase : IFileDatabase {
     private readonly IDictionary<FullPath, string> _projectHashes;

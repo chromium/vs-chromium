@@ -44,7 +44,7 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase Build(
       IFileDatabase previousFileDatabase,
-      FileSystemTreeSnapshot newSnapshot,
+      FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges,
       Action<IFileDatabase> onIntermadiateResult) {
       using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
@@ -238,7 +238,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       }
     }
 
-    private void ComputeFileCollection(FileSystemTreeSnapshot snapshot) {
+    private void ComputeFileCollection(FileSystemSnapshot snapshot) {
       using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree")) {
 
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);

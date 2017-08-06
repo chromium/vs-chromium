@@ -19,7 +19,7 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
   public class ProjectRootSnapshotBuilder {
     private readonly IFileSystem _fileSystem;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
-    private readonly FileSystemTreeSnapshot _oldSnapshot;
+    private readonly FileSystemSnapshot _oldSnapshot;
     private readonly IProject _project;
     private readonly IProgressTracker _progress;
     private readonly ProjectPathChanges _pathChanges;
@@ -27,7 +27,7 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
 
     public ProjectRootSnapshotBuilder(IFileSystem fileSystem,
                                      IFileSystemNameFactory fileSystemNameFactory,
-                                     FileSystemTreeSnapshot oldSnapshot,
+                                     FileSystemSnapshot oldSnapshot,
                                      IProject project,
                                      IProgressTracker progress,
                                      ProjectPathChanges pathChanges,

@@ -10,8 +10,8 @@ namespace VsChromium.Server.FileSystem {
   public class SnapshotScanResult {
     public OperationInfo OperationInfo { get; set; }
     public Exception Error { get; set; }
-    public FileSystemTreeSnapshot PreviousSnapshot { get; set; }
-    public FileSystemTreeSnapshot NewSnapshot { get; set; }
+    public FileSystemSnapshot PreviousSnapshot { get; set; }
+    public FileSystemSnapshot NewSnapshot { get; set; }
     /// <summary>Maybe <code>null</code> if changes are not known.</summary>
     public FullPathChanges FullPathChanges { get; set; }
   }

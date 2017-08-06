@@ -9,9 +9,9 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemScanSnapshot {
   public interface IFileSystemSnapshotBuilder {
-    FileSystemTreeSnapshot Compute(
+    FileSystemSnapshot Compute(
       IFileSystemNameFactory fileNameFactory, 
-      FileSystemTreeSnapshot oldSnapshot,
+      FileSystemSnapshot oldSnapshot,
       FullPathChanges pathChanges /* may be null */,
       IList<IProject> projects, 
       int version,

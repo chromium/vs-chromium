@@ -14,10 +14,10 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
     private static readonly Func<DirectorySnapshot, DirectoryName, int> DirectoryNameComparer = (x, item) => NameComparer.Compare(x.DirectoryName.RelativePath.FileName, item.RelativePath.FileName);
     private static readonly Func<FileName, string, int> FileComparer = (x, item) => NameComparer.Compare(x.RelativePath.FileName, item);
 
-    private readonly FileSystemTreeSnapshot _snapshot;
+    private readonly FileSystemSnapshot _snapshot;
     private readonly IFileSystemNameFactory _previous;
 
-    public FileSystemTreeSnapshotNameFactory(FileSystemTreeSnapshot snapshot, IFileSystemNameFactory previous) {
+    public FileSystemTreeSnapshotNameFactory(FileSystemSnapshot snapshot, IFileSystemNameFactory previous) {
       _snapshot = snapshot;
       _previous = previous;
     }

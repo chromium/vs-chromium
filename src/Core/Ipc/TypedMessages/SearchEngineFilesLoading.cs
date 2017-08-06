@@ -8,8 +8,4 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class SearchEngineFilesLoading : PairedTypedEvent {
   }
-
-  [ProtoContract]
-  public class SearchEngineFilesLoadingProgress : PairedTypedEvent {
-  }
 }

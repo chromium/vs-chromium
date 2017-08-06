@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -27,24 +28,25 @@ namespace VsChromium.Server.Ipc.TypedEvents {
     }
 
     public void RegisterEventHandlers() {
-      _fileSystemProcessor.SnapshotComputing += FileSystemProcessorOnSnapshotComputing;
-      _fileSystemProcessor.SnapshotComputed += FileSystemProcessorOnSnapshotComputed;
+      _fileSystemProcessor.SnapshotScanStarted += FileSystemProcessorOnSnapshotScanStarted;
+      _fileSystemProcessor.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
 
       _searchEngine.FilesLoading += SearchEngineOnFilesLoading;
       _searchEngine.FilesLoadingProgress += SearchEngineOnFilesLoadingProgress;
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
-    private void FileSystemProcessorOnSnapshotComputing(object sender, OperationInfo e) {
-      _typedEventSender.SendEventAsync(new FileSystemTreeComputing {
+    private void FileSystemProcessorOnSnapshotScanStarted(object sender, OperationInfo e) {
+      _typedEventSender.SendEventAsync(new FileSystemScanStarted {
         OperationId = e.OperationId
       });
     }
 
-    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedResult e) {
-      var fileSystemTreeComputed = new FileSystemTreeComputed {
+    private void FileSystemProcessorOnSnapshotScanFinished(object sender, SnapshotScanResult e) {
+      var fileSystemTreeComputed = new FileSystemScanFinished {
         OperationId = e.OperationInfo.OperationId,
-        Error = ErrorResponseHelper.CreateErrorResponse(e.Error)
+        Error = ErrorResponseHelper.CreateErrorResponse(e.Error),
+        IsCancelled = e.Error is OperationCanceledException,
       };
 
       if (e.PreviousSnapshot != null) {

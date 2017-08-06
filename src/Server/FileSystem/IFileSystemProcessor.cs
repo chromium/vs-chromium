@@ -14,8 +14,8 @@ namespace VsChromium.Server.FileSystem {
     void UnregisterFile(FullPath path);
     FileSystemTreeSnapshot GetCurrentSnapshot();
 
-    event EventHandler<OperationInfo> SnapshotComputing;
-    event EventHandler<SnapshotComputedResult> SnapshotComputed;
+    event EventHandler<OperationInfo> SnapshotScanStarted;
+    event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     event EventHandler<FilesChangedEventArgs> FilesChanged;
   }
 }

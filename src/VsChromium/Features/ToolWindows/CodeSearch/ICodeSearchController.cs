@@ -21,17 +21,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     IWindowsExplorer WindowsExplorer { get; }
     GlobalSettings GlobalSettings { get; }
 
+    void Start();
+
     void RefreshFileSystemTree();
 
     void PerformSearch(bool immediate);
-
-    // Callbacks from server about updates to the index database
-    void OnFileSystemTreeComputing();
-    void OnFileSystemTreeComputed(FileSystemTree tree);
-    void OnFileSystemTreeError(ErrorResponse error);
-    void OnFilesLoading();
-    void OnFilesLoadingProgress();
-    void OnFilesLoaded(long treeVersion);
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void OpenFileInEditor(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length);

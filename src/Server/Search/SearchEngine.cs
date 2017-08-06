@@ -67,7 +67,7 @@ namespace VsChromium.Server.Search {
       _currentFileDatabase = _fileDatabaseFactory.CreateEmpty();
 
       // Setup computing a new state everytime a new tree is computed.
-      fileSystemProcessor.SnapshotComputed += FileSystemProcessorOnSnapshotComputed;
+      fileSystemProcessor.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
       fileSystemProcessor.FilesChanged += FileSystemProcessorOnFilesChanged;
     }
 
@@ -267,7 +267,7 @@ namespace VsChromium.Server.Search {
       });
     }
 
-    private void FileSystemProcessorOnSnapshotComputed(object sender, SnapshotComputedResult e) {
+    private void FileSystemProcessorOnSnapshotScanFinished(object sender, SnapshotScanResult e) {
       if (e.Error != null)
         return;
 

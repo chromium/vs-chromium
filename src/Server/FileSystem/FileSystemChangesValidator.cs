@@ -11,7 +11,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.FileSystemScanSnapshot;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {

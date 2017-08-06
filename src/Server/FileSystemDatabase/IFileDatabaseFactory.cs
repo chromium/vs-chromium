@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 using VsChromium.Server.FileSystem;
-using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.FileSystemScanSnapshot;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabaseFactory {

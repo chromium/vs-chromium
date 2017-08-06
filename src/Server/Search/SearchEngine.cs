@@ -20,7 +20,7 @@ using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.FileSystemSnapshot;
+using VsChromium.Server.FileSystemScanSnapshot;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Projects;

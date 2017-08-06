@@ -16,7 +16,7 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
   /// Exposes am in-memory snapshot of the list of file names, directory names
-  /// and file contents for a given <see cref="FileSystemTreeSnapshot"/> snapshot.
+  /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
   /// </summary>
   [Export(typeof(IFileDatabaseFactory))]
   public class FileDatabaseFactory : IFileDatabaseFactory {
@@ -47,8 +47,8 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabase CreateIncremental(
       IFileDatabase previousFileDatabase,
-      FileSystemTreeSnapshot previousSnapshot,
-      FileSystemTreeSnapshot newSnapshot,
+      FileSystemSnapshot previousSnapshot,
+      FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges,
       Action<IFileDatabase> onIntermadiateResult) {
 

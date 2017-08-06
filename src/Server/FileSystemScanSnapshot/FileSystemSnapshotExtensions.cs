@@ -5,14 +5,14 @@ using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemScanSnapshot {
   public static class FileSystemSnapshotExtensions {
-    public static  FileSystemTree ToIpcFileSystemTree(this FileSystemTreeSnapshot tree) {
+    public static  FileSystemTree ToIpcFileSystemTree(this FileSystemSnapshot tree) {
       return new FileSystemTree {
         Version = tree.Version,
         Root = BuildFileSystemTreeRoot(tree)
       };
     }
 
-    private static DirectoryEntry BuildFileSystemTreeRoot(FileSystemTreeSnapshot fileSystemSnapshot) {
+    private static DirectoryEntry BuildFileSystemTreeRoot(FileSystemSnapshot fileSystemSnapshot) {
       return new DirectoryEntry {
         Name = null,
         Data = null,

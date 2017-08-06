@@ -60,7 +60,7 @@ namespace VsChromium.Server.FileSystem {
     /// <summary>
     /// Access to this field is serialized through tasks executed on the  <see cref="_longRunningFileSystemTaskQueue"/>
     /// </summary>
-    private FileSystemTreeSnapshot _fileSystemSnapshot;
+    private FileSystemSnapshot _fileSystemSnapshot;
 
     private int _version;
 
@@ -85,13 +85,13 @@ namespace VsChromium.Server.FileSystem {
       _flushPathChangesTaskQueue = taskQueueFactory.CreateQueue("FileSystemProcessor Path Changes Task Queue");
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
       _fileRegistrationTracker.FullRescanRequired += FileRegistrationTrackerOnFullRescanRequired;
-      _fileSystemSnapshot = FileSystemTreeSnapshot.Empty;
+      _fileSystemSnapshot = FileSystemSnapshot.Empty;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
     }
 
-    public FileSystemTreeSnapshot CurrentSnapshot {
+    public FileSystemSnapshot CurrentSnapshot {
       get { return _fileSystemSnapshot; }
     }
 
@@ -253,8 +253,8 @@ namespace VsChromium.Server.FileSystem {
       });
     }
 
-    private FileSystemTreeSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
-      FileSystemTreeSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
+    private FileSystemSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
+      FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
 
       using (new TimeElapsedLogger("Computing snapshot delta from list of file changes")) {
         // file name factory

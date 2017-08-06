@@ -12,11 +12,11 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
   /// A view of the file system (directories and files) of all the projects
   /// known to the server at the time the snapshot was built.
   /// </summary>
-  public class FileSystemTreeSnapshot {
+  public class FileSystemSnapshot {
     private readonly int _version;
     private readonly ReadOnlyCollection<ProjectRootSnapshot> _projectRoots;
 
-    public FileSystemTreeSnapshot(int version, ReadOnlyCollection<ProjectRootSnapshot> projectRoots) {
+    public FileSystemSnapshot(int version, ReadOnlyCollection<ProjectRootSnapshot> projectRoots) {
       _version = version;
       _projectRoots = projectRoots;
     }
@@ -29,9 +29,9 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
       get { return _projectRoots; }
     }
 
-    public static FileSystemTreeSnapshot Empty {
+    public static FileSystemSnapshot Empty {
       get {
-        return new FileSystemTreeSnapshot(0, Enumerable.Empty<ProjectRootSnapshot>().ToReadOnlyCollection());
+        return new FileSystemSnapshot(0, Enumerable.Empty<ProjectRootSnapshot>().ToReadOnlyCollection());
       }
     }
   }

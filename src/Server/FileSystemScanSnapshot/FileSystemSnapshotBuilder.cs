@@ -27,8 +27,8 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public FileSystemTreeSnapshot Compute(IFileSystemNameFactory fileNameFactory,
-                                          FileSystemTreeSnapshot oldSnapshot,
+    public FileSystemSnapshot Compute(IFileSystemNameFactory fileNameFactory,
+                                          FileSystemSnapshot oldSnapshot,
                                           FullPathChanges pathChanges/* may be null */,
                                           IList<IProject> projects,
                                           int version,
@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystemScanSnapshot {
             .OrderBy(projectRoot => projectRoot.Directory.DirectoryName)
             .ToReadOnlyCollection();
 
-        return new FileSystemTreeSnapshot(version, projectRoots);
+        return new FileSystemSnapshot(version, projectRoots);
       }
     }
   }

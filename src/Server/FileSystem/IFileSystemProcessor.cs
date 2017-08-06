@@ -12,7 +12,7 @@ namespace VsChromium.Server.FileSystem {
     void Refresh();
     void RegisterFile(FullPath path);
     void UnregisterFile(FullPath path);
-    FileSystemTreeSnapshot CurrentSnapshot { get; }
+    FileSystemSnapshot CurrentSnapshot { get; }
 
     event EventHandler<OperationInfo> SnapshotScanStarted;
     event EventHandler<SnapshotScanResult> SnapshotScanFinished;

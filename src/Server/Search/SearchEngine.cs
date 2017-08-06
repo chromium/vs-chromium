@@ -29,6 +29,7 @@ using VsChromium.Server.Threads;
 namespace VsChromium.Server.Search {
   [Export(typeof(ISearchEngine))]
   public class SearchEngine : ISearchEngine {
+    private static readonly TaskId UpdateFileContentsTaskId = new TaskId("UpdateFileContentsTaskId");
     private static readonly TaskId ComputeNewStatedId = new TaskId("ComputeNewStateId");
     private static readonly TaskId GarbageCollectId = new TaskId("GarbageCollectId");
     private readonly IFileDatabaseFactory _fileDatabaseFactory;
@@ -37,6 +38,7 @@ namespace VsChromium.Server.Search {
     private readonly ICompiledTextSearchDataFactory _compiledTextSearchDataFactory;
     private readonly IOperationProcessor _operationProcessor;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
+
     /// <summary>
     /// We use a <see cref="ITaskQueue"/> to ensure that we process all events
     /// in sequence (asynchronously). This ensure the final state of <see
@@ -44,6 +46,7 @@ namespace VsChromium.Server.Search {
     /// the last event reveived.
     /// </summary>
     private readonly ITaskQueue _taskQueue;
+
     private volatile IFileDatabase _currentFileDatabase;
     private long _currentTreeVersion = -1;
 
@@ -51,13 +54,13 @@ namespace VsChromium.Server.Search {
     public SearchEngine(
       IFileSystemProcessor fileSystemProcessor,
       IFileSystemNameFactory fileSystemNameFactory,
-      ITaskQueueFactory taskQueueFactory,
+      ILongRunningFileSystemTaskQueue taskQueue,
       IFileDatabaseFactory fileDatabaseFactory,
       IProjectDiscovery projectDiscovery,
       ICompiledTextSearchDataFactory compiledTextSearchDataFactory,
       IOperationProcessor operationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
-      _taskQueue = taskQueueFactory.CreateQueue("SearchEngine Task Queue");
+      _taskQueue = taskQueue;
       _fileDatabaseFactory = fileDatabaseFactory;
       _projectDiscovery = projectDiscovery;
       _compiledTextSearchDataFactory = compiledTextSearchDataFactory;
@@ -71,7 +74,9 @@ namespace VsChromium.Server.Search {
       fileSystemProcessor.FilesChanged += FileSystemProcessorOnFilesChanged;
     }
 
-    public IFileDatabase CurrentFileDatabase { get { return _currentFileDatabase; } }
+    public IFileDatabase CurrentFileDatabase {
+      get { return _currentFileDatabase; }
+    }
 
     public SearchFilePathsResult SearchFilePaths(SearchParams searchParams) {
       // taskCancellation is used to make sure we cancel previous tasks as fast
@@ -181,8 +186,8 @@ namespace VsChromium.Server.Search {
               .Select(x => new FilePositionSpan {
                 Position = x.Position,
                 Length = x.Length,
-              }).
-              ToList(),
+              })
+              .ToList(),
           };
         })
         .Where(r => r.Spans != null && r.Spans.Count > 0)
@@ -207,7 +212,8 @@ namespace VsChromium.Server.Search {
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans, int maxLength) {
-      var filename = FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
+      var filename =
+        FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
       if (filename.IsNull)
         return Enumerable.Empty<FileExtract>();
 
@@ -236,9 +242,9 @@ namespace VsChromium.Server.Search {
     }
 
     private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
-      _taskQueue.Enqueue(
-        new TaskId("FileSystemProcessorOnFilesChanged"),
-        cancellationToken => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
+      _taskQueue.Enqueue(UpdateFileContentsTaskId, cancellationToken => {
+        UpdateFileContents(filesChangedEventArgs.ChangedFiles);
+      });
     }
 
     private void UpdateFileContents(IEnumerable<ProjectFileName> files) {
@@ -249,7 +255,7 @@ namespace VsChromium.Server.Search {
         OnError = (info, error) => {
           OnFilesLoading(info);
           OnFilesLoaded(new FilesLoadedResult {
-            OperationInfo = info, 
+            OperationInfo = info,
             Error = error,
             TreeVersion = _currentTreeVersion,
           });
@@ -291,6 +297,7 @@ namespace VsChromium.Server.Search {
     private class SearchPreProcessResult<T> : IDisposable {
       public Func<T, bool> Matcher { get; set; }
       public CompiledTextSearchData SearchData { get; set; }
+
       public void Dispose() {
         if (SearchData != null) {
           SearchData.Dispose();
@@ -299,8 +306,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private SearchPreProcessResult<T> PreProcessFileSystemNameSearch<T>(
-      SearchParams searchParams,
+    private SearchPreProcessResult<T> PreProcessFileSystemNameSearch<T>(SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
 
@@ -320,7 +326,7 @@ namespace VsChromium.Server.Search {
       // Split pattern around ";", normalize directory separators and
       // add "*" if not a whole word search
       var patterns = pattern
-        .Split(new[] { ';' })
+        .Split(new[] {';'})
         .Where(x => !string.IsNullOrWhiteSpace(x.Trim()))
         .Select(x => x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar))
         .Select(x => {
@@ -338,9 +344,7 @@ namespace VsChromium.Server.Search {
 
       var matcher = new AnyPathMatcher(patterns.Select(PatternParser.ParsePattern));
 
-      var comparer = searchParams.MatchCase ?
-                       PathComparerRegistry.CaseSensitive :
-                       PathComparerRegistry.CaseInsensitive;
+      var comparer = searchParams.MatchCase ? PathComparerRegistry.CaseSensitive : PathComparerRegistry.CaseInsensitive;
       if (patterns.Any(x => x.Contains(Path.DirectorySeparatorChar))) {
         return new SearchPreProcessResult<T> {
           Matcher = (item) => matchRelativeName(matcher, item, comparer)
@@ -352,8 +356,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private SearchPreProcessResult<T> PreProcessFileSystemNameRegularExpressionSearch<T>(
-      SearchParams searchParams,
+    private SearchPreProcessResult<T> PreProcessFileSystemNameRegularExpressionSearch<T>(SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
       Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileSystemName {
 
@@ -365,9 +368,7 @@ namespace VsChromium.Server.Search {
       var data = _compiledTextSearchDataFactory.Create(searchParams, x => true);
       var provider = data.GetSearchContainer(data.ParsedSearchString.MainEntry);
       var matcher = new CompiledTextSearchProviderPathMatcher(provider);
-      var comparer = searchParams.MatchCase ?
-                       PathComparerRegistry.CaseSensitive :
-                       PathComparerRegistry.CaseInsensitive;
+      var comparer = searchParams.MatchCase ? PathComparerRegistry.CaseSensitive : PathComparerRegistry.CaseInsensitive;
       if (pattern.Contains('/') || pattern.Contains("\\\\")) {
         return new SearchPreProcessResult<T> {
           Matcher = (item) => matchRelativeName(matcher, item, comparer),
@@ -422,17 +423,17 @@ namespace VsChromium.Server.Search {
             return false;
 
           // Replace '\' with '/' and try again
-          var first = (byte*)ptr.ToPointer();
+          var first = (byte*) ptr.ToPointer();
           var last = first + value.Length;
           for (; first != last; first++) {
-            if ((char)(*first) == Path.DirectorySeparatorChar) {
-              *first = (byte)Path.AltDirectorySeparatorChar;
+            if ((char) (*first) == Path.DirectorySeparatorChar) {
+              *first = (byte) Path.AltDirectorySeparatorChar;
             }
           }
 
           // Search again
           hit = _searchContainer.GetAsciiSearch()
-                      .FindFirst(range, OperationProgressTracker.None);
+            .FindFirst(range, OperationProgressTracker.None);
           return hit.HasValue;
         }
         finally {
@@ -441,9 +442,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private void ComputeNewState(
-      FileSystemTreeSnapshot previousSnapshot,
-      FileSystemTreeSnapshot newSnapshot,
+    private void ComputeNewState(FileSystemTreeSnapshot previousSnapshot, FileSystemTreeSnapshot newSnapshot,
       FullPathChanges fullPathChanges) {
 
       _operationProcessor.Execute(new OperationHandlers {

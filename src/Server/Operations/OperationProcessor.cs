@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.Operations {
   [Export(typeof(IOperationProcessor))]
@@ -25,7 +26,11 @@ namespace VsChromium.Server.Operations {
         operationHandlers.Execute(info);
       }
       catch (Exception e) {
-        Logger.LogError(e, "Error executing operation {0}", info.OperationId);
+        if (e.IsCanceled()) {
+          Logger.LogInfo("Operation {0} has been canceled", info.OperationId);
+        } else {
+          Logger.LogError(e, "Error executing operation {0}", info.OperationId);
+        }
         operationHandlers.OnError(info, e);
       }
     }

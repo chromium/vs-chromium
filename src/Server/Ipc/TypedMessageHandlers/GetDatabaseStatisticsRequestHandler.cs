@@ -23,7 +23,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (GetDatabaseStatisticsRequest)typedRequest;
 
-      var snapshot = _processor.GetCurrentSnapshot();
+      var snapshot = _processor.CurrentSnapshot;
       var database = _searchEngine.CurrentFileDatabase;
       return new GetDatabaseStatisticsResponse {
         ProjectCount = snapshot.ProjectRoots.Count,

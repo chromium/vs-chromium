@@ -17,7 +17,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      var tree = _processor.GetCurrentSnapshot();
+      var tree = _processor.CurrentSnapshot;
       return new GetFileSystemVersionResponse {
         Version = tree.Version
       };

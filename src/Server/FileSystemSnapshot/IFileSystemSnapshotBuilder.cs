@@ -4,8 +4,8 @@
 
 using System.Collections.Generic;
 using System.Threading;
-using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystemSnapshot {
   public interface IFileSystemSnapshotBuilder {
@@ -13,7 +13,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       IFileSystemNameFactory fileNameFactory, 
       FileSystemTreeSnapshot oldSnapshot,
       FullPathChanges pathChanges /* may be null */,
-      IList<FullPath> rootFiles, 
+      IList<IProject> projects, 
       int version,
       CancellationToken cancellationToken);
   }

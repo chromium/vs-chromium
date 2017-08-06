@@ -10,15 +10,15 @@ using VsChromium.Server.FileSystem;
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class RegisterFileRequestHandler : TypedMessageRequestHandler {
-    private readonly IFileSystemSnapshotManager _snapshotManager;
+    private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
     [ImportingConstructor]
-    public RegisterFileRequestHandler(IFileSystemSnapshotManager snapshotManager) {
-      _snapshotManager = snapshotManager;
+    public RegisterFileRequestHandler(IFileRegistrationTracker fileRegistrationTracker) {
+      _fileRegistrationTracker = fileRegistrationTracker;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      _snapshotManager.RegisterFile(new FullPath(((RegisterFileRequest)typedRequest).FileName));
+      _fileRegistrationTracker.RegisterFile(new FullPath(((RegisterFileRequest)typedRequest).FileName));
 
       return new DoneResponse {
         Info = "processing..."

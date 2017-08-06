@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
@@ -12,6 +13,7 @@ using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystem {
+  [Export(typeof(IFileRegistrationTracker))]
   public class FileRegistrationTracker : IFileRegistrationTracker {
     private static readonly TaskId FlushFileRegistrationQueueTaskId = new TaskId("FlushFileRegistrationQueueTaskId");
     private static readonly TaskId RefreshTaskId = new TaskId("RefreshTaskId");
@@ -26,6 +28,7 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     private readonly HashSet<FullPath> _registeredFiles = new HashSet<FullPath>();
 
+    [ImportingConstructor]
     public FileRegistrationTracker(IFileSystem fileSystem, IProjectDiscovery projectDiscovery,
       ITaskQueueFactory taskQueueFactory) {
       _fileSystem = fileSystem;
@@ -33,8 +36,8 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue = taskQueueFactory.CreateQueue("File Registration Tracker Task Queue");
     }
 
-    public event EventHandler<IList<IProject>> ProjectListChanged;
-    public event EventHandler<IList<IProject>> FullRescanRequired;
+    public event EventHandler<ProjectsEventArgs> ProjectListChanged;
+    public event EventHandler<ProjectsEventArgs> ProjectListRefreshed;
 
     public void RegisterFile(FullPath path) {
       Logger.LogInfo("Register path \"{0}\"", path);
@@ -57,14 +60,14 @@ namespace VsChromium.Server.FileSystem {
       if (ProcessPendingFileRegistrations()) {
         // TODO(rpaquay): Be smarter here, don't recompute directory roots
         // that have not been affected.
-        OnProjectListChanged(CollectAndSortProjectsFromRegisteredFiles());
+        OnProjectListChanged(new ProjectsEventArgs(CollectAndSortProjectsFromRegisteredFiles()));
       }
     }
 
     private void RefreshTask(CancellationToken cancellationToken) {
       ProcessPendingFileRegistrations();
       ValidateKnownFiles();
-      OnFullRescanRequired(CollectAndSortProjectsFromRegisteredFiles());
+      OnProjectListRefreshed(new ProjectsEventArgs(CollectAndSortProjectsFromRegisteredFiles()));
     }
 
     private IList<IProject> CollectAndSortProjectsFromRegisteredFiles() {
@@ -140,12 +143,12 @@ namespace VsChromium.Server.FileSystem {
       return recompute;
     }
 
-    protected virtual void OnProjectListChanged(IList<IProject> projects) {
-      ProjectListChanged?.Invoke(this, projects);
+    protected virtual void OnProjectListChanged(ProjectsEventArgs e) {
+      ProjectListChanged?.Invoke(this, e);
     }
 
-    protected virtual void OnFullRescanRequired(IList<IProject> projects) {
-      FullRescanRequired?.Invoke(this, projects);
+    protected virtual void OnProjectListRefreshed(ProjectsEventArgs e) {
+      ProjectListRefreshed?.Invoke(this, e);
     }
   }
 }

@@ -20,14 +20,14 @@ namespace VsChromium.Tests.Server {
   public class TestSearchCode : MefTestBase {
     private static CompositionContainer _container;
     private static FileInfo _testFile;
-    private static IFileSystemSnapshotManager _registry;
+    private static IFileRegistrationTracker _registry;
     private static ISearchEngine _searchEngine;
     private static readonly EventWaitHandle _serverReadyEvent = new ManualResetEvent(false);
 
     [ClassInitialize]
     public static void Initialize(TestContext context) {
       _container = SetupServerMefContainer();
-      _registry = _container.GetExportedValue<IFileSystemSnapshotManager>();
+      _registry = _container.GetExportedValue<IFileRegistrationTracker>();
       _searchEngine = _container.GetExportedValue<ISearchEngine>();
       _searchEngine.FilesLoaded += (sender, result) => _serverReadyEvent.Set();
       _testFile = Utils.GetChromiumTestEnlistmentFile();

@@ -9,12 +9,34 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {
   public interface IFileRegistrationTracker {
+    /// <summary>
+    /// Register a new file to serve as the base for figuring out project roots
+    /// </summary>
     void RegisterFile(FullPath path);
+
+    /// <summary>
+    /// Un-register a new file to serve as the base for figuring out project roots
+    /// </summary>
     void UnregisterFile(FullPath path);
 
+    /// <summary>
+    /// Force a file system rescan
+    /// </summary>
     void Refresh();
 
-    event EventHandler<IList<IProject>> FullRescanRequired;
-    event EventHandler<IList<IProject>> ProjectListChanged;
+    event EventHandler<ProjectsEventArgs> ProjectListRefreshed;
+    event EventHandler<ProjectsEventArgs> ProjectListChanged;
+  }
+
+  public class ProjectsEventArgs : EventArgs {
+    private readonly IList<IProject> _projects;
+
+    public ProjectsEventArgs(IList<IProject> projects) {
+      _projects = projects;
+    }
+
+    public IList<IProject> Projects {
+      get { return _projects; }
+    }
   }
 }

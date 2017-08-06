@@ -8,7 +8,7 @@ using VsChromium.Core.Linq;
 
 namespace VsChromium.Core.Threads {
   /// <summary>
-  /// Keeps track of cancellation tokens of multiple independent tasks. Tread
+  /// Keeps track of cancellation tokens of multiple independent tasks. Thread
   /// safe.
   /// </summary>
   public class TaskCancellation {

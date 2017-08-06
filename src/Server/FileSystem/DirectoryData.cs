@@ -4,7 +4,7 @@
 
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem {
   /// <summary>
   /// Abstraction over immutable data related to a directory entry.
   /// </summary>

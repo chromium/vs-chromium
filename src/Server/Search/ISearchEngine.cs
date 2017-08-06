@@ -11,7 +11,7 @@ using VsChromium.Server.Operations;
 
 namespace VsChromium.Server.Search {
   public interface ISearchEngine {
-    IFileDatabase CurrentFileDatabase { get; }
+    IFileDatabaseSnapshot CurrentFileDatabaseSnapshot { get; }
 
     SearchFilePathsResult SearchFilePaths(SearchParams searchParams);
     SearchCodeResult SearchCode(SearchParams searchParams);

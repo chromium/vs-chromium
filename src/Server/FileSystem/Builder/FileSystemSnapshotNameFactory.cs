@@ -4,7 +4,7 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.FileSystem {
+namespace VsChromium.Server.FileSystem.Builder {
   public class FileSystemTreeSnapshotNameFactory : IFileSystemNameFactory {
     // We can use the fast case sentive comparer as this factory is merely a cache
     // for previously re-used names.

@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 
-namespace VsChromium.Server.FileSystem {
+namespace VsChromium.Server.Ipc {
   public static class FileSystemSnapshotExtensions {
     public static  FileSystemTree ToIpcFileSystemTree(this FileSystemSnapshot tree) {
       return new FileSystemTree {

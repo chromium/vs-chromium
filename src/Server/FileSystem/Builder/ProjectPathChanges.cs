@@ -6,7 +6,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem.Builder {
   /// <summary>
   /// Map from RelativePath to PathChangeKind for a given project root path.
   /// Note: This class is thread safe

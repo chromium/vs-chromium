@@ -24,7 +24,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var request = (GetDatabaseStatisticsRequest)typedRequest;
 
       var snapshot = _snapshotManager.CurrentSnapshot;
-      var database = _searchEngine.CurrentFileDatabase;
+      var database = _searchEngine.CurrentFileDatabaseSnapshot;
       return new GetDatabaseStatisticsResponse {
         ProjectCount = snapshot.ProjectRoots.Count,
         FileCount = database.FileNames.Count,

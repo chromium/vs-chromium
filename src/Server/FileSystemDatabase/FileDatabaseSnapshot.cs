@@ -17,14 +17,14 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// </summary>
   public class FileDatabaseSnapshot : IFileDatabaseSnapshot {
     private readonly IDictionary<FullPath, string> _projectHashes;
-    private readonly IDictionary<FileName, FileData> _files;
+    private readonly IDictionary<FileName, FileWithContents> _files;
     private readonly IList<FileName> _fileNames;
     private readonly IDictionary<DirectoryName, DirectoryData> _directories;
     private readonly IList<IFileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
     public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes,
-                        IDictionary<FileName, FileData> files,
+                        IDictionary<FileName, FileWithContents> files,
                         IList<FileName> fileNames,
                         IDictionary<DirectoryName, DirectoryData> directories,
                         IList<IFileContentsPiece> fileContentsPieces,
@@ -41,7 +41,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       get { return _projectHashes; }
     }
 
-    public IDictionary<FileName, FileData> Files {
+    public IDictionary<FileName, FileWithContents> Files {
       get {
         return _files;
       }
@@ -103,10 +103,10 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     /// <summary>
-    /// Return the <see cref="FileData"/> instance associated to <paramref name="filename"/> or null if not present.
+    /// Return the <see cref="FileWithContents"/> instance associated to <paramref name="filename"/> or null if not present.
     /// </summary>
-    private FileData GetFileData(FileName filename) {
-      FileData result;
+    private FileWithContents GetFileData(FileName filename) {
+      FileWithContents result;
       Files.TryGetValue(filename, out result);
       return result;
     }

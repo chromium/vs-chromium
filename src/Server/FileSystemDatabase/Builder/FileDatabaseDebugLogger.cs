@@ -20,7 +20,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private static readonly int LogContentsStats_ExtensionsList_Count = 10;
     private static readonly int LogContentsStats_ExtensionsList_File_Count = 25;
 
-    public static void LogFilePieces(ICollection<FileData> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
+    public static void LogFilePieces(ICollection<FileWithContents> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
       if (LogPiecesStats && Logger.Info) {
         Debug.Assert(filePieces.All(x => x != null));
         Debug.Assert(filePieces.Aggregate(0L, (c, x) => c + x.ByteLength) ==
@@ -37,7 +37,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    public static void LogFileContentsStats(IList<FileData> filesWithContents) {
+    public static void LogFileContentsStats(IList<FileWithContents> filesWithContents) {
       if (LogContentsStats && Logger.Info) {
         var sectionSeparator = new string('=', 180);
         Logger.LogInfo("{0}", sectionSeparator);
@@ -86,7 +86,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    private static void LogFileContentsByPath(IEnumerable<FileData> bigFiles) {
+    private static void LogFileContentsByPath(IEnumerable<FileWithContents> bigFiles) {
       var table = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
       table.AddColumn("Path", 140, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.EllipsisString);
       table.AddColumn("Size", 16, TextTableGenerator.Align.Right, FormatSizeAsKB);

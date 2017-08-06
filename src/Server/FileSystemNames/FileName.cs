@@ -12,9 +12,9 @@ namespace VsChromium.Server.FileSystemNames {
 
     public FileName(DirectoryName parent, RelativePath relativePath) {
       if (parent == null)
-        throw new ArgumentNullException("parent");
+        throw new ArgumentNullException(nameof(parent));
       if (relativePath.IsEmpty)
-        throw new ArgumentException("Relative path is empty", "relativePath");
+        throw new ArgumentException("Relative path is empty", nameof(relativePath));
       _parent = parent;
       _relativePath = relativePath;
     }

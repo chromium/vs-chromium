@@ -8,7 +8,7 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
 
-namespace VsChromium.Server.FileSystemDatabase {
+namespace VsChromium.Server.FileSystemContents {
   /// <summary>
   /// The most basic piece of contents that can be searched.
   /// There is at least one instance per searchable file, and

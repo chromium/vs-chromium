@@ -18,6 +18,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.NativeInterop;
@@ -41,12 +42,12 @@ namespace VsChromium.Server.Search {
     /// <summary>
     /// We use a <see cref="ITaskQueue"/> to ensure that we process all events
     /// in sequence (asynchronously). This ensure the final state of <see
-    /// cref="_currentFileDatabase"/> reflects the state we should keep wrt to
+    /// cref="_currentFileDatabaseSnapshot"/> reflects the state we should keep wrt to
     /// the last event reveived.
     /// </summary>
     private readonly ITaskQueue _taskQueue;
 
-    private volatile IFileDatabase _currentFileDatabase;
+    private volatile IFileDatabaseSnapshot _currentFileDatabaseSnapshot;
     private long _currentTreeVersion = -1;
 
     [ImportingConstructor]
@@ -66,15 +67,15 @@ namespace VsChromium.Server.Search {
       _operationProcessor = operationProcessor;
 
       // Create a "Null" state
-      _currentFileDatabase = _fileDatabaseFactory.CreateEmpty();
+      _currentFileDatabaseSnapshot = _fileDatabaseFactory.CreateEmpty();
 
       // Setup computing a new state everytime a new tree is computed.
       fileSystemSnapshotManager.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
       fileSystemSnapshotManager.FilesChanged += FileSystemProcessorOnFilesChanged;
     }
 
-    public IFileDatabase CurrentFileDatabase {
-      get { return _currentFileDatabase; }
+    public IFileDatabaseSnapshot CurrentFileDatabaseSnapshot {
+      get { return _currentFileDatabaseSnapshot; }
     }
 
     public SearchFilePathsResult SearchFilePaths(SearchParams searchParams) {
@@ -94,7 +95,7 @@ namespace VsChromium.Server.Search {
 
       using (preProcessResult) {
         var searchedFileCount = 0;
-        var matches = _currentFileDatabase.FileNames
+        var matches = _currentFileDatabaseSnapshot.FileNames
           .AsParallel()
           // We need the line below because of "Take" (.net 4.0 PLinq
           // limitation)
@@ -103,7 +104,7 @@ namespace VsChromium.Server.Search {
           .Where(
             item => {
               if (!searchParams.IncludeSymLinks) {
-                if (_currentFileDatabase.IsContainedInSymLink(item))
+                if (_currentFileDatabaseSnapshot.IsContainedInSymLink(item))
                   return false;
               }
               Interlocked.Increment(ref searchedFileCount);
@@ -160,9 +161,9 @@ namespace VsChromium.Server.Search {
       CancellationToken cancellationToken) {
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
       var searchedFileIds = new PartitionedBitArray(
-        _currentFileDatabase.SearchableFileCount,
+        _currentFileDatabaseSnapshot.SearchableFileCount,
         Environment.ProcessorCount * 2);
-      var matches = _currentFileDatabase.FileContentsPieces
+      var matches = _currentFileDatabaseSnapshot.FileContentsPieces
         .AsParallel()
         .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
         .WithCancellation(cancellationToken)
@@ -170,7 +171,7 @@ namespace VsChromium.Server.Search {
         .Select(item => {
           // Filter out files inside symlinks if needed
           if (!includeSymLinks) {
-            if (_currentFileDatabase.IsContainedInSymLink(item.FileName))
+            if (_currentFileDatabaseSnapshot.IsContainedInSymLink(item.FileName))
               return default(SearchableContentsResult);
           }
           // Filter out files that don't match the file name match pattern
@@ -200,7 +201,7 @@ namespace VsChromium.Server.Search {
       return new SearchCodeResult {
         Entries = matches,
         SearchedFileCount = searchedFileIds.Count,
-        TotalFileCount = _currentFileDatabase.SearchableFileCount,
+        TotalFileCount = _currentFileDatabaseSnapshot.SearchableFileCount,
         HitCount = progressTracker.ResultCount,
       };
     }
@@ -216,7 +217,7 @@ namespace VsChromium.Server.Search {
       if (filename.IsNull)
         return Enumerable.Empty<FileExtract>();
 
-      return _currentFileDatabase.GetFileExtracts(filename.FileName, spans, maxLength);
+      return _currentFileDatabaseSnapshot.GetFileExtracts(filename.FileName, spans, maxLength);
     }
 
     public event EventHandler<OperationInfo> FilesLoading;
@@ -260,8 +261,8 @@ namespace VsChromium.Server.Search {
           });
         },
         Execute = info => {
-          _currentFileDatabase = _fileDatabaseFactory.CreateWithChangedFiles(
-            _currentFileDatabase,
+          _currentFileDatabaseSnapshot = _fileDatabaseFactory.CreateWithChangedFiles(
+            _currentFileDatabaseSnapshot,
             files,
             onLoading: () => OnFilesLoading(operationInfo),
             onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
@@ -459,7 +460,7 @@ namespace VsChromium.Server.Search {
 
         Execute = info => {
           using (new TimeElapsedLogger("Computing new state of file database")) {
-            var oldState = _currentFileDatabase;
+            var oldState = _currentFileDatabaseSnapshot;
             var newState = _fileDatabaseFactory.CreateIncremental(
               oldState,
               previousSnapshot,
@@ -467,11 +468,11 @@ namespace VsChromium.Server.Search {
               fullPathChanges,
               fileDatabase => {
                 // Store and activate intermediate new state (atomic operation).
-                _currentFileDatabase = fileDatabase;
+                _currentFileDatabaseSnapshot = fileDatabase;
                 OnFilesLoadingProgress(info);
               });
             // Store and activate final new state (atomic operation).
-            _currentFileDatabase = newState;
+            _currentFileDatabaseSnapshot = newState;
           }
           _currentTreeVersion = newSnapshot.Version;
           OnFilesLoaded(new FilesLoadedResult {

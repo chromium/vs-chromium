@@ -7,6 +7,7 @@ using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemDatabase {
@@ -14,7 +15,7 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// Exposes am in-memory snapshot of the list of file names, directory names
   /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
   /// </summary>
-  public class FileDatabase : IFileDatabase {
+  public class FileDatabaseSnapshot : IFileDatabaseSnapshot {
     private readonly IDictionary<FullPath, string> _projectHashes;
     private readonly IDictionary<FileName, FileData> _files;
     private readonly IList<FileName> _fileNames;
@@ -22,7 +23,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IList<IFileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
-    public FileDatabase(IDictionary<FullPath, string> projectHashes,
+    public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes,
                         IDictionary<FileName, FileData> files,
                         IList<FileName> fileNames,
                         IDictionary<DirectoryName, DirectoryData> directories,

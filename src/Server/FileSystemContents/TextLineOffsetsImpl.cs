@@ -9,7 +9,6 @@ using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Strings;
-using VsChromium.Server.NativeInterop;
 
 namespace VsChromium.Server.FileSystemContents {
   public unsafe class TextLineOffsetsImpl {

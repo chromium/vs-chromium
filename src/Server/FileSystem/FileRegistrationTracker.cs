@@ -12,7 +12,7 @@ using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystem {
-  public class FileRegistrationTracker {
+  public class FileRegistrationTracker : IFileRegistrationTracker {
     private static readonly TaskId FlushFileRegistrationQueueTaskId = new TaskId("FlushFileRegistrationQueueTaskId");
     private static readonly TaskId RefreshTaskId = new TaskId("RefreshTaskId");
 

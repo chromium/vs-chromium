@@ -238,7 +238,7 @@ namespace VsChromium.Server.Search {
     private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
       _taskQueue.Enqueue(
         new TaskId("FileSystemProcessorOnFilesChanged"),
-        () => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
+        cancellationToken => UpdateFileContents(filesChangedEventArgs.ChangedFiles));
     }
 
     private void UpdateFileContents(IEnumerable<ProjectFileName> files) {
@@ -271,7 +271,7 @@ namespace VsChromium.Server.Search {
       if (e.Error != null)
         return;
 
-      _taskQueue.Enqueue(ComputeNewStatedId, () =>
+      _taskQueue.Enqueue(ComputeNewStatedId, cancellationToken =>
         ComputeNewState(e.PreviousSnapshot, e.NewSnapshot, e.FullPathChanges));
 
       // Enqueue a GC at this point makes sense as there might be a lot of
@@ -280,7 +280,7 @@ namespace VsChromium.Server.Search {
       // orphan SafeHandles are released in a timely fashion. We enqueue a
       // separate task to ensure there is no potential state keeping these
       // variables alive for slightly too long.
-      _taskQueue.Enqueue(GarbageCollectId, () => {
+      _taskQueue.Enqueue(GarbageCollectId, cancellationToken => {
         Logger.LogMemoryStats();
         GC.Collect(GC.MaxGeneration);
         GC.WaitForPendingFinalizers();

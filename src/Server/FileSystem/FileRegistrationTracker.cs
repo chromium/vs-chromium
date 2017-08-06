@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Server.Projects;
@@ -50,7 +51,7 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(RefreshTaskId, RefreshTask);
     }
 
-    private void FlushFileRegistrationQueueTask() {
+    private void FlushFileRegistrationQueueTask(CancellationToken cancellationToken) {
       if (ProcessPendingFileRegistrations()) {
         // TODO(rpaquay): Be smarter here, don't recompute directory roots
         // that have not been affected.
@@ -58,7 +59,7 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private void RefreshTask() {
+    private void RefreshTask(CancellationToken cancellationToken) {
       ProcessPendingFileRegistrations();
       ValidateKnownFiles();
       OnFullRescanRequired(CollectAndSortProjectsFromRegisteredFiles());

@@ -11,14 +11,17 @@ namespace VsChromium.Server.FileSystem {
       ModifiedFiles = new List<ProjectFileName>();
     }
 
-    public bool NoChanges { get; set; }
+    public FileSystemValidationResultKind Kind { get; set; }
 
-    public bool FileModificationsOnly { get; set; }
     public IList<ProjectFileName> ModifiedFiles { get; set; }
 
-    public bool VariousFileChanges { get; set; }
     public FullPathChanges FileChanges { get; set; }
+  }
 
-    public bool UnknownChanges { get; set; }
+  public enum FileSystemValidationResultKind {
+    NoChanges,
+    FileModificationsOnly,
+    VariousFileChanges,
+    UnknownChanges
   }
 }

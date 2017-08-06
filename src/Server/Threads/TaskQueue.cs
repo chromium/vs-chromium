@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 
@@ -14,6 +15,7 @@ namespace VsChromium.Server.Threads {
     private readonly ICustomThreadPool _customThreadPool;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly TaskEntryQueue _tasks = new TaskEntryQueue();
+    private readonly CancellationTokenTracker _taskCancellationTracker = new CancellationTokenTracker();
     private volatile TaskEntry _runningTask;
     private readonly object _lock = new object();
 
@@ -23,7 +25,7 @@ namespace VsChromium.Server.Threads {
       _dateTimeProvider = dateTimeProvider;
     }
 
-    public void Enqueue(TaskId id, Action task) {
+    public void Enqueue(TaskId id, Action<CancellationToken> task) {
       var entry = new TaskEntry {
         Id = id,
         EnqueuedDateTimeUtc = _dateTimeProvider.UtcNow,
@@ -48,6 +50,10 @@ namespace VsChromium.Server.Threads {
         RunTaskAsync(entry);
     }
 
+    public void CancelCurrentTask() {
+      _taskCancellationTracker.CancelCurrent();
+    }
+
     private void RunTaskAsync(TaskEntry entry) {
       _customThreadPool.RunAsync(() => {
         try {
@@ -56,7 +62,7 @@ namespace VsChromium.Server.Threads {
             entry.Id.Description,
             (_dateTimeProvider.UtcNow - entry.EnqueuedDateTimeUtc).TotalMilliseconds);
           entry.StopWatch.Start();
-          entry.Action();
+          entry.Action(_taskCancellationTracker.NewToken());
         }
         finally {
           OnTaskFinished(entry);
@@ -108,7 +114,7 @@ namespace VsChromium.Server.Threads {
 
     private class TaskEntry {
       public TaskId Id { get; set; }
-      public Action Action { get; set; }
+      public Action<CancellationToken> Action { get; set; }
       public DateTime EnqueuedDateTimeUtc { get; set; }
       public Stopwatch StopWatch { get; set; }
     }

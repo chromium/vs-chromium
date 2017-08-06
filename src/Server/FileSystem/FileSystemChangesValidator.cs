@@ -48,7 +48,7 @@ namespace VsChromium.Server.FileSystem {
         Logger.LogInfo("All changes have been filtered out.");
 
         return new FileSystemValidationResult {
-          NoChanges = true,
+          Kind = FileSystemValidationResultKind.NoChanges
         };
       }
 
@@ -56,7 +56,7 @@ namespace VsChromium.Server.FileSystem {
         Logger.LogInfo("At least one change is a project file.");
 
         return new FileSystemValidationResult {
-          UnknownChanges = true,
+          Kind = FileSystemValidationResultKind.UnknownChanges
         };
       }
 
@@ -68,7 +68,7 @@ namespace VsChromium.Server.FileSystem {
           .Where(name => !name.IsNull);
 
         return new FileSystemValidationResult {
-          FileModificationsOnly = true,
+          Kind = FileSystemValidationResultKind.FileModificationsOnly,
           ModifiedFiles = fileNames.ToList()
         };
       }
@@ -76,7 +76,7 @@ namespace VsChromium.Server.FileSystem {
       // All kinds of file changes
       Logger.LogInfo("Some file change events are create or delete events.");
       return new FileSystemValidationResult {
-        VariousFileChanges = true,
+        Kind = FileSystemValidationResultKind.VariousFileChanges,
         FileChanges = new FullPathChanges(filteredChanges)
       };
     }

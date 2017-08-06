@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Threading;
 
 namespace VsChromium.Server.Threads {
   /// <summary>
@@ -16,7 +17,12 @@ namespace VsChromium.Server.Threads {
     /// </summary>
     /// <param name="id"></param>
     /// <param name="task"></param>
-    void Enqueue(TaskId id, Action task);
+    void Enqueue(TaskId id, Action<CancellationToken> task);
+
+    /// <summary>
+    /// Cancel running task if there is one
+    /// </summary>
+    void CancelCurrentTask();
   }
 
   /// <summary>

@@ -44,17 +44,22 @@ namespace VsChromium.Server.FileSystem {
     private readonly IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
     private readonly IOperationProcessor _operationProcessor;
     private readonly ITaskQueue _taskQueue;
-    private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue = new SimpleConcurrentQueue<IList<PathChangeEntry>>();
-    private readonly CancellationTokenTracker _rescanCancellationTracker = new CancellationTokenTracker();
+
+    private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue =
+      new SimpleConcurrentQueue<IList<PathChangeEntry>>();
+
     private readonly FileRegistrationTracker _fileRegistrationTracker;
+
     /// <summary>
     /// Access to this field is serialized through tasks executed on the _taskQueue
     /// </summary>
     private IList<IProject> _registeredProjects = new List<IProject>();
+
     /// <summary>
     /// Access to this field is serialized through tasks executed on the _taskQueue
     /// </summary>
     private FileSystemTreeSnapshot _fileSystemSnapshot;
+
     private int _version;
 
     [ImportingConstructor]
@@ -119,12 +124,12 @@ namespace VsChromium.Server.FileSystem {
 
     private void FileRegistrationTrackerOnProjectListChanged(object o, IList<IProject> projects) {
       Logger.LogInfo("List of projects changed: Enqueuing a partial file system scan");
-      _taskQueue.Enqueue(ProjectListChangedTaskId, () => {
+      _taskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
         // Pass empty changes, as we don't know of any file system changes for
         // existing entries. For new entries, they don't exist in the snapshot,
         // so they will be read form disk
         var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
-        RescanFileSystem(projects, emptyChanges);
+        RescanFileSystem(projects, emptyChanges, cancellationToken);
       });
     }
 
@@ -132,10 +137,10 @@ namespace VsChromium.Server.FileSystem {
       Logger.LogInfo("List of projects changed dramatically: Enqueuing a full file system scan");
       // If we are queuing a task that requires rescanning the entire file system,
       // cancel existing tasks (should be only one really) to avoid wasting time
-      _rescanCancellationTracker.CancelCurrent();
+      _taskQueue.CancelCurrentTask();
 
-      _taskQueue.Enqueue(FullRescanRequiredTaskId, () => {
-        RescanFileSystem(projects, null);
+      _taskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
+        RescanFileSystem(projects, null, cancellationToken);
       });
     }
 
@@ -154,7 +159,9 @@ namespace VsChromium.Server.FileSystem {
       _fileRegistrationTracker.Refresh();
     }
 
-    private void FlushPathsChangedQueueTask() {
+    private void FlushPathsChangedQueueTask(CancellationToken cancellationToken) {
+      cancellationToken.ThrowIfCancellationRequested();
+
       var changes = _pathsChangedQueue
         .DequeueAll()
         .SelectMany(x => x)
@@ -163,31 +170,32 @@ namespace VsChromium.Server.FileSystem {
       var validationResult = new FileSystemChangesValidator(_fileSystemNameFactory, _fileSystem, _projectDiscovery)
         .ProcessPathsChangedEvent(changes);
 
-      if (validationResult.NoChanges) {
-        return;
-      }
+      switch (validationResult.Kind) {
+        case FileSystemValidationResultKind.NoChanges:
+          return;
 
-      if (validationResult.FileModificationsOnly) {
-        OnFilesChanged(new FilesChangedEventArgs {
-          ChangedFiles = validationResult.ModifiedFiles.ToReadOnlyCollection()
-        });
-        return;
-      }
+        case FileSystemValidationResultKind.FileModificationsOnly:
+          OnFilesChanged(new FilesChangedEventArgs {
+            ChangedFiles = validationResult.ModifiedFiles.ToReadOnlyCollection()
+          });
+          return;
 
-      if (validationResult.VariousFileChanges) {
-        RescanFileSystem(_registeredProjects, validationResult.FileChanges);
-        return;
-      }
+        case FileSystemValidationResultKind.VariousFileChanges:
+          RescanFileSystem(_registeredProjects, validationResult.FileChanges, cancellationToken);
+          return;
 
-      if (validationResult.UnknownChanges) {
-        _fileRegistrationTracker.Refresh();
-        return;
-      }
+        case FileSystemValidationResultKind.UnknownChanges:
+          _fileRegistrationTracker.Refresh();
+          return;
 
-      Debug.Assert(false, "What kind of validation result is this?");
+        default:
+          Debug.Assert(false, "What kind of validation result is this?");
+          return;
+      }
     }
 
-    private void RescanFileSystem(IList<IProject> projects, FullPathChanges pathChanges /* may be null */) {
+    private void RescanFileSystem(IList<IProject> projects, FullPathChanges pathChanges /* may be null */,
+      CancellationToken cancellationToken) {
       _registeredProjects = projects;
 
       _operationProcessor.Execute(new OperationHandlers {
@@ -206,7 +214,7 @@ namespace VsChromium.Server.FileSystem {
         Execute = info => {
           // Compute and assign new snapshot
           var oldSnapshot = _fileSystemSnapshot;
-          var newSnapshot = BuildNewFileSystemSnapshot(projects, oldSnapshot, pathChanges, _rescanCancellationTracker.NewToken());
+          var newSnapshot = BuildNewFileSystemSnapshot(projects, oldSnapshot, pathChanges, cancellationToken);
           // Update of new tree (assert calls are serialized).
           Debug.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
           _fileSystemSnapshot = newSnapshot;
@@ -228,7 +236,9 @@ namespace VsChromium.Server.FileSystem {
       });
     }
 
-    private FileSystemTreeSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects, FileSystemTreeSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
+    private FileSystemTreeSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
+      FileSystemTreeSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
+
       using (new TimeElapsedLogger("Computing snapshot delta from list of file changes")) {
         // file name factory
         var fileNameFactory = _fileSystemNameFactory;
@@ -266,32 +276,6 @@ namespace VsChromium.Server.FileSystem {
       return
         1 +
         entry.ChildDirectories.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
-    }
-
-    /// <summary>
-    /// Keeps track of a single cancellation token (the last one created) in a thread safe manner.
-    /// </summary>
-    private class CancellationTokenTracker {
-      private CancellationTokenSource _currentTokenSource;
-
-      /// <summary>
-      /// Create a new token, replacing the previous one (which is now orphan)
-      /// </summary>
-      public CancellationToken NewToken() {
-        var newSource = new CancellationTokenSource();
-        Interlocked.Exchange(ref _currentTokenSource, newSource);
-        return newSource.Token;
-      }
-
-      /// <summary>
-      /// Cancel the last token created (if there was one)
-      /// </summary>
-      public void CancelCurrent() {
-        var currentSource = Interlocked.Exchange(ref _currentTokenSource, null);
-        if (currentSource != null) {
-          currentSource.Cancel();
-        }
-      }
     }
   }
 }

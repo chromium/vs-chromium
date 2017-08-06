@@ -11,14 +11,14 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemContents;
 
-namespace VsChromium.Server.FileSystemDatabase {
+namespace VsChromium.Server.FileSystemDatabase.Builder {
   public class FileDatabaseDebugLogger {
-    private static bool LogPiecesStats = false;
-    private static bool LogContentsStats = false;
-    private static int LogContentsStats_LargeFile_Threshold_Bytes = 500 * 1024;
-    private static int LogContentsStats_FilesByExtensions_Threshold_Bytes = 100 * 1024;
-    private static int LogContentsStats_ExtensionsList_Count = 10;
-    private static int LogContentsStats_ExtensionsList_File_Count = 25;
+    private static readonly bool LogPiecesStats = false;
+    private static readonly bool LogContentsStats = false;
+    private static readonly int LogContentsStats_LargeFile_Threshold_Bytes = 500 * 1024;
+    private static readonly int LogContentsStats_FilesByExtensions_Threshold_Bytes = 100 * 1024;
+    private static readonly int LogContentsStats_ExtensionsList_Count = 10;
+    private static readonly int LogContentsStats_ExtensionsList_File_Count = 25;
 
     public static void LogFilePieces(ICollection<FileData> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
       if (LogPiecesStats && Logger.Info) {

@@ -8,13 +8,16 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystemDatabase {
+  /// <summary>
+  /// Holds a <see cref="FileName"/> and a <see cref="FileContents"/>
+  /// </summary>
   public class FileData {
     private readonly FileName _fileName;
     private FileContents _contents;
 
     public FileData(FileName fileName, FileContents contents) {
       if (fileName == null)
-        throw new ArgumentNullException("fileName");
+        throw new ArgumentNullException(nameof(fileName));
 
       _fileName = fileName;
       _contents = contents;

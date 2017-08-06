@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
+using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 

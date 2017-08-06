@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using VsChromium.Core.Linq;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.FileSystem {
+namespace VsChromium.Server.FileSystem.Builder {
   public class FileSystemSnapshotVisitor {
 
     public static List<KeyValuePair<IProject, DirectorySnapshot>> GetDirectories(FileSystemSnapshot snapshot) {

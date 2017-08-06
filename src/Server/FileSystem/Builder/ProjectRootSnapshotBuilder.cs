@@ -15,7 +15,7 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem.Builder {
   public class ProjectRootSnapshotBuilder {
     private readonly IFileSystem _fileSystem;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;

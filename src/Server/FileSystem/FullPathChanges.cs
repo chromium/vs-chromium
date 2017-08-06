@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Files;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem {
   /// <summary>
   /// Map from FullPath to PathChangeKind.
   /// Note: This class is thread safe

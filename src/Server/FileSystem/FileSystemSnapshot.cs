@@ -7,7 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using VsChromium.Core.Linq;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem {
   /// <summary>
   /// A view of the file system (directories and files) of all the projects
   /// known to the server at the time the snapshot was built.

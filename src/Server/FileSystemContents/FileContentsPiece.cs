@@ -4,7 +4,6 @@
 
 using System.Collections.Generic;
 using VsChromium.Core.Utility;
-using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;

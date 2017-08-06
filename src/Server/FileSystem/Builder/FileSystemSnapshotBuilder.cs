@@ -8,12 +8,11 @@ using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
-using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
-namespace VsChromium.Server.FileSystemScanSnapshot {
+namespace VsChromium.Server.FileSystem.Builder {
   [Export(typeof(IFileSystemSnapshotBuilder))]
   public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
     private readonly IFileSystem _fileSystem;

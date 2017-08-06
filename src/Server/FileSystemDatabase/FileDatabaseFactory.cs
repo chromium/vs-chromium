@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.FileSystemDatabase.Builder;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;

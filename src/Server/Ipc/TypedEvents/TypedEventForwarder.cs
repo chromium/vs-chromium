@@ -13,36 +13,36 @@ using VsChromium.Server.Search;
 namespace VsChromium.Server.Ipc.TypedEvents {
   [Export(typeof(ITypedEventForwarder))]
   public class TypedEventForwarder : ITypedEventForwarder {
-    private readonly IFileSystemProcessor _fileSystemProcessor;
+    private readonly IFileSystemSnapshotManager _fileSystemSnapshotManager;
     private readonly ISearchEngine _searchEngine;
     private readonly ITypedEventSender _typedEventSender;
 
     [ImportingConstructor]
     public TypedEventForwarder(
       ITypedEventSender typedEventSender,
-      IFileSystemProcessor fileSystemProcessor,
+      IFileSystemSnapshotManager fileSystemSnapshotManager,
       ISearchEngine searchEngine) {
       _typedEventSender = typedEventSender;
-      _fileSystemProcessor = fileSystemProcessor;
+      _fileSystemSnapshotManager = fileSystemSnapshotManager;
       _searchEngine = searchEngine;
     }
 
     public void RegisterEventHandlers() {
-      _fileSystemProcessor.SnapshotScanStarted += FileSystemProcessorOnSnapshotScanStarted;
-      _fileSystemProcessor.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
+      _fileSystemSnapshotManager.SnapshotScanStarted += FileSystemSnapshotManagerOnSnapshotScanStarted;
+      _fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
 
       _searchEngine.FilesLoading += SearchEngineOnFilesLoading;
       _searchEngine.FilesLoadingProgress += SearchEngineOnFilesLoadingProgress;
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
-    private void FileSystemProcessorOnSnapshotScanStarted(object sender, OperationInfo e) {
+    private void FileSystemSnapshotManagerOnSnapshotScanStarted(object sender, OperationInfo e) {
       _typedEventSender.SendEventAsync(new FileSystemScanStarted {
         OperationId = e.OperationId
       });
     }
 
-    private void FileSystemProcessorOnSnapshotScanFinished(object sender, SnapshotScanResult e) {
+    private void FileSystemSnapshotManagerOnSnapshotScanFinished(object sender, SnapshotScanResult e) {
       var fileSystemTreeComputed = new FileSystemScanFinished {
         OperationId = e.OperationInfo.OperationId,
         Error = ErrorResponseHelper.CreateErrorResponse(e.Error),

@@ -6,15 +6,15 @@ using VsChromium.Server.FileSystem;
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class UnregisterFileRequestHandler : TypedMessageRequestHandler {
-    private readonly IFileSystemProcessor _processor;
+    private readonly IFileSystemSnapshotManager _snapshotManager;
 
     [ImportingConstructor]
-    public UnregisterFileRequestHandler(IFileSystemProcessor processor) {
-      _processor = processor;
+    public UnregisterFileRequestHandler(IFileSystemSnapshotManager snapshotManager) {
+      _snapshotManager = snapshotManager;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      _processor.UnregisterFile(new FullPath(((UnregisterFileRequest)typedRequest).FileName));
+      _snapshotManager.UnregisterFile(new FullPath(((UnregisterFileRequest)typedRequest).FileName));
 
       return new DoneResponse {
         Info = "processing..."

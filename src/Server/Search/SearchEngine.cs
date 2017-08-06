@@ -52,7 +52,7 @@ namespace VsChromium.Server.Search {
 
     [ImportingConstructor]
     public SearchEngine(
-      IFileSystemProcessor fileSystemProcessor,
+      IFileSystemSnapshotManager fileSystemSnapshotManager,
       IFileSystemNameFactory fileSystemNameFactory,
       ILongRunningFileSystemTaskQueue taskQueue,
       IFileDatabaseFactory fileDatabaseFactory,
@@ -70,8 +70,8 @@ namespace VsChromium.Server.Search {
       _currentFileDatabase = _fileDatabaseFactory.CreateEmpty();
 
       // Setup computing a new state everytime a new tree is computed.
-      fileSystemProcessor.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
-      fileSystemProcessor.FilesChanged += FileSystemProcessorOnFilesChanged;
+      fileSystemSnapshotManager.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
+      fileSystemSnapshotManager.FilesChanged += FileSystemProcessorOnFilesChanged;
     }
 
     public IFileDatabase CurrentFileDatabase {

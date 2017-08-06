@@ -60,8 +60,8 @@
     <Compile Include="FileSystem\FileSystemChangesValidator.cs" />
     <Compile Include="FileSystem\FileSystemValidationResult.cs" />
     <Compile Include="FileSystem\FileSystemNameFactoryExtensions.cs" />
-    <Compile Include="FileSystem\FileSystemProcessor.cs" />
-    <Compile Include="FileSystem\IFileSystemProcessor.cs" />
+    <Compile Include="FileSystem\FileSystemSnapshotManager.cs" />
+    <Compile Include="FileSystem\IFileSystemSnapshotManager.cs" />
     <Compile Include="FileSystemScanSnapshot\IFileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectFileName.cs" />

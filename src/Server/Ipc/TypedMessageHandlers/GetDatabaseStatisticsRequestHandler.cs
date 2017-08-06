@@ -11,19 +11,19 @@ using VsChromium.Server.Search;
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
   public class GetDatabaseStatisticsRequestHandler : TypedMessageRequestHandler {
-    private readonly IFileSystemProcessor _processor;
+    private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 
     [ImportingConstructor]
-    public GetDatabaseStatisticsRequestHandler(IFileSystemProcessor processor, ISearchEngine searchEngine) {
-      _processor = processor;
+    public GetDatabaseStatisticsRequestHandler(IFileSystemSnapshotManager snapshotManager, ISearchEngine searchEngine) {
+      _snapshotManager = snapshotManager;
       _searchEngine = searchEngine;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (GetDatabaseStatisticsRequest)typedRequest;
 
-      var snapshot = _processor.CurrentSnapshot;
+      var snapshot = _snapshotManager.CurrentSnapshot;
       var database = _searchEngine.CurrentFileDatabase;
       return new GetDatabaseStatisticsResponse {
         ProjectCount = snapshot.ProjectRoots.Count,

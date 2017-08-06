@@ -26,9 +26,7 @@ namespace VsChromium.Server.Operations {
         operationHandlers.Execute(info);
       }
       catch (Exception e) {
-        if (e.IsCanceled()) {
-          Logger.LogInfo("Operation {0} has been canceled", info.OperationId);
-        } else {
+        if (!e.IsCanceled()) {
           Logger.LogError(e, "Error executing operation {0}", info.OperationId);
         }
         operationHandlers.OnError(info, e);

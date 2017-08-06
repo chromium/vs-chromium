@@ -219,7 +219,9 @@ namespace VsChromium.Server.FileSystem {
           OnSnapshotComputing(info),
 
         OnError = (info, error) => {
-          Logger.LogInfo("File system rescan error: {0}", error.Message);
+          if (!error.IsCanceled()) {
+            Logger.LogError(error, "File system rescan error");
+          }
           OnSnapshotComputed(new SnapshotScanResult {
             OperationInfo = info,
             Error = error

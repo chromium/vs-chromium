@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
@@ -40,6 +41,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly CodeSearchControl _control;
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
+    // ReSharper disable once NotAccessedField.Local
     private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
     private readonly IProgressBarTracker _progressBarTracker;
     private readonly IStandarImageSourceFactory _standarImageSourceFactory;
@@ -122,7 +124,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void Dispose() {
-      Logger.LogInfo("{0} disposed.", this.GetType().FullName);
+      Logger.LogInfo("{0} disposed.", GetType().FullName);
 
       _globalSettingsProvider.GlobalSettings.PropertyChanged -= GlobalSettingsOnPropertyChanged;
       _eventBus.UnregisterHandler(_eventBusCookie1);
@@ -144,13 +146,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void TextDocumentOpenHandler(object sender, EventArgs eventArgs) {
       var doc = (ITextDocument)sender;
-      var args = (EventArgs)eventArgs;
+      var args = eventArgs;
       _searchResultDocumentChangeTracker.DocumentOpen(doc, args);
     }
 
     private void TextDocumentClosedHandler(object sender, EventArgs eventArgs) {
       var doc = (ITextDocument)sender;
-      var args = (EventArgs)eventArgs;
+      var args = eventArgs;
       _searchResultDocumentChangeTracker.DocumentClose(doc, args);
     }
 
@@ -318,7 +320,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         Id = "RefreshFileSystemTreeRequest",
         Delay = TimeSpan.FromSeconds(0.0),
         OnSend = () => {
-          this._performSearchOnNextRefresh = true;
+          _performSearchOnNextRefresh = true;
         }
       };
 
@@ -641,6 +643,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     class FilePathSearchInfo {
+      [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
       public string RawSearchPattern { get; set; }
       public string SearchPattern { get; set; }
       public int LineNumber { get; set; }

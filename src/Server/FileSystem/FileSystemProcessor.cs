@@ -47,6 +47,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly ITaskQueue _taskQueue;
     private readonly FileRegistrationQueue _fileRegistrationQueue = new FileRegistrationQueue();
     private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue = new SimpleConcurrentQueue<IList<PathChangeEntry>>();
+    private readonly CancellationTokenTracker _cancellationTracker = new CancellationTokenTracker();
     private FileSystemTreeSnapshot _fileSystemSnapshot;
     private int _version;
 
@@ -92,17 +93,17 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
     }
 
-    public event EventHandler<OperationInfo> SnapshotComputing;
-    public event EventHandler<SnapshotComputedResult> SnapshotComputed;
+    public event EventHandler<OperationInfo> SnapshotScanStarted;
+    public event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;
 
     protected virtual void OnSnapshotComputing(OperationInfo e) {
-      EventHandler<OperationInfo> handler = SnapshotComputing;
+      EventHandler<OperationInfo> handler = SnapshotScanStarted;
       if (handler != null) handler(this, e);
     }
 
-    protected virtual void OnSnapshotComputed(SnapshotComputedResult e) {
-      EventHandler<SnapshotComputedResult> handler = SnapshotComputed;
+    protected virtual void OnSnapshotComputed(SnapshotScanResult e) {
+      EventHandler<SnapshotScanResult> handler = SnapshotScanFinished;
       if (handler != null) handler(this, e);
     }
 
@@ -122,7 +123,7 @@ namespace VsChromium.Server.FileSystem {
 
     private void RefreshTask() {
       ValidateKnownFiles();
-      RecomputeGraph(null /* Force refresh all*/);
+      EnqueueBuildNewFileSystemSnapshotTask(null /* Force refresh all*/);
     }
 
     private void DirectoryChangeWatcherErrorTask() {
@@ -130,7 +131,7 @@ namespace VsChromium.Server.FileSystem {
       _pathsChangedQueue.DequeueAll();
 
       // Rescan all projects from scratch.
-      RecomputeGraph(null /* force rescan*/);
+      EnqueueBuildNewFileSystemSnapshotTask(null /* force rescan*/);
     }
 
     private void FlushPathsChangedQueueTask() {
@@ -154,12 +155,12 @@ namespace VsChromium.Server.FileSystem {
       }
 
       if (validationResult.VariousFileChanges) {
-        RecomputeGraph(validationResult.FileChanges);
+        EnqueueBuildNewFileSystemSnapshotTask(validationResult.FileChanges);
         return;
       }
 
       if (validationResult.UnknownChanges) {
-        RecomputeGraph(null /* force rescan*/);
+        EnqueueBuildNewFileSystemSnapshotTask(null /* force rescan*/);
         return;
       }
 
@@ -210,7 +211,7 @@ namespace VsChromium.Server.FileSystem {
         // existing entries. For new entries, they don't exist in the snapshot,
         // so they will be read form disk
         var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
-        RecomputeGraph(emptyChanges);
+        EnqueueBuildNewFileSystemSnapshotTask(emptyChanges);
       }
     }
 
@@ -254,19 +255,27 @@ namespace VsChromium.Server.FileSystem {
       return false;
     }
 
-    private void RecomputeGraph(FullPathChanges pathChanges) {
+    private void EnqueueBuildNewFileSystemSnapshotTask(FullPathChanges pathChanges) {
+      if (pathChanges == null) {
+        // If we are queuing a task that requires rescanning the entire file system,
+        // cancel existing tasks (should be only one really) to avoid wasting time
+        _cancellationTracker.CancelCurrent();
+      }
       _operationProcessor.Execute(new OperationHandlers {
+
         OnBeforeExecute = info =>
           OnSnapshotComputing(info),
+
         OnError = (info, error) =>
-          OnSnapshotComputed(new SnapshotComputedResult {
+          OnSnapshotComputed(new SnapshotScanResult {
             OperationInfo = info,
             Error = error
           }),
+
         Execute = info => {
           // Compute and assign new snapshot
           var oldSnapshot = _fileSystemSnapshot;
-          var newSnapshot = ComputeNewSnapshot(oldSnapshot, pathChanges);
+          var newSnapshot = BuildNewFileSystemSnapshot(oldSnapshot, pathChanges, _cancellationTracker.NewToken());
           // Update of new tree (assert calls are serialized).
           Debug.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
           _fileSystemSnapshot = newSnapshot;
@@ -278,7 +287,7 @@ namespace VsChromium.Server.FileSystem {
           }
 
           // Post event
-          OnSnapshotComputed(new SnapshotComputedResult {
+          OnSnapshotComputed(new SnapshotScanResult {
             OperationInfo = info,
             PreviousSnapshot = oldSnapshot,
             FullPathChanges = pathChanges,
@@ -288,7 +297,9 @@ namespace VsChromium.Server.FileSystem {
       });
     }
 
-    private FileSystemTreeSnapshot ComputeNewSnapshot(FileSystemTreeSnapshot oldSnapshot, FullPathChanges pathChanges) {
+    private FileSystemTreeSnapshot BuildNewFileSystemSnapshot(FileSystemTreeSnapshot oldSnapshot,
+                                                              FullPathChanges pathChanges,
+                                                              CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Computing snapshot delta from list of file changes")) {
         // Get list of currently registered files.
         var rootFiles = new List<FullPath>();
@@ -311,7 +322,8 @@ namespace VsChromium.Server.FileSystem {
           oldSnapshot,
           pathChanges,
           rootFiles,
-          Interlocked.Increment(ref _version));
+          Interlocked.Increment(ref _version),
+          cancellationToken);
 
         // Monitor all project roots for file changes.
         var newRoots = newSnapshot.ProjectRoots
@@ -332,6 +344,32 @@ namespace VsChromium.Server.FileSystem {
       return
         1 +
         entry.ChildDirectories.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
+    }
+
+    /// <summary>
+    /// Keeps track of a single cancellation token (the last one created) in a thread safe manner.
+    /// </summary>
+    private class CancellationTokenTracker {
+      private CancellationTokenSource _currentTokenSource;
+
+      /// <summary>
+      /// Create a new token, replacing the previous one (which is now orphan)
+      /// </summary>
+      public CancellationToken NewToken() {
+        var newSource = new CancellationTokenSource();
+        Interlocked.Exchange(ref _currentTokenSource, newSource);
+        return newSource.Token;
+      }
+
+      /// <summary>
+      /// Cancel the last token created (if there was one)
+      /// </summary>
+      public void CancelCurrent() {
+        var currentSource = Interlocked.Exchange(ref _currentTokenSource, null);
+        if (currentSource != null) {
+          currentSource.Cancel();
+        }
+      }
     }
   }
 }

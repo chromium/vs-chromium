@@ -6,8 +6,8 @@ using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
-  [ProtoInclude(10, typeof(FileSystemTreeComputing))]
-  [ProtoInclude(11, typeof(FileSystemTreeComputed))]
+  [ProtoInclude(10, typeof(FileSystemScanStarted))]
+  [ProtoInclude(11, typeof(FileSystemScanFinished))]
   [ProtoInclude(12, typeof(SearchEngineFilesLoading))]
   [ProtoInclude(13, typeof(SearchEngineFilesLoadingProgress))]
   [ProtoInclude(14, typeof(SearchEngineFilesLoaded))]

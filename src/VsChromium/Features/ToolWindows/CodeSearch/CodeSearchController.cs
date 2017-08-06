@@ -21,6 +21,7 @@ using VsChromium.Core.Threads;
 using VsChromium.Features.BuildOutputAnalyzer;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
+using VsChromium.ServerProxy;
 using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -30,12 +31,16 @@ using TreeView = System.Windows.Controls.TreeView;
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class CodeSearchController : ICodeSearchController {
     private static class OperationsIds {
+      public const string FileSystemScanning = "file-system-scanning";
+      public const string FilesLoading = "files-loading";
       public const string SearchCode = "files-contents-search";
       public const string SearchFilePaths = "file-names-search";
     }
 
     private readonly CodeSearchControl _control;
     private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly IFileSystemTreeSource _fileSystemTreeSource;
+    private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
     private readonly IProgressBarTracker _progressBarTracker;
     private readonly IStandarImageSourceFactory _standarImageSourceFactory;
     private readonly IWindowsExplorer _windowsExplorer;
@@ -65,6 +70,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       CodeSearchControl control,
       IUIRequestProcessor uiRequestProcessor,
       IUIDelayedOperationProcessor uiDelayedOperationProcessor,
+      IFileSystemTreeSource fileSystemTreeSource,
+      ITypedRequestProcessProxy typedRequestProcessProxy,
       IProgressBarTracker progressBarTracker,
       IStandarImageSourceFactory standarImageSourceFactory,
       IWindowsExplorer windowsExplorer,
@@ -78,6 +85,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IVsEditorAdaptersFactoryService adaptersFactoryService) {
       _control = control;
       _uiRequestProcessor = uiRequestProcessor;
+      _fileSystemTreeSource = fileSystemTreeSource;
+      _typedRequestProcessProxy = typedRequestProcessProxy;
       _progressBarTracker = progressBarTracker;
       _standarImageSourceFactory = standarImageSourceFactory;
       _windowsExplorer = windowsExplorer;
@@ -105,6 +114,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBusCookie1 = _eventBus.RegisterHandler("TextDocument-Open", TextDocumentOpenHandler);
       _eventBusCookie2 = _eventBus.RegisterHandler("TextDocument-Closed", TextDocumentClosedHandler);
       _eventBusCookie3 = _eventBus.RegisterHandler("TextDocumentFile-FileActionOccurred", TextDocumentFileActionOccurred);
+
+      typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
+
+      fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
+      fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
     }
 
     public void Dispose() {
@@ -114,6 +128,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBus.UnregisterHandler(_eventBusCookie1);
       _eventBus.UnregisterHandler(_eventBusCookie2);
       _eventBus.UnregisterHandler(_eventBusCookie3);
+    }
+
+    private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
+      WpfUtilities.Post(_control, () => {
+        OnFileSystemTreeScanSuccess(fileSystemTree);
+      });
+    }
+
+    private void FileSystemTreeSource_OnErrorReceived(ErrorResponse errorResponse) {
+      WpfUtilities.Post(_control, () => {
+        OnFileSystemTreeScanError(errorResponse);
+      });
     }
 
     private void TextDocumentOpenHandler(object sender, EventArgs eventArgs) {
@@ -168,7 +194,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
-    public void OnFileSystemTreeComputing() {
+    public void OnFileSystemTreeScanStarted() {
       // Display a generic "loading" message the first time a file system tree
       // is loaded.
       if (!ViewModel.FileSystemTreeAvailable) {
@@ -185,9 +211,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public void OnFileSystemTreeComputed(FileSystemTree tree) {
+    public void OnFileSystemTreeScanSuccess(FileSystemTree tree) {
       ViewModel.FileSystemTreeAvailable = (tree.Root.Entries.Count > 0);
-      this._currentFileSystemTreeVersion = tree.Version;
+      _currentFileSystemTreeVersion = tree.Version;
 
       if (ViewModel.FileSystemTreeAvailable) {
         var items = CreateInfromationMessages(
@@ -212,9 +238,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public void OnFileSystemTreeError(ErrorResponse error) {
+    public void OnFileSystemTreeScanError(ErrorResponse error) {
       var viewModel = CreateErrorResponseViewModel(error);
       ViewModel.SetInformationMessages(viewModel);
+    }
+
+    public void OnFileSystemTreeScanFinished() {
+      // Nothing to do, since we already either got a success or error notification.
     }
 
     public void OnFilesLoading() {
@@ -851,6 +881,80 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return;
       BringItemViewModelToView(item);
       ExecuteOpenCommandForItem(item);
+    }
+
+    public void Start() {
+      _fileSystemTreeSource.Fetch();
+    }
+
+    private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
+      DispatchFileSystemTreeScanStarted(typedEvent);
+      DispatchFileSystemTreeScanFinished(typedEvent);
+      DispatchSearchEngineFilesLoading(typedEvent);
+      DispatchSearchEngineFilesLoadingProgress(typedEvent);
+      DispatchSearchEngineFilesLoaded(typedEvent);
+    }
+
+    private void DispatchFileSystemTreeScanStarted(TypedEvent typedEvent) {
+      var @event = typedEvent as FileSystemScanStarted;
+      if (@event != null) {
+        WpfUtilities.Post(_control, () => {
+          Logger.LogInfo("FileSystemTree is being computed on server.");
+          _progressBarTracker.Start(OperationsIds.FileSystemScanning,
+            "Loading files and directory names from file system.");
+          OnFileSystemTreeScanStarted();
+        });
+      }
+    }
+
+    private void DispatchFileSystemTreeScanFinished(TypedEvent typedEvent) {
+      var @event = typedEvent as FileSystemScanFinished;
+      if (@event != null) {
+        WpfUtilities.Post(_control, () => {
+          _progressBarTracker.Stop(OperationsIds.FileSystemScanning);
+          if (@event.Error != null) {
+            OnFileSystemTreeScanError(@event.Error);
+            return;
+          }
+          Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
+        });
+      }
+    }
+
+    private void DispatchSearchEngineFilesLoading(TypedEvent typedEvent) {
+      var @event = typedEvent as SearchEngineFilesLoading;
+      if (@event != null) {
+        WpfUtilities.Post(_control, () => {
+          OnFilesLoading();
+          Logger.LogInfo("Search engine is loading file database on server.");
+          _progressBarTracker.Start(OperationsIds.FilesLoading, "Loading files contents from file system.");
+        });
+      }
+    }
+
+    private void DispatchSearchEngineFilesLoadingProgress(TypedEvent typedEvent) {
+      var @event = typedEvent as SearchEngineFilesLoadingProgress;
+      if (@event != null) {
+        WpfUtilities.Post(_control, () => {
+          OnFilesLoadingProgress();
+          Logger.LogInfo("Search engine has produced intermediate file database index on server.");
+        });
+      }
+    }
+
+    private void DispatchSearchEngineFilesLoaded(TypedEvent typedEvent) {
+      var @event = typedEvent as SearchEngineFilesLoaded;
+      if (@event != null) {
+        WpfUtilities.Post(_control, () => {
+          _progressBarTracker.Stop(OperationsIds.FilesLoading);
+          OnFilesLoaded(@event.TreeVersion);
+          if (@event.Error != null) {
+            OnFileSystemTreeScanError(@event.Error);
+            return;
+          }
+          Logger.LogInfo("Search engine is done loading file database on server.");
+        });
+      }
     }
   }
 }

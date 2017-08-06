@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
+using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemNames;
 
@@ -13,6 +14,7 @@ namespace VsChromium.Server.FileSystemSnapshot {
       FileSystemTreeSnapshot oldSnapshot,
       FullPathChanges pathChanges /* may be null */,
       IList<FullPath> rootFiles, 
-      int version);
+      int version,
+      CancellationToken cancellationToken);
   }
 }

@@ -37,6 +37,7 @@
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
     <Compile Include="FileSystemSnapshot\DirectoryData.cs" />
+    <Compile Include="FileSystemSnapshot\ProjectRootSnapshotBuilder.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshotNameFactory.cs" />
     <Compile Include="FileSystemNames\DirectoryName.cs" />
     <Compile Include="FileSystemNames\FileName.cs" />
@@ -60,7 +61,7 @@
     <Compile Include="FileSystem\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectFileName.cs" />
     <Compile Include="FileSystem\ProjectPathComparer.cs" />
-    <Compile Include="FileSystem\SnapshotComputedResult.cs" />
+    <Compile Include="FileSystem\SnapshotScanResult.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDatabaseStatisticsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDirectoryStatisticsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\RefreshFileSystemTreeRequestHandler.cs" />

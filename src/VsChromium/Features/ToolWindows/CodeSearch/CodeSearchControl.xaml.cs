@@ -13,8 +13,6 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
@@ -37,11 +35,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private ScrollViewer _treeViewScrollViewer;
 
     private readonly IProgressBarTracker _progressBarTracker;
-    private ITypedRequestProcessProxy _typedRequestProcessProxy;
     private IUIRequestProcessor _uiRequestProcessor;
     private bool _swallowsRequestBringIntoView = true;
     private CodeSearchController _controller;
-    private IFileSystemTreeSource _fileSystemTreeSource;
 
     public CodeSearchControl() {
       InitializeComponent();
@@ -82,19 +78,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
       _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
-      _typedRequestProcessProxy = componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>();
-      _fileSystemTreeSource = componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>();
-
-      _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
-      _fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
-      _fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
-
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
       _controller = new CodeSearchController(
         this,
         _uiRequestProcessor,
         componentModel.DefaultExportProvider.GetExportedValue<IUIDelayedOperationProcessor>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>(),
+        componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>(),
         _progressBarTracker,
         standarImageSourceFactory,
         componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>(),
@@ -106,12 +97,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>(),
         componentModel.DefaultExportProvider.GetExportedValue<IBuildOutputParser>(),
         componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>());
-
+      _controller.Start();
       // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
       // exposes pictures from Visual Studio resources.
       ViewModel.ImageSourceFactory = standarImageSourceFactory;
-
-      _fileSystemTreeSource.Fetch();
 
       // Hookup property changed notifier
       ViewModel.PropertyChanged += ViewModel_PropertyChanged;
@@ -174,103 +163,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
-      DispatchFileSystemTreeComputing(typedEvent);
-      DispatchFileSystemTreeComputed(typedEvent);
-      DispatchSearchEngineFilesLoading(typedEvent);
-      DispatchSearchEngineFilesLoadingProgress(typedEvent);
-      DispatchSearchEngineFilesLoaded(typedEvent);
-    }
-
-    private void DispatchFileSystemTreeComputing(TypedEvent typedEvent) {
-      var @event = typedEvent as FileSystemTreeComputing;
-      if (@event != null) {
-        WpfUtilities.Post(this, () => {
-          Logger.LogInfo("FileSystemTree is being computed on server.");
-          _progressBarTracker.Start(OperationsIds.FileSystemTreeComputing,
-                                    "Loading files and directory names from file system.");
-          Controller.OnFileSystemTreeComputing();
-        });
-      }
-    }
-
-    private void DispatchFileSystemTreeComputed(TypedEvent typedEvent) {
-      var @event = typedEvent as FileSystemTreeComputed;
-      if (@event != null) {
-        WpfUtilities.Post(this, () => {
-          _progressBarTracker.Stop(OperationsIds.FileSystemTreeComputing);
-          if (@event.Error != null) {
-            Controller.OnFileSystemTreeError(@event.Error);
-            return;
-          }
-          Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
-        });
-      }
-    }
-
-    private void DispatchSearchEngineFilesLoading(TypedEvent typedEvent) {
-      var @event = typedEvent as SearchEngineFilesLoading;
-      if (@event != null) {
-        Wpf.WpfUtilities.Post(this, () => {
-          Controller.OnFilesLoading();
-          Logger.LogInfo("Search engine is loading file database on server.");
-          _progressBarTracker.Start(OperationsIds.FilesLoading, "Loading files contents from file system.");
-        });
-      }
-    }
-
-    private void DispatchSearchEngineFilesLoadingProgress(TypedEvent typedEvent) {
-      var @event = typedEvent as SearchEngineFilesLoadingProgress;
-      if (@event != null) {
-        Wpf.WpfUtilities.Post(this, () => {
-          Controller.OnFilesLoadingProgress();
-          Logger.LogInfo("Search engine has produced intermediate file database index on server.");
-        });
-      }
-    }
-
-    private void DispatchSearchEngineFilesLoaded(TypedEvent typedEvent) {
-      var @event = typedEvent as SearchEngineFilesLoaded;
-      if (@event != null) {
-        WpfUtilities.Post(this, () => {
-          _progressBarTracker.Stop(OperationsIds.FilesLoading);
-          Controller.OnFilesLoaded(@event.TreeVersion);
-          if (@event.Error != null) {
-            Controller.OnFileSystemTreeError(@event.Error);
-            return;
-          }
-          Logger.LogInfo("Search engine is done loading file database on server.");
-        });
-      }
-    }
-
-    private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
-      WpfUtilities.Post(this, () => {
-        Controller.OnFileSystemTreeComputed(fileSystemTree);
-      });
-    }
-
-    private void FileSystemTreeSource_OnErrorReceived(ErrorResponse errorResponse) {
-      WpfUtilities.Post(this, () => {
-        Controller.OnFileSystemTreeError(errorResponse);
-      });
-    }
-
     private class ComboBoxInfo {
       public ComboBoxInfo() {
-        this.InitialItems = new List<string>();
+        InitialItems = new List<string>();
       }
 
       public Action<string> TextChanged { get; set; }
       public Action<bool> SearchFunction { get; set; }
       public UIElement PreviousElement { get; set; }
       public UIElement NextElement { get; set; }
-      public List<string> InitialItems { get; set; }
-    }
-
-    private static class OperationsIds {
-      public const string FileSystemTreeComputing = "file-system-collecting";
-      public const string FilesLoading = "files-loading";
+      public List<string> InitialItems { get; }
     }
 
     public void SwallowsRequestBringIntoView(bool value) {

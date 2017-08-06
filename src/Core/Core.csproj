@@ -117,11 +117,12 @@
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeRequest.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\SearchEngineFilesLoadingProgress.cs" />
     <Compile Include="Ipc\TypedMessages\UnregisterFileRequest.cs" />
     <Compile Include="Ipc\TypedMessages\FileExtract.cs" />
     <Compile Include="Ipc\TypedMessages\FilePositionSpan.cs" />
-    <Compile Include="Ipc\TypedMessages\FileSystemTreeComputing.cs" />
-    <Compile Include="Ipc\TypedMessages\FileSystemTreeComputed.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSystemScanStarted.cs" />
+    <Compile Include="Ipc\TypedMessages\FileSystemScanFinished.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileExtractsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileExtractsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\PairedTypedEvent.cs" />
@@ -254,7 +255,7 @@
     <Compile Include="Processes\ProcessCreator.cs" />
     <Compile Include="Win32\Processes\SafeProcessHandle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Ipc\ProtoBuf\ProtoSerializer.cs" />
+    <Compile Include="Ipc\ProtoBuf\ProtoBufSerializer.cs" />
     <Compile Include="Win32\Processes\NativeEnums.cs" />
     <Compile Include="Win32\Shell\NativeMethods.cs" />
     <Compile Include="Win32\Shell\SHFileInfo.cs" />

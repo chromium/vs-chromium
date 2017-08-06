@@ -26,6 +26,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// Split large files in chunks of maximum <code>ChunkSize</code> bytes.
     /// </summary>
     private const int ChunkSize = 100 * 1024;
+
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
@@ -47,9 +48,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges,
       Action<IFileDatabaseSnapshot> onIntermadiateResult) {
-      using (var logger = new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
+      using (var logger =
+        new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
 
-        var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
+        var fileDatabase = (FileDatabaseSnapshot) previousFileDatabaseSnapshot;
 
         // Compute list of files from tree
         ComputeFileCollection(newSnapshot);
@@ -91,13 +93,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    public IFileDatabaseSnapshot BuildWithChangedFiles(
-      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
-      IEnumerable<ProjectFileName> changedFiles,
-      Action onLoading,
-      Action onLoaded) {
+    public IFileDatabaseSnapshot BuildWithChangedFiles(IFileDatabaseSnapshot previousFileDatabaseSnapshot,
+      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded) {
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
-        var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
+        var fileDatabase = (FileDatabaseSnapshot) previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.
         var filesToRead = changedFiles
@@ -133,17 +132,17 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
         // the dictionary will be used in incremental updates where FileName instances
         // may be new instances from a complete file system enumeration.
-        var files = new Dictionary<FileName, FileData>(_files.Count);
-        var filesWithContentsArray = new FileData[_files.Count];
+        var files = new Dictionary<FileName, FileWithContents>(_files.Count);
+        var filesWithContentsArray = new FileWithContents[_files.Count];
         int filesWithContentsIndex = 0;
         foreach (var kvp in _files) {
-          var fileData = kvp.Value.FileData;
+          var fileData = kvp.Value.FileWithContents;
           files.Add(kvp.Key, fileData);
           if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
             filesWithContentsArray[filesWithContentsIndex++] = fileData;
           }
         }
-        var filesWithContents = new ListSegment<FileData>(filesWithContentsArray, 0, filesWithContentsIndex);
+        var filesWithContents = new ListSegment<FileWithContents>(filesWithContentsArray, 0, filesWithContentsIndex);
         var searchableContentsCollection = CreateFilePieces(filesWithContents);
         FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
@@ -168,13 +167,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// Note: This code inside this method is not the cleanest, but it is
     /// written in a way that tries to minimiz the # of large array allocations.
     /// </summary>
-    private static IList<IFileContentsPiece> CreateFilePieces(ICollection<FileData> filesWithContents) {
+    private static IList<IFileContentsPiece> CreateFilePieces(ICollection<FileWithContents> filesWithContents) {
       // Factory for file identifiers
       int currentFileId = 0;
       Func<int> fileIdFactory = () => currentFileId++;
 
       // Predicate to figure out if a file is "small"
-      Func<FileData, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
+      Func<FileWithContents, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
 
       // Count the total # of small and large files, while splitting large files
       // into their fragments.
@@ -183,8 +182,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       foreach (var fileData in filesWithContents) {
         if (isSmallFile(fileData)) {
           smallFilesCount++;
-        }
-        else {
+        } else {
           var splitFileContents = SplitFileContents(fileData, fileIdFactory());
           largeFiles.AddRange(splitFileContents);
         }
@@ -216,9 +214,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return filePieces;
     }
 
-    private static List<FileData> FilterFilesWithContents(ICollection<FileData> files) {
+    private static List<FileWithContents> FilterFilesWithContents(ICollection<FileWithContents> files) {
       // Create filesWithContents with minimum memory allocations and copying.
-      var filesWithContents = new List<FileData>(files.Count);
+      var filesWithContents = new List<FileWithContents>(files.Count);
       filesWithContents.AddRange(files.Where(x => x.Contents != null && x.Contents.ByteLength > 0));
       return filesWithContents;
     }
@@ -226,13 +224,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// <summary>
     ///  Create chunks of 100KB for files larger than 100KB.
     /// </summary>
-    private static IEnumerable<FileContentsPiece> SplitFileContents(FileData fileData, int fileId) {
-      var range = fileData.Contents.TextRange;
+    private static IEnumerable<FileContentsPiece> SplitFileContents(FileWithContents fileWithContents, int fileId) {
+      var range = fileWithContents.Contents.TextRange;
       while (range.Length > 0) {
         // TODO(rpaquay): Be smarter and split around new lines characters.
         var chunkLength = Math.Min(range.Length, ChunkSize);
         var chunk = new TextRange(range.Position, chunkLength);
-        yield return fileData.Contents.CreatePiece(fileData.FileName, fileId, chunk);
+        yield return fileWithContents.Contents.CreatePiece(fileWithContents.FileName, fileId, chunk);
 
         range = new TextRange(chunk.EndPosition, range.EndPosition - chunk.EndPosition);
       }
@@ -264,7 +262,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         foreach (var directory in directories.ToForeachEnum()) {
           foreach (var fileName in directory.Value.ChildFiles.ToForeachEnum()) {
-            files.Add(fileName, new ProjectFileData(directory.Key, new FileData(fileName, null)));
+            files.Add(fileName, new ProjectFileData(directory.Key, new FileWithContents(fileName, null)));
           }
         }
 
@@ -291,16 +289,16 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       using (var logger = new TimeElapsedLogger("Loading file contents from disk")) {
         using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
           _files.AsParallel().ForAll(fileEntry => {
-            Debug.Assert(fileEntry.Value.FileData.Contents == null);
+            Debug.Assert(fileEntry.Value.FileWithContents.Contents == null);
 
             if (progress.Step()) {
               progress.DisplayProgress((i, n) =>
-                  string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
+                string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
             }
 
             var contents = LoadSingleFileContents(loadingInfo, fileEntry.Value);
             if (contents != null) {
-              fileEntry.Value.FileData.UpdateContents(contents);
+              fileEntry.Value.FileWithContents.UpdateContents(contents);
             }
           });
         }
@@ -371,23 +369,22 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       var fileContents = _fileContentsFactory.ReadFileContents(projectFileData.FileName.FullPath);
       if (fileContents is BinaryFileContents) {
         Interlocked.Increment(ref loadingInfo.LoadedBinaryFileCount);
-      }
-      else {
+      } else {
         Interlocked.Increment(ref loadingInfo.LoadedTextFileCount);
       }
       return loadingInfo.FileContentsMemoization.Get(projectFileData.FileName, fileContents);
     }
 
-    private bool IsFileContentsUpToDate(FullPathChanges fullPathChanges, FileData oldFileData) {
-      Debug.Assert(oldFileData.Contents != null);
+    private bool IsFileContentsUpToDate(FullPathChanges fullPathChanges, FileWithContents oldFileWithContents) {
+      Debug.Assert(oldFileWithContents.Contents != null);
 
-      var fullPath = oldFileData.FileName.FullPath;
+      var fullPath = oldFileWithContents.FileName.FullPath;
 
       if (fullPathChanges != null) {
         // We don't get file change events for file in symlinks, so we can't
         // rely on fullPathChanges contents for our heuristic of avoiding file
         // system access.
-        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(_directories, oldFileData.FileName)) {
+        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(_directories, oldFileWithContents.FileName)) {
           return fullPathChanges.GetPathChangeKind(fullPath) == PathChangeKind.None;
         }
       }
@@ -397,31 +394,38 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return
         (fi.Exists) &&
         (fi.IsFile) &&
-        (fi.LastWriteTimeUtc == oldFileData.Contents.UtcLastModified);
+        (fi.LastWriteTimeUtc == oldFileWithContents.Contents.UtcLastModified);
     }
 
     /// <summary>
-    /// Utility class to store a FileData instance along with the IProject
+    /// Utility class to store a FileWithContents instance along with the IProject
     /// instance the file is coming from. This is needed because an IProject
     /// instance is needed during snapshot computation to determine if a file is
     /// searchable.
     /// </summary>
     private struct ProjectFileData {
       private readonly IProject _project;
-      private readonly FileData _fileData;
+      private readonly FileWithContents _fileWithContents;
 
-      public ProjectFileData(IProject project, FileData fileData) {
+      public ProjectFileData(IProject project, FileWithContents fileWithContents) {
         _project = project;
-        _fileData = fileData;
+        _fileWithContents = fileWithContents;
       }
 
-      public IProject Project { get { return _project; } }
-      public FileData FileData { get { return _fileData; } }
-      public FileName FileName { get { return _fileData.FileName; } }
+      public IProject Project {
+        get { return _project; }
+      }
+
+      public FileWithContents FileWithContents {
+        get { return _fileWithContents; }
+      }
+
+      public FileName FileName {
+        get { return _fileWithContents.FileName; }
+      }
+
       public bool IsSearchable {
-        get {
-          return _project.IsFileSearchable(_fileData.FileName);
-        }
+        get { return _project.IsFileSearchable(_fileWithContents.FileName); }
       }
     }
 
@@ -431,10 +435,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// </summary>
     private class PartitionIndicesGenerator {
       private readonly int _count;
+
       // Size of paritions (rounded up)
       private readonly int _partitionSize;
+
       // Last index of partitions that are of filled up to partition size
       private readonly int _fullPartitionsEndIndex;
+
       private int _currentIndex;
 
       public PartitionIndicesGenerator(int count, int partitionCount) {

@@ -32,7 +32,7 @@ namespace VsChromium.Server.Search {
     private static readonly TaskId UpdateFileContentsTaskId = new TaskId("UpdateFileContentsTaskId");
     private static readonly TaskId ComputeNewStatedId = new TaskId("ComputeNewStateId");
     private static readonly TaskId GarbageCollectId = new TaskId("GarbageCollectId");
-    private readonly IFileDatabaseFactory _fileDatabaseFactory;
+    private readonly IFileDatabaseSnapshotFactory _fileDatabaseSnapshotFactory;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly ICompiledTextSearchDataFactory _compiledTextSearchDataFactory;
@@ -55,19 +55,19 @@ namespace VsChromium.Server.Search {
       IFileSystemSnapshotManager fileSystemSnapshotManager,
       IFileSystemNameFactory fileSystemNameFactory,
       ILongRunningFileSystemTaskQueue taskQueue,
-      IFileDatabaseFactory fileDatabaseFactory,
+      IFileDatabaseSnapshotFactory fileDatabaseSnapshotFactory,
       IProjectDiscovery projectDiscovery,
       ICompiledTextSearchDataFactory compiledTextSearchDataFactory,
       IOperationProcessor operationProcessor) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _taskQueue = taskQueue;
-      _fileDatabaseFactory = fileDatabaseFactory;
+      _fileDatabaseSnapshotFactory = fileDatabaseSnapshotFactory;
       _projectDiscovery = projectDiscovery;
       _compiledTextSearchDataFactory = compiledTextSearchDataFactory;
       _operationProcessor = operationProcessor;
 
       // Create a "Null" state
-      _currentFileDatabaseSnapshot = _fileDatabaseFactory.CreateEmpty();
+      _currentFileDatabaseSnapshot = _fileDatabaseSnapshotFactory.CreateEmpty();
 
       // Setup computing a new state everytime a new tree is computed.
       fileSystemSnapshotManager.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
@@ -261,7 +261,7 @@ namespace VsChromium.Server.Search {
           });
         },
         Execute = info => {
-          _currentFileDatabaseSnapshot = _fileDatabaseFactory.CreateWithChangedFiles(
+          _currentFileDatabaseSnapshot = _fileDatabaseSnapshotFactory.CreateWithChangedFiles(
             _currentFileDatabaseSnapshot,
             files,
             onLoading: () => OnFilesLoading(operationInfo),
@@ -461,9 +461,8 @@ namespace VsChromium.Server.Search {
         Execute = info => {
           using (new TimeElapsedLogger("Computing new state of file database")) {
             var oldState = _currentFileDatabaseSnapshot;
-            var newState = _fileDatabaseFactory.CreateIncremental(
+            var newState = _fileDatabaseSnapshotFactory.CreateIncremental(
               oldState,
-              previousSnapshot,
               newSnapshot,
               fullPathChanges,
               fileDatabase => {

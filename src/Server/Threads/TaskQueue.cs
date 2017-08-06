@@ -31,7 +31,7 @@ namespace VsChromium.Server.Threads {
         StopWatch = new Stopwatch(),
       };
 
-      Logger.LogInfo("Queue \"{0}\": Enqueing task \"{1}\"", _description, entry.Id.Description);
+      Logger.LogInfo("Queue \"{0}\": Enqueuing task \"{1}\"", _description, entry.Id.Description);
 
       bool isFirstTask;
       lock (_lock) {

@@ -19,7 +19,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       return new GetFileSystemResponse {
-        Tree = _processor.GetCurrentSnapshot().ToIpcFileSystemTree()
+        Tree = _processor.CurrentSnapshot.ToIpcFileSystemTree()
       };
     }
   }

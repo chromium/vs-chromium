@@ -17,31 +17,26 @@ namespace VsChromium.Server.FileSystemSnapshot {
   [Export(typeof(IFileSystemSnapshotBuilder))]
   public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
     private readonly IFileSystem _fileSystem;
-    private readonly IProjectDiscovery _projectDiscovery;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
     [ImportingConstructor]
     public FileSystemSnapshotBuilder(
       IFileSystem fileSystem,
-      IProjectDiscovery projectDiscovery,
       IProgressTrackerFactory progressTrackerFactory) {
       _fileSystem = fileSystem;
-      _projectDiscovery = projectDiscovery;
       _progressTrackerFactory = progressTrackerFactory;
     }
 
     public FileSystemTreeSnapshot Compute(IFileSystemNameFactory fileNameFactory,
                                           FileSystemTreeSnapshot oldSnapshot,
                                           FullPathChanges pathChanges/* may be null */,
-                                          IList<FullPath> rootFiles,
+                                          IList<IProject> projects,
                                           int version,
                                           CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested(); // cancellation
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         var projectRoots =
-          rootFiles
-            .Select(filename => _projectDiscovery.GetProject(filename))
-            .Where(project => project != null)
+          projects
             .Distinct(new ProjectPathComparer())
             .Select(project => {
               cancellationToken.ThrowIfCancellationRequested(); // cancellation

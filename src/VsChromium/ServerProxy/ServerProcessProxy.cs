@@ -76,24 +76,34 @@ namespace VsChromium.ServerProxy {
     }
 
     private void CreateServerProcess() {
-      _serverProcessLauncher.CreateProxy(PreCreateProxy, AfterProxyCreated);
+        _serverProcessLauncher.CreateProxy(PreCreateProxy, AfterProxyCreated);
     }
 
+    /// <summary>
+    /// Note: Calls are serialized by _serverProcessLauncher, so no need to lock
+    /// </summary>
     private IEnumerable<string> PreCreateProxy() {
       Logger.LogInfo("PreCreateProxy");
-      _tcpListener = CreateServerSocket();
+
+      if (_tcpListener == null) {
+        _tcpListener = CreateServerSocket();
+      }
 
       return new string[] {
-        ((IPEndPoint)_tcpListener.LocalEndpoint).Port.ToString()
+        ((IPEndPoint) _tcpListener.LocalEndpoint).Port.ToString()
       };
     }
 
+    /// <summary>
+    /// Note: Calls are serialized by _serverProcessLauncher, so no need to lock
+    /// </summary>
     private void AfterProxyCreated(CreateProcessResult serverProcess) {
       Logger.LogInfo("AfterProxyCreated (pid={0}", serverProcess.Process.Id);
-      var timeout = TimeSpan.FromSeconds(5.0);
 #if PROFILE_SERVER
-      timeout = TimeSpan.FromSeconds(120.0);
+      var timeout = TimeSpan.FromSeconds(120.0);
       System.Diagnostics.Trace.WriteLine(string.Format("You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds, ((IPEndPoint)_tcpListener.LocalEndpoint).Port));
+#else
+      var timeout = TimeSpan.FromSeconds(5.0);
 #endif
       Logger.LogInfo("AfterProxyCreated: Wait for TCP client connection from server process.");
       if (!_waitForConnection.WaitOne(timeout)) {
@@ -129,7 +139,13 @@ namespace VsChromium.ServerProxy {
 
     private TcpListener CreateServerSocket() {
       Logger.LogInfo("Opening TCP server socket for server process client connection.");
-      var server = new TcpListener(IPAddress.Loopback, 0);
+#if PROFILE_SERVER
+      int port = 63300;
+#else
+      int port = 0;
+#endif
+      var endPoint = new IPEndPoint(IPAddress.Loopback, port);
+      var server = new TcpListener(endPoint);
       server.Start();
       Logger.LogInfo("TCP server started on port {0}.", ((IPEndPoint)server.LocalEndpoint).Port);
       server.BeginAcceptTcpClient(ClientConnected, server);

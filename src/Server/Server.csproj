@@ -13,6 +13,9 @@
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="protobuf-net, Version=2.0.0.640, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
       <HintPath>$(BuildRoot)src\packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
@@ -50,6 +53,7 @@
     <Compile Include="FileSystemSnapshot\DirectorySnapshot.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemTreeSnapshot.cs" />
     <Compile Include="FileSystem\FileRegistrationQueue.cs" />
+    <Compile Include="FileSystem\FileRegistrationTracker.cs" />
     <Compile Include="FileSystem\FilesChangedEventArgs.cs" />
     <Compile Include="FileSystemSnapshot\FileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystem\FileSystemChangesValidator.cs" />

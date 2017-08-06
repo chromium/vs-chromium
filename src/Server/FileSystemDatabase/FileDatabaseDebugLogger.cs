@@ -13,8 +13,8 @@ using VsChromium.Server.FileSystemContents;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public class FileDatabaseDebugLogger {
-    private static bool LogPiecesStats = true;
-    private static bool LogContentsStats = true;
+    private static bool LogPiecesStats = false;
+    private static bool LogContentsStats = false;
     private static int LogContentsStats_LargeFile_Threshold_Bytes = 500 * 1024;
     private static int LogContentsStats_FilesByExtensions_Threshold_Bytes = 100 * 1024;
     private static int LogContentsStats_ExtensionsList_Count = 10;

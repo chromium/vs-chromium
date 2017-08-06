@@ -52,14 +52,18 @@ a better position than anyone else to do so.
 
       3. Now your breakpoints in the child process will work too.
 
-=== Debugging the server process
+=== Profiling or Debugging the server process
+    The easiest option for debugging is to simply run the VsChromium project
+    as usual, then Attach the VS Debugger to the "VsChromium.Server.exe" process
+
+    To Debug startup code (or to run the Server from an external profile such as
+    DotMemory), follow these steps:
     1. Setup the solution as in the previous section
-    2. Rename the "PROFILE_SERVER2" "Conditional compilation symbol" in the
-       "Properties" of the VsChromium project to "PROFILE_SERVER"
-    3. Run the VsChromium project (with Ctrl-F5)
-    4. Look at the message in DebugView:
-       Run server executable with argument (i.e. tcp port number) xxxxx
-    5. (You now have 120 seconds to start the server process at port "xxxxx")
-    6. Update the project properties of the "Server" project and set "xxxxx"
-       (without the quotes) as the command line argument
-    7. Hit "F5", to debug the server process
+    2. Rename the "PROFILE_SERVER2" to "PROFILE_SERVER" "Conditional compilation symbol"
+       in the "Properties" of the VsChromium project 
+    3. Build
+    4. Run Visual Studio with experimental root suffix from a command prompt
+       (it seems that it is required to use an "Admin" command prompt)
+       Ex: "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\devenv.exe" /rootSuffix Exp 
+    4. Run the "Server" project (ensure the command line argument is set to "63300"
+       which is the default TCP port to use when debugging

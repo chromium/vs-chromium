@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
@@ -25,10 +26,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// Note: For debugging purposes only.
     /// </summary>
     private readonly IFileContentsFactory _fileContentsFactory;
+
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
     [ImportingConstructor]
-    public FileDatabaseSnapshotFactory(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory, IProgressTrackerFactory progressTrackerFactory) {
+    public FileDatabaseSnapshotFactory(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory,
+      IProgressTrackerFactory progressTrackerFactory) {
+
       _fileSystem = fileSystem;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
@@ -36,22 +40,20 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabaseSnapshot CreateEmpty() {
       return new FileDatabaseSnapshot(
-          new Dictionary<FullPath, string>(), 
-          new Dictionary<FileName, FileWithContents>(),
-          new List<FileName>(), 
-          new Dictionary<DirectoryName, DirectoryData>(),
-          new List<IFileContentsPiece>(),
-          0);
+        new Dictionary<FullPath, string>(),
+        new Dictionary<FileName, FileWithContents>(),
+        new List<FileName>(),
+        new Dictionary<DirectoryName, DirectoryData>(),
+        new List<IFileContentsPiece>(),
+        0);
     }
 
-    public IFileDatabaseSnapshot CreateIncremental(
-      IFileDatabaseSnapshot previousSnapshot,
-      FileSystemSnapshot newFileSystemSnapshot,
-      FullPathChanges fullPathChanges,
-      Action<IFileDatabaseSnapshot> onIntermadiateResult) {
+    public IFileDatabaseSnapshot CreateIncremental(IFileDatabaseSnapshot previousDatabase,
+      FileSystemSnapshot newFileSystemSnapshot, FullPathChanges fullPathChanges,
+      Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-          .Build(previousSnapshot, newFileSystemSnapshot, fullPathChanges, onIntermadiateResult);
+        .Build(previousDatabase, newFileSystemSnapshot, fullPathChanges, onIntermadiateResult, cancellationToken);
     }
 
     /// <summary>
@@ -60,13 +62,11 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// snapshot" semantics but enables efficient updates for the most common
     /// type of file change events.
     /// </summary>
-    public IFileDatabaseSnapshot CreateWithChangedFiles(
-      IFileDatabaseSnapshot previousSnapshot,
-      IEnumerable<ProjectFileName> changedFiles,
-      Action onLoading,
-      Action onLoaded) {
+    public IFileDatabaseSnapshot CreateWithChangedFiles(IFileDatabaseSnapshot previousDatabase,
+      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded) {
+
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-        .BuildWithChangedFiles(previousSnapshot, changedFiles, onLoading, onLoaded);
+        .BuildWithChangedFiles(previousDatabase, changedFiles, onLoading, onLoaded);
     }
   }
 }

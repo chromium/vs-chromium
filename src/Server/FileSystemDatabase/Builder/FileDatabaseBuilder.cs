@@ -30,10 +30,6 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
-    private Dictionary<FileName, ProjectFileData> _files;
-    private Dictionary<DirectoryName, DirectoryData> _directories;
-    private Dictionary<FullPath, string> _projectHashes;
-
     public FileDatabaseBuilder(
       IFileSystem fileSystem,
       IFileContentsFactory fileContentsFactory,
@@ -43,18 +39,15 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabaseSnapshot Build(
-      IFileDatabaseSnapshot previousFileDatabaseSnapshot,
-      FileSystemSnapshot newSnapshot,
-      FullPathChanges fullPathChanges,
-      Action<IFileDatabaseSnapshot> onIntermadiateResult) {
-      using (var logger =
-        new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
+    public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot,
+      FullPathChanges fullPathChanges, Action<IFileDatabaseSnapshot> onIntermadiateResult,
+      CancellationToken cancellationToken) {
+      using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
 
-        var fileDatabase = (FileDatabaseSnapshot) previousFileDatabaseSnapshot;
+        var fileDatabase = (FileDatabaseSnapshot) previousDatabase;
 
         // Compute list of files from tree
-        ComputeFileCollection(newSnapshot);
+        var entities = ComputeFileSystemEntities(newSnapshot);
 
         var unchangedProjects = newSnapshot
           .ProjectRoots.Where(x =>
@@ -71,7 +64,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         //IFileContentsMemoization fileContentsMemoization = new FileContentsMemoization();
         IFileContentsMemoization fileContentsMemoization = new NullFileContentsMemoization();
 
-        var loadingInfo = new FileContentsLoadingInfo {
+        var loadingContext = new FileContentsLoadingContext {
           FileContentsMemoization = fileContentsMemoization,
           FullPathChanges = fullPathChanges,
           LoadedTextFileCount = 0,
@@ -80,16 +73,16 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           PartialProgressReporter = new PartialProgressReporter(
             TimeSpan.FromSeconds(5.0),
             () => {
-              Logger.LogInfo("Creating intermedidate file database");
-              var database = this.CreateFileDatabse();
+              Logger.LogInfo("Creating intermedidate file database for partial progress reporting");
+              var database = CreateFileDatabse(entities);
               onIntermadiateResult(database);
             })
         };
 
         // Merge old state in new state and load all missing files
-        LoadFileContents(loadingInfo);
+        LoadFileContents(entities, loadingContext, cancellationToken);
 
-        return CreateFileDatabse();
+        return CreateFileDatabse(entities);
       }
     }
 
@@ -126,16 +119,16 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    private FileDatabaseSnapshot CreateFileDatabse() {
+    private FileDatabaseSnapshot CreateFileDatabse(FileSystemEntities entities) {
       using (new TimeElapsedLogger("Freezing file database state")) {
-        var directories = _directories;
+        var directories = entities.Directories;
         // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
         // the dictionary will be used in incremental updates where FileName instances
         // may be new instances from a complete file system enumeration.
-        var files = new Dictionary<FileName, FileWithContents>(_files.Count);
-        var filesWithContentsArray = new FileWithContents[_files.Count];
+        var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
+        var filesWithContentsArray = new FileWithContents[entities.Files.Count];
         int filesWithContentsIndex = 0;
-        foreach (var kvp in _files) {
+        foreach (var kvp in entities.Files) {
           var fileData = kvp.Value.FileWithContents;
           files.Add(kvp.Key, fileData);
           if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
@@ -147,7 +140,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
         return new FileDatabaseSnapshot(
-          _projectHashes,
+          entities.ProjectHashes,
           files,
           files.Keys.ToArray(),
           directories,
@@ -236,7 +229,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    private void ComputeFileCollection(FileSystemSnapshot snapshot) {
+    private class FileSystemEntities {
+      public Dictionary<FileName, ProjectFileData> Files { get; set; }
+      public Dictionary<DirectoryName, DirectoryData> Directories { get; set; }
+      public Dictionary<FullPath, string> ProjectHashes { get; set; }
+    }
+
+    private FileSystemEntities ComputeFileSystemEntities(FileSystemSnapshot snapshot) {
       using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree")) {
 
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
@@ -266,15 +265,15 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           }
         }
 
-        _files = files;
-        _directories = directoryNames;
-        _projectHashes = snapshot.ProjectRoots.ToDictionary(
-          x => x.Project.RootPath,
-          x => x.Project.VersionHash);
+        return new FileSystemEntities {
+          Files = files,
+          Directories = directoryNames,
+          ProjectHashes = snapshot.ProjectRoots.ToDictionary(x => x.Project.RootPath, x => x.Project.VersionHash)
+        };
       }
     }
 
-    private class FileContentsLoadingInfo {
+    private class FileContentsLoadingContext {
       public FileDatabaseSnapshot OldFileDatabaseSnapshot;
       public FullPathChanges FullPathChanges;
       public IFileContentsMemoization FileContentsMemoization;
@@ -284,19 +283,24 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       public PartialProgressReporter PartialProgressReporter;
     }
 
-    private void LoadFileContents(FileContentsLoadingInfo loadingInfo) {
-
-      using (var logger = new TimeElapsedLogger("Loading file contents from disk")) {
-        using (var progress = _progressTrackerFactory.CreateTracker(_files.Count)) {
-          _files.AsParallel().ForAll(fileEntry => {
+    private void LoadFileContents(FileSystemEntities entities, FileContentsLoadingContext loadingContext, CancellationToken cancellationToken) {
+      using (new TimeElapsedLogger("Loading file contents from disk")) {
+        using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
+          entities.Files.AsParallel().ForAll(fileEntry => {
             Debug.Assert(fileEntry.Value.FileWithContents.Contents == null);
 
             if (progress.Step()) {
               progress.DisplayProgress((i, n) =>
                 string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
+
+              // Check for cancellation
+              if (cancellationToken.IsCancellationRequested) {
+                loadingContext.PartialProgressReporter.ReportProgressNow();
+                cancellationToken.ThrowIfCancellationRequested();
+              }
             }
 
-            var contents = LoadSingleFileContents(loadingInfo, fileEntry.Value);
+            var contents = LoadSingleFileContents(entities, loadingContext, fileEntry.Value);
             if (contents != null) {
               fileEntry.Value.FileWithContents.UpdateContents(contents);
             }
@@ -304,20 +308,21 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         }
       }
       Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files.",
-        loadingInfo.LoadedTextFileCount,
-        loadingInfo.LoadedBinaryFileCount);
+        loadingContext.LoadedTextFileCount,
+        loadingContext.LoadedBinaryFileCount);
     }
 
     private FileContents LoadSingleFileContents(
-      FileContentsLoadingInfo loadingInfo,
+      FileSystemEntities entities,
+      FileContentsLoadingContext loadingContext,
       ProjectFileData projectFileData) {
 
       var fileName = projectFileData.FileName;
-      var oldFileData = loadingInfo.OldFileDatabaseSnapshot.Files.GetValue(fileName);
+      var oldFileData = loadingContext.OldFileDatabaseSnapshot.Files.GetValue(fileName);
 
       // If the file was never loaded before, just load it
       if (oldFileData == null || oldFileData.Contents == null) {
-        return LoadSingleFileContentsWorker(loadingInfo, projectFileData);
+        return LoadSingleFileContentsWorker(loadingContext, projectFileData);
       }
 
       bool isSearchable;
@@ -325,7 +330,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       // database (and the file was present in it), then it is certainly
       // searchable, so no need to make an expensive call to "IsSearchable"
       // again.
-      if (loadingInfo.UnchangedProjects.Contains(projectFileData.Project)) {
+      if (loadingContext.UnchangedProjects.Contains(projectFileData.Project)) {
         isSearchable = true;
       } else {
         // If the file is not searchable in the current project, it should be
@@ -340,22 +345,22 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
       // If the file has not changed since the previous snapshot, we can re-use
       // the former file contents snapshot.
-      if (IsFileContentsUpToDate(loadingInfo.FullPathChanges, oldFileData)) {
+      if (IsFileContentsUpToDate(entities, loadingContext.FullPathChanges, oldFileData)) {
         return oldFileData.Contents;
       }
 
-      return LoadSingleFileContentsWorker(loadingInfo, projectFileData);
+      return LoadSingleFileContentsWorker(loadingContext, projectFileData);
     }
 
     private FileContents LoadSingleFileContentsWorker(
-      FileContentsLoadingInfo loadingInfo,
+      FileContentsLoadingContext loadingContext,
       ProjectFileData projectFileData) {
 
       // If project configuration has not changed, the file is still not
       // searchable, irrelevant to calling "IsSearchable".
-      if (loadingInfo.FullPathChanges != null) {
-        if (loadingInfo.FullPathChanges.GetPathChangeKind(projectFileData.FileName.FullPath) == PathChangeKind.None) {
-          if (loadingInfo.UnchangedProjects.Contains(projectFileData.Project))
+      if (loadingContext.FullPathChanges != null) {
+        if (loadingContext.FullPathChanges.GetPathChangeKind(projectFileData.FileName.FullPath) == PathChangeKind.None) {
+          if (loadingContext.UnchangedProjects.Contains(projectFileData.Project))
             return null;
         }
       }
@@ -364,18 +369,18 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       if (!projectFileData.IsSearchable)
         return null;
 
-      loadingInfo.PartialProgressReporter.ReportProgress();
+      loadingContext.PartialProgressReporter.ReportProgress();
 
       var fileContents = _fileContentsFactory.ReadFileContents(projectFileData.FileName.FullPath);
       if (fileContents is BinaryFileContents) {
-        Interlocked.Increment(ref loadingInfo.LoadedBinaryFileCount);
+        Interlocked.Increment(ref loadingContext.LoadedBinaryFileCount);
       } else {
-        Interlocked.Increment(ref loadingInfo.LoadedTextFileCount);
+        Interlocked.Increment(ref loadingContext.LoadedTextFileCount);
       }
-      return loadingInfo.FileContentsMemoization.Get(projectFileData.FileName, fileContents);
+      return loadingContext.FileContentsMemoization.Get(projectFileData.FileName, fileContents);
     }
 
-    private bool IsFileContentsUpToDate(FullPathChanges fullPathChanges, FileWithContents oldFileWithContents) {
+    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContents oldFileWithContents) {
       Debug.Assert(oldFileWithContents.Contents != null);
 
       var fullPath = oldFileWithContents.FileName.FullPath;
@@ -384,7 +389,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         // We don't get file change events for file in symlinks, so we can't
         // rely on fullPathChanges contents for our heuristic of avoiding file
         // system access.
-        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(_directories, oldFileWithContents.FileName)) {
+        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(entities.Directories, oldFileWithContents.FileName)) {
           return fullPathChanges.GetPathChangeKind(fullPath) == PathChangeKind.None;
         }
       }

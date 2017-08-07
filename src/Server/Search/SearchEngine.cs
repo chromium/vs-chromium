@@ -278,7 +278,7 @@ namespace VsChromium.Server.Search {
         return;
 
       _taskQueue.Enqueue(ComputeNewStatedId, cancellationToken =>
-        ComputeNewState(e.PreviousSnapshot, e.NewSnapshot, e.FullPathChanges));
+        ComputeNewState(e.NewSnapshot, e.FullPathChanges, cancellationToken));
 
       // Enqueue a GC at this point makes sense as there might be a lot of
       // garbage to reclaim from previous file contents stored in native heap.
@@ -442,8 +442,8 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private void ComputeNewState(FileSystemSnapshot previousSnapshot, FileSystemSnapshot newSnapshot,
-      FullPathChanges fullPathChanges) {
+    private void ComputeNewState(FileSystemSnapshot newSnapshot, FullPathChanges fullPathChanges,
+      CancellationToken cancellationToken) {
 
       _operationProcessor.Execute(new OperationHandlers {
         OnBeforeExecute = info =>
@@ -469,7 +469,8 @@ namespace VsChromium.Server.Search {
                 // Store and activate intermediate new state (atomic operation).
                 _currentFileDatabaseSnapshot = fileDatabase;
                 OnFilesLoadingProgress(info);
-              });
+              },
+              cancellationToken);
             // Store and activate final new state (atomic operation).
             _currentFileDatabaseSnapshot = newState;
           }

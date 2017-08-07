@@ -4,22 +4,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.FileSystemDatabase {
   public interface IFileDatabaseSnapshotFactory {
     IFileDatabaseSnapshot CreateEmpty();
 
-    IFileDatabaseSnapshot CreateIncremental(
-      IFileDatabaseSnapshot previousSnapshot,
-      FileSystemSnapshot newFileSystemSnapshot,
-      FullPathChanges fullPathChanges,
-      Action<IFileDatabaseSnapshot> onIntermadiateResult);
+    IFileDatabaseSnapshot CreateIncremental(IFileDatabaseSnapshot previousDatabase,
+      FileSystemSnapshot newFileSystemSnapshot, FullPathChanges fullPathChanges,
+      Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken);
 
-    IFileDatabaseSnapshot CreateWithChangedFiles(
-      IFileDatabaseSnapshot previousSnapshot,
-      IEnumerable<ProjectFileName> changedFiles,
-      Action onLoading,
-      Action onLoaded);
+    IFileDatabaseSnapshot CreateWithChangedFiles(IFileDatabaseSnapshot previousDatabase,
+      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded);
   }
 }

@@ -13,15 +13,25 @@ namespace VsChromium.Server.ProgressTracking {
     private long _lastReportTick;
 
     public PartialProgressReporter(TimeSpan delay, Action action) {
-      _delayMsec = (long)delay.TotalMilliseconds;
+      _delayMsec = (long) delay.TotalMilliseconds;
       _action = action;
       _lastReportTick = _tickCountProvider.TickCount;
     }
 
+    public void ReportProgressNow() {
+      ReportProgressWorkder(true);
+    }
+
     public void ReportProgress() {
+      ReportProgressWorkder(false);
+    }
+
+    private void ReportProgressWorkder(bool force) {
       var now = _tickCountProvider.TickCount;
-      if (now - _lastReportTick < _delayMsec)
-        return;
+      if (!force) {
+        if (now - _lastReportTick < _delayMsec)
+          return;
+      }
 
       bool isRunner;
       lock (_lock) {

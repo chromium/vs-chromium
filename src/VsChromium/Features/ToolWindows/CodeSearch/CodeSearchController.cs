@@ -140,7 +140,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void FileSystemTreeSource_OnErrorReceived(ErrorResponse errorResponse) {
       WpfUtilities.Post(_control, () => {
-        OnFileSystemTreeScanError(errorResponse);
+        ReportServerError(errorResponse);
       });
     }
 
@@ -240,24 +240,19 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public void OnFileSystemTreeScanError(ErrorResponse error) {
+    private void ReportServerError(ErrorResponse error) {
+      if (!ErrorResponseHelper.IsReportableError(error))
+        return;
+
       var viewModel = CreateErrorResponseViewModel(error);
       ViewModel.SetInformationMessages(viewModel);
     }
 
-    public void OnFileSystemTreeScanFinished() {
-      // Nothing to do, since we already either got a success or error notification.
-    }
-
-    public void OnFilesLoading() {
-      // Nothing to do.
-    }
-
-    public void OnFilesLoadingProgress() {
+    private void OnFilesLoadingProgress() {
       FetchDatabaseStatistics();
     }
 
-    public void OnFilesLoaded(long treeVersion) {
+    private void OnFilesLoaded(long treeVersion) {
       RefreshView(treeVersion);
       FetchDatabaseStatistics();
     }
@@ -911,24 +906,23 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void DispatchFileSystemTreeScanFinished(TypedEvent typedEvent) {
-      var @event = typedEvent as FileSystemScanFinished;
-      if (@event != null) {
+      var evt = typedEvent as FileSystemScanFinished;
+      if (evt != null) {
         WpfUtilities.Post(_control, () => {
           _progressBarTracker.Stop(OperationsIds.FileSystemScanning);
-          if (@event.Error != null) {
-            OnFileSystemTreeScanError(@event.Error);
+          if (evt.IsReportableError()) {
+            ReportServerError(evt.Error);
             return;
           }
-          Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", @event.NewVersion);
+          Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", evt.NewVersion);
         });
       }
     }
 
     private void DispatchSearchEngineFilesLoading(TypedEvent typedEvent) {
-      var @event = typedEvent as SearchEngineFilesLoading;
-      if (@event != null) {
+      var evt = typedEvent as SearchEngineFilesLoading;
+      if (evt != null) {
         WpfUtilities.Post(_control, () => {
-          OnFilesLoading();
           Logger.LogInfo("Search engine is loading file database on server.");
           _progressBarTracker.Start(OperationsIds.FilesLoading, "Loading files contents from file system.");
         });
@@ -936,8 +930,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void DispatchSearchEngineFilesLoadingProgress(TypedEvent typedEvent) {
-      var @event = typedEvent as SearchEngineFilesLoadingProgress;
-      if (@event != null) {
+      var evt = typedEvent as SearchEngineFilesLoadingProgress;
+      if (evt != null) {
         WpfUtilities.Post(_control, () => {
           OnFilesLoadingProgress();
           Logger.LogInfo("Search engine has produced intermediate file database index on server.");
@@ -946,13 +940,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void DispatchSearchEngineFilesLoaded(TypedEvent typedEvent) {
-      var @event = typedEvent as SearchEngineFilesLoaded;
-      if (@event != null) {
+      var evt = typedEvent as SearchEngineFilesLoaded;
+      if (evt != null) {
         WpfUtilities.Post(_control, () => {
           _progressBarTracker.Stop(OperationsIds.FilesLoading);
-          OnFilesLoaded(@event.TreeVersion);
-          if (@event.Error != null) {
-            OnFileSystemTreeScanError(@event.Error);
+          OnFilesLoaded(evt.TreeVersion);
+          if (evt.IsReportableError()) {
+            ReportServerError(evt.Error);
             return;
           }
           Logger.LogInfo("Search engine is done loading file database on server.");

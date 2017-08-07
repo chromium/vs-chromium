@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Core.Ipc {
   public static class ErrorResponseHelper {
@@ -43,6 +44,18 @@ namespace VsChromium.Core.Ipc {
 
     public static bool IsRecoverable(this ErrorResponse error) {
       return GetBaseError(error).FullTypeName == typeof(RecoverableErrorException).FullName;
+    }
+
+    public static bool IsReportableError(ErrorResponse error) {
+      if (error == null)
+        return false;
+      if (error.IsOperationCanceled())
+        return false;
+      return true;
+    }
+
+    public static bool IsReportableError(this PairedTypedEvent e) {
+      return IsReportableError(e.Error);
     }
   }
 }

@@ -31,8 +31,7 @@ namespace VsChromium.ServerProxy {
     private void ProxyOnEventReceived(TypedEvent typedEvent) {
       var evt = typedEvent as FileSystemScanFinished;
       if (evt != null) {
-        // Don't fetch new tree if the operation was cancelled
-        if (evt.Error == null || !evt.Error.IsOperationCanceled()) {
+        if (evt.Error == null) {
           _delayedOperationProcessor.Post(new DelayedOperation {
             Id = "FetchFileSystemTree",
             Delay = TimeSpan.FromSeconds(0.1),

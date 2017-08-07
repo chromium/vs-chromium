@@ -4,13 +4,15 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Logging {
   public class Logger {
-    private static readonly Lazy<string> ProcessName = new Lazy<string>(() => Process.GetCurrentProcess().ProcessName, LazyThreadSafetyMode.PublicationOnly);
+    private static readonly Lazy<string> ProcessName =
+      new Lazy<string>(() => Process.GetCurrentProcess().ProcessName, LazyThreadSafetyMode.PublicationOnly);
 
     static Logger() {
 #if DEBUG
@@ -25,7 +27,7 @@ namespace VsChromium.Core.Logging {
     public static bool Info { get; set; }
     public static bool Perf { get; set; }
     public static bool Warning { get; set; }
-    public static  bool Error { get; set; }
+    public static bool Error { get; set; }
 
     private static string GetLoggerId() {
       return ProcessName.Value;
@@ -33,7 +35,9 @@ namespace VsChromium.Core.Logging {
 
     private static void LogImpl(string format, params object[] args) {
       var message = string.Format(format, args);
-      Trace.WriteLine(string.Format("[{0}:tid={1}] {2}", GetLoggerId(), Thread.CurrentThread.ManagedThreadId, message));
+      string timestamp = DateTime.UtcNow.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture);
+      Trace.WriteLine(string.Format("[{0}-{1}-tid={2}] {3}", timestamp, GetLoggerId(),
+        Thread.CurrentThread.ManagedThreadId, message));
     }
 
     public static void LogInfo(string format, params object[] args) {

@@ -168,7 +168,7 @@ namespace VsChromium.Tests.Mocks {
       }
     }
 
-    public SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount) {
+    public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
       throw new NotImplementedException();
     }
 

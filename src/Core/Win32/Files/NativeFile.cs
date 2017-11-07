@@ -27,8 +27,8 @@ namespace VsChromium.Core.Win32.Files {
     /// <summary>
     /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
     /// </summary>
-    public static SafeHeapBlockHandle ReadFileNulTerminated(SlimFileInfo fileInfo, int trailingByteCount) {
-      var result = ReadFileWorker(fileInfo, trailingByteCount);
+    public static SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
+      var result = ReadFileWorker(path, fileSize, trailingByteCount);
 
       var trailingPtr = result.Pointer.ToInt64() + result.ByteLength - trailingByteCount;
       for (var i = 0; i < trailingByteCount; i++) {
@@ -37,19 +37,19 @@ namespace VsChromium.Core.Win32.Files {
       return result;
     }
 
-    private static SafeHeapBlockHandle ReadFileWorker(SlimFileInfo fileInfo, int trailingByteCount) {
+    private static SafeHeapBlockHandle ReadFileWorker(FullPath path, long fileSize, int trailingByteCount) {
       using (
-        var fileHandle = NativeMethods.CreateFile(fileInfo.FullPath.Value, NativeAccessFlags.GenericRead, FileShare.ReadWrite | FileShare.Delete, IntPtr.Zero,
+        var fileHandle = NativeMethods.CreateFile(path.Value, NativeAccessFlags.GenericRead, FileShare.ReadWrite | FileShare.Delete, IntPtr.Zero,
                                                   FileMode.Open, 0, IntPtr.Zero)) {
         if (fileHandle.IsInvalid)
           throw new Win32Exception();
 
         // Note: We are limited to 2GB files by design.
-        int maxLen = Int32.MaxValue - trailingByteCount;
-        if (fileInfo.Length >= maxLen) {
+        var maxLen = int.MaxValue - trailingByteCount;
+        if (fileSize >= maxLen) {
           Logger.LogWarning("File too big, truncated to {0} bytes", maxLen);
         }
-        var len = (int)Math.Min(maxLen, fileInfo.Length);
+        var len = (int)Math.Min(maxLen, fileSize);
         var heap = HeapAllocStatic.Alloc(len + trailingByteCount);
         var bytesRead = new int[1];
 

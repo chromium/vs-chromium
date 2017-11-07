@@ -129,6 +129,20 @@ namespace VsChromium.Core.Files {
     }
 
     /// <summary>
+    /// Returns <code>true</code> if <paramref name="parentPath"/> combined with
+    /// <param name="relativePath"></param> is too long.
+    /// </summary>
+    public static bool IsPathTooLong(string parentPath, string relativePath) {
+      if (string.IsNullOrEmpty(parentPath))
+        throw new ArgumentException();
+
+      if (string.IsNullOrEmpty(relativePath))
+        return IsPathTooLong(parentPath);
+
+      return parentPath.Length + 1 + relativePath.Length > MaxPath;
+    }
+
+    /// <summary>
     /// Returns <code>true</code> if <paramref name="path"/> is too long.
     /// </summary>
     public static bool IsValidBclPath(string path) {

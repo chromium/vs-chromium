@@ -24,7 +24,7 @@ namespace VsChromium.Core.Files {
     /// Reads the full contents of a file in memory, with <paramref
     /// name="trailingByteCount"/> null bytes as suffix.
     /// </summary>
-    SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount);
+    SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount);
 
     /// <summary>
     /// Return the list of directory entries contained in the directory

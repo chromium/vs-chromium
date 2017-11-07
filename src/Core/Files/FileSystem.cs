@@ -38,8 +38,8 @@ namespace VsChromium.Core.Files {
       return File.ReadAllLines(path.Value);
     }
 
-    public SafeHeapBlockHandle ReadFileNulTerminated(IFileInfoSnapshot fileInfo, int trailingByteCount) {
-      return NativeFile.ReadFileNulTerminated(((FileInfoSnapshot)fileInfo).SlimFileInfo, trailingByteCount);
+    public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
+      return NativeFile.ReadFileNulTerminated(path, fileSize, trailingByteCount);
     }
 
     public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {

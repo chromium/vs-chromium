@@ -9,8 +9,8 @@ namespace VsChromium.Core.Files {
   public class FileInfoSnapshot : IFileInfoSnapshot {
     private readonly SlimFileInfo _fileInfo;
 
-    public FileInfoSnapshot(FullPath path) {
-      _fileInfo = new SlimFileInfo(path);
+    public FileInfoSnapshot(SlimFileInfo fileInfo) {
+      _fileInfo = fileInfo;
     }
 
     public SlimFileInfo SlimFileInfo { get { return _fileInfo; } }

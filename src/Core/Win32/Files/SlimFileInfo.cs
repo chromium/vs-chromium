@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Win32.Files {
@@ -12,14 +11,15 @@ namespace VsChromium.Core.Win32.Files {
   /// SlimFileInfo is, as the name suggests, a slimmer version of System.IO.FileInfo. The intent
   /// is to be more efficient because of fewer checks performed.
   /// </summary>
-  public class SlimFileInfo {
+  public struct SlimFileInfo {
     private readonly FullPath _path;
     private readonly WIN32_FILE_ATTRIBUTE_DATA _data;
     private readonly int _win32Error;
 
-    public SlimFileInfo(FullPath path) {
+    public SlimFileInfo(FullPath path, WIN32_FILE_ATTRIBUTE_DATA data, int win32Error) {
       _path = path;
-      _win32Error = EnsureFileAttribues(out _data);
+      _data = data;
+      _win32Error = win32Error;
     }
 
     public FullPath FullPath { get { return _path; } }
@@ -63,14 +63,6 @@ namespace VsChromium.Core.Win32.Files {
         ThrowOnError();
         return DateTime.FromFileTimeUtc(HighLowToLong(_data.ftLastWriteTimeHigh, _data.ftLastWriteTimeLow));
       }
-    }
-
-    private int EnsureFileAttribues(out WIN32_FILE_ATTRIBUTE_DATA data) {
-      var win32Error = 0;
-      data = default(WIN32_FILE_ATTRIBUTE_DATA);
-      if (!NativeMethods.GetFileAttributesEx(_path.Value, 0, ref data))
-        win32Error = Marshal.GetLastWin32Error();
-      return win32Error;
     }
 
     private void ThrowOnError() {

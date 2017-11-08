@@ -31,5 +31,10 @@ namespace VsChromium.Core.Files {
     /// <paramref name="path"/>.
     /// </summary>
     IList<DirectoryEntry> GetDirectoryEntries(FullPath path);
+
+    /// <summary>
+    /// Returns a new <see cref="IFileSystemWatcher"/> instances for the given directory path.
+    /// </summary>
+    IFileSystemWatcher CreateDirectoryWatcher(FullPath path);
   }
 }

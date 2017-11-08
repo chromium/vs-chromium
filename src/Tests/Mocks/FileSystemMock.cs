@@ -176,6 +176,10 @@ namespace VsChromium.Tests.Mocks {
       throw new NotImplementedException();
     }
 
+    public IFileSystemWatcher CreateDirectoryWatcher(FullPath path) {
+      throw new NotImplementedException();
+    }
+
     public DirectoryMock AddDirectory(string name) {
       return _rootDirectory.AddDirectory(name);
     }

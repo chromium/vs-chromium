@@ -25,7 +25,7 @@ namespace VsChromium.Core.Files {
     /// <summary>
     /// Dictionary of watchers, one per root directory path.
     /// </summary>
-    private readonly Dictionary<FullPath, FileSystemWatcher> _watchers = new Dictionary<FullPath, FileSystemWatcher>();
+    private readonly Dictionary<FullPath, IFileSystemWatcher> _watchers = new Dictionary<FullPath, IFileSystemWatcher>();
     private readonly object _watchersLock = new object();
 
     /// <summary>
@@ -82,7 +82,7 @@ namespace VsChromium.Core.Files {
     }
 
     private void AddDirectory(FullPath directory) {
-      FileSystemWatcher watcher;
+      IFileSystemWatcher watcher;
       lock (_watchersLock) {
         if (_pollingThread == null) {
           _pollingThread = new Thread(ThreadLoop) { IsBackground = true };
@@ -91,25 +91,24 @@ namespace VsChromium.Core.Files {
         if (_watchers.TryGetValue(directory, out watcher))
           return;
 
-        watcher = new FileSystemWatcher();
+        watcher = _fileSystem.CreateDirectoryWatcher(directory);
         _watchers.Add(directory, watcher);
       }
 
       Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
-      watcher.Path = directory.Value;
       watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
       watcher.IncludeSubdirectories = true;
-      watcher.InternalBufferSize = 60 * 1024; // 50KB sounds more reasonable than 8KB
+      watcher.InternalBufferSize = 60 * 1024; // 60KB sounds more reasonable than 8KB
       watcher.Changed += WatcherOnChanged;
       watcher.Created += WatcherOnCreated;
       watcher.Deleted += WatcherOnDeleted;
       watcher.Renamed += WatcherOnRenamed;
       watcher.Error += WatcherOnError;
-      watcher.EnableRaisingEvents = true;
+      watcher.Start();
     }
 
     private void RemoveDirectory(FullPath directory) {
-      FileSystemWatcher watcher;
+      IFileSystemWatcher watcher;
       lock (_watchersLock) {
         if (!_watchers.TryGetValue(directory, out watcher))
           return;

@@ -100,7 +100,21 @@ namespace VsChromium.Core.Files {
       Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
       watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
       watcher.IncludeSubdirectories = true;
-      watcher.InternalBufferSize = 60 * 1024; // 60KB sounds more reasonable than 8KB
+      // Note: The MSDN documentation says to use less than 64KB
+      //       (see https://msdn.microsoft.com/en-us/library/system.io.filesystemwatcher.internalbuffersize(v=vs.110).aspx)
+      //         "You can set the buffer to 4 KB or larger, but it must not exceed 64 KB."
+      //       However, the implementation allows for arbitrary buffer sizes.
+      //       Experience has shown that 64KB is small enough that we frequently run into "OverflowException"
+      //       exceptions on heavily active file systems (e.g. during a build of a complex project
+      //       such as Chromium).
+      //       The issue with these exceptions is that the consumer must be extremely conservative
+      //       when such errors occur, because we lost track of what happened at the individual
+      //       directory/file level. In the case of VsChromium, the server will batch a full re-scan
+      //       of the file system, instead of an incremental re-scan, and that can be quite time
+      //       consuming (as well as I/O consuming).
+      //       In the end, increasing the size of the buffer to 2 MB is the best option to avoid
+      //       these issues (2 MB is not that much memory in the grand scheme of things).
+      watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
       watcher.Changed += WatcherOnChanged;
       watcher.Created += WatcherOnCreated;
       watcher.Deleted += WatcherOnDeleted;

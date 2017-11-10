@@ -12,6 +12,7 @@ using System.Threading;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Files {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
@@ -21,6 +22,7 @@ namespace VsChromium.Core.Files {
     private readonly PollingDelayPolicy _pathChangesPolling;
     private readonly PollingDelayPolicy _simplePathChangesPolling;
     private readonly PollingDelayPolicy _checkRootsPolling;
+    private readonly BoundedOperationLimiter _logLimiter = new BoundedOperationLimiter(10);
 
     /// <summary>
     /// Dictionary of watchers, one per root directory path.
@@ -330,11 +332,29 @@ namespace VsChromium.Core.Files {
     /// </summary>
     private bool SkipPath(string path) {
       if (PathHelpers.IsPathTooLong(path)) {
-        Logger.LogInfo("Skipping file change event because path is too long: \"{0}\"", path);
+        switch (_logLimiter.Proceed()) {
+          case BoundedOperationLimiter.Result.YesAndLast:
+            Logger.LogInfo("(The following log message will be the last of its kind)", path);
+            goto case BoundedOperationLimiter.Result.Yes;
+          case BoundedOperationLimiter.Result.Yes:
+            Logger.LogInfo("Skipping file change event because path is too long: \"{0}\"", path);
+            break;
+          case BoundedOperationLimiter.Result.NoMore:
+            break;
+        }
         return true;
       }
       if (!PathHelpers.IsValidBclPath(path)) {
-        Logger.LogInfo("Skipping file change event because path is invalid: \"{0}\"", path);
+        switch (_logLimiter.Proceed()) {
+          case BoundedOperationLimiter.Result.YesAndLast:
+            Logger.LogInfo("(The following log message will be the last of its kind)", path);
+            goto case BoundedOperationLimiter.Result.Yes;
+          case BoundedOperationLimiter.Result.Yes:
+            Logger.LogInfo("Skipping file change event because path is invalid: \"{0}\"", path);
+            break;
+          case BoundedOperationLimiter.Result.NoMore:
+            break;
+        }
         return true;
       }
       return false;

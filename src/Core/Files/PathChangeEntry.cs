@@ -4,15 +4,19 @@
 
 namespace VsChromium.Core.Files {
   public struct PathChangeEntry {
-    private readonly FullPath _path;
+    private readonly FullPath _basePath;
+    private readonly RelativePath _entryPath;
     private readonly PathChangeKind _kind;
 
-    public PathChangeEntry(FullPath path, PathChangeKind kind) {
-      _path = path;
+    public PathChangeEntry(FullPath basePath, RelativePath entryPath, PathChangeKind kind) {
+      _basePath = basePath;
+      _entryPath = entryPath;
       _kind = kind;
     }
 
-    public FullPath Path { get { return _path; } }
+    public FullPath BasePath { get { return _basePath; } }
+    public RelativePath RelativePath { get { return _entryPath; } }
+    public FullPath Path { get { return _basePath.Combine(_entryPath); } }
     public PathChangeKind Kind { get { return _kind; } }
 
     public override string ToString() {

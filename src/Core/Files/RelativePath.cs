@@ -16,6 +16,8 @@ namespace VsChromium.Core.Files {
     private readonly string _relativePath;
     private readonly string _filename;
 
+    public static readonly RelativePath Empty = default(RelativePath);
+
     /// <summary>
     /// Creates a <see cref="RelativePath"/> instance from a relative path
     /// string. Note this constructor is less efficient than the constructor

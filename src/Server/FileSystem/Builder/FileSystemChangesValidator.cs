@@ -62,7 +62,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         Logger.LogInfo("All file change events are file modifications.");
 
         var fileNames = filteredChanges
-          .Select(change => GetProjectFileName(change.Path))
+          .Select(change => GetProjectFileName(change.BasePath))
           .Where(name => !name.IsNull);
 
         return new FileSystemValidationResult {
@@ -86,19 +86,16 @@ namespace VsChromium.Server.FileSystem.Builder {
     }
 
     private bool PathIsExcluded(PathChangeEntry change) {
-      var path = change.Path;
-      var project = _projectDiscovery.GetProject(path);
+      // If path is root itself, it is never excluded.
+      if (change.RelativePath.IsEmpty)
+        return false;
+
+      var project = _projectDiscovery.GetProject(change.BasePath);
       if (project == null)
         return true;
 
-      // If path is root itself, it is never excluded.
-      if (path == project.RootPath)
-        return false;
-
       // Split relative part into list of name components.
-      var split = PathHelpers.SplitPrefix(path.Value, project.RootPath.Value);
-      var relativePath = split.Suffix;
-      var names = relativePath.Split(Path.DirectorySeparatorChar);
+      var names = change.RelativePath.Value.Split(Path.DirectorySeparatorChar);
 
       // Check each relative path from root path to full path.
       var pathToItem = new RelativePath();
@@ -106,20 +103,30 @@ namespace VsChromium.Server.FileSystem.Builder {
         var relativePathToItem = pathToItem.CreateChild(item);
 
         bool exclude;
-        // For the last component, we might not if it is a file or directory.
+        // For the last component, we don't know if it is a file or directory.
         // Check depending on the change kind.
         if (item == names.Last()) {
           if (change.Kind == PathChangeKind.Deleted) {
             exclude = false;
           } else {
-            var info = _fileSystem.GetFileInfoSnapshot(path);
-            if (info.IsFile) {
-              exclude = !project.FileFilter.Include(relativePathToItem);
-            } else if (info.IsDirectory) {
-              exclude = !project.DirectoryFilter.Include(relativePathToItem);
-            } else {
-              // We don't know... Be conservative.
-              exclude = false;
+            // Try to avoid Disk I/O if the path should be excluded
+            var fileShouldBeIgnored = !project.FileFilter.Include(relativePathToItem);
+            var directoryShouldBeIgnored = !project.DirectoryFilter.Include(relativePathToItem);
+            if (fileShouldBeIgnored && directoryShouldBeIgnored) {
+              exclude = true;
+            }
+            else {
+              var info = _fileSystem.GetFileInfoSnapshot(change.Path);
+              if (info.IsFile) {
+                exclude = fileShouldBeIgnored;
+              }
+              else if (info.IsDirectory) {
+                exclude = directoryShouldBeIgnored;
+              }
+              else {
+                // We don't know... Be conservative.
+                exclude = false;
+              }
             }
           }
         } else {

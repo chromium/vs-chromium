@@ -9,7 +9,11 @@ namespace VsChromium.Core.Files {
   public interface IDirectoryChangeWatcher {
     void WatchDirectories(IEnumerable<FullPath> directories);
 
-    event Action<IList<PathChangeEntry>> PathsChanged;
-    event Action<Exception> Error;
+    event EventHandler<PathsChangedEventArgs> PathsChanged;
+    event EventHandler<Exception> Error;
+  }
+
+  public class PathsChangedEventArgs : EventArgs {
+    public IList<PathChangeEntry> Changes { get; set; } 
   }
 }

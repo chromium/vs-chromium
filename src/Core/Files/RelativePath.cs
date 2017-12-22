@@ -134,7 +134,6 @@ namespace VsChromium.Core.Files {
         return Equals((RelativePath)other);
       return false;
     }
-
     #endregion
   }
 }

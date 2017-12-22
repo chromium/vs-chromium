@@ -30,7 +30,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     public FileSystemValidationResult ProcessPathsChangedEvent(IList<PathChangeEntry> changes) {
       // Skip files from filtered out directories
       var filteredChanges = changes
-        .Where(x => !PathIsExcluded(x))
+        .Where(x => !PathChangeShouldBeIgnored(x))
         .ToList();
 
       if (Logger.Info) {
@@ -85,7 +85,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileName);
     }
 
-    private bool PathIsExcluded(PathChangeEntry change) {
+    private bool PathChangeShouldBeIgnored(PathChangeEntry change) {
       // If path is root itself, it is never excluded.
       if (change.RelativePath.IsEmpty)
         return false;
@@ -95,50 +95,51 @@ namespace VsChromium.Server.FileSystem.Builder {
         return true;
 
       // Split relative part into list of name components.
-      var names = change.RelativePath.Value.Split(Path.DirectorySeparatorChar);
+      var segments = change.RelativePath.Value.Split(Path.DirectorySeparatorChar);
 
       // Check each relative path from root path to full path.
-      var pathToItem = new RelativePath();
-      foreach (var item in names) {
-        var relativePathToItem = pathToItem.CreateChild(item);
+      var parentPath = new RelativePath();
+      foreach (var segment in segments) {
+        var segmentPath = parentPath.CreateChild(segment);
 
-        bool exclude;
-        // For the last component, we don't know if it is a file or directory.
-        // Check depending on the change kind.
-        if (item == names.Last()) {
-          if (change.Kind == PathChangeKind.Deleted) {
-            exclude = false;
-          } else {
-            // Try to avoid Disk I/O if the path should be excluded
-            var fileShouldBeIgnored = !project.FileFilter.Include(relativePathToItem);
-            var directoryShouldBeIgnored = !project.DirectoryFilter.Include(relativePathToItem);
-            if (fileShouldBeIgnored && directoryShouldBeIgnored) {
-              exclude = true;
-            }
-            else {
-              var info = _fileSystem.GetFileInfoSnapshot(change.Path);
-              if (info.IsFile) {
-                exclude = fileShouldBeIgnored;
-              }
-              else if (info.IsDirectory) {
-                exclude = directoryShouldBeIgnored;
-              }
-              else {
-                // We don't know... Be conservative.
-                exclude = false;
-              }
-            }
-          }
-        } else {
-          exclude = !project.DirectoryFilter.Include(relativePathToItem);
-        }
-
+        var exclude = RelativePathShouldBeIgnored(project, change, segmentPath);
         if (exclude)
           return true;
 
-        pathToItem = relativePathToItem;
+        parentPath = segmentPath;
       }
       return false;
+    }
+
+    private bool RelativePathShouldBeIgnored(IProject project, PathChangeEntry change, RelativePath segmentPath) {
+      // For the last component, we don't know if it is a file or directory.
+      if (segmentPath.Equals(change.RelativePath)) {
+        // Try to avoid Disk I/O if the path should be excluded
+        var fileShouldBeIgnored = !project.FileFilter.Include(segmentPath);
+        var directoryShouldBeIgnored = !project.DirectoryFilter.Include(segmentPath);
+        if (fileShouldBeIgnored && directoryShouldBeIgnored) {
+          return true;
+        }
+
+        // Check depending on the change kind.
+        if (change.Kind == PathChangeKind.Deleted) {
+          return false;
+        }
+
+        var info = _fileSystem.GetFileInfoSnapshot(change.Path);
+        if (info.IsFile) {
+          return fileShouldBeIgnored;
+        }
+
+        if (info.IsDirectory) {
+          return directoryShouldBeIgnored;
+        }
+
+        // We don't know... Be conservative.
+        return false;
+      }
+
+      return !project.DirectoryFilter.Include(segmentPath);
     }
 
     private ProjectFileName GetProjectFileName(FullPath path) {

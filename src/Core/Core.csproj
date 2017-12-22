@@ -66,6 +66,7 @@
     <Compile Include="DkmShared\VsDebuggerMessage.cs" />
     <Compile Include="DkmShared\VsPackageMessage.cs" />
     <Compile Include="Files\CustomPathComparer.cs" />
+    <Compile Include="Files\SingleDirectoryChangeWatcher.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.cs" />
     <Compile Include="Files\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="Files\FileInfoSnapshot.cs" />
@@ -169,6 +170,7 @@
     <Compile Include="Ipc\TypedMessages\SearchCodeRequest.cs" />
     <Compile Include="Ipc\TypedMessages\SearchFilePathsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemRequest.cs" />
+    <Compile Include="Threads\PeriodicTimer.cs" />
     <Compile Include="Utility\BoundedOperationLimiter.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Ipc\IpcRequest.cs" />

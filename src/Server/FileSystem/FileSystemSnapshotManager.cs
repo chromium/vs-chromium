@@ -147,13 +147,13 @@ namespace VsChromium.Server.FileSystem {
       });
     }
 
-    private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
+    private void DirectoryChangeWatcherOnPathsChanged(object sender, PathsChangedEventArgs e) {
       Logger.LogInfo("File change events: enqueuing an incremental file system rescan");
-      _pathsChangedQueue.Enqueue(changes);
+      _pathsChangedQueue.Enqueue(e.Changes);
       _flushPathChangesTaskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
     }
 
-    private void DirectoryChangeWatcherOnError(Exception exception) {
+    private void DirectoryChangeWatcherOnError(object sender, Exception exception) {
       Logger.LogInfo("File change events error: queuing a full file system rescan");
       // Ingore all changes
       _pathsChangedQueue.DequeueAll();

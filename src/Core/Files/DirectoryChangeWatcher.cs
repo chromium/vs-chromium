@@ -3,17 +3,13 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
-using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Files {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
@@ -23,19 +19,14 @@ namespace VsChromium.Core.Files {
     private readonly PollingDelayPolicy _pathChangesPolling;
     private readonly PollingDelayPolicy _simplePathChangesPolling;
     private readonly PollingDelayPolicy _checkRootsPolling;
-    private readonly BoundedOperationLimiter _logLimiter = new BoundedOperationLimiter(10);
-
     /// <summary>
     /// Dictionary of watchers, one per root directory path.
     /// </summary>
-    private readonly Dictionary<FullPath, IFileSystemWatcher> _watchers = new Dictionary<FullPath, IFileSystemWatcher>();
+    private readonly IDictionary<FullPath, SingleDirectoryChangeWatcher> _watchers =new Dictionary<FullPath, SingleDirectoryChangeWatcher>();
     private readonly object _watchersLock = new object();
 
-    /// <summary>
-    /// Dictionary of file change events, per path.
-    /// </summary>
-    private Dictionary<FullPath, PathChangeEntry> _changedPaths = new Dictionary<FullPath, PathChangeEntry>();
-    private readonly object _changedPathsLock = new object();
+    private HashSet<FullPath> _deletedRootDirectories = new HashSet<FullPath>();
+    private readonly object __deletedRootDirectoriesLock = new object();
 
     /// <summary>
     /// The polling and event posting thread.
@@ -49,16 +40,6 @@ namespace VsChromium.Core.Files {
       _simplePathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(10.0));
       _pathChangesPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(60.0));
       _checkRootsPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
-    }
-
-    [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-    private static void LogPath(string path, PathChangeKind kind) {
-#if false
-      var pathToLog = @"";
-      if (SystemPathComparer.Instance.IndexOf(path, pathToLog, 0, path.Length) == 0) {
-        Logger.LogInfo("*************************** {0}: {1} *******************", path, kind);
-      }
-#endif
     }
 
     public void WatchDirectories(IEnumerable<FullPath> directories) {
@@ -77,16 +58,23 @@ namespace VsChromium.Core.Files {
       }
     }
 
-    public event Action<IList<PathChangeEntry>> PathsChanged;
-    public event Action<Exception> Error;
+    public event EventHandler<PathsChangedEventArgs> PathsChanged;
+    public event EventHandler<Exception> Error;
 
-    protected virtual void OnError(Exception obj) {
-      var handler = Error;
-      if (handler != null) handler(obj);
+    /// <summary>
+    /// Executed on the background thread when changes need to be notified to
+    /// our listeners.
+    /// </summary>
+    protected virtual void OnPathsChanged(PathsChangedEventArgs e) {
+      PathsChanged?.Invoke(this, e);
+    }
+
+    protected virtual void OnError(Exception e) {
+      Error?.Invoke(this, e);
     }
 
     private void AddDirectory(FullPath directory) {
-      IFileSystemWatcher watcher;
+      SingleDirectoryChangeWatcher watcher;
       lock (_watchersLock) {
         if (_pollingThread == null) {
           _pollingThread = new Thread(ThreadLoop) { IsBackground = true };
@@ -95,38 +83,17 @@ namespace VsChromium.Core.Files {
         if (_watchers.TryGetValue(directory, out watcher))
           return;
 
-        watcher = _fileSystem.CreateDirectoryWatcher(directory);
+        watcher = new SingleDirectoryChangeWatcher(_fileSystem, _dateTimeProvider, directory);
         _watchers.Add(directory, watcher);
       }
 
-      Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
-      watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
-      watcher.IncludeSubdirectories = true;
-      // Note: The MSDN documentation says to use less than 64KB
-      //       (see https://msdn.microsoft.com/en-us/library/system.io.filesystemwatcher.internalbuffersize(v=vs.110).aspx)
-      //         "You can set the buffer to 4 KB or larger, but it must not exceed 64 KB."
-      //       However, the implementation allows for arbitrary buffer sizes.
-      //       Experience has shown that 64KB is small enough that we frequently run into "OverflowException"
-      //       exceptions on heavily active file systems (e.g. during a build of a complex project
-      //       such as Chromium).
-      //       The issue with these exceptions is that the consumer must be extremely conservative
-      //       when such errors occur, because we lost track of what happened at the individual
-      //       directory/file level. In the case of VsChromium, the server will batch a full re-scan
-      //       of the file system, instead of an incremental re-scan, and that can be quite time
-      //       consuming (as well as I/O consuming).
-      //       In the end, increasing the size of the buffer to 2 MB is the best option to avoid
-      //       these issues (2 MB is not that much memory in the grand scheme of things).
-      watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
-      watcher.Changed += WatcherOnChanged;
-      watcher.Created += WatcherOnCreated;
-      watcher.Deleted += WatcherOnDeleted;
-      watcher.Renamed += WatcherOnRenamed;
       watcher.Error += WatcherOnError;
+      watcher.PathsChanged += WatcherOnPathsChanged;
       watcher.Start();
     }
 
     private void RemoveDirectory(FullPath directory) {
-      IFileSystemWatcher watcher;
+      SingleDirectoryChangeWatcher watcher;
       lock (_watchersLock) {
         if (!_watchers.TryGetValue(directory, out watcher))
           return;
@@ -162,17 +129,21 @@ namespace VsChromium.Core.Files {
         return;
       _checkRootsPolling.Restart();
 
+      List<KeyValuePair<FullPath, SingleDirectoryChangeWatcher>> deletedWatchers;
       lock (_watchersLock) {
-        var deletedWatchers = _watchers
+        deletedWatchers = _watchers
           .Where(item => !_fileSystem.DirectoryExists(item.Key))
           .ToList();
-
         deletedWatchers
           .ForAll(item => {
-            EnqueueChangeEvent(item.Key, RelativePath.Empty, PathChangeKind.Deleted);
             RemoveDirectory(item.Key);
           });
       }
+
+      deletedWatchers
+        .ForAll(item => {
+          EnqueueRootDeletedEvent(item.Key);
+        });
     }
 
     private void PostPathsChangedEvents() {
@@ -207,7 +178,7 @@ namespace VsChromium.Core.Files {
 
         // See if we got new events, and merge them.
         var morePathsChanged = DequeueChangedPathsEvents();
-        morePathsChanged.ForAll(change => MergePathChange(changedPaths, change.Value));
+        morePathsChanged.ForAll(item => MergePathChange(changedPaths, item.Value));
 
         // If we got more changes, reset the polling interval for the non-simple
         // path changed. The goal is to avoid processing those too frequently if
@@ -230,6 +201,27 @@ namespace VsChromium.Core.Files {
       Debug.Assert(changedPaths.Count == 0);
     }
 
+    private static void MergePathChange(IDictionary<FullPath, PathChangeEntry> changes, PathChangeEntry entry) {
+      var entryPath = entry.Path;
+      PathChangeKind previousChangeKind = PathChangeKind.None;
+      PathChangeEntry currentEntry;
+      if (changes.TryGetValue(entryPath, out currentEntry)) {
+        previousChangeKind = currentEntry.Kind;
+      }
+
+      // Merge change kinds
+      var newChangeKind = SingleDirectoryChangeWatcher.CombineChangeKinds(previousChangeKind, entry.Kind);
+
+      // Update table with new change kind
+      if (newChangeKind == PathChangeKind.None) {
+        // Remove entry for files that have been created then deleted
+        changes.Remove(entryPath);
+      } else {
+        // Update entry for other cases
+        changes[entryPath] = new PathChangeEntry(entry.BasePath, entry.RelativePath, newChangeKind);
+      }
+    }
+
     /// <summary>
     /// Filter, remove and post events for all changes in <paramref
     /// name="paths"/> that match <paramref name="predicate"/>
@@ -245,7 +237,9 @@ namespace VsChromium.Core.Files {
         return;
 
       changes.ForAll(x => paths.Remove(x.Path));
-      OnPathsChanged(changes);
+      if (changes.Count > 0) {
+        OnPathsChanged(new PathsChangedEventArgs { Changes = changes });
+      }
     }
 
     private bool IncludeChange(PathChangeEntry entry) {
@@ -259,205 +253,44 @@ namespace VsChromium.Core.Files {
 
     private IDictionary<FullPath, PathChangeEntry> DequeueChangedPathsEvents() {
       // Copy current changes into temp and reset to empty collection.
-      lock (_changedPathsLock) {
-        var temp = _changedPaths;
-        _changedPaths = new Dictionary<FullPath, PathChangeEntry>();
-        return temp;
+      Dictionary<FullPath, PathChangeEntry> result = new Dictionary<FullPath, PathChangeEntry>();
+      lock (__deletedRootDirectoriesLock) {
+        foreach (var path in _deletedRootDirectories) {
+          result.Add(path, new PathChangeEntry(path, RelativePath.Empty, PathChangeKind.Deleted));
+        }
+        _deletedRootDirectories.Clear();
       }
+      lock (_watchersLock) {
+        foreach (var dir in _watchers.Values) {
+          foreach (var change in dir.DequeueChangedPathsEvents()) {
+            var path = dir.DirectoryPath.Combine(change.Key);
+            result.Add(path, new PathChangeEntry(dir.DirectoryPath, change.Key, change.Value));
+          }
+        }
+      }
+      return result;
     }
 
     private void RemoveIgnorableEvents(IDictionary<FullPath, PathChangeEntry> changes) {
       changes.RemoveWhere(x => !IncludeChange(x.Value));
     }
 
-    private void EnqueueChangeEvent(FullPath rootPath, RelativePath entryPath, PathChangeKind changeKind) {
-      //Logger.LogInfo("Enqueue change event: {0}, {1}", path, changeKind);
-      var entry = new PathChangeEntry(rootPath, entryPath, changeKind);
-      LogLastChange(new ChangeLog {
-        Entry = entry,
-        TimeStampUtc = _dateTimeProvider.UtcNow,
-      });
-
-      lock (_changedPathsLock) {
-        MergePathChange(_changedPaths, entry);
+    private void EnqueueRootDeletedEvent(FullPath rootPath) {
+      lock (__deletedRootDirectoriesLock) {
+        _deletedRootDirectories.Add(rootPath);
       }
     }
 
-    private static void MergePathChange(IDictionary<FullPath, PathChangeEntry> changes, PathChangeEntry entry) {
-      PathChangeKind currentChangeKind = PathChangeKind.None;
-      PathChangeEntry currentEntry;
-      if (changes.TryGetValue(entry.Path, out currentEntry)) {
-        currentChangeKind = currentEntry.Kind;
-      }
-      changes[entry.Path] = new PathChangeEntry(entry.BasePath, entry.RelativePath, CombineChangeKinds(currentChangeKind, entry.Kind));
-    }
-
-    private static PathChangeKind CombineChangeKinds(PathChangeKind current, PathChangeKind next) {
-      switch (current) {
-        case PathChangeKind.None:
-          return next;
-        case PathChangeKind.Created:
-          switch (next) {
-            case PathChangeKind.None:
-              return current;
-            case PathChangeKind.Created:
-              return current;
-            case PathChangeKind.Deleted:
-              return PathChangeKind.None;
-            case PathChangeKind.Changed:
-              return current;
-            default:
-              throw new ArgumentOutOfRangeException("next");
-          }
-        case PathChangeKind.Deleted:
-          switch (next) {
-            case PathChangeKind.None:
-              return current;
-            case PathChangeKind.Created:
-              return PathChangeKind.Changed;
-            case PathChangeKind.Deleted:
-              return current;
-            case PathChangeKind.Changed:
-              return PathChangeKind.Deleted; // Weird case...
-            default:
-              throw new ArgumentOutOfRangeException("next");
-          }
-        case PathChangeKind.Changed:
-          switch (next) {
-            case PathChangeKind.None:
-              return current;
-            case PathChangeKind.Created:
-              return PathChangeKind.Changed; // Weird case...
-            case PathChangeKind.Deleted:
-              return next;
-            case PathChangeKind.Changed:
-              return current;
-            default:
-              throw new ArgumentOutOfRangeException("next");
-          }
-        default:
-          throw new ArgumentOutOfRangeException("current");
-      }
-    }
-
-    /// <summary>
-    ///  Skip paths BCL can't process (e.g. path too long)
-    /// </summary>
-    private bool SkipPath(string path) {
-      if (PathHelpers.IsPathTooLong(path)) {
-        switch (_logLimiter.Proceed()) {
-          case BoundedOperationLimiter.Result.YesAndLast:
-            Logger.LogInfo("(The following log message will be the last of its kind)", path);
-            goto case BoundedOperationLimiter.Result.Yes;
-          case BoundedOperationLimiter.Result.Yes:
-            Logger.LogInfo("Skipping file change event because path is too long: \"{0}\"", path);
-            break;
-          case BoundedOperationLimiter.Result.NoMore:
-            break;
-        }
-        return true;
-      }
-      if (!PathHelpers.IsValidBclPath(path)) {
-        switch (_logLimiter.Proceed()) {
-          case BoundedOperationLimiter.Result.YesAndLast:
-            Logger.LogInfo("(The following log message will be the last of its kind)", path);
-            goto case BoundedOperationLimiter.Result.Yes;
-          case BoundedOperationLimiter.Result.Yes:
-            Logger.LogInfo("Skipping file change event because path is invalid: \"{0}\"", path);
-            break;
-          case BoundedOperationLimiter.Result.NoMore:
-            break;
-        }
-        return true;
-      }
-      return false;
-    }
-
-    private void WatcherOnError(object sender, ErrorEventArgs errorEventArgs) {
+    private void WatcherOnError(object sender, Exception exception) {
       Logger.WrapActionInvocation(() => {
-        // TODO(rpaquay): Try to recover?
-        Logger.LogError(errorEventArgs.GetException(), "File system watcher for path \"{0}\" error.",
-          ((FileSystemWatcher)sender).Path);
-        OnError(errorEventArgs.GetException());
+        Logger.LogError(exception, "File system watcher for path \"{0}\" error.",
+          ((SingleDirectoryChangeWatcher)sender).DirectoryPath);
+        OnError(exception);
       });
     }
 
-    private void WatcherOnRenamed(object sender, RenamedEventArgs args) {
-      Logger.WrapActionInvocation(() => {
-        var watcher = (FileSystemWatcher)sender;
-
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Created);
-        if (SkipPath(path))
-          return;
-
-        var oldPath = PathHelpers.CombinePaths(watcher.Path, args.OldName);
-        LogPath(oldPath, PathChangeKind.Deleted);
-        if (SkipPath(oldPath))
-          return;
-
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.OldName), PathChangeKind.Deleted);
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Created);
-        _eventReceived.Set();
-      });
-    }
-
-    private void WatcherOnDeleted(object sender, FileSystemEventArgs args) {
-      Logger.WrapActionInvocation(() => {
-        var watcher = (FileSystemWatcher)sender;
-
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Deleted);
-        if (SkipPath(path))
-          return;
-
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Deleted);
-        _eventReceived.Set();
-      });
-    }
-
-    private void WatcherOnCreated(object sender, FileSystemEventArgs args) {
-      Logger.WrapActionInvocation(() => {
-        var watcher = (FileSystemWatcher)sender;
-
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Created);
-        if (SkipPath(path))
-          return;
-
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Created);
-        _eventReceived.Set();
-      });
-    }
-
-    private void WatcherOnChanged(object sender, FileSystemEventArgs args) {
-      Logger.WrapActionInvocation(() => {
-        var watcher = (FileSystemWatcher)sender;
-
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Changed);
-        if (SkipPath(path))
-          return;
-
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Changed);
-        _eventReceived.Set();
-      });
-    }
-
-    /// <summary>
-    /// Executed on the background thread when changes need to be notified to
-    /// our listeners.
-    /// </summary>
-    protected virtual void OnPathsChanged(IList<PathChangeEntry> changes) {
-      if (changes.Count == 0)
-        return;
-
-      //Logger.LogInfo("DirectoryChangedWatcher.OnPathsChanged: {0} items (logging max 5 below).", changes.Count);
-      //changes.Take(5).ForAll(x => 
-      //  Logger.LogInfo("  Path changed: \"{0}\", {1}.", x.Path, x.Kind));
-      var handler = PathsChanged;
-      if (handler != null)
-        handler(changes);
+    private void WatcherOnPathsChanged(object sender, EventArgs e) {
+      _eventReceived.Set();
     }
 
     private class PollingDelayPolicy {
@@ -520,22 +353,6 @@ namespace VsChromium.Core.Files {
         }
         return result;
       }
-    }
-
-    // For debugging only
-    public static ConcurrentQueue<ChangeLog> LastChanges = new ConcurrentQueue<ChangeLog>();
-
-    public static void LogLastChange(ChangeLog entry) {
-      if (LastChanges.Count >= 100) {
-        ChangeLog temp;
-        LastChanges.TryDequeue(out temp);
-      }
-      LastChanges.Enqueue(entry);
-    }
-
-    public class ChangeLog {
-      public PathChangeEntry Entry { get; set; }
-      public DateTime TimeStampUtc { get; set; }
     }
   }
 }

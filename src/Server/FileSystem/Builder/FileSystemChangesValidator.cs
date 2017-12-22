@@ -106,14 +106,16 @@ namespace VsChromium.Server.FileSystem.Builder {
         // For the last component, we don't know if it is a file or directory.
         // Check depending on the change kind.
         if (item == names.Last()) {
-          if (change.Kind == PathChangeKind.Deleted) {
-            exclude = false;
-          } else {
-            // Try to avoid Disk I/O if the path should be excluded
-            var fileShouldBeIgnored = !project.FileFilter.Include(relativePathToItem);
-            var directoryShouldBeIgnored = !project.DirectoryFilter.Include(relativePathToItem);
-            if (fileShouldBeIgnored && directoryShouldBeIgnored) {
-              exclude = true;
+          // Try to avoid Disk I/O if the path should be excluded
+          var fileShouldBeIgnored = !project.FileFilter.Include(relativePathToItem);
+          var directoryShouldBeIgnored = !project.DirectoryFilter.Include(relativePathToItem);
+          if (fileShouldBeIgnored && directoryShouldBeIgnored) {
+            exclude = true;
+          }
+          else {
+            if (change.Kind == PathChangeKind.Deleted) {
+              // Note: Not sure why this is the case.
+              exclude = false;
             }
             else {
               var info = _fileSystem.GetFileInfoSnapshot(change.Path);

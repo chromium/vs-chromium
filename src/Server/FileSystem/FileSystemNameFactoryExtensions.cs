@@ -21,9 +21,9 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public static DirectoryEntry ToFlatSearchResult<TSource>(IFileSystemNameFactory fileSystemNameFactory,
-                                                             IEnumerable<TSource> source,
-                                                             Func<TSource, FileSystemName> fileNameMapper,
-                                                             Func<TSource, FileSystemEntryData> dataMapper) {
+      IEnumerable<TSource> source,
+      Func<TSource, FileSystemName> fileNameMapper,
+      Func<TSource, FileSystemEntryData> dataMapper) {
       var sw = Stopwatch.StartNew();
       // Group by root directory (typically one)
       var groups = source
@@ -45,8 +45,8 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private static IEnumerable<FileSystemEntry> CreateGroup<TSource>(IEnumerable<TSource> grouping,
-                                                                     Func<TSource, FileSystemName> fileNameMapper,
-                                                                     Func<TSource, FileSystemEntryData> dataMapper) {
+      Func<TSource, FileSystemName> fileNameMapper,
+      Func<TSource, FileSystemEntryData> dataMapper) {
       return grouping
         .Where(x => !fileNameMapper(x).IsAbsoluteName)
         .OrderBy(x => fileNameMapper(x).RelativePath)
@@ -84,27 +84,54 @@ namespace VsChromium.Server.FileSystem {
     }
 
     /// <summary>
-    /// Return the |FileName| instance corresponding to the full path |path|.
-    /// Returns |null| if |path| is invalid or not part of a project.
+    /// Return the <see cref="ProjectFileName"/> instance of the full path <paramref name="path"/>.
+    /// Returns the default value if <paramref name="path"/> is invalid or not part of a project.
     /// </summary>
-    public static ProjectFileName GetProjectFileName(IFileSystemNameFactory fileSystemNameFactory, IProjectDiscovery projectDiscovery, FullPath path) {
+    public static ProjectFileName CreateProjectFileFromFullPath(this IFileSystemNameFactory fileSystemNameFactory,
+      IProjectDiscovery projectDiscovery, FullPath path) {
       var project = projectDiscovery.GetProject(path);
       if (project == null)
         return default(ProjectFileName);
 
       var split = PathHelpers.SplitPrefix(path.Value, project.RootPath.Value);
-      var relativePath = split.Suffix;
+      return CreateProjectFileNameFromRelativePath(fileSystemNameFactory, project, new RelativePath(split.Suffix));
+    }
+
+    /// <summary>
+    /// Return the <see cref="ProjectFileName"/> instance of the project file <paramref name="relativePath"/>.
+    /// Returns the default value if <paramref name="relativePath"/> is invalid or not part of a project.
+    /// </summary>
+    public static ProjectFileName CreateProjectFileNameFromRelativePath(
+      this IFileSystemNameFactory fileSystemNameFactory, IProject project, RelativePath relativePath) {
+      return CreateProjectFileNameFromRelativePath(fileSystemNameFactory, project, relativePath.Value);
+    }
+
+    /// <summary>
+    /// Return the <see cref="ProjectFileName"/> instance of the project file <paramref name="relativePath"/>.
+    /// Returns the default value if <paramref name="relativePath"/> is invalid or not part of a project.
+    /// </summary>
+    public static ProjectFileName CreateProjectFileNameFromRelativePath(
+      this IFileSystemNameFactory fileSystemNameFactory, IProject project, string relativePath) {
+      if (project == null) {
+        throw new ArgumentNullException();
+      }
+      if (string.IsNullOrEmpty(relativePath)) {
+        return default(ProjectFileName);
+      }
 
       var directoryName = fileSystemNameFactory.CreateAbsoluteDirectoryName(project.RootPath);
-      var names = relativePath.Split(Path.DirectorySeparatorChar);
+      var names = PathHelpers.SplitPath(relativePath).ToList();
 
       foreach (var name in names) {
-        if (name == names.Last())
+        if (name == names.Last()) {
           return new ProjectFileName(project, fileSystemNameFactory.CreateFileName(directoryName, name));
+        }
 
         directoryName = fileSystemNameFactory.CreateDirectoryName(directoryName, name);
       }
-      return default(ProjectFileName);
+
+      Debug.Assert(false, "Unreachable code");
+      throw new InvalidOperationException();
     }
   }
 }

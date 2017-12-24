@@ -3,15 +3,17 @@
 // found in the LICENSE file.
 
 using System;
-using System.CodeDom;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace VsChromium.Core.Files {
   public static class PathHelpers {
     private const int MaxPath = 260;
     private static readonly string DirectorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
     private static readonly char[] DirectorySeparatorArray = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+    private static readonly string NetworkSharePrefix = new string(Path.DirectorySeparatorChar, 2);
 
     /// <summary>
     /// Combines two paths into a single path. More efficient than <see
@@ -49,6 +51,39 @@ namespace VsChromium.Core.Files {
       return path[prefix.Length] == Path.DirectorySeparatorChar;
     }
 
+    /// <summary>
+    /// Splits a path into its components, e.g c:\foo\bar into "c:", "foo" and "bar".
+    /// </summary>
+    public static IEnumerable<string> SplitPath(string path) {
+      if (string.IsNullOrEmpty(path)) {
+        yield break;
+      }
+
+      int start = 0;
+      StringBuilder sb = new StringBuilder();
+      if (path.StartsWith(NetworkSharePrefix)) {
+        start = NetworkSharePrefix.Length;
+        sb.Append(NetworkSharePrefix);
+      }
+      for (var index = start; index < path.Length; index++) {
+        char ch = path[index];
+        if (ch == Path.DirectorySeparatorChar) {
+          yield return sb.ToString();
+          sb.Clear();
+        }
+        else {
+          sb.Append(ch);
+        }
+      }
+      if (sb.Length > 0) {
+        yield return sb.ToString();
+      }
+    }
+
+    /// <summary>
+    /// Splits a path into an absolute path plus a relative path, using
+    /// <paramref name="prefix"/> as the path prefix.
+    /// </summary>
     public static SplitPath SplitPrefix(string path, string prefix) {
       if (string.IsNullOrEmpty(path))
         throw new ArgumentException();
@@ -151,6 +186,7 @@ namespace VsChromium.Core.Files {
 
       try {
         // This call checks path contains valid characters only, etc.
+        // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
         Path.GetDirectoryName(path);
         return true;
       }

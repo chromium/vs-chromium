@@ -19,7 +19,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (GetDirectoryStatisticsRequest)typedRequest;
 
-      //var directoryname = FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
+      //var directoryname = FileSystemNameFactoryExtensions.CreateProjectFileFromFullPath(_fileSystemNameFactory, _projectDiscovery, path);
       //if (filename == null)
       //  return Enumerable.Empty<FileExtract>();
 

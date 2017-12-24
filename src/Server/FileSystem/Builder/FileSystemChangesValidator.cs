@@ -62,7 +62,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         Logger.LogInfo("All file change events are file modifications.");
 
         var fileNames = filteredChanges
-          .Select(change => GetProjectFileName(change.BasePath))
+          .Select(change => CreateProjectFileNameFromChangeEntry(change))
           .Where(name => !name.IsNull);
 
         return new FileSystemValidationResult {
@@ -143,8 +143,12 @@ namespace VsChromium.Server.FileSystem.Builder {
       return false;
     }
 
-    private ProjectFileName GetProjectFileName(FullPath path) {
-      return FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
+    private ProjectFileName CreateProjectFileNameFromChangeEntry(PathChangeEntry entry) {
+      var project = _projectDiscovery.GetProject(entry.BasePath);
+      if (project == null) {
+        return default(ProjectFileName);
+      }
+      return _fileSystemNameFactory.CreateProjectFileNameFromRelativePath(project, entry.RelativePath);
     }
   }
 }

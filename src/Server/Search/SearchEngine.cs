@@ -212,8 +212,7 @@ namespace VsChromium.Server.Search {
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans, int maxLength) {
-      var filename =
-        FileSystemNameFactoryExtensions.GetProjectFileName(_fileSystemNameFactory, _projectDiscovery, path);
+      var filename =_fileSystemNameFactory.CreateProjectFileFromFullPath(_projectDiscovery, path);
       if (filename.IsNull)
         return Enumerable.Empty<FileExtract>();
 

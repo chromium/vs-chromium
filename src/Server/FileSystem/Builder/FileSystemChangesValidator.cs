@@ -95,7 +95,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         return true;
 
       // Split relative part into list of name components.
-      var names = change.RelativePath.Value.Split(Path.DirectorySeparatorChar);
+      var names = PathHelpers.SplitPath(change.RelativePath.Value).ToList();
 
       // Check each relative path from root path to full path.
       var pathToItem = new RelativePath();

@@ -286,7 +286,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private void LoadFileContents(FileSystemEntities entities, FileContentsLoadingContext loadingContext, CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Loading file contents from disk")) {
         using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
-          entities.Files.AsParallel().ForAll(fileEntry => {
+          entities.Files.AsParallelWrapper().ForAll(fileEntry => {
             Debug.Assert(fileEntry.Value.FileWithContents.Contents == null);
 
             if (progress.Step()) {
@@ -359,7 +359,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       // If project configuration has not changed, the file is still not
       // searchable, irrelevant to calling "IsSearchable".
       if (loadingContext.FullPathChanges != null) {
-        if (loadingContext.FullPathChanges.GetPathChangeKind(projectFileData.FileName.FullPath) == PathChangeKind.None) {
+        if (loadingContext.FullPathChanges.ShouldSkipLoadFileContents(projectFileData.FileName.FullPath)) {
           if (loadingContext.UnchangedProjects.Contains(projectFileData.Project))
             return null;
         }
@@ -380,17 +380,17 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return loadingContext.FileContentsMemoization.Get(projectFileData.FileName, fileContents);
     }
 
-    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContents oldFileWithContents) {
-      Debug.Assert(oldFileWithContents.Contents != null);
+    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContents existingFileWithContents) {
+      Debug.Assert(existingFileWithContents.Contents != null);
 
-      var fullPath = oldFileWithContents.FileName.FullPath;
+      var fullPath = existingFileWithContents.FileName.FullPath;
 
       if (fullPathChanges != null) {
         // We don't get file change events for file in symlinks, so we can't
         // rely on fullPathChanges contents for our heuristic of avoiding file
         // system access.
-        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(entities.Directories, oldFileWithContents.FileName)) {
-          return fullPathChanges.GetPathChangeKind(fullPath) == PathChangeKind.None;
+        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(entities.Directories, existingFileWithContents.FileName)) {
+          return fullPathChanges.ShouldSkipLoadFileContents(fullPath);
         }
       }
 
@@ -399,7 +399,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return
         (fi.Exists) &&
         (fi.IsFile) &&
-        (fi.LastWriteTimeUtc == oldFileWithContents.Contents.UtcLastModified);
+        (fi.LastWriteTimeUtc == existingFileWithContents.Contents.UtcLastModified);
     }
 
     /// <summary>

@@ -15,34 +15,63 @@ namespace VsChromium.Server.FileSystem {
   public class FullPathChanges {
     private readonly IList<PathChangeEntry> _entries;
     private readonly Lazy<Dictionary<FullPath, PathChangeKind>> _map;
+    private readonly Lazy<HashSet<FullPath>> _createdDirectories;
+    private readonly Lazy<HashSet<FullPath>> _basePaths;
 
     public FullPathChanges(IList<PathChangeEntry> entries) {
       _entries = entries;
-      _map = new Lazy<Dictionary<FullPath, PathChangeKind>>(() => _entries.ToDictionary(x => x.Path, x => x.ChangeKind));
+
+      _map = new Lazy<Dictionary<FullPath, PathChangeKind>>(() =>
+        _entries.ToDictionary(x => x.Path, x => x.ChangeKind));
+
+      _createdDirectories = new Lazy<HashSet<FullPath>>(() =>
+        new HashSet<FullPath>(_entries.Where(MaybeDirectoryCreation).Select(entry => entry.Path)));
+
+      _basePaths = new Lazy<HashSet<FullPath>>(() =>
+        new HashSet<FullPath>(_entries.Select(x => x.BasePath).Distinct()));
+    }
+
+    private static bool MaybeDirectoryCreation(PathChangeEntry entry) {
+      if (entry.ChangeKind == PathChangeKind.Created) {
+        return entry.PathKind == PathKind.Directory
+               || entry.PathKind == PathKind.FileOrDirectory
+               || entry.PathKind == PathKind.FileAndDirectory;
+      }
+      return false;
     }
 
     public IList<PathChangeEntry> Entries {
       get { return _entries; }
     }
 
-    public PathChangeKind GetPathChangeKind(FullPath path) {
+    public bool ShouldSkipLoadFileContents(FullPath path) {
+      // Don't skip if file has any change associated to it
+      if (GetPathChangeKind(path) != PathChangeKind.None) {
+        return false;
+      }
+
+      // Don't skip if any parent directory was newly created
+      if (_createdDirectories.Value.Count > 0) {
+        foreach (var parent in path.EnumerateParents()) {
+          if (_createdDirectories.Value.Contains(parent)) {
+            return false;
+          }
+          // Optimization: Don't move up past base (i.e. project) paths
+          if (_basePaths.Value.Contains(parent)) {
+            break;
+          }
+        }
+      }
+
+      return true;
+    }
+
+    private PathChangeKind GetPathChangeKind(FullPath path) {
       PathChangeKind result;
       if (!_map.Value.TryGetValue(path, out result)) {
         result = PathChangeKind.None;
       }
       return result;
-    }
-
-    public bool IsDeleted(FullPath path) {
-      return GetPathChangeKind(path) == PathChangeKind.Deleted;
-    }
-
-    public bool IsCreated(FullPath path) {
-      return GetPathChangeKind(path) == PathChangeKind.Created;
-    }
-
-    public bool IsChanged(FullPath path) {
-      return GetPathChangeKind(path) == PathChangeKind.Changed;
     }
   }
 }

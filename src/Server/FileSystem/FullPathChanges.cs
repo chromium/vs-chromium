@@ -45,33 +45,26 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public bool ShouldSkipLoadFileContents(FullPath path) {
-      // Don't skip if file has any change associated to it
-      if (GetPathChangeKind(path) != PathChangeKind.None) {
+      // Don't skip if path has any change associated to it
+      if (_map.Value.ContainsKey(path)) {
         return false;
       }
 
       // Don't skip if any parent directory was newly created
+      // (because new directories can contain files we don't know about yet).
       if (_createdDirectories.Value.Count > 0) {
-        foreach (var parent in path.EnumerateParents()) {
-          if (_createdDirectories.Value.Contains(parent)) {
+        foreach (var parentPath in path.EnumerateParents()) {
+          if (_createdDirectories.Value.Contains(parentPath)) {
             return false;
           }
           // Optimization: Don't move up past base (i.e. project) paths
-          if (_basePaths.Value.Contains(parent)) {
+          if (_basePaths.Value.Contains(parentPath)) {
             break;
           }
         }
       }
 
       return true;
-    }
-
-    private PathChangeKind GetPathChangeKind(FullPath path) {
-      PathChangeKind result;
-      if (!_map.Value.TryGetValue(path, out result)) {
-        result = PathChangeKind.None;
-      }
-      return result;
     }
   }
 }

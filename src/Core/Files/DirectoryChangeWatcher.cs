@@ -280,7 +280,7 @@ namespace VsChromium.Core.Files {
       RemoveIgnorableEvents(paths);
 
       var changes = paths
-        .Where(x => predicate(x.Value.Kind))
+        .Where(x => predicate(x.Value.ChangeKind))
         .Select(x => x.Value)
         .ToList();
       if (changes.Count == 0)
@@ -292,7 +292,7 @@ namespace VsChromium.Core.Files {
 
     private bool IncludeChange(PathChangeEntry entry) {
       // Ignore changes for files that have been created then deleted
-      if (entry.Kind == PathChangeKind.None)
+      if (entry.ChangeKind == PathChangeKind.None)
         return false;
 
 
@@ -330,13 +330,13 @@ namespace VsChromium.Core.Files {
       PathKind currentPathKind = PathKind.FileOrDirectory;
       PathChangeEntry currentEntry;
       if (changes.TryGetValue(entry.Path, out currentEntry)) {
-        currentChangeKind = currentEntry.Kind;
+        currentChangeKind = currentEntry.ChangeKind;
         currentPathKind = currentEntry.PathKind;
       }
       changes[entry.Path] = new PathChangeEntry(
         entry.BasePath,
         entry.RelativePath,
-        CombineChangeKinds(currentChangeKind, entry.Kind),
+        CombineChangeKinds(currentChangeKind, entry.ChangeKind),
         CombinePathKind(currentPathKind, entry.PathKind));
     }
 

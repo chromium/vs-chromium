@@ -23,12 +23,12 @@ namespace VsChromium.Core.Files {
     public FullPath BasePath { get { return _basePath; } }
     public RelativePath RelativePath { get { return _entryPath; } }
     public FullPath Path { get { return _basePath.Combine(_entryPath); } }
-    public PathChangeKind Kind { get { return _changeKind; } }
+    public PathChangeKind ChangeKind { get { return _changeKind; } }
     public PathKind PathKind { get { return _pathKind; }
     }
 
     public override string ToString() {
-      return string.Format("Change: Path=\"{0}\", PathKind={1}, ChangeKind={2}", Path.Value, PathKind, Kind);
+      return string.Format("Change: Path=\"{0}\", PathKind={1}, ChangeKind={2}", Path.Value, PathKind, ChangeKind);
     }
   }
 

@@ -18,7 +18,7 @@ namespace VsChromium.Server.FileSystem {
 
     public FullPathChanges(IList<PathChangeEntry> entries) {
       _entries = entries;
-      _map = new Lazy<Dictionary<FullPath, PathChangeKind>>(() => _entries.ToDictionary(x => x.Path, x => x.Kind));
+      _map = new Lazy<Dictionary<FullPath, PathChangeKind>>(() => _entries.ToDictionary(x => x.Path, x => x.ChangeKind));
     }
 
     public IList<PathChangeEntry> Entries {

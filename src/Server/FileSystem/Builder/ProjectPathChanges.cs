@@ -24,7 +24,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         .Where(x => PathHelpers.IsPrefix(x.Path.Value, _projectPath.Value))
         .Select(x => {
           var relPath = PathHelpers.SplitPrefix(x.Path.Value, _projectPath.Value).Suffix;
-          return KeyValuePair.Create(new RelativePath(relPath), x.Kind);
+          return KeyValuePair.Create(new RelativePath(relPath), x.ChangeKind);
         })
         .ToDictionary(x => x.Key, x => x.Value);
 

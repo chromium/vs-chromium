@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         filteredChanges
           .Take(5)
           .ForAll(x =>
-            Logger.LogInfo("  Path changed: \"{0}\", Pathkind={1}, Changekind={2}", x.Path, x.PathKind, x.Kind));
+            Logger.LogInfo("  Path changed: \"{0}\", Pathkind={1}, Changekind={2}", x.Path, x.PathKind, x.ChangeKind));
       }
 
       if (filteredChanges.Count == 0) {
@@ -58,7 +58,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         };
       }
 
-      if (filteredChanges.All(x => x.Kind == PathChangeKind.Changed)) {
+      if (filteredChanges.All(x => x.ChangeKind == PathChangeKind.Changed)) {
         Logger.LogInfo("All file change events are file modifications.");
 
         var fileNames = filteredChanges
@@ -113,7 +113,7 @@ namespace VsChromium.Server.FileSystem.Builder {
             exclude = true;
           }
           else {
-            if (change.Kind == PathChangeKind.Deleted) {
+            if (change.ChangeKind == PathChangeKind.Deleted) {
               // Note: Not sure why this is the case.
               exclude = false;
             }

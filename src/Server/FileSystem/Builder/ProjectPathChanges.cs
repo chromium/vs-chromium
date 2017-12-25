@@ -21,11 +21,8 @@ namespace VsChromium.Server.FileSystem.Builder {
       _projectPath = projectPath;
 
       _map = entries
-        .Where(x => PathHelpers.IsPrefix(x.Path.Value, _projectPath.Value))
-        .Select(x => {
-          var relPath = PathHelpers.SplitPrefix(x.Path.Value, _projectPath.Value).Suffix;
-          return KeyValuePair.Create(new RelativePath(relPath), x.ChangeKind);
-        })
+        .Where(x => x.BasePath.Equals(_projectPath))
+        .Select(x => KeyValuePair.Create(x.RelativePath, x.ChangeKind))
         .ToDictionary(x => x.Key, x => x.Value);
 
       _createdChildren = new Lazy<Dictionary<RelativePath, List<RelativePath>>>(() => _map

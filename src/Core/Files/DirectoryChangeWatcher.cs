@@ -17,6 +17,10 @@ using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Files {
   public class DirectoryChangeWatcher : IDirectoryChangeWatcher {
+    /// <summary>
+    /// Record the last 100 change notification, for debugging purpose only.
+    /// </summary>
+    private static readonly PathChangeRecorder _globalChangeRecorder = new PathChangeRecorder();
     private readonly IFileSystem _fileSystem;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
@@ -65,12 +69,12 @@ namespace VsChromium.Core.Files {
     }
 
     [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-    private static void LogPath(string path, PathChangeKind kind, PathKind pathKind) {
-#if true
-      //var pathToLog = @"";
-      //if (SystemPathComparer.Instance.IndexOf(path, pathToLog, 0, path.Length) == 0) {
+    private static void LogPathForDebugging(string path, PathChangeKind kind, PathKind pathKind) {
+#if false
+      var pathToLog = @"";
+      if (SystemPathComparer.Instance.IndexOf(path, pathToLog, 0, path.Length) == 0) {
         Logger.LogInfo("*************************** {0}: {1}-{2} *******************", path, kind, pathKind);
-      //}
+      }
 #endif
     }
 
@@ -315,7 +319,7 @@ namespace VsChromium.Core.Files {
     private void EnqueueChangeEvent(FullPath rootPath, RelativePath entryPath, PathChangeKind changeKind, PathKind pathKind) {
       //Logger.LogInfo("Enqueue change event: {0}, {1}", path, changeKind);
       var entry = new PathChangeEntry(rootPath, entryPath, changeKind, pathKind);
-      LogLastChange(new ChangeLog {
+      _globalChangeRecorder.RecordChange(new PathChangeRecorder.ChangeInfo {
         Entry = entry,
         TimeStampUtc = _dateTimeProvider.UtcNow,
       });
@@ -326,8 +330,8 @@ namespace VsChromium.Core.Files {
     }
 
     private static void MergePathChange(IDictionary<FullPath, PathChangeEntry> changes, PathChangeEntry entry) {
-      PathChangeKind currentChangeKind = PathChangeKind.None;
-      PathKind currentPathKind = PathKind.FileOrDirectory;
+      var currentChangeKind = PathChangeKind.None;
+      var currentPathKind = PathKind.FileOrDirectory;
       PathChangeEntry currentEntry;
       if (changes.TryGetValue(entry.Path, out currentEntry)) {
         currentChangeKind = currentEntry.ChangeKind;
@@ -474,7 +478,7 @@ namespace VsChromium.Core.Files {
         var watcher = (FileSystemWatcher)sender;
 
         var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Changed, pathKind);
+        LogPathForDebugging(path, PathChangeKind.Changed, pathKind);
         if (SkipPath(path))
           return;
 
@@ -488,7 +492,7 @@ namespace VsChromium.Core.Files {
         var watcher = (FileSystemWatcher)sender;
 
         var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Created, pathKind);
+        LogPathForDebugging(path, PathChangeKind.Created, pathKind);
         if (SkipPath(path))
           return;
 
@@ -502,7 +506,7 @@ namespace VsChromium.Core.Files {
         var watcher = (FileSystemWatcher)sender;
 
         var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Deleted, pathKind);
+        LogPathForDebugging(path, PathChangeKind.Deleted, pathKind);
         if (SkipPath(path))
           return;
 
@@ -516,12 +520,12 @@ namespace VsChromium.Core.Files {
         var watcher = (FileSystemWatcher)sender;
 
         var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Created, pathKind);
+        LogPathForDebugging(path, PathChangeKind.Created, pathKind);
         if (SkipPath(path))
           return;
 
         var oldPath = PathHelpers.CombinePaths(watcher.Path, args.OldName);
-        LogPath(oldPath, PathChangeKind.Deleted, pathKind);
+        LogPathForDebugging(oldPath, PathChangeKind.Deleted, pathKind);
         if (SkipPath(oldPath))
           return;
 
@@ -609,20 +613,21 @@ namespace VsChromium.Core.Files {
       }
     }
 
-    // For debugging only
-    public static ConcurrentQueue<ChangeLog> LastChanges = new ConcurrentQueue<ChangeLog>();
+    private class PathChangeRecorder {
+      private readonly ConcurrentQueue<ChangeInfo> _lastRecords = new ConcurrentQueue<ChangeInfo>();
 
-    public static void LogLastChange(ChangeLog entry) {
-      if (LastChanges.Count >= 100) {
-        ChangeLog temp;
-        LastChanges.TryDequeue(out temp);
+      public void RecordChange(ChangeInfo entry) {
+        if (_lastRecords.Count >= 100) {
+          ChangeInfo temp;
+          _lastRecords.TryDequeue(out temp);
+        }
+        _lastRecords.Enqueue(entry);
       }
-      LastChanges.Enqueue(entry);
-    }
 
-    public class ChangeLog {
-      public PathChangeEntry Entry { get; set; }
-      public DateTime TimeStampUtc { get; set; }
+      public class ChangeInfo {
+        public PathChangeEntry Entry { get; set; }
+        public DateTime TimeStampUtc { get; set; }
+      }
     }
   }
 }

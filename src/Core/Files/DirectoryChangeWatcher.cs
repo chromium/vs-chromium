@@ -28,7 +28,7 @@ namespace VsChromium.Core.Files {
     /// <summary>
     /// Dictionary of watchers, one per root directory path.
     /// </summary>
-    private readonly Dictionary<FullPath, IFileSystemWatcher> _watchers = new Dictionary<FullPath, IFileSystemWatcher>();
+    private readonly Dictionary<FullPath, DirectoryWatcherhEntry> _watchers = new Dictionary<FullPath, DirectoryWatcherhEntry>();
     private readonly object _watchersLock = new object();
 
     /// <summary>
@@ -51,13 +51,26 @@ namespace VsChromium.Core.Files {
       _checkRootsPolling = new PollingDelayPolicy(dateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
     }
 
-    [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-    private static void LogPath(string path, PathChangeKind kind) {
-#if false
-      var pathToLog = @"";
-      if (SystemPathComparer.Instance.IndexOf(path, pathToLog, 0, path.Length) == 0) {
-        Logger.LogInfo("*************************** {0}: {1} *******************", path, kind);
+    private class DirectoryWatcherhEntry {
+      public FullPath Path { get; set; }
+      public IFileSystemWatcher DirectoryNameWatcher { get; set; }
+      public IFileSystemWatcher FileNameWatcher { get; set; }
+      public IFileSystemWatcher FileWriteWatcher { get; set; }
+
+      public void Dispose() {
+        DirectoryNameWatcher?.Dispose();
+        FileNameWatcher?.Dispose();
+        FileWriteWatcher.Dispose();
       }
+    }
+
+    [SuppressMessage("ReSharper", "UnusedParameter.Local")]
+    private static void LogPath(string path, PathChangeKind kind, PathKind pathKind) {
+#if true
+      //var pathToLog = @"";
+      //if (SystemPathComparer.Instance.IndexOf(path, pathToLog, 0, path.Length) == 0) {
+        Logger.LogInfo("*************************** {0}: {1}-{2} *******************", path, kind, pathKind);
+      //}
 #endif
     }
 
@@ -86,47 +99,76 @@ namespace VsChromium.Core.Files {
     }
 
     private void AddDirectory(FullPath directory) {
-      IFileSystemWatcher watcher;
+      DirectoryWatcherhEntry watcherEntry;
       lock (_watchersLock) {
         if (_pollingThread == null) {
-          _pollingThread = new Thread(ThreadLoop) { IsBackground = true };
+          _pollingThread = new Thread(ThreadLoop) {IsBackground = true};
           _pollingThread.Start();
         }
-        if (_watchers.TryGetValue(directory, out watcher))
+        if (_watchers.TryGetValue(directory, out watcherEntry))
           return;
 
-        watcher = _fileSystem.CreateDirectoryWatcher(directory);
-        _watchers.Add(directory, watcher);
+        watcherEntry = new DirectoryWatcherhEntry {
+          Path = directory,
+          DirectoryNameWatcher = _fileSystem.CreateDirectoryWatcher(directory),
+          FileNameWatcher = _fileSystem.CreateDirectoryWatcher(directory),
+          FileWriteWatcher = _fileSystem.CreateDirectoryWatcher(directory),
+        };
+        _watchers.Add(directory, watcherEntry);
       }
 
       Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
-      watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.DirectoryName | NotifyFilters.FileName;
-      watcher.IncludeSubdirectories = true;
-      // Note: The MSDN documentation says to use less than 64KB
-      //       (see https://msdn.microsoft.com/en-us/library/system.io.filesystemwatcher.internalbuffersize(v=vs.110).aspx)
-      //         "You can set the buffer to 4 KB or larger, but it must not exceed 64 KB."
-      //       However, the implementation allows for arbitrary buffer sizes.
-      //       Experience has shown that 64KB is small enough that we frequently run into "OverflowException"
-      //       exceptions on heavily active file systems (e.g. during a build of a complex project
-      //       such as Chromium).
-      //       The issue with these exceptions is that the consumer must be extremely conservative
-      //       when such errors occur, because we lost track of what happened at the individual
-      //       directory/file level. In the case of VsChromium, the server will batch a full re-scan
-      //       of the file system, instead of an incremental re-scan, and that can be quite time
-      //       consuming (as well as I/O consuming).
-      //       In the end, increasing the size of the buffer to 2 MB is the best option to avoid
-      //       these issues (2 MB is not that much memory in the grand scheme of things).
-      watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
-      watcher.Changed += WatcherOnChanged;
-      watcher.Created += WatcherOnCreated;
-      watcher.Deleted += WatcherOnDeleted;
-      watcher.Renamed += WatcherOnRenamed;
-      watcher.Error += WatcherOnError;
-      watcher.Start();
+
+      // Note: "DirectoryName" captures directory creation, deletion and rename
+      watcherEntry.DirectoryNameWatcher.NotifyFilter = NotifyFilters.DirectoryName;
+      watcherEntry.DirectoryNameWatcher.Changed += (s, e) => WatcherOnChanged(s, e, PathKind.Directory);
+      watcherEntry.DirectoryNameWatcher.Created += (s, e) => WatcherOnCreated(s, e, PathKind.Directory);
+      watcherEntry.DirectoryNameWatcher.Deleted += (s, e) => WatcherOnDeleted(s, e, PathKind.Directory);
+      watcherEntry.DirectoryNameWatcher.Renamed += (s, e) => WatcherOnRenamed(s, e, PathKind.Directory);
+
+      // Note: "FileName" captures file creation, deletion and rename
+      watcherEntry.FileNameWatcher.NotifyFilter = NotifyFilters.FileName;
+      watcherEntry.FileNameWatcher.Changed += (s, e) => WatcherOnChanged(s, e, PathKind.File);
+      watcherEntry.FileNameWatcher.Created += (s, e) => WatcherOnCreated(s, e, PathKind.File);
+      watcherEntry.FileNameWatcher.Deleted += (s, e) => WatcherOnDeleted(s, e, PathKind.File);
+      watcherEntry.FileNameWatcher.Renamed += (s, e) => WatcherOnRenamed(s, e, PathKind.File);
+
+      // Note: "LastWrite" will catch changes to *both* files and directories, i.e. it is
+      // not possible to known which one it is.
+      // For directories, a "LastWrite" change occurs when a child entry (file or directory) is added,
+      // renamed or deleted.
+      // For files, a "LastWrite" change occurs when the file is written to.
+      watcherEntry.FileWriteWatcher.NotifyFilter = NotifyFilters.LastWrite;
+      watcherEntry.FileWriteWatcher.Changed += (s, e) => WatcherOnChanged(s, e, PathKind.FileOrDirectory);
+      watcherEntry.FileWriteWatcher.Created += (s, e) => WatcherOnCreated(s, e, PathKind.FileOrDirectory);
+      watcherEntry.FileWriteWatcher.Deleted += (s, e) => WatcherOnDeleted(s, e, PathKind.FileOrDirectory);
+      watcherEntry.FileWriteWatcher.Renamed += (s, e) => WatcherOnRenamed(s, e, PathKind.FileOrDirectory);
+
+      foreach (var watcher in new[]
+        {watcherEntry.DirectoryNameWatcher, watcherEntry.FileNameWatcher, watcherEntry.FileWriteWatcher}) {
+        watcher.IncludeSubdirectories = true;
+        // Note: The MSDN documentation says to use less than 64KB
+        //       (see https://msdn.microsoft.com/en-us/library/system.io.filesystemwatcher.internalbuffersize(v=vs.110).aspx)
+        //         "You can set the buffer to 4 KB or larger, but it must not exceed 64 KB."
+        //       However, the implementation allows for arbitrary buffer sizes.
+        //       Experience has shown that 64KB is small enough that we frequently run into "OverflowException"
+        //       exceptions on heavily active file systems (e.g. during a build of a complex project
+        //       such as Chromium).
+        //       The issue with these exceptions is that the consumer must be extremely conservative
+        //       when such errors occur, because we lost track of what happened at the individual
+        //       directory/file level. In the case of VsChromium, the server will batch a full re-scan
+        //       of the file system, instead of an incremental re-scan, and that can be quite time
+        //       consuming (as well as I/O consuming).
+        //       In the end, increasing the size of the buffer to 2 MB is the best option to avoid
+        //       these issues (2 MB is not that much memory in the grand scheme of things).
+        watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
+        watcher.Error += WatcherOnError;
+        watcher.Start();
+      }
     }
 
     private void RemoveDirectory(FullPath directory) {
-      IFileSystemWatcher watcher;
+      DirectoryWatcherhEntry watcher;
       lock (_watchersLock) {
         if (!_watchers.TryGetValue(directory, out watcher))
           return;
@@ -169,7 +211,7 @@ namespace VsChromium.Core.Files {
 
         deletedWatchers
           .ForAll(item => {
-            EnqueueChangeEvent(item.Key, RelativePath.Empty, PathChangeKind.Deleted);
+            EnqueueChangeEvent(item.Key, RelativePath.Empty, PathChangeKind.Deleted, PathKind.Directory);
             RemoveDirectory(item.Key);
           });
       }
@@ -270,9 +312,9 @@ namespace VsChromium.Core.Files {
       changes.RemoveWhere(x => !IncludeChange(x.Value));
     }
 
-    private void EnqueueChangeEvent(FullPath rootPath, RelativePath entryPath, PathChangeKind changeKind) {
+    private void EnqueueChangeEvent(FullPath rootPath, RelativePath entryPath, PathChangeKind changeKind, PathKind pathKind) {
       //Logger.LogInfo("Enqueue change event: {0}, {1}", path, changeKind);
-      var entry = new PathChangeEntry(rootPath, entryPath, changeKind);
+      var entry = new PathChangeEntry(rootPath, entryPath, changeKind, pathKind);
       LogLastChange(new ChangeLog {
         Entry = entry,
         TimeStampUtc = _dateTimeProvider.UtcNow,
@@ -285,11 +327,56 @@ namespace VsChromium.Core.Files {
 
     private static void MergePathChange(IDictionary<FullPath, PathChangeEntry> changes, PathChangeEntry entry) {
       PathChangeKind currentChangeKind = PathChangeKind.None;
+      PathKind currentPathKind = PathKind.FileOrDirectory;
       PathChangeEntry currentEntry;
       if (changes.TryGetValue(entry.Path, out currentEntry)) {
         currentChangeKind = currentEntry.Kind;
+        currentPathKind = currentEntry.PathKind;
       }
-      changes[entry.Path] = new PathChangeEntry(entry.BasePath, entry.RelativePath, CombineChangeKinds(currentChangeKind, entry.Kind));
+      changes[entry.Path] = new PathChangeEntry(
+        entry.BasePath,
+        entry.RelativePath,
+        CombineChangeKinds(currentChangeKind, entry.Kind),
+        CombinePathKind(currentPathKind, entry.PathKind));
+    }
+
+    private static PathKind CombinePathKind(PathKind current, PathKind next) {
+      switch (current) {
+        case PathKind.File:
+          switch (next) {
+            case PathKind.File: return PathKind.File;
+            case PathKind.Directory: return PathKind.FileAndDirectory;
+            case PathKind.FileOrDirectory: return PathKind.File;
+            case PathKind.FileAndDirectory: return PathKind.FileAndDirectory;
+            default: throw new ArgumentOutOfRangeException("next");
+          }
+        case PathKind.Directory:
+          switch (next) {
+            case PathKind.File: return PathKind.FileAndDirectory;
+            case PathKind.Directory: return PathKind.Directory;
+            case PathKind.FileOrDirectory: return PathKind.Directory;
+            case PathKind.FileAndDirectory: return PathKind.FileAndDirectory;
+            default: throw new ArgumentOutOfRangeException("next");
+          }
+        case PathKind.FileOrDirectory:
+          switch (next) {
+            case PathKind.File: return PathKind.File;
+            case PathKind.Directory: return PathKind.Directory;
+            case PathKind.FileOrDirectory: return PathKind.FileOrDirectory;
+            case PathKind.FileAndDirectory: return PathKind.FileAndDirectory;
+            default: throw new ArgumentOutOfRangeException("next");
+          }
+        case PathKind.FileAndDirectory:
+          switch (next) {
+            case PathKind.File: return PathKind.FileAndDirectory;
+            case PathKind.Directory: return PathKind.FileAndDirectory;
+            case PathKind.FileOrDirectory: return PathKind.FileAndDirectory;
+            case PathKind.FileAndDirectory: return PathKind.FileAndDirectory;
+            default: throw new ArgumentOutOfRangeException("next");
+          }
+        default:
+          throw new ArgumentOutOfRangeException("current");
+      }
     }
 
     private static PathChangeKind CombineChangeKinds(PathChangeKind current, PathChangeKind next) {
@@ -382,64 +469,64 @@ namespace VsChromium.Core.Files {
       });
     }
 
-    private void WatcherOnRenamed(object sender, RenamedEventArgs args) {
+    private void WatcherOnChanged(object sender, FileSystemEventArgs args, PathKind pathKind) {
       Logger.WrapActionInvocation(() => {
         var watcher = (FileSystemWatcher)sender;
 
         var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Created);
+        LogPath(path, PathChangeKind.Changed, pathKind);
+        if (SkipPath(path))
+          return;
+
+        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Changed, pathKind);
+        _eventReceived.Set();
+      });
+    }
+
+    private void WatcherOnCreated(object sender, FileSystemEventArgs args, PathKind pathKind) {
+      Logger.WrapActionInvocation(() => {
+        var watcher = (FileSystemWatcher)sender;
+
+        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        LogPath(path, PathChangeKind.Created, pathKind);
+        if (SkipPath(path))
+          return;
+
+        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Created, pathKind);
+        _eventReceived.Set();
+      });
+    }
+
+    private void WatcherOnDeleted(object sender, FileSystemEventArgs args, PathKind pathKind) {
+      Logger.WrapActionInvocation(() => {
+        var watcher = (FileSystemWatcher)sender;
+
+        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        LogPath(path, PathChangeKind.Deleted, pathKind);
+        if (SkipPath(path))
+          return;
+
+        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Deleted, pathKind);
+        _eventReceived.Set();
+      });
+    }
+
+    private void WatcherOnRenamed(object sender, RenamedEventArgs args, PathKind pathKind) {
+      Logger.WrapActionInvocation(() => {
+        var watcher = (FileSystemWatcher)sender;
+
+        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        LogPath(path, PathChangeKind.Created, pathKind);
         if (SkipPath(path))
           return;
 
         var oldPath = PathHelpers.CombinePaths(watcher.Path, args.OldName);
-        LogPath(oldPath, PathChangeKind.Deleted);
+        LogPath(oldPath, PathChangeKind.Deleted, pathKind);
         if (SkipPath(oldPath))
           return;
 
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.OldName), PathChangeKind.Deleted);
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Created);
-        _eventReceived.Set();
-      });
-    }
-
-    private void WatcherOnDeleted(object sender, FileSystemEventArgs args) {
-      Logger.WrapActionInvocation(() => {
-        var watcher = (FileSystemWatcher)sender;
-
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Deleted);
-        if (SkipPath(path))
-          return;
-
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Deleted);
-        _eventReceived.Set();
-      });
-    }
-
-    private void WatcherOnCreated(object sender, FileSystemEventArgs args) {
-      Logger.WrapActionInvocation(() => {
-        var watcher = (FileSystemWatcher)sender;
-
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Created);
-        if (SkipPath(path))
-          return;
-
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Created);
-        _eventReceived.Set();
-      });
-    }
-
-    private void WatcherOnChanged(object sender, FileSystemEventArgs args) {
-      Logger.WrapActionInvocation(() => {
-        var watcher = (FileSystemWatcher)sender;
-
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
-        LogPath(path, PathChangeKind.Changed);
-        if (SkipPath(path))
-          return;
-
-        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Changed);
+        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.OldName), PathChangeKind.Deleted, pathKind);
+        EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Created, pathKind);
         _eventReceived.Set();
       });
     }
@@ -454,7 +541,7 @@ namespace VsChromium.Core.Files {
 
       //Logger.LogInfo("DirectoryChangedWatcher.OnPathsChanged: {0} items (logging max 5 below).", changes.Count);
       //changes.Take(5).ForAll(x => 
-      //  Logger.LogInfo("  Path changed: \"{0}\", {1}.", x.Path, x.Kind));
+      //  Logger.LogInfo("  Path changed: \"{0}\", {1}.", x.Path, x.ChangeKind));
       var handler = PathsChanged;
       if (handler != null)
         handler(changes);

@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         filteredChanges
           .Take(5)
           .ForAll(x =>
-            Logger.LogInfo("  Path changed: \"{0}\", kind={1}", x.Path, x.Kind));
+            Logger.LogInfo("  Path changed: \"{0}\", Pathkind={1}, Changekind={2}", x.Path, x.PathKind, x.Kind));
       }
 
       if (filteredChanges.Count == 0) {

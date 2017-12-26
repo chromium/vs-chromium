@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace VsChromium.Core.Files {
   /// <summary>
@@ -45,7 +44,7 @@ namespace VsChromium.Core.Files {
     /// <summary>
     /// Return the file name part of this full path.
     /// </summary>
-    public string FileName { get { return Path.GetFileName(_path); } }
+    public string FileName { get { return PathHelpers.GetFileName(_path); } }
 
     /// <summary>
     /// Returns a full path instance as the combination of this full path with
@@ -113,7 +112,7 @@ namespace VsChromium.Core.Files {
     /// one of its component, i.e. parts between directory separator.
     /// </summary>
     public bool HasComponent(string component) {
-      foreach (string currentComponent in _path.Split(Path.DirectorySeparatorChar)) {
+      foreach (string currentComponent in PathHelpers.SplitPath(_path)) {
         if (currentComponent.Equals(component, StringComparison.CurrentCultureIgnoreCase))
           return true;
       }
@@ -124,7 +123,7 @@ namespace VsChromium.Core.Files {
     /// Returns the enumeration of the parent full path of this full path.
     /// </summary>
     public IEnumerable<FullPath> EnumerateParents() {
-      for (var parent = this.Parent; parent != default(FullPath); parent = parent.Parent) {
+      for (var parent = Parent; parent != default(FullPath); parent = parent.Parent) {
         yield return parent;
       }
     }

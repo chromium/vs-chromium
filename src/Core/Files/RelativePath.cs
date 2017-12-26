@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.IO;
 
 namespace VsChromium.Core.Files {
   /// <summary>
@@ -62,7 +61,7 @@ namespace VsChromium.Core.Files {
         throw new ArgumentNullException("relativePath");
       if (PathHelpers.IsFileName(relativePath))
         return relativePath;
-      return Path.GetFileName(relativePath);
+      return PathHelpers.GetFileName(relativePath);
     }
 
     /// <summary>
@@ -105,28 +104,28 @@ namespace VsChromium.Core.Files {
     }
 
     public override string ToString() {
-      return this.Value;
+      return Value;
     }
 
     /// <summary>
     /// Returns a new relative path instance by appending <paramref name="name"/> to this instance.
     /// </summary>
     public RelativePath CreateChild(string name) {
-      return new RelativePath(PathHelpers.CombinePaths(this.Value, name), name);
+      return new RelativePath(PathHelpers.CombinePaths(Value, name), name);
     }
 
     #region Comparison/Equality plumbing
 
     public int CompareTo(RelativePath other) {
-      return SystemPathComparer.Instance.StringComparer.Compare(this.Value, other.Value);
+      return SystemPathComparer.Instance.StringComparer.Compare(Value, other.Value);
     }
 
     public bool Equals(RelativePath other) {
-      return SystemPathComparer.Instance.StringComparer.Equals(this.Value, other.Value);
+      return SystemPathComparer.Instance.StringComparer.Equals(Value, other.Value);
     }
 
     public override int GetHashCode() {
-      return SystemPathComparer.Instance.StringComparer.GetHashCode(this.Value);
+      return SystemPathComparer.Instance.StringComparer.GetHashCode(Value);
     }
 
     public override bool Equals(object other) {

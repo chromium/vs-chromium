@@ -14,6 +14,7 @@ namespace VsChromium.Core.Files {
     private static readonly string DirectorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
     private static readonly char[] DirectorySeparatorArray = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
     private static readonly string NetworkSharePrefix = new string(Path.DirectorySeparatorChar, 2);
+    public static char DirectorySeparatorChar = Path.DirectorySeparatorChar;
 
     /// <summary>
     /// Combines two paths into a single path. More efficient than <see
@@ -174,7 +175,7 @@ namespace VsChromium.Core.Files {
       if (string.IsNullOrEmpty(relativePath))
         return IsPathTooLong(parentPath);
 
-      return parentPath.Length + 1 + relativePath.Length > MaxPath;
+      return (parentPath.Length + 1 + relativePath.Length) >= MaxPath;
     }
 
     /// <summary>
@@ -193,6 +194,20 @@ namespace VsChromium.Core.Files {
       catch (Exception) {
         return false;
       }
+    }
+
+    public static string GetFileName(string path) {
+      if (string.IsNullOrEmpty(path)) {
+        return path;
+      }
+      int length = path.Length;
+      int index = length;
+      while (--index >= 0) {
+        char ch = path[index];
+        if (ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar || ch == Path.VolumeSeparatorChar)
+          return path.Substring(index + 1, length - index - 1);
+      }
+      return path;
     }
   }
 

@@ -29,16 +29,17 @@ namespace VsChromium.Server.Ipc.TypedEvents {
     public void RegisterEventHandlers() {
       _fileSystemSnapshotManager.SnapshotScanStarted += FileSystemSnapshotManagerOnSnapshotScanStarted;
       _fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
-      _fileSystemSnapshotManager.IndexingStateChanged += FileSystemSnapshotManagerOnIndexingStateChanged;
+      _fileSystemSnapshotManager.IndexingStatusChanged += FileSystemSnapshotManagerOnIndexingStatusChanged;
 
       _searchEngine.FilesLoading += SearchEngineOnFilesLoading;
       _searchEngine.FilesLoadingProgress += SearchEngineOnFilesLoadingProgress;
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
-    private void FileSystemSnapshotManagerOnIndexingStateChanged(object sender, StateChangedEventArgs e) {
+    private void FileSystemSnapshotManagerOnIndexingStatusChanged(object sender, IndexingStateChangedEventArgs e) {
       _typedEventSender.SendEventAsync(new IndexingStateChangedEvent {
-        Paused = e.NewState == IndexingState.Paused,
+        Paused = e.NewStatus.State == IndexingState.Paused,
+        PausedDueToError = e.NewStatus.PauseReason == PauseReason.FileWatchBufferOverflow
       });
     }
 

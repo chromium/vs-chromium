@@ -184,8 +184,12 @@
           <TextBlock.Style>
             <Style TargetType="TextBlock">
               <Style.Triggers>
+                <!-- Last one wins! -->
                 <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
                   <Setter Property="Foreground" Value="Goldenrod" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IndexingPausedDueToError}" Value="True">
+                  <Setter Property="Foreground" Value="OrangeRed" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
                   <Setter Property="Foreground" Value="Green" />

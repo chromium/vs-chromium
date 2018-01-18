@@ -31,7 +31,7 @@ namespace VsChromium.Tests.Server {
       _searchEngine = _container.GetExportedValue<ISearchEngine>();
       _searchEngine.FilesLoaded += (sender, result) => _serverReadyEvent.Set();
       _testFile = Utils.GetChromiumTestEnlistmentFile();
-      _registry.RegisterFile(new FullPath(_testFile.FullName));
+      _registry.RegisterFileAsync(new FullPath(_testFile.FullName));
     }
 
     [ClassCleanup]

@@ -31,6 +31,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string _displayFontFamily;
     private double _displayFontSize;
     private bool _indexingPaused;
+    private bool _indexingPausedDueToError;
 
     public enum DisplayKind {
       InformationMessages,
@@ -441,6 +442,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         _indexingPaused = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingPaused));
+      }
+    }
+
+    public bool IndexingPausedDueToError {
+      get { return _indexingPausedDueToError; }
+      set {
+        if (value == _indexingPausedDueToError)
+          return;
+        _indexingPausedDueToError = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingPausedDueToError));
       }
     }
 

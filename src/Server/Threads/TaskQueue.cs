@@ -50,7 +50,18 @@ namespace VsChromium.Server.Threads {
         RunTaskAsync(entry);
     }
 
+    public void EnqueueUnique(Action<CancellationToken> task) {
+      Enqueue(new TaskId("UniqueTask"), task);
+    }
+
     public void CancelCurrentTask() {
+      _taskCancellationTracker.CancelCurrent();
+    }
+
+    public void CancelAll() {
+      lock (_lock) {
+        _tasks.Clear();
+      }
       _taskCancellationTracker.CancelCurrent();
     }
 
@@ -111,6 +122,11 @@ namespace VsChromium.Server.Threads {
         _queue.RemoveFirst();
         _map.Remove(result.Id);
         return result;
+      }
+
+      public void Clear() {
+        _queue.Clear();
+        _map.Clear();
       }
     }
 

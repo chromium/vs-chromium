@@ -14,7 +14,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      switch (_snapshotManager.State) {
+      switch (_snapshotManager.GetStatus().State) {
         case IndexingState.Running:
           _snapshotManager.Pause();
           break;

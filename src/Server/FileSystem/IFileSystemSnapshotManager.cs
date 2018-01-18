@@ -20,7 +20,7 @@ namespace VsChromium.Server.FileSystem {
     void Pause();
     void Resume();
 
-    IndexingState State { get; }
+    IndexingStatus GetStatus();
 
     /// <summary>
     /// Event raised when a file system scan operation has started
@@ -39,7 +39,7 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     event EventHandler<FilesChangedEventArgs> FilesChanged;
 
-    event EventHandler<StateChangedEventArgs> IndexingStateChanged;
+    event EventHandler<IndexingStateChangedEventArgs> IndexingStatusChanged;
   }
 
   public enum IndexingState {
@@ -47,8 +47,18 @@ namespace VsChromium.Server.FileSystem {
     Paused
   }
 
-  public class StateChangedEventArgs : EventArgs {
-    public IndexingState OldState { get; set; }
-    public IndexingState NewState { get; set; }
+  public enum PauseReason {
+    UserRequest,
+    FileWatchBufferOverflow,
+  }
+
+  public class IndexingStatus {
+    public IndexingState State { get; set; }
+    public PauseReason PauseReason { get; set; }
+  }
+
+  public class IndexingStateChangedEventArgs : EventArgs {
+    public IndexingStatus OldStatus { get; set; }
+    public IndexingStatus NewStatus { get; set; }
   }
 }

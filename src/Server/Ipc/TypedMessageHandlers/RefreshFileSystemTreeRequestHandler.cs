@@ -13,7 +13,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      _fileRegistrationTracker.Refresh();
+      _fileRegistrationTracker.RefreshAsync();
       return new RefreshFileSystemTreeResponse();
     }
   }

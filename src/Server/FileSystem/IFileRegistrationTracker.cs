@@ -12,17 +12,17 @@ namespace VsChromium.Server.FileSystem {
     /// <summary>
     /// Register a new file to serve as the base for figuring out project roots
     /// </summary>
-    void RegisterFile(FullPath path);
+    void RegisterFileAsync(FullPath path);
 
     /// <summary>
     /// Un-register a new file to serve as the base for figuring out project roots
     /// </summary>
-    void UnregisterFile(FullPath path);
+    void UnregisterFileAsync(FullPath path);
 
     /// <summary>
     /// Force a file system rescan
     /// </summary>
-    void Refresh();
+    void RefreshAsync();
 
     event EventHandler<ProjectsEventArgs> ProjectListRefreshed;
     event EventHandler<ProjectsEventArgs> ProjectListChanged;

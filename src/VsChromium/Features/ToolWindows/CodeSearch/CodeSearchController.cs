@@ -632,6 +632,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             ViewModel.StatusText = message;
             ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "";
             ViewModel.IndexingPaused = response.IndexingPaused;
+            ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
           }
         });
     }
@@ -908,6 +909,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       DispatchSearchEngineFilesLoading(typedEvent);
       DispatchSearchEngineFilesLoadingProgress(typedEvent);
       DispatchSearchEngineFilesLoaded(typedEvent);
+      DispatchIndexingStateChanged(typedEvent);
     }
 
     private void DispatchIndexingStateChanged(TypedEvent typedEvent) {

@@ -14,7 +14,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      _fileRegistrationTracker.UnregisterFile(new FullPath(((UnregisterFileRequest)typedRequest).FileName));
+      _fileRegistrationTracker.UnregisterFileAsync(new FullPath(((UnregisterFileRequest)typedRequest).FileName));
 
       return new DoneResponse {
         Info = "processing..."

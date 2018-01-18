@@ -46,6 +46,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly IOperationProcessor _operationProcessor;
     private readonly ITaskQueue _longRunningFileSystemTaskQueue;
     private readonly ITaskQueue _flushPathChangesTaskQueue;
+    private readonly ITaskQueue _stateChangeTaskQueue;
 
     private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue =
       new SimpleConcurrentQueue<IList<PathChangeEntry>>();
@@ -53,6 +54,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
     private IndexingState _indexingState = IndexingState.Running;
+    private PauseReason _pauseReason;
 
     /// <summary>
     /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
@@ -86,6 +88,7 @@ namespace VsChromium.Server.FileSystem {
       _fileRegistrationTracker = fileRegistrationTracker;
 
       _flushPathChangesTaskQueue = taskQueueFactory.CreateQueue("FileSystemSnapshotManager Path Changes Task Queue");
+      _stateChangeTaskQueue = taskQueueFactory.CreateQueue("FileSystemSnapshotManager State Change Task Queue");
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
       _fileRegistrationTracker.ProjectListRefreshed += FileRegistrationTrackerOnProjectListRefreshed;
       _fileSystemSnapshot = FileSystemSnapshot.Empty;
@@ -94,62 +97,65 @@ namespace VsChromium.Server.FileSystem {
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
     }
 
-    public IndexingState State { get { return _indexingState; } }
+    public IndexingStatus GetStatus() {
+      return new IndexingStatus {
+        State = _indexingState,
+        PauseReason = _pauseReason
+      };
+    }
 
     public FileSystemSnapshot CurrentSnapshot {
       get { return _fileSystemSnapshot; }
     }
 
+    public PauseReason PauseReason {
+      get { return _pauseReason; }
+    }
+
     public void Pause() {
-      switch (_indexingState) {
-        case IndexingState.Running:
-          // Cancel current scan request and set state to "paused"
-          _directoryChangeWatcher.Stop();
-          _indexingState = IndexingState.Paused;
-          OnIndexingStateChanged(new StateChangedEventArgs {
-            OldState = IndexingState.Running,
-            NewState = IndexingState.Paused,
-          });
-          break;
-        case IndexingState.Paused:
-          return;
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
+      PauseImpl(PauseReason.UserRequest);
     }
 
     public void Resume() {
-      switch (_indexingState) {
-        case IndexingState.Running:
-          return;
-        case IndexingState.Paused:
-          // Start a new file system scan request to "running"
-          _directoryChangeWatcher.Start();
-          _indexingState = IndexingState.Running;
-          OnIndexingStateChanged(new StateChangedEventArgs {
-            OldState = IndexingState.Paused,
-            NewState = IndexingState.Running,
-          });
-          return;
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        var oldStatus = GetStatus();
+        switch (_indexingState) {
+          case IndexingState.Running:
+            return;
+          case IndexingState.Paused:
+            _indexingState = IndexingState.Running;
+            _pauseReason = default(PauseReason);
+            // Start a new file system scan request to "running"
+            _directoryChangeWatcher.Start();
+            OnIndexingStatusChanged(new IndexingStateChangedEventArgs {
+              OldStatus = oldStatus,
+              NewStatus = GetStatus(),
+            });
+            _fileRegistrationTracker.RefreshAsync();
+            return;
+          default:
+            throw new ArgumentOutOfRangeException();
+        }
+      });
     }
 
     public void Refresh() {
-      _fileRegistrationTracker.Refresh();
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        _longRunningFileSystemTaskQueue.CancelAll();
+        _fileRegistrationTracker.RefreshAsync();
+      });
     }
 
     public event EventHandler<OperationInfo> SnapshotScanStarted;
     public event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;
-    public event EventHandler<StateChangedEventArgs> IndexingStateChanged;
+    public event EventHandler<IndexingStateChangedEventArgs> IndexingStatusChanged;
 
-    protected virtual void OnSnapshotComputing(OperationInfo e) {
+    protected virtual void OnSnapshotScanStarted(OperationInfo e) {
       SnapshotScanStarted?.Invoke(this, e);
     }
 
-    protected virtual void OnSnapshotComputed(SnapshotScanResult e) {
+    protected virtual void OnSnapshotScanFinished(SnapshotScanResult e) {
       SnapshotScanFinished?.Invoke(this, e);
     }
 
@@ -157,51 +163,84 @@ namespace VsChromium.Server.FileSystem {
       FilesChanged?.Invoke(this, e);
     }
 
-    protected virtual void OnIndexingStateChanged(StateChangedEventArgs e) {
-      IndexingStateChanged?.Invoke(this, e);
+    protected virtual void OnIndexingStatusChanged(IndexingStateChangedEventArgs e) {
+      IndexingStatusChanged?.Invoke(this, e);
     }
 
     private void FileRegistrationTrackerOnProjectListChanged(object sender, ProjectsEventArgs e) {
-      Logger.LogInfo("List of projects has changed: Enqueuing a partial file system scan");
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        Logger.LogInfo("List of projects has changed: Enqueuing a partial file system scan");
 
-      // If we are queuing a task that requires rescanning the entire file system,
-      // cancel existing tasks (should be only one really) to avoid wasting time
-      _longRunningFileSystemTaskQueue.CancelCurrentTask();
+        // If we are queuing a task that requires rescanning the entire file system,
+        // cancel existing tasks (should be only one really) to avoid wasting time
+        _longRunningFileSystemTaskQueue.CancelAll();
 
-      _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
-        // Pass empty changes, as we don't know of any file system changes for
-        // existing entries. For new entries, they don't exist in the snapshot,
-        // so they will be read form disk
-        var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
-        RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
+        _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
+          // Pass empty changes, as we don't know of any file system changes for
+          // existing entries. For new entries, they don't exist in the snapshot,
+          // so they will be read form disk
+          var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
+          RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
+        });
       });
     }
 
     private void FileRegistrationTrackerOnProjectListRefreshed(object sender, ProjectsEventArgs e) {
-      Logger.LogInfo("List of projects has been refreshed: Enqueuing a full file system scan");
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        Logger.LogInfo("List of projects has been refreshed: Enqueuing a full file system scan");
 
-      // If we are queuing a task that requires rescanning the entire file system,
-      // cancel existing tasks (should be only one really) to avoid wasting time
-      _longRunningFileSystemTaskQueue.CancelCurrentTask();
+        // If we are queuing a task that requires rescanning the entire file system,
+        // cancel existing tasks (should be only one really) to avoid wasting time
+        _longRunningFileSystemTaskQueue.CancelAll();
 
-      _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
-        RescanFileSystem(e.Projects, null, cancellationToken);
+        _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
+          RescanFileSystem(e.Projects, null, cancellationToken);
+        });
       });
     }
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
-      Logger.LogInfo("File change events: enqueuing an incremental file system rescan");
-      _pathsChangedQueue.Enqueue(changes);
-      _flushPathChangesTaskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        if (_indexingState == IndexingState.Running) {
+          Logger.LogInfo("File change events: enqueuing an incremental file system rescan");
+          _pathsChangedQueue.Enqueue(changes);
+          _flushPathChangesTaskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
+        }
+      });
     }
 
     private void DirectoryChangeWatcherOnError(Exception exception) {
-      Logger.LogInfo("File change events error: queuing a full file system rescan");
-      // Ingore all changes
-      _pathsChangedQueue.DequeueAll();
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        Logger.LogInfo("File change events error: entering pause mode");
+        // Ingore all changes
+        _pathsChangedQueue.DequeueAll();
 
-      // Rescan all projects from scratch.
-      _fileRegistrationTracker.Refresh();
+        // If we are in a runnin state, pause due to an error
+        PauseImpl(PauseReason.FileWatchBufferOverflow);
+      });
+    }
+
+    public void PauseImpl(PauseReason reason) {
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        var oldStatus = GetStatus();
+        switch (_indexingState) {
+          case IndexingState.Running:
+            // Cancel current scan request and set state to "paused"
+            _directoryChangeWatcher.Stop();
+            _longRunningFileSystemTaskQueue.CancelAll();
+            _indexingState = IndexingState.Paused;
+            _pauseReason = reason;
+            OnIndexingStatusChanged(new IndexingStateChangedEventArgs {
+              OldStatus = oldStatus,
+              NewStatus = GetStatus(),
+            });
+            break;
+          case IndexingState.Paused:
+            return;
+          default:
+            throw new ArgumentOutOfRangeException();
+        }
+      });
     }
 
     private void FlushPathsChangedQueueTask(CancellationToken cancellationToken) {
@@ -235,7 +274,7 @@ namespace VsChromium.Server.FileSystem {
           return;
 
         case FileSystemValidationResultKind.UnknownChanges:
-          _fileRegistrationTracker.Refresh();
+          _fileRegistrationTracker.RefreshAsync();
           return;
 
         default:
@@ -251,13 +290,13 @@ namespace VsChromium.Server.FileSystem {
       _operationProcessor.Execute(new OperationHandlers {
 
         OnBeforeExecute = info =>
-          OnSnapshotComputing(info),
+          OnSnapshotScanStarted(info),
 
         OnError = (info, error) => {
           if (!error.IsCanceled()) {
             Logger.LogError(error, "File system rescan error");
           }
-          OnSnapshotComputed(new SnapshotScanResult {
+          OnSnapshotScanFinished(new SnapshotScanResult {
             OperationInfo = info,
             Error = error
           });
@@ -278,7 +317,7 @@ namespace VsChromium.Server.FileSystem {
           }
 
           // Post event
-          OnSnapshotComputed(new SnapshotScanResult {
+          OnSnapshotScanFinished(new SnapshotScanResult {
             OperationInfo = info,
             PreviousSnapshot = oldSnapshot,
             FullPathChanges = pathChanges,

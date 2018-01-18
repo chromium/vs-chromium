@@ -192,7 +192,8 @@ namespace VsChromium.Core.Files {
         //       consuming (as well as I/O consuming).
         //       In the end, increasing the size of the buffer to 2 MB is the best option to avoid
         //       these issues (2 MB is not that much memory in the grand scheme of things).
-        watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
+        //watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
+        watcher.InternalBufferSize = 8 * 1024; // 8 KB
         watcher.Error += WatcherOnError;
         watcher.Start();
       }

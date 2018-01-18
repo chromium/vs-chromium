@@ -40,19 +40,19 @@ namespace VsChromium.Server.FileSystem {
     public event EventHandler<ProjectsEventArgs> ProjectListChanged;
     public event EventHandler<ProjectsEventArgs> ProjectListRefreshed;
 
-    public void RegisterFile(FullPath path) {
+    public void RegisterFileAsync(FullPath path) {
       Logger.LogInfo("Register path \"{0}\"", path);
       _pendingFileRegistrations.Enqueue(FileRegistrationKind.Register, path);
       _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
     }
 
-    public void UnregisterFile(FullPath path) {
+    public void UnregisterFileAsync(FullPath path) {
       Logger.LogInfo("Unregister path \"{0}\"", path);
       _pendingFileRegistrations.Enqueue(FileRegistrationKind.Unregister, path);
       _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
     }
 
-    public void Refresh() {
+    public void RefreshAsync() {
       Logger.LogInfo("Enqeuing file registration full refresh");
       _taskQueue.Enqueue(RefreshTaskId, RefreshTask);
     }

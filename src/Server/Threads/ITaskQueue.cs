@@ -19,10 +19,17 @@ namespace VsChromium.Server.Threads {
     /// <param name="task"></param>
     void Enqueue(TaskId id, Action<CancellationToken> task);
 
+    void EnqueueUnique(Action<CancellationToken> task);
+
     /// <summary>
     /// Cancel running task if there is one
     /// </summary>
     void CancelCurrentTask();
+
+    /// <summary>
+    /// Cancel all running and pending tasks
+    /// </summary>
+    void CancelAll();
   }
 
   /// <summary>
@@ -31,7 +38,7 @@ namespace VsChromium.Server.Threads {
   /// only used for logging and debugging purposes.
   /// </summary>
   public class TaskId : IEquatable<TaskId> {
-    private readonly String _description;
+    private readonly string _description;
 
     public TaskId(string description) {
       _description = description;

@@ -30,6 +30,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         FileCount = database.FileNames.Count,
         IndexedFileCount = database.SearchableFileCount,
         IndexedFileSize = database.FileContentsPieces.Aggregate(0L, (x, piece) => x + piece.ByteLength),
+        IndexingPaused = _snapshotManager.State == IndexingState.Paused
       };
     }
   }

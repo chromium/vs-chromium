@@ -9,6 +9,9 @@ namespace VsChromium.Core.Files {
   public interface IDirectoryChangeWatcher {
     void WatchDirectories(IEnumerable<FullPath> directories);
 
+    void Start();
+    void Stop();
+
     event Action<IList<PathChangeEntry>> PathsChanged;
     event Action<Exception> Error;
   }

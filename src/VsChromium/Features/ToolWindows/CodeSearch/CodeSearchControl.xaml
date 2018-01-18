@@ -12,7 +12,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300"
              d:DataContext="{d:DesignInstance codesearch:CodeSearchViewModel, IsDesignTimeCreatable=True}"
-             Name="FileExplorerToolWindow"
+             x:Name="FileExplorerToolWindow"
              Background="{DynamicResource VsBrush.ToolWindowBackground}"
              Foreground="{DynamicResource VsBrush.ToolWindowText}"
              HorizontalAlignment="Stretch">
@@ -42,7 +42,7 @@
         </Trigger>
       </Style.Triggers>
     </Style>
-    <Style TargetType="wpf:EditableComboBox" d:DataContext="{d:DesignInstance wpf:StringListViewModel}">
+    <Style TargetType="wpf:EditableComboBox">
       <Style.Triggers>
         <!-- Override default template behavior which is hard-coded to set Foregroud
              color to "White" on "IsKeyboardFocusWithin" -->
@@ -179,11 +179,36 @@
             <TextBlock Text="Resource usage of the Index maintained by the VS Chromium Server process"/>
           </TextBlock.ToolTip>
         </TextBlock>
-        <Button VerticalAlignment="Center" HorizontalAlignment="Right" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" Click="RefreshIndexButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button VerticalAlignment="Center" 
+                HorizontalAlignment="Right"
+                IsTabStop="False" Click="PauseIndexingButton_Click"
+                Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
+                Content="&#x3b;" FontSize="16" FontFamily="Webdings">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
+                  <Setter Property="Content" Value="&#x34;" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
+                  <Setter Property="Content" Value="&#x3b;" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
+          <Button.ToolTip>
+            <TextBlock Text="Turn on or off automatic updates of the index. Turning off may result in less file system performance impact."/>
+          </Button.ToolTip>
+        </Button>
+        <Button VerticalAlignment="Center" 
+                HorizontalAlignment="Right"
+                Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                IsTabStop="False" Click="RefreshIndexButton_Click"
+                Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
+                Content="&#x21ba;" FontSize="16" FontFamily="Segoe UI Emoji">
           <Button.ToolTip>
             <TextBlock Text="Refresh index"/>
           </Button.ToolTip>
-          <Image Source="{Binding RefreshFileSystemTreeButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16" />
         </Button>
       </StackPanel>
     </Grid>
@@ -269,7 +294,7 @@
     <!-- 'RootNode' is the property name of the control's DataContext instance. -->
     <TreeView
       ItemsSource="{Binding RootNodes}"
-      Name="FileTreeView" Height="Auto"
+      x:Name="FileTreeView" Height="Auto"
       VirtualizingStackPanel.IsVirtualizing="True"
       VirtualizingStackPanel.VirtualizationMode="Recycling"
       Background="{DynamicResource VsBrush.ToolWindowBackground}"

@@ -17,6 +17,11 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     FileSystemSnapshot CurrentSnapshot { get; }
 
+    void Pause();
+    void Run();
+
+    IndexingState State { get; }
+
     /// <summary>
     /// Event raised when a file system scan operation has started
     /// </summary>
@@ -33,5 +38,17 @@ namespace VsChromium.Server.FileSystem {
     /// remains unchanged.
     /// </summary>
     event EventHandler<FilesChangedEventArgs> FilesChanged;
+
+    event EventHandler<StateChangedEventArgs> IndexingStateChanged;
+  }
+
+  public enum IndexingState {
+    Running,
+    Paused
+  }
+
+  public class StateChangedEventArgs : EventArgs {
+    public IndexingState OldState { get; set; }
+    public IndexingState NewState { get; set; }
   }
 }

@@ -321,5 +321,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     #endregion
+
+    private void PauseIndexingButton_Click(object sender, RoutedEventArgs e) {
+      //TODO
+    }
   }
 }

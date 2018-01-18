@@ -52,6 +52,8 @@ namespace VsChromium.Server.FileSystem {
 
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
+    private IndexingState _indexingState = IndexingState.Running;
+
     /// <summary>
     /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
     /// </summary>
@@ -92,8 +94,46 @@ namespace VsChromium.Server.FileSystem {
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
     }
 
+    public IndexingState State { get { return _indexingState; } }
+
     public FileSystemSnapshot CurrentSnapshot {
       get { return _fileSystemSnapshot; }
+    }
+
+    public void Pause() {
+      switch (_indexingState) {
+        case IndexingState.Running:
+          // Cancel current scan request and set state to "paused"
+          _directoryChangeWatcher.Stop();
+          _indexingState = IndexingState.Paused;
+          OnIndexingStateChanged(new StateChangedEventArgs {
+            OldState = IndexingState.Running,
+            NewState = IndexingState.Paused,
+          });
+          break;
+        case IndexingState.Paused:
+          return;
+        default:
+          throw new ArgumentOutOfRangeException();
+      }
+    }
+
+    public void Run() {
+      switch (_indexingState) {
+        case IndexingState.Running:
+          return;
+        case IndexingState.Paused:
+          // Start a new file system scan request to "running"
+          _directoryChangeWatcher.Start();
+          _indexingState = IndexingState.Running;
+          OnIndexingStateChanged(new StateChangedEventArgs {
+            OldState = IndexingState.Paused,
+            NewState = IndexingState.Running,
+          });
+          return;
+        default:
+          throw new ArgumentOutOfRangeException();
+      }
     }
 
     public void Refresh() {
@@ -103,20 +143,22 @@ namespace VsChromium.Server.FileSystem {
     public event EventHandler<OperationInfo> SnapshotScanStarted;
     public event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;
+    public event EventHandler<StateChangedEventArgs> IndexingStateChanged;
 
     protected virtual void OnSnapshotComputing(OperationInfo e) {
-      EventHandler<OperationInfo> handler = SnapshotScanStarted;
-      if (handler != null) handler(this, e);
+      SnapshotScanStarted?.Invoke(this, e);
     }
 
     protected virtual void OnSnapshotComputed(SnapshotScanResult e) {
-      EventHandler<SnapshotScanResult> handler = SnapshotScanFinished;
-      if (handler != null) handler(this, e);
+      SnapshotScanFinished?.Invoke(this, e);
     }
 
     protected virtual void OnFilesChanged(FilesChangedEventArgs e) {
-      EventHandler<FilesChangedEventArgs> handler = FilesChanged;
-      if (handler != null) handler(this, e);
+      FilesChanged?.Invoke(this, e);
+    }
+
+    protected virtual void OnIndexingStateChanged(StateChangedEventArgs e) {
+      IndexingStateChanged?.Invoke(this, e);
     }
 
     private void FileRegistrationTrackerOnProjectListChanged(object sender, ProjectsEventArgs e) {

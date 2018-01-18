@@ -196,6 +196,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
+    public void OnIndexingStateChanged() {
+      FetchDatabaseStatistics();
+    }
+
     public void OnFileSystemTreeScanStarted() {
       // Display a generic "loading" message the first time a file system tree
       // is loaded.
@@ -611,10 +615,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
               memoryUsageMb = 1;
             var message =
               String.Format(
-                "Index: {0:n0} files - {1:n0} MB",
+                "Index: {0:n0} files - {1:n0} MB (State: {2})",
                 response.IndexedFileCount,
-                memoryUsageMb);
+                memoryUsageMb,
+                response.IndexingPaused ? "Paused" : "Running");
             ViewModel.StatusText = message;
+            ViewModel.IndexingPaused = response.IndexingPaused;
           }
         });
     }
@@ -891,6 +897,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       DispatchSearchEngineFilesLoading(typedEvent);
       DispatchSearchEngineFilesLoadingProgress(typedEvent);
       DispatchSearchEngineFilesLoaded(typedEvent);
+    }
+
+    private void DispatchIndexingStateChanged(TypedEvent typedEvent) {
+      var @event = typedEvent as IndexingStateChanged;
+      if (@event != null) {
+        WpfUtilities.Post(_control, () => {
+          Logger.LogInfo("Indexing state had changed to {0}.", @event.Paused);
+          OnIndexingStateChanged();
+        });
+      }
     }
 
     private void DispatchFileSystemTreeScanStarted(TypedEvent typedEvent) {

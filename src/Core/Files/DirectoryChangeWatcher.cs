@@ -20,7 +20,7 @@ namespace VsChromium.Core.Files {
     /// <summary>
     /// Record the last 100 change notification, for debugging purpose only.
     /// </summary>
-    private static readonly PathChangeRecorder _globalChangeRecorder = new PathChangeRecorder();
+    private static readonly PathChangeRecorder GlobalChangeRecorder = new PathChangeRecorder();
     private readonly IFileSystem _fileSystem;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly AutoResetEvent _eventReceived = new AutoResetEvent(false);
@@ -66,6 +66,18 @@ namespace VsChromium.Core.Files {
         FileNameWatcher?.Dispose();
         FileWriteWatcher.Dispose();
       }
+
+      public void Start() {
+        DirectoryNameWatcher?.Start();
+        FileNameWatcher?.Start();
+        FileWriteWatcher?.Start();
+      }
+
+      public void Stop() {
+        DirectoryNameWatcher?.Stop();
+        FileNameWatcher?.Stop();
+        FileWriteWatcher?.Stop();
+      }
     }
 
     [SuppressMessage("ReSharper", "UnusedParameter.Local")]
@@ -94,12 +106,27 @@ namespace VsChromium.Core.Files {
       }
     }
 
+    public void Start() {
+      lock (_watchersLock) {
+        foreach (var watcher in _watchers) {
+          watcher.Value.Start();
+        }
+      }
+    }
+
+    public void Stop() {
+      lock (_watchersLock) {
+        foreach (var watcher in _watchers) {
+          watcher.Value.Stop();
+        }
+      }
+    }
+
     public event Action<IList<PathChangeEntry>> PathsChanged;
     public event Action<Exception> Error;
 
     protected virtual void OnError(Exception obj) {
-      var handler = Error;
-      if (handler != null) handler(obj);
+      Error?.Invoke(obj);
     }
 
     private void AddDirectory(FullPath directory) {
@@ -319,7 +346,7 @@ namespace VsChromium.Core.Files {
     private void EnqueueChangeEvent(FullPath rootPath, RelativePath entryPath, PathChangeKind changeKind, PathKind pathKind) {
       //Logger.LogInfo("Enqueue change event: {0}, {1}", path, changeKind);
       var entry = new PathChangeEntry(rootPath, entryPath, changeKind, pathKind);
-      _globalChangeRecorder.RecordChange(new PathChangeRecorder.ChangeInfo {
+      GlobalChangeRecorder.RecordChange(new PathChangeRecorder.ChangeInfo {
         Entry = entry,
         TimeStampUtc = _dateTimeProvider.UtcNow,
       });

@@ -29,6 +29,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private double _pathFontSize;
     private string _displayFontFamily;
     private double _displayFontSize;
+    private bool _indexingPaused;
 
     public enum DisplayKind {
       InformationMessages,
@@ -419,6 +420,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         _searchFilePathsValue = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchFilePathsValue));
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.RefreshSearchResultsEnabled));
+      }
+    }
+
+    public bool IndexingPaused {
+      get { return _indexingPaused; }
+      set {
+        if (value == _indexingPaused)
+          return;
+        _indexingPaused = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingPaused));
       }
     }
 

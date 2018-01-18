@@ -117,6 +117,7 @@
     <Compile Include="Ipc\TypedMessages\GetDatabaseStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\IndexingStateChanged.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeRequest.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeResponse.cs" />
     <Compile Include="Ipc\TypedMessages\SearchEngineFilesLoadingProgress.cs" />

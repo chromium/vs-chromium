@@ -118,7 +118,7 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    public void Run() {
+    public void Resume() {
       switch (_indexingState) {
         case IndexingState.Running:
           return;

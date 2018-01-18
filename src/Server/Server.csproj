@@ -66,6 +66,7 @@
     <Compile Include="FileSystem\IFileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystemDatabase\Builder\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectFileName.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\PauseResumeIndexingRequestHandler.cs" />
     <Compile Include="Projects\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotScanResult.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDatabaseStatisticsRequestHandler.cs" />

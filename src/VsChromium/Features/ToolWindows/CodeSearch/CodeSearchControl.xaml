@@ -107,69 +107,70 @@
           </ToggleButton.ToolTip>
         </ToggleButton>
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
-        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}" Click="GotoPrevious_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button IsTabStop="False" IsEnabled="{Binding GotoPreviousEnabled}"
+                Click="GotoPrevious_Click" Foreground="{DynamicResource VsBrush.WindowText}"
+                FontFamily="Segoe UI Symbol" FontSize="14" Content="&#xE0B3;">
           <Button.ToolTip>
             <TextBlock Text="Go to previous search result (Shift-F8 or Ctrl-Shift-F8)"/>
           </Button.ToolTip>
-          <Image Source="{Binding GotoPreviousButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-            <Image.Style>
-              <Style TargetType="Image">
-                <Style.Triggers>
-                  <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.5" />
-                  </Trigger>
-                </Style.Triggers>
-              </Style>
-            </Image.Style>
-          </Image>
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
         </Button>
-        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}" Click="GotoNext_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button IsTabStop="False" IsEnabled="{Binding GotoNextEnabled}"
+                Click="GotoNext_Click" Foreground="{DynamicResource VsBrush.WindowText}"
+                FontFamily="Segoe UI Symbol" FontSize="14" Content="&#xE0AF;">
           <Button.ToolTip>
             <TextBlock Text="Go to next search result (F8 or Ctrl-F8)"/>
           </Button.ToolTip>
-          <Image Source="{Binding GotoNextButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-            <Image.Style>
-              <Style TargetType="Image">
-                <Style.Triggers>
-                  <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.5" />
-                  </Trigger>
-                </Style.Triggers>
-              </Style>
-            </Image.Style>
-          </Image>
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
         </Button>
-        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}" Click="Cancel_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button IsTabStop="False" IsEnabled="{Binding CancelSearchEnabled}"
+                Click="Cancel_Click" Foreground="{DynamicResource VsBrush.WindowText}"
+                FontFamily="Segoe UI Symbol" FontSize="14" Content="&#xE10A;">
           <Button.ToolTip>
             <TextBlock Text="Clear search results"/>
           </Button.ToolTip>
-          <Image Source="{Binding CancelSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-            <Image.Style>
-              <Style TargetType="Image">
-                <Style.Triggers>
-                  <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.5" />
-                  </Trigger>
-                </Style.Triggers>
-              </Style>
-            </Image.Style>
-          </Image>
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
         </Button>
-        <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" IsTabStop="False" IsEnabled="{Binding RefreshSearchResultsEnabled}" Click="RefreshSearchResultsButton_Click" Foreground="{DynamicResource VsBrush.WindowText}">
+        <Button IsTabStop="False" IsEnabled="{Binding RefreshSearchResultsEnabled}" 
+                Click="RefreshSearchResultsButton_Click"
+                Foreground="{DynamicResource VsBrush.WindowText}"
+                FontFamily="Segoe UI Symbol" FontSize="14" Content="&#xE11A;">
           <Button.ToolTip>
             <TextBlock Text="Refresh search results"/>
           </Button.ToolTip>
-          <Image Source="{Binding RefreshSearchResultsButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16">
-            <Image.Style>
-              <Style TargetType="Image">
-                <Style.Triggers>
-                  <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.5" />
-                  </Trigger>
-                </Style.Triggers>
-              </Style>
-            </Image.Style>
-          </Image>
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
         </Button>
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
       </StackPanel>
@@ -179,25 +180,55 @@
             <TextBlock Text="Resource usage of the Index maintained by the VS Chromium Server process"/>
           </TextBlock.ToolTip>
         </TextBlock>
+        <TextBlock Text="{Binding IndexingStatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="4,0,2,0">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
+                  <Setter Property="Foreground" Value="Goldenrod" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
+                  <Setter Property="Foreground" Value="Green" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+          <TextBlock.ToolTip>
+            <TextBlock>
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
+                      <Setter Property="Text" Value="Automatic indexing is currently paused. The index database is not up-to-date. Press the Run or Refresh button." />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
+                      <Setter Property="Text" Value="Automatic indexing is currently active. The index database is automatically updated with as files change on disk." />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+          </TextBlock.ToolTip>
+        </TextBlock>
         <Button VerticalAlignment="Center" 
                 HorizontalAlignment="Right"
                 IsTabStop="False" Click="PauseIndexingButton_Click"
                 Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
-                Content="&#x3b;" FontSize="16" FontFamily="Webdings">
+                FontFamily="Segoe UI Symbol" FontSize="14">
           <Button.Style>
             <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
               <Style.Triggers>
                 <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
-                  <Setter Property="Content" Value="&#x34;" />
+                  <Setter Property="Content" Value="&#xE102;" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
-                  <Setter Property="Content" Value="&#x3b;" />
+                  <Setter Property="Content" Value="&#xE103;" />
                 </DataTrigger>
               </Style.Triggers>
             </Style>
           </Button.Style>
           <Button.ToolTip>
-            <TextBlock Text="Turn on or off automatic updates of the index. Turning off may result in less file system performance impact."/>
+            <TextBlock Text="Pause or Resume automatic updates of the index. Pausing indexing decreases the load on the file system."/>
           </Button.ToolTip>
         </Button>
         <Button VerticalAlignment="Center" 
@@ -205,7 +236,7 @@
                 Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
                 IsTabStop="False" Click="RefreshIndexButton_Click"
                 Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
-                Content="&#x21ba;" FontSize="16" FontFamily="Segoe UI Emoji">
+                FontFamily="Segoe UI Symbol" FontSize="14" Content="&#xE149;">
           <Button.ToolTip>
             <TextBlock Text="Refresh index"/>
           </Button.ToolTip>
@@ -232,7 +263,7 @@
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="80" />
             <ColumnDefinition Width="*" MinWidth="100" />
-            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="Auto"/>
           </Grid.ColumnDefinitions>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="Search Code:" VerticalAlignment="Center" />
@@ -248,11 +279,17 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="0" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearSearchCode_Click">
+          <Button Grid.Row="0" Grid.Column="2" IsTabStop="False"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Center"
+                  Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                  Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
+                  Background="Transparent"
+                  Click="ClearSearchCode_Click"
+                  FontFamily="Segoe UI Symbol" Content="&#xE10A;">
             <Button.ToolTip>
               <TextBlock Text="Clear text"/>
             </Button.ToolTip>
-            <Image Source="{Binding ClearSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
           </Button>
           <!-- Row 1 -->
           <TextBlock Grid.Row="1" Grid.Column="0" Text="File Paths:" VerticalAlignment="Center" Foreground="{DynamicResource VsBrush.WindowText}" />
@@ -269,11 +306,17 @@
               </TextBlock>
             </wpf:EditableComboBox.ToolTip>
           </wpf:EditableComboBox>
-          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}" Click="ClearFilePathsPattern_Click">
+          <Button Grid.Row="1" Grid.Column="2" IsTabStop="False"
+                  Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Center"
+                  Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
+                  Background="Transparent"
+                  Click="ClearFilePathsPattern_Click"
+                  FontFamily="Segoe UI Symbol" Content="&#xE10A;">
             <Button.ToolTip>
               <TextBlock Text="Clear file paths"/>
             </Button.ToolTip>
-            <Image Source="{Binding ClearSearchButtonImage}" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="None" Width="16" Height="16"/>
           </Button>
 
           <!-- Row 2 -->

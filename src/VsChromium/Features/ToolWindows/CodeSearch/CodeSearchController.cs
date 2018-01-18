@@ -326,6 +326,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _uiRequestProcessor.Post(uiRequest);
     }
 
+    public void PauseResumeIndexing() {
+      var uiRequest = new UIRequest {
+        Request = new PauseResumeIndexingRequest(),
+        Id = nameof(PauseResumeIndexingRequest),
+        Delay = TimeSpan.FromSeconds(0.0),
+        OnReceive = FetchDatabaseStatistics,
+      };
+
+      _uiRequestProcessor.Post(uiRequest);
+    }
+
     private Span? TranslateLineColumnToSpan(IVsTextView vsTextView, int lineNumber, int columnNumber, int length) {
       if (lineNumber < 0)
         return null;
@@ -615,11 +626,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
               memoryUsageMb = 1;
             var message =
               String.Format(
-                "Index: {0:n0} files - {1:n0} MB (State: {2})",
+                "Index: {0:n0} files - {1:n0} MB",
                 response.IndexedFileCount,
-                memoryUsageMb,
-                response.IndexingPaused ? "Paused" : "Running");
+                memoryUsageMb);
             ViewModel.StatusText = message;
+            ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "";
             ViewModel.IndexingPaused = response.IndexingPaused;
           }
         });
@@ -900,7 +911,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void DispatchIndexingStateChanged(TypedEvent typedEvent) {
-      var @event = typedEvent as IndexingStateChanged;
+      var @event = typedEvent as IndexingStateChangedEvent;
       if (@event != null) {
         WpfUtilities.Post(_control, () => {
           Logger.LogInfo("Indexing state had changed to {0}.", @event.Paused);

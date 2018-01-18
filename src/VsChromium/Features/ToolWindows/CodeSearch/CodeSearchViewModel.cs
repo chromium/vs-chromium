@@ -21,6 +21,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _includeSymLinks;
     private bool _understandBuildOutputPaths;
     private string _statusText;
+    private string _indexingStatusText;
     private string _searchCodeValue;
     private string _searchFilePathsValue;
     private string _textExtractFontFamily;
@@ -398,6 +399,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         _statusText = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.StatusText));
+      }
+    }
+
+    public string IndexingStatusText {
+      get { return _indexingStatusText; }
+      set {
+        if (value == _indexingStatusText)
+          return;
+        _indexingStatusText = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingStatusText));
       }
     }
 

@@ -18,7 +18,7 @@ namespace VsChromium.Server.FileSystem {
     FileSystemSnapshot CurrentSnapshot { get; }
 
     void Pause();
-    void Run();
+    void Resume();
 
     IndexingState State { get; }
 

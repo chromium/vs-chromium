@@ -37,7 +37,7 @@ namespace VsChromium.Server.Ipc.TypedEvents {
     }
 
     private void FileSystemSnapshotManagerOnIndexingStateChanged(object sender, StateChangedEventArgs e) {
-      _typedEventSender.SendEventAsync(new IndexingStateChanged {
+      _typedEventSender.SendEventAsync(new IndexingStateChangedEvent {
         Paused = e.NewState == IndexingState.Paused,
       });
     }

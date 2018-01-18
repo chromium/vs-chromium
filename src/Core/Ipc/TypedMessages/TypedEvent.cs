@@ -8,6 +8,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   [ProtoInclude(10, typeof(PairedTypedEvent))]
   [ProtoInclude(11, typeof(ProgressReportEvent))]
+  [ProtoInclude(21, typeof(IndexingStateChangedEvent))]
   public class TypedEvent : TypedMessage {
   }
 }

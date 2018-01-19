@@ -175,22 +175,41 @@
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
       </StackPanel>
       <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-        <TextBlock Text="{Binding IndexStatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,0">
+        <!-- Index statistics -->
+        <TextBlock VerticalAlignment="Center" Text="{Binding IndexStatusText}" Margin="0,0,0,0">
           <TextBlock.ToolTip>
             <TextBlock Text="Resource usage of the Index maintained by the VS Chromium Server process"/>
           </TextBlock.ToolTip>
         </TextBlock>
-        <TextBlock Text=" - " VerticalAlignment="Center" HorizontalAlignment="Right" />
-        <TextBlock Text="{Binding IndexingServerStateText}" VerticalAlignment="Center" HorizontalAlignment="Right"
-                   Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
-                   Margin="0,0,2,0">
+        <!-- Separator -->
+        <TextBlock Text=" - " VerticalAlignment="Center" />
+        <!-- The "!" symbol (when indexing is paused) -->
+        <TextBlock VerticalAlignment="Center" Foreground="Goldenrod"
+                   FontFamily="Webdings" FontSize="14" Text="&#x69;" Margin="2,0,2,0">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Style.Triggers>
+                <!-- Set text color: Last one wins! -->
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
           <TextBlock.ToolTip>
             <TextBlock>
               <TextBlock.Style>
                 <Style TargetType="TextBlock">
                   <Style.Triggers>
+                    <!-- Set tooltip text: last one wins! -->
                     <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
                       <Setter Property="Text" Value="Automatic indexing is currently paused. The index database is not up-to-date. Press the Run or Refresh button." />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IndexingPausedDueToError}" Value="True">
+                      <Setter Property="Text" Value="Automatic indexing is currently paused due to an error. The index database is not up-to-date. Press the Run or Refresh button." />
                     </DataTrigger>
                     <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
                       <Setter Property="Text" Value="Automatic indexing is currently active. The index database is automatically updated with as files change on disk." />
@@ -201,9 +220,47 @@
             </TextBlock>
           </TextBlock.ToolTip>
         </TextBlock>
+        <!-- The index server state (running or paused) -->
+        <TextBlock Text="{Binding IndexingServerStateText}" VerticalAlignment="Center" Margin="0,0,2,0">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Style.Triggers>
+                <!-- Set text color: Last one wins! -->
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
+                  <Setter Property="Foreground" Value="Goldenrod" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
+                  <Setter Property="Foreground" Value="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+          <TextBlock.ToolTip>
+            <TextBlock>
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Style.Triggers>
+                    <!-- Set tooltip text: last one wins! -->
+                    <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
+                      <Setter Property="Text" Value="Automatic indexing is currently paused. The index database is not up-to-date. Press the Run or Refresh button." />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IndexingPausedDueToError}" Value="True">
+                      <Setter Property="Text" Value="Automatic indexing is currently paused due to an error. The index database is not up-to-date. Press the Run or Refresh button." />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
+                      <Setter Property="Text" Value="Automatic indexing is currently active. The index database is automatically updated with as files change on disk." />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+          </TextBlock.ToolTip>
+        </TextBlock>
+        <!-- The Pause/Resume button -->
         <Button VerticalAlignment="Center" 
                 HorizontalAlignment="Right"
                 IsTabStop="False" Click="PauseIndexingButton_Click"
+                Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
                 FontFamily="Segoe UI Symbol" FontSize="14">
           <Button.Style>
             <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
@@ -214,16 +271,6 @@
                 <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
                   <Setter Property="Content" Value="&#xE103;" />
                 </DataTrigger>
-                <!-- Last one wins! -->
-                <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
-                  <Setter Property="Foreground" Value="Goldenrod" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IndexingPausedDueToError}" Value="True">
-                  <Setter Property="Foreground" Value="OrangeRed" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
-                  <Setter Property="Foreground" Value="Green" />
-                </DataTrigger>
               </Style.Triggers>
             </Style>
           </Button.Style>
@@ -231,6 +278,7 @@
             <TextBlock Text="Pause or Resume automatic updates of the index. Pausing indexing decreases the load on the file system."/>
           </Button.ToolTip>
         </Button>
+        <!-- The manual refresh button -->
         <Button VerticalAlignment="Center" 
                 HorizontalAlignment="Right"
                 Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"

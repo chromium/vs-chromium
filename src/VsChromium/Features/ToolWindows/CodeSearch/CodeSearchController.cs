@@ -70,6 +70,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     /// </summary>
     private int _operationSequenceId;
 
+    private GetDatabaseStatisticsResponse _lastIndexingServerStatistics;
+
     public CodeSearchController(
       CodeSearchControl control,
       IUIRequestProcessor uiRequestProcessor,
@@ -630,23 +632,29 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           Request = new GetDatabaseStatisticsRequest(),
           OnSuccess = typedResponse => {
             var response = (GetDatabaseStatisticsResponse)typedResponse;
-            var memoryUsageMb = response.IndexedFileSize / 1024L / 1024L;
-            if (memoryUsageMb == 0 && response.IndexedFileSize > 0)
-              memoryUsageMb = 1;
-            var message =
-              String.Format(
-                "Index: {0:n0} files - {1:n0} MB",
-                response.IndexedFileCount,
-                memoryUsageMb);
-            if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.IndexedFileCount > 0) {
-              message += string.Format(" - {0}", HumanReadableDuration(response.IndexLastUpdatedUtc));
-            }
-            ViewModel.StatusText = message;
-            ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "Active";
-            ViewModel.IndexingPaused = response.IndexingPaused;
-            ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
+            DisplayIndexingServerStatus(response);
           }
         });
+    }
+
+    private void DisplayIndexingServerStatus(GetDatabaseStatisticsResponse response) {
+      _lastIndexingServerStatistics = response;
+
+      var memoryUsageMb = response.IndexedFileSize / 1024L / 1024L;
+      if (memoryUsageMb == 0 && response.IndexedFileSize > 0)
+        memoryUsageMb = 1;
+      var message =
+        String.Format(
+          "Index: {0:n0} files - {1:n0} MB",
+          response.IndexedFileCount,
+          memoryUsageMb);
+      if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.IndexedFileCount > 0) {
+        message += string.Format(" - {0}", HumanReadableDuration(response.IndexLastUpdatedUtc));
+      }
+      ViewModel.StatusText = message;
+      ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "Active";
+      ViewModel.IndexingPaused = response.IndexingPaused;
+      ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
     }
 
     private string HumanReadableDuration(DateTime utcTime) {
@@ -937,7 +945,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void RefreshTimerOnTick(object sender, EventArgs eventArgs) {
-      FetchDatabaseStatistics();
+      // Since time passed by since the last update, we need to refresh to UI
+      // as we show a duration since last index operation as part of the status.
+      if (_lastIndexingServerStatistics != null) {
+        DisplayIndexingServerStatus(_lastIndexingServerStatistics);
+      }
     }
 
     private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {

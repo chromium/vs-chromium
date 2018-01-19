@@ -19,6 +19,7 @@ namespace VsChromium.Server.FileSystem {
 
     void Pause();
     void Resume();
+    void Refresh();
 
     /// <summary>
     /// Event raised when a file system scan operation has started

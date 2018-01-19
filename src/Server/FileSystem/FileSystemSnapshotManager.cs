@@ -161,15 +161,13 @@ namespace VsChromium.Server.FileSystem {
         // cancel existing tasks (should be only one really) to avoid wasting time
         _longRunningFileSystemTaskQueue.CancelAll();
 
-        if (_isWatchingDirectories) {
-          _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
-            // Pass empty changes, as we don't know of any file system changes for
-            // existing entries. For new entries, they don't exist in the snapshot,
-            // so they will be read form disk
-            var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
-            RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
-          });
-        }
+        _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
+          // Pass empty changes, as we don't know of any file system changes for
+          // existing entries. For new entries, they don't exist in the snapshot,
+          // so they will be read form disk
+          var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
+          RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
+        });
       });
     }
 
@@ -181,11 +179,9 @@ namespace VsChromium.Server.FileSystem {
         // cancel existing tasks (should be only one really) to avoid wasting time
         _longRunningFileSystemTaskQueue.CancelAll();
 
-        if (_isWatchingDirectories) {
-          _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
-            RescanFileSystem(e.Projects, null, cancellationToken);
-          });
-        }
+        _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
+          RescanFileSystem(e.Projects, null, cancellationToken);
+        });
       });
     }
 
@@ -208,7 +204,7 @@ namespace VsChromium.Server.FileSystem {
         // If we are in a runnin state, pause due to an error
         _isWatchingDirectories = false;
         _longRunningFileSystemTaskQueue.CancelAll();
-        OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs {IsError = true});
+        OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs { IsError = true });
       });
     }
 

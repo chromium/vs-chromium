@@ -638,18 +638,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
                 "Index: {0:n0} files - {1:n0} MB",
                 response.IndexedFileCount,
                 memoryUsageMb);
-            if (response.IndexLastUpdatedUtc != DateTime.MinValue) {
-              message += string.Format(" - {0}", HumanReadableTime(response.IndexLastUpdatedUtc));
+            if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.IndexedFileCount > 0) {
+              message += string.Format(" - {0}", HumanReadableDuration(response.IndexLastUpdatedUtc));
             }
             ViewModel.StatusText = message;
-            //ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "Active";
+            ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "Active";
             ViewModel.IndexingPaused = response.IndexingPaused;
             ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
           }
         });
     }
 
-    private string HumanReadableTime(DateTime utcTime) {
+    private string HumanReadableDuration(DateTime utcTime) {
       var span = _dateTimeProvider.UtcNow - utcTime;
       if (span.TotalSeconds <= 5) {
         return "Updated a few seconds ago";

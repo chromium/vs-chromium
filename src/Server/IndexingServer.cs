@@ -35,6 +35,16 @@ namespace VsChromium.Server {
       searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
+    public IndexingServerState CurrentState {
+      get {
+        return new IndexingServerState {
+          Status = _status,
+          PauseReason = _pauseReason,
+          LastIndexUpdateUtc = _lastUpdateUtc,
+        };
+      }
+    }
+
     public event EventHandler<IndexingServerStateUpdatedEventArgs> StateUpdated;
 
     public void TogglePausedRunning() {
@@ -52,14 +62,10 @@ namespace VsChromium.Server {
       });
     }
 
-    public IndexingServerState CurrentState {
-      get {
-        return new IndexingServerState {
-          Status = _status,
-          PauseReason = _pauseReason,
-          LastIndexUpdateUtc = _lastUpdateUtc,
-        };
-      }
+    public void Refresh() {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
+        _fileSystemSnapshotManager.Refresh();
+      });
     }
 
     public void Pause() {

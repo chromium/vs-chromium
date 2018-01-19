@@ -6,11 +6,12 @@ using System;
 
 namespace VsChromium.Server {
   public interface IIndexingServer {
+    IndexingServerState CurrentState { get; }
+
     void Pause();
     void Resume();
     void TogglePausedRunning();
-
-    IndexingServerState CurrentState { get; }
+    void Refresh();
 
     event EventHandler<IndexingServerStateUpdatedEventArgs> StateUpdated;
   }

@@ -8,6 +8,10 @@ using VsChromium.Server.Operations;
 namespace VsChromium.Server.FileSystem {
   public class SnapshotScanResult {
     public OperationInfo OperationInfo { get; set; }
+    /// <summary>
+    /// Error if the file loading operation did not complete successfully.
+    /// <code>null</code> if successful completion.
+    /// </summary>
     public Exception Error { get; set; }
     /// <summary>Property is <code>null</code> if <see cref="Error"/> is set.</summary>
     public FileSystemSnapshot PreviousSnapshot { get; set; }

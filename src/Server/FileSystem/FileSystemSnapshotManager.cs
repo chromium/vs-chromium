@@ -53,9 +53,6 @@ namespace VsChromium.Server.FileSystem {
 
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
-    private IndexingState _indexingState = IndexingState.Running;
-    private PauseReason _pauseReason;
-
     /// <summary>
     /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
     /// </summary>
@@ -67,6 +64,8 @@ namespace VsChromium.Server.FileSystem {
     private FileSystemSnapshot _fileSystemSnapshot;
 
     private int _version;
+    private bool _isWatchingDirectories;
+
 
     [ImportingConstructor]
     public FileSystemSnapshotManager(
@@ -95,46 +94,33 @@ namespace VsChromium.Server.FileSystem {
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
-    }
 
-    public IndexingStatus GetStatus() {
-      return new IndexingStatus {
-        State = _indexingState,
-        PauseReason = _pauseReason
-      };
+      _isWatchingDirectories = true;
     }
 
     public FileSystemSnapshot CurrentSnapshot {
       get { return _fileSystemSnapshot; }
     }
 
-    public PauseReason PauseReason {
-      get { return _pauseReason; }
-    }
-
     public void Pause() {
-      PauseImpl(PauseReason.UserRequest);
+      _stateChangeTaskQueue.EnqueueUnique(token => {
+        if (_isWatchingDirectories) {
+          _directoryChangeWatcher.Stop();
+          _longRunningFileSystemTaskQueue.CancelAll();
+          _isWatchingDirectories = false;
+          OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs {
+            IsError = false,
+          });
+        }
+      });
     }
 
     public void Resume() {
       _stateChangeTaskQueue.EnqueueUnique(token => {
-        var oldStatus = GetStatus();
-        switch (_indexingState) {
-          case IndexingState.Running:
-            return;
-          case IndexingState.Paused:
-            _indexingState = IndexingState.Running;
-            _pauseReason = default(PauseReason);
-            // Start a new file system scan request to "running"
-            _directoryChangeWatcher.Start();
-            OnIndexingStatusChanged(new IndexingStateChangedEventArgs {
-              OldStatus = oldStatus,
-              NewStatus = GetStatus(),
-            });
-            _fileRegistrationTracker.RefreshAsync();
-            return;
-          default:
-            throw new ArgumentOutOfRangeException();
+        if (!_isWatchingDirectories) {
+          _directoryChangeWatcher.Start();
+          _fileRegistrationTracker.RefreshAsync();
+          _isWatchingDirectories = true;
         }
       });
     }
@@ -149,7 +135,7 @@ namespace VsChromium.Server.FileSystem {
     public event EventHandler<OperationInfo> SnapshotScanStarted;
     public event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;
-    public event EventHandler<IndexingStateChangedEventArgs> IndexingStatusChanged;
+    public event EventHandler<FileSystemWatchStoppedEventArgs> FileSystemWatchStopped;
 
     protected virtual void OnSnapshotScanStarted(OperationInfo e) {
       SnapshotScanStarted?.Invoke(this, e);
@@ -163,8 +149,8 @@ namespace VsChromium.Server.FileSystem {
       FilesChanged?.Invoke(this, e);
     }
 
-    protected virtual void OnIndexingStatusChanged(IndexingStateChangedEventArgs e) {
-      IndexingStatusChanged?.Invoke(this, e);
+    protected virtual void OnFileSystemWatchStopped(FileSystemWatchStoppedEventArgs e) {
+      FileSystemWatchStopped?.Invoke(this, e);
     }
 
     private void FileRegistrationTrackerOnProjectListChanged(object sender, ProjectsEventArgs e) {
@@ -175,13 +161,15 @@ namespace VsChromium.Server.FileSystem {
         // cancel existing tasks (should be only one really) to avoid wasting time
         _longRunningFileSystemTaskQueue.CancelAll();
 
-        _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
-          // Pass empty changes, as we don't know of any file system changes for
-          // existing entries. For new entries, they don't exist in the snapshot,
-          // so they will be read form disk
-          var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
-          RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
-        });
+        if (_isWatchingDirectories) {
+          _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
+            // Pass empty changes, as we don't know of any file system changes for
+            // existing entries. For new entries, they don't exist in the snapshot,
+            // so they will be read form disk
+            var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
+            RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
+          });
+        }
       });
     }
 
@@ -193,15 +181,17 @@ namespace VsChromium.Server.FileSystem {
         // cancel existing tasks (should be only one really) to avoid wasting time
         _longRunningFileSystemTaskQueue.CancelAll();
 
-        _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
-          RescanFileSystem(e.Projects, null, cancellationToken);
-        });
+        if (_isWatchingDirectories) {
+          _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
+            RescanFileSystem(e.Projects, null, cancellationToken);
+          });
+        }
       });
     }
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       _stateChangeTaskQueue.EnqueueUnique(token => {
-        if (_indexingState == IndexingState.Running) {
+        if (_isWatchingDirectories) {
           Logger.LogInfo("File change events: enqueuing an incremental file system rescan");
           _pathsChangedQueue.Enqueue(changes);
           _flushPathChangesTaskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
@@ -216,30 +206,9 @@ namespace VsChromium.Server.FileSystem {
         _pathsChangedQueue.DequeueAll();
 
         // If we are in a runnin state, pause due to an error
-        PauseImpl(PauseReason.FileWatchBufferOverflow);
-      });
-    }
-
-    public void PauseImpl(PauseReason reason) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
-        var oldStatus = GetStatus();
-        switch (_indexingState) {
-          case IndexingState.Running:
-            // Cancel current scan request and set state to "paused"
-            _directoryChangeWatcher.Stop();
-            _longRunningFileSystemTaskQueue.CancelAll();
-            _indexingState = IndexingState.Paused;
-            _pauseReason = reason;
-            OnIndexingStatusChanged(new IndexingStateChangedEventArgs {
-              OldStatus = oldStatus,
-              NewStatus = GetStatus(),
-            });
-            break;
-          case IndexingState.Paused:
-            return;
-          default:
-            throw new ArgumentOutOfRangeException();
-        }
+        _isWatchingDirectories = false;
+        _longRunningFileSystemTaskQueue.CancelAll();
+        OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs {IsError = true});
       });
     }
 

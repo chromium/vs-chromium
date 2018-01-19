@@ -66,6 +66,12 @@
     <Compile Include="FileSystem\IFileSystemSnapshotBuilder.cs" />
     <Compile Include="FileSystemDatabase\Builder\ProjectDiscoveryExtensions.cs" />
     <Compile Include="FileSystem\ProjectFileName.cs" />
+    <Compile Include="IIndexingServer.cs" />
+    <Compile Include="IndexingServer.cs" />
+    <Compile Include="IndexingServerPauseReason.cs" />
+    <Compile Include="IndexingServerState.cs" />
+    <Compile Include="IndexingServerStatus.cs" />
+    <Compile Include="IndexingServerStateUpdatedEventArgs.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\PauseResumeIndexingRequestHandler.cs" />
     <Compile Include="Projects\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotScanResult.cs" />
@@ -143,6 +149,7 @@
     <Compile Include="Threads\ITaskQueueFactory.cs" />
     <Compile Include="Threads\LongRunningFileSystemTaskQueue.cs" />
     <Compile Include="Threads\TaskQueue.cs" />
+    <Compile Include="Threads\TaskQueueExtensions.cs" />
     <Compile Include="Threads\TaskQueueFactory.cs" />
     <Compile Include="FileSystemContents\FileContentsFactory.cs" />
     <Compile Include="Search\FileSearchResult.cs" />

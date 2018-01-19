@@ -913,7 +913,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void DispatchIndexingStateChanged(TypedEvent typedEvent) {
-      var @event = typedEvent as IndexingStateChangedEvent;
+      var @event = typedEvent as IndexingServerStateChangedEvent;
       if (@event != null) {
         WpfUtilities.Post(_control, () => {
           Logger.LogInfo("Indexing state had changed to {0}.", @event.Paused);

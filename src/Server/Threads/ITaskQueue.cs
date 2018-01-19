@@ -19,8 +19,6 @@ namespace VsChromium.Server.Threads {
     /// <param name="task"></param>
     void Enqueue(TaskId id, Action<CancellationToken> task);
 
-    void EnqueueUnique(Action<CancellationToken> task);
-
     /// <summary>
     /// Cancel running task if there is one
     /// </summary>

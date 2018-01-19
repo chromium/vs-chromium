@@ -15,13 +15,16 @@ namespace VsChromium.Server.Ipc.TypedEvents {
     private readonly IFileSystemSnapshotManager _fileSystemSnapshotManager;
     private readonly ISearchEngine _searchEngine;
     private readonly ITypedEventSender _typedEventSender;
+    private readonly IIndexingServer _indexingServer;
 
     [ImportingConstructor]
     public TypedEventForwarder(
       ITypedEventSender typedEventSender,
+      IIndexingServer indexingServer,
       IFileSystemSnapshotManager fileSystemSnapshotManager,
       ISearchEngine searchEngine) {
       _typedEventSender = typedEventSender;
+      _indexingServer = indexingServer;
       _fileSystemSnapshotManager = fileSystemSnapshotManager;
       _searchEngine = searchEngine;
     }
@@ -29,17 +32,19 @@ namespace VsChromium.Server.Ipc.TypedEvents {
     public void RegisterEventHandlers() {
       _fileSystemSnapshotManager.SnapshotScanStarted += FileSystemSnapshotManagerOnSnapshotScanStarted;
       _fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
-      _fileSystemSnapshotManager.IndexingStatusChanged += FileSystemSnapshotManagerOnIndexingStatusChanged;
 
       _searchEngine.FilesLoading += SearchEngineOnFilesLoading;
       _searchEngine.FilesLoadingProgress += SearchEngineOnFilesLoadingProgress;
       _searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
+
+      _indexingServer.StateUpdated += IndexingServerOnStateUpdated;
     }
 
-    private void FileSystemSnapshotManagerOnIndexingStatusChanged(object sender, IndexingStateChangedEventArgs e) {
-      _typedEventSender.SendEventAsync(new IndexingStateChangedEvent {
-        Paused = e.NewStatus.State == IndexingState.Paused,
-        PausedDueToError = e.NewStatus.PauseReason == PauseReason.FileWatchBufferOverflow
+    private void IndexingServerOnStateUpdated(object sender, IndexingServerStateUpdatedEventArgs e) {
+      _typedEventSender.SendEventAsync(new IndexingServerStateChangedEvent {
+        Paused = e.State.Status == IndexingServerStatus.Paused,
+        PausedDueToError = e.State.PauseReason == IndexingServerPauseReason.FileWatchBufferOverflow,
+        LastIndexUpdatedUtc = e.State.LastIndexUpdateUtc,
       });
     }
 

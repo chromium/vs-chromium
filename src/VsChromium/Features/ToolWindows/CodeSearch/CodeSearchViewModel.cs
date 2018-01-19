@@ -20,8 +20,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _useRegex;
     private bool _includeSymLinks;
     private bool _understandBuildOutputPaths;
-    private string _statusText;
-    private string _indexingStatusText;
+    private string _indexStatusText;
+    private string _indexingServerStateText;
     private string _searchCodeValue;
     private string _searchFilePathsValue;
     private string _textExtractFontFamily;
@@ -393,23 +393,23 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     #endregion
 
-    public string StatusText {
-      get { return _statusText; }
+    public string IndexStatusText {
+      get { return _indexStatusText; }
       set {
-        if (value == _statusText)
+        if (value == _indexStatusText)
           return;
-        _statusText = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.StatusText));
+        _indexStatusText = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexStatusText));
       }
     }
 
-    public string IndexingStatusText {
-      get { return _indexingStatusText; }
+    public string IndexingServerStateText {
+      get { return _indexingServerStateText; }
       set {
-        if (value == _indexingStatusText)
+        if (value == _indexingServerStateText)
           return;
-        _indexingStatusText = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingStatusText));
+        _indexingServerStateText = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingServerStateText));
       }
     }
 

@@ -640,6 +640,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void DisplayIndexingServerStatus(GetDatabaseStatisticsResponse response) {
       _lastIndexingServerStatistics = response;
 
+      ViewModel.IndexingPaused = response.IndexingPaused;
+      ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
+      ViewModel.IndexStatusText = GetIndexStatusText(response);
+      ViewModel.IndexingServerStateText = GetIndexingServerStateText(response);
+    }
+
+    private string GetIndexStatusText(GetDatabaseStatisticsResponse response) {
       var memoryUsageMb = response.IndexedFileSize / 1024L / 1024L;
       if (memoryUsageMb == 0 && response.IndexedFileSize > 0)
         memoryUsageMb = 1;
@@ -651,10 +658,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.IndexedFileCount > 0) {
         message += string.Format(" - {0}", HumanReadableDuration(response.IndexLastUpdatedUtc));
       }
-      ViewModel.StatusText = message;
-      ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "Active";
-      ViewModel.IndexingPaused = response.IndexingPaused;
-      ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
+      return message;
+    }
+
+    private static string GetIndexingServerStateText(GetDatabaseStatisticsResponse response) {
+      if (response.IndexingPaused) {
+        if (response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow)
+          return "Error";
+        return "Paused";
+      }
+      return "Active";
     }
 
     private string HumanReadableDuration(DateTime utcTime) {
@@ -671,8 +684,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (span.TotalMinutes <= 60) {
         return string.Format("Updated about {0:n0} minutes ago", Math.Ceiling(span.TotalMinutes));
       }
+      if (span.TotalHours <= 1.5) {
+        return "Updated about one hour ago";
+      }
       if (span.TotalHours <= 24) {
-        return "Updated a few hours ago";
+        return string.Format("Updated about {0:n0} hours ago", Math.Ceiling(span.TotalHours));
       }
       return "Updated more than one day ago";
     }

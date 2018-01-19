@@ -175,13 +175,13 @@
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
       </StackPanel>
       <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,0">
+        <TextBlock Text="{Binding IndexStatusText}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,0">
           <TextBlock.ToolTip>
             <TextBlock Text="Resource usage of the Index maintained by the VS Chromium Server process"/>
           </TextBlock.ToolTip>
         </TextBlock>
         <TextBlock Text=" - " VerticalAlignment="Center" HorizontalAlignment="Right" />
-        <TextBlock Text="{Binding IndexingStatusText}" VerticalAlignment="Center" HorizontalAlignment="Right"
+        <TextBlock Text="{Binding IndexingServerStateText}" VerticalAlignment="Center" HorizontalAlignment="Right"
                    Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
                    Margin="0,0,2,0">
           <TextBlock.ToolTip>

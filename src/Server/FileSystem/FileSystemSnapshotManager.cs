@@ -103,7 +103,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public void Pause() {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         if (_isWatchingDirectories) {
           _directoryChangeWatcher.Stop();
           _longRunningFileSystemTaskQueue.CancelAll();
@@ -116,7 +116,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public void Resume() {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         if (!_isWatchingDirectories) {
           _directoryChangeWatcher.Start();
           _fileRegistrationTracker.RefreshAsync();
@@ -126,7 +126,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public void Refresh() {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         _longRunningFileSystemTaskQueue.CancelAll();
         _fileRegistrationTracker.RefreshAsync();
       });
@@ -154,7 +154,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void FileRegistrationTrackerOnProjectListChanged(object sender, ProjectsEventArgs e) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         Logger.LogInfo("List of projects has changed: Enqueuing a partial file system scan");
 
         // If we are queuing a task that requires rescanning the entire file system,
@@ -174,7 +174,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void FileRegistrationTrackerOnProjectListRefreshed(object sender, ProjectsEventArgs e) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         Logger.LogInfo("List of projects has been refreshed: Enqueuing a full file system scan");
 
         // If we are queuing a task that requires rescanning the entire file system,
@@ -190,7 +190,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         if (_isWatchingDirectories) {
           Logger.LogInfo("File change events: enqueuing an incremental file system rescan");
           _pathsChangedQueue.Enqueue(changes);
@@ -200,7 +200,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void DirectoryChangeWatcherOnError(Exception exception) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         Logger.LogInfo("File change events error: entering pause mode");
         // Ingore all changes
         _pathsChangedQueue.DequeueAll();

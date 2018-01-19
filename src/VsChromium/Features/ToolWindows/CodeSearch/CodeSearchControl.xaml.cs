@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Features.BuildOutputAnalyzer;
@@ -96,7 +97,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         componentModel.DefaultExportProvider.GetExportedValue<IEventBus>(),
         componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>(),
         componentModel.DefaultExportProvider.GetExportedValue<IBuildOutputParser>(),
-        componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>());
+        componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IDateTimeProvider>());
       _controller.Start();
       // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
       // exposes pictures from Visual Studio resources.

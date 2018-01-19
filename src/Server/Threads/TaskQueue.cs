@@ -50,10 +50,6 @@ namespace VsChromium.Server.Threads {
         RunTaskAsync(entry);
     }
 
-    public void EnqueueUnique(Action<CancellationToken> task) {
-      Enqueue(new TaskId("UniqueTask"), task);
-    }
-
     public void CancelCurrentTask() {
       _taskCancellationTracker.CancelCurrent();
     }

@@ -27,14 +27,15 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
       var snapshot = _snapshotManager.CurrentSnapshot;
       var database = _searchEngine.CurrentFileDatabaseSnapshot;
-      var status = _indexingServer.CurrentState;
+      var indexingServerState = _indexingServer.CurrentState;
       return new GetDatabaseStatisticsResponse {
         ProjectCount = snapshot.ProjectRoots.Count,
         FileCount = database.FileNames.Count,
         IndexedFileCount = database.SearchableFileCount,
         IndexedFileSize = database.FileContentsPieces.Aggregate(0L, (x, piece) => x + piece.ByteLength),
-        IndexingPaused = status.Status == IndexingServerStatus.Paused,
-        IndexingPausedReason = status.PauseReason == IndexingServerPauseReason.UserRequest ? IndexingPausedReason.UserAction : IndexingPausedReason.FileSystemWatcherOverflow,
+        IndexingPaused = indexingServerState.Status == IndexingServerStatus.Paused,
+        IndexingPausedReason = indexingServerState.PauseReason == IndexingServerPauseReason.UserRequest ? IndexingPausedReason.UserAction : IndexingPausedReason.FileSystemWatcherOverflow,
+        IndexLastUpdatedUtc = indexingServerState.LastIndexUpdateUtc,
       };
     }
   }

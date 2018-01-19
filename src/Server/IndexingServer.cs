@@ -18,7 +18,7 @@ namespace VsChromium.Server {
 
     private IndexingServerStatus _status;
     private IndexingServerPauseReason _pauseReason;
-    private DateTime _lastUpdateUtc;
+    private DateTime _lastUpdateUtc = DateTime.MinValue;
 
     [ImportingConstructor]
     public IndexingServer(
@@ -38,7 +38,7 @@ namespace VsChromium.Server {
     public event EventHandler<IndexingServerStateUpdatedEventArgs> StateUpdated;
 
     public void TogglePausedRunning() {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         switch (_status) {
           case IndexingServerStatus.Running:
             PauseImpl(IndexingServerPauseReason.UserRequest);
@@ -63,13 +63,13 @@ namespace VsChromium.Server {
     }
 
     public void Pause() {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         PauseImpl(IndexingServerPauseReason.UserRequest);
       });
     }
 
     public void Resume() {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         ResumeImpl();
       });
     }
@@ -105,7 +105,7 @@ namespace VsChromium.Server {
     }
 
     private void FileSystemSnapshotManagerOnSnapshotScanFinished(object sender, SnapshotScanResult snapshotScanResult) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         if (snapshotScanResult.Error == null) {
           _lastUpdateUtc = _dateTimeProvider.UtcNow;
           OnStatusUpdated();
@@ -114,7 +114,7 @@ namespace VsChromium.Server {
     }
 
     private void SearchEngineOnFilesLoaded(object sender, FilesLoadedResult filesLoadedResult) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         if (filesLoadedResult.Error == null) {
           _lastUpdateUtc = _dateTimeProvider.UtcNow;
           OnStatusUpdated();
@@ -123,7 +123,7 @@ namespace VsChromium.Server {
     }
 
     private void FileSystemSnapshotManagerOnFileSystemWatchStopped(object sender, FileSystemWatchStoppedEventArgs e) {
-      _stateChangeTaskQueue.EnqueueUnique(token => {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
         if (_status == IndexingServerStatus.Running) {
           _status = IndexingServerStatus.Paused;
           _pauseReason = e.IsError

@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
@@ -53,8 +54,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IBuildOutputParser _buildOutputParser;
     private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly TaskCancellation _taskCancellation;
     private readonly SearchResultsDocumentChangeTracker _searchResultDocumentChangeTracker;
+    private readonly DispatcherTimer _refreshTimer;
     private readonly object _eventBusCookie1;
     private readonly object _eventBusCookie2;
     private readonly object _eventBusCookie3;
@@ -66,7 +69,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     /// For generating unique id n progress bar tracker.
     /// </summary>
     private int _operationSequenceId;
-
 
     public CodeSearchController(
       CodeSearchControl control,
@@ -84,7 +86,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IBuildOutputParser buildOutputParser,
-      IVsEditorAdaptersFactoryService adaptersFactoryService) {
+      IVsEditorAdaptersFactoryService adaptersFactoryService,
+      IDateTimeProvider dateTimeProvider) {
       _control = control;
       _uiRequestProcessor = uiRequestProcessor;
       _fileSystemTreeSource = fileSystemTreeSource;
@@ -99,6 +102,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _globalSettingsProvider = globalSettingsProvider;
       _buildOutputParser = buildOutputParser;
       _adaptersFactoryService = adaptersFactoryService;
+      _dateTimeProvider = dateTimeProvider;
       _searchResultDocumentChangeTracker = new SearchResultsDocumentChangeTracker(
         uiDelayedOperationProcessor,
         textDocumentTable);
@@ -121,11 +125,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
       fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
+
+      _refreshTimer = new DispatcherTimer();
+      _refreshTimer.Interval = TimeSpan.FromSeconds(10);
+      _refreshTimer.Tick += RefreshTimerOnTick;
     }
 
     public void Dispose() {
       Logger.LogInfo("{0} disposed.", GetType().FullName);
 
+      _refreshTimer.Stop();
       _globalSettingsProvider.GlobalSettings.PropertyChanged -= GlobalSettingsOnPropertyChanged;
       _eventBus.UnregisterHandler(_eventBusCookie1);
       _eventBus.UnregisterHandler(_eventBusCookie2);
@@ -629,12 +638,35 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
                 "Index: {0:n0} files - {1:n0} MB",
                 response.IndexedFileCount,
                 memoryUsageMb);
+            if (response.IndexLastUpdatedUtc != DateTime.MinValue) {
+              message += string.Format(" - {0}", HumanReadableTime(response.IndexLastUpdatedUtc));
+            }
             ViewModel.StatusText = message;
-            ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "";
+            //ViewModel.IndexingStatusText = response.IndexingPaused ? "Paused" : "Active";
             ViewModel.IndexingPaused = response.IndexingPaused;
             ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
           }
         });
+    }
+
+    private string HumanReadableTime(DateTime utcTime) {
+      var span = _dateTimeProvider.UtcNow - utcTime;
+      if (span.TotalSeconds <= 5) {
+        return "Updated a few seconds ago";
+      }
+      if (span.TotalSeconds <= 50) {
+        return "Updated less than 1 minute ago";
+      }
+      if (span.TotalMinutes <= 1) {
+        return "Updated about 1 minute ago";
+      }
+      if (span.TotalMinutes <= 60) {
+        return string.Format("Updated about {0:n0} minutes ago", Math.Ceiling(span.TotalMinutes));
+      }
+      if (span.TotalHours <= 24) {
+        return "Updated a few hours ago";
+      }
+      return "Updated more than one day ago";
     }
 
     public void PerformSearch(bool immediate) {
@@ -829,7 +861,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (hitCount >= maxResults) {
         return string.Format(
           "Maximum number of results ({0:n0}) hit - some results omitted. " +
-          "Use Tools-> Options -> VsChromium -> General to increase the limit, " + 
+          "Use Tools-> Options -> VsChromium -> General to increase the limit, " +
           "or change your query to exclude more results.",
           maxResults);
       }
@@ -900,7 +932,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void Start() {
+      _refreshTimer.Start();
       _fileSystemTreeSource.Fetch();
+    }
+
+    private void RefreshTimerOnTick(object sender, EventArgs eventArgs) {
+      FetchDatabaseStatistics();
     }
 
     private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {

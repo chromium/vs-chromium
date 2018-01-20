@@ -67,6 +67,16 @@
     <Compile Include="DkmShared\VsPackageMessage.cs" />
     <Compile Include="Files\CustomPathComparer.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.DirectoryWatcherhEntry.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.DisposedState.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.ErrorState.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.PathChangeRecorder.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.PollingDelayPolicy.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.RestartingState.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.RunningState.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.SharedState.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.State.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.PausedState.cs" />
     <Compile Include="Files\DirectoryChangeWatcherFactory.cs" />
     <Compile Include="Files\FileInfoSnapshot.cs" />
     <Compile Include="Files\FileSystem.cs" />

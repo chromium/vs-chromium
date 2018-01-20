@@ -64,6 +64,9 @@ namespace VsChromium.Server.FileSystem {
     private FileSystemSnapshot _fileSystemSnapshot;
 
     private int _version;
+    /// <summary>
+    /// <code>true</code> if the file system watchers are currently not active.
+    /// </summary>
     private bool _isWatchingDirectories;
 
 
@@ -91,9 +94,11 @@ namespace VsChromium.Server.FileSystem {
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
       _fileRegistrationTracker.ProjectListRefreshed += FileRegistrationTrackerOnProjectListRefreshed;
       _fileSystemSnapshot = FileSystemSnapshot.Empty;
-      _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher();
+      _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher(TimeSpan.FromSeconds(10));
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
+      _directoryChangeWatcher.Paused += DirectoryChangeWatcherOnPaused;
+      _directoryChangeWatcher.Resumed += DirectoryChangeWatcherOnResumed;
 
       _isWatchingDirectories = true;
     }
@@ -105,12 +110,8 @@ namespace VsChromium.Server.FileSystem {
     public void Pause() {
       _taskExecutor.ExecuteAsync(token => {
         if (_isWatchingDirectories) {
-          _directoryChangeWatcher.Stop();
-          _longRunningFileSystemTaskQueue.CancelAll();
-          _isWatchingDirectories = false;
-          OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs {
-            IsError = false,
-          });
+          // "OnPause" event will be fired by the directory watcher
+          _directoryChangeWatcher.Pause();
         }
       });
     }
@@ -118,9 +119,8 @@ namespace VsChromium.Server.FileSystem {
     public void Resume() {
       _taskExecutor.ExecuteAsync(token => {
         if (!_isWatchingDirectories) {
-          _directoryChangeWatcher.Start();
-          _fileRegistrationTracker.RefreshAsync();
-          _isWatchingDirectories = true;
+          // "OnResume" event will be fired by the directory watcher
+          _directoryChangeWatcher.Resume();
         }
       });
     }
@@ -197,15 +197,35 @@ namespace VsChromium.Server.FileSystem {
 
     private void DirectoryChangeWatcherOnError(Exception exception) {
       _taskExecutor.ExecuteAsync(token => {
-        Logger.LogInfo("File change events error: entering pause mode");
+        Logger.LogInfo("Directory watcher error: entering pause mode");
         // Ingore all changes
         _pathsChangedQueue.DequeueAll();
 
         // If we are in a running state, pause due to an error
+        // Note: No need to stop the directory watcher, it paused itself
         _isWatchingDirectories = false;
-        _directoryChangeWatcher.Stop();
         _longRunningFileSystemTaskQueue.CancelAll();
         OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs { IsError = true });
+      });
+    }
+
+    private void DirectoryChangeWatcherOnPaused() {
+      _taskExecutor.ExecuteAsync(token => {
+        Logger.LogInfo("Directory watcher entered pause mode");
+        // Ingore all changes
+        _pathsChangedQueue.DequeueAll();
+
+        _isWatchingDirectories = false;
+        _longRunningFileSystemTaskQueue.CancelAll();
+        OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs { IsError = false });
+      });
+    }
+
+    private void DirectoryChangeWatcherOnResumed() {
+      _taskExecutor.ExecuteAsync(token => {
+        Logger.LogInfo("Directory watcher resumed");
+        _fileRegistrationTracker.RefreshAsync();
+        _isWatchingDirectories = true;
       });
     }
 

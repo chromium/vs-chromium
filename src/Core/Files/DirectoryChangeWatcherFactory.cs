@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Threads;
 
@@ -17,8 +18,8 @@ namespace VsChromium.Core.Files {
       _dateTimeProvider = dateTimeProvider;
     }
 
-    public IDirectoryChangeWatcher CreateWatcher() {
-      return new DirectoryChangeWatcher(_fileSystem, _dateTimeProvider);
+    public IDirectoryChangeWatcher CreateWatcher(TimeSpan? autoRestartDelay) {
+      return new DirectoryChangeWatcher(_fileSystem, _dateTimeProvider, autoRestartDelay);
     }
   }
 }

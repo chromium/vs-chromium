@@ -7,12 +7,26 @@ using System.Collections.Generic;
 
 namespace VsChromium.Core.Files {
   public interface IDirectoryChangeWatcher {
+    /// <summary>
+    /// Update the list of directories to watch
+    /// </summary>
     void WatchDirectories(IEnumerable<FullPath> directories);
 
-    void Start();
-    void Stop();
+    /// <summary>
+    /// Pause the underlying file system watchers. The watchers will fully stop so that
+    /// they don't consume file system resources when files change on disk.
+    /// </summary>
+    void Resume();
+
+    /// <summary>
+    /// Resume the underlying file system watchers, so that file change notifications
+    /// will start to be fired again.
+    /// </summary>
+    void Pause();
 
     event Action<IList<PathChangeEntry>> PathsChanged;
     event Action<Exception> Error;
+    event Action Paused;
+    event Action Resumed;
   }
 }

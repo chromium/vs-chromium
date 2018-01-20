@@ -70,18 +70,21 @@ namespace VsChromium.Core.Files {
     public void WatchDirectories(IEnumerable<FullPath> directories) {
       lock (_stateLock) {
         _state = _state.OnWatchDirectories(directories);
+        _state.OnStateActive();
       }
     }
 
     public void Pause() {
       lock (_stateLock) {
         _state = _state.OnPause();
+        _state.OnStateActive();
       }
     }
 
     public void Resume() {
       lock (_stateLock) {
         _state = _state.OnResume();
+        _state.OnStateActive();
       }
     }
 
@@ -110,6 +113,7 @@ namespace VsChromium.Core.Files {
       Logger.WrapActionInvocation(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherErrorEvent(sender, args);
+          _state.OnStateActive();
         }
       });
     }
@@ -118,6 +122,7 @@ namespace VsChromium.Core.Files {
       Logger.WrapActionInvocation(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileChangedEvent(sender, args, pathKind);
+          _state.OnStateActive();
         }
       });
     }
@@ -126,6 +131,7 @@ namespace VsChromium.Core.Files {
       Logger.WrapActionInvocation(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileCreatedEvent(sender, args, pathKind);
+          _state.OnStateActive();
         }
       });
     }
@@ -134,6 +140,7 @@ namespace VsChromium.Core.Files {
       Logger.WrapActionInvocation(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileDeletedEvent(sender, args, pathKind);
+          _state.OnStateActive();
         }
       });
     }
@@ -142,6 +149,7 @@ namespace VsChromium.Core.Files {
       Logger.WrapActionInvocation(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileRenamedEvent(sender, args, pathKind);
+          _state.OnStateActive();
         }
       });
     }
@@ -163,6 +171,7 @@ namespace VsChromium.Core.Files {
           _eventReceived.WaitOne(_pollingThreadTimeout);
           lock (_stateLock) {
             _state = _state.OnPolling();
+            _state.OnStateActive();
           }
         }
       } catch (Exception e) {

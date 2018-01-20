@@ -19,6 +19,7 @@ namespace VsChromium.Core.Files {
       private readonly SharedState _sharedState;
 
       protected State(SharedState sharedState) {
+        Logger.LogInfo("DirectoryWatcher: Entering {0} state", this.GetType().Name);
         _sharedState = sharedState;
       }
 
@@ -26,6 +27,7 @@ namespace VsChromium.Core.Files {
         get { return _sharedState; }
       }
 
+      public virtual void OnStateActive() { }
       public abstract State OnPause();
       public abstract State OnResume();
       public abstract State OnWatchDirectories(IEnumerable<FullPath> directories);

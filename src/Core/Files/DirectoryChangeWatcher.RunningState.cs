@@ -17,7 +17,10 @@ namespace VsChromium.Core.Files {
     /// </summary>
     private class RunningState : State {
       public RunningState(SharedState sharedState) : base(sharedState) {
-        // Note: Watchers should be active when entering this state
+      }
+
+      public override void OnStateActive() {
+        StartWatchers();
       }
 
       public override State OnPause() {

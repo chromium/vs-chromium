@@ -17,6 +17,9 @@ namespace VsChromium.Core.Files {
 
       public RestartingState(SharedState sharedState) : base(sharedState) {
         _enteredStateUtc = SharedState.ParentWatcher._dateTimeProvider.UtcNow;
+      }
+
+      public override void OnStateActive() {
         StartWatchers();
       }
 

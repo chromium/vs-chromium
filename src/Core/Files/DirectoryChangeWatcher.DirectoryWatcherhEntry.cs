@@ -13,7 +13,7 @@ namespace VsChromium.Core.Files {
       public void Dispose() {
         DirectoryNameWatcher?.Dispose();
         FileNameWatcher?.Dispose();
-        FileWriteWatcher.Dispose();
+        FileWriteWatcher?.Dispose();
       }
 
       public void Start() {

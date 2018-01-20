@@ -4,7 +4,6 @@
 
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;

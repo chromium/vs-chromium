@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace VsChromium.Core.Files {
   public partial class DirectoryChangeWatcher {
@@ -18,6 +19,7 @@ namespace VsChromium.Core.Files {
         _lastRecords.Enqueue(entry);
       }
 
+      [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
       public class ChangeInfo {
         public PathChangeEntry Entry { get; set; }
         public DateTime TimeStampUtc { get; set; }

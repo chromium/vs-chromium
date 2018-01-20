@@ -110,6 +110,8 @@ namespace VsChromium.Core.Files {
     }
 
     private void WatcherOnError(object sender, ErrorEventArgs args) {
+      var watcher = (IFileSystemWatcher) sender;
+      Logger.LogError(args.GetException(), "Error: Path={0}, Filter={1}, Buffer={2}", watcher.Path, watcher.NotifyFilter, watcher.InternalBufferSize);
       Logger.WrapActionInvocation(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherErrorEvent(sender, args);

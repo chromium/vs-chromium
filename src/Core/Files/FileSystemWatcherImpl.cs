@@ -7,18 +7,23 @@ using System.IO;
 namespace VsChromium.Core.Files {
   public class FileSystemWatcherImpl : IFileSystemWatcher {
     private readonly FullPath _path;
-    private readonly FileSystemWatcher _fileSystemWatcherImplementation;
+    private FileSystemWatcher _fileSystemWatcherImplementation;
 
     public FileSystemWatcherImpl(FullPath path) {
       _path = path;
-      _fileSystemWatcherImplementation = new FileSystemWatcher(_path.Value);
+      _fileSystemWatcherImplementation = new FileSystemWatcher(path.Value);
+      _fileSystemWatcherImplementation.Changed += (sender, args) => OnChanged(args);
+      _fileSystemWatcherImplementation.Created += (sender, args) => OnCreated(args);
+      _fileSystemWatcherImplementation.Deleted += (sender, args) => OnDeleted(args);
+      _fileSystemWatcherImplementation.Renamed += (sender, args) => OnRenamed(args);
+      _fileSystemWatcherImplementation.Error += (sender, args) => OnError(args);
     }
 
     public void Dispose() {
       _fileSystemWatcherImplementation.Dispose();
     }
 
-    public FullPath DirectoryPath {
+    public FullPath Path {
       get { return _path; }
     }
 
@@ -37,30 +42,11 @@ namespace VsChromium.Core.Files {
       set { _fileSystemWatcherImplementation.IncludeSubdirectories = value; }
     }
 
-    public event FileSystemEventHandler Changed {
-      add { _fileSystemWatcherImplementation.Changed += value; }
-      remove { _fileSystemWatcherImplementation.Changed -= value; }
-    }
-
-    public event FileSystemEventHandler Created {
-      add { _fileSystemWatcherImplementation.Created += value; }
-      remove { _fileSystemWatcherImplementation.Created -= value; }
-    }
-
-    public event FileSystemEventHandler Deleted {
-      add { _fileSystemWatcherImplementation.Deleted += value; }
-      remove { _fileSystemWatcherImplementation.Deleted -= value; }
-    }
-
-    public event RenamedEventHandler Renamed {
-      add { _fileSystemWatcherImplementation.Renamed += value; }
-      remove { _fileSystemWatcherImplementation.Renamed -= value; }
-    }
-
-    public event ErrorEventHandler Error {
-      add { _fileSystemWatcherImplementation.Error += value; }
-      remove { _fileSystemWatcherImplementation.Error -= value; }
-    }
+    public event FileSystemEventHandler Changed;
+    public event FileSystemEventHandler Created;
+    public event FileSystemEventHandler Deleted;
+    public event RenamedEventHandler Renamed;
+    public event ErrorEventHandler Error;
 
     public void Start() {
       _fileSystemWatcherImplementation.EnableRaisingEvents = true;
@@ -68,6 +54,26 @@ namespace VsChromium.Core.Files {
 
     public void Stop() {
       _fileSystemWatcherImplementation.EnableRaisingEvents = false;
+    }
+
+    protected virtual void OnChanged(FileSystemEventArgs e) {
+      Changed?.Invoke(this, e);
+    }
+
+    protected virtual void OnCreated(FileSystemEventArgs e) {
+      Created?.Invoke(this, e);
+    }
+
+    protected virtual void OnDeleted(FileSystemEventArgs e) {
+      Deleted?.Invoke(this, e);
+    }
+
+    protected virtual void OnRenamed(RenamedEventArgs e) {
+      Renamed?.Invoke(this, e);
+    }
+
+    protected virtual void OnError(ErrorEventArgs e) {
+      Error?.Invoke(this, e);
     }
   }
 }

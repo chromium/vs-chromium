@@ -7,7 +7,7 @@ using System.IO;
 
 namespace VsChromium.Core.Files {
   public interface IFileSystemWatcher : IDisposable {
-    FullPath DirectoryPath { get; }
+    FullPath Path { get; }
     NotifyFilters NotifyFilter { get; set; }
     int InternalBufferSize { get; set; }
     bool IncludeSubdirectories { get; set;  }

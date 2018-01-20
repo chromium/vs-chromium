@@ -124,7 +124,7 @@ namespace VsChromium.Core.Files {
           //       In the end, increasing the size of the buffer to 2 MB is the best option to avoid
           //       these issues (2 MB is not that much memory in the grand scheme of things).
           //watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
-          watcher.InternalBufferSize = 8 * 1024; // 8 KB
+          watcher.InternalBufferSize = 60 * 1024; // 16 KB
           watcher.Error += SharedState.ParentWatcher.WatcherOnError;
         }
         OnWatcherAdded(directory, watcherEntry);

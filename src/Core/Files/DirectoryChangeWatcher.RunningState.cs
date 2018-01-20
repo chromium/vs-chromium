@@ -46,7 +46,7 @@ namespace VsChromium.Core.Files {
 
       public override State OnWatcherErrorEvent(object sender, ErrorEventArgs args) {
         Logger.LogError(args.GetException(), "File system watcher for path \"{0}\" error.",
-          ((FileSystemWatcher)sender).Path);
+          ((IFileSystemWatcher)sender).Path);
         StopWatchers();
         SharedState.ParentWatcher.OnError(args.GetException());
 
@@ -67,20 +67,20 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnWatcherFileRenamedEvent(object sender, RenamedEventArgs args, PathKind pathKind) {
-        var watcher = (FileSystemWatcher)sender;
+        var watcher = (IFileSystemWatcher)sender;
 
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        var path = PathHelpers.CombinePaths(watcher.Path.Value, args.Name);
         LogPathForDebugging(path, PathChangeKind.Created, pathKind);
         if (SharedState.ParentWatcher.SkipPath(path))
           return this;
 
-        var oldPath = PathHelpers.CombinePaths(watcher.Path, args.OldName);
+        var oldPath = PathHelpers.CombinePaths(watcher.Path.Value, args.OldName);
         LogPathForDebugging(oldPath, PathChangeKind.Deleted, pathKind);
         if (SharedState.ParentWatcher.SkipPath(oldPath))
           return this;
 
-        SharedState.ParentWatcher.EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.OldName), PathChangeKind.Deleted, pathKind);
-        SharedState.ParentWatcher.EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name), PathChangeKind.Created, pathKind);
+        SharedState.ParentWatcher.EnqueueChangeEvent(watcher.Path, new RelativePath(args.OldName), PathChangeKind.Deleted, pathKind);
+        SharedState.ParentWatcher.EnqueueChangeEvent(watcher.Path, new RelativePath(args.Name), PathChangeKind.Created, pathKind);
         SharedState.ParentWatcher._eventReceived.Set();
         return this;
       }
@@ -95,14 +95,14 @@ namespace VsChromium.Core.Files {
       }
 
       private State OnWatcherSingleFileChange(object sender, FileSystemEventArgs args, PathKind pathKind, PathChangeKind changeKind) {
-        var watcher = (FileSystemWatcher)sender;
+        var watcher = (IFileSystemWatcher)sender;
 
-        var path = PathHelpers.CombinePaths(watcher.Path, args.Name);
+        var path = PathHelpers.CombinePaths(watcher.Path.Value, args.Name);
         LogPathForDebugging(path, PathChangeKind.Changed, pathKind);
         if (SharedState.ParentWatcher.SkipPath(path))
           return this;
 
-        SharedState.ParentWatcher.EnqueueChangeEvent(new FullPath(watcher.Path), new RelativePath(args.Name),
+        SharedState.ParentWatcher.EnqueueChangeEvent(watcher.Path, new RelativePath(args.Name),
           changeKind, pathKind);
         SharedState.ParentWatcher._eventReceived.Set();
         return this;

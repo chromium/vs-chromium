@@ -9,7 +9,7 @@ using System.IO;
 namespace VsChromium.Core.Files {
   public partial class DirectoryChangeWatcher {
     private class DisposedState : State {
-      public DisposedState(SharedState sharedState) : base(sharedState) {
+      public DisposedState(StateHost stateHost) : base(stateHost) {
       }
 
       public override State OnResume() {

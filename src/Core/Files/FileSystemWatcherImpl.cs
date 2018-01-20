@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.IO;
 
 namespace VsChromium.Core.Files {
@@ -12,11 +13,43 @@ namespace VsChromium.Core.Files {
     public FileSystemWatcherImpl(FullPath path) {
       _path = path;
       _fileSystemWatcherImplementation = new FileSystemWatcher(path.Value);
-      _fileSystemWatcherImplementation.Changed += (sender, args) => OnChanged(args);
-      _fileSystemWatcherImplementation.Created += (sender, args) => OnCreated(args);
-      _fileSystemWatcherImplementation.Deleted += (sender, args) => OnDeleted(args);
-      _fileSystemWatcherImplementation.Renamed += (sender, args) => OnRenamed(args);
-      _fileSystemWatcherImplementation.Error += (sender, args) => OnError(args);
+      AddHandlers(_fileSystemWatcherImplementation);
+    }
+
+    private void AddHandlers(FileSystemWatcher watcher) {
+      watcher.Changed += FileSystemWatcherImplementationOnChanged;
+      watcher.Created += FileSystemWatcherImplementationOnCreated;
+      watcher.Deleted += FileSystemWatcherImplementationOnDeleted;
+      watcher.Renamed += FileSystemWatcherImplementationOnRenamed;
+      watcher.Error += FileSystemWatcherImplementationOnError;
+    }
+
+    private void RemoveHandlers(FileSystemWatcher watcher) {
+      watcher.Changed -= FileSystemWatcherImplementationOnChanged;
+      watcher.Created -= FileSystemWatcherImplementationOnCreated;
+      watcher.Deleted -= FileSystemWatcherImplementationOnDeleted;
+      watcher.Renamed -= FileSystemWatcherImplementationOnRenamed;
+      watcher.Error -= FileSystemWatcherImplementationOnError;
+    }
+
+    private void FileSystemWatcherImplementationOnChanged(object o, FileSystemEventArgs args) {
+      OnChanged(args);
+    }
+
+    private void FileSystemWatcherImplementationOnCreated(object o, FileSystemEventArgs args) {
+      OnCreated(args);
+    }
+
+    private void FileSystemWatcherImplementationOnDeleted(object o, FileSystemEventArgs args) {
+      OnDeleted(args);
+    }
+
+    private void FileSystemWatcherImplementationOnRenamed(object sender, RenamedEventArgs args) {
+      OnRenamed(args);
+    }
+
+    private void FileSystemWatcherImplementationOnError(object o, ErrorEventArgs args) {
+      OnError(args);
     }
 
     public void Dispose() {
@@ -49,11 +82,26 @@ namespace VsChromium.Core.Files {
     public event ErrorEventHandler Error;
 
     public void Start() {
-      _fileSystemWatcherImplementation.EnableRaisingEvents = true;
+      if (_fileSystemWatcherImplementation.EnableRaisingEvents) {
+        return;
+      }
+
+      var newImpl = new FileSystemWatcher(Path.Value);
+      newImpl.NotifyFilter = _fileSystemWatcherImplementation.NotifyFilter;
+      newImpl.InternalBufferSize = _fileSystemWatcherImplementation.InternalBufferSize;
+      newImpl.IncludeSubdirectories = _fileSystemWatcherImplementation.IncludeSubdirectories;
+      AddHandlers(newImpl);
+      newImpl.EnableRaisingEvents = true;
+
+      _fileSystemWatcherImplementation = newImpl;
     }
 
     public void Stop() {
+      if (!_fileSystemWatcherImplementation.EnableRaisingEvents) {
+        return;
+      }
       _fileSystemWatcherImplementation.EnableRaisingEvents = false;
+      RemoveHandlers(_fileSystemWatcherImplementation);
     }
 
     protected virtual void OnChanged(FileSystemEventArgs e) {

@@ -14,18 +14,18 @@ namespace VsChromium.Core.Files {
     private class ErrorState : State {
       private readonly DateTime _enteredStateUtc;
 
-      public ErrorState(SharedState sharedState) : base(sharedState) {
-        _enteredStateUtc = sharedState.ParentWatcher._dateTimeProvider.UtcNow;
+      public ErrorState(StateHost stateHost) : base(stateHost) {
+        _enteredStateUtc = stateHost.ParentWatcher._dateTimeProvider.UtcNow;
       }
 
       public override State OnResume() {
         StartWatchers();
-        SharedState.ParentWatcher.OnResumed();
-        return new RunningState(SharedState);
+        StateHost.ParentWatcher.OnResumed();
+        return new RunningState(StateHost);
       }
 
       public override State OnPause() {
-        return new PausedState(SharedState);
+        return new PausedState(StateHost);
       }
 
       public override State OnWatchDirectories(IEnumerable<FullPath> directories) {
@@ -36,10 +36,10 @@ namespace VsChromium.Core.Files {
       public override State OnPolling() {
         // Check how long we have been in error state.
         // If it is longer than "autoRestartDelay", enter the "restarting" state
-        if (SharedState.ParentWatcher._autoRestartDelay != null) {
-          var span = SharedState.ParentWatcher._dateTimeProvider.UtcNow - _enteredStateUtc;
-          if (span >= SharedState.ParentWatcher._autoRestartDelay.Value) {
-            return new RestartingState(SharedState);
+        if (StateHost.ParentWatcher._autoRestartDelay != null) {
+          var span = DateTimeProvider.UtcNow - _enteredStateUtc;
+          if (span >= StateHost.ParentWatcher._autoRestartDelay.Value) {
+            return new RestartingState(StateHost);
           }
         }
 

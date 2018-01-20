@@ -74,7 +74,7 @@
     <Compile Include="Files\DirectoryChangeWatcher.PollingDelayPolicy.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.RestartingState.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.RunningState.cs" />
-    <Compile Include="Files\DirectoryChangeWatcher.SharedState.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.StateHost.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.State.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.PausedState.cs" />
     <Compile Include="Files\DirectoryChangeWatcherFactory.cs" />

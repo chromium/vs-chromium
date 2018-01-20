@@ -11,13 +11,13 @@ namespace VsChromium.Core.Files {
     /// State where the directory watcher has been manually paused (by the end-user for example)
     /// </summary>
     private class PausedState : State {
-      public PausedState(SharedState sharedState) : base(sharedState) {
+      public PausedState(StateHost stateHost) : base(stateHost) {
       }
 
       public override State OnResume() {
         StartWatchers();
-        SharedState.ParentWatcher.OnResumed();
-        return new RunningState(SharedState);
+        StateHost.ParentWatcher.OnResumed();
+        return new RunningState(StateHost);
       }
 
       public override State OnPause() {

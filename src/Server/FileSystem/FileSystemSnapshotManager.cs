@@ -94,7 +94,7 @@ namespace VsChromium.Server.FileSystem {
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
       _fileRegistrationTracker.ProjectListRefreshed += FileRegistrationTrackerOnProjectListRefreshed;
       _fileSystemSnapshot = FileSystemSnapshot.Empty;
-      _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher(TimeSpan.FromSeconds(60));
+      _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher(TimeSpan.FromSeconds(20));
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
       _directoryChangeWatcher.Paused += DirectoryChangeWatcherOnPaused;

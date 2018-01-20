@@ -3,12 +3,11 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Threads;
 
 namespace VsChromium.Core.Files {
   public partial class DirectoryChangeWatcher {
@@ -16,15 +15,19 @@ namespace VsChromium.Core.Files {
     /// The common base class of all possible states
     /// </summary>
     private abstract class State {
-      private readonly SharedState _sharedState;
+      private readonly StateHost _stateHost;
 
-      protected State(SharedState sharedState) {
-        Logger.LogInfo("DirectoryWatcher: Entering {0} state", this.GetType().Name);
-        _sharedState = sharedState;
+      protected State(StateHost stateHost) {
+        Logger.LogInfo("DirectoryWatcher: Entering {0} state", GetType().Name);
+        _stateHost = stateHost;
       }
 
-      public SharedState SharedState {
-        get { return _sharedState; }
+      public StateHost StateHost {
+        get { return _stateHost; }
+      }
+
+      public IDateTimeProvider DateTimeProvider {
+        get { return StateHost.ParentWatcher._dateTimeProvider; }
       }
 
       public virtual void OnStateActive() { }
@@ -41,12 +44,12 @@ namespace VsChromium.Core.Files {
       public abstract State OnWatcherRemoved(FullPath directory, DirectoryWatcherhEntry watcher);
 
       public virtual State OnDispose() {
-        return new DisposedState(SharedState);
+        return new DisposedState(StateHost);
       }
 
       protected void WatchDirectoriesImpl(IEnumerable<FullPath> directories) {
-        lock (SharedState.ParentWatcher._watchersLock) {
-          var oldSet = new HashSet<FullPath>(SharedState.ParentWatcher._watchers.Keys);
+        lock (StateHost.ParentWatcher._watchersLock) {
+          var oldSet = new HashSet<FullPath>(StateHost.ParentWatcher._watchers.Keys);
           var newSet = new HashSet<FullPath>(directories);
 
           var removed = new HashSet<FullPath>(oldSet);
@@ -62,38 +65,44 @@ namespace VsChromium.Core.Files {
 
       protected void AddDirectory(FullPath directory) {
         DirectoryWatcherhEntry watcherEntry;
-        lock (SharedState.ParentWatcher._watchersLock) {
-          if (SharedState.ParentWatcher._pollingThread == null) {
-            SharedState.ParentWatcher._pollingThread = new Thread(SharedState.ParentWatcher.ThreadLoop) { IsBackground = true };
-            SharedState.ParentWatcher._pollingThread.Start();
-          }
-          if (SharedState.ParentWatcher._watchers.TryGetValue(directory, out watcherEntry))
+        lock (StateHost.ParentWatcher._watchersLock) {
+          StateHost.PollingThread.Start();
+          if (StateHost.ParentWatcher._watchers.TryGetValue(directory, out watcherEntry))
             return;
 
           watcherEntry = new DirectoryWatcherhEntry {
             Path = directory,
-            DirectoryNameWatcher = SharedState.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
-            FileNameWatcher = SharedState.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
-            FileWriteWatcher = SharedState.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
+            DirectoryNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
+            FileNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
+            FileWriteWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
           };
-          SharedState.ParentWatcher._watchers.Add(directory, watcherEntry);
+          StateHost.ParentWatcher._watchers.Add(directory, watcherEntry);
         }
 
         Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
 
+        // History of the tweaks made to handle file change notifications:
+        //
+        // Initially, we were using a single watcher watching for DirectoryName, FileName and
+        // LastWrite changes, with a buffer of 16KB.
+        //
+        //  
+
         // Note: "DirectoryName" captures directory creation, deletion and rename
         watcherEntry.DirectoryNameWatcher.NotifyFilter = NotifyFilters.DirectoryName;
-        watcherEntry.DirectoryNameWatcher.Changed += (s, e) => SharedState.ParentWatcher.WatcherOnChanged(s, e, PathKind.Directory);
-        watcherEntry.DirectoryNameWatcher.Created += (s, e) => SharedState.ParentWatcher.WatcherOnCreated(s, e, PathKind.Directory);
-        watcherEntry.DirectoryNameWatcher.Deleted += (s, e) => SharedState.ParentWatcher.WatcherOnDeleted(s, e, PathKind.Directory);
-        watcherEntry.DirectoryNameWatcher.Renamed += (s, e) => SharedState.ParentWatcher.WatcherOnRenamed(s, e, PathKind.Directory);
+        watcherEntry.DirectoryNameWatcher.Changed += (s, e) => StateHost.ParentWatcher.WatcherOnChanged(s, e, PathKind.Directory);
+        watcherEntry.DirectoryNameWatcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.Directory);
+        watcherEntry.DirectoryNameWatcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.Directory);
+        watcherEntry.DirectoryNameWatcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.Directory);
+        watcherEntry.DirectoryNameWatcher.InternalBufferSize = 8 * 1024; // 8 KB
 
         // Note: "FileName" captures file creation, deletion and rename
         watcherEntry.FileNameWatcher.NotifyFilter = NotifyFilters.FileName;
-        watcherEntry.FileNameWatcher.Changed += (s, e) => SharedState.ParentWatcher.WatcherOnChanged(s, e, PathKind.File);
-        watcherEntry.FileNameWatcher.Created += (s, e) => SharedState.ParentWatcher.WatcherOnCreated(s, e, PathKind.File);
-        watcherEntry.FileNameWatcher.Deleted += (s, e) => SharedState.ParentWatcher.WatcherOnDeleted(s, e, PathKind.File);
-        watcherEntry.FileNameWatcher.Renamed += (s, e) => SharedState.ParentWatcher.WatcherOnRenamed(s, e, PathKind.File);
+        watcherEntry.FileNameWatcher.Changed += (s, e) => StateHost.ParentWatcher.WatcherOnChanged(s, e, PathKind.File);
+        watcherEntry.FileNameWatcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.File);
+        watcherEntry.FileNameWatcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.File);
+        watcherEntry.FileNameWatcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.File);
+        watcherEntry.FileNameWatcher.InternalBufferSize = 8 * 1024; // 8 KB
 
         // Note: "LastWrite" will catch changes to *both* files and directories, i.e. it is
         // not possible to known which one it is.
@@ -101,10 +110,11 @@ namespace VsChromium.Core.Files {
         // renamed or deleted.
         // For files, a "LastWrite" change occurs when the file is written to.
         watcherEntry.FileWriteWatcher.NotifyFilter = NotifyFilters.LastWrite;
-        watcherEntry.FileWriteWatcher.Changed += (s, e) => SharedState.ParentWatcher.WatcherOnChanged(s, e, PathKind.FileOrDirectory);
-        watcherEntry.FileWriteWatcher.Created += (s, e) => SharedState.ParentWatcher.WatcherOnCreated(s, e, PathKind.FileOrDirectory);
-        watcherEntry.FileWriteWatcher.Deleted += (s, e) => SharedState.ParentWatcher.WatcherOnDeleted(s, e, PathKind.FileOrDirectory);
-        watcherEntry.FileWriteWatcher.Renamed += (s, e) => SharedState.ParentWatcher.WatcherOnRenamed(s, e, PathKind.FileOrDirectory);
+        watcherEntry.FileWriteWatcher.Changed += (s, e) => StateHost.ParentWatcher.WatcherOnChanged(s, e, PathKind.FileOrDirectory);
+        watcherEntry.FileWriteWatcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.FileOrDirectory);
+        watcherEntry.FileWriteWatcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.FileOrDirectory);
+        watcherEntry.FileWriteWatcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.FileOrDirectory);
+        watcherEntry.FileWriteWatcher.InternalBufferSize = 16 * 1024; // 16 KB
 
         foreach (var watcher in new[]
           {watcherEntry.DirectoryNameWatcher, watcherEntry.FileNameWatcher, watcherEntry.FileWriteWatcher}) {
@@ -124,18 +134,18 @@ namespace VsChromium.Core.Files {
           //       In the end, increasing the size of the buffer to 2 MB is the best option to avoid
           //       these issues (2 MB is not that much memory in the grand scheme of things).
           //watcher.InternalBufferSize = 2 * 1024 * 1024; // 2 MB
-          watcher.InternalBufferSize = 60 * 1024; // 16 KB
-          watcher.Error += SharedState.ParentWatcher.WatcherOnError;
+          //watcher.InternalBufferSize = 60 * 1024; // 16 KB
+          watcher.Error += StateHost.ParentWatcher.WatcherOnError;
         }
         OnWatcherAdded(directory, watcherEntry);
       }
 
       protected void RemoveDirectory(FullPath directory) {
         DirectoryWatcherhEntry watcher;
-        lock (SharedState.ParentWatcher._watchersLock) {
-          if (!SharedState.ParentWatcher._watchers.TryGetValue(directory, out watcher))
+        lock (StateHost.ParentWatcher._watchersLock) {
+          if (!StateHost.ParentWatcher._watchers.TryGetValue(directory, out watcher))
             return;
-          SharedState.ParentWatcher._watchers.Remove(directory);
+          StateHost.ParentWatcher._watchers.Remove(directory);
         }
         Logger.LogInfo("Removing directory \"{0}\" from change notification monitoring.", directory);
         watcher.Dispose();
@@ -143,16 +153,16 @@ namespace VsChromium.Core.Files {
       }
 
       protected void StartWatchers() {
-        lock (SharedState.ParentWatcher._watchersLock) {
-          foreach (var watcher in SharedState.ParentWatcher._watchers) {
+        lock (StateHost.ParentWatcher._watchersLock) {
+          foreach (var watcher in StateHost.ParentWatcher._watchers) {
             watcher.Value.Start();
           }
         }
       }
 
       protected void StopWatchers() {
-        lock (SharedState.ParentWatcher._watchersLock) {
-          foreach (var watcher in SharedState.ParentWatcher._watchers) {
+        lock (StateHost.ParentWatcher._watchersLock) {
+          foreach (var watcher in StateHost.ParentWatcher._watchers) {
             watcher.Value.Stop();
           }
         }

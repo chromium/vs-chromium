@@ -15,8 +15,8 @@ namespace VsChromium.Core.Files {
       /// </summary>
       private readonly DateTime? _enteredStateUtc;
 
-      public RestartingState(SharedState sharedState) : base(sharedState) {
-        _enteredStateUtc = SharedState.ParentWatcher._dateTimeProvider.UtcNow;
+      public RestartingState(StateHost stateHost) : base(stateHost) {
+        _enteredStateUtc = DateTimeProvider.UtcNow;
       }
 
       public override void OnStateActive() {
@@ -24,13 +24,13 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnResume() {
-        SharedState.ParentWatcher.OnResumed();
-        return new RunningState(SharedState);
+        StateHost.ParentWatcher.OnResumed();
+        return new RunningState(StateHost);
       }
 
       public override State OnPause() {
         StopWatchers();
-        return new PausedState(SharedState);
+        return new PausedState(StateHost);
       }
 
       public override State OnWatchDirectories(IEnumerable<FullPath> directories) {
@@ -39,11 +39,11 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnPolling() {
-        var span = SharedState.ParentWatcher._dateTimeProvider.UtcNow - _enteredStateUtc;
-        if (span > SharedState.ParentWatcher._autoRestartObservePeriod) {
+        var span = DateTimeProvider.UtcNow - _enteredStateUtc;
+        if (span > StateHost.ParentWatcher._autoRestartObservePeriod) {
           // We have not had any events so we can restart evertything
-          SharedState.ParentWatcher.OnResumed();
-          return new RunningState(SharedState);
+          StateHost.ParentWatcher.OnResumed();
+          return new RunningState(StateHost);
         }
         return this;
       }
@@ -78,7 +78,7 @@ namespace VsChromium.Core.Files {
 
       private State BackToErrorState() {
         StopWatchers();
-        return new ErrorState(SharedState);
+        return new ErrorState(StateHost);
       }
     }
   }

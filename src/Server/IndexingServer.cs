@@ -32,6 +32,7 @@ namespace VsChromium.Server {
 
       _fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
       _fileSystemSnapshotManager.FileSystemWatchStopped += FileSystemSnapshotManagerOnFileSystemWatchStopped;
+      _fileSystemSnapshotManager.FileSystemWatchResumed += FileSystemSnapshotManagerOnFileSystemWatchResumed;
       searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
@@ -135,6 +136,16 @@ namespace VsChromium.Server {
           _pauseReason = e.IsError
             ? IndexingServerPauseReason.FileWatchBufferOverflow
             : IndexingServerPauseReason.UserRequest;
+          OnStatusUpdated();
+        }
+      });
+    }
+
+    private void FileSystemSnapshotManagerOnFileSystemWatchResumed(object sender, EventArgs e) {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
+        if (_status == IndexingServerStatus.Paused) {
+          _status = IndexingServerStatus.Running;
+          _pauseReason = default(IndexingServerPauseReason);
           OnStatusUpdated();
         }
       });

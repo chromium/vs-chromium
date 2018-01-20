@@ -136,6 +136,7 @@ namespace VsChromium.Server.FileSystem {
     public event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;
     public event EventHandler<FileSystemWatchStoppedEventArgs> FileSystemWatchStopped;
+    public event EventHandler FileSystemWatchResumed;
 
     protected virtual void OnSnapshotScanStarted(OperationInfo e) {
       SnapshotScanStarted?.Invoke(this, e);
@@ -151,6 +152,10 @@ namespace VsChromium.Server.FileSystem {
 
     protected virtual void OnFileSystemWatchStopped(FileSystemWatchStoppedEventArgs e) {
       FileSystemWatchStopped?.Invoke(this, e);
+    }
+
+    protected virtual void OnFileSystemWatchResumed() {
+      FileSystemWatchResumed?.Invoke(this, EventArgs.Empty);
     }
 
     private void FileRegistrationTrackerOnProjectListChanged(object sender, ProjectsEventArgs e) {
@@ -226,6 +231,7 @@ namespace VsChromium.Server.FileSystem {
         Logger.LogInfo("Directory watcher resumed");
         _fileRegistrationTracker.RefreshAsync();
         _isWatchingDirectories = true;
+        OnFileSystemWatchResumed();
       });
     }
 

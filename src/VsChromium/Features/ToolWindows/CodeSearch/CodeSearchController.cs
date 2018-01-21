@@ -640,8 +640,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void DisplayIndexingServerStatus(GetDatabaseStatisticsResponse response) {
       _lastIndexingServerStatistics = response;
 
-      ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Inactive;
-      ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Inactive;
+      ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Yield;
+      ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Yield;
       ViewModel.IndexStatusText = GetIndexStatusText(response);
       ViewModel.IndexingServerStateText = GetIndexingServerStatusText(response);
       ViewModel.ServerStatusToolTipText = GetIndexingServerStatusToolTipText(response);
@@ -668,10 +668,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return "Idle";
         case IndexingServerStatus.Paused:
           return "Paused";
-        case IndexingServerStatus.Inactive:
-          return "Inactive";
+        case IndexingServerStatus.Yield:
+          return "Yield";
         case IndexingServerStatus.Busy:
-          return "Updating";
+          return "Busy";
         default:
           throw new ArgumentOutOfRangeException();
       }
@@ -680,19 +680,20 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string GetIndexingServerStatusToolTipText(GetDatabaseStatisticsResponse response) {
       switch (response.ServerStatus) {
         case IndexingServerStatus.Idle:
-          return "The index is up to date. " +
-                 "The index is automatically updated when files change on disk.";
+          return "The server is idle and the index is up to date.\r\n" +
+                 "The index is automatically updated as files change on disk.";
         case IndexingServerStatus.Paused:
-          return "Automatic indexing has been paused. " +
-                 "The index is not automatically updated when files change on disk. " +
-                 "Press the \"Run\" button to resume automatic indexing.";
-        case IndexingServerStatus.Inactive:
-          return "Automatic indexing has been paused due to heavy disk activity. " +
-                 "The index is not automatically updated when files change on disk. " +
-                 "The index process will restart automatically in a few minutes. " +
-                 "Press the \"Run\" button to resume automatic indexing.";
+          return "The server is paused and the index may be out of date.\r\n" +
+                 "The index is not automatically updated as files change on disk.\r\n" +
+                 "Press the \"Run\" button to resume automatic indexing now.";
+        case IndexingServerStatus.Yield:
+          return "The server is paused due to heavy disk activity and the index may be out of date.\r\n" +
+                 "The index is not automatically updated as files change on disk.\r\n" +
+                 "The server will attempt to update the index in a few minutes.\r\n" +
+                 "Press the \"Run\" button to resume automatic indexing now.";
         case IndexingServerStatus.Busy:
-          return "The index is being updated to match the contents of files on disk.";
+          return "The server is working on updating the index to match the contents of files on disk.\r\n" +
+                 "Press the \"Pause\" button to pause indexing.";
         default:
           throw new ArgumentOutOfRangeException();
       }
@@ -1009,7 +1010,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var @event = typedEvent as IndexingServerStateChangedEvent;
       if (@event != null) {
         WpfUtilities.Post(_control, () => {
-          Logger.LogInfo("Indexing state had changed to {0}.", @event.ServerStatus);
+          Logger.LogInfo("Indexing state has changed to \"{0}\".", @event.ServerStatus);
           OnIndexingStateChanged();
         });
       }

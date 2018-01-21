@@ -33,7 +33,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         .Where(x => !PathIsExcluded(x))
         .ToList();
 
-      if (Logger.Info) {
+      if (Logger.IsInfoEnabled) {
         Logger.LogInfo("ProcessPathsChangedEvent: {0:n0} items left out of {1:n0} after filtering (showing max 5 below).",
           filteredChanges.Count, changes.Count);
         filteredChanges

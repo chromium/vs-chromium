@@ -19,12 +19,13 @@ namespace VsChromium.Core.Logging {
 
       // Step 3. Set target properties 
       string layout =
-        @"[${longdate}][" + id + @"][${processid}-${threadid}] ${message}" +
+        @"[${longdate}][" + id + @"][${processid}-${threadid}][${level}] ${message}" +
         @"${onexception:" +
         @"${newline}EXCEPTION-LOG${newline}${exception:format=type,message,stacktrace,Data:maxInnerExceptionLevel=10:separator=\\r\\n}" +
         @"}";
 
-      // One file for all processes in %LOCALAPPDATA%/VsChromium, with up to 10 archives of 2MB each.
+      // One file shared by all processes, located in %LOCALAPPDATA%/VsChromium,
+      // with up to 10 archives of 2MB each.
       fileTarget.FileName = "${specialfolder:folder=LocalApplicationData}/VsChromium/" + fileName + ".log";
       fileTarget.Layout = layout;
       fileTarget.KeepFileOpen = true; // For performance

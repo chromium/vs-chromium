@@ -95,9 +95,10 @@ namespace VsChromium.ServerProxy {
 
     private static void SendResponses(IEnumerable<BufferedResponse> reponsesToSend) {
       reponsesToSend.ForAll(bufferedResponse => {
-        Logger.LogInfo("Request {0} of type \"{1}\" took {2:n0} msec to handle.",
-                   bufferedResponse.IpcRequest.RequestId, bufferedResponse.IpcRequest.Data.GetType().Name,
-                   bufferedResponse.Elapsed.TotalMilliseconds);
+        Logger.LogInfo("Server request {0} of type \"{1}\" took {2:n0} msec to execute.",
+          bufferedResponse.IpcRequest.RequestId,
+          bufferedResponse.IpcRequest.Data.GetType().Name,
+          bufferedResponse.Elapsed.TotalMilliseconds);
 
         if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.TypedMessage) {
           bufferedResponse.SuccessCallback((TypedResponse)bufferedResponse.IpcResponse.Data);

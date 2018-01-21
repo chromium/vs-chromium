@@ -304,7 +304,7 @@ namespace VsChromium.Server.FileSystem {
           Debug.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
           _fileSystemSnapshot = newSnapshot;
 
-          if (Logger.Info) {
+          if (Logger.IsInfoEnabled) {
             Logger.LogInfo("FileSystemSnapshotManager: Scanned {0:n0} files in {1:n0} directories",
               newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
               newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)));

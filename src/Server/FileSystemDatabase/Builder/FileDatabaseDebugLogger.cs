@@ -21,7 +21,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private static readonly int LogContentsStats_ExtensionsList_File_Count = 25;
 
     public static void LogFilePieces(ICollection<FileWithContents> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
-      if (LogPiecesStats && Logger.Info) {
+      if (LogPiecesStats && Logger.IsInfoEnabled) {
         Debug.Assert(filePieces.All(x => x != null));
         Debug.Assert(filePieces.Aggregate(0L, (c, x) => c + x.ByteLength) ==
           filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
@@ -38,7 +38,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     public static void LogFileContentsStats(IList<FileWithContents> filesWithContents) {
-      if (LogContentsStats && Logger.Info) {
+      if (LogContentsStats && Logger.IsInfoEnabled) {
         var sectionSeparator = new string('=', 180);
         Logger.LogInfo("{0}", sectionSeparator);
         Logger.LogInfo("Index statistics");

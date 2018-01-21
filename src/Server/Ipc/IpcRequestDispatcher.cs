@@ -39,7 +39,7 @@ namespace VsChromium.Server.Ipc {
       _ipcResponseQueue.Enqueue(response);
       sw.Stop();
 
-      Logger.LogInfo("Request {0} of type \"{1}\" took {2:n0} msec to handle.",
+      Logger.LogInfo("Request {0} of type \"{1}\" took {2:n0} msec to execute.",
                  request.RequestId, request.Data.GetType().Name, sw.ElapsedMilliseconds);
     }
 

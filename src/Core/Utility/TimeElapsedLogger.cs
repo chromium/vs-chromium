@@ -24,15 +24,16 @@ namespace VsChromium.Core.Utility {
       _description = description;
       _stopwatch = Stopwatch.StartNew();
       _indent = GetIndent(_currentThreadIndent);
-      if (Logger.Info)
-        Logger.LogInfo("{0}{1}.", _indent, _description);
+      if (Logger.IsDebugEnabled) {
+        Logger.LogDebug("{0}{1}.", _indent, _description);
+      }
     }
 
     public void Dispose() {
       _currentThreadIndent--;
       _stopwatch.Stop();
-      if (Logger.Perf) {
-        Logger.LogPerf(
+      if (Logger.IsDebugEnabled) {
+        Logger.LogDebug(
           "{0}{1} performed in {2:n0} msec - GC Memory: {3:n0} bytes.",
           _indent,
           _description,
@@ -62,7 +63,7 @@ namespace VsChromium.Core.Utility {
         case 6:
           return ">>>>>>>>>>>> ";
         default:
-          return new string('+', indent * 2);
+          return new string('>', indent * 2);
       }
     }
   }

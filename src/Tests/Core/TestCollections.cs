@@ -200,8 +200,8 @@ namespace VsChromium.Tests.Core {
       //const int loopCount = 300000;
       const int iterationCount = 1;
       const int loopCount = 3000;
-      Logger.Perf = true;
-      Logger.Info = false;
+      Logger.IsDebugEnabled = true;
+      Logger.IsInfoEnabled = false;
 
       var items = new List<int>();
       IList<int> itemsAsIList = items;
@@ -212,7 +212,7 @@ namespace VsChromium.Tests.Core {
       }
 
       for (var iteration = 0; iteration < iterationCount; iteration++) {
-        Logger.LogPerf("Iteration #{0}", iteration);
+        Logger.LogDebug("Iteration #{0}", iteration);
         GabargeCollect();
         using (new TimeElapsedLogger(string.Format("{0,-20}", "for loop, List<T>:"))) {
           for (var loop = 0; loop < loopCount; loop++) {

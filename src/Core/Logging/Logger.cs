@@ -4,6 +4,7 @@
 
 using NLog;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using VsChromium.Core.Win32.Memory;
@@ -21,64 +22,76 @@ namespace VsChromium.Core.Logging {
     static Logger() {
       FileName = "VsChromium";
       Id = "VsChromium";
-      Info = true;
-      Perf = true;
-      Warning = true;
-      Error = true;
+#if DEBUG
+      IsDebugEnabled = true;
+#endif
+      IsInfoEnabled = true;
+      IsWarningEnabled = true;
+      IsErrorEnabled = true;
     }
 
     public static string FileName { get; set; }
     public static string Id { get; set; }
 
-    public static bool Info { get; set; }
-    public static bool Perf { get; set; }
-    public static bool Warning { get; set; }
-    public static bool Error { get; set; }
+    public static bool IsDebugEnabled { get; set; }
+    public static bool IsInfoEnabled { get; set; }
+    public static bool IsWarningEnabled { get; set; }
+    public static bool IsErrorEnabled { get; set; }
+
+    public static void LogDebug(string format, params object[] args) {
+      if (!IsDebugEnabled)
+        return;
+
+      NLogLogger.Value.Debug(format, args);
+    }
 
     public static void LogInfo(string format, params object[] args) {
-      if (!Info)
+      if (!IsInfoEnabled)
         return;
 
       NLogLogger.Value.Info(format, args);
     }
 
-    public static void LogPerf(string format, params object[] args) {
-      if (!Perf)
+    public static void LogInfo(Exception exception, string format, params object[] args) {
+      if (!IsInfoEnabled)
         return;
 
       NLogLogger.Value.Info(format, args);
+      LogException(LogLevel.Info, exception);
     }
 
     public static void LogWarning(string format, params object[] args) {
-      if (!Warning)
+      if (!IsWarningEnabled)
         return;
 
       NLogLogger.Value.Warn(format, args);
     }
 
     public static void LogWarning(Exception exception, string format, params object[] args) {
-      if (!Warning)
+      if (!IsWarningEnabled)
         return;
 
-      NLogLogger.Value.Warn(exception, format, args);
+      NLogLogger.Value.Warn(format, args);
+      LogException(LogLevel.Warn, exception);
     }
 
     public static void LogError(string format, params object[] args) {
-      if (!Error)
+      if (!IsErrorEnabled)
         return;
 
       NLogLogger.Value.Error(format, args);
     }
 
     public static void LogError(Exception exception, string format, params object[] args) {
-      if (!Error)
+      if (!IsErrorEnabled)
         return;
 
-      NLogLogger.Value.Error(exception, format, args);
+      NLogLogger.Value.Error(format, args);
+      LogException(LogLevel.Error, exception);
     }
 
     public static void LogHResult(int hresult, string format, params object[] args) {
-      if (!Error)
+      if (!IsErrorEnabled)
         return;
 
       var exception = Marshal.GetExceptionForHR(hresult);
@@ -95,7 +108,7 @@ namespace VsChromium.Core.Logging {
     }
 
     public static void LogMemoryStats(string indent = "") {
-      if (!Perf)
+      if (!IsDebugEnabled)
         return;
 
       var msg = "";
@@ -107,12 +120,48 @@ namespace VsChromium.Core.Logging {
       NLogLogger.Value.Info(msg);
     }
 
+    public static void LogException(LogLevel logLevel, Exception e) {
+      LogExceptionWorker(logLevel, 0, e);
+    }
+
+    public static void LogExceptionWorker(LogLevel logLevel, int indent, Exception e) {
+      if (e == null) {
+        return;
+      }
+
+      var strIndent = new string(' ', indent * 2);
+      NLogLogger.Value.Log(logLevel, "{0} Exception Type: {1}", strIndent, e.GetType());
+      NLogLogger.Value.Log(logLevel, "{0} Exception Message: {1}", strIndent, e.Message.Replace("\r\n", "\\r\\n"));
+      using (var reader = new StringReader(e.StackTrace)) {
+        for (var line = reader.ReadLine(); line != null; line = reader.ReadLine()) {
+          if (line.Length > 0) {
+            NLogLogger.Value.Log(logLevel, "{0} + {1}", strIndent, line);
+          }
+        }
+      }
+
+      LogExceptionWorker(logLevel, indent + 1, e.InnerException);
+    }
+
     public static void WrapActionInvocation(Action action) {
       try {
         action();
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
         LogError(e, "Error during callback execution");
+      }
+    }
+
+    public static void TestLogException() {
+      try {
+        try {
+          var s = "foo";
+          s.Substring(10);
+        }
+        catch (Exception e) {
+          throw new ApplicationException("Test Exception message", e);
+        }
+      } catch (Exception e) {
+        Logger.LogInfo(e, "Test exception");
       }
     }
   }

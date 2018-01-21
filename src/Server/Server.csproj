@@ -38,7 +38,6 @@
     <Compile Include="FileSystem\DirectoryData.cs" />
     <Compile Include="FileSystem\Builder\ProjectPathChanges.cs" />
     <Compile Include="FileSystem\Builder\ProjectRootSnapshotBuilder.cs" />
-    <Compile Include="FileSystem\Builder\FileSystemSnapshotNameFactory.cs" />
     <Compile Include="FileSystemNames\DirectoryName.cs" />
     <Compile Include="FileSystemNames\FileName.cs" />
     <Compile Include="FileSystemNames\FileSystemName.cs" />

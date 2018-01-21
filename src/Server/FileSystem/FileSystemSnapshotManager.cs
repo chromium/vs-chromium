@@ -27,17 +27,6 @@ namespace VsChromium.Server.FileSystem {
     private static readonly TaskId ProjectListChangedTaskId = new TaskId("ProjectListChangedTaskId");
     private static readonly TaskId FullRescanRequiredTaskId = new TaskId("FullRescanRequiredTaskId");
 
-    /// <summary>
-    /// Performance optimization flag: when building a new file system tree
-    /// snapshot, this flag enables code to try to re-use filename instances
-    /// from the previous snapshot. This is currently turned off, as profiling
-    /// showed this slows down the algorithm by about 40% with not advantage
-    /// other than decreasing GC activity. Note that this actually didn't
-    /// decrease memory usage, as FileName instances are orphaned when a new
-    /// snapshot is created (and the previous one is released).
-    /// </summary>
-    private static readonly bool ReuseFileNameInstances = false;
-
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IDirectoryChangeWatcher _directoryChangeWatcher;
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
@@ -325,17 +314,9 @@ namespace VsChromium.Server.FileSystem {
       FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
 
       using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes")) {
-        // file name factory
-        var fileNameFactory = _fileSystemNameFactory;
-        if (ReuseFileNameInstances) {
-          if (oldSnapshot.ProjectRoots.Count > 0) {
-            fileNameFactory = new FileSystemTreeSnapshotNameFactory(oldSnapshot, fileNameFactory);
-          }
-        }
-
         // Compute new snapshot
         var newSnapshot = _fileSystemSnapshotBuilder.Compute(
-          fileNameFactory,
+          _fileSystemNameFactory,
           oldSnapshot,
           pathChanges,
           projects,

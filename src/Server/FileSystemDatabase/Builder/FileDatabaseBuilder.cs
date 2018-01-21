@@ -60,12 +60,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // dictionary only for the duration of this "Build" call.
           new ReferenceEqualityComparer<IProject>());
 
-        // Don't use file memoization for now, as benefit is dubvious.
-        //IFileContentsMemoization fileContentsMemoization = new FileContentsMemoization();
-        IFileContentsMemoization fileContentsMemoization = new NullFileContentsMemoization();
-
         var loadingContext = new FileContentsLoadingContext {
-          FileContentsMemoization = fileContentsMemoization,
           FullPathChanges = fullPathChanges,
           LoadedTextFileCount = 0,
           OldFileDatabaseSnapshot = fileDatabase,
@@ -276,7 +271,6 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private class FileContentsLoadingContext {
       public FileDatabaseSnapshot OldFileDatabaseSnapshot;
       public FullPathChanges FullPathChanges;
-      public IFileContentsMemoization FileContentsMemoization;
       public ISet<IProject> UnchangedProjects;
       public int LoadedTextFileCount;
       public int LoadedBinaryFileCount;
@@ -377,7 +371,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       } else {
         Interlocked.Increment(ref loadingContext.LoadedTextFileCount);
       }
-      return loadingContext.FileContentsMemoization.Get(projectFileData.FileName, fileContents);
+      return fileContents;
     }
 
     private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContents existingFileWithContents) {

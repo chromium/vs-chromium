@@ -28,15 +28,11 @@
   <ItemGroup>
     <Compile Include="FileSystemContents\AsciiTextLineOffsets.cs" />
     <Compile Include="FileSystemContents\BinaryFileContents.cs" />
-    <Compile Include="FileSystemContents\FileContentsHash.cs" />
     <Compile Include="FileSystemContents\ITextLineOffsets.cs" />
     <Compile Include="FileSystemContents\TextLineOffsetsImpl.cs" />
     <Compile Include="FileSystemDatabase\Builder\FileDatabaseDebugLogger.cs" />
-    <Compile Include="FileSystemDatabase\Builder\IFileContentsMemoization.cs" />
-    <Compile Include="FileSystemDatabase\Builder\FileContentsMemoization.cs" />
     <Compile Include="FileSystemContents\IFileContentsPiece.cs" />
     <Compile Include="FileSystemContents\FileContentsPiece.cs" />
-    <Compile Include="FileSystemDatabase\Builder\NullFileContentsMemoization.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
     <Compile Include="FileSystem\DirectoryData.cs" />

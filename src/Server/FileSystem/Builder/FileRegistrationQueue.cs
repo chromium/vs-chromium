@@ -10,7 +10,7 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Server.FileSystem.Builder {
   public class FileRegistrationQueue {
-    private readonly SimpleConcurrentQueue<FileRegistrationEntry> _queue = new SimpleConcurrentQueue<FileRegistrationEntry>();
+    private readonly ConcurrentBufferQueue<FileRegistrationEntry> _queue = new ConcurrentBufferQueue<FileRegistrationEntry>();
 
     public void Enqueue(FileRegistrationKind registrationKind, FullPath path) {
       _queue.Enqueue(new FileRegistrationEntry(path, registrationKind));

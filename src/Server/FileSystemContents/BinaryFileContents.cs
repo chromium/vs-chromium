@@ -27,10 +27,6 @@ namespace VsChromium.Server.FileSystemContents {
       : base(LazyEmptyContentsMemory.Value, utcLastModified) {
     }
 
-    public override bool HasSameContents(FileContents other) {
-      return other is BinaryFileContents;
-    }
-
     protected override ITextLineOffsets GetFileOffsets() {
       throw new NotImplementedException();
     }

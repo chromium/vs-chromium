@@ -62,11 +62,5 @@ namespace VsChromium.Tests.Server {
       var contents = new Utf16FileContents(memory, DateTime.Now);
       return contents;
     }
-
-    public static FileContentsHash CreateFileContentsHash(string text) {
-      var mem = CreateAsciiMemory(text);
-      var hash = new FileContentsHash(mem);
-      return hash;
-    }
   }
 }

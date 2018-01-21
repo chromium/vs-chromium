@@ -43,7 +43,6 @@
     <Compile Include="Server\TestProjectFileDiscoveryProvider.cs" />
     <Compile Include="Server\TestSearchCode.cs" />
     <Compile Include="Server\Utils.cs" />
-    <Compile Include="Server\TestFileContentsHash.cs" />
     <Compile Include="Server\TestFileContentsSearch.cs" />
     <Compile Include="Server\TestSearchStringParser.cs" />
     <Compile Include="Features\TestBuildOutputAnalyzer.cs" />

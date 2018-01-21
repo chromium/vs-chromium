@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 

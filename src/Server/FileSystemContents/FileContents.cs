@@ -25,12 +25,10 @@ namespace VsChromium.Server.FileSystemContents {
     protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
     private readonly FileContentsMemory _contents;
     private readonly DateTime _utcLastModified;
-    private readonly Lazy<FileContentsHash> _hash;
 
     protected FileContents(FileContentsMemory contents, DateTime utcLastModified) {
       _contents = contents;
       _utcLastModified = utcLastModified;
-      _hash = new Lazy<FileContentsHash>(CreateHash);
     }
 
     public DateTime UtcLastModified { get { return _utcLastModified; } }
@@ -38,8 +36,6 @@ namespace VsChromium.Server.FileSystemContents {
     public TextRange TextRange { get { return new TextRange(0, CharacterCount); } }
 
     public int ByteLength { get { return _contents.ByteLength; } }
-
-    public abstract bool HasSameContents(FileContents other);
 
     public FileContentsPiece CreatePiece(FileName fileName, int fileId, TextRange range) {
       return new FileContentsPiece(fileName, this, fileId, range);
@@ -76,7 +72,7 @@ namespace VsChromium.Server.FileSystemContents {
     protected int CharacterCount { get { return ByteLength / CharacterSize; } }
 
     protected TextFragment TextFragment {
-      get { return new TextFragment(this.Contents.Pointer, 0, this.CharacterCount, this.CharacterSize); }
+      get { return new TextFragment(Contents.Pointer, 0, CharacterCount, CharacterSize); }
     }
 
     protected abstract ITextLineOffsets GetFileOffsets();
@@ -87,41 +83,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     protected abstract TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength);
 
-    protected FileContentsHash Hash { get { return _hash.Value; } }
-
     protected FileContentsMemory Contents {
       get { return _contents; }
-    }
-
-    protected static bool CompareBinaryContents(
-      FileContents item1,
-      IntPtr ptr1,
-      long byteSize1,
-      FileContents item2,
-      IntPtr ptr2,
-      long byteSize2) {
-
-      if (byteSize1 != byteSize2)
-        return false;
-
-      const int smallPrefixSize = 256;
-      if (byteSize1 < smallPrefixSize) {
-        return NativeMethods.Ascii_Compare(
-          ptr1,
-          byteSize1,
-          ptr2,
-          byteSize2);
-      }
-
-      if (!NativeMethods.Ascii_Compare(ptr1, smallPrefixSize, ptr2, smallPrefixSize)) {
-        return false;
-      }
-
-      return item1.Hash.Equals(item2.Hash);
-    }
-
-    private FileContentsHash CreateHash() {
-      return new FileContentsHash(Contents);
     }
 
     private TextFragment CreateFragmentFromRange(TextRange textRange) {
@@ -137,13 +100,13 @@ namespace VsChromium.Server.FileSystemContents {
 
       // Search for a match for "entry" withing "textRange"
       FindEntryFunction findEntry = (textRange, entry) => {
-        var algo = this.GetCompiledTextSearch(compiledTextSearchData.GetSearchContainer(entry));
+        var algo = GetCompiledTextSearch(compiledTextSearchData.GetSearchContainer(entry));
         return algo.FindFirst(CreateFragmentFromRange(textRange), OperationProgressTracker.None);
       };
 
       // Return the extent of the line to look into for non-main entries.
       GetLineRangeFunction getLineRange = position =>
-        this.GetLineTextRangeFromPosition(position, MaxLineExtentOffset);
+        GetLineTextRangeFromPosition(position, MaxLineExtentOffset);
 
       var sourceTextSearch = new TextSourceTextSearch(
         getLineRange,

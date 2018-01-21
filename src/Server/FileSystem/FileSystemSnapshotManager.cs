@@ -48,8 +48,8 @@ namespace VsChromium.Server.FileSystem {
     private readonly ITaskQueue _flushPathChangesTaskQueue;
     private readonly ITaskQueue _taskExecutor;
 
-    private readonly SimpleConcurrentQueue<IList<PathChangeEntry>> _pathsChangedQueue =
-      new SimpleConcurrentQueue<IList<PathChangeEntry>>();
+    private readonly ConcurrentBufferQueue<IList<PathChangeEntry>> _pathsChangedQueue =
+      new ConcurrentBufferQueue<IList<PathChangeEntry>>();
 
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
 

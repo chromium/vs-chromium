@@ -47,7 +47,7 @@
     <Compile Include="Collections\LeftRightItemPair.cs" />
     <Compile Include="Collections\PartitionedBitArray.cs" />
     <Compile Include="Collections\ReferenceEqualityComparer.cs" />
-    <Compile Include="Collections\SimpleConcurrentQueue.cs" />
+    <Compile Include="Collections\ConcurrentBufferQueue.cs" />
     <Compile Include="Collections\SortedArray.cs" />
     <Compile Include="Collections\SortedArrayHelpers.cs" />
     <Compile Include="Configuration\ConfigurationDirectoryNames.cs" />
@@ -74,7 +74,6 @@
     <Compile Include="Files\DirectoryChangeWatcher.DirectoryWatcherhEntry.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.DisposedState.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.ErrorState.cs" />
-    <Compile Include="Files\DirectoryChangeWatcher.ConcurrentBufferQueue.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.PathChangeRecorder.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.PollingDelayPolicy.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.RestartingState.cs" />

@@ -16,16 +16,6 @@ namespace VsChromium.Server.FileSystemContents {
       : base(contents, utcLastModified) {
     }
 
-    public override bool HasSameContents(FileContents other) {
-      var other2 = other as AsciiFileContents;
-      if (other2 == null)
-        return false;
-
-      return CompareBinaryContents(
-        this, Contents.Pointer, ByteLength,
-        other2, other2.Contents.Pointer, other2.ByteLength);
-    }
-
     protected override ITextLineOffsets GetFileOffsets() {
       return new AsciiTextLineOffsets(Contents);
     }
@@ -63,8 +53,8 @@ namespace VsChromium.Server.FileSystemContents {
       int lineStart;
       int lineLength;
       NativeMethods.Ascii_GetLineExtentFromPosition(
-        this.Contents.Pointer,
-        this.CharacterCount,
+        Contents.Pointer,
+        CharacterCount,
         position,
         MaxLineExtentOffset,
         out lineStart,

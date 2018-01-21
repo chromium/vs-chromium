@@ -331,19 +331,26 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public void ShowServerInfo() {
       FetchDatabaseStatistics(response => {
         var message = new StringBuilder();
-        message.AppendFormat("Server status: {0}\r\n\r\n", GetIndexingServerStatusText(response));
-        message.AppendFormat("{0}\r\n\r\n", GetIndexingServerStatusToolTipText(response));
-        message.AppendFormat("Total file count: {0:n0}\r\n", response.FileCount);
-        message.AppendFormat("Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
-        message.AppendFormat("Directory/project count: {0:n0}\r\n", response.ProjectCount);
+        message.AppendFormat("Server status: {0}\r\n", GetIndexingServerStatusText(response));
+        message.AppendLine();
+        message.AppendFormat("{0}\r\n", GetIndexingServerStatusToolTipText(response));
+        message.AppendLine();
+        message.AppendFormat("Index state:\r\n");
+        message.AppendFormat("  Directory/project count: {0:n0}\r\n", response.ProjectCount);
+        message.AppendFormat("  Total file count: {0:n0}\r\n", response.FileCount);
+        message.AppendFormat("  Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
         if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.SearchableFileCount > 0) {
-          message.AppendFormat("Last updated: {0}\r\n", HumanReadableDuration(response.IndexLastUpdatedUtc));
+          message.AppendFormat("  Last updated: {0} ({1} {2})\r\n",
+            HumanReadableDuration(response.IndexLastUpdatedUtc),
+            response.IndexLastUpdatedUtc.ToLocalTime().ToShortDateString(),
+            response.IndexLastUpdatedUtc.ToLocalTime().ToLongTimeString());
         } else {
-          message.AppendFormat("Last updated: {0}\r\n", "n/a (index is empty)");
+          message.AppendFormat("  Last updated: {0}\r\n", "n/a (index is empty)");
         }
+        message.AppendLine();
         message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", response.ServerGcMemoryUsage / (1024 * 1024));
         message.AppendFormat("Native memory usage: {0:n2} MB\r\n", response.ServerNativeMemoryUsage / (1024 * 1024));
-        _shellHost.ShowInfoMessageBox("Index Server Information", message.ToString());
+        _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", message.ToString());
       });
     }
 

@@ -640,8 +640,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void DisplayIndexingServerStatus(GetDatabaseStatisticsResponse response) {
       _lastIndexingServerStatistics = response;
 
-      ViewModel.IndexingPaused = response.IndexingPaused;
-      ViewModel.IndexingPausedDueToError = response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow;
+      ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Inactive;
+      ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Inactive;
       ViewModel.IndexStatusText = GetIndexStatusText(response);
       ViewModel.IndexingServerStateText = GetIndexingServerStateText(response);
     }
@@ -662,12 +662,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private static string GetIndexingServerStateText(GetDatabaseStatisticsResponse response) {
-      if (response.IndexingPaused) {
-        if (response.IndexingPausedReason == IndexingPausedReason.FileSystemWatcherOverflow)
-          return "Error";
-        return "Paused";
+      switch (response.ServerStatus) {
+        case IndexingServerStatus.Idle:
+          return "Idle";
+        case IndexingServerStatus.Paused:
+          return "Paused";
+        case IndexingServerStatus.Inactive:
+          return "Inactive";
+        case IndexingServerStatus.Busy:
+          return "Busy";
+        default:
+          throw new ArgumentOutOfRangeException();
       }
-      return "Active";
     }
 
     private string HumanReadableDuration(DateTime utcTime) {
@@ -981,7 +987,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var @event = typedEvent as IndexingServerStateChangedEvent;
       if (@event != null) {
         WpfUtilities.Post(_control, () => {
-          Logger.LogInfo("Indexing state had changed to {0}.", @event.Paused);
+          Logger.LogInfo("Indexing state had changed to {0}.", @event.ServerStatus);
           OnIndexingStateChanged();
         });
       }

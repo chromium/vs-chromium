@@ -42,8 +42,7 @@ namespace VsChromium.Server.Ipc.TypedEvents {
 
     private void IndexingServerOnStateUpdated(object sender, IndexingServerStateUpdatedEventArgs e) {
       _typedEventSender.SendEventAsync(new IndexingServerStateChangedEvent {
-        Paused = e.State.Status == IndexingServerStatus.Paused,
-        PausedDueToError = e.State.PauseReason == IndexingServerPauseReason.FileWatchBufferOverflow,
+        ServerStatus = e.State.Status,
         LastIndexUpdatedUtc = e.State.LastIndexUpdateUtc,
       });
     }

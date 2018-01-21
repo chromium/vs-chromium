@@ -19,23 +19,25 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     [ProtoMember(5)]
     public DateTime IndexLastUpdatedUtc { get; set; }
     [ProtoMember(6)]
-    public bool IndexingPaused { get; set; }
-    [ProtoMember(7)]
-    public IndexingPausedReason IndexingPausedReason { get; set; }
+    public IndexingServerStatus ServerStatus { get; set; }
   }
 
-  public enum IndexingPausedReason {
+  public enum IndexingServerStatus {
     /// <summary>
     /// The server is actually running
     /// </summary>
-    None,
+    Idle,
     /// <summary>
     /// The server received a request to go in a "pause" state
     /// </summary>
-    UserAction,
+    Paused,
     /// <summary>
     /// The server put itself in "pause" mode because of a file system watcher buffer overflow error
     /// </summary>
-    FileSystemWatcherOverflow,
+    Inactive,
+    /// <summary>
+    /// The server is busy indexing the file system
+    /// </summary>
+    Busy,
   }
 }

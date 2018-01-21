@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server {
   public class IndexingServerState {
     public IndexingServerStatus Status { get; set; }
-    public IndexingServerPauseReason PauseReason { get; set; }
     public DateTime LastIndexUpdateUtc { get; set; }
   }
 }

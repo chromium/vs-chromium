@@ -4,8 +4,12 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
+using System.Threading;
+using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Threads;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.Operations;
 using VsChromium.Server.Search;
 using VsChromium.Server.Threads;
 
@@ -16,8 +20,9 @@ namespace VsChromium.Server {
     private readonly IFileSystemSnapshotManager _fileSystemSnapshotManager;
     private readonly ITaskQueue _stateChangeTaskQueue;
 
-    private IndexingServerStatus _status;
-    private IndexingServerPauseReason _pauseReason;
+    private bool _paused;
+    private bool _indexing;
+    private bool _pausedDueToError;
     private DateTime _lastUpdateUtc = DateTime.MinValue;
 
     [ImportingConstructor]
@@ -30,42 +35,54 @@ namespace VsChromium.Server {
       _fileSystemSnapshotManager = fileSystemSnapshotManager;
       _stateChangeTaskQueue = taskQueueFactory.CreateQueue("IndexingServer State Change Task Queue");
 
+      _fileSystemSnapshotManager.SnapshotScanStarted += FileSystemSnapshotManagerOnSnapshotScanStarted;
       _fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
       _fileSystemSnapshotManager.FileSystemWatchStopped += FileSystemSnapshotManagerOnFileSystemWatchStopped;
       _fileSystemSnapshotManager.FileSystemWatchResumed += FileSystemSnapshotManagerOnFileSystemWatchResumed;
+
+      searchEngine.FilesLoading += SearchEngineOnFilesLoading;
       searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
     }
 
     public IndexingServerState CurrentState {
       get {
-        return new IndexingServerState {
-          Status = _status,
-          PauseReason = _pauseReason,
-          LastIndexUpdateUtc = _lastUpdateUtc,
-        };
+        IndexingServerState result = null;
+        var e = new ManualResetEvent(false);
+        _stateChangeTaskQueue.ExecuteAsync(token => {
+          result = GetCurrentState();
+          e.Set();
+        });
+        e.WaitOne();
+        Debug.Assert(result != null);
+        return result;
       }
+    }
+
+    private IndexingServerStatus GetStatus() {
+      if (_indexing)
+        return IndexingServerStatus.Busy;
+      if (_pausedDueToError)
+        return IndexingServerStatus.Inactive;
+      if (_paused)
+        return IndexingServerStatus.Paused;
+      return IndexingServerStatus.Idle;
     }
 
     public event EventHandler<IndexingServerStateUpdatedEventArgs> StateUpdated;
 
-    public void TogglePausedRunning() {
-      _stateChangeTaskQueue.ExecuteAsync(token => {
-        switch (_status) {
-          case IndexingServerStatus.Running:
-            PauseImpl(IndexingServerPauseReason.UserRequest);
-            break;
-          case IndexingServerStatus.Paused:
-            Resume();
-            break;
-          default:
-            throw new ArgumentOutOfRangeException();
-        }
-      });
-    }
-
     public void Refresh() {
       _stateChangeTaskQueue.ExecuteAsync(token => {
         _fileSystemSnapshotManager.Refresh();
+      });
+    }
+
+    public void TogglePausedRunning() {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
+        if (_paused) {
+          ResumeImpl();
+        } else {
+          PauseImpl(IndexingServerPauseReason.UserRequest);
+        }
       });
     }
 
@@ -82,60 +99,58 @@ namespace VsChromium.Server {
     }
 
     private void PauseImpl(IndexingServerPauseReason reason) {
-      switch (_status) {
-        case IndexingServerStatus.Running:
-          _status = IndexingServerStatus.Paused;
-          _pauseReason = reason;
-          _fileSystemSnapshotManager.Pause();
-          OnStatusUpdated();
-          break;
-        case IndexingServerStatus.Paused:
-          return;
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
+      _paused = true;
+      _pausedDueToError = (reason == IndexingServerPauseReason.FileWatchBufferOverflow);
+      _fileSystemSnapshotManager.Pause();
+      OnStatusUpdated();
     }
 
     private void ResumeImpl() {
-      switch (_status) {
-        case IndexingServerStatus.Running:
-          return;
-        case IndexingServerStatus.Paused:
-          _status = IndexingServerStatus.Running;
-          _pauseReason = default(IndexingServerPauseReason);
-          _fileSystemSnapshotManager.Resume();
-          OnStatusUpdated();
-          return;
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
+      _paused = false;
+      _pausedDueToError = false;
+      _fileSystemSnapshotManager.Resume();
+      OnStatusUpdated();
+    }
+
+    private void FileSystemSnapshotManagerOnSnapshotScanStarted(object sender, OperationInfo operationInfo) {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
+        _indexing = true;
+        OnStatusUpdated();
+      });
     }
 
     private void FileSystemSnapshotManagerOnSnapshotScanFinished(object sender, SnapshotScanResult snapshotScanResult) {
       _stateChangeTaskQueue.ExecuteAsync(token => {
+        _indexing = false;
         if (snapshotScanResult.Error == null) {
           _lastUpdateUtc = _dateTimeProvider.UtcNow;
-          OnStatusUpdated();
         }
+        OnStatusUpdated();
+      });
+    }
+
+    private void SearchEngineOnFilesLoading(object sender, OperationInfo operationInfo) {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
+        _indexing = true;
+        OnStatusUpdated();
       });
     }
 
     private void SearchEngineOnFilesLoaded(object sender, FilesLoadedResult filesLoadedResult) {
       _stateChangeTaskQueue.ExecuteAsync(token => {
+        _indexing = false;
         if (filesLoadedResult.Error == null) {
           _lastUpdateUtc = _dateTimeProvider.UtcNow;
-          OnStatusUpdated();
         }
+        OnStatusUpdated();
       });
     }
 
     private void FileSystemSnapshotManagerOnFileSystemWatchStopped(object sender, FileSystemWatchStoppedEventArgs e) {
       _stateChangeTaskQueue.ExecuteAsync(token => {
-        if (_status == IndexingServerStatus.Running) {
-          _status = IndexingServerStatus.Paused;
-          _pauseReason = e.IsError
-            ? IndexingServerPauseReason.FileWatchBufferOverflow
-            : IndexingServerPauseReason.UserRequest;
+        if (!_paused) {
+          _paused = true;
+          _pausedDueToError = e.IsError;
           OnStatusUpdated();
         }
       });
@@ -143,17 +158,29 @@ namespace VsChromium.Server {
 
     private void FileSystemSnapshotManagerOnFileSystemWatchResumed(object sender, EventArgs e) {
       _stateChangeTaskQueue.ExecuteAsync(token => {
-        if (_status == IndexingServerStatus.Paused) {
-          _status = IndexingServerStatus.Running;
-          _pauseReason = default(IndexingServerPauseReason);
+        if (_paused) {
+          _paused = false;
+          _pausedDueToError = false;
           OnStatusUpdated();
         }
       });
     }
 
     protected virtual void OnStatusUpdated() {
-      var e = new IndexingServerStateUpdatedEventArgs {State = CurrentState};
+      var e = new IndexingServerStateUpdatedEventArgs { State = GetCurrentState() };
       StateUpdated?.Invoke(this, e);
+    }
+
+    private IndexingServerState GetCurrentState() {
+      return new IndexingServerState {
+        Status = GetStatus(),
+        LastIndexUpdateUtc = _lastUpdateUtc,
+      };
+    }
+
+    private enum IndexingServerPauseReason {
+      UserRequest,
+      FileWatchBufferOverflow,
     }
   }
 }

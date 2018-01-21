@@ -263,7 +263,9 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\InstalledBuildViewModel.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\ShowBuildExplorerCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
+    <Compile Include="Package\IShellHost.cs" />
     <Compile Include="Package\ReportServerProgress.cs" />
+    <Compile Include="Package\ShellHost.cs" />
     <Compile Include="Views\ITextDocumentTable.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchCodeCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />

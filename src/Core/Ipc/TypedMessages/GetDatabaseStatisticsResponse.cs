@@ -13,12 +13,14 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     [ProtoMember(2)]
     public long FileCount { get; set; }
     [ProtoMember(3)]
-    public long IndexedFileCount { get; set; }
+    public long SearchableFileCount { get; set; }
     [ProtoMember(4)]
-    public long IndexedFileSize { get; set; }
+    public long ServerNativeMemoryUsage { get; set; }
     [ProtoMember(5)]
-    public DateTime IndexLastUpdatedUtc { get; set; }
+    public long ServerGcMemoryUsage { get; set; }
     [ProtoMember(6)]
+    public DateTime IndexLastUpdatedUtc { get; set; }
+    [ProtoMember(7)]
     public IndexingServerStatus ServerStatus { get; set; }
   }
 

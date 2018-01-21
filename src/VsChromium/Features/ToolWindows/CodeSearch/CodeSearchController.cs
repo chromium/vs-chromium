@@ -2,18 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.TextManager.Interop;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.Editor;
-using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -40,6 +41,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private readonly CodeSearchControl _control;
+    private readonly IShellHost _shellHost;
     private readonly IUIRequestProcessor _uiRequestProcessor;
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     // ReSharper disable once NotAccessedField.Local
@@ -74,6 +76,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public CodeSearchController(
       CodeSearchControl control,
+      IShellHost shellHost,
       IUIRequestProcessor uiRequestProcessor,
       IUIDelayedOperationProcessor uiDelayedOperationProcessor,
       IFileSystemTreeSource fileSystemTreeSource,
@@ -91,6 +94,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IVsEditorAdaptersFactoryService adaptersFactoryService,
       IDateTimeProvider dateTimeProvider) {
       _control = control;
+      _shellHost = shellHost;
       _uiRequestProcessor = uiRequestProcessor;
       _fileSystemTreeSource = fileSystemTreeSource;
       _typedRequestProcessProxy = typedRequestProcessProxy;
@@ -322,6 +326,25 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         "Search results may be out of date as index has been updated. Run search again to display up-to-date results.");
       ViewModel.RootNodes.Insert(0, item);
 #endif
+    }
+
+    public void ShowServerInfo() {
+      FetchDatabaseStatistics(response => {
+        var message = new StringBuilder();
+        message.AppendFormat("Server status: {0}\r\n\r\n", GetIndexingServerStatusText(response));
+        message.AppendFormat("{0}\r\n\r\n", GetIndexingServerStatusToolTipText(response));
+        message.AppendFormat("Total file count: {0:n0}\r\n", response.FileCount);
+        message.AppendFormat("Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
+        message.AppendFormat("Directory/project count: {0:n0}\r\n", response.ProjectCount);
+        if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.SearchableFileCount > 0) {
+          message.AppendFormat("Last updated: {0}\r\n", HumanReadableDuration(response.IndexLastUpdatedUtc));
+        } else {
+          message.AppendFormat("Last updated: {0}\r\n", "n/a (index is empty)");
+        }
+        message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", response.ServerGcMemoryUsage / (1024 * 1024));
+        message.AppendFormat("Native memory usage: {0:n2} MB\r\n", response.ServerNativeMemoryUsage / (1024 * 1024));
+        _shellHost.ShowInfoMessageBox("Index Server Information", message.ToString());
+      });
     }
 
     public void RefreshFileSystemTree() {
@@ -626,6 +649,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void FetchDatabaseStatistics() {
+      FetchDatabaseStatistics(x => { });
+    }
+
+    private void FetchDatabaseStatistics(Action<GetDatabaseStatisticsResponse> callback) {
       _uiRequestProcessor.Post(
         new UIRequest {
           Id = "GetDatabaseStatisticsRequest",
@@ -633,6 +660,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           OnSuccess = typedResponse => {
             var response = (GetDatabaseStatisticsResponse)typedResponse;
             DisplayIndexingServerStatus(response);
+            callback(response);
           }
         });
     }
@@ -648,17 +676,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private string GetIndexStatusText(GetDatabaseStatisticsResponse response) {
-      var memoryUsageMb = response.IndexedFileSize / 1024L / 1024L;
-      if (memoryUsageMb == 0 && response.IndexedFileSize > 0)
+      var memoryUsageMb = response.ServerNativeMemoryUsage / 1024L / 1024L;
+      if (memoryUsageMb == 0 && response.ServerNativeMemoryUsage > 0)
         memoryUsageMb = 1;
       var message =
         String.Format(
           "Index: {0:n0} files - {1:n0} MB",
-          response.IndexedFileCount,
+          response.SearchableFileCount,
           memoryUsageMb);
-      if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.IndexedFileCount > 0) {
-        message += string.Format(" - {0}", HumanReadableDuration(response.IndexLastUpdatedUtc));
-      }
       return message;
     }
 
@@ -702,24 +727,24 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string HumanReadableDuration(DateTime utcTime) {
       var span = _dateTimeProvider.UtcNow - utcTime;
       if (span.TotalSeconds <= 5) {
-        return "Updated a few seconds ago";
+        return "a few seconds ago";
       }
       if (span.TotalSeconds <= 50) {
-        return "Updated less than 1 minute ago";
+        return "less than 1 minute ago";
       }
       if (span.TotalMinutes <= 1) {
-        return "Updated about 1 minute ago";
+        return "about 1 minute ago";
       }
       if (span.TotalMinutes <= 60) {
-        return string.Format("Updated about {0:n0} minutes ago", Math.Ceiling(span.TotalMinutes));
+        return string.Format("about {0:n0} minutes ago", Math.Ceiling(span.TotalMinutes));
       }
       if (span.TotalHours <= 1.5) {
-        return "Updated about one hour ago";
+        return "about one hour ago";
       }
       if (span.TotalHours <= 24) {
-        return string.Format("Updated about {0:n0} hours ago", Math.Ceiling(span.TotalHours));
+        return string.Format("about {0:n0} hours ago", Math.Ceiling(span.TotalHours));
       }
-      return "Updated more than one day ago";
+      return "more than one day ago";
     }
 
     public void PerformSearch(bool immediate) {

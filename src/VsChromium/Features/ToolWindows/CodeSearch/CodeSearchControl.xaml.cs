@@ -29,7 +29,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// <summary>
   /// Interaction logic for CodeSearchControl.xaml
   /// </summary>
-  public partial class CodeSearchControl : UserControl {
+  public partial class CodeSearchControl {
     // For controlling scrolling inside tree view.
     private double _treeViewHorizScrollPos;
     private bool _treeViewResetHorizScroll;
@@ -44,8 +44,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       InitializeComponent();
       // Add the "VsColors" brushes to the WPF resources of the control, so that the
       // resource keys used on the XAML file can be resolved dynamically.
-      this.Resources.MergedDictionaries.Add(VsResources.BuildResourceDictionary());
-      base.DataContext = new CodeSearchViewModel();
+      Resources.MergedDictionaries.Add(VsResources.BuildResourceDictionary());
+      DataContext = new CodeSearchViewModel();
 
       _progressBarTracker = new ProgressBarTracker(ProgressBar);
 
@@ -83,6 +83,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
       _controller = new CodeSearchController(
         this,
+        componentModel.DefaultExportProvider.GetExportedValue<IShellHost>(),
         _uiRequestProcessor,
         componentModel.DefaultExportProvider.GetExportedValue<IUIDelayedOperationProcessor>(),
         componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>(),
@@ -221,18 +222,18 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
 
       // Find the scroll viewer and hook up scroll changed event handler.
-      if (this._treeViewScrollViewer == null) {
-        this._treeViewScrollViewer = this.FileTreeView.Template.FindName("_tv_scrollviewer_", this.FileTreeView) as ScrollViewer;
+      if (_treeViewScrollViewer == null) {
+        _treeViewScrollViewer = FileTreeView.Template.FindName("_tv_scrollviewer_", FileTreeView) as ScrollViewer;
         if (_treeViewScrollViewer != null) {
-          this._treeViewScrollViewer.ScrollChanged += this.TreeViewScrollViewer_ScrollChanged;
+          _treeViewScrollViewer.ScrollChanged += TreeViewScrollViewer_ScrollChanged;
         }
       }
 
       // If we got a scroll viewer, remember the horizontal offset so we can
       // restore it in the scroll changed event.
       if (_treeViewScrollViewer != null) {
-        this._treeViewResetHorizScroll = true;
-        this._treeViewHorizScrollPos = this._treeViewScrollViewer.HorizontalOffset;
+        _treeViewResetHorizScroll = true;
+        _treeViewHorizScrollPos = _treeViewScrollViewer.HorizontalOffset;
       }
       e.Handled = false;
     }
@@ -240,9 +241,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void TreeViewScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) {
       Debug.Assert(this._treeViewScrollViewer != null);
 
-      if (this._treeViewResetHorizScroll) {
-        this._treeViewScrollViewer.ScrollToHorizontalOffset(this._treeViewHorizScrollPos);
-        this._treeViewResetHorizScroll = false;
+      if (_treeViewResetHorizScroll) {
+        _treeViewScrollViewer.ScrollToHorizontalOffset(_treeViewHorizScrollPos);
+        _treeViewResetHorizScroll = false;
       }
     }
 
@@ -326,6 +327,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void PauseIndexingButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(() => Controller.PauseResumeIndexing());
+    }
+
+    private void ServerInfo_Click(object sender, RoutedEventArgs e) {
+      Logger.WrapActionInvocation(() => Controller.ShowServerInfo());
     }
   }
 }

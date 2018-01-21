@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -31,10 +32,11 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       return new GetDatabaseStatisticsResponse {
         ProjectCount = snapshot.ProjectRoots.Count,
         FileCount = database.FileNames.Count,
-        IndexedFileCount = database.SearchableFileCount,
-        IndexedFileSize = database.FileContentsPieces.Aggregate(0L, (x, piece) => x + piece.ByteLength),
-        ServerStatus = indexingServerState.Status,
+        SearchableFileCount = database.SearchableFileCount,
+        ServerNativeMemoryUsage = database.FileContentsPieces.Aggregate(0L, (x, piece) => x + piece.ByteLength),
         IndexLastUpdatedUtc = indexingServerState.LastIndexUpdateUtc,
+        ServerGcMemoryUsage = GC.GetTotalMemory(false),
+        ServerStatus = indexingServerState.Status,
       };
     }
   }

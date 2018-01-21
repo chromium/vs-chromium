@@ -175,52 +175,38 @@
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Width="2" />
       </StackPanel>
       <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-        <!-- Index statistics -->
-        <TextBlock VerticalAlignment="Center" Text="{Binding IndexStatusText}" Margin="0,0,0,0">
-          <TextBlock.ToolTip>
-            <TextBlock Text="Resource usage of the Index maintained by the VS Chromium Server process"/>
-          </TextBlock.ToolTip>
-        </TextBlock>
-        <!-- Separator -->
-        <TextBlock Text=" - " VerticalAlignment="Center" />
-        <!-- The "!" symbol (when indexing is paused) -->
-        <TextBlock VerticalAlignment="Center" Foreground="Goldenrod"
-                   FontFamily="Webdings" Text="&#x69;" Margin="2,0,2,0"
-                   ToolTip="{Binding ServerStatusToolTipText}">
-          <TextBlock.Style>
-            <Style TargetType="TextBlock">
-              <Style.Triggers>
-                <!-- Set text color: Last one wins! -->
-                <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
-                  <Setter Property="Visibility" Value="Visible" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
-                  <Setter Property="Visibility" Value="Collapsed" />
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </TextBlock.Style>
-        </TextBlock>
-        <!-- The index server state (running or paused) -->
-        <TextBlock Text="{Binding IndexingServerStateText}" VerticalAlignment="Center" Margin="0,0,2,0"
-                   ToolTip="{Binding ServerStatusToolTipText}">
-          <TextBlock.Style>
-            <Style TargetType="TextBlock">
-              <Style.Triggers>
-                <!-- Set text color: Last one wins! -->
-                <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
-                  <Setter Property="Foreground" Value="Goldenrod" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
-                  <Setter Property="Foreground" Value="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}" />
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </TextBlock.Style>
-        </TextBlock>
+        <!-- The server info button -->
+        <Button IsTabStop="False" Click="ServerInfo_Click" ToolTip="{Binding ServerStatusToolTipText}"
+                Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}">
+          <Button.Content>
+            <StackPanel Orientation="Horizontal">
+              <!-- The "!" symbol (when indexing is paused) -->
+              <TextBlock VerticalAlignment="Center" FontFamily="Webdings" FontSize="14" Text="&#x69;" Margin="0,0,2,0" />
+              <!-- Index statistics -->
+              <TextBlock VerticalAlignment="Center" Text="{Binding IndexStatusText}" />
+              <TextBlock VerticalAlignment="Center" Text=" - " />
+              <!-- The index server state (running or paused) -->
+              <TextBlock VerticalAlignment="Center" Text="{Binding IndexingServerStateText}" Margin="0,0,0,0">
+                <TextBlock.Style>
+                  <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                      <!-- Set text color: Last one wins! -->
+                      <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
+                        <Setter Property="Foreground" Value="Goldenrod" />
+                      </DataTrigger>
+                      <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
+                        <Setter Property="Foreground" Value="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </TextBlock.Style>
+              </TextBlock>
+            </StackPanel>
+          </Button.Content>
+        </Button>
         <!-- The Pause/Resume button -->
-        <Button VerticalAlignment="Center" 
-                HorizontalAlignment="Right"
+        <Button HorizontalAlignment="Right"
                 IsTabStop="False" Click="PauseIndexingButton_Click"
                 Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
                 FontFamily="Segoe UI Symbol" FontSize="14">
@@ -241,8 +227,7 @@
           </Button.ToolTip>
         </Button>
         <!-- The manual refresh button -->
-        <Button VerticalAlignment="Center" 
-                HorizontalAlignment="Right"
+        <Button HorizontalAlignment="Right"
                 Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
                 IsTabStop="False" Click="RefreshIndexButton_Click"
                 Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
@@ -595,4 +580,34 @@
 
   </DockPanel>
 </UserControl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

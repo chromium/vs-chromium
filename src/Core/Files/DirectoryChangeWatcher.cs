@@ -95,7 +95,7 @@ namespace VsChromium.Core.Files {
 
       var actions = _watcherEventQueue.DequeueAll();
       if (actions.Count > 0) {
-        Logger.LogInfo("DirectectoryChangeWatcher: Processing {0} watcher event(s)", actions.Count);
+        Logger.LogInfo("DirectectoryChangeWatcher: Processing {0} file change event(s)", actions.Count);
         foreach (var action in actions) {
           Logger.WrapActionInvocation(() => {
             action();
@@ -110,7 +110,10 @@ namespace VsChromium.Core.Files {
       // is because we know that such events are not useful after errors, since
       // the state of the file system is not known.
       Logger.WrapActionInvocation(() => {
-        _watcherEventQueue.Clear();
+        var actions = _watcherEventQueue.DequeueAll();
+        if (actions.Count > 0) {
+          Logger.LogInfo("DirectectoryChangeWatcher: Ignoring {0} file change events due to overflow error", actions.Count);
+        }
 
         lock (_stateLock) {
           _state = _state.OnWatcherErrorEvent(sender, args);

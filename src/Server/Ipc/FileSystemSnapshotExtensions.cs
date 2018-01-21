@@ -23,7 +23,7 @@ namespace VsChromium.Server.Ipc {
 
     private static DirectoryEntry BuildDirectoryEntry(DirectorySnapshot directoryEntry) {
       return new DirectoryEntry {
-        Name = (directoryEntry.DirectoryName.IsAbsoluteName ? directoryEntry.DirectoryName.FullPath.Value : directoryEntry.DirectoryName.RelativePath.FileName),
+        Name = (directoryEntry.DirectoryName.IsAbsoluteName ? directoryEntry.DirectoryName.FullPath.Value : directoryEntry.DirectoryName.Name),
         Data = null,
         Entries = BuildEntries(directoryEntry)
       };
@@ -31,7 +31,7 @@ namespace VsChromium.Server.Ipc {
 
     private static FileSystemEntry BuildFileEntry(FileName filename) {
       return new FileEntry {
-        Name = filename.RelativePath.FileName,
+        Name = filename.Name,
         Data = null
       };
     }

@@ -14,13 +14,11 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public FileName CreateFileName(DirectoryName parent, string name) {
-      var relativePath = parent.RelativePath.CreateChild(name);
-      return new FileName(parent, relativePath);
+      return new FileName(parent, name);
     }
 
     public DirectoryName CreateDirectoryName(DirectoryName parent, string name) {
-      var relativePath = parent.RelativePath.CreateChild(name);
-      return new RelativeDirectoryName(parent, relativePath);
+      return new RelativeDirectoryName(parent, name);
     }
   }
 }

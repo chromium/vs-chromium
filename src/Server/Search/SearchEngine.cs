@@ -483,7 +483,7 @@ namespace VsChromium.Server.Search {
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
-      return matcher.MatchFileName(new RelativePath(fileName.RelativePath.FileName), comparer);
+      return matcher.MatchFileName(new RelativePath(fileName.Name, fileName.Name), comparer);
     }
 
     private bool MatchFileRelativePath(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {

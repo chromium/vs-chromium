@@ -53,6 +53,8 @@ namespace VsChromium.Server.FileSystemNames {
     /// </summary>
     public abstract FullPath FullPath { get; }
 
+    public abstract string Name { get; }
+
     /// <summary>
     /// Returns true if this instance is an absolute directory name, false
     /// otherwise. <see cref="IsAbsoluteName"/> implies <see cref="Parent"/> is
@@ -79,6 +81,16 @@ namespace VsChromium.Server.FileSystemNames {
       return FullPath.Value;
     }
 
+
+    protected RelativePath BuildRelativePath(FileSystemName name) {
+      var a = name as AbsoluteDirectoryName;
+      if (a != null) {
+        return a.RelativePath;
+      }
+
+      return BuildRelativePath(name.Parent).CreateChild(name.Name);
+    }
+
     #region Comparison/Equality plumbing
 
     public int CompareTo(FileSystemName other) {
@@ -91,7 +103,7 @@ namespace VsChromium.Server.FileSystemNames {
 
     public override int GetHashCode() {
       if (_hashCode == 0)
-         _hashCode = FileSystemNameComparer.Instance.GetHashCode(this);
+        _hashCode = FileSystemNameComparer.Instance.GetHashCode(this);
       return _hashCode;
     }
 

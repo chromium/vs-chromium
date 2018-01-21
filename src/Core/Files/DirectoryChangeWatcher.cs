@@ -27,6 +27,13 @@ namespace VsChromium.Core.Files {
     private readonly object _watchersLock = new object();
 
     /// <summary>
+    /// Buffer for file change notifications. The buffer has its own lock to make sure
+    /// watcher event are processed as fast as possible without any lock contention,
+    /// to prevent internal buffer overflow exceptions (from watchers) as much as possible.
+    /// </summary>
+    private readonly ConcurrentBufferQueue<Action> _watcherEventQueue = new ConcurrentBufferQueue<Action>();
+
+    /// <summary>
     /// Our current state which changes when we are started, stopped, run into errors with file system watcher, etc.
     /// This state allows reacting to external operations and events specifically for each state.
     /// </summary>
@@ -91,10 +98,26 @@ namespace VsChromium.Core.Files {
         _state = _state.OnPolling();
         _state.OnStateActive();
       }
+
+      var actions = _watcherEventQueue.DequeueAll();
+      if (actions.Count > 0) {
+        Logger.LogInfo("DirectectoryChangeWatcher: Processing {0} watcher event(s)", actions.Count);
+        foreach (var action in actions) {
+          Logger.WrapActionInvocation(() => {
+            action();
+          });
+        }
+      }
     }
 
     private void WatcherOnError(object sender, ErrorEventArgs args) {
+      // Note: Unlike other type of watcher events, errors are not queued,
+      // instead they are processed directly, after clearing the queue. This
+      // is because we know that such events are not useful after errors, since
+      // the state of the file system is not known.
       Logger.WrapActionInvocation(() => {
+        _watcherEventQueue.Clear();
+
         lock (_stateLock) {
           _state = _state.OnWatcherErrorEvent(sender, args);
           _state.OnStateActive();
@@ -103,7 +126,7 @@ namespace VsChromium.Core.Files {
     }
 
     private void WatcherOnChanged(object sender, FileSystemEventArgs args, PathKind pathKind) {
-      Logger.WrapActionInvocation(() => {
+      _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileChangedEvent(sender, args, pathKind);
           _state.OnStateActive();
@@ -112,7 +135,7 @@ namespace VsChromium.Core.Files {
     }
 
     private void WatcherOnCreated(object sender, FileSystemEventArgs args, PathKind pathKind) {
-      Logger.WrapActionInvocation(() => {
+      _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileCreatedEvent(sender, args, pathKind);
           _state.OnStateActive();
@@ -121,7 +144,7 @@ namespace VsChromium.Core.Files {
     }
 
     private void WatcherOnDeleted(object sender, FileSystemEventArgs args, PathKind pathKind) {
-      Logger.WrapActionInvocation(() => {
+      _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileDeletedEvent(sender, args, pathKind);
           _state.OnStateActive();
@@ -130,7 +153,7 @@ namespace VsChromium.Core.Files {
     }
 
     private void WatcherOnRenamed(object sender, RenamedEventArgs args, PathKind pathKind) {
-      Logger.WrapActionInvocation(() => {
+      _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
           _state = _state.OnWatcherFileRenamedEvent(sender, args, pathKind);
           _state.OnStateActive();

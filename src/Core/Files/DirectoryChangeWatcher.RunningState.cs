@@ -26,10 +26,10 @@ namespace VsChromium.Core.Files {
       /// Change events that are coming from the underlying file change notification events, but have not
       /// been procseed and buffered yet.
       /// </summary>
-      private Dictionary<FullPath, PathChangeEntry> _newChangedPaths = new Dictionary<FullPath, PathChangeEntry>();
+      private Dictionary<FullPath, PathChangeEntry> _enqueuedChangedPaths = new Dictionary<FullPath, PathChangeEntry>();
 
       /// <summary>
-      /// Change events that have been moved and merged from <see cref="_newChangedPaths"/>, but have not
+      /// Change events that have been moved and merged from <see cref="_enqueuedChangedPaths"/>, but have not
       /// been posted as events to our consumer.
       /// </summary>
       private readonly IDictionary<FullPath, PathChangeEntry> _bufferedChangedPaths = new Dictionary<FullPath, PathChangeEntry>();
@@ -223,8 +223,8 @@ namespace VsChromium.Core.Files {
 
       private IDictionary<FullPath, PathChangeEntry> DequeueChangedPathsEvents() {
         // Copy current changes into temp and reset to empty collection.
-        var temp = _newChangedPaths;
-        _newChangedPaths = new Dictionary<FullPath, PathChangeEntry>();
+        var temp = _enqueuedChangedPaths;
+        _enqueuedChangedPaths = new Dictionary<FullPath, PathChangeEntry>();
         return temp;
       }
 
@@ -236,7 +236,7 @@ namespace VsChromium.Core.Files {
           TimeStampUtc = DateTimeProvider.UtcNow,
         });
 
-        MergePathChange(_newChangedPaths, entry);
+        MergePathChange(_enqueuedChangedPaths, entry);
       }
 
       private static void MergePathChange(IDictionary<FullPath, PathChangeEntry> changes, PathChangeEntry entry) {

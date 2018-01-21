@@ -70,6 +70,7 @@
     <Compile Include="Files\DirectoryChangeWatcher.DirectoryWatcherhEntry.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.DisposedState.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.ErrorState.cs" />
+    <Compile Include="Files\DirectoryChangeWatcher.ConcurrentBufferQueue.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.PathChangeRecorder.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.PollingDelayPolicy.cs" />
     <Compile Include="Files\DirectoryChangeWatcher.RestartingState.cs" />

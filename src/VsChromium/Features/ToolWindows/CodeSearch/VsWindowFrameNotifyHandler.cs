@@ -20,7 +20,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public void Advise() {
       var hr = _frame.Advise(this, out _notifyCookie);
       if (ErrorHandler.Failed(hr)) {
-        Logger.LogWarning("IVsWindowFrame2.Advise() failed: hr={0}", hr);
+        Logger.LogWarn("IVsWindowFrame2.Advise() failed: hr={0}", hr);
       }
     }
 
@@ -37,7 +37,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           _isVisible = false;
           var hr = _frame.Unadvise(_notifyCookie);
           if (ErrorHandler.Failed(hr)) {
-            Logger.LogWarning("IVsWindowFrame2.Unadvise() failed: hr={0}", hr);
+            Logger.LogWarn("IVsWindowFrame2.Unadvise() failed: hr={0}", hr);
           }
           break;
         case __FRAMESHOW.FRAMESHOW_TabActivated:

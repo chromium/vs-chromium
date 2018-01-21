@@ -26,7 +26,7 @@ namespace VsChromium.Core.Logging {
       IsDebugEnabled = true;
 #endif
       IsInfoEnabled = true;
-      IsWarningEnabled = true;
+      IsWarnEnabled = true;
       IsErrorEnabled = true;
     }
 
@@ -35,7 +35,7 @@ namespace VsChromium.Core.Logging {
 
     public static bool IsDebugEnabled { get; set; }
     public static bool IsInfoEnabled { get; set; }
-    public static bool IsWarningEnabled { get; set; }
+    public static bool IsWarnEnabled { get; set; }
     public static bool IsErrorEnabled { get; set; }
 
     public static void LogDebug(string format, params object[] args) {
@@ -60,15 +60,15 @@ namespace VsChromium.Core.Logging {
       LogException(LogLevel.Info, exception);
     }
 
-    public static void LogWarning(string format, params object[] args) {
-      if (!IsWarningEnabled)
+    public static void LogWarn(string format, params object[] args) {
+      if (!IsWarnEnabled)
         return;
 
       NLogLogger.Value.Warn(format, args);
     }
 
-    public static void LogWarning(Exception exception, string format, params object[] args) {
-      if (!IsWarningEnabled)
+    public static void LogWarn(Exception exception, string format, params object[] args) {
+      if (!IsWarnEnabled)
         return;
 
       NLogLogger.Value.Warn(format, args);
@@ -132,10 +132,15 @@ namespace VsChromium.Core.Logging {
       var strIndent = new string(' ', indent * 2);
       NLogLogger.Value.Log(logLevel, "{0} Exception Type: {1}", strIndent, e.GetType());
       NLogLogger.Value.Log(logLevel, "{0} Exception Message: {1}", strIndent, e.Message.Replace("\r\n", "\\r\\n"));
-      using (var reader = new StringReader(e.StackTrace)) {
-        for (var line = reader.ReadLine(); line != null; line = reader.ReadLine()) {
-          if (line.Length > 0) {
-            NLogLogger.Value.Log(logLevel, "{0} + {1}", strIndent, line);
+      var stackTrace = e.StackTrace;
+      if (string.IsNullOrWhiteSpace(stackTrace)) {
+        NLogLogger.Value.Log(logLevel, "{0} + {1}", strIndent, "<No Stack Trace>");
+      } else {
+        using (var reader = new StringReader(e.StackTrace)) {
+          for (var line = reader.ReadLine(); line != null; line = reader.ReadLine()) {
+            if (line.Length > 0) {
+              NLogLogger.Value.Log(logLevel, "{0} + {1}", strIndent, line);
+            }
           }
         }
       }

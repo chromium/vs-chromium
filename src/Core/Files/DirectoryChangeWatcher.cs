@@ -96,7 +96,7 @@ namespace VsChromium.Core.Files {
 
       var actions = _watcherEventQueue.DequeueAll();
       if (actions.Count > 0) {
-        Logger.LogInfo("DirectectoryChangeWatcher: Processing {0} file change event(s)", actions.Count);
+        Logger.LogDebug("DirectectoryChangeWatcher: Processing {0} file change event(s)", actions.Count);
         foreach (var action in actions) {
           Logger.WrapActionInvocation(() => {
             action();

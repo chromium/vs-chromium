@@ -34,7 +34,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     /// <summary>
     /// The server put itself in "pause" mode because of a file system watcher buffer overflow error
     /// </summary>
-    Inactive,
+    Yield,
     /// <summary>
     /// The server is busy indexing the file system
     /// </summary>

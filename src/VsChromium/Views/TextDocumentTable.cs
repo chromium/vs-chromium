@@ -52,7 +52,7 @@ namespace VsChromium.Views {
           docData = info.DocData as IVsTextBuffer;
         }
         catch (Exception e) {
-          Logger.LogWarning(e, "Error getting IVsTextBuffer for document {0}, skipping document", path);
+          Logger.LogWarn(e, "Error getting IVsTextBuffer for document {0}, skipping document", path);
         }
         if (docData == null)
           continue;

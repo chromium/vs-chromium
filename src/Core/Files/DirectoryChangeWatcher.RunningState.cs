@@ -66,7 +66,7 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnWatcherErrorEvent(object sender, ErrorEventArgs args) {
-        Logger.LogError(args.GetException(), "File system watcher for path \"{0}\" error.",
+        Logger.LogWarn(args.GetException(), "File system watcher for path \"{0}\" error.",
           ((IFileSystemWatcher)sender).Path);
         StopWatchers();
         StateHost.ParentWatcher.OnError(args.GetException());

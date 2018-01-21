@@ -62,7 +62,7 @@ namespace VsChromium.Server {
       if (_indexing)
         return IndexingServerStatus.Busy;
       if (_pausedDueToError)
-        return IndexingServerStatus.Inactive;
+        return IndexingServerStatus.Yield;
       if (_paused)
         return IndexingServerStatus.Paused;
       return IndexingServerStatus.Idle;

@@ -23,7 +23,7 @@ namespace VsChromium.Server {
     private bool _paused;
     private bool _indexing;
     private bool _pausedDueToError;
-    private DateTime _lastUpdateUtc = DateTime.MinValue;
+    private DateTime _lastIndexUpdateUtc = DateTime.MinValue;
 
     [ImportingConstructor]
     public IndexingServer(
@@ -122,9 +122,6 @@ namespace VsChromium.Server {
     private void FileSystemSnapshotManagerOnSnapshotScanFinished(object sender, SnapshotScanResult snapshotScanResult) {
       _stateChangeTaskQueue.ExecuteAsync(token => {
         _indexing = false;
-        if (snapshotScanResult.Error == null) {
-          _lastUpdateUtc = _dateTimeProvider.UtcNow;
-        }
         OnStatusUpdated();
       });
     }
@@ -140,7 +137,7 @@ namespace VsChromium.Server {
       _stateChangeTaskQueue.ExecuteAsync(token => {
         _indexing = false;
         if (filesLoadedResult.Error == null) {
-          _lastUpdateUtc = _dateTimeProvider.UtcNow;
+          _lastIndexUpdateUtc = _dateTimeProvider.UtcNow;
         }
         OnStatusUpdated();
       });
@@ -174,7 +171,7 @@ namespace VsChromium.Server {
     private IndexingServerState GetCurrentState() {
       return new IndexingServerState {
         Status = GetStatus(),
-        LastIndexUpdateUtc = _lastUpdateUtc,
+        LastIndexUpdateUtc = _lastIndexUpdateUtc,
       };
     }
 

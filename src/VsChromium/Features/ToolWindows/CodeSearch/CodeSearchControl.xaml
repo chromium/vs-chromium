@@ -185,7 +185,8 @@
         <TextBlock Text=" - " VerticalAlignment="Center" />
         <!-- The "!" symbol (when indexing is paused) -->
         <TextBlock VerticalAlignment="Center" Foreground="Goldenrod"
-                   FontFamily="Webdings" FontSize="14" Text="&#x69;" Margin="2,0,2,0">
+                   FontFamily="Webdings" Text="&#x69;" Margin="2,0,2,0"
+                   ToolTip="{Binding ServerStatusToolTipText}">
           <TextBlock.Style>
             <Style TargetType="TextBlock">
               <Style.Triggers>
@@ -199,29 +200,10 @@
               </Style.Triggers>
             </Style>
           </TextBlock.Style>
-          <TextBlock.ToolTip>
-            <TextBlock>
-              <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                  <Style.Triggers>
-                    <!-- Set tooltip text: last one wins! -->
-                    <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
-                      <Setter Property="Text" Value="Automatic indexing is currently paused. The index database is not up-to-date. Press the Run or Refresh button." />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding IndexingPausedDueToError}" Value="True">
-                      <Setter Property="Text" Value="Automatic indexing is currently paused due to an error. The index database is not up-to-date. Press the Run or Refresh button." />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
-                      <Setter Property="Text" Value="Automatic indexing is currently active. The index database is automatically updated with as files change on disk." />
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </TextBlock.Style>
-            </TextBlock>
-          </TextBlock.ToolTip>
         </TextBlock>
         <!-- The index server state (running or paused) -->
-        <TextBlock Text="{Binding IndexingServerStateText}" VerticalAlignment="Center" Margin="0,0,2,0">
+        <TextBlock Text="{Binding IndexingServerStateText}" VerticalAlignment="Center" Margin="0,0,2,0"
+                   ToolTip="{Binding ServerStatusToolTipText}">
           <TextBlock.Style>
             <Style TargetType="TextBlock">
               <Style.Triggers>
@@ -235,26 +217,6 @@
               </Style.Triggers>
             </Style>
           </TextBlock.Style>
-          <TextBlock.ToolTip>
-            <TextBlock>
-              <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                  <Style.Triggers>
-                    <!-- Set tooltip text: last one wins! -->
-                    <DataTrigger Binding="{Binding IndexingPaused}" Value="True">
-                      <Setter Property="Text" Value="Automatic indexing is currently paused. The index database is not up-to-date. Press the Run or Refresh button." />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding IndexingPausedDueToError}" Value="True">
-                      <Setter Property="Text" Value="Automatic indexing is currently paused due to an error. The index database is not up-to-date. Press the Run or Refresh button." />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding IndexingPaused}" Value="False">
-                      <Setter Property="Text" Value="Automatic indexing is currently active. The index database is automatically updated with as files change on disk." />
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </TextBlock.Style>
-            </TextBlock>
-          </TextBlock.ToolTip>
         </TextBlock>
         <!-- The Pause/Resume button -->
         <Button VerticalAlignment="Center" 

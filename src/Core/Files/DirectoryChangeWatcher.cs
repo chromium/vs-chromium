@@ -32,6 +32,7 @@ namespace VsChromium.Core.Files {
     /// This state allows reacting to external operations and events specifically for each state.
     /// </summary>
     private State _state;
+
     /// <summary>
     /// The lock to protect access to <see cref="_state"/>
     /// </summary>

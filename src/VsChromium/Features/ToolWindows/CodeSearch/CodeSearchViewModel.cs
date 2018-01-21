@@ -31,6 +31,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string _displayFontFamily;
     private double _displayFontSize;
     private bool _indexingPaused;
+    private string _serverStatusToolTipText;
     private bool _indexingPausedDueToError;
 
     public enum DisplayKind {
@@ -442,6 +443,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         _indexingPaused = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingPaused));
+      }
+    }
+
+    public string ServerStatusToolTipText {
+      get { return _serverStatusToolTipText; }
+      set {
+        if (value == _serverStatusToolTipText)
+          return;
+        _serverStatusToolTipText = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.ServerStatusToolTipText));
       }
     }
 

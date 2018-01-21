@@ -643,7 +643,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Inactive;
       ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Inactive;
       ViewModel.IndexStatusText = GetIndexStatusText(response);
-      ViewModel.IndexingServerStateText = GetIndexingServerStateText(response);
+      ViewModel.IndexingServerStateText = GetIndexingServerStatusText(response);
+      ViewModel.ServerStatusToolTipText = GetIndexingServerStatusToolTipText(response);
     }
 
     private string GetIndexStatusText(GetDatabaseStatisticsResponse response) {
@@ -661,7 +662,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return message;
     }
 
-    private static string GetIndexingServerStateText(GetDatabaseStatisticsResponse response) {
+    private static string GetIndexingServerStatusText(GetDatabaseStatisticsResponse response) {
       switch (response.ServerStatus) {
         case IndexingServerStatus.Idle:
           return "Idle";
@@ -670,7 +671,28 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         case IndexingServerStatus.Inactive:
           return "Inactive";
         case IndexingServerStatus.Busy:
-          return "Busy";
+          return "Updating";
+        default:
+          throw new ArgumentOutOfRangeException();
+      }
+    }
+
+    private string GetIndexingServerStatusToolTipText(GetDatabaseStatisticsResponse response) {
+      switch (response.ServerStatus) {
+        case IndexingServerStatus.Idle:
+          return "The index is up to date. " +
+                 "The index is automatically updated when files change on disk.";
+        case IndexingServerStatus.Paused:
+          return "Automatic indexing has been paused. " +
+                 "The index is not automatically updated when files change on disk. " +
+                 "Press the \"Run\" button to resume automatic indexing.";
+        case IndexingServerStatus.Inactive:
+          return "Automatic indexing has been paused due to heavy disk activity. " +
+                 "The index is not automatically updated when files change on disk. " +
+                 "The index process will restart automatically in a few minutes. " +
+                 "Press the \"Run\" button to resume automatic indexing.";
+        case IndexingServerStatus.Busy:
+          return "The index is being updated to match the contents of files on disk.";
         default:
           throw new ArgumentOutOfRangeException();
       }

@@ -67,7 +67,7 @@ namespace VsChromium.Server.FileSystem {
     /// <summary>
     /// <code>true</code> if the file system watchers are currently not active.
     /// </summary>
-    private bool _isWatchingDirectories;
+    private bool _isPaused;
 
 
     [ImportingConstructor]
@@ -99,8 +99,6 @@ namespace VsChromium.Server.FileSystem {
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
       _directoryChangeWatcher.Paused += DirectoryChangeWatcherOnPaused;
       _directoryChangeWatcher.Resumed += DirectoryChangeWatcherOnResumed;
-
-      _isWatchingDirectories = true;
     }
 
     public FileSystemSnapshot CurrentSnapshot {
@@ -109,7 +107,7 @@ namespace VsChromium.Server.FileSystem {
 
     public void Pause() {
       _taskExecutor.ExecuteAsync(token => {
-        if (_isWatchingDirectories) {
+        if (!_isPaused) {
           // "OnPause" event will be fired by the directory watcher
           _directoryChangeWatcher.Pause();
         }
@@ -118,7 +116,7 @@ namespace VsChromium.Server.FileSystem {
 
     public void Resume() {
       _taskExecutor.ExecuteAsync(token => {
-        if (!_isWatchingDirectories) {
+        if (_isPaused) {
           // "OnResume" event will be fired by the directory watcher
           _directoryChangeWatcher.Resume();
         }
@@ -160,40 +158,44 @@ namespace VsChromium.Server.FileSystem {
 
     private void FileRegistrationTrackerOnProjectListChanged(object sender, ProjectsEventArgs e) {
       _taskExecutor.ExecuteAsync(token => {
-        Logger.LogInfo("List of projects has changed: Enqueuing a partial file system scan");
+        Logger.LogInfo("FileSystemSnapshotManager: List of projects has changed, enqueuing a partial file system scan");
 
         // If we are queuing a task that requires rescanning the entire file system,
         // cancel existing tasks (should be only one really) to avoid wasting time
         _longRunningFileSystemTaskQueue.CancelAll();
 
-        _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
-          // Pass empty changes, as we don't know of any file system changes for
-          // existing entries. For new entries, they don't exist in the snapshot,
-          // so they will be read form disk
-          var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
-          RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
-        });
+        if (!_isPaused) {
+          _longRunningFileSystemTaskQueue.Enqueue(ProjectListChangedTaskId, cancellationToken => {
+            // Pass empty changes, as we don't know of any file system changes for
+            // existing entries. For new entries, they don't exist in the snapshot,
+            // so they will be read form disk
+            var emptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
+            RescanFileSystem(e.Projects, emptyChanges, cancellationToken);
+          });
+        }
       });
     }
 
     private void FileRegistrationTrackerOnProjectListRefreshed(object sender, ProjectsEventArgs e) {
       _taskExecutor.ExecuteAsync(token => {
-        Logger.LogInfo("List of projects has been refreshed: Enqueuing a full file system scan");
+        Logger.LogInfo("FileSystemSnapshotManager: List of projects has been refreshed, enqueuing a full file system scan");
 
         // If we are queuing a task that requires rescanning the entire file system,
         // cancel existing tasks (should be only one really) to avoid wasting time
         _longRunningFileSystemTaskQueue.CancelAll();
 
-        _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
-          RescanFileSystem(e.Projects, null, cancellationToken);
-        });
+        if (!_isPaused) {
+          _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
+            RescanFileSystem(e.Projects, null, cancellationToken);
+          });
+        }
       });
     }
 
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       _taskExecutor.ExecuteAsync(token => {
-        if (_isWatchingDirectories) {
-          Logger.LogInfo("File change events: enqueuing an incremental file system rescan");
+        if (!_isPaused) {
+          Logger.LogInfo("FileSystemSnapshotManager: File changes received, enqueuing an incremental file system rescan");
           _pathsChangedQueue.Enqueue(changes);
           _flushPathChangesTaskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
         }
@@ -202,13 +204,12 @@ namespace VsChromium.Server.FileSystem {
 
     private void DirectoryChangeWatcherOnError(Exception exception) {
       _taskExecutor.ExecuteAsync(token => {
-        Logger.LogInfo("Directory watcher error: entering pause mode");
+        Logger.LogInfo("FileSystemSnapshotManager: Directory watcher error received, entering pause mode");
+        // Note: No need to stop the directory watcher, it paused itself
+        _isPaused = true;
+
         // Ingore all changes
         _pathsChangedQueue.DequeueAll();
-
-        // If we are in a running state, pause due to an error
-        // Note: No need to stop the directory watcher, it paused itself
-        _isWatchingDirectories = false;
         _longRunningFileSystemTaskQueue.CancelAll();
         OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs { IsError = true });
       });
@@ -216,11 +217,11 @@ namespace VsChromium.Server.FileSystem {
 
     private void DirectoryChangeWatcherOnPaused() {
       _taskExecutor.ExecuteAsync(token => {
-        Logger.LogInfo("Directory watcher entered pause mode");
+        Logger.LogInfo("FileSystemSnapshotManager: Directory watcher entered pause mode, entering pause mode");
+        _isPaused = true;
+
         // Ingore all changes
         _pathsChangedQueue.DequeueAll();
-
-        _isWatchingDirectories = false;
         _longRunningFileSystemTaskQueue.CancelAll();
         OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs { IsError = false });
       });
@@ -228,9 +229,10 @@ namespace VsChromium.Server.FileSystem {
 
     private void DirectoryChangeWatcherOnResumed() {
       _taskExecutor.ExecuteAsync(token => {
-        Logger.LogInfo("Directory watcher resumed");
+        Logger.LogInfo("FileSystemSnapshotManager: Directory watcher has resumed, leaving pause mode");
+        _isPaused = false;
+
         _fileRegistrationTracker.RefreshAsync();
-        _isWatchingDirectories = true;
         OnFileSystemWatchResumed();
       });
     }
@@ -303,7 +305,7 @@ namespace VsChromium.Server.FileSystem {
           _fileSystemSnapshot = newSnapshot;
 
           if (Logger.Info) {
-            Logger.LogInfo("+++++++++++ Collected {0:n0} files in {1:n0} directories",
+            Logger.LogInfo("FileSystemSnapshotManager: Scanned {0:n0} files in {1:n0} directories",
               newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
               newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)));
           }
@@ -322,7 +324,7 @@ namespace VsChromium.Server.FileSystem {
     private FileSystemSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
       FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
 
-      using (new TimeElapsedLogger("Computing snapshot delta from list of file changes")) {
+      using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes")) {
         // file name factory
         var fileNameFactory = _fileSystemNameFactory;
         if (ReuseFileNameInstances) {

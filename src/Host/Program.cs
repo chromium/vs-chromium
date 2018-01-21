@@ -12,6 +12,7 @@ using VsChromium.Core.Processes;
 namespace VsChromium.Host {
   class Program {
     private static void Main(string[] args) {
+      Logger.Id = "Host";
       try {
         Logger.LogInfo("Starting server host process (version={0}).", Assembly.GetExecutingAssembly().GetName().Version);
         Logger.LogInfo("Host process id={0}.", Process.GetCurrentProcess().Id);

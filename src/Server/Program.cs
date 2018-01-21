@@ -8,6 +8,7 @@ using VsChromium.Core.Logging;
 namespace VsChromium.Server {
   class Program {
     private static void Main(string[] args) {
+      Logger.Id = "Server";
       Logger.LogInfo("Server process started");
       try {
         var port = GetTcpPort(args);

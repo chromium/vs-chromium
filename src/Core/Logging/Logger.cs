@@ -2,91 +2,83 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using NLog;
 using System;
-using System.Diagnostics;
-using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Logging {
   public class Logger {
-    private static readonly Lazy<string> ProcessName =
-      new Lazy<string>(() => Process.GetCurrentProcess().ProcessName, LazyThreadSafetyMode.PublicationOnly);
+    private static readonly Lazy<NLog.Logger> NLogLogger =
+      new Lazy<NLog.Logger>(CreateNLogLogger, LazyThreadSafetyMode.ExecutionAndPublication);
+
+    private static NLog.Logger CreateNLogLogger() {
+      NLogConfig.ConfigureApplication(FileName, Id);
+      return LogManager.GetCurrentClassLogger();
+    }
 
     static Logger() {
-#if DEBUG
+      FileName = "VsChromium";
+      Id = "VsChromium";
       Info = true;
       Perf = true;
-#endif
-      //Perf = true;
       Warning = true;
       Error = true;
     }
+
+    public static string FileName { get; set; }
+    public static string Id { get; set; }
 
     public static bool Info { get; set; }
     public static bool Perf { get; set; }
     public static bool Warning { get; set; }
     public static bool Error { get; set; }
 
-    private static string GetLoggerId() {
-      return ProcessName.Value;
-    }
-
-    private static void LogImpl(string format, params object[] args) {
-      var message = string.Format(format, args);
-      string timestamp = DateTime.UtcNow.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Trace.WriteLine(string.Format("[{0}-{1}-tid={2}] {3}", timestamp, GetLoggerId(),
-        Thread.CurrentThread.ManagedThreadId, message));
-    }
-
     public static void LogInfo(string format, params object[] args) {
-      if (!Logger.Info)
+      if (!Info)
         return;
 
-      LogImpl(format, args);
+      NLogLogger.Value.Info(format, args);
     }
 
     public static void LogPerf(string format, params object[] args) {
-      if (!Logger.Perf)
+      if (!Perf)
         return;
 
-      LogImpl(format, args);
+      NLogLogger.Value.Info(format, args);
     }
 
     public static void LogWarning(string format, params object[] args) {
-      if (!Logger.Warning)
+      if (!Warning)
         return;
 
-      LogImpl(format, args);
+      NLogLogger.Value.Warn(format, args);
     }
 
     public static void LogWarning(Exception exception, string format, params object[] args) {
-      if (!Logger.Warning)
+      if (!Warning)
         return;
 
-      LogImpl(format, args);
-      LogException(exception);
+      NLogLogger.Value.Warn(exception, format, args);
     }
 
     public static void LogError(string format, params object[] args) {
-      if (!Logger.Error)
+      if (!Error)
         return;
 
-      LogImpl("ERROR: {0}", string.Format(format, args));
+      NLogLogger.Value.Error(format, args);
     }
 
     public static void LogError(Exception exception, string format, params object[] args) {
-      if (!Logger.Error)
+      if (!Error)
         return;
 
-      var msg = string.Format(format, args);
-      LogImpl("ERROR: {0}", msg);
-      LogException(exception);
+      NLogLogger.Value.Error(exception, format, args);
     }
 
     public static void LogHResult(int hresult, string format, params object[] args) {
-      if (!Logger.Error)
+      if (!Error)
         return;
 
       var exception = Marshal.GetExceptionForHR(hresult);
@@ -103,7 +95,7 @@ namespace VsChromium.Core.Logging {
     }
 
     public static void LogMemoryStats(string indent = "") {
-      if (!Logger.Perf)
+      if (!Perf)
         return;
 
       var msg = "";
@@ -112,7 +104,7 @@ namespace VsChromium.Core.Logging {
         msg += string.Format(" Gen{0}: {1:n0}.", i, GC.CollectionCount(i));
       }
       msg += string.Format(" HeapAlloc Memory: {0:n0} bytes.", HeapAllocStatic.TotalMemory);
-      LogImpl(msg);
+      NLogLogger.Value.Info(msg);
     }
 
     public static void WrapActionInvocation(Action action) {
@@ -120,16 +112,7 @@ namespace VsChromium.Core.Logging {
         action();
       }
       catch (Exception e) {
-        Logger.LogError(e, "Error during callback execution");
-      }
-    }
-
-    private static void LogException(Exception exception) {
-      for (var ex = exception; ex != null; ex = ex.InnerException) {
-        LogImpl("  Message:     {0}", ex.Message);
-        LogImpl("  Type:        {0}", ex.GetType().FullName);
-        LogImpl("  StackTrace:");
-        LogImpl("{0}", ex.StackTrace);
+        LogError(e, "Error during callback execution");
       }
     }
   }

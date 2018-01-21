@@ -176,17 +176,15 @@ namespace VsChromium.Core.Files {
           return;
         _checkRootsPolling.Restart();
 
-        lock (StateHost.ParentWatcher._watchersLock) {
-          var deletedWatchers = StateHost.ParentWatcher._watchers
-            .Where(item => !StateHost.ParentWatcher._fileSystem.DirectoryExists(item.Key))
-            .ToList();
+        var deletedWatchers = StateHost.WatcherDictionary
+          .Where(item => !StateHost.ParentWatcher._fileSystem.DirectoryExists(item.Key))
+          .ToList();
 
-          deletedWatchers
-            .ForAll(item => {
-              EnqueueChangeEvent(item.Key, RelativePath.Empty, PathChangeKind.Deleted, PathKind.Directory);
-              RemoveDirectory(item.Key);
-            });
-        }
+        deletedWatchers
+          .ForAll(item => {
+            EnqueueChangeEvent(item.Key, RelativePath.Empty, PathChangeKind.Deleted, PathKind.Directory);
+            RemoveDirectory(item.Key);
+          });
       }
 
       /// <summary>

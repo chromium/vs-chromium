@@ -47,36 +47,32 @@ namespace VsChromium.Core.Files {
       }
 
       protected void WatchDirectoriesImpl(IEnumerable<FullPath> directories) {
-        lock (StateHost.ParentWatcher._watchersLock) {
-          var oldSet = new HashSet<FullPath>(StateHost.ParentWatcher._watchers.Keys);
-          var newSet = new HashSet<FullPath>(directories);
+        var oldSet = new HashSet<FullPath>(StateHost.WatcherDictionary.Keys);
+        var newSet = new HashSet<FullPath>(directories);
 
-          var removed = new HashSet<FullPath>(oldSet);
-          removed.ExceptWith(newSet);
+        var removed = new HashSet<FullPath>(oldSet);
+        removed.ExceptWith(newSet);
 
-          var added = new HashSet<FullPath>(newSet);
-          added.ExceptWith(oldSet);
+        var added = new HashSet<FullPath>(newSet);
+        added.ExceptWith(oldSet);
 
-          removed.ForAll(RemoveDirectory);
-          added.ForAll(AddDirectory);
-        }
+        removed.ForAll(RemoveDirectory);
+        added.ForAll(AddDirectory);
       }
 
       protected void AddDirectory(FullPath directory) {
         DirectoryWatcherhEntry watcherEntry;
-        lock (StateHost.ParentWatcher._watchersLock) {
-          StateHost.PollingThread.Start();
-          if (StateHost.ParentWatcher._watchers.TryGetValue(directory, out watcherEntry))
-            return;
+        StateHost.PollingThread.Start();
+        if (StateHost.WatcherDictionary.TryGetValue(directory, out watcherEntry))
+          return;
 
-          watcherEntry = new DirectoryWatcherhEntry {
-            Path = directory,
-            DirectoryNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
-            FileNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
-            FileWriteWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
-          };
-          StateHost.ParentWatcher._watchers.Add(directory, watcherEntry);
-        }
+        watcherEntry = new DirectoryWatcherhEntry {
+          Path = directory,
+          DirectoryNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
+          FileNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
+          FileWriteWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
+        };
+        StateHost.WatcherDictionary.Add(directory, watcherEntry);
 
         Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
 
@@ -141,29 +137,23 @@ namespace VsChromium.Core.Files {
 
       protected void RemoveDirectory(FullPath directory) {
         DirectoryWatcherhEntry watcher;
-        lock (StateHost.ParentWatcher._watchersLock) {
-          if (!StateHost.ParentWatcher._watchers.TryGetValue(directory, out watcher))
-            return;
-          StateHost.ParentWatcher._watchers.Remove(directory);
-        }
+        if (!StateHost.WatcherDictionary.TryGetValue(directory, out watcher))
+          return;
+        StateHost.WatcherDictionary.Remove(directory);
         Logger.LogInfo("Removing directory \"{0}\" from change notification monitoring.", directory);
         watcher.Dispose();
         OnWatcherRemoved(directory, watcher);
       }
 
       protected void StartWatchers() {
-        lock (StateHost.ParentWatcher._watchersLock) {
-          foreach (var watcher in StateHost.ParentWatcher._watchers) {
-            watcher.Value.Start();
-          }
+        foreach (var watcher in StateHost.WatcherDictionary) {
+          watcher.Value.Start();
         }
       }
 
       protected void StopWatchers() {
-        lock (StateHost.ParentWatcher._watchersLock) {
-          foreach (var watcher in StateHost.ParentWatcher._watchers) {
-            watcher.Value.Stop();
-          }
+        foreach (var watcher in StateHost.WatcherDictionary) {
+          watcher.Value.Stop();
         }
       }
     }

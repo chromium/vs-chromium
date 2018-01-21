@@ -21,12 +21,6 @@ namespace VsChromium.Core.Files {
     private readonly TimeSpan _autoRestartObservePeriod = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// Dictionary of watchers, one per root directory path.
-    /// </summary>
-    private readonly Dictionary<FullPath, DirectoryWatcherhEntry> _watchers = new Dictionary<FullPath, DirectoryWatcherhEntry>();
-    private readonly object _watchersLock = new object();
-
-    /// <summary>
     /// Buffer for file change notifications. The buffer has its own lock to make sure
     /// watcher event are processed as fast as possible without any lock contention,
     /// to prevent internal buffer overflow exceptions (from watchers) as much as possible.

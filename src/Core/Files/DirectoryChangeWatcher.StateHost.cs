@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -13,6 +14,10 @@ namespace VsChromium.Core.Files {
       private readonly DirectoryChangeWatcher _parentWatcher;
       private readonly BoundedOperationLimiter _logLimiter = new BoundedOperationLimiter(10);
       private readonly PollingWatcherThread _pollingThread;
+      /// <summary>
+      /// Dictionary of watchers, one per root directory path.
+      /// </summary>
+      private readonly Dictionary<FullPath, DirectoryWatcherhEntry> _watcherDictionary = new Dictionary<FullPath, DirectoryWatcherhEntry>();
 
       public StateHost(DirectoryChangeWatcher parentWatcher) {
         _parentWatcher = parentWatcher;
@@ -29,6 +34,13 @@ namespace VsChromium.Core.Files {
 
       public PollingWatcherThread PollingThread {
         get { return _pollingThread; }
+      }
+
+      /// <summary>
+      /// Dictionary of watchers, one per root directory path.
+      /// </summary>
+      public Dictionary<FullPath, DirectoryWatcherhEntry> WatcherDictionary {
+        get { return _watcherDictionary; }
       }
 
       public class PollingWatcherThread {

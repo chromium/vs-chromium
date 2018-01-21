@@ -15,7 +15,7 @@ namespace VsChromium.Core.Files {
       private readonly DateTime _enteredStateUtc;
 
       public ErrorState(StateHost stateHost) : base(stateHost) {
-        _enteredStateUtc = stateHost.ParentWatcher._dateTimeProvider.UtcNow;
+        _enteredStateUtc = DateTimeProvider.UtcNow;
       }
 
       public override State OnResume() {

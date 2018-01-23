@@ -43,6 +43,7 @@
     <Compile Include="Collections\ArrayDiffsResult.cs" />
     <Compile Include="Collections\ArrayUtilities.cs" />
     <Compile Include="Collections\ConcurrentBitArray.cs" />
+    <Compile Include="Collections\ConcurrentHashSet.cs" />
     <Compile Include="Collections\IBitArray.cs" />
     <Compile Include="Collections\LeftRightItemPair.cs" />
     <Compile Include="Collections\PartitionedBitArray.cs" />

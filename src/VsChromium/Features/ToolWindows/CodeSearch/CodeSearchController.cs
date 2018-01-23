@@ -348,8 +348,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           message.AppendFormat("  Last updated: {0}\r\n", "n/a (index is empty)");
         }
         message.AppendLine();
-        message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", response.ServerGcMemoryUsage / (1024 * 1024));
-        message.AppendFormat("Native memory usage: {0:n2} MB\r\n", response.ServerNativeMemoryUsage / (1024 * 1024));
+        message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
+        message.AppendFormat("Native memory usage: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
         _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", message.ToString());
       });
     }
@@ -683,14 +683,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private string GetIndexStatusText(GetDatabaseStatisticsResponse response) {
-      var memoryUsageMb = response.ServerNativeMemoryUsage / 1024L / 1024L;
-      if (memoryUsageMb == 0 && response.ServerNativeMemoryUsage > 0)
-        memoryUsageMb = 1;
-      var message =
-        String.Format(
-          "Index: {0:n0} files - {1:n0} MB",
-          response.SearchableFileCount,
-          memoryUsageMb);
+      var memoryUsageMb = (double)response.ServerNativeMemoryUsage / 1024L / 1024L;
+      var message = String.Format("Index: {0:n0} files - {1:n0} MB", response.SearchableFileCount, memoryUsageMb);
       return message;
     }
 

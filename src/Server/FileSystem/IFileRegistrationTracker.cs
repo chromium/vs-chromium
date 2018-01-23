@@ -22,9 +22,8 @@ namespace VsChromium.Server.FileSystem {
     /// <summary>
     /// Force a file system rescan
     /// </summary>
-    void RefreshAsync();
+    void RefreshAsync(Action<IList<IProject>> callback);
 
-    event EventHandler<ProjectsEventArgs> ProjectListRefreshed;
     event EventHandler<ProjectsEventArgs> ProjectListChanged;
   }
 

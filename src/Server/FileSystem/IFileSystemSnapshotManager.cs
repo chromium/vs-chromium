@@ -38,11 +38,11 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     event EventHandler<FilesChangedEventArgs> FilesChanged;
 
-    event EventHandler<FileSystemWatchStoppedEventArgs> FileSystemWatchStopped;
+    event EventHandler<FileSystemWatchPausedEventArgs> FileSystemWatchPaused;
     event EventHandler FileSystemWatchResumed;
   }
 
-  public class FileSystemWatchStoppedEventArgs : EventArgs {
+  public class FileSystemWatchPausedEventArgs : EventArgs {
     public bool IsError { get; set; }
   }
 }

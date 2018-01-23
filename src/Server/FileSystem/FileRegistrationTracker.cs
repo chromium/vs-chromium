@@ -52,9 +52,9 @@ namespace VsChromium.Server.FileSystem {
       _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
     }
 
-    public void RefreshAsync() {
+    public void RefreshAsync(Action<IList<IProject>> callback) {
       Logger.LogInfo("Enqeuing file registration full refresh");
-      _taskQueue.Enqueue(RefreshTaskId, RefreshTask);
+      _taskQueue.Enqueue(RefreshTaskId, token => RefreshTask(token, callback));
     }
 
     private void FlushFileRegistrationQueueTask(CancellationToken cancellationToken) {
@@ -65,10 +65,15 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private void RefreshTask(CancellationToken cancellationToken) {
+    private void RefreshTask(CancellationToken cancellationToken, Action<IList<IProject>> callback) {
       ProcessPendingFileRegistrations();
       ValidateKnownFiles();
-      OnProjectListRefreshed(new ProjectsEventArgs(CollectAndSortProjectsFromRegisteredFiles()));
+
+      if (cancellationToken.IsCancellationRequested) {
+        return;
+      }
+      var projects = CollectAndSortProjectsFromRegisteredFiles();
+      callback(projects);
     }
 
     private IList<IProject> CollectAndSortProjectsFromRegisteredFiles() {

@@ -81,7 +81,6 @@ namespace VsChromium.Server.FileSystem {
       _flushPathChangesTaskQueue = taskQueueFactory.CreateQueue("FileSystemSnapshotManager Path Changes Task Queue");
       _taskExecutor = taskQueueFactory.CreateQueue("FileSystemSnapshotManager State Change Task Queue");
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
-      _fileRegistrationTracker.ProjectListRefreshed += FileRegistrationTrackerOnProjectListRefreshed;
       _fileSystemSnapshot = FileSystemSnapshot.Empty;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher(TimeSpan.FromSeconds(60));
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
@@ -115,14 +114,14 @@ namespace VsChromium.Server.FileSystem {
     public void Refresh() {
       _taskExecutor.ExecuteAsync(token => {
         _longRunningFileSystemTaskQueue.CancelAll();
-        _fileRegistrationTracker.RefreshAsync();
+        _fileRegistrationTracker.RefreshAsync(FileRegistrationTrackerRefreshCompleted);
       });
     }
 
     public event EventHandler<OperationInfo> SnapshotScanStarted;
     public event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;
-    public event EventHandler<FileSystemWatchStoppedEventArgs> FileSystemWatchStopped;
+    public event EventHandler<FileSystemWatchPausedEventArgs> FileSystemWatchPaused;
     public event EventHandler FileSystemWatchResumed;
 
     protected virtual void OnSnapshotScanStarted(OperationInfo e) {
@@ -137,8 +136,8 @@ namespace VsChromium.Server.FileSystem {
       FilesChanged?.Invoke(this, e);
     }
 
-    protected virtual void OnFileSystemWatchStopped(FileSystemWatchStoppedEventArgs e) {
-      FileSystemWatchStopped?.Invoke(this, e);
+    protected virtual void OnFileSystemWatchPaused(FileSystemWatchPausedEventArgs e) {
+      FileSystemWatchPaused?.Invoke(this, e);
     }
 
     protected virtual void OnFileSystemWatchResumed() {
@@ -165,7 +164,7 @@ namespace VsChromium.Server.FileSystem {
       });
     }
 
-    private void FileRegistrationTrackerOnProjectListRefreshed(object sender, ProjectsEventArgs e) {
+    private void FileRegistrationTrackerRefreshCompleted(IList<IProject> projects) {
       _taskExecutor.ExecuteAsync(token => {
         Logger.LogInfo("FileSystemSnapshotManager: List of projects has been refreshed, enqueuing a full file system scan");
 
@@ -173,11 +172,11 @@ namespace VsChromium.Server.FileSystem {
         // cancel existing tasks (should be only one really) to avoid wasting time
         _longRunningFileSystemTaskQueue.CancelAll();
 
-        if (!_isPaused) {
-          _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
-            RescanFileSystem(e.Projects, null, cancellationToken);
-          });
-        }
+        // Note: Don't check for "paused" state, as we arrive here only for explicit
+        // refresh.
+        _longRunningFileSystemTaskQueue.Enqueue(FullRescanRequiredTaskId, cancellationToken => {
+          RescanFileSystem(projects, null, cancellationToken);
+        });
       });
     }
 
@@ -200,7 +199,7 @@ namespace VsChromium.Server.FileSystem {
         // Ingore all changes
         _pathsChangedQueue.DequeueAll();
         _longRunningFileSystemTaskQueue.CancelAll();
-        OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs { IsError = true });
+        OnFileSystemWatchPaused(new FileSystemWatchPausedEventArgs { IsError = true });
       });
     }
 
@@ -212,7 +211,7 @@ namespace VsChromium.Server.FileSystem {
         // Ingore all changes
         _pathsChangedQueue.DequeueAll();
         _longRunningFileSystemTaskQueue.CancelAll();
-        OnFileSystemWatchStopped(new FileSystemWatchStoppedEventArgs { IsError = false });
+        OnFileSystemWatchPaused(new FileSystemWatchPausedEventArgs { IsError = false });
       });
     }
 
@@ -221,7 +220,7 @@ namespace VsChromium.Server.FileSystem {
         Logger.LogInfo("FileSystemSnapshotManager: Directory watcher has resumed, leaving pause mode");
         _isPaused = false;
 
-        _fileRegistrationTracker.RefreshAsync();
+        _fileRegistrationTracker.RefreshAsync(FileRegistrationTrackerRefreshCompleted);
         OnFileSystemWatchResumed();
       });
     }
@@ -257,7 +256,7 @@ namespace VsChromium.Server.FileSystem {
           return;
 
         case FileSystemValidationResultKind.UnknownChanges:
-          _fileRegistrationTracker.RefreshAsync();
+          _fileRegistrationTracker.RefreshAsync(FileRegistrationTrackerRefreshCompleted);
           return;
 
         default:

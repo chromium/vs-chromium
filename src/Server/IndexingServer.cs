@@ -37,7 +37,7 @@ namespace VsChromium.Server {
 
       _fileSystemSnapshotManager.SnapshotScanStarted += FileSystemSnapshotManagerOnSnapshotScanStarted;
       _fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
-      _fileSystemSnapshotManager.FileSystemWatchStopped += FileSystemSnapshotManagerOnFileSystemWatchStopped;
+      _fileSystemSnapshotManager.FileSystemWatchPaused += FileSystemSnapshotManagerOnFileSystemWatchPaused;
       _fileSystemSnapshotManager.FileSystemWatchResumed += FileSystemSnapshotManagerOnFileSystemWatchResumed;
 
       searchEngine.FilesLoading += SearchEngineOnFilesLoading;
@@ -143,7 +143,7 @@ namespace VsChromium.Server {
       });
     }
 
-    private void FileSystemSnapshotManagerOnFileSystemWatchStopped(object sender, FileSystemWatchStoppedEventArgs e) {
+    private void FileSystemSnapshotManagerOnFileSystemWatchPaused(object sender, FileSystemWatchPausedEventArgs e) {
       _stateChangeTaskQueue.ExecuteAsync(token => {
         if (!_paused) {
           _paused = true;

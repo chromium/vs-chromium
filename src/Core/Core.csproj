@@ -46,11 +46,13 @@
     <Compile Include="Collections\ConcurrentHashSet.cs" />
     <Compile Include="Collections\IBitArray.cs" />
     <Compile Include="Collections\LeftRightItemPair.cs" />
+    <Compile Include="Collections\ObjectPool.cs" />
     <Compile Include="Collections\PartitionedBitArray.cs" />
     <Compile Include="Collections\ReferenceEqualityComparer.cs" />
     <Compile Include="Collections\ConcurrentBufferQueue.cs" />
     <Compile Include="Collections\SortedArray.cs" />
     <Compile Include="Collections\SortedArrayHelpers.cs" />
+    <Compile Include="Collections\StringBuilderPool.cs" />
     <Compile Include="Configuration\ConfigurationDirectoryNames.cs" />
     <Compile Include="Configuration\ConfigurationFileNames.cs" />
     <Compile Include="Configuration\ConfigurationFileConfigurationSectionProvider.cs" />

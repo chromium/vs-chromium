@@ -4,6 +4,7 @@
 
 using System;
 using System.Text;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.FileSystemNames {
@@ -77,11 +78,13 @@ namespace VsChromium.Server.FileSystemNames {
       return FullPath.Value;
     }
 
+    private static readonly StringBuilderPool _stringBuilderPool  = new StringBuilderPool();
 
     protected static RelativePath BuildRelativePath(FileSystemName name) {
-      StringBuilder sb = new StringBuilder();
-      BuildRelativePath(sb, name);
-      return new RelativePath(sb.ToString());
+      using (var sbFromPool =_stringBuilderPool.AcquireWithDisposable()) {
+        BuildRelativePath(sbFromPool.Value, name);
+        return new RelativePath(sbFromPool.Value.ToString());
+      }
     }
 
     protected static void BuildRelativePath(StringBuilder sb, FileSystemName name) {

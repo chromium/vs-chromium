@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Text;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.FileSystemNames {
@@ -28,11 +29,6 @@ namespace VsChromium.Server.FileSystemNames {
   ///       Parent = null
   /// </summary>
   public abstract class FileSystemName : IComparable<FileSystemName>, IEquatable<FileSystemName> {
-    /// <summary>
-    /// HashCode cache.
-    /// </summary>
-    private int _hashCode;
-
     /// <summary>
     /// Returns the parent directory, or null if <see cref="IsAbsoluteName"/> is true.
     /// </summary>
@@ -82,19 +78,41 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
 
-    protected RelativePath BuildRelativePath(FileSystemName name) {
+    protected static RelativePath BuildRelativePath(FileSystemName name) {
+      StringBuilder sb = new StringBuilder();
+      BuildRelativePath(sb, name);
+      return new RelativePath(sb.ToString());
+    }
+
+    protected static void BuildRelativePath(StringBuilder sb, FileSystemName name) {
       var a = name as AbsoluteDirectoryName;
       if (a != null) {
-        return a.RelativePath;
+        return;
       }
 
-      return BuildRelativePath(name.Parent).CreateChild(name.Name);
+      BuildRelativePath(sb, name.Parent);
+      if (sb.Length > 0) {
+        sb.Append(PathHelpers.DirectorySeparatorChar);
+      }
+      sb.Append(name.Name);
     }
 
     #region Comparison/Equality plumbing
 
     public int CompareTo(FileSystemName other) {
       return FileSystemNameComparer.Instance.Compare(this, other);
+#if false
+      var result = FileSystemNameComparer.Instance.Compare(this, other);
+      var result2 = SystemPathComparer.Instance.StringComparer.Compare(this.FullPath.Value, other.FullPath.Value);
+      if (result < 0) result = -1;
+      if (result > 0) result = 1;
+      if (result2 < 0) result2 = -1;
+      if (result2 > 0) result2 = 1;
+      if (result != result2) {
+        result = FileSystemNameComparer.Instance.Compare(this, other);
+      }
+      return result;
+#endif
     }
 
     public bool Equals(FileSystemName other) {
@@ -102,15 +120,13 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public override int GetHashCode() {
-      if (_hashCode == 0)
-        _hashCode = FileSystemNameComparer.Instance.GetHashCode(this);
-      return _hashCode;
+      return FileSystemNameComparer.Instance.GetHashCode(this);
     }
 
     public override bool Equals(object other) {
       return Equals(other as FileSystemName);
     }
 
-    #endregion
+#endregion
   }
 }

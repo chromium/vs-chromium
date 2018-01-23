@@ -8,7 +8,7 @@
     </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <DefineConstants>PROFILE_SERVER2;</DefineConstants>
+    <DefineConstants>TRACE;PROFILE_SERVER2;</DefineConstants>
   </PropertyGroup>
   <Import Project="..\ProjectBefore.settings" />
   <PropertyGroup>

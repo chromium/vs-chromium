@@ -24,5 +24,9 @@ namespace VsChromium.Server.FileSystem {
     public bool IsSymLink {
       get { return _isSymLink; }
     }
+
+    public override string ToString() {
+      return DirectoryName.ToString();
+    }
   }
 }

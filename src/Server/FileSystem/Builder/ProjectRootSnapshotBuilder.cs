@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -57,73 +58,81 @@ namespace VsChromium.Server.FileSystem.Builder {
     }
 
     private DirectorySnapshot CreateDirectorySnapshot(DirectoryName directory, bool isSymLink) {
-      // Create list of pairs (DirectoryName, List[FileNames])
-      var directoriesWithFiles = TraverseFileSystem(directory, isSymLink)
-        .AsParallel()
-        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        .Select(traversedDirectoryEntry => {
-          var directoryName = traversedDirectoryEntry.DirectoryData.DirectoryName;
-          if (_progress.Step()) {
-            _progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}",
-                                                              _project.RootPath.Value,
-                                                              directoryName.RelativePath.Value));
-          }
-          var fileNames = traversedDirectoryEntry.ChildFileNames
-            .Where(childFilename => _project.FileFilter.Include(childFilename.RelativePath))
-            .OrderBy(x => x.RelativePath)
-            .ToReadOnlyCollection();
+      List<KeyValuePair<DirectoryData, ReadOnlyCollection<FileName>>> directoriesWithFiles;
+      using (new TimeElapsedLogger("Traversing directory to collect directory/file names")) {
+        // Create list of pairs (DirectoryName, List[FileNames])
+        directoriesWithFiles = TraverseFileSystem(directory, isSymLink)
+          .AsParallel()
+          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
+          .Select(traversedDirectoryEntry => {
+            var directoryName = traversedDirectoryEntry.DirectoryData.DirectoryName;
+            if (_progress.Step()) {
+              _progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}",
+                _project.RootPath.Value,
+                directoryName.RelativePath.Value));
+            }
 
-          return KeyValuePair.Create(traversedDirectoryEntry.DirectoryData, fileNames);
-        })
-        .ToList();
+            var fileNames = traversedDirectoryEntry.ChildFileNames
+              .Where(childFilename => _project.FileFilter.Include(childFilename.RelativePath))
+              .OrderBy(x => x.Name)
+              .ToReadOnlyCollection();
 
-      // We sort entries by directory name *descending* to make sure we process
-      // directories bottom up, so that we know
-      // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
-      // 2) we create instances of child directories before their parent.
-      directoriesWithFiles.Sort((x, y) => -x.Key.DirectoryName.RelativePath.CompareTo(y.Key.DirectoryName.RelativePath));
+            return KeyValuePair.Create(traversedDirectoryEntry.DirectoryData, fileNames);
+          })
+          .ToList();
+      }
 
-      // Build map from parent directory -> list of child directories
-      var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
-      directoriesWithFiles.ForAll(x => {
-        var directoryName = x.Key;
+      using (new TimeElapsedLogger("Creating directory snapshot from file system files")) {
 
-        // Ignore root project directory name
-        if (directoryName.DirectoryName.IsAbsoluteName)
-          return;
+        // We sort entries by directory name *descending* to make sure we process
+        // directories bottom up, so that we know
+        // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
+        // 2) we create instances of child directories before their parent.
+        directoriesWithFiles.Sort((x, y) => -x.Key.DirectoryName.CompareTo(y.Key.DirectoryName));
 
-        GetOrCreateList(directoriesToChildDirectories, directoryName.DirectoryName.Parent).Add(directoryName.DirectoryName);
-      });
+        // Build map from parent directory -> list of child directories
+        var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
+        directoriesWithFiles.ForAll(x => {
+          var directoryName = x.Key;
 
-      // Build directory snapshots for each directory entry, using an
-      // intermediate map to enable connecting snapshots to their parent.
-      var directoriesToSnapshot = new Dictionary<DirectoryName, DirectorySnapshot>();
-      var directorySnapshots = directoriesWithFiles.Select(entry => {
-        var directoryElement = entry.Key;
-        var childFilenames = entry.Value;
+          // Ignore root project directory name
+          if (directoryName.DirectoryName.IsAbsoluteName)
+            return;
 
-        var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryElement.DirectoryName)
-          .Select(x => directoriesToSnapshot[x])
-          .OrderBy(x => x.DirectoryName.RelativePath)
-          .ToReadOnlyCollection();
+          GetOrCreateList(directoriesToChildDirectories, directoryName.DirectoryName.Parent)
+            .Add(directoryName.DirectoryName);
+        });
 
-        // TODO(rpaquay): Not clear the lines below are a perf win, even though
-        // they do not hurt correctness.
-        // Remove children since we processed them
-        //GetOrEmptyList(directoriesToChildDirectories, directoryName)
-        //  .ForAll(x => directoriesToSnapshot.Remove(x));
+        // Build directory snapshots for each directory entry, using an
+        // intermediate map to enable connecting snapshots to their parent.
+        var directoriesToSnapshot = new Dictionary<DirectoryName, DirectorySnapshot>();
+        var directorySnapshots = directoriesWithFiles.Select(entry => {
+            var directoryElement = entry.Key;
+            var childFilenames = entry.Value;
 
-        var result = new DirectorySnapshot(directoryElement, childDirectories, childFilenames);
-        directoriesToSnapshot.Add(directoryElement.DirectoryName, result);
-        return result;
-      })
-        .ToList();
+            var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryElement.DirectoryName)
+              .Select(x => directoriesToSnapshot[x])
+              .OrderBy(x => x.DirectoryName.Name)
+              .ToReadOnlyCollection();
 
-      // Since we sort directories by name descending, the last entry is always the
-      // entry correcsponding to the project root.
-      Debug.Assert(directorySnapshots.Count >= 1);
-      Debug.Assert(directorySnapshots.Last().DirectoryName.Equals(directory));
-      return directorySnapshots.Last();
+            // TODO(rpaquay): Not clear the lines below are a perf win, even though
+            // they do not hurt correctness.
+            // Remove children since we processed them
+            //GetOrEmptyList(directoriesToChildDirectories, directoryName)
+            //  .ForAll(x => directoriesToSnapshot.Remove(x));
+
+            var result = new DirectorySnapshot(directoryElement, childDirectories, childFilenames);
+            directoriesToSnapshot.Add(directoryElement.DirectoryName, result);
+            return result;
+          })
+          .ToList();
+
+        // Since we sort directories by name descending, the last entry is always the
+        // entry correcsponding to the project root.
+        Debug.Assert(directorySnapshots.Count >= 1);
+        Debug.Assert(directorySnapshots.Last().DirectoryName.Equals(directory));
+        return directorySnapshots.Last();
+      }
     }
 
     private DirectorySnapshot ApplyDirectorySnapshotDelta(DirectorySnapshot oldDirectory) {

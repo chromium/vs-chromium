@@ -17,36 +17,30 @@ namespace VsChromium.Core.Utility {
 
     private readonly string _description;
     private readonly Stopwatch _stopwatch;
-    private readonly string _indent;
 
     public TimeElapsedLogger(string description) {
       _currentThreadIndent++;
       _description = description;
       _stopwatch = Stopwatch.StartNew();
-      _indent = GetIndent(_currentThreadIndent);
-      if (Logger.IsDebugEnabled) {
-        Logger.LogDebug("{0}{1}.", _indent, _description);
+      if (Logger.IsInfoEnabled) {
+        Logger.LogInfo("{0}{1}.", GetOpenIndent(_currentThreadIndent), _description);
       }
     }
 
     public void Dispose() {
-      _currentThreadIndent--;
       _stopwatch.Stop();
-      if (Logger.IsDebugEnabled) {
-        Logger.LogDebug(
+      if (Logger.IsInfoEnabled) {
+        Logger.LogInfo(
           "{0}{1} performed in {2:n0} msec - GC Memory: {3:n0} bytes.",
-          _indent,
+          GetCloseIndent(_currentThreadIndent),
           _description,
           _stopwatch.ElapsedMilliseconds,
           GC.GetTotalMemory(false));
       }
+      _currentThreadIndent--;
     }
 
-    public string Indent {
-      get { return _indent; }
-    }
-
-    public static string GetIndent(int indent) {
+    public static string GetOpenIndent(int indent) {
       switch (indent) {
         case 0:
           return "";
@@ -66,5 +60,27 @@ namespace VsChromium.Core.Utility {
           return new string('>', indent * 2);
       }
     }
+
+    public static string GetCloseIndent(int indent) {
+      switch (indent) {
+        case 0:
+          return "";
+        case 1:
+          return "<< ";
+        case 2:
+          return "<<<< ";
+        case 3:
+          return "<<<<<< ";
+        case 4:
+          return "<<<<<<<< ";
+        case 5:
+          return "<<<<<<<<<< ";
+        case 6:
+          return "<<<<<<<<<<<< ";
+        default:
+          return new string('<', indent * 2);
+      }
+    }
+
   }
 }

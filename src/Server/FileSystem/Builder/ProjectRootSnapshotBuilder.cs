@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -94,7 +95,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         var directorySnapshots = directoriesWithFiles.Select(entry => {
           if (_progress.Step()) {
             _progress.DisplayProgress((i, n) =>
-              string.Format("Sorting files for directory \"{0}\"", _project.RootPath.Value));
+              string.Format("Processing files and directories of directory {0}", _project.RootPath.Value));
           }
 
           var directoryData = entry.DirectoryData;
@@ -244,20 +245,12 @@ namespace VsChromium.Server.FileSystem.Builder {
     }
 
     private Task TraverseDirectoryAsync(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, CancellationToken token) {
-      TaskCompletionSource<object> subTasksTcs = new TaskCompletionSource<object>();
-      var directoryTask = new Task(() => {
-        var allTasks = new List<Task>();
-        try {
-          ProcessDirectory(directory, bag, allTasks, token);
-        } finally {
-          Task.WhenAll(allTasks).ContinueWith(t => SetContinuation(subTasksTcs, t), token);
-        }
-      }, token);
-      directoryTask.Start();
-      return Task.WhenAll(subTasksTcs.Task, directoryTask);
+      var directoryTask = Task.Run(() => ProcessDirectory(directory, bag, token), token);
+      return ContinueWithTask(directoryTask, t => Task.WhenAll(t.Result), token);
     }
 
-    private void ProcessDirectory(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, List<Task> allTasks, CancellationToken token) {
+    private List<Task> ProcessDirectory(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, CancellationToken token) {
+      var allTasks = new List<Task>();
       if (directory.DirectoryName.IsAbsoluteName ||
           _project.DirectoryFilter.Include(directory.DirectoryName.RelativePath)) {
         if (_progress.Step()) {
@@ -289,16 +282,28 @@ namespace VsChromium.Server.FileSystem.Builder {
 
         bag.Add(new DirectoryWithFiles(directory, fileNames));
       }
+
+      return allTasks;
     }
 
-    private void SetContinuation(TaskCompletionSource<object> tcs, Task task) {
-      if (task.IsCanceled) {
-        tcs.TrySetCanceled();
-      } else if (task.Exception != null) {
-        tcs.TrySetException(task.Exception);
-      } else {
-        tcs.TrySetResult(null);
-      }
+    public static Task ContinueWithTask<T>(Task<T> task, Func<Task<T>, Task> continuationFunction, CancellationToken cancellationToken) {
+      var tcs = new TaskCompletionSource<object>();
+      task.ContinueWith(t => {
+        if (cancellationToken.IsCancellationRequested) {
+          tcs.TrySetCanceled();
+        } else {
+          continuationFunction(t).ContinueWith(t2 => {
+            if (cancellationToken.IsCancellationRequested || t2.IsCanceled) {
+              tcs.TrySetCanceled();
+            } else if (t2.Exception != null) {
+              tcs.TrySetException(t2.Exception);
+            } else {
+              tcs.TrySetResult(null);
+            }
+          });
+        }
+      });
+      return tcs.Task;
     }
 
     private struct DirectoryWithFiles {

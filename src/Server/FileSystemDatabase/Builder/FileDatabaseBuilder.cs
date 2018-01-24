@@ -43,48 +43,51 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       FullPathChanges fullPathChanges, Action<IFileDatabaseSnapshot> onIntermadiateResult,
       CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
+        using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
+          progress.DisplayProgress((i, n) => "Preparing list of files to load from disk");
 
-        var fileDatabase = (FileDatabaseSnapshot) previousDatabase;
+          var fileDatabase = (FileDatabaseSnapshot)previousDatabase;
 
-        // Compute list of files from tree
-        var entities = ComputeFileSystemEntities(newSnapshot);
+          // Compute list of files from tree
+          var entities = ComputeFileSystemEntities(newSnapshot);
 
-        var unchangedProjects = newSnapshot
-          .ProjectRoots.Where(x =>
-            fileDatabase.ProjectHashes.ContainsKey(x.Project.RootPath) &&
-            fileDatabase.ProjectHashes[x.Project.RootPath] == x.Project.VersionHash)
-          .Select(x => x.Project);
+          var unchangedProjects = newSnapshot
+            .ProjectRoots.Where(x =>
+              fileDatabase.ProjectHashes.ContainsKey(x.Project.RootPath) &&
+              fileDatabase.ProjectHashes[x.Project.RootPath] == x.Project.VersionHash)
+            .Select(x => x.Project);
 
-        var unchangedProjectSet = new HashSet<IProject>(unchangedProjects,
-          // Use reference equality for IProject is safe, as we keep this
-          // dictionary only for the duration of this "Build" call.
-          new ReferenceEqualityComparer<IProject>());
+          var unchangedProjectSet = new HashSet<IProject>(unchangedProjects,
+            // Use reference equality for IProject is safe, as we keep this
+            // dictionary only for the duration of this "Build" call.
+            new ReferenceEqualityComparer<IProject>());
 
-        var loadingContext = new FileContentsLoadingContext {
-          FullPathChanges = fullPathChanges,
-          LoadedTextFileCount = 0,
-          OldFileDatabaseSnapshot = fileDatabase,
-          UnchangedProjects = unchangedProjectSet,
-          PartialProgressReporter = new PartialProgressReporter(
-            TimeSpan.FromSeconds(5.0),
-            () => {
-              Logger.LogInfo("Creating intermedidate file database for partial progress reporting");
-              var database = CreateFileDatabse(entities);
-              onIntermadiateResult(database);
-            })
-        };
+          var loadingContext = new FileContentsLoadingContext {
+            FullPathChanges = fullPathChanges,
+            LoadedTextFileCount = 0,
+            OldFileDatabaseSnapshot = fileDatabase,
+            UnchangedProjects = unchangedProjectSet,
+            PartialProgressReporter = new PartialProgressReporter(
+              TimeSpan.FromSeconds(5.0),
+              () => {
+                Logger.LogInfo("Creating intermedidate file database for partial progress reporting");
+                var database = CreateFileDatabse(entities);
+                onIntermadiateResult(database);
+              })
+          };
 
-        // Merge old state in new state and load all missing files
-        LoadFileContents(entities, loadingContext, cancellationToken);
+          // Merge old state in new state and load all missing files
+          LoadFileContents(entities, loadingContext, cancellationToken);
 
-        return CreateFileDatabse(entities);
+          return CreateFileDatabse(entities);
+        }
       }
     }
 
     public IFileDatabaseSnapshot BuildWithChangedFiles(IFileDatabaseSnapshot previousFileDatabaseSnapshot,
       IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded) {
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
-        var fileDatabase = (FileDatabaseSnapshot) previousFileDatabaseSnapshot;
+        var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.
         var filesToRead = changedFiles
@@ -116,31 +119,35 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
     private FileDatabaseSnapshot CreateFileDatabse(FileSystemEntities entities) {
       using (new TimeElapsedLogger("Freezing file database state")) {
-        var directories = entities.Directories;
-        // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
-        // the dictionary will be used in incremental updates where FileName instances
-        // may be new instances from a complete file system enumeration.
-        var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
-        var filesWithContentsArray = new FileWithContents[entities.Files.Count];
-        int filesWithContentsIndex = 0;
-        foreach (var kvp in entities.Files) {
-          var fileData = kvp.Value.FileWithContents;
-          files.Add(kvp.Key, fileData);
-          if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
-            filesWithContentsArray[filesWithContentsIndex++] = fileData;
+        using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
+          progress.DisplayProgress((i, n) => "Finalizing index update");
+          var directories = entities.Directories;
+          // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
+          // the dictionary will be used in incremental updates where FileName instances
+          // may be new instances from a complete file system enumeration.
+          var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
+          var filesWithContentsArray = new FileWithContents[entities.Files.Count];
+          int filesWithContentsIndex = 0;
+          foreach (var kvp in entities.Files) {
+            var fileData = kvp.Value.FileWithContents;
+            files.Add(kvp.Key, fileData);
+            if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
+              filesWithContentsArray[filesWithContentsIndex++] = fileData;
+            }
           }
-        }
-        var filesWithContents = new ListSegment<FileWithContents>(filesWithContentsArray, 0, filesWithContentsIndex);
-        var searchableContentsCollection = CreateFilePieces(filesWithContents);
-        FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
-        return new FileDatabaseSnapshot(
-          entities.ProjectHashes,
-          files,
-          files.Keys.ToArray(),
-          directories,
-          searchableContentsCollection,
-          filesWithContents.Count);
+          var filesWithContents = new ListSegment<FileWithContents>(filesWithContentsArray, 0, filesWithContentsIndex);
+          var searchableContentsCollection = CreateFilePieces(filesWithContents);
+          FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
+
+          return new FileDatabaseSnapshot(
+            entities.ProjectHashes,
+            files,
+            files.Keys.ToArray(),
+            directories,
+            searchableContentsCollection,
+            filesWithContents.Count);
+        }
       }
     }
 

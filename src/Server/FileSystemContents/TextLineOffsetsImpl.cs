@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Strings;
 
@@ -60,11 +61,11 @@ namespace VsChromium.Server.FileSystemContents {
       // prefix - span - suffix
       var extractLength = lineEnd - lineStart;
       var spanLength = filePositionSpan.Length;
-      Debug.Assert(spanLength <= extractLength);
+      Invariants.Assert(spanLength <= extractLength);
       var prefixLength = Math.Min(spanStart - lineStart, maxTextExtent - spanLength);
-      Debug.Assert(prefixLength >= 0);
+      Invariants.Assert(prefixLength >= 0);
       var suffixLength = Math.Min(lineEnd - spanEnd ,maxTextExtent - spanLength - prefixLength);
-      Debug.Assert(suffixLength >= 0);
+      Invariants.Assert(suffixLength >= 0);
 
       lineStart = spanStart - prefixLength;
       lineEnd = spanEnd + suffixLength;
@@ -82,8 +83,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     private Tuple<int, int> GetLineColumn(int offset) {
       var lineNumber = GetLineStartIndex(offset);
-      Debug.Assert(lineNumber >= 0);
-      Debug.Assert(lineNumber < _listStartOffsets.Count);
+      Invariants.Assert(lineNumber >= 0);
+      Invariants.Assert(lineNumber < _listStartOffsets.Count);
 
       var columnNumber = offset - _listStartOffsets[lineNumber];
 
@@ -91,8 +92,8 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     private int GetLineStartIndex(int offset) {
-      Debug.Assert(offset >= 0);
-      Debug.Assert(_listStartOffsets[0] == 0);
+      Invariants.Assert(offset >= 0);
+      Invariants.Assert(_listStartOffsets[0] == 0);
 
       var result = _listStartOffsets.BinarySearch(offset);
       if (result < 0) {

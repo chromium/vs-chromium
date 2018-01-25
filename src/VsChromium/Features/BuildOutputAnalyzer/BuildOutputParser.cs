@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Features.BuildOutputAnalyzer {
   [Export(typeof(IBuildOutputParser))]
@@ -38,7 +39,7 @@ namespace VsChromium.Features.BuildOutputAnalyzer {
 
       var filenameMatch = match.Groups["filename"];
       var filename = filenameMatch.Value;
-      Debug.Assert(!string.IsNullOrEmpty(filename), "RegEx is malformed: it should not match an empty filename");
+      Invariants.Assert(!string.IsNullOrEmpty(filename), "RegEx is malformed: it should not match an empty filename");
 
       int line;
       int column;

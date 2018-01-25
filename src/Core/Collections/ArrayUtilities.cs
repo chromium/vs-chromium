@@ -5,8 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Collections {
   public static class ArrayUtilities {
@@ -38,7 +38,7 @@ namespace VsChromium.Core.Collections {
 
       // Quick check assumption about identity is verified: both list should not
       // contain duplicate elements.
-      Debug.Assert(
+      Invariants.Assert(
         result2.LeftOnlyItems.Count +
         result2.RightOnlyItems.Count +
         result2.CommonItems.Count * 2 ==
@@ -197,7 +197,7 @@ namespace VsChromium.Core.Collections {
       int result;
       if (!items.TryGetValue(item, out result))
         return -1;
-      Debug.Assert(result >= 0);
+      Invariants.Assert(result >= 0);
       return result;
     }
 

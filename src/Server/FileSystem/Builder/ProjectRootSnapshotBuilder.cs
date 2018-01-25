@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
@@ -120,8 +121,8 @@ namespace VsChromium.Server.FileSystem.Builder {
 
         // Since we sort directories by name descending, the last entry is always the
         // entry correcsponding to the project root.
-        Debug.Assert(directorySnapshots.Count >= 1);
-        Debug.Assert(directorySnapshots.Last().DirectoryName.Equals(directory));
+        Invariants.Assert(directorySnapshots.Count >= 1);
+        Invariants.Assert(directorySnapshots.Last().DirectoryName.Equals(directory));
         return directorySnapshots.Last();
       }
     }

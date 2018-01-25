@@ -7,6 +7,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Operations;
@@ -53,7 +54,7 @@ namespace VsChromium.Server {
           e.Set();
         });
         e.WaitOne();
-        Debug.Assert(result != null);
+        Invariants.Assert(result != null);
         return result;
       }
     }

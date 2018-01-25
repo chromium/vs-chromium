@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.VisualStudio.Debugger;
 using Microsoft.VisualStudio.Debugger.CallStack;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
   // Analyzes stack frames of x64 calling conventions.  This class handles only the case of x64
@@ -63,7 +64,7 @@ namespace VsChromium.DkmIntegration.ServerComponent.FrameAnalyzers {
       // arguments may or may not actually be on the stack since it's register spill-over space,
       // but they are guaranteed to be in RCX, RDX, R8, and R9 respectively.  So get their values 
       // from the registers and then write them into our copy of the stack.
-      Debug.Assert(bytesRequired % 8 == 0);
+      Invariants.Assert(bytesRequired % 8 == 0);
       if (bytesRequired > 0) {
         ulong rcx = frame.VscxGetRegisterValue64(CpuRegister.Rcx);
         BitConverter.GetBytes(rcx).CopyTo(stack, 0);

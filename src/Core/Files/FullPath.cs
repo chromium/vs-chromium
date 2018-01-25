@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Files {
   /// <summary>
@@ -13,17 +14,12 @@ namespace VsChromium.Core.Files {
     private readonly string _path;
 
     public FullPath(string path) {
-      if (!PathHelpers.IsAbsolutePath(path))
-        ThrowInvalidPath(path);
+      Invariants.CheckArgument(IsValid(path), nameof(path), "Path must be absolute: \"{0}\".", path);
       _path = path;
     }
 
     public static bool IsValid(string path) {
       return PathHelpers.IsAbsolutePath(path);
-    }
-
-    private static void ThrowInvalidPath(string path) {
-      throw new ArgumentException(string.Format("Path must be absolute: \"{0}\".", path), "path");
     }
 
     /// <summary>

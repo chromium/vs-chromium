@@ -150,9 +150,9 @@ namespace VsChromium.Wpf {
       ItemsControl parentItemsControl,
       IHierarchyObject parentDataObject,
       IHierarchyObject dataObject) {
-      Debug.Assert(parentItemsControl != null);
-      Debug.Assert(parentDataObject != null);
-      Debug.Assert(dataObject != null);
+      Invariants.Assert(parentItemsControl != null);
+      Invariants.Assert(parentDataObject != null);
+      Invariants.Assert(dataObject != null);
 
       // Expand the the tree view item if necessary.
       var parentTreeViewItem = parentItemsControl as TreeViewItem;

@@ -5,13 +5,14 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Win32 {
   public struct ComPtr<T> : IDisposable  where T : class {
     private T ptr;
 
     public ComPtr(T ptr) {
-      Debug.Assert(ptr == null || Marshal.IsComObject(ptr));
+      Invariants.Assert(ptr == null || Marshal.IsComObject(ptr));
       this.ptr = ptr;
     }
 

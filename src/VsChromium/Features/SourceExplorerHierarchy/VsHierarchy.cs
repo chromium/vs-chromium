@@ -141,7 +141,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           return;
         }
 
-        Debug.Assert(_vsHierarchyActive);
+        Invariants.Assert(_vsHierarchyActive);
 
         // PERF: Simple case of one of the collection empty, refresh all is
         // faster than individual operations
@@ -159,7 +159,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         }
 
         // Incremental case: Notify of add/remove items.
-        Debug.Assert(changes != null);
+        Invariants.Assert(changes != null);
 
         // Note: We want to avoid calling "OnItemAdded" in "IVsHierarchyEvents"
         // if possible, because it implies making the item visible.
@@ -176,8 +176,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         // GetProperty call will return info about current node only.
         foreach (var deleted in changes.DeletedItems) {
           var deletedNode = _nodes.GetNode(deleted);
-          Debug.Assert(deletedNode != null);
-          Debug.Assert(deletedNode.Parent != null);
+          Invariants.Assert(deletedNode != null);
+          Invariants.Assert(deletedNode.Parent != null);
           if (_logger.LogNodeChangesActivity) {
             _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.FullPath);
           }
@@ -199,8 +199,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         foreach (var added in changes.AddedItems) {
           var addedNode = nodes.GetNode(added);
           var previousSiblingItemId = addedNode.GetPreviousSiblingItemId();
-          Debug.Assert(addedNode != null);
-          Debug.Assert(addedNode.Parent != null);
+          Invariants.Assert(addedNode != null);
+          Invariants.Assert(addedNode.Parent != null);
           if (_logger.LogNodeChangesActivity) {
             _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.FullPath);
             _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.FullPath);

@@ -48,7 +48,7 @@ namespace VsChromium.Core.Debugger {
 
       _stopWaitHandle.Set();
       _stopDoneWaitHandle.WaitOne();
-      Debug.Assert(_running == false);
+      Invariants.Assert(_running == false);
       if (_stopError != null) {
         throw new Exception("Error stopping debugger", _stopError);
       }
@@ -111,7 +111,7 @@ namespace VsChromium.Core.Debugger {
         while(true) {
           var debugEvent = WaitForDebugEvent(10);
           if (debugEvent != null) {
-            Debug.Assert(_processId == 0 || _processId == debugEvent.Value.dwProcessId);
+            Invariants.Assert(_processId == 0 || _processId == debugEvent.Value.dwProcessId);
             _processId = debugEvent.Value.dwProcessId;
             LogDebugEvent(debugEvent.Value);
 

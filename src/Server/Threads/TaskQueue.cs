@@ -91,7 +91,7 @@ namespace VsChromium.Server.Threads {
 
       TaskEntry nextTask;
       lock (_lock) {
-        Debug.Assert(ReferenceEquals(_runningTask, task));
+        Invariants.Assert(ReferenceEquals(_runningTask, task));
         nextTask = _runningTask = _tasks.Dequeue();
       }
 

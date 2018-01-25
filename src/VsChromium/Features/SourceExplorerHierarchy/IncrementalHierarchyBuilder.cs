@@ -98,7 +98,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           // If only 1 child, merge root node and root path entries
           if (_fileSystemTree.Root.Entries.Count == 1) {
             var rootEntry = _fileSystemTree.Root.Entries[0] as DirectoryEntry;
-            Debug.Assert(rootEntry != null);
+            Invariants.Assert(rootEntry != null);
 
             // Update root node
             var rootNode = _newNodes.RootNode;
@@ -124,9 +124,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void AddNodeForChildren(FileSystemEntry entry, NodeViewModel oldParent, NodeViewModel newParent) {
-      Debug.Assert(entry != null);
-      Debug.Assert(newParent != null);
-      Debug.Assert(newParent.Children.Count == 0);
+      Invariants.Assert(entry != null);
+      Invariants.Assert(newParent != null);
+      Invariants.Assert(newParent.Children.Count == 0);
 
       // Create children nodes
       var directoryEntry = entry as DirectoryEntry;
@@ -171,7 +171,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       // Call recursively on all children
       if (directoryEntry != null) {
-        Debug.Assert(directoryEntry.Entries.Count == newParent.Children.Count);
+        Invariants.Assert(directoryEntry.Entries.Count == newParent.Children.Count);
         for (var i = 0; i < newParent.Children.Count; i++) {
           var childEntry = directoryEntry.Entries[i];
           var newChildNode = newParent.Children[i];
@@ -196,8 +196,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private NodeViewModel CreateNodeViewModel(FileSystemEntry entry, NodeViewModel parent) {
-      Debug.Assert(entry != null);
-      Debug.Assert(parent != null);
+      Invariants.Assert(entry != null);
+      Invariants.Assert(parent != null);
 
       var directoryEntry = entry as DirectoryEntry;
       var node = directoryEntry != null
@@ -212,7 +212,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         node.Template = _templateFactory.DirectoryTemplate;
       } else {
         var extension = Path.GetExtension(entry.Name);
-        Debug.Assert(extension != null);
+        Invariants.Assert(extension != null);
         node.Template = _templateFactory.GetFileTemplate(extension);
         if (node.Template.Icon == null) {
           if (!_fileTemplatesToInitialize.ContainsKey(extension)) {

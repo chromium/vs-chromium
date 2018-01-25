@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Processes;
@@ -123,7 +124,7 @@ namespace VsChromium.Core.Processes {
         return false;
 
       _parentProcessId = (int)pbi.ParentProcessId;
-      Debug.Assert((int)pbi.UniqueProcessId == _processId);
+      Invariants.Assert((int)pbi.UniqueProcessId == _processId);
 
       if (flags.HasFlag(ProcessAccessFlags.VmRead)) {
         IntPtr pebBuffer = IntPtr.Zero;

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.Diagnostics;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
   public enum ParameterType {
@@ -23,7 +24,7 @@ namespace VsChromium.DkmIntegration.ServerComponent {
     public ParameterType Type { get { return _type; } }
 
     public int GetSize(int wordSize) {
-      Debug.Assert((wordSize & (wordSize - 1)) == 0);
+      Invariants.Assert((wordSize & (wordSize - 1)) == 0);
 
       switch (_type) {
         case ParameterType.Int32: 
@@ -31,13 +32,13 @@ namespace VsChromium.DkmIntegration.ServerComponent {
         case ParameterType.Int64: 
           return 8;
         default:
-          Debug.Assert(_type == ParameterType.Pointer);
+          Invariants.Assert(_type == ParameterType.Pointer);
           return wordSize;
       }
     }
 
     public int GetPaddedSize(int wordSize) {
-      Debug.Assert((wordSize & (wordSize - 1)) == 0);
+      Invariants.Assert((wordSize & (wordSize - 1)) == 0);
 
       return (GetSize(wordSize) + (wordSize - 1)) & ~(wordSize - 1);
     }

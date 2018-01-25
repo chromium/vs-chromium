@@ -59,7 +59,7 @@ namespace VsChromium.Server.FileSystemContents {
           return new BinaryFileContents(fileInfo.LastWriteTimeUtc);
 
         default:
-          Debug.Assert(false);
+          Invariants.Assert(false);
           throw new InvalidOperationException();
       }
     }

@@ -44,7 +44,7 @@ namespace VsChromium.DkmIntegration.ServerComponent {
 
     public DkmCustomMessage SendLower(DkmCustomMessage customMessage) {
       try {
-        Debug.Assert(customMessage.SourceId == PackageServices.VsDebuggerMessageGuid);
+        Invariants.Assert(customMessage.SourceId == PackageServices.VsDebuggerMessageGuid);
         VsDebuggerMessage code = (VsDebuggerMessage)customMessage.MessageCode;
         switch (code) {
           case VsDebuggerMessage.EnableChildProcessDebugging:

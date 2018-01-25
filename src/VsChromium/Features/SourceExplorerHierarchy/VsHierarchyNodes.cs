@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.VisualStudio;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class VsHierarchyNodes {
@@ -31,7 +32,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public int Count { get { return _itemIdMap.Count; } }
 
     public void AddNode(NodeViewModel node) {
-      Debug.Assert(node.ItemId != VSConstants.VSITEMID_NIL);
+      Invariants.Assert(node.ItemId != VSConstants.VSITEMID_NIL);
       _itemIdMap.Add(node.ItemId, node);
       if (node.ItemId != RootNodeItemId) {
         _maxItemId = Math.Max(_maxItemId, node.ItemId);

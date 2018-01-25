@@ -62,7 +62,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
             _fileSystemTree.Version);
           rootEntries.ForAll(entry => {
             var result = entry.ChangeApplier(latestFileSystemTreeVersion);
-            Debug.Assert(result == ApplyChangesResult.Done);
+            Invariants.Assert(result == ApplyChangesResult.Done);
           });
           var newHierarchies = rootEntries
             .Where(x => !x.Hierarchy.IsEmpty)
@@ -161,7 +161,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (PathHelpers.IsAbsolutePath(rootNode.Name)) {
         return rootNode.Name;
       } else {
-        Debug.Assert(rootNode.Children.Count > 0);
+        Invariants.Assert(rootNode.Children.Count > 0);
         return rootNode.Children[0].FullPath;
       }
     }

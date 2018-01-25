@@ -239,7 +239,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void TreeViewScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) {
-      Debug.Assert(this._treeViewScrollViewer != null);
+      Invariants.Assert(this._treeViewScrollViewer != null);
 
       if (_treeViewResetHorizScroll) {
         _treeViewScrollViewer.ScrollToHorizontalOffset(_treeViewHorizScrollPos);

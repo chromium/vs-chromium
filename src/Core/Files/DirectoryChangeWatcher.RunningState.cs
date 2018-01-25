@@ -139,7 +139,7 @@ namespace VsChromium.Core.Files {
       }
 
       private void ProcessChangedPathEvents() {
-        Debug.Assert(StateHost.PollingThread.IsThread(Thread.CurrentThread));
+        Invariants.Assert(StateHost.PollingThread.IsThread(Thread.CurrentThread));
         var morePathsChanged = DequeueChangedPathsEvents();
 
         // If we got more changes, reset the polling interval for the non-simple
@@ -181,7 +181,7 @@ namespace VsChromium.Core.Files {
       /// this kind of changes.
       /// </summary>
       private void CheckDeletedRoots() {
-        Debug.Assert(StateHost.PollingThread.IsThread(Thread.CurrentThread));
+        Invariants.Assert(StateHost.PollingThread.IsThread(Thread.CurrentThread));
         if (!_checkRootsPolling.WaitTimeExpired())
           return;
         _checkRootsPolling.Restart();

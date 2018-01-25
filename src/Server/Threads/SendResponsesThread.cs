@@ -40,7 +40,7 @@ namespace VsChromium.Server.Threads {
       try {
         while (true) {
           var response = _ipcResponseQeueue.Dequeue();
-          Debug.Assert(response != null);
+          Invariants.Assert(response != null);
           _ipcStream.WriteResponse(response);
         }
       }

@@ -260,7 +260,7 @@ namespace VsChromium.Server.FileSystem {
           return;
 
         default:
-          Debug.Assert(false, "What kind of validation result is this?");
+          Invariants.Assert(false, "What kind of validation result is this?");
           return;
       }
     }
@@ -289,7 +289,7 @@ namespace VsChromium.Server.FileSystem {
           var oldSnapshot = _fileSystemSnapshot;
           var newSnapshot = BuildNewFileSystemSnapshot(projects, oldSnapshot, pathChanges, cancellationToken);
           // Update of new tree (assert calls are serialized).
-          Debug.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
+          Invariants.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
           _fileSystemSnapshot = newSnapshot;
 
           if (Logger.IsInfoEnabled) {

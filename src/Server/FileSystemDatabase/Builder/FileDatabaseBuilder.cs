@@ -288,7 +288,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       using (new TimeElapsedLogger("Loading file contents from disk")) {
         using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
           entities.Files.AsParallelWrapper().ForAll(fileEntry => {
-            Debug.Assert(fileEntry.Value.FileWithContents.Contents == null);
+            Invariants.Assert(fileEntry.Value.FileWithContents.Contents == null);
 
             if (progress.Step()) {
               progress.DisplayProgress((i, n) =>
@@ -382,7 +382,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContents existingFileWithContents) {
-      Debug.Assert(existingFileWithContents.Contents != null);
+      Invariants.Assert(existingFileWithContents.Contents != null);
 
       var fullPath = existingFileWithContents.FileName.FullPath;
 

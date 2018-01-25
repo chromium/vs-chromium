@@ -374,7 +374,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           _imageSourceFactory);
       }
 
-      Debug.Assert(false);
+      Invariants.Assert(false);
       return null;
     }
 

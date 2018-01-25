@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Text;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Features.FormatComment {
   [Export(typeof(ICommentFormatter))]
@@ -181,9 +182,9 @@ namespace VsChromium.Features.FormatComment {
     }
 
     private LineData ExtractLine(string text, int startIndex, int lineLength) {
-      Debug.Assert(startIndex >= 0);
-      Debug.Assert(startIndex <= text.Length);
-      Debug.Assert(lineLength > 0);
+      Invariants.Assert(startIndex >= 0);
+      Invariants.Assert(startIndex <= text.Length);
+      Invariants.Assert(lineLength > 0);
 
       // Skip initial whitespaces
       for (; startIndex < text.Length; startIndex++) {

@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Wpf {
   public class HierarchyObjectNavigator {
@@ -30,7 +31,7 @@ namespace VsChromium.Wpf {
         if (child.Equals(item))
           found = true;
       }
-      Debug.Assert(found);
+      Invariants.Assert(found);
       return null;
     }
 
@@ -47,7 +48,7 @@ namespace VsChromium.Wpf {
           return previous;
         previous = child;
       }
-      Debug.Assert(false);
+      Invariants.Assert(false);
       return null;
     }
 
@@ -76,7 +77,7 @@ namespace VsChromium.Wpf {
       // Return "a" if we are on "e"
       //
       while (true) {
-        Debug.Assert(item != null);
+        Invariants.Assert(item != null);
         result = NextSibling(item);
         if (result != null)
           return result;
@@ -113,7 +114,7 @@ namespace VsChromium.Wpf {
           return parent;
         // "a" case: get the very last child at the bottom of the tree
         while (true) {
-          Debug.Assert(item != null);
+          Invariants.Assert(item != null);
           var last = LastChild(item);
           if (last == null)
             return item;
@@ -122,7 +123,7 @@ namespace VsChromium.Wpf {
        }
 
       while (true) {
-        Debug.Assert(result != null);
+        Invariants.Assert(result != null);
         var last = LastChild(result);
         if (last == null)
           return result;

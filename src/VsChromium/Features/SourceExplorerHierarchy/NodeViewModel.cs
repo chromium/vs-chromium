@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Core.Files;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public abstract class NodeViewModel {
@@ -136,7 +137,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return VSConstants.VSITEMID_NIL;
 
       var index = ChildIndex;
-      Debug.Assert(0 <= index && index < _parent.ChildrenImpl.Count);
+      Invariants.Assert(0 <= index && index < _parent.ChildrenImpl.Count);
       if (index < 0 || index >= _parent.ChildrenImpl.Count - 1)
         return VSConstants.VSITEMID_NIL;
       return _parent.ChildrenImpl[index + 1].ItemId;
@@ -147,7 +148,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return VSConstants.VSITEMID_NIL;
 
       var index = ChildIndex;
-      Debug.Assert(0 <= index && index < _parent.ChildrenImpl.Count);
+      Invariants.Assert(0 <= index && index < _parent.ChildrenImpl.Count);
       if (index < 1)
         return VSConstants.VSITEMID_NIL;
       return _parent.ChildrenImpl[index - 1].ItemId;

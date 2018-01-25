@@ -59,7 +59,7 @@ namespace VsChromium.Commands {
       uint cCmds,
       OLECMD[] prgCmds,
       System.IntPtr pCmdText) {
-      Debug.Assert(receiver != null);
+      Invariants.Assert(receiver != null);
 
       var commandId = new CommandID(pguidCmdGroup, (int)prgCmds[0].cmdID);
       if (LogCommand(commandId)) {
@@ -92,7 +92,7 @@ namespace VsChromium.Commands {
       uint nCmdexecopt,
       System.IntPtr pvaIn,
       System.IntPtr pvaOut) {
-        Debug.Assert(receiver != null);
+        Invariants.Assert(receiver != null);
 
       var commandId = new CommandID(pguidCmdGroup, (int)nCmdID);
       if (LogCommand(commandId)) {

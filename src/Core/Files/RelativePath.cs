@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Files {
   /// <summary>
@@ -34,31 +35,19 @@ namespace VsChromium.Core.Files {
     /// name="filename"/>.
     /// </summary>
     public RelativePath(string relativePath, string filename) {
-      if (relativePath == null)
-        throw new ArgumentNullException("relativePath");
-
-      if (filename == null)
-        throw new ArgumentNullException("filename");
-
-      if (PathHelpers.IsAbsolutePath(relativePath))
-        throw new ArgumentException("Path must be relative.", "relativePath");
-
-      if (!PathHelpers.IsFileName(filename))
-        throw new ArgumentException("Path must be a simple file name + extension.", "filename");
-
-      if (relativePath.Length < filename.Length)
-        throw new ArgumentException("Relative path must contain file name", "relativePath");
-
-      if (string.Compare(relativePath, relativePath.Length - filename.Length, filename, 0, filename.Length, StringComparison.Ordinal) != 0)
-        throw new ArgumentException("Relative path must end with file name", "relativePath");
+      Invariants.CheckArgumentNotNull(relativePath, nameof(relativePath));
+      Invariants.CheckArgumentNotNull(filename, nameof(filename));
+      Invariants.CheckArgument(!PathHelpers.IsAbsolutePath(relativePath), nameof(relativePath), "Path must be relative.");
+      Invariants.CheckArgument(PathHelpers.IsFileName(filename), nameof(filename), "Path must be a simple file name + extension.");
+      Invariants.CheckArgument(relativePath.Length >= filename.Length, nameof(relativePath), "Relative path must contain file name");
+      Invariants.CheckArgument(relativePath.EndsWith(filename, StringComparison.Ordinal), nameof(relativePath), "Relative path must end with file name");
 
       _relativePath = relativePath;
       _filename = filename;
     }
 
     private static string ExtractFileName(string relativePath) {
-      if (relativePath == null)
-        throw new ArgumentNullException("relativePath");
+      Invariants.CheckArgumentNotNull(relativePath, nameof(relativePath));
       if (PathHelpers.IsFileName(relativePath))
         return relativePath;
       return PathHelpers.GetFileName(relativePath);

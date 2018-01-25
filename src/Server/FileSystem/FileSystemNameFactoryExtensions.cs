@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
 
@@ -129,7 +130,7 @@ namespace VsChromium.Server.FileSystem {
         directoryName = fileSystemNameFactory.CreateDirectoryName(directoryName, name);
       }
 
-      Debug.Assert(false, "Unreachable code");
+      Invariants.Assert(false, "Unreachable code");
       throw new InvalidOperationException();
     }
   }

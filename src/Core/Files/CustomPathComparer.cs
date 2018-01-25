@@ -5,6 +5,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Files {
   /// <summary>
@@ -62,7 +63,7 @@ namespace VsChromium.Core.Files {
             return 0;
           if (outside1)
             return -1;
-          Debug.Assert(outside2);
+          Invariants.Assert(outside2);
           return 1;
         } else {
           int len1 = index1 - startIndex1;
@@ -73,7 +74,7 @@ namespace VsChromium.Core.Files {
           if (result != 0)
             return result;
 
-          Debug.Assert(len1 == len2);
+          Invariants.Assert(len1 == len2);
           length -= (len1 + 1);
           startIndex1 = index1 + 1;
           startIndex2 = index2 + 1;

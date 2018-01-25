@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using VsChromium.Core.Files;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.FileSystemNames {
@@ -37,13 +38,13 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public int CompareSameDistance(FileSystemName x, FileSystemName y) {
-      Debug.Assert(x != null);
-      Debug.Assert(y != null);
+      Invariants.Assert(x != null);
+      Invariants.Assert(y != null);
 
       var xabs = x as AbsoluteDirectoryName;
       var yabs = y as AbsoluteDirectoryName;
       if (xabs != null || yabs != null) {
-        Debug.Assert(xabs != null && yabs != null);
+        Invariants.Assert(xabs != null && yabs != null);
         return xabs.FullPath.CompareTo(yabs.FullPath);
       }
 
@@ -54,21 +55,21 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     private FileSystemName GetAncestor(FileSystemName x, int count) {
-      Debug.Assert(x != null);
+      Invariants.Assert(x != null);
       for (var i = 0; i < count; i++) {
         x = x.Parent;
       }
-      Debug.Assert(x != null);
+      Invariants.Assert(x != null);
       return x;
     }
 
     private int GetDistanceToAbsolutePath(FileSystemName x) {
-      Debug.Assert(x != null);
+      Invariants.Assert(x != null);
       for (int result = 0;; result++) {
         if (x is AbsoluteDirectoryName)
           return result;
         x = x.Parent;
-        Debug.Assert(x != null);
+        Invariants.Assert(x != null);
       }
     }
     public bool Equals(FileSystemName x, FileSystemName y) {

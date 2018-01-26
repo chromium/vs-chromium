@@ -50,10 +50,12 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabaseSnapshot CreateIncremental(IFileDatabaseSnapshot previousDatabase,
       FileSystemSnapshot newFileSystemSnapshot, FullPathChanges fullPathChanges,
+      Action onLoading, Action onLoaded,
       Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-        .Build(previousDatabase, newFileSystemSnapshot, fullPathChanges, onIntermadiateResult, cancellationToken);
+        .Build(previousDatabase, newFileSystemSnapshot, fullPathChanges,
+          onLoading, onLoaded, onIntermadiateResult, cancellationToken);
     }
 
     /// <summary>
@@ -63,10 +65,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// type of file change events.
     /// </summary>
     public IFileDatabaseSnapshot CreateWithChangedFiles(IFileDatabaseSnapshot previousDatabase,
-      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded, CancellationToken cancellationToken) {
+      FileSystemSnapshot fileSystemSnapshot, IList<ProjectFileName> changedFiles,
+      Action onLoading, Action onLoaded,
+      Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-        .BuildWithChangedFiles(previousDatabase, changedFiles, onLoading, onLoaded, cancellationToken);
+        .BuildWithChangedFiles(previousDatabase, fileSystemSnapshot, changedFiles,
+          onLoading, onLoaded, onIntermadiateResult, cancellationToken);
     }
   }
 }

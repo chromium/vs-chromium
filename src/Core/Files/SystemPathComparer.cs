@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
+
 namespace VsChromium.Core.Files {
   /// <summary>
   /// The comparer instance to use for file s system paths comparisons.
@@ -11,6 +13,14 @@ namespace VsChromium.Core.Files {
       get {
         return PathComparerRegistry.Default;
       }
+    }
+
+    public static bool Equals(string name1, string name2) {
+      return Instance.StringComparer.Equals(name1, name2);
+    }
+
+    public static int Compare(string name1, string name2) {
+      return Instance.StringComparer.Compare(name1, name2);
     }
   }
 }

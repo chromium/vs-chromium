@@ -24,11 +24,9 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly long _searchableFileCount;
 
     public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes,
-                        IDictionary<FileName, FileWithContents> files,
-                        IList<FileName> fileNames,
-                        IDictionary<DirectoryName, DirectoryData> directories,
-                        IList<IFileContentsPiece> fileContentsPieces,
-                        long searchableFileCount) {
+      IDictionary<FileName, FileWithContents> files, IList<FileName> fileNames,
+      IDictionary<DirectoryName, DirectoryData> directories, IList<IFileContentsPiece> fileContentsPieces,
+      long searchableFileCount) {
       _projectHashes = projectHashes;
       _files = files;
       _fileNames = fileNames;
@@ -37,35 +35,12 @@ namespace VsChromium.Server.FileSystemDatabase {
       _searchableFileCount = searchableFileCount;
     }
 
-    public IDictionary<FullPath, string> ProjectHashes {
-      get { return _projectHashes; }
-    }
-
-    public IDictionary<FileName, FileWithContents> Files {
-      get {
-        return _files;
-      }
-    }
-
-    public IDictionary<DirectoryName, DirectoryData> Directories {
-      get {
-        return _directories;
-      }
-    }
-
-    public IList<FileName> FileNames {
-      get {
-        return _fileNames;
-      }
-    }
-
-    public IList<IFileContentsPiece> FileContentsPieces {
-      get { return _fileContentsPieces; }
-    }
-
-    public long SearchableFileCount {
-      get { return _searchableFileCount; }
-    }
+    public IDictionary<FullPath, string> ProjectHashes => _projectHashes;
+    public IDictionary<FileName, FileWithContents> Files => _files;
+    public IDictionary<DirectoryName, DirectoryData> Directories => _directories;
+    public IList<FileName> FileNames => _fileNames;
+    public IList<IFileContentsPiece> FileContentsPieces => _fileContentsPieces;
+    public long SearchableFileCount => _searchableFileCount;
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans, int maxLength) {
       var fileData = GetFileData(filename);

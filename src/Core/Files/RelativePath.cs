@@ -7,50 +7,21 @@ using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Files {
   /// <summary>
-  /// Wrapper around a relative path name (file or directory). For performance
-  /// reasons (i.e. to decrease string allocations), we also internally store
-  /// the "filename" part of the path (i.e. the part of the path after the last
-  /// directory separator).
+  /// Wrapper around a relative path name (file or directory).
   /// </summary>
   public struct RelativePath : IEquatable<RelativePath>, IComparable<RelativePath> {
     private readonly string _relativePath;
-    private readonly string _filename;
 
     public static readonly RelativePath Empty = default(RelativePath);
 
     /// <summary>
-    /// Creates a <see cref="RelativePath"/> instance from a relative path
-    /// string. Note this constructor is less efficient than the constructor
-    /// with two arguments, as this constuctor needs to extract the file name
-    /// from the relative path name.
+    /// Creates a <see cref="RelativePath"/> instance from a relative
+    /// path string (e.g. "foo\\bar\\blah.txt").
     /// </summary>
-    public RelativePath(string relativePath)
-      : this(relativePath, ExtractFileName(relativePath)) {
-    }
-
-    /// <summary>
-    /// Creates a <see cref="RelativePath"/> instance from a relative path
-    /// string (e.g. "foo\\bar\\blah.txt") and the corresponding file name (e.g.
-    /// "blah.txt"). <paramref name="relativePath"/> must be end with <paramref
-    /// name="filename"/>.
-    /// </summary>
-    public RelativePath(string relativePath, string filename) {
+    public RelativePath(string relativePath) {
       Invariants.CheckArgumentNotNull(relativePath, nameof(relativePath));
-      Invariants.CheckArgumentNotNull(filename, nameof(filename));
       Invariants.CheckArgument(!PathHelpers.IsAbsolutePath(relativePath), nameof(relativePath), "Path must be relative.");
-      Invariants.CheckArgument(PathHelpers.IsFileName(filename), nameof(filename), "Path must be a simple file name + extension.");
-      Invariants.CheckArgument(relativePath.Length >= filename.Length, nameof(relativePath), "Relative path must contain file name");
-      Invariants.CheckArgument(relativePath.EndsWith(filename, StringComparison.Ordinal), nameof(relativePath), "Relative path must end with file name");
-
       _relativePath = relativePath;
-      _filename = filename;
-    }
-
-    private static string ExtractFileName(string relativePath) {
-      Invariants.CheckArgumentNotNull(relativePath, nameof(relativePath));
-      if (PathHelpers.IsFileName(relativePath))
-        return relativePath;
-      return PathHelpers.GetFileName(relativePath);
     }
 
     /// <summary>
@@ -64,17 +35,11 @@ namespace VsChromium.Core.Files {
     public string Value { get { return _relativePath ?? ""; } }
 
     /// <summary>
-    /// Returns the string reprensentation of the last part (i.e. the file or
-    /// directory name) of the relative path.
-    /// </summary>
-    public string FileName { get { return _filename ?? ""; } }
-
-    /// <summary>
     /// Return the file extension (including the dot).
     /// </summary>
     public string Extension {
       get {
-        var name = _filename ?? "";
+        var name = _relativePath ?? "";
         var index = name.LastIndexOf('.');
         if (index < 0)
           return "";
@@ -100,21 +65,21 @@ namespace VsChromium.Core.Files {
     /// Returns a new relative path instance by appending <paramref name="name"/> to this instance.
     /// </summary>
     public RelativePath CreateChild(string name) {
-      return new RelativePath(PathHelpers.CombinePaths(Value, name), name);
+      return new RelativePath(PathHelpers.CombinePaths(_relativePath, name));
     }
 
     #region Comparison/Equality plumbing
 
     public int CompareTo(RelativePath other) {
-      return SystemPathComparer.Instance.StringComparer.Compare(Value, other.Value);
+      return SystemPathComparer.Instance.StringComparer.Compare(_relativePath, other._relativePath);
     }
 
     public bool Equals(RelativePath other) {
-      return SystemPathComparer.Instance.StringComparer.Equals(Value, other.Value);
+      return SystemPathComparer.Instance.StringComparer.Equals(_relativePath, other._relativePath);
     }
 
     public override int GetHashCode() {
-      return SystemPathComparer.Instance.StringComparer.GetHashCode(Value);
+      return SystemPathComparer.Instance.StringComparer.GetHashCode(_relativePath);
     }
 
     public override bool Equals(object other) {

@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Collections;
@@ -48,11 +47,12 @@ namespace VsChromium.Server.FileSystem {
     private IList<IProject> _registeredProjects = new List<IProject>();
 
     /// <summary>
-    /// Access to this field is serialized through tasks executed on the  <see cref="_longRunningFileSystemTaskQueue"/>
+    /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
     /// </summary>
-    private FileSystemSnapshot _fileSystemSnapshot;
+    private FileSystemSnapshot _currentSnapshot;
 
     private int _version;
+
     /// <summary>
     /// <code>true</code> if the file system watchers are currently not active.
     /// </summary>
@@ -81,7 +81,7 @@ namespace VsChromium.Server.FileSystem {
       _flushPathChangesTaskQueue = taskQueueFactory.CreateQueue("FileSystemSnapshotManager Path Changes Task Queue");
       _taskExecutor = taskQueueFactory.CreateQueue("FileSystemSnapshotManager State Change Task Queue");
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
-      _fileSystemSnapshot = FileSystemSnapshot.Empty;
+      _currentSnapshot = FileSystemSnapshot.Empty;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher(TimeSpan.FromSeconds(60));
       _directoryChangeWatcher.PathsChanged += DirectoryChangeWatcherOnPathsChanged;
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
@@ -90,7 +90,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public FileSystemSnapshot CurrentSnapshot {
-      get { return _fileSystemSnapshot; }
+      get { return _currentSnapshot; }
     }
 
     public void Pause() {
@@ -244,6 +244,7 @@ namespace VsChromium.Server.FileSystem {
 
         case FileSystemValidationResultKind.FileModificationsOnly:
           OnFilesChanged(new FilesChangedEventArgs {
+            FileSystemSnapshot = _currentSnapshot,
             ChangedFiles = validationResult.ModifiedFiles.ToReadOnlyCollection()
           });
           return;
@@ -285,11 +286,11 @@ namespace VsChromium.Server.FileSystem {
 
         Execute = info => {
           // Compute and assign new snapshot
-          var oldSnapshot = _fileSystemSnapshot;
+          var oldSnapshot = _currentSnapshot;
           var newSnapshot = BuildNewFileSystemSnapshot(projects, oldSnapshot, pathChanges, cancellationToken);
           // Update of new tree (assert calls are serialized).
-          Invariants.Assert(ReferenceEquals(oldSnapshot, _fileSystemSnapshot));
-          _fileSystemSnapshot = newSnapshot;
+          Invariants.Assert(ReferenceEquals(oldSnapshot, _currentSnapshot));
+          _currentSnapshot = newSnapshot;
 
           if (Logger.IsInfoEnabled) {
             Logger.LogInfo("FileSystemSnapshotManager: Scanned {0:n0} files in {1:n0} directories",

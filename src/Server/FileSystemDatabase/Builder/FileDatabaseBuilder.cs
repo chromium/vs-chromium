@@ -29,6 +29,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
+
     public FileDatabaseBuilder(
       IFileSystem fileSystem,
       IFileContentsFactory fileContentsFactory,
@@ -38,11 +39,11 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot,
-      FullPathChanges fullPathChanges, Action<IFileDatabaseSnapshot> onIntermadiateResult,
-      CancellationToken cancellationToken) {
+    public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot, FullPathChanges fullPathChanges,
+      Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot", cancellationToken)) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
+          onLoading();
           progress.DisplayProgress((i, n) => "Preparing list of files to load from disk");
 
           var fileDatabase = (FileDatabaseSnapshot)previousDatabase;
@@ -81,14 +82,20 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Merge old state in new state and load all missing files
           LoadFileContents(entities, loadingContext, cancellationToken);
 
-          return CreateFileDatabse(entities, cancellationToken);
+          var result = CreateFileDatabse(entities, cancellationToken);
+          onLoaded();
+          return result;
         }
       }
     }
 
     public IFileDatabaseSnapshot BuildWithChangedFiles(IFileDatabaseSnapshot previousFileDatabaseSnapshot,
-      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded, CancellationToken cancellationToken) {
+      FileSystemSnapshot fileSystemSnapshot, IEnumerable<ProjectFileName> changedFiles,
+      Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult,
+      CancellationToken cancellationToken) {
+
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files", cancellationToken)) {
+        Invariants.Assert(previousFileDatabaseSnapshot is FileDatabaseSnapshot);
         var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.

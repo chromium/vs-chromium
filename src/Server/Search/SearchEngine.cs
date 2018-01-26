@@ -49,6 +49,7 @@ namespace VsChromium.Server.Search {
 
     private volatile IFileDatabaseSnapshot _currentFileDatabaseSnapshot;
     private long _currentTreeVersion = -1;
+    private bool _allowIncrementalUpdates;
 
     [ImportingConstructor]
     public SearchEngine(
@@ -70,8 +71,8 @@ namespace VsChromium.Server.Search {
       _currentFileDatabaseSnapshot = _fileDatabaseSnapshotFactory.CreateEmpty();
 
       // Setup computing a new state everytime a new tree is computed.
-      fileSystemSnapshotManager.SnapshotScanFinished += FileSystemProcessorOnSnapshotScanFinished;
-      fileSystemSnapshotManager.FilesChanged += FileSystemProcessorOnFilesChanged;
+      fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
+      fileSystemSnapshotManager.FilesChanged += FileSystemSnapshotManagerOnFilesChanged;
     }
 
     public IFileDatabaseSnapshot CurrentFileDatabaseSnapshot {
@@ -212,7 +213,7 @@ namespace VsChromium.Server.Search {
     }
 
     public IEnumerable<FileExtract> GetFileExtracts(FullPath path, IEnumerable<FilePositionSpan> spans, int maxLength) {
-      var filename =_fileSystemNameFactory.CreateProjectFileFromFullPath(_projectDiscovery, path);
+      var filename = _fileSystemNameFactory.CreateProjectFileFromFullPath(_projectDiscovery, path);
       if (filename.IsNull)
         return Enumerable.Empty<FileExtract>();
 
@@ -240,45 +241,18 @@ namespace VsChromium.Server.Search {
       if (handler != null) handler(this, e);
     }
 
-    private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
+    private void FileSystemSnapshotManagerOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
       _taskQueue.Enqueue(UpdateFileContentsTaskId, cancellationToken => {
-        UpdateFileContents(filesChangedEventArgs.ChangedFiles, cancellationToken);
+        UpdateFileContentsLongTask(filesChangedEventArgs, cancellationToken);
       });
     }
 
-    private void UpdateFileContents(IEnumerable<ProjectFileName> files, CancellationToken cancellationToken) {
-      OperationInfo operationInfo = null;
-      _operationProcessor.Execute(new OperationHandlers {
-        OnBeforeExecute = info =>
-          operationInfo = info,
-        OnError = (info, error) => {
-          OnFilesLoading(info);
-          OnFilesLoaded(new FilesLoadedResult {
-            OperationInfo = info,
-            Error = error,
-            TreeVersion = _currentTreeVersion,
-          });
-        },
-        Execute = info => {
-          _currentFileDatabaseSnapshot = _fileDatabaseSnapshotFactory.CreateWithChangedFiles(
-            _currentFileDatabaseSnapshot,
-            files,
-            onLoading: () => OnFilesLoading(operationInfo),
-            onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
-              OperationInfo = operationInfo,
-              TreeVersion = _currentTreeVersion,
-            }),
-            cancellationToken: cancellationToken);
-        }
-      });
-    }
-
-    private void FileSystemProcessorOnSnapshotScanFinished(object sender, SnapshotScanResult e) {
+    private void FileSystemSnapshotManagerOnSnapshotScanFinished(object sender, SnapshotScanResult e) {
       if (e.Error != null)
         return;
 
       _taskQueue.Enqueue(ComputeNewStatedId, cancellationToken =>
-        ComputeNewState(e.NewSnapshot, e.FullPathChanges, cancellationToken));
+        ComputeNewStateLongTask(e.NewSnapshot, e.FullPathChanges, cancellationToken));
 
       // Enqueue a GC at this point makes sense as there might be a lot of
       // garbage to reclaim from previous file contents stored in native heap.
@@ -326,7 +300,7 @@ namespace VsChromium.Server.Search {
       // Split pattern around ";", normalize directory separators and
       // add "*" if not a whole word search
       var patterns = pattern
-        .Split(new[] {';'})
+        .Split(new[] { ';' })
         .Where(x => !string.IsNullOrWhiteSpace(x.Trim()))
         .Select(x => x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar))
         .Select(x => {
@@ -423,11 +397,11 @@ namespace VsChromium.Server.Search {
             return false;
 
           // Replace '\' with '/' and try again
-          var first = (byte*) ptr.ToPointer();
+          var first = (byte*)ptr.ToPointer();
           var last = first + value.Length;
           for (; first != last; first++) {
-            if ((char) (*first) == Path.DirectorySeparatorChar) {
-              *first = (byte) Path.AltDirectorySeparatorChar;
+            if ((char)(*first) == Path.DirectorySeparatorChar) {
+              *first = (byte)Path.AltDirectorySeparatorChar;
             }
           }
 
@@ -435,56 +409,115 @@ namespace VsChromium.Server.Search {
           hit = _searchContainer.GetAsciiSearch()
             .FindFirst(range, OperationProgressTracker.None);
           return hit.HasValue;
-        }
-        finally {
+        } finally {
           Marshal.FreeHGlobal(ptr);
         }
       }
     }
 
-    private void ComputeNewState(FileSystemSnapshot newSnapshot, FullPathChanges fullPathChanges,
+    private void ComputeNewStateLongTask(FileSystemSnapshot newSnapshot, FullPathChanges fullPathChanges, CancellationToken cancellationToken) {
+      UpdateFileDatabaseLongTask(newSnapshot, options => options.AllowIncrementalUpdates
+        ? CreateIncremental(newSnapshot, fullPathChanges, options, cancellationToken)
+        : CreateFullScan(newSnapshot, options, cancellationToken), cancellationToken);
+    }
+
+    private void UpdateFileContentsLongTask(FilesChangedEventArgs args, CancellationToken cancellationToken) {
+      UpdateFileDatabaseLongTask(args.FileSystemSnapshot, options => options.AllowIncrementalUpdates
+        ? CreateWithChangedFiles(args, options, cancellationToken)
+        : CreateFullScan(args.FileSystemSnapshot, options, cancellationToken), cancellationToken);
+    }
+
+    private IFileDatabaseSnapshot CreateFullScan(FileSystemSnapshot newSnapshot,
+      UpdateFileDatabaseOptions options, CancellationToken cancellationToken) {
+      return CreateIncremental(newSnapshot, null, options, cancellationToken);
+    }
+
+    private IFileDatabaseSnapshot CreateIncremental(FileSystemSnapshot newSnapshot, FullPathChanges fullPathChanges, UpdateFileDatabaseOptions options, CancellationToken cancellationToken) {
+      return _fileDatabaseSnapshotFactory.CreateIncremental(
+        options.CurrentFileDatabase,
+        newSnapshot,
+        fullPathChanges,
+        onIntermadiateResult: fileDatabase => {
+          // Store and activate intermediate new state (atomic operation).
+          _currentFileDatabaseSnapshot = fileDatabase;
+          OnFilesLoadingProgress(options.OperationInfo);
+        },
+        onLoading: () => OnFilesLoading(options.OperationInfo),
+        onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
+          OperationInfo = options.OperationInfo,
+          TreeVersion = _currentTreeVersion,
+        }),
+        cancellationToken: cancellationToken);
+    }
+
+    private IFileDatabaseSnapshot CreateWithChangedFiles(FilesChangedEventArgs args, UpdateFileDatabaseOptions options,
       CancellationToken cancellationToken) {
+      return _fileDatabaseSnapshotFactory.CreateWithChangedFiles(
+        options.CurrentFileDatabase,
+        args.FileSystemSnapshot,
+        args.ChangedFiles,
+        onIntermadiateResult: fileDatabase => {
+          // Store and activate intermediate new state (atomic operation).
+          _currentFileDatabaseSnapshot = fileDatabase;
+          OnFilesLoadingProgress(options.OperationInfo);
+        },
+        onLoading: () => OnFilesLoading(options.OperationInfo),
+        onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
+          OperationInfo = options.OperationInfo,
+          TreeVersion = _currentTreeVersion,
+        }),
+        cancellationToken: cancellationToken);
+    }
+
+    private class UpdateFileDatabaseOptions {
+      public OperationInfo OperationInfo { get; set; }
+      public bool AllowIncrementalUpdates { get; set; }
+      public IFileDatabaseSnapshot CurrentFileDatabase { get; set; }
+    }
+
+    private void UpdateFileDatabaseLongTask(FileSystemSnapshot fileSystemSnapshot,
+      Func<UpdateFileDatabaseOptions, IFileDatabaseSnapshot> updater, CancellationToken cancellationToken) {
+
+      var options = new UpdateFileDatabaseOptions();
 
       _operationProcessor.Execute(new OperationHandlers {
-        OnBeforeExecute = info =>
-          OnFilesLoading(info),
+        OnBeforeExecute = info => {
+          options.OperationInfo = info;
+          options.AllowIncrementalUpdates = _allowIncrementalUpdates;
+          _allowIncrementalUpdates = false;
+        },
 
         OnError = (info, error) => {
-          _currentTreeVersion = newSnapshot.Version;
+          _currentTreeVersion = fileSystemSnapshot.Version;
+          OnFilesLoading(info);
           OnFilesLoaded(new FilesLoadedResult {
             OperationInfo = info,
             Error = error,
-            TreeVersion = newSnapshot.Version
+            TreeVersion = _currentTreeVersion,
           });
         },
 
         Execute = info => {
-          using (new TimeElapsedLogger("Computing new state of file database", cancellationToken)) {
-            var oldState = _currentFileDatabaseSnapshot;
-            var newState = _fileDatabaseSnapshotFactory.CreateIncremental(
-              oldState,
-              newSnapshot,
-              fullPathChanges,
-              fileDatabase => {
-                // Store and activate intermediate new state (atomic operation).
-                _currentFileDatabaseSnapshot = fileDatabase;
-                OnFilesLoadingProgress(info);
-              },
-              cancellationToken);
-            // Store and activate final new state (atomic operation).
+          using (new TimeElapsedLogger(
+            $"Computing new state of file database (allow incremental={options.AllowIncrementalUpdates}",
+            cancellationToken)) {
+            options.CurrentFileDatabase = _currentFileDatabaseSnapshot;
+            var newState = updater(options);
             _currentFileDatabaseSnapshot = newState;
+            _currentTreeVersion = fileSystemSnapshot.Version;
+            _allowIncrementalUpdates = true; // Success => we allow incremtal updates next time
           }
-          _currentTreeVersion = newSnapshot.Version;
+
           OnFilesLoaded(new FilesLoadedResult {
             OperationInfo = info,
-            TreeVersion = newSnapshot.Version
+            TreeVersion = fileSystemSnapshot.Version
           });
         }
       });
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
-      return matcher.MatchFileName(new RelativePath(fileName.Name, fileName.Name), comparer);
+      return matcher.MatchFileName(new RelativePath(fileName.Name), comparer);
     }
 
     private bool MatchFileRelativePath(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {

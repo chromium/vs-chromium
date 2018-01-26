@@ -16,6 +16,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken);
 
     IFileDatabaseSnapshot CreateWithChangedFiles(IFileDatabaseSnapshot previousDatabase,
-      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded);
+      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded,
+      CancellationToken cancellationToken);
   }
 }

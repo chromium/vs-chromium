@@ -95,19 +95,15 @@ namespace VsChromium.Server.FileSystem {
 
     public void Pause() {
       _taskExecutor.ExecuteAsync(token => {
-        if (!_isPaused) {
-          // "OnPause" event will be fired by the directory watcher
-          _directoryChangeWatcher.Pause();
-        }
+        // "OnPause" event will be fired by the directory watcher
+        _directoryChangeWatcher.Pause();
       });
     }
 
     public void Resume() {
       _taskExecutor.ExecuteAsync(token => {
-        if (_isPaused) {
-          // "OnResume" event will be fired by the directory watcher
-          _directoryChangeWatcher.Resume();
-        }
+        // "OnResume" event will be fired by the directory watcher
+        _directoryChangeWatcher.Resume();
       });
     }
 
@@ -220,6 +216,9 @@ namespace VsChromium.Server.FileSystem {
         Logger.LogInfo("FileSystemSnapshotManager: Directory watcher has resumed, leaving pause mode");
         _isPaused = false;
 
+        // Ingore all changes
+        _pathsChangedQueue.DequeueAll();
+        _longRunningFileSystemTaskQueue.CancelAll();
         _fileRegistrationTracker.RefreshAsync(FileRegistrationTrackerRefreshCompleted);
         OnFileSystemWatchResumed();
       });
@@ -312,7 +311,7 @@ namespace VsChromium.Server.FileSystem {
     private FileSystemSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
       FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
 
-      using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes")) {
+      using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes", cancellationToken)) {
         // Compute new snapshot
         var newSnapshot = _fileSystemSnapshotBuilder.Compute(
           _fileSystemNameFactory,

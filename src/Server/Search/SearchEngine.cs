@@ -242,11 +242,11 @@ namespace VsChromium.Server.Search {
 
     private void FileSystemProcessorOnFilesChanged(object sender, FilesChangedEventArgs filesChangedEventArgs) {
       _taskQueue.Enqueue(UpdateFileContentsTaskId, cancellationToken => {
-        UpdateFileContents(filesChangedEventArgs.ChangedFiles);
+        UpdateFileContents(filesChangedEventArgs.ChangedFiles, cancellationToken);
       });
     }
 
-    private void UpdateFileContents(IEnumerable<ProjectFileName> files) {
+    private void UpdateFileContents(IEnumerable<ProjectFileName> files, CancellationToken cancellationToken) {
       OperationInfo operationInfo = null;
       _operationProcessor.Execute(new OperationHandlers {
         OnBeforeExecute = info =>
@@ -267,7 +267,8 @@ namespace VsChromium.Server.Search {
             onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
               OperationInfo = operationInfo,
               TreeVersion = _currentTreeVersion,
-            }));
+            }),
+            cancellationToken: cancellationToken);
         }
       });
     }
@@ -458,7 +459,7 @@ namespace VsChromium.Server.Search {
         },
 
         Execute = info => {
-          using (new TimeElapsedLogger("Computing new state of file database")) {
+          using (new TimeElapsedLogger("Computing new state of file database", cancellationToken)) {
             var oldState = _currentFileDatabaseSnapshot;
             var newState = _fileDatabaseSnapshotFactory.CreateIncremental(
               oldState,

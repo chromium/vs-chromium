@@ -207,7 +207,7 @@
         </Button>
         <!-- The Pause/Resume button -->
         <Button HorizontalAlignment="Right"
-                IsTabStop="False" Click="PauseIndexingButton_Click"
+                IsTabStop="False" Click="PauseResumeIndexingButton_Click"
                 Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
                 FontFamily="Segoe UI Symbol" FontSize="14">
           <Button.Style>
@@ -228,13 +228,27 @@
         </Button>
         <!-- The manual refresh button -->
         <Button HorizontalAlignment="Right"
-                Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
                 IsTabStop="False" Click="RefreshIndexButton_Click"
                 Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
                 FontFamily="Segoe UI Symbol" FontSize="14" Content="&#xE149;">
           <Button.ToolTip>
             <TextBlock Text="Refresh index"/>
           </Button.ToolTip>
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IndexingBusy}" Value="True">
+                  <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IndexingBusy}" Value="False">
+                  <Setter Property="IsEnabled" Value="True" />
+                </DataTrigger>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
         </Button>
       </StackPanel>
     </Grid>

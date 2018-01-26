@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Utility {
@@ -16,11 +17,16 @@ namespace VsChromium.Core.Utility {
     private static int _currentThreadIndent;
 
     private readonly string _description;
+    private readonly CancellationToken _cancellationToken;
     private readonly Stopwatch _stopwatch;
 
-    public TimeElapsedLogger(string description) {
+    public TimeElapsedLogger(string description) : this(description, new CancellationTokenSource().Token) {
+    }
+
+    public TimeElapsedLogger(string description, CancellationToken cancellationToken) {
       _currentThreadIndent++;
       _description = description;
+      _cancellationToken = cancellationToken;
       _stopwatch = Stopwatch.StartNew();
       if (Logger.IsInfoEnabled) {
         Logger.LogInfo("{0}{1}.", GetOpenIndent(_currentThreadIndent), _description);
@@ -31,9 +37,10 @@ namespace VsChromium.Core.Utility {
       _stopwatch.Stop();
       if (Logger.IsInfoEnabled) {
         Logger.LogInfo(
-          "{0}{1} performed in {2:n0} msec - GC Memory: {3:n0} bytes.",
+          "{0}{1} {2} {3:n0} msec - GC Memory: {4:n0} bytes.",
           GetCloseIndent(_currentThreadIndent),
           _description,
+          _cancellationToken.IsCancellationRequested ? "cancelled after" : "completed in",
           _stopwatch.ElapsedMilliseconds,
           GC.GetTotalMemory(false));
       }

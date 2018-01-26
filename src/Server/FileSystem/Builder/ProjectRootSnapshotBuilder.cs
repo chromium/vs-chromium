@@ -60,25 +60,22 @@ namespace VsChromium.Server.FileSystem.Builder {
     }
 
     private DirectorySnapshot CreateDirectorySnapshot(DirectoryName directory, bool isSymLink) {
-      List<DirectoryWithFiles> directoriesWithFiles;
-      using (new TimeElapsedLogger("Traversing directory to collect directory/file names")) {
-        // Create list of pairs (DirectoryName, List[FileNames])
-        directoriesWithFiles = TraverseFileSystem(directory, isSymLink).ToList();
-      }
+      var directoriesWithFiles = TraverseFileSystem(directory, isSymLink).ToList();
 
-      using (new TimeElapsedLogger("Creating directory snapshot from file system files")) {
-        _progress.DisplayProgress((i, n) =>
-          string.Format("Sorting files for directory \"{0}\"", _project.RootPath.Value));
+      using (new TimeElapsedLogger("Creating directory snapshot from file system files", _cancellationToken)) {
+        _cancellationToken.ThrowIfCancellationRequested();
 
         // We sort entries by directory name *descending* to make sure we process
         // directories bottom up, so that we know
         // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
         // 2) we create instances of child directories before their parent.
+        _progress.DisplayProgress((i, n) => $"Sorting files of directory {_project.RootPath.Value}");
         directoriesWithFiles.Sort((x, y) => -x.DirectoryData.DirectoryName.CompareTo(y.DirectoryData.DirectoryName));
 
         // Build map from parent directory -> list of child directories
         var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
         directoriesWithFiles.ForAll(x => {
+          _cancellationToken.ThrowIfCancellationRequested();
           var directoryName = x.DirectoryData.DirectoryName;
 
           // Ignore root project directory name
@@ -93,9 +90,9 @@ namespace VsChromium.Server.FileSystem.Builder {
         // intermediate map to enable connecting snapshots to their parent.
         var directoriesToSnapshot = new Dictionary<DirectoryName, DirectorySnapshot>();
         var directorySnapshots = directoriesWithFiles.Select(entry => {
+          _cancellationToken.ThrowIfCancellationRequested();
           if (_progress.Step()) {
-            _progress.DisplayProgress((i, n) =>
-              string.Format("Processing files and directories of directory {0}", _project.RootPath.Value));
+            _progress.DisplayProgress((i, n) => $"Processing files and directories of directory {_project.RootPath.Value}");
           }
 
           var directoryData = entry.DirectoryData;
@@ -129,12 +126,13 @@ namespace VsChromium.Server.FileSystem.Builder {
     private DirectorySnapshot ApplyDirectorySnapshotDelta(DirectorySnapshot oldDirectory) {
       var oldDirectoryPath = oldDirectory.DirectoryName.RelativePath;
 
-      // Create lists of created dirs and files. We havet to access the file system to know
+      // Create lists of created dirs and files. We have to access the file system to know
       // if each path is a file or a directory.
       List<IFileInfoSnapshot> createDirs = null;
       List<IFileInfoSnapshot> createdFiles = null;
       foreach (var path in _pathChanges.GetCreatedEntries(oldDirectoryPath).ToForeachEnum()) {
         _cancellationToken.ThrowIfCancellationRequested(); // cancellation
+
         var info = _fileSystem.GetFileInfoSnapshot(_project.RootPath.Combine(path));
         if (info.IsDirectory) {
           if (createDirs == null)
@@ -157,14 +155,15 @@ namespace VsChromium.Server.FileSystem.Builder {
       // Add created directories
       if (createDirs != null) {
         foreach (var info in createDirs.ToForeachEnum()) {
-          var name = _fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
-          var childSnapshot = CreateDirectorySnapshot(name, info.IsSymLink);
+          _cancellationToken.ThrowIfCancellationRequested(); // cancellation
+
+          var createdDirectoryName = _fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
+          var childSnapshot = CreateDirectorySnapshot(createdDirectoryName, info.IsSymLink);
 
           // Note: File system change notifications are not always 100%
           // reliable. We may get a "create" event for directory we already know
           // about.
-          var index = childDirectories.FindIndex(x =>
-              SystemPathComparer.Instance.StringComparer.Equals(x.DirectoryName.RelativePath.FileName, name.RelativePath.FileName));
+          var index = childDirectories.FindIndex(x => SystemPathComparer.Equals(x.DirectoryName.Name, createdDirectoryName.Name));
           if (index >= 0) {
             childDirectories.RemoveAt(index);
           }
@@ -172,8 +171,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         }
 
         // We need to re-sort the array since we added new entries
-        childDirectories.Sort((x, y) =>
-          SystemPathComparer.Instance.StringComparer.Compare(x.DirectoryName.RelativePath.FileName, y.DirectoryName.RelativePath.FileName));
+        childDirectories.Sort((x, y) => SystemPathComparer.Compare(x.DirectoryName.Name, y.DirectoryName.Name));
       }
 
       // Match non deleted files
@@ -195,14 +193,12 @@ namespace VsChromium.Server.FileSystem.Builder {
           }
 
           // We need to re-sort the array since we added new entries
-          newFileListTemp.Sort((x, y) =>
-            SystemPathComparer.Instance.StringComparer.Compare(x.RelativePath.FileName, y.RelativePath.FileName));
+          newFileListTemp.Sort((x, y) => SystemPathComparer.Compare(x.Name, y.Name));
 
           // Note: File system change notifications are not always 100%
           // reliable. We may get a "create" event for files we already know
           // about.
-          ArrayUtilities.RemoveDuplicates(newFileListTemp, (x, y) =>
-            SystemPathComparer.Instance.StringComparer.Equals(x.RelativePath.FileName, y.RelativePath.FileName));
+          ArrayUtilities.RemoveDuplicates(newFileListTemp, (x, y) => SystemPathComparer.Equals(x.Name, y.Name));
         }
         newFileList = newFileListTemp;
       }
@@ -237,11 +233,13 @@ namespace VsChromium.Server.FileSystem.Builder {
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
     private IEnumerable<DirectoryWithFiles> TraverseFileSystem(DirectoryName startDirectoryName, bool isSymLink) {
-      var rootDir = new DirectoryData(startDirectoryName, isSymLink);
-      var bag = new ConcurrentBag<DirectoryWithFiles>();
-      var task = TraverseDirectoryAsync(rootDir, bag, _cancellationToken);
-      task.Wait(_cancellationToken);
-      return bag;
+      using (new TimeElapsedLogger("Traversing directory to collect directory/file names", _cancellationToken)) {
+        var rootDir = new DirectoryData(startDirectoryName, isSymLink);
+        var bag = new ConcurrentBag<DirectoryWithFiles>();
+        var task = TraverseDirectoryAsync(rootDir, bag, _cancellationToken);
+        task.Wait(_cancellationToken);
+        return bag;
+      }
     }
 
     private Task TraverseDirectoryAsync(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, CancellationToken token) {

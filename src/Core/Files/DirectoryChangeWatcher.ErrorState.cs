@@ -25,6 +25,7 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnPause() {
+        StateHost.ParentWatcher.OnPaused();
         return new PausedState(StateHost);
       }
 

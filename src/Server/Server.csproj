@@ -65,7 +65,8 @@
     <Compile Include="IndexingServer.cs" />
     <Compile Include="IndexingServerState.cs" />
     <Compile Include="IndexingServerStateUpdatedEventArgs.cs" />
-    <Compile Include="Ipc\TypedMessageHandlers\PauseResumeIndexingRequestHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\PauseIndexingRequestHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\ResumeIndexingRequestHandler.cs" />
     <Compile Include="Projects\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotScanResult.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDatabaseStatisticsRequestHandler.cs" />

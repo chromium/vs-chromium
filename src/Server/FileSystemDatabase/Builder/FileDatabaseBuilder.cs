@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Collections;
@@ -42,26 +41,29 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges, Action<IFileDatabaseSnapshot> onIntermadiateResult,
       CancellationToken cancellationToken) {
-      using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot")) {
+      using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot", cancellationToken)) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
           progress.DisplayProgress((i, n) => "Preparing list of files to load from disk");
 
           var fileDatabase = (FileDatabaseSnapshot)previousDatabase;
 
           // Compute list of files from tree
-          var entities = ComputeFileSystemEntities(newSnapshot);
+          var entities = ComputeFileSystemEntities(newSnapshot, cancellationToken);
 
+          cancellationToken.ThrowIfCancellationRequested();
           var unchangedProjects = newSnapshot
             .ProjectRoots.Where(x =>
               fileDatabase.ProjectHashes.ContainsKey(x.Project.RootPath) &&
               fileDatabase.ProjectHashes[x.Project.RootPath] == x.Project.VersionHash)
             .Select(x => x.Project);
 
+          cancellationToken.ThrowIfCancellationRequested();
           var unchangedProjectSet = new HashSet<IProject>(unchangedProjects,
             // Use reference equality for IProject is safe, as we keep this
             // dictionary only for the duration of this "Build" call.
             new ReferenceEqualityComparer<IProject>());
 
+          cancellationToken.ThrowIfCancellationRequested();
           var loadingContext = new FileContentsLoadingContext {
             FullPathChanges = fullPathChanges,
             LoadedTextFileCount = 0,
@@ -71,7 +73,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
               TimeSpan.FromSeconds(5.0),
               () => {
                 Logger.LogInfo("Creating intermedidate file database for partial progress reporting");
-                var database = CreateFileDatabse(entities);
+                var database = CreateFileDatabse(entities, cancellationToken);
                 onIntermadiateResult(database);
               })
           };
@@ -79,14 +81,14 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Merge old state in new state and load all missing files
           LoadFileContents(entities, loadingContext, cancellationToken);
 
-          return CreateFileDatabse(entities);
+          return CreateFileDatabse(entities, cancellationToken);
         }
       }
     }
 
     public IFileDatabaseSnapshot BuildWithChangedFiles(IFileDatabaseSnapshot previousFileDatabaseSnapshot,
-      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded) {
-      using (new TimeElapsedLogger("Building file database from previous one and list of changed files")) {
+      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded, CancellationToken cancellationToken) {
+      using (new TimeElapsedLogger("Building file database from previous one and list of changed files", cancellationToken)) {
         var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.
@@ -112,13 +114,14 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           fileDatabase.Files,
           fileDatabase.FileNames,
           fileDatabase.Directories,
-          CreateFilePieces(filesWithContents),
+          CreateFilePieces(filesWithContents, cancellationToken),
           filesWithContents.Count);
       }
     }
 
-    private FileDatabaseSnapshot CreateFileDatabse(FileSystemEntities entities) {
-      using (new TimeElapsedLogger("Freezing file database state")) {
+    private FileDatabaseSnapshot CreateFileDatabse(FileSystemEntities entities, CancellationToken cancellationToken) {
+      cancellationToken.ThrowIfCancellationRequested();
+      using (new TimeElapsedLogger("Freezing file database state", cancellationToken)) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
           progress.DisplayProgress((i, n) => "Finalizing index update");
           var directories = entities.Directories;
@@ -129,6 +132,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           var filesWithContentsArray = new FileWithContents[entities.Files.Count];
           int filesWithContentsIndex = 0;
           foreach (var kvp in entities.Files) {
+            cancellationToken.ThrowIfCancellationRequested();
             var fileData = kvp.Value.FileWithContents;
             files.Add(kvp.Key, fileData);
             if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
@@ -137,7 +141,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           }
 
           var filesWithContents = new ListSegment<FileWithContents>(filesWithContentsArray, 0, filesWithContentsIndex);
-          var searchableContentsCollection = CreateFilePieces(filesWithContents);
+          var searchableContentsCollection = CreateFilePieces(filesWithContents, cancellationToken);
           FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
           return new FileDatabaseSnapshot(
@@ -162,7 +166,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// Note: This code inside this method is not the cleanest, but it is
     /// written in a way that tries to minimiz the # of large array allocations.
     /// </summary>
-    private static IList<IFileContentsPiece> CreateFilePieces(ICollection<FileWithContents> filesWithContents) {
+    private static IList<IFileContentsPiece> CreateFilePieces(ICollection<FileWithContents> filesWithContents, CancellationToken cancellationToken) {
+      cancellationToken.ThrowIfCancellationRequested();
+
       // Factory for file identifiers
       int currentFileId = 0;
       Func<int> fileIdFactory = () => currentFileId++;
@@ -175,6 +181,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       var smallFilesCount = 0;
       var largeFiles = new List<FileContentsPiece>(filesWithContents.Count / 100);
       foreach (var fileData in filesWithContents) {
+        cancellationToken.ThrowIfCancellationRequested();
         if (isSmallFile(fileData)) {
           smallFilesCount++;
         } else {
@@ -183,6 +190,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         }
       }
       var totalFileCount = smallFilesCount + largeFiles.Count;
+      cancellationToken.ThrowIfCancellationRequested();
 
       // Store elements in their partitions
       // # of partitions = # of logical processors
@@ -196,6 +204,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
       // Store small files
       foreach (var fileData in filesWithContents) {
+        cancellationToken.ThrowIfCancellationRequested();
         if (isSmallFile(fileData)) {
           var item = fileData.Contents.CreatePiece(
             fileData.FileName,
@@ -237,8 +246,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       public Dictionary<FullPath, string> ProjectHashes { get; set; }
     }
 
-    private FileSystemEntities ComputeFileSystemEntities(FileSystemSnapshot snapshot) {
-      using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree")) {
+    private FileSystemEntities ComputeFileSystemEntities(FileSystemSnapshot snapshot, CancellationToken cancellationToken) {
+      using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree", cancellationToken)) {
 
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
 
@@ -285,7 +294,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     private void LoadFileContents(FileSystemEntities entities, FileContentsLoadingContext loadingContext, CancellationToken cancellationToken) {
-      using (new TimeElapsedLogger("Loading file contents from disk")) {
+      using (new TimeElapsedLogger("Loading file contents from disk", cancellationToken)) {
         using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
           entities.Files.AsParallelWrapper().ForAll(fileEntry => {
             Invariants.Assert(fileEntry.Value.FileWithContents.Contents == null);

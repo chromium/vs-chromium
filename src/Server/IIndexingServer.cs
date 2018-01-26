@@ -10,7 +10,6 @@ namespace VsChromium.Server {
 
     void Pause();
     void Resume();
-    void TogglePausedRunning();
     void Refresh();
 
     event EventHandler<IndexingServerStateUpdatedEventArgs> StateUpdated;

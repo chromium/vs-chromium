@@ -368,12 +368,20 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void PauseResumeIndexing() {
-      var uiRequest = new UIRequest {
-        Request = new PauseResumeIndexingRequest(),
-        Id = nameof(PauseResumeIndexingRequest),
-        Delay = TimeSpan.FromSeconds(0.0),
-        OnReceive = FetchDatabaseStatistics,
-      };
+
+      var uiRequest = ViewModel.IndexingPaused
+        ? new UIRequest {
+          Request = new ResumeIndexingRequest(),
+          Id = nameof(ResumeIndexingRequest),
+          Delay = TimeSpan.FromSeconds(0.0),
+          OnReceive = FetchDatabaseStatistics,
+        }
+        : new UIRequest {
+          Request = new PauseIndexingRequest(),
+          Id = nameof(PauseIndexingRequest),
+          Delay = TimeSpan.FromSeconds(0.0),
+          OnReceive = FetchDatabaseStatistics,
+        };
 
       _uiRequestProcessor.Post(uiRequest);
     }
@@ -677,6 +685,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Yield;
       ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Yield;
+      ViewModel.IndexingBusy = response.ServerStatus == IndexingServerStatus.Busy;
       ViewModel.IndexStatusText = GetIndexStatusText(response);
       ViewModel.IndexingServerStateText = GetIndexingServerStatusText(response);
       ViewModel.ServerStatusToolTipText = GetIndexingServerStatusToolTipText(response);

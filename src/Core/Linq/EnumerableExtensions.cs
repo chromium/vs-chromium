@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using VsChromium.Core.Collections;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Linq {
@@ -69,38 +70,33 @@ namespace VsChromium.Core.Linq {
     /// name="partitionCount"/> lists having identical total weight (as best as
     /// possible).
     /// </summary>
-    public static IEnumerable<IList<TSource>> PartitionWithWeight<TSource>(
-      this IList<TSource> source,
-      Func<TSource, long> weight,
-      int partitionCount) {
-      var description = string.Format("Creating {0} partition(s) for {1} element(s)", partitionCount, source.Count);
-      using (new TimeElapsedLogger(description)) {
-        var partitions = source
-          .GetPartitionSizes(partitionCount)
-          .Select(x => new Partition<TSource> {
-            MaxCount = x,
-            Items = new List<TSource>(x)
-          })
-          .ToList();
+    public static IEnumerable<IList<TSource>> PartitionWithWeight<TSource>(this IList<TSource> source, Func<TSource, long> weight, int partitionCount) {
+      var partitions = source
+        .GetPartitionSizes(partitionCount)
+        .Select(x => new Partition<TSource> {
+          MaxCount = x,
+          Items = new List<TSource>(x)
+        })
+        .ToList();
 
-        // Create MinHeap of partitions (wrt Weight function).
-        var minHeap = new MinHeap<Partition<TSource>>(new PartitionWeightComparer<TSource>());
-        partitions.ForAll(x => minHeap.Add(x));
+      // Create MinHeap of partitions (wrt Weight function).
+      var minHeap = new MinHeap<Partition<TSource>>(new PartitionWeightComparer<TSource>());
+      partitions.ForAll(x => minHeap.Add(x));
 
-        // Distribute items using MinHeap.
-        source
-          // Sort so that elements with highest weight are first, so that we
-          // have a better chance of ending with partitions of same total weight
-          // - it is easier to adjust with elements of low weight than with
-          // elements of high weight.
-          .OrderByDescending(weight)
-          .ForAll(item => {
-            var min = minHeap.Remove();
-            min.Items.Add(item);
-            min.TotalWeight += weight(item);
-            if (min.Items.Count < min.MaxCount)
-              minHeap.Add(min);
-          });
+      // Distribute items using MinHeap.
+      source
+        // Sort so that elements with highest weight are first, so that we
+        // have a better chance of ending with partitions of same total weight
+        // - it is easier to adjust with elements of low weight than with
+        // elements of high weight.
+        .OrderByDescending(weight)
+        .ForAll(item => {
+          var min = minHeap.Remove();
+          min.Items.Add(item);
+          min.TotalWeight += weight(item);
+          if (min.Items.Count < min.MaxCount)
+            minHeap.Add(min);
+        });
 
 #if false
       Logger.LogInfo("Created {0} partitions for a total ot {1:n0} elements and weight of {2:n0}.",
@@ -111,8 +107,7 @@ namespace VsChromium.Core.Linq {
         Logger.LogInfo("  Partition count is {0:n0}, total weight is {1:n0}.", x.Items.Count, x.TotalWeight);
       });
 #endif
-        return partitions.Select(x => x.Items);
-      }
+      return partitions.Select(x => x.Items);
     }
 
     private class Partition<T> {
@@ -123,6 +118,8 @@ namespace VsChromium.Core.Linq {
 
     private class PartitionWeightComparer<T> : IComparer<Partition<T>> {
       public int Compare(Partition<T> x, Partition<T> y) {
+        Invariants.Assert(x != null);
+        Invariants.Assert(y != null);
         return x.TotalWeight.CompareTo(y.TotalWeight);
       }
     }

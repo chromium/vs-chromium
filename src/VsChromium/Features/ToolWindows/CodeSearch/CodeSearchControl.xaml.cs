@@ -325,7 +325,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     #endregion
 
-    private void PauseIndexingButton_Click(object sender, RoutedEventArgs e) {
+    private void PauseResumeIndexingButton_Click(object sender, RoutedEventArgs e) {
       Logger.WrapActionInvocation(() => Controller.PauseResumeIndexing());
     }
 

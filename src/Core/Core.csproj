@@ -135,10 +135,11 @@
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\IndexingServerStateChangedEvent.cs" />
-    <Compile Include="Ipc\TypedMessages\PauseResumeIndexingRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\PauseIndexingRequest.cs" />
     <Compile Include="Ipc\TypedMessages\PauseResumeIndexingResponse.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeRequest.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\ResumeIndexingRequest.cs" />
     <Compile Include="Ipc\TypedMessages\SearchEngineFilesLoadingProgress.cs" />
     <Compile Include="Ipc\TypedMessages\UnregisterFileRequest.cs" />
     <Compile Include="Ipc\TypedMessages\FileExtract.cs" />

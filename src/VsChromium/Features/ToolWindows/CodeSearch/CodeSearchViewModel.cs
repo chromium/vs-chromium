@@ -33,6 +33,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _indexingPaused;
     private string _serverStatusToolTipText;
     private bool _indexingPausedDueToError;
+    private bool _indexingBusy;
 
     public enum DisplayKind {
       InformationMessages,
@@ -436,16 +437,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public bool IndexingPaused {
-      get { return _indexingPaused; }
-      set {
-        if (value == _indexingPaused)
-          return;
-        _indexingPaused = value;
-        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingPaused));
-      }
-    }
-
     public string ServerStatusToolTipText {
       get { return _serverStatusToolTipText; }
       set {
@@ -456,6 +447,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
+    public bool IndexingPaused {
+      get { return _indexingPaused; }
+      set {
+        if (value == _indexingPaused)
+          return;
+        _indexingPaused = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingPaused));
+      }
+    }
+
     public bool IndexingPausedDueToError {
       get { return _indexingPausedDueToError; }
       set {
@@ -463,6 +464,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         _indexingPausedDueToError = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingPausedDueToError));
+      }
+    }
+
+    public bool IndexingBusy {
+      get { return _indexingBusy; }
+      set {
+        if (value == _indexingBusy)
+          return;
+        _indexingBusy = value;
+        OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.IndexingBusy));
       }
     }
 

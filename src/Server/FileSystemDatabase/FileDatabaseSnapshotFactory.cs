@@ -63,10 +63,10 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// type of file change events.
     /// </summary>
     public IFileDatabaseSnapshot CreateWithChangedFiles(IFileDatabaseSnapshot previousDatabase,
-      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded) {
+      IEnumerable<ProjectFileName> changedFiles, Action onLoading, Action onLoaded, CancellationToken cancellationToken) {
 
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-        .BuildWithChangedFiles(previousDatabase, changedFiles, onLoading, onLoaded);
+        .BuildWithChangedFiles(previousDatabase, changedFiles, onLoading, onLoaded, cancellationToken);
     }
   }
 }

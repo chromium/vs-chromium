@@ -1,5 +1,8 @@
+// Copyright 2018 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System;
-using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Logging;
 
@@ -153,7 +156,7 @@ namespace VsChromium.Wpf {
       var initialItem = item;
       while (item != null) {
         item = apply(item);
-        if (object.ReferenceEquals(item, initialItem))
+        if (ReferenceEquals(item, initialItem))
           break;
         var result = item as T;
         if (result != null)

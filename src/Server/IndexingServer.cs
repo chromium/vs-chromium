@@ -4,10 +4,7 @@
 
 using System;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
-using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Operations;
@@ -47,15 +44,7 @@ namespace VsChromium.Server {
 
     public IndexingServerState CurrentState {
       get {
-        IndexingServerState result = null;
-        var e = new ManualResetEvent(false);
-        _stateChangeTaskQueue.ExecuteAsync(token => {
-          result = GetCurrentState();
-          e.Set();
-        });
-        e.WaitOne();
-        Invariants.Assert(result != null);
-        return result;
+        return _stateChangeTaskQueue.ExecuteAndWait(token => GetCurrentState());
       }
     }
 

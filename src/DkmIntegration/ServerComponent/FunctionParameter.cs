@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Diagnostics;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.DkmIntegration.ServerComponent {
@@ -16,8 +15,8 @@ namespace VsChromium.DkmIntegration.ServerComponent {
     private string _name;
     private ParameterType _type;
     public FunctionParameter(string name, ParameterType type) {
-      this._name = name;
-      this._type = type;
+      _name = name;
+      _type = type;
     }
 
     public string Name { get { return _name; } }

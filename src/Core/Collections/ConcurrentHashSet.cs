@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace VsChromium.Core.Collections {
-  public class ConcurrentHashSet<T> {
-    private readonly double _loadFactor;
-    private readonly IEqualityComparer<T> _comparer;
-    private Entry[] _entries;
-    private int _count;
-    private int _mask;
+  public class ConcurrentHashSet<T> : SlimHashTable<T, T> {
 
     public ConcurrentHashSet() : this(0.8, EqualityComparer<T>.Default) {
     }
@@ -18,84 +15,28 @@ namespace VsChromium.Core.Collections {
     public ConcurrentHashSet(double loadFactor) : this(loadFactor, EqualityComparer<T>.Default) {
     }
 
-    public ConcurrentHashSet(double loadFactor, IEqualityComparer<T> comparer) {
-      _loadFactor = loadFactor;
-      _comparer = comparer;
-      _mask = 31;
-      _entries = new Entry[_mask + 1];
+    public ConcurrentHashSet(double loadFactor, IEqualityComparer<T> comparer)
+      : base(new Parameters(), 0, loadFactor, comparer) {
     }
 
-    public T GetOrAdd(T key) {
-      var comparer = _comparer;
-      var hashCode = comparer.GetHashCode(key);
-
-      lock (this) {
-        for (var e = _entries[hashCode & _mask]; e != null; e = e.Next) {
-          if (comparer.Equals(key, e.Value)) {
-            return e.Value;
-          }
-        }
-        return AddEntry(key, hashCode);
-      }
+    public T GetOrAdd(T value) {
+      return GetOrAdd(value, value);
     }
 
-    public T Get(T value) {
-      var comparer = _comparer;
-      var hashCode = comparer.GetHashCode(value);
+    private class Parameters : ISlimHashTableParameters<T, T> {
+      private readonly object _lock = new object();
 
-      lock (this) {
-        for (var e = _entries[hashCode & _mask]; e != null; e = e.Next) {
-          if (comparer.Equals(value, e.Value)) {
-            return e.Value;
-          }
-        }
+      public Func<T, T> KeyGetter {
+        get { return t => t; }
       }
 
-      return default(T);
-    }
-
-    private T AddEntry(T value, int hashCode) {
-      var index = hashCode & _mask;
-      var e = new Entry(value, _entries[index]);
-      _entries[index] = e;
-      _count++;
-      if ((float)_count / _entries.Length >= _loadFactor) {
-        Grow();
-      }
-      return e.Value;
-    }
-
-    private void Grow() {
-      int newMask = _mask * 2 + 1;
-      var oldEntries = _entries;
-      var newEntries = new Entry[newMask + 1];
-
-      // use oldEntries.Length to eliminate the rangecheck            
-      for (int i = 0; i < oldEntries.Length; i++) {
-        var e = oldEntries[i];
-        while (e != null) {
-          var newIndex = e.HashCode & newMask;
-          var tmp = e.Next;
-          e.Next = newEntries[newIndex];
-          newEntries[newIndex] = e;
-          e = tmp;
-        }
+      public Action Locker {
+        get { return () => Monitor.Enter(_lock); }
       }
 
-      _entries = newEntries;
-      _mask = newMask;
-    }
-
-    private class Entry {
-      internal readonly T Value;
-      internal Entry Next;
-
-      internal Entry(T value, Entry next) {
-        Value = value;
-        Next = next;
+      public Action Unlnlocker {
+        get { return () => Monitor.Exit(_lock); }
       }
-
-      public int HashCode => Value.GetHashCode();
     }
   }
 }

@@ -45,11 +45,14 @@
     <Compile Include="Collections\ConcurrentBitArray.cs" />
     <Compile Include="Collections\ConcurrentHashSet.cs" />
     <Compile Include="Collections\IBitArray.cs" />
+    <Compile Include="Collections\ISlimHashTableParameters.cs" />
     <Compile Include="Collections\LeftRightItemPair.cs" />
     <Compile Include="Collections\ObjectPool.cs" />
     <Compile Include="Collections\PartitionedBitArray.cs" />
     <Compile Include="Collections\ReferenceEqualityComparer.cs" />
     <Compile Include="Collections\ConcurrentBufferQueue.cs" />
+    <Compile Include="Collections\SlimDictionary.cs" />
+    <Compile Include="Collections\SlimHashTable.cs" />
     <Compile Include="Collections\SortedArray.cs" />
     <Compile Include="Collections\SortedArrayHelpers.cs" />
     <Compile Include="Collections\StringBuilderPool.cs" />

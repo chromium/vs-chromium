@@ -43,6 +43,12 @@ namespace VsChromium.Core.Logging {
       Debug.Assert(condition, message);
     }
 
+    public static Exception Fail(string message) {
+      LogAssertionFailed(message);
+      Debug.Assert(false, message);
+      throw new AssertionFailedException(message);
+    }
+
     private static void ThrowArgumentNullException(string paramName, string message) {
       try {
         throw new ArgumentNullException(paramName, message);

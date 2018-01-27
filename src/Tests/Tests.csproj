@@ -33,6 +33,7 @@
   <ItemGroup>
     <Compile Include="Core\TestConversion.cs" />
     <Compile Include="Core\TestPathHelpers.cs" />
+    <Compile Include="Core\TestSlimHashTable.cs" />
     <Compile Include="Mocks\FileSystemMock.cs" />
     <Compile Include="NativeInterop\TestGetLineExtent.cs" />
     <Compile Include="ServerProcess\TestUnregisterFile.cs" />

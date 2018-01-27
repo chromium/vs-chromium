@@ -135,7 +135,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
           // the dictionary will be used in incremental updates where FileName instances
           // may be new instances from a complete file system enumeration.
-          var files = new SlimDictionary<FileName, FileWithContents>(entities.Files.Count);
+          var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
           var filesWithContentsArray = new FileWithContents[entities.Files.Count];
           int filesWithContentsIndex = 0;
           foreach (var kvp in entities.Files) {
@@ -258,7 +258,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
 
-        var directoryNames = new SlimDictionary<DirectoryName, DirectoryData>(
+        var directoryNames = new Dictionary<DirectoryName, DirectoryData>(
           directories.Count,
           // Note: We can use reference equality here because the directory
           // names are contructed unique.
@@ -270,7 +270,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             new DirectoryData(kvp.Value.DirectoryName, kvp.Value.IsSymLink));
         }
 
-        var files = new SlimDictionary<FileName, ProjectFileData>(
+        var files = new Dictionary<FileName, ProjectFileData>(
           directories.Count * 2,
           // Note: We can use reference equality here because the file names are
           // constructed unique and the dictionary will be discarded once we are

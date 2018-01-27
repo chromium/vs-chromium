@@ -69,11 +69,11 @@ namespace VsChromium.Server.FileSystem {
     }
 
     /// <summary>
-    /// Returns the "project root" part of a <see cref="FileSystemName"/>. This
+    /// Returns the "project root" part of a <see cref="DirectoryName"/>. This
     /// function assumes "project root" is the absolute directory of <paramref
     /// name="name"/>.
     /// </summary>
-    private static DirectoryName GetProjectRoot(FileSystemName name) {
+    private static DirectoryName GetProjectRoot(DirectoryName name) {
       if (name == null)
         throw new ArgumentNullException("name");
 
@@ -84,7 +84,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     /// <summary>
-    /// Returns the "project root" part of a <see cref="FileSystemName"/>. This
+    /// Returns the "project root" part of a <see cref="DirectoryName"/>. This
     /// function assumes "project root" is the absolute directory of <paramref
     /// name="name"/>.
     /// </summary>

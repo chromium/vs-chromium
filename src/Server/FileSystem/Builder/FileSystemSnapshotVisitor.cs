@@ -18,20 +18,15 @@ namespace VsChromium.Server.FileSystem.Builder {
       return result;
     }
 
-    public static void VisitDirectories(
-      FileSystemSnapshot snapshot,
-      Action<IProject, DirectorySnapshot> callback) {
+    public static void VisitDirectories(FileSystemSnapshot snapshot, Action<IProject, DirectorySnapshot> callback) {
       foreach (var project in snapshot.ProjectRoots.ToForeachEnum()) {
         VisitDirectory(project.Project, project.Directory, callback);
       }
     }
 
-    private static void VisitDirectory(
-      IProject project,
-      DirectorySnapshot directory,
-      Action<IProject, DirectorySnapshot> callback) {
+    private static void VisitDirectory(IProject project, DirectorySnapshot directory, Action<IProject, DirectorySnapshot> callback) {
       callback(project, directory);
-      foreach (var child in directory.ChildDirectories) {
+      foreach (var child in directory.ChildDirectories.ToForeachEnum()) {
         VisitDirectory(project, child, callback);
       }
     }

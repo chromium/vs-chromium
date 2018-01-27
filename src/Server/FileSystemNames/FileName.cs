@@ -11,19 +11,21 @@ namespace VsChromium.Server.FileSystemNames {
   public struct FileName : IEquatable<FileName>, IComparable<FileName> {
     private readonly DirectoryName _parent;
     private readonly string _name;
+    private readonly int _hashCode;
 
     public FileName(DirectoryName parent, string name) {
       Invariants.CheckArgumentNotNull(parent, nameof(parent));
       Invariants.CheckArgumentNotNull(name, nameof(name), "File name is empty");
-      Invariants.CheckArgument(PathHelpers.IsFileName(name), nameof(name), "File name contains directory separator");
+      Invariants.CheckArgument(PathHelpers.IsFileName(name), nameof(name), "File name contains one or more directory separator");
       _parent = parent;
       _name = name;
+      _hashCode = HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
     }
 
-    public DirectoryName Parent { get { return _parent; } }
-    public RelativePath RelativePath { get { return _parent.RelativePath.CreateChild(_name); } }
-    public FullPath FullPath { get { return _parent.GetAbsolutePath().Combine(RelativePath); } }
-    public string Name { get { return _name; } }
+    public DirectoryName Parent => _parent;
+    public RelativePath RelativePath => _parent.RelativePath.CreateChild(_name);
+    public FullPath FullPath => _parent.GetAbsolutePath().Combine(RelativePath);
+    public string Name => _name;
 
     public override bool Equals(object obj) {
       if (obj is FileName) {
@@ -33,7 +35,7 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public override int GetHashCode() {
-      return HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.Instance.StringComparer.GetHashCode(_name));
+      return _hashCode;
     }
 
     public bool Equals(FileName other) {

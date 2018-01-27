@@ -38,10 +38,9 @@
     <Compile Include="FileSystem\DirectoryData.cs" />
     <Compile Include="FileSystem\Builder\ProjectPathChanges.cs" />
     <Compile Include="FileSystem\Builder\ProjectRootSnapshotBuilder.cs" />
-    <Compile Include="FileSystemNames\DirectoryName.cs" />
     <Compile Include="FileSystemNames\FileName.cs" />
-    <Compile Include="FileSystemNames\FileSystemName.cs" />
-    <Compile Include="FileSystemNames\FileSystemNameComparer.cs" />
+    <Compile Include="FileSystemNames\DirectoryName.cs" />
+    <Compile Include="FileSystemNames\DirectoryNameComparer.cs" />
     <Compile Include="FileSystemNames\FileSystemNameFactory.cs" />
     <Compile Include="FileSystemNames\IFileSystemNameFactory.cs" />
     <Compile Include="FileSystem\FullPathChanges.cs" />

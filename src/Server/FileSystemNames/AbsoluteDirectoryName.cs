@@ -14,10 +14,11 @@ namespace VsChromium.Server.FileSystemNames {
       _hashCode = path.GetHashCode();
     }
 
-    public override DirectoryName Parent { get { return null; } }
-    public override RelativePath RelativePath { get { return default(RelativePath); } }
-    public override FullPath FullPath { get { return _path; } }
-    public override string Name { get { return _path.FileName; } }
+    public override DirectoryName Parent => null;
+    public override RelativePath RelativePath => default(RelativePath);
+    public override FullPath FullPath => _path;
+    public override string Name => _path.FileName;
+
     public override int GetHashCode() {
       return _hashCode;
     }

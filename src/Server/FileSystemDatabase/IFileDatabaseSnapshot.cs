@@ -45,7 +45,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// Returns true if the file or directory <paramref name="name"/> is
     /// containted in a symlink directory.
     /// </summary>
-    bool IsContainedInSymLink(FileSystemName name);
+    bool IsContainedInSymLink(DirectoryName name);
 
   }
 

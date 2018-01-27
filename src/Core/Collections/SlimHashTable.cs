@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Collections {
   public class SlimHashTable<TKey, TValue> : IEnumerable<TValue> {
@@ -17,7 +18,7 @@ namespace VsChromium.Core.Collections {
     private readonly IEqualityComparer<TKey> _comparer;
     private Entry[] _entries;
     private int _count;
-    private int _mask;
+    private int _length;
     private Overflow _overflow;
 
     public SlimHashTable(ISlimHashTableParameters<TKey, TValue> parameters)
@@ -42,19 +43,14 @@ namespace VsChromium.Core.Collections {
       _unlocker = parameters.Unlnlocker;
       _loadFactor = loadFactor;
       _comparer = comparer;
-      _mask = GetMask(capacity, loadFactor);
-      _entries = new Entry[_mask + 1];
+      _length = GetPrimeLength(capacity, loadFactor);
+      _entries = new Entry[_length];
       _overflow = new Overflow();
     }
 
-    private static int GetMask(int capacity, double loadFactor) {
+    private static int GetPrimeLength(int capacity, double loadFactor) {
       var targetCapacity = (int)(capacity / loadFactor);
-      for (var mask = 32; mask < int.MaxValue; mask = mask * 2) {
-        if (targetCapacity < mask) {
-          return mask - 1;
-        }
-      }
-      throw Invariants.Fail("Dictionary capacity is greater than int.MaxValue");
+      return HashCode.GetPrime(targetCapacity);
     }
 
     public int Count => _count;
@@ -84,8 +80,8 @@ namespace VsChromium.Core.Collections {
 
     public void Clear() {
       using (new Locker(this)) {
-        _mask = 31;
-        _entries = new Entry[_mask + 1];
+        _length = HashCode.GetPrime(10);
+        _entries = new Entry[_length];
       }
     }
 
@@ -207,7 +203,7 @@ namespace VsChromium.Core.Collections {
     }
 
     private TValue AddEntry(TValue value, int hashCode) {
-      var index = hashCode & _mask;
+      var index = (hashCode & int.MaxValue) % _length;
       var entry = _entries[index];
       if (entry.IsValid) {
         var overflowIndex = _overflow.Allocate();
@@ -225,9 +221,9 @@ namespace VsChromium.Core.Collections {
     }
 
     private void Grow() {
-      int newMask = _mask * 2 + 1;
+      var newLength = HashCode.GetPrime(_length + 1);
       var oldEntries = _entries;
-      var newEntries = new Entry[newMask + 1];
+      var newEntries = new Entry[newLength];
       var newOverflow = new Overflow();
 
       // use oldEntries.Length to eliminate the rangecheck            
@@ -246,12 +242,12 @@ namespace VsChromium.Core.Collections {
 
       _entries = newEntries;
       _overflow = newOverflow;
-      _mask = newMask;
+      _length = newLength;
     }
 
     private void StoreNewEntry(Entry[] newEntries, Overflow newOverflow, TValue value) {
-      int newMask = newEntries.Length - 1;
-      var newIndex = _comparer.GetHashCode(_getKey(value)) & newMask;
+      var newLength = newEntries.Length;
+      var newIndex = (_comparer.GetHashCode(_getKey(value)) & int.MaxValue) % newLength;
       var newEntry = newEntries[newIndex];
       if (newEntry.IsValid) {
         // Store at head of overflow list
@@ -265,7 +261,7 @@ namespace VsChromium.Core.Collections {
     }
 
     private EntryLocation? FindEntryLocation(TKey key, int hashCode) {
-      int index = hashCode & _mask;
+      var index = (hashCode & int.MaxValue) % _length;
       var entry = _entries[index];
       if (!entry.IsValid) {
         return null;

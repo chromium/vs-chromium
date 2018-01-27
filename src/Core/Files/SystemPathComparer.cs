@@ -9,10 +9,10 @@ namespace VsChromium.Core.Files {
   /// The comparer instance to use for file s system paths comparisons.
   /// </summary>
   public static class SystemPathComparer {
-    public static IPathComparer Instance {
-      get {
-        return PathComparerRegistry.Default;
-      }
+    public static IPathComparer Instance => PathComparerRegistry.Default;
+
+    public static int GetHashCode(string name) {
+      return Instance.StringComparer.GetHashCode(name);
     }
 
     public static bool Equals(string name1, string name2) {

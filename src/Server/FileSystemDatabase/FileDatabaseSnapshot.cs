@@ -55,11 +55,11 @@ namespace VsChromium.Server.FileSystemDatabase {
       return contents.GetFileExtracts(maxLength, spans);
     }
 
-    public bool IsContainedInSymLink(FileSystemName name) {
+    public bool IsContainedInSymLink(DirectoryName name) {
       return IsContainedInSymLinkHelper(_directories, name);
     }
 
-    public static bool IsContainedInSymLinkHelper(IReadOnlyMap<DirectoryName, DirectoryData> directories, FileSystemName name) {
+    public static bool IsContainedInSymLinkHelper(IReadOnlyMap<DirectoryName, DirectoryData> directories, DirectoryName name) {
       var directoryName = (name as DirectoryName) ?? name.Parent;
       if (directoryName == null)
         return false;
@@ -86,7 +86,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       return IsContainedInSymLinkHelper(directories, name.Parent);
     }
 
-    public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, FileSystemName name) {
+    public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, DirectoryName name) {
       var directoryName = (name as DirectoryName) ?? name.Parent;
       if (directoryName == null)
         return false;

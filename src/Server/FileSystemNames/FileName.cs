@@ -11,7 +11,6 @@ namespace VsChromium.Server.FileSystemNames {
   public struct FileName : IEquatable<FileName>, IComparable<FileName> {
     private readonly DirectoryName _parent;
     private readonly string _name;
-    private readonly int _hashCode;
 
     public FileName(DirectoryName parent, string name) {
       Invariants.CheckArgumentNotNull(parent, nameof(parent));
@@ -19,7 +18,6 @@ namespace VsChromium.Server.FileSystemNames {
       Invariants.CheckArgument(PathHelpers.IsFileName(name), nameof(name), "File name contains one or more directory separator");
       _parent = parent;
       _name = name;
-      _hashCode = HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
     }
 
     public DirectoryName Parent => _parent;
@@ -35,7 +33,7 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public override int GetHashCode() {
-      return _hashCode;
+      return HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
     }
 
     public bool Equals(FileName other) {

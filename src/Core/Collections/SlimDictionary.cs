@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace VsChromium.Core.Collections {
   public class SlimDictionary<TKey, TValue> : IDictionary<TKey, TValue> {
-    private static readonly double DefaultLoadFactor = 3.0;
+    private static readonly double DefaultLoadFactor = 0.9;
     private readonly object _syncRoot = new object();
     private readonly SlimHashTable<TKey, Entry> _table;
     private KeyCollection _keys;

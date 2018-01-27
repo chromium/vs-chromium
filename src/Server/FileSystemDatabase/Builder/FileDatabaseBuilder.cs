@@ -223,6 +223,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
 
       FileDatabaseDebugLogger.LogFilePieces(filesWithContents, filePieces, partitionCount);
+      // ReSharper disable once CoVariantArrayConversion
       return filePieces;
     }
 
@@ -318,7 +319,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           entities.Files.AsParallelWrapper().ForAll(fileEntry => {
             Invariants.Assert(fileEntry.Value.FileWithContents.Contents == null);
 
+            // ReSharper disable once AccessToDisposedClosure
             if (progress.Step()) {
+              // ReSharper disable once AccessToDisposedClosure
               progress.DisplayProgress((i, n) =>
                 string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
 

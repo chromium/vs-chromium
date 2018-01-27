@@ -9,14 +9,14 @@ using System.Threading;
 namespace VsChromium.Core.Collections {
   public class ConcurrentHashSet<T> : SlimHashTable<T, T> {
 
-    public ConcurrentHashSet() : this(0.8, EqualityComparer<T>.Default) {
+    public ConcurrentHashSet() : this(0, 0.9, EqualityComparer<T>.Default) {
     }
 
-    public ConcurrentHashSet(double loadFactor) : this(loadFactor, EqualityComparer<T>.Default) {
+    public ConcurrentHashSet(int capacity, double loadFactor) : this(capacity, loadFactor, EqualityComparer<T>.Default) {
     }
 
-    public ConcurrentHashSet(double loadFactor, IEqualityComparer<T> comparer)
-      : base(new Parameters(), 0, loadFactor, comparer) {
+    public ConcurrentHashSet(int capacity, double loadFactor, IEqualityComparer<T> comparer)
+      : base(new Parameters(), capacity, loadFactor, comparer) {
     }
 
     public T GetOrAdd(T value) {

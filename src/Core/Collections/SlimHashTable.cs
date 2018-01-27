@@ -14,6 +14,7 @@ namespace VsChromium.Core.Collections {
     private readonly Func<TValue, TKey> _getKey;
     private readonly Action _locker;
     private readonly Action _unlocker;
+    private readonly int _capacity;
     private readonly double _loadFactor;
     private readonly IEqualityComparer<TKey> _comparer;
     private Entry[] _entries;
@@ -23,10 +24,6 @@ namespace VsChromium.Core.Collections {
 
     public SlimHashTable(ISlimHashTableParameters<TKey, TValue> parameters)
       : this(parameters, 0, DefaultLoadFactor, EqualityComparer<TKey>.Default) {
-    }
-
-    public SlimHashTable(ISlimHashTableParameters<TKey, TValue> parameters, int capacity)
-      : this(parameters, capacity, DefaultLoadFactor, EqualityComparer<TKey>.Default) {
     }
 
     public SlimHashTable(ISlimHashTableParameters<TKey, TValue> parameters, int capacity, double loadFactor)
@@ -41,16 +38,22 @@ namespace VsChromium.Core.Collections {
       _getKey = parameters.KeyGetter;
       _locker = parameters.Locker;
       _unlocker = parameters.Unlnlocker;
+      _capacity = capacity;
       _loadFactor = loadFactor;
       _comparer = comparer;
       _length = GetPrimeLength(capacity, loadFactor);
       _entries = new Entry[_length];
-      _overflow = new Overflow();
+      _overflow = new Overflow(GetOverflowCapacity(capacity, loadFactor));
     }
 
     private static int GetPrimeLength(int capacity, double loadFactor) {
       var targetCapacity = (int)(capacity / loadFactor);
       return HashCode.GetPrime(targetCapacity);
+    }
+
+    private static int GetOverflowCapacity(int capacity, double loadFactor) {
+      var targetCapacity = (int)(capacity / loadFactor);
+      return Math.Max(0, capacity - targetCapacity);
     }
 
     public int Count => _count;
@@ -80,8 +83,10 @@ namespace VsChromium.Core.Collections {
 
     public void Clear() {
       using (new Locker(this)) {
-        _length = HashCode.GetPrime(10);
+        _count = 0;
+        _length = GetPrimeLength(_capacity, _loadFactor);
         _entries = new Entry[_length];
+        _overflow = new Overflow(GetOverflowCapacity(_capacity, _loadFactor));
       }
     }
 
@@ -221,10 +226,12 @@ namespace VsChromium.Core.Collections {
     }
 
     private void Grow() {
-      var newLength = HashCode.GetPrime(_length + 1);
       var oldEntries = _entries;
+      var oldLength = _entries.Length;
+
+      var newLength = HashCode.GetPrime(GrowSize(oldLength));
       var newEntries = new Entry[newLength];
-      var newOverflow = new Overflow();
+      var newOverflow = new Overflow(Math.Max(_overflow.Capacity, _overflow.Count - (newLength - oldLength)));
 
       // use oldEntries.Length to eliminate the rangecheck            
       for (var i = 0; i < oldEntries.Length; i++) {
@@ -240,9 +247,13 @@ namespace VsChromium.Core.Collections {
         }
       }
 
+      _length = newLength;
       _entries = newEntries;
       _overflow = newOverflow;
-      _length = newLength;
+    }
+
+    private static int GrowSize(int oldLength) {
+      return Math.Max(2, (int)Math.Round((double)oldLength * 3 / 2));
     }
 
     private void StoreNewEntry(Entry[] newEntries, Overflow newOverflow, TValue value) {
@@ -317,13 +328,19 @@ namespace VsChromium.Core.Collections {
     }
 
     private class Overflow {
-      private readonly List<Entry> _entries = new List<Entry>();
+      private readonly int _capacity;
+      private readonly List<Entry> _entries;
       private int _freeListHead;
       private int _freeListSize;
 
-      public Overflow() {
+      public Overflow(int capacity) {
+        _capacity = capacity;
+        _entries = new List<Entry>(capacity);
         _freeListHead = -1;
       }
+
+      public int Capacity => _capacity;
+      public int Count => _entries.Count;
 
       public Entry Get(int index) {
         return _entries[index];

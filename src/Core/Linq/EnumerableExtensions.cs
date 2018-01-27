@@ -261,6 +261,19 @@ namespace VsChromium.Core.Linq {
     }
 
     /// <summary>
+    /// Returns <code>defaultValue</code> when not found.
+    /// </summary>
+    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value) {
+      TValue result;
+      if (dictionary.TryGetValue(key, out result)) {
+        return result;
+      }
+
+      dictionary[key] = value;
+      return value;
+    }
+
+    /// <summary>
     /// Returns <code>null</code> when not found.
     /// </summary>
     public static TValue GetValue<TKey, TValue>(this IReadOnlyMap<TKey, TValue> dictionary, TKey key) where TValue : class {

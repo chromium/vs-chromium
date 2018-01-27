@@ -30,6 +30,8 @@ namespace VsChromium.Server.FileSystemNames {
   ///       Parent = null
   /// </summary>
   public abstract class FileSystemName : IComparable<FileSystemName>, IEquatable<FileSystemName> {
+    private static readonly StringBuilderPool StringBuilderPoolInstance = new StringBuilderPool();
+
     /// <summary>
     /// Returns the parent directory, or null if <see cref="IsAbsoluteName"/> is true.
     /// </summary>
@@ -78,10 +80,8 @@ namespace VsChromium.Server.FileSystemNames {
       return FullPath.Value;
     }
 
-    private static readonly StringBuilderPool _stringBuilderPool  = new StringBuilderPool();
-
     protected static RelativePath BuildRelativePath(FileSystemName name) {
-      using (var sbFromPool =_stringBuilderPool.AcquireWithDisposable()) {
+      using (var sbFromPool = StringBuilderPoolInstance.AcquireWithDisposable()) {
         BuildRelativePath(sbFromPool.Value, name);
         return new RelativePath(sbFromPool.Value.ToString());
       }
@@ -101,21 +101,8 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     #region Comparison/Equality plumbing
-
     public int CompareTo(FileSystemName other) {
       return FileSystemNameComparer.Instance.Compare(this, other);
-#if false
-      var result = FileSystemNameComparer.Instance.Compare(this, other);
-      var result2 = SystemPathComparer.Instance.StringComparer.Compare(this.FullPath.Value, other.FullPath.Value);
-      if (result < 0) result = -1;
-      if (result > 0) result = 1;
-      if (result2 < 0) result2 = -1;
-      if (result2 > 0) result2 = 1;
-      if (result != result2) {
-        result = FileSystemNameComparer.Instance.Compare(this, other);
-      }
-      return result;
-#endif
     }
 
     public bool Equals(FileSystemName other) {
@@ -129,7 +116,6 @@ namespace VsChromium.Server.FileSystemNames {
     public override bool Equals(object other) {
       return Equals(other as FileSystemName);
     }
-
-#endregion
+    #endregion
   }
 }

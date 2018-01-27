@@ -22,5 +22,13 @@ namespace VsChromium.Core.Files {
     public static int Compare(string name1, string name2) {
       return Instance.StringComparer.Compare(name1, name2);
     }
+
+    public static bool EqualsNames(string name1, string name2) {
+      return StringComparer.OrdinalIgnoreCase.Equals(name1, name2);
+    }
+
+    public static int CompareNames(string name1, string name2) {
+      return StringComparer.OrdinalIgnoreCase.Compare(name1, name2);
+    }
   }
 }

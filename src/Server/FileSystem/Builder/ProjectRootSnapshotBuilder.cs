@@ -163,7 +163,7 @@ namespace VsChromium.Server.FileSystem.Builder {
           // Note: File system change notifications are not always 100%
           // reliable. We may get a "create" event for directory we already know
           // about.
-          var index = childDirectories.FindIndex(x => SystemPathComparer.Equals(x.DirectoryName.Name, createdDirectoryName.Name));
+          var index = childDirectories.FindIndex(x => SystemPathComparer.EqualsNames(x.DirectoryName.Name, createdDirectoryName.Name));
           if (index >= 0) {
             childDirectories.RemoveAt(index);
           }
@@ -198,7 +198,7 @@ namespace VsChromium.Server.FileSystem.Builder {
           // Note: File system change notifications are not always 100%
           // reliable. We may get a "create" event for files we already know
           // about.
-          ArrayUtilities.RemoveDuplicates(newFileListTemp, (x, y) => SystemPathComparer.Equals(x.Name, y.Name));
+          ArrayUtilities.RemoveDuplicates(newFileListTemp, (x, y) => SystemPathComparer.EqualsNames(x.Name, y.Name));
         }
         newFileList = newFileListTemp;
       }

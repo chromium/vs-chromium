@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -51,7 +50,7 @@ namespace VsChromium.Server.FileSystemNames {
 
       var result = CompareSameDistance(x.Parent, y.Parent);
       if (result == 0)
-        result = SystemPathComparer.Compare(x.Name, y.Name);
+        result = SystemPathComparer.CompareNames(x.Name, y.Name);
       return result;
     }
 
@@ -73,9 +72,16 @@ namespace VsChromium.Server.FileSystemNames {
         Invariants.Assert(x != null);
       }
     }
+
     public bool Equals(FileSystemName x, FileSystemName y) {
-      if (x == null || y == null)
-        return ReferenceEquals(x, y);
+      if (ReferenceEquals(x, y)) {
+        return true;
+      }
+
+      if (x == null || y == null) {
+        return false;
+      }
+
       var xabs = x as AbsoluteDirectoryName;
       var yabs = y as AbsoluteDirectoryName;
       if (xabs != null || yabs != null) {
@@ -86,14 +92,14 @@ namespace VsChromium.Server.FileSystemNames {
 
       var result = Equals(x.Parent, y.Parent);
       if (result)
-        result = SystemPathComparer.Instance.StringComparer.Equals(x.Name, y.Name);
+        result = SystemPathComparer.EqualsNames(x.Name, y.Name);
       return result;
     }
 
     public int GetHashCode(FileSystemName x) {
       var abs = x as AbsoluteDirectoryName;
       if (abs != null) {
-        return abs.FullPath.GetHashCode();
+        return abs.GetHashCode();
       }
 
       return HashCode.Combine(GetHashCode(x.Parent), SystemPathComparer.Instance.StringComparer.GetHashCode(x.Name));

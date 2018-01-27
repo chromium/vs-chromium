@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
@@ -17,7 +16,7 @@ namespace VsChromium.Server.FileSystemNames {
     public FileSystemNameFactory() {
       _dictionaries = new ConcurrentHashSet<Entry>[BucketCount];
       for (var i = 0; i < _dictionaries.Length; i++) {
-        _dictionaries[i] = new ConcurrentHashSet<Entry>(3.0);
+        _dictionaries[i] = new ConcurrentHashSet<Entry>(2.0);
       }
     }
 

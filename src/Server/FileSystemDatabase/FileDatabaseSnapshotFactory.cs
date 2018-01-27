@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Threading;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
@@ -40,10 +41,10 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public IFileDatabaseSnapshot CreateEmpty() {
       return new FileDatabaseSnapshot(
-        new Dictionary<FullPath, string>(),
-        new Dictionary<FileName, FileWithContents>(),
+        new Dictionary<FullPath, string>().ToReadOnlyMap(),
+        new Dictionary<FileName, FileWithContents>().ToReadOnlyMap(),
         new List<FileName>(),
-        new Dictionary<DirectoryName, DirectoryData>(),
+        new Dictionary<DirectoryName, DirectoryData>().ToReadOnlyMap(),
         new List<IFileContentsPiece>(),
         0);
     }

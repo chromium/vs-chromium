@@ -1,24 +1,89 @@
-﻿using System;
+﻿// Copyright 2018 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace VsChromium.Core.Collections {
-  public class SlimDictionary<TKey, TValue> : IDictionary<TKey, TValue> {
-    private static readonly double DefaultLoadFactor = 3.0;
+  public class ReadOnlyMapSortedList<TKey, TValue> : IReadOnlyMap<TKey, TValue> {
+    private readonly IList<KeyValuePair<TKey, TValue>> _entries;
+    private readonly IComparer<TKey> _comparer;
+    private readonly Func<KeyValuePair<TKey, TValue>, TKey, int> _itemComparer;
     private readonly object _syncRoot = new object();
-    private readonly SlimHashTable<TKey, Entry> _table;
     private KeyCollection _keys;
     private ValueCollection _values;
 
-    public SlimDictionary() : this(0, EqualityComparer<TKey>.Default) {
+    public ReadOnlyMapSortedList(KeyValuePair<TKey, TValue>[] entries) {
+      _entries = entries;
+      _comparer = Comparer<TKey>.Default;
+      _itemComparer = ItemComparer;
     }
 
-    public SlimDictionary(int capacity) : this(capacity, EqualityComparer<TKey>.Default) {
+    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
+      return _entries.GetEnumerator();
     }
 
-    public SlimDictionary(int capacity, IEqualityComparer<TKey> comparer) {
-      _table = new SlimHashTable<TKey, Entry>(new Parameters(), capacity, DefaultLoadFactor, comparer);
+    IEnumerator IEnumerable.GetEnumerator() {
+      return GetEnumerator();
+    }
+
+    public void Add(KeyValuePair<TKey, TValue> item) {
+      throw new NotSupportedException();
+    }
+
+    public void Clear() {
+      throw new NotSupportedException();
+    }
+
+    public bool Contains(KeyValuePair<TKey, TValue> item) {
+      return FindIndex(item.Key) >= 0;
+    }
+
+    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
+      _entries.CopyTo(array, arrayIndex);
+    }
+
+    public bool Remove(KeyValuePair<TKey, TValue> item) {
+      throw new NotSupportedException();
+    }
+
+    public int Count {
+      get { return _entries.Count; }
+    }
+
+    public bool IsReadOnly {
+      get { return true; }
+    }
+
+    public TValue this[TKey key] {
+      get {
+        TValue value;
+        if (!TryGetValue(key, out value)) {
+          throw new ArgumentException("Key not found", nameof(key));
+        }
+        return value;
+      }
+    }
+
+    public object SyncRoot {
+      get { return _syncRoot; }
+    }
+
+    public bool TryGetValue(TKey key, out TValue value) {
+      var index = FindIndex(key);
+      if (index < 0) {
+        value = default(TValue);
+        return false;
+      }
+      value = _entries[index].Value;
+      return true;
+    }
+
+    public bool ContainsKey(TKey key) {
+      return FindIndex(key) >= 0;
     }
 
     public ICollection<TKey> Keys {
@@ -39,96 +104,18 @@ namespace VsChromium.Core.Collections {
       }
     }
 
-    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-      return _table.Select(x => new KeyValuePair<TKey, TValue>(x.Key, x.Value)).GetEnumerator();
+    private int FindIndex(TKey key) {
+      return SortedArrayHelpers.BinarySearch(_entries, key, _itemComparer);
     }
 
-    IEnumerator IEnumerable.GetEnumerator() {
-      return GetEnumerator();
-    }
-
-    public void Add(KeyValuePair<TKey, TValue> item) {
-      _table.Add(item.Key, new Entry(item.Key, item.Value));
-    }
-
-    public void Clear() {
-      _table.Clear();
-    }
-
-    public bool Contains(KeyValuePair<TKey, TValue> item) {
-      return _table.Contains(item.Key);
-    }
-
-    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
-      _table.CopyTo(array, (k, v) => new KeyValuePair<TKey, TValue>(k, v.Value), arrayIndex);
-    }
-
-    public bool Remove(KeyValuePair<TKey, TValue> item) {
-      return _table.Remove(item.Key);
-    }
-
-    public int Count {
-      get { return _table.Count; }
-    }
-
-    public bool IsReadOnly {
-      get { return false; }
-    }
-
-    public object SyncRoot {
-      get { return _syncRoot; }
-    }
-
-    public bool ContainsKey(TKey key) {
-      return _table.Contains(key);
-    }
-
-    public bool ContainsValue(TValue value) {
-      if (ReferenceEquals(value, null)) {
-        foreach (var entry in this) {
-          if (entry.Value == null)
-            return true;
-        }
-      } else {
-        var equalityComparer = EqualityComparer<TValue>.Default;
-        foreach (var entry in this) {
-          if (equalityComparer.Equals(entry.Value, value)) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    }
-
-    public void Add(TKey key, TValue value) {
-      _table.Add(key, new Entry(key, value));
-    }
-
-    public bool Remove(TKey key) {
-      return _table.Remove(key);
-    }
-
-    public bool TryGetValue(TKey key, out TValue value) {
-      Entry entry;
-      if (_table.TryGetValue(key, out entry)) {
-        value = entry.Value;
-        return true;
-      }
-
-      value = default(TValue);
-      return false;
-    }
-
-    public TValue this[TKey key] {
-      get { return _table[key].Value; }
-      set { _table[key] = new Entry(key, value); }
+    private int ItemComparer(KeyValuePair<TKey, TValue> keyValuePair, TKey key) {
+      return _comparer.Compare(keyValuePair.Key, key);
     }
 
     private class KeyCollection : ICollection<TKey>, ICollection, IReadOnlyCollection<TKey> {
-      private readonly SlimDictionary<TKey, TValue> _dictionary;
+      private readonly IReadOnlyMap<TKey, TValue> _dictionary;
 
-      public KeyCollection(SlimDictionary<TKey, TValue> dictionary) {
+      public KeyCollection(IReadOnlyMap<TKey, TValue> dictionary) {
         _dictionary = dictionary;
       }
 
@@ -195,9 +182,9 @@ namespace VsChromium.Core.Collections {
     }
 
     private class ValueCollection : ICollection<TValue>, ICollection, IReadOnlyCollection<TValue> {
-      private readonly SlimDictionary<TKey, TValue> _dictionary;
+      private readonly IReadOnlyMap<TKey, TValue> _dictionary;
 
-      public ValueCollection(SlimDictionary<TKey, TValue> dictionary) {
+      public ValueCollection(IReadOnlyMap<TKey, TValue> dictionary) {
         _dictionary = dictionary;
       }
 
@@ -218,7 +205,12 @@ namespace VsChromium.Core.Collections {
       }
 
       public bool Contains(TValue item) {
-        return _dictionary.ContainsValue(item);
+        foreach (var kvp in _dictionary) {
+          if (Equals(kvp.Value, item)) {
+            return true;
+          }
+        }
+        return false;
       }
 
       public void CopyTo(TValue[] array, int arrayIndex) {
@@ -259,30 +251,6 @@ namespace VsChromium.Core.Collections {
       }
       public bool IsReadOnly {
         get { return true; }
-      }
-    }
-
-    private struct Entry {
-      internal readonly TKey Key;
-      internal readonly TValue Value;
-
-      public Entry(TKey key, TValue value) {
-        Key = key;
-        Value = value;
-      }
-    }
-
-    private class Parameters : ISlimHashTableParameters<TKey, Entry> {
-      public Func<Entry, TKey> KeyGetter {
-        get { return t => t.Key; }
-      }
-
-      public Action Locker {
-        get { return () => { }; }
-      }
-
-      public Action Unlnlocker {
-        get { return () => { }; }
       }
     }
   }

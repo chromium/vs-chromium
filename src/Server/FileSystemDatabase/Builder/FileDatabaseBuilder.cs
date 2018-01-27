@@ -152,10 +152,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
           return new FileDatabaseSnapshot(
-            entities.ProjectHashes,
-            files,
+            entities.ProjectHashes.ToReadOnlyMap(),
+            files.ToReadOnlyMap(),
             files.Keys.ToArray(),
-            directories,
+            directories.ToReadOnlyMap(),
             searchableContentsCollection,
             filesWithContents.Count);
         }

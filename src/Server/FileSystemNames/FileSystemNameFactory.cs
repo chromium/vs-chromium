@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
@@ -10,12 +12,12 @@ namespace VsChromium.Server.FileSystemNames {
   [Export(typeof(IFileSystemNameFactory))]
   public class FileSystemNameFactory : IFileSystemNameFactory {
     private const int BucketCount = 31; // Prime number
-    private readonly ConcurrentHashSet<string>[] _dictionaries;
+    private readonly ConcurrentHashSet<Entry>[] _dictionaries;
 
     public FileSystemNameFactory() {
-      _dictionaries = new ConcurrentHashSet<string>[BucketCount];
+      _dictionaries = new ConcurrentHashSet<Entry>[BucketCount];
       for (var i = 0; i < _dictionaries.Length; i++) {
-        _dictionaries[i] = new ConcurrentHashSet<string>(3.0);
+        _dictionaries[i] = new ConcurrentHashSet<Entry>(3.0);
       }
     }
 
@@ -32,7 +34,37 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     private string InterName(string name) {
-      return _dictionaries[name.Length % BucketCount].GetOrAdd(name);
+      return _dictionaries[name.Length % BucketCount].GetOrAdd(new Entry(name)).Value;
+    }
+
+    private struct Entry : IEquatable<Entry> {
+      private readonly int _hashCode;
+      private readonly string _value;
+
+      public Entry(string value) {
+        _hashCode = StringComparer.OrdinalIgnoreCase.GetHashCode(value);
+        _value = value;
+      }
+
+      public string Value {
+        get { return _value; }
+      }
+
+      public override int GetHashCode() {
+        return _hashCode;
+      }
+
+      public override bool Equals(object obj) {
+        if (obj is Entry) {
+          return Equals((Entry)obj);
+        }
+        return false;
+      }
+
+      public bool Equals(Entry other) {
+        return _hashCode == other._hashCode &&
+               _value == other._value;
+      }
     }
   }
 }

@@ -31,6 +31,8 @@ namespace VsChromium.Core.Files {
     public override int Compare(string x, string y) {
       x = (x ?? string.Empty);
       y = (y ?? string.Empty);
+      if (ReferenceEquals(x, y))
+        return 0;
       return Compare(x, 0, y, 0, Math.Max(x.Length, y.Length));
     }
 

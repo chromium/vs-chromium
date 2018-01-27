@@ -45,10 +45,14 @@
     <Compile Include="Collections\ConcurrentBitArray.cs" />
     <Compile Include="Collections\ConcurrentHashSet.cs" />
     <Compile Include="Collections\IBitArray.cs" />
+    <Compile Include="Collections\IReadOnlyMap.cs" />
     <Compile Include="Collections\ISlimHashTableParameters.cs" />
     <Compile Include="Collections\LeftRightItemPair.cs" />
     <Compile Include="Collections\ObjectPool.cs" />
     <Compile Include="Collections\PartitionedBitArray.cs" />
+    <Compile Include="Collections\ReadOnlyMapSortedList.cs" />
+    <Compile Include="Collections\ReadOnlyMapDict.cs" />
+    <Compile Include="Collections\ReadOnlyMapExtensions.cs" />
     <Compile Include="Collections\ReferenceEqualityComparer.cs" />
     <Compile Include="Collections\ConcurrentBufferQueue.cs" />
     <Compile Include="Collections\SlimDictionary.cs" />

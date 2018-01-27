@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
@@ -16,16 +17,16 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
   /// </summary>
   public class FileDatabaseSnapshot : IFileDatabaseSnapshot {
-    private readonly IDictionary<FullPath, string> _projectHashes;
-    private readonly IDictionary<FileName, FileWithContents> _files;
+    private readonly IReadOnlyMap<FullPath, string> _projectHashes;
+    private readonly IReadOnlyMap<FileName, FileWithContents> _files;
     private readonly IList<FileName> _fileNames;
-    private readonly IDictionary<DirectoryName, DirectoryData> _directories;
+    private readonly IReadOnlyMap<DirectoryName, DirectoryData> _directories;
     private readonly IList<IFileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
-    public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes,
-      IDictionary<FileName, FileWithContents> files, IList<FileName> fileNames,
-      IDictionary<DirectoryName, DirectoryData> directories, IList<IFileContentsPiece> fileContentsPieces,
+    public FileDatabaseSnapshot(IReadOnlyMap<FullPath, string> projectHashes,
+      IReadOnlyMap<FileName, FileWithContents> files, IList<FileName> fileNames,
+      IReadOnlyMap<DirectoryName, DirectoryData> directories, IList<IFileContentsPiece> fileContentsPieces,
       long searchableFileCount) {
       _projectHashes = projectHashes;
       _files = files;
@@ -35,9 +36,9 @@ namespace VsChromium.Server.FileSystemDatabase {
       _searchableFileCount = searchableFileCount;
     }
 
-    public IDictionary<FullPath, string> ProjectHashes => _projectHashes;
-    public IDictionary<FileName, FileWithContents> Files => _files;
-    public IDictionary<DirectoryName, DirectoryData> Directories => _directories;
+    public IReadOnlyMap<FullPath, string> ProjectHashes => _projectHashes;
+    public IReadOnlyMap<FileName, FileWithContents> Files => _files;
+    public IReadOnlyMap<DirectoryName, DirectoryData> Directories => _directories;
     public IList<FileName> FileNames => _fileNames;
     public IList<IFileContentsPiece> FileContentsPieces => _fileContentsPieces;
     public long SearchableFileCount => _searchableFileCount;
@@ -56,6 +57,25 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     public bool IsContainedInSymLink(FileSystemName name) {
       return IsContainedInSymLinkHelper(_directories, name);
+    }
+
+    public static bool IsContainedInSymLinkHelper(IReadOnlyMap<DirectoryName, DirectoryData> directories, FileSystemName name) {
+      var directoryName = (name as DirectoryName) ?? name.Parent;
+      if (directoryName == null)
+        return false;
+
+      DirectoryData directoryData;
+      if (!directories.TryGetValue(directoryName, out directoryData))
+        return false;
+
+      if (directoryData.IsSymLink)
+        return true;
+
+      var parent = directoryName.Parent;
+      if (parent == null)
+        return false;
+
+      return IsContainedInSymLinkHelper(directories, parent);
     }
 
     public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, FileSystemName name) {

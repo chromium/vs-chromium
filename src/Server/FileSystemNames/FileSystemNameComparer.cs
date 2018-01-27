@@ -38,8 +38,9 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public int CompareSameDistance(FileSystemName x, FileSystemName y) {
-      Invariants.Assert(x != null);
-      Invariants.Assert(y != null);
+      if (ReferenceEquals(x, y)) {
+        return 0;
+      }
 
       var xabs = x as AbsoluteDirectoryName;
       var yabs = y as AbsoluteDirectoryName;
@@ -48,9 +49,9 @@ namespace VsChromium.Server.FileSystemNames {
         return xabs.FullPath.CompareTo(yabs.FullPath);
       }
 
-      var result = Compare(x.Parent, y.Parent);
+      var result = CompareSameDistance(x.Parent, y.Parent);
       if (result == 0)
-        result = SystemPathComparer.Instance.StringComparer.Compare(x.Name, y.Name);
+        result = SystemPathComparer.Compare(x.Name, y.Name);
       return result;
     }
 

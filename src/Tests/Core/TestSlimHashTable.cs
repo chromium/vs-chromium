@@ -41,7 +41,7 @@ namespace VsChromium.Tests.Core {
     }
 
     private void AssertTableContents(SlimHashTable<string, string> table) {
-      var dic = table.ToDictionary(x => x, x => x);
+      var dic = table.ToDictionary(x => x.Key, x => x.Value);
       if (table.Count >= 1) {
         Assert.IsTrue(table.Contains("foo"));
         Assert.IsTrue(dic.ContainsKey("foo"));

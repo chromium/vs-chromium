@@ -9,7 +9,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Core.Collections {
-  public class SlimHashTable<TKey, TValue> : IEnumerable<TValue> {
+  public partial class SlimHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
     private static readonly double DefaultLoadFactor = 2.0;
     private readonly Func<TValue, TKey> _getKey;
     private readonly Action _locker;
@@ -17,10 +17,13 @@ namespace VsChromium.Core.Collections {
     private readonly int _capacity;
     private readonly double _loadFactor;
     private readonly IEqualityComparer<TKey> _comparer;
+    private readonly object _syncRoot = new object();
     private Entry[] _entries;
     private int _count;
     private int _length;
     private Overflow _overflow;
+    private KeyCollection _keys;
+    private ValueCollection _values;
 
     public SlimHashTable(ISlimHashTableParameters<TKey, TValue> parameters)
       : this(parameters, 0, DefaultLoadFactor, EqualityComparer<TKey>.Default) {
@@ -56,15 +59,46 @@ namespace VsChromium.Core.Collections {
       return Math.Max(0, capacity - targetCapacity);
     }
 
+    public bool Remove(KeyValuePair<TKey, TValue> item) {
+      return Remove(item.Key);
+    }
+
     public int Count => _count;
+    public bool IsReadOnly => false;
 
     public TValue this[TKey key] {
-      get { return Get(key); }
+      get { return GetOrDefault(key); }
       set { GetOrAdd(key, value); }
+    }
+
+    public ICollection<TKey> Keys {
+      get {
+        if (_keys == null) {
+          _keys = new KeyCollection(this);
+        }
+        return _keys;
+      }
+    }
+
+    public ICollection<TValue> Values {
+      get {
+        if (_values == null) {
+          _values = new ValueCollection(this);
+        }
+        return _values;
+      }
+    }
+
+    public object SyncRoot {
+      get { return _syncRoot; }
     }
 
     public void Add(TValue value) {
       Add(_getKey(value), value);
+    }
+
+    public bool ContainsKey(TKey key) {
+      return Contains(key);
     }
 
     public void Add(TKey key, TValue value) {
@@ -81,6 +115,10 @@ namespace VsChromium.Core.Collections {
       }
     }
 
+    public void Add(KeyValuePair<TKey, TValue> item) {
+      Add(item.Key, item.Value);
+    }
+
     public void Clear() {
       using (new Locker(this)) {
         _count = 0;
@@ -88,6 +126,14 @@ namespace VsChromium.Core.Collections {
         _entries = new Entry[_length];
         _overflow = new Overflow(GetOverflowCapacity(_capacity, _loadFactor));
       }
+    }
+
+    public bool Contains(KeyValuePair<TKey, TValue> item) {
+      return ContainsKey(item.Key);
+    }
+
+    public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
+      CopyTo(array, (k,v) => new KeyValuePair<TKey, TValue>(k, v), arrayIndex);
     }
 
     public bool Contains(TKey key) {
@@ -99,7 +145,11 @@ namespace VsChromium.Core.Collections {
       }
     }
 
-    public TValue Get(TKey key) {
+    private bool ContainsValue(TValue item) {
+      return ContainsKey(_getKey(item));
+    }
+
+    public TValue GetOrDefault(TKey key) {
       TValue result;
       if (!TryGetValue(key, out result)) {
         return default(TValue);
@@ -144,8 +194,8 @@ namespace VsChromium.Core.Collections {
     public void CopyTo<TArray>(TArray[] array, Func<TKey, TValue, TArray> convert, int arrayIndex) {
       using (new Locker(this)) {
         var index = arrayIndex;
-        foreach (var entry in this) {
-          array[index] = convert(_getKey(entry), entry);
+        foreach (var kvp in this) {
+          array[index] = convert(kvp.Key, kvp.Value);
           index++;
         }
       }
@@ -161,9 +211,9 @@ namespace VsChromium.Core.Collections {
           return false;
         }
 
-        int index = location.Value.Index;
-        int overflowIndex = location.Value.OverflowIndex;
-        int previousOverflowIndex = location.Value.PreviousOverflowIndex;
+        var index = location.Value.Index;
+        var overflowIndex = location.Value.OverflowIndex;
+        var previousOverflowIndex = location.Value.PreviousOverflowIndex;
         if (overflowIndex >= 0) {
           if (previousOverflowIndex >= 0) {
             // Remove entry contained in the overflow table
@@ -194,10 +244,10 @@ namespace VsChromium.Core.Collections {
       }
     }
 
-    public IEnumerator<TValue> GetEnumerator() {
+    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
       foreach (var e in _entries) {
         for (var head = e; head.IsValid;) {
-          yield return head.Value;
+          yield return new KeyValuePair<TKey, TValue>(_getKey(head.Value), head.Value);
           if (head.OverflowIndex >= 0) {
             head = _overflow.Get(head.OverflowIndex);
           } else {
@@ -205,6 +255,10 @@ namespace VsChromium.Core.Collections {
           }
         }
       }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() {
+      return GetEnumerator();
     }
 
     private TValue AddEntry(TValue value, int hashCode) {
@@ -301,136 +355,6 @@ namespace VsChromium.Core.Collections {
         previousOverflowIndex = overflowIndex;
         overflowIndex = entry.OverflowIndex;
       }
-    }
-
-    private struct EntryLocation {
-      private readonly int _index;
-      private readonly int _previousOverflowIndex;
-      private readonly int _overflowIndex;
-
-      public EntryLocation(int index, int previousOverflowIndex, int overflowIndex) {
-        _index = index;
-        _previousOverflowIndex = previousOverflowIndex;
-        _overflowIndex = overflowIndex;
-      }
-
-      public int Index {
-        get { return _index; }
-      }
-
-      public int PreviousOverflowIndex {
-        get { return _previousOverflowIndex; }
-      }
-
-      public int OverflowIndex {
-        get { return _overflowIndex; }
-      }
-    }
-
-    private class Overflow {
-      private readonly int _capacity;
-      private readonly List<Entry> _entries;
-      private int _freeListHead;
-      private int _freeListSize;
-
-      public Overflow(int capacity) {
-        _capacity = capacity;
-        _entries = new List<Entry>(capacity);
-        _freeListHead = -1;
-      }
-
-      public int Capacity => _capacity;
-      public int Count => _entries.Count;
-
-      public Entry Get(int index) {
-        return _entries[index];
-      }
-
-      public void Free(int index) {
-        _entries[index] = new Entry(default(TValue), _freeListHead);
-        _freeListHead = index;
-        _freeListSize++;
-      }
-
-      public void SetOverflowIndex(int index, int overflowIndex) {
-        _entries[index] = new Entry(_entries[index].Value, overflowIndex);
-      }
-
-      public int Allocate() {
-        if (_freeListHead < 0) {
-          Invariants.Assert(_freeListSize == 0);
-          Grow();
-        }
-
-        var index = _freeListHead;
-        _freeListHead = _entries[index].OverflowIndex;
-        _entries[index] = default(Entry);
-        _freeListSize--;
-        return index;
-      }
-
-      private void Grow() {
-        var oldLen = _entries.Count;
-        var newLen = Math.Max(2, _entries.Count * 2);
-        for (var i = oldLen; i < newLen; i++) {
-          var nextIndex = (i + 1 < newLen) ? i + 1 : -1;
-          _entries.Add(new Entry(default(TValue), nextIndex));
-        }
-        _freeListHead = oldLen;
-        _freeListSize += newLen - oldLen;
-      }
-
-      public void Set(int index, Entry entry) {
-        _entries[index] = entry;
-      }
-    }
-
-    private struct Entry {
-      public readonly TValue Value;
-      /// <summary>
-      /// 0 = Invalid entry (<code>null</code>)
-      /// -1 = No overflow index
-      /// [1.. n] == overflow index [0..n -1]
-      /// </summary>
-      private readonly int _overflowIndex; // index + 1, so that 0 means "invalid"
-
-      internal Entry(TValue value, int overflowIndex) {
-        Value = value;
-        _overflowIndex = overflowIndex == -1 ? -1 : overflowIndex + 1;
-      }
-
-      /// <summary>
-      /// Index into overflow buffer. <code>-1</code> if last entry in the chain.
-      /// </summary>
-      public int OverflowIndex {
-        get {
-          Invariants.Assert(IsValid, "Overflow index is not valid");
-          return _overflowIndex == -1 ? -1 : _overflowIndex - 1;
-        }
-      }
-
-      public bool IsValid => _overflowIndex != 0;
-
-      public override string ToString() {
-        return $"Value={Value} - OverflowIndex={(IsValid ? OverflowIndex.ToString() : "n/a")}";
-      }
-    }
-
-    private struct Locker : IDisposable {
-      private readonly SlimHashTable<TKey, TValue> _table;
-
-      public Locker(SlimHashTable<TKey, TValue> table) {
-        _table = table;
-        _table._locker();
-      }
-
-      public void Dispose() {
-        _table._unlocker();
-      }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() {
-      return GetEnumerator();
     }
   }
 }

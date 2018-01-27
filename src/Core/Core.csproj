@@ -56,7 +56,16 @@
     <Compile Include="Collections\ReferenceEqualityComparer.cs" />
     <Compile Include="Collections\ConcurrentBufferQueue.cs" />
     <Compile Include="Collections\SlimDictionary.cs" />
+    <Compile Include="Collections\SlimDictionary.Entry.cs" />
+    <Compile Include="Collections\SlimDictionary.Parameters.cs" />
+    <Compile Include="Collections\SlimDictionary.ValueCollection.cs" />
     <Compile Include="Collections\SlimHashTable.cs" />
+    <Compile Include="Collections\SlimHashTable.Entry.cs" />
+    <Compile Include="Collections\SlimHashTable.EntryLocation.cs" />
+    <Compile Include="Collections\SlimHashTable.KeyCollection.cs" />
+    <Compile Include="Collections\SlimHashTable.Locker.cs" />
+    <Compile Include="Collections\SlimHashTable.Overflow.cs" />
+    <Compile Include="Collections\SlimHashTable.ValueCollection.cs" />
     <Compile Include="Collections\SortedArray.cs" />
     <Compile Include="Collections\SortedArrayHelpers.cs" />
     <Compile Include="Collections\StringBuilderPool.cs" />

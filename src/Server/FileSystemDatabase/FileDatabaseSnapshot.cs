@@ -78,6 +78,14 @@ namespace VsChromium.Server.FileSystemDatabase {
       return IsContainedInSymLinkHelper(directories, parent);
     }
 
+    public static bool IsContainedInSymLinkHelper(IReadOnlyMap<DirectoryName, DirectoryData> directories, FileName name) {
+      return IsContainedInSymLinkHelper(directories, name.Parent);
+    }
+
+    public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, FileName name) {
+      return IsContainedInSymLinkHelper(directories, name.Parent);
+    }
+
     public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, FileSystemName name) {
       var directoryName = (name as DirectoryName) ?? name.Parent;
       if (directoryName == null)

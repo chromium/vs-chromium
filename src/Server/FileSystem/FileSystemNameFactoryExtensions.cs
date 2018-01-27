@@ -14,15 +14,15 @@ using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem {
   public static class FileSystemNameFactoryExtensions {
-    public static DirectoryEntry ToFlatSearchResult(IFileSystemNameFactory fileSystemNameFactory, IEnumerable<FileSystemName> names) {
-      Func<FileSystemName, FileSystemName> fileNameMapper = x => x;
-      Func<FileSystemName, FileSystemEntryData> dataMapper = x => null;
+    public static DirectoryEntry ToFlatSearchResult(IFileSystemNameFactory fileSystemNameFactory, IEnumerable<FileName> names) {
+      Func<FileName, FileName> fileNameMapper = x => x;
+      Func<FileName, FileSystemEntryData> dataMapper = x => null;
       return ToFlatSearchResult(fileSystemNameFactory, names, fileNameMapper, dataMapper);
     }
 
     public static DirectoryEntry ToFlatSearchResult<TSource>(IFileSystemNameFactory fileSystemNameFactory,
       IEnumerable<TSource> source,
-      Func<TSource, FileSystemName> fileNameMapper,
+      Func<TSource, FileName> fileNameMapper,
       Func<TSource, FileSystemEntryData> dataMapper) {
       var sw = Stopwatch.StartNew();
       // Group by root directory (typically one)
@@ -45,27 +45,27 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private static IEnumerable<FileSystemEntry> CreateGroup<TSource>(IEnumerable<TSource> grouping,
-      Func<TSource, FileSystemName> fileNameMapper,
+      Func<TSource, FileName> fileNameMapper,
       Func<TSource, FileSystemEntryData> dataMapper) {
       return grouping
-        .Where(x => !fileNameMapper(x).IsAbsoluteName)
+        //.Where(x => !fileNameMapper(x).IsAbsoluteName)
         .OrderBy(x => fileNameMapper(x).RelativePath)
         .Select(x => CreateFileSystemEntry(x, fileNameMapper, dataMapper));
     }
 
-    private static FileSystemEntry CreateFileSystemEntry<T>(T item, Func<T, FileSystemName> fileNameMapper, Func<T, FileSystemEntryData> dataMapper) {
+    private static FileSystemEntry CreateFileSystemEntry<T>(T item, Func<T, FileName> fileNameMapper, Func<T, FileSystemEntryData> dataMapper) {
       var name = fileNameMapper(item);
       var data = dataMapper(item);
-      if (name is FileName)
+      //if (name is FileName)
         return new FileEntry {
           Name = name.RelativePath.Value,
           Data = data
         };
-      else
-        return new DirectoryEntry {
-          Name = name.RelativePath.Value,
-          Data = data
-        };
+      //else
+      //  return new DirectoryEntry {
+      //    Name = name.RelativePath.Value,
+      //    Data = data
+      //  };
     }
 
     /// <summary>
@@ -80,6 +80,15 @@ namespace VsChromium.Server.FileSystem {
       if (name.IsAbsoluteName)
         return (DirectoryName)name;
 
+      return GetProjectRoot(name.Parent);
+    }
+
+    /// <summary>
+    /// Returns the "project root" part of a <see cref="FileSystemName"/>. This
+    /// function assumes "project root" is the absolute directory of <paramref
+    /// name="name"/>.
+    /// </summary>
+    private static DirectoryName GetProjectRoot(FileName name) {
       return GetProjectRoot(name.Parent);
     }
 

@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
@@ -275,7 +276,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Note: We can use reference equality here because the file names are
           // constructed unique and the dictionary will be discarded once we are
           // done building this snapshot.
-          new ReferenceEqualityComparer<FileName>());
+          new FileNameReferenceEqualityComparer());
 
         foreach (var directory in directories.ToForeachEnum()) {
           foreach (var fileName in directory.Value.ChildFiles.ToForeachEnum()) {
@@ -288,6 +289,17 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           Directories = directoryNames,
           ProjectHashes = snapshot.ProjectRoots.ToDictionary(x => x.Project.RootPath, x => x.Project.VersionHash)
         };
+      }
+    }
+
+    private class FileNameReferenceEqualityComparer : IEqualityComparer<FileName> {
+      public bool Equals(FileName x, FileName y) {
+        return ReferenceEquals(x.Parent, y.Parent) &&
+               ReferenceEquals(x.Name, y.Name);
+      }
+
+      public int GetHashCode(FileName obj) {
+        return HashCode.Combine(RuntimeHelpers.GetHashCode(obj.Parent), RuntimeHelpers.GetHashCode(obj.Name));
       }
     }
 

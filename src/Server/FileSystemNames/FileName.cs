@@ -8,7 +8,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.FileSystemNames {
-  public class FileName : IEquatable<FileName>, IComparable<FileName> {
+  public struct FileName : IEquatable<FileName>, IComparable<FileName> {
     private readonly DirectoryName _parent;
     private readonly string _name;
 
@@ -37,19 +37,12 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public bool Equals(FileName other) {
-      if (other == null) {
-        return false;
-      }
       return Equals(_parent, other._parent) &&
              SystemPathComparer.EqualsNames(_name, other._name);
     }
 
     public int CompareTo(FileName other) {
-      if (other == null) {
-        return 1;
-      }
-
-      int result = _parent.CompareTo(other._parent);
+      var result = _parent.CompareTo(other._parent);
       if (result == 0) {
         result = SystemPathComparer.CompareNames(_name, other._name);
       }

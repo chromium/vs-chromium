@@ -282,7 +282,7 @@ namespace VsChromium.Server.Search {
 
     private SearchPreProcessResult<T> PreProcessFileSystemNameSearch<T>(SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
-      Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileName {
+      Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) {
 
       // Regex has its own set of rules for pre-processing
       if (searchParams.Regex) {
@@ -332,7 +332,7 @@ namespace VsChromium.Server.Search {
 
     private SearchPreProcessResult<T> PreProcessFileSystemNameRegularExpressionSearch<T>(SearchParams searchParams,
       Func<IPathMatcher, T, IPathComparer, bool> matchName,
-      Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) where T : FileName {
+      Func<IPathMatcher, T, IPathComparer, bool> matchRelativeName) {
 
       var pattern = searchParams.SearchString ?? "";
       pattern = pattern.Trim();

@@ -14,10 +14,10 @@ namespace VsChromium.Server.FileSystem {
   /// </summary>
   public class DirectorySnapshot {
     private readonly DirectoryData _directoryData;
-    private readonly ReadOnlyCollection<DirectorySnapshot> _childDirectories;
-    private readonly ReadOnlyCollection<FileName> _childFiles;
+    private readonly IList<DirectorySnapshot> _childDirectories;
+    private readonly IList<FileName> _childFiles;
 
-    public DirectorySnapshot(DirectoryData directoryData, ReadOnlyCollection<DirectorySnapshot> childDirectories, ReadOnlyCollection<FileName> childFiles) {
+    public DirectorySnapshot(DirectoryData directoryData, IList<DirectorySnapshot> childDirectories, IList<FileName> childFiles) {
       _directoryData = directoryData;
       _childDirectories = childDirectories;
       _childFiles = childFiles;

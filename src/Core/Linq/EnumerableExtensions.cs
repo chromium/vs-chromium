@@ -203,10 +203,44 @@ namespace VsChromium.Core.Linq {
       var coll = source as ReadOnlyCollection<TSource>;
       if (coll != null)
         return coll;
+
       var list = source as IList<TSource>;
-      if (list != null)
+      if (list != null) {
+        if (list.Count == 0) {
+          return EmptyCollection<TSource>.Instance;
+        }
         return new ReadOnlyCollection<TSource>(list);
-      return new ReadOnlyCollection<TSource>(source.ToArray());
+      }
+
+      list = source.ToArray();
+      if (list.Count == 0) {
+        return EmptyCollection<TSource>.Instance;
+      }
+      return new ReadOnlyCollection<TSource>(list);
+    }
+
+    public static IList<TSource> ToReadOnlyList<TSource>(this IEnumerable<TSource> source) {
+      var coll = source as ReadOnlyCollection<TSource>;
+      if (coll != null)
+        return coll;
+
+      var list = source as IList<TSource>;
+      if (list != null) {
+        if (list.Count == 0) {
+          return EmptyCollection<TSource>.Instance;
+        }
+        return list;
+      }
+
+      list = source.ToArray();
+      if (list.Count == 0) {
+        return EmptyCollection<TSource>.Instance;
+      }
+      return list;
+    }
+
+    private static class EmptyCollection<TSource> {
+      public static readonly ReadOnlyCollection<TSource> Instance = new ReadOnlyCollection<TSource>(new TSource[0]);
     }
 
     /// <summary>

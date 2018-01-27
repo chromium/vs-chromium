@@ -101,7 +101,7 @@ namespace VsChromium.Server.FileSystem.Builder {
           var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryData.DirectoryName)
             .Select(x => directoriesToSnapshot[x])
             .OrderBy(x => x.DirectoryName.Name)
-            .ToReadOnlyCollection();
+            .ToReadOnlyList();
 
           // TODO(rpaquay): Not clear the lines below are a perf win, even though
           // they do not hurt correctness.
@@ -207,8 +207,8 @@ namespace VsChromium.Server.FileSystem.Builder {
 
       return new DirectorySnapshot(
         newData,
-        childDirectories.ToReadOnlyCollection(),
-        newFileList.ToReadOnlyCollection());
+        childDirectories.ToReadOnlyList(),
+        newFileList.ToReadOnlyList());
     }
 
     private static List<TValue> GetOrCreateList<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {
@@ -276,7 +276,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         var fileNames = childFileNames
           .Where(childFilename => _project.FileFilter.Include(childFilename.RelativePath))
           .OrderBy(x => x.Name)
-          .ToReadOnlyCollection();
+          .ToReadOnlyList();
 
         bag.Add(new DirectoryWithFiles(directory, fileNames));
       }
@@ -306,15 +306,15 @@ namespace VsChromium.Server.FileSystem.Builder {
 
     private struct DirectoryWithFiles {
       private readonly DirectoryData _directory;
-      private readonly ReadOnlyCollection<FileName> _fileNames;
+      private readonly IList<FileName> _fileNames;
 
-      public DirectoryWithFiles(DirectoryData directory, ReadOnlyCollection<FileName> fileNames) {
+      public DirectoryWithFiles(DirectoryData directory, IList<FileName> fileNames) {
         _directory = directory;
         _fileNames = fileNames;
       }
 
       public DirectoryData DirectoryData => _directory;
-      public ReadOnlyCollection<FileName> FileNames => _fileNames;
+      public IList<FileName> FileNames => _fileNames;
     }
   }
 }

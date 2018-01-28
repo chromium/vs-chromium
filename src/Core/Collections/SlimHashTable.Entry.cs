@@ -2,38 +2,41 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Collections {
   public partial class SlimHashTable<TKey, TValue> {
     private struct Entry {
-      public readonly TValue Value;
+      internal TValue Value;
       /// <summary>
-      /// 0 = Invalid entry (<code>null</code>)
-      /// -1 = No overflow index
-      /// [1.. n] == overflow index [0..n -1]
+      /// MinValue: entry is not valid, there is no next free index
+      /// &lt;= -1: entry is not valid, next free index is (-value - 1)
+      /// 0: entry is not valid
+      /// >= 1: entry is valid, next entry index is (value - 1)
+      /// MaxValue: entry is valid, but does not point to a next index
       /// </summary>
-      private readonly int _overflowIndex; // index + 1, so that 0 means "invalid"
+      private int _nextIndex;
 
-      internal Entry(TValue value, int overflowIndex) {
+      internal Entry(TValue value, int nextIndex) {
         Value = value;
-        _overflowIndex = overflowIndex == -1 ? -1 : overflowIndex + 1;
+        _nextIndex = (nextIndex == -1 ? int.MaxValue : nextIndex + 1);
       }
 
-      /// <summary>
-      /// Index into overflow buffer. <code>-1</code> if last entry in the chain.
-      /// </summary>
-      public int OverflowIndex {
-        get {
-          Invariants.Assert(IsValid, "Overflow index is not valid");
-          return _overflowIndex == -1 ? -1 : _overflowIndex - 1;
-        }
-      }
+      public bool IsValid => _nextIndex >= 1;
 
-      public bool IsValid => _overflowIndex != 0;
+      public int NextIndex => (_nextIndex >= 1 && _nextIndex < int.MaxValue) ? (_nextIndex - 1) : -1;
+      public int NextFreeIndex => (_nextIndex > int.MinValue && _nextIndex < 0) ? (-_nextIndex - 1) : -1;
 
       public override string ToString() {
-        return $"Value={Value} - OverflowIndex={(IsValid ? OverflowIndex.ToString() : "n/a")}";
+        return $"Value={Value} - IsValid={IsValid} = NextIndex={NextIndex} - NextFreeIndex={NextFreeIndex}";
+      }
+
+      public void SetNextIndex(int nextIndex) {
+        _nextIndex = (nextIndex == -1 ? int.MaxValue : nextIndex + 1);
+      }
+
+      public void SetNextFreeIndex(int nextIndex) {
+        Value = default(TValue);
+        _nextIndex = (nextIndex == -1 ? int.MinValue : -nextIndex - 1);
       }
     }
   }

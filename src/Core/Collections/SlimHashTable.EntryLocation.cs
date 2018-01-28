@@ -5,27 +5,20 @@
 namespace VsChromium.Core.Collections {
   public partial class SlimHashTable<TKey, TValue> {
     private struct EntryLocation {
-      private readonly int _index;
-      private readonly int _previousOverflowIndex;
-      private readonly int _overflowIndex;
-
-      public EntryLocation(int index, int previousOverflowIndex, int overflowIndex) {
-        _index = index;
-        _previousOverflowIndex = previousOverflowIndex;
-        _overflowIndex = overflowIndex;
+      public EntryLocation(int slotIndex, int entryIndex, int previousEntryIndex) {
+        SlotIndex = slotIndex;
+        EntryIndex = entryIndex;
+        PreviousEntryIndex = previousEntryIndex;
       }
 
-      public int Index {
-        get { return _index; }
+      public bool IsValid {
+        get { return SlotIndex >= 0; }
       }
+      public int SlotIndex { get; }
 
-      public int PreviousOverflowIndex {
-        get { return _previousOverflowIndex; }
-      }
+      public int EntryIndex { get; }
 
-      public int OverflowIndex {
-        get { return _overflowIndex; }
-      }
+      public int PreviousEntryIndex { get; }
     }
   }
 }

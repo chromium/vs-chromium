@@ -16,10 +16,10 @@ namespace VsChromium.Core.Collections {
     private readonly double _loadFactor;
     private readonly IEqualityComparer<TKey> _comparer;
     private readonly object _syncRoot = new object();
+    private int[] _slots;
     private Entry[] _entries;
     private int _count;
-    private int _length;
-    private Overflow _overflow;
+    private int _freeListHead;
     private KeyCollection _keys;
     private ValueCollection _values;
 
@@ -41,9 +41,19 @@ namespace VsChromium.Core.Collections {
       _capacity = capacity;
       _loadFactor = loadFactor;
       _comparer = comparer;
-      _length = GetPrimeLength(capacity, loadFactor);
-      _entries = new Entry[_length];
-      _overflow = new Overflow(GetOverflowCapacity(capacity, loadFactor));
+
+      var length = GetPrimeLength(capacity, loadFactor);
+      InitSlots(length);
+    }
+
+    private void InitSlots(int length) {
+      _slots = new int[length];
+      for (var i = 0; i < _slots.Length; i++) {
+        _slots[i] = -1;
+      }
+      _entries = new Entry[length];
+      _freeListHead = -1;
+      _count = 0;
     }
 
     public static SlimHashTable<TKey, TValue> Create(Func<TValue, TKey> keygetter, int capacity) {
@@ -68,11 +78,6 @@ namespace VsChromium.Core.Collections {
       return HashCode.GetPrime(targetCapacity);
     }
 
-    private static int GetOverflowCapacity(int capacity, double loadFactor) {
-      var targetCapacity = (int) (capacity / loadFactor);
-      return Math.Max(0, capacity - targetCapacity);
-    }
-
     public bool Remove(KeyValuePair<TKey, TValue> item) {
       return Remove(item.Key);
     }
@@ -85,59 +90,31 @@ namespace VsChromium.Core.Collections {
       set { GetOrAdd(key, value); }
     }
 
-    public ICollection<TKey> Keys {
-      get {
-        if (_keys == null) {
-          _keys = new KeyCollection(this);
-        }
+    public ICollection<TKey> Keys => _keys ?? (_keys = new KeyCollection(this));
 
-        return _keys;
-      }
-    }
+    public ICollection<TValue> Values => _values ?? (_values = new ValueCollection(this));
 
-    public ICollection<TValue> Values {
-      get {
-        if (_values == null) {
-          _values = new ValueCollection(this);
-        }
-
-        return _values;
-      }
-    }
-
-    public object SyncRoot {
-      get { return _syncRoot; }
-    }
+    public object SyncRoot => _syncRoot;
 
     public void Add(TValue value) {
       Add(_getKey(value), value);
-    }
-
-    public bool ContainsKey(TKey key) {
-      return Contains(key);
-    }
-
-    public void Add(TKey key, TValue value) {
-      var comparer = _comparer;
-      var hashCode = comparer.GetHashCode(key);
-
-      var location = FindEntryLocation(key, hashCode);
-      if (location != null) {
-        Invariants.CheckArgument(false, nameof(key), "Key already exists in dictionary");
-      }
-
-      AddEntry(value, hashCode);
     }
 
     public void Add(KeyValuePair<TKey, TValue> item) {
       Add(item.Key, item.Value);
     }
 
+    public void Add(TKey key, TValue value) {
+      AddEntry(key, value, false);
+    }
+
+    public bool ContainsKey(TKey key) {
+      return Contains(key);
+    }
+
     public void Clear() {
-      _count = 0;
-      _length = GetPrimeLength(_capacity, _loadFactor);
-      _entries = new Entry[_length];
-      _overflow = new Overflow(GetOverflowCapacity(_capacity, _loadFactor));
+      var length = GetPrimeLength(_capacity, _loadFactor);
+      InitSlots(length);
     }
 
     public bool Contains(KeyValuePair<TKey, TValue> item) {
@@ -152,7 +129,7 @@ namespace VsChromium.Core.Collections {
       var comparer = _comparer;
       var hashCode = comparer.GetHashCode(key);
 
-      return FindEntryLocation(key, hashCode) != null;
+      return FindEntryLocation(key, hashCode).IsValid;
     }
 
     private bool ContainsValue(TValue item) {
@@ -173,10 +150,8 @@ namespace VsChromium.Core.Collections {
       var hashCode = comparer.GetHashCode(key);
 
       var location = FindEntryLocation(key, hashCode);
-      if (location != null) {
-        value = location.Value.OverflowIndex >= 0
-          ? _overflow.Get(location.Value.OverflowIndex).Value
-          : _entries[location.Value.Index].Value;
+      if (location.IsValid) {
+        value = _entries[location.EntryIndex].Value;
         return true;
       }
 
@@ -185,18 +160,19 @@ namespace VsChromium.Core.Collections {
     }
 
     public TValue GetOrAdd(TKey key, TValue value) {
-      var comparer = _comparer;
-      var hashCode = comparer.GetHashCode(key);
-
-      var location = FindEntryLocation(key, hashCode);
-      if (location != null) {
-        value = location.Value.OverflowIndex >= 0
-          ? _overflow.Get(location.Value.OverflowIndex).Value
-          : _entries[location.Value.Index].Value;
-        return value;
+      var hashCode = _comparer.GetHashCode(key);
+      var slotIndex = (hashCode & int.MaxValue) % _slots.Length;
+      for (var entryIndex = _slots[slotIndex]; entryIndex >= 0;) {
+        var entry = _entries[entryIndex];
+        var entryKey = _getKey(entry.Value);
+        if (_comparer.GetHashCode(entryKey) == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
+          return entry.Value;
+        }
+        entryIndex = _entries[entryIndex].NextIndex;
       }
 
-      return AddEntry(value, hashCode);
+      AddEntryWorker(value, slotIndex, hashCode);
+      return value;
     }
 
     public void CopyTo<TArray>(TArray[] array, Func<TKey, TValue, TArray> convert, int arrayIndex) {
@@ -208,55 +184,33 @@ namespace VsChromium.Core.Collections {
     }
 
     public bool Remove(TKey key) {
-      var comparer = _comparer;
-      var hashCode = comparer.GetHashCode(key);
+      var hashCode = _comparer.GetHashCode(key);
 
       var location = FindEntryLocation(key, hashCode);
-      if (location == null) {
+      if (!location.IsValid) {
         return false;
       }
 
-      var index = location.Value.Index;
-      var overflowIndex = location.Value.OverflowIndex;
-      var previousOverflowIndex = location.Value.PreviousOverflowIndex;
-      if (overflowIndex >= 0) {
-        if (previousOverflowIndex >= 0) {
-          // Remove entry contained in the overflow table
-          var entry = _overflow.Get(overflowIndex);
-          _overflow.Free(overflowIndex);
-          _overflow.SetOverflowIndex(previousOverflowIndex, entry.OverflowIndex);
-
-        } else {
-          // entry is first overflow entry
-          var entry = _overflow.Get(overflowIndex);
-          _overflow.Free(overflowIndex);
-          _entries[index] = new Entry(_entries[index].Value, entry.OverflowIndex);
-        }
-
+      if (location.PreviousEntryIndex >= 0) {
+        // Entry is inside list, not the head
+        _entries[location.PreviousEntryIndex].SetNextIndex(_entries[location.EntryIndex].NextIndex);
       } else {
-        var entry = _entries[index];
-        if (entry.OverflowIndex >= 0) {
-          var overflowEntry = _overflow.Get(entry.OverflowIndex);
-          _entries[index] = overflowEntry;
-          _overflow.Free(entry.OverflowIndex);
-        } else {
-          _entries[index] = default(Entry);
-        }
+        // Entry is first from slot
+        _slots[location.SlotIndex] = _entries[location.EntryIndex].NextIndex;
       }
-
+      _entries[location.EntryIndex].Value = default(TValue);
+      _entries[location.EntryIndex].SetNextFreeIndex(_freeListHead);
+      _freeListHead = location.EntryIndex;
       _count--;
       return true;
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-      foreach (var e in _entries) {
-        for (var head = e; head.IsValid;) {
-          yield return new KeyValuePair<TKey, TValue>(_getKey(head.Value), head.Value);
-          if (head.OverflowIndex >= 0) {
-            head = _overflow.Get(head.OverflowIndex);
-          } else {
-            break;
-          }
+      for (var i = 0; i < _slots.Length; i++) {
+        for (var entryIndex = _slots[i]; entryIndex >= 0;) {
+          var entry = _entries[entryIndex];
+          yield return new KeyValuePair<TKey, TValue>(_getKey(entry.Value), entry.Value);
+          entryIndex = entry.NextIndex;
         }
       }
     }
@@ -265,101 +219,93 @@ namespace VsChromium.Core.Collections {
       return GetEnumerator();
     }
 
-    private TValue AddEntry(TValue value, int hashCode) {
-      var index = (hashCode & int.MaxValue) % _length;
-      var entry = _entries[index];
-      if (entry.IsValid) {
-        var overflowIndex = _overflow.Allocate();
-        _overflow.Set(overflowIndex, entry);
-        _entries[index] = new Entry(value, overflowIndex);
-      } else {
-        _entries[index] = new Entry(value, -1);
+    private void AddEntry(TKey key, TValue value, bool updateExistingAllowed) {
+      var hashCode = _comparer.GetHashCode(key);
+      var slotIndex = (hashCode & int.MaxValue) % _slots.Length;
+      for (var entryIndex = _slots[slotIndex]; entryIndex >= 0;) {
+        var entry = _entries[entryIndex];
+        var entryKey = _getKey(entry.Value);
+        if (_comparer.GetHashCode(entryKey) == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
+          if (!updateExistingAllowed) {
+            Invariants.CheckArgument(false, nameof(key), "Key already exist in table");
+          }
+          _entries[entryIndex].Value = value;
+          return;
+        }
+        entryIndex = _entries[entryIndex].NextIndex;
       }
 
-      _count++;
-      if ((float) _count / _entries.Length >= _loadFactor) {
+      AddEntryWorker(value, slotIndex, hashCode);
+    }
+
+    private void AddEntryWorker(TValue value, int slotIndex, int hashCode) {
+      // We need to actually add the value
+      if (_count >= _slots.Length) {
         Grow();
+        slotIndex = (hashCode & int.MaxValue) % _slots.Length;
       }
 
-      return value;
+      // Insert at head of list starting at (new) slotIndex
+      int newEntryIndex;
+      if (_freeListHead >= 0) {
+        newEntryIndex = _freeListHead;
+        _freeListHead = _entries[_freeListHead].NextFreeIndex;
+      } else {
+        // Free list is empty, so insertion is at end of list of _entries
+        newEntryIndex = _count;
+      }
+
+      _entries[newEntryIndex] = new Entry(value, _slots[slotIndex]);
+      _slots[slotIndex] = newEntryIndex;
+      _count++;
     }
 
     private void Grow() {
+      Invariants.Assert(_count == _entries.Length);
+      Invariants.Assert(_count == _slots.Length);
+      Invariants.Assert(_freeListHead== -1);
       var oldEntries = _entries;
       var oldLength = _entries.Length;
 
       var newLength = HashCode.GetPrime(GrowSize(oldLength));
+      var newSlots = new int[newLength];
+      for (var i = 0; i < newSlots.Length; i++) {
+        newSlots[i] = -1;
+      }
       var newEntries = new Entry[newLength];
-      var newOverflow = new Overflow(Math.Max(_overflow.Capacity, _overflow.Count - (newLength - oldLength)));
+      Array.Copy(_entries, newEntries, _entries.Length);
 
-      // use oldEntries.Length to eliminate the rangecheck            
-      for (var i = 0; i < oldEntries.Length; i++) {
-        var e = oldEntries[i];
-        if (e.IsValid) {
-          StoreNewEntry(newEntries, newOverflow, e.Value);
-          for (var overflowIndex = e.OverflowIndex; overflowIndex >= 0; overflowIndex = e.OverflowIndex) {
-            e = _overflow.Get(overflowIndex);
-            Invariants.Assert(e.IsValid);
-            _overflow.Free(overflowIndex);
-            StoreNewEntry(newEntries, newOverflow, e.Value);
-          }
+      for (var entryIndex = 0; entryIndex < oldEntries.Length; entryIndex++) {
+        var oldEntry = oldEntries[entryIndex];
+        if (oldEntry.IsValid) {
+          var newSlotIndex = (_comparer.GetHashCode(_getKey(oldEntry.Value)) & int.MaxValue) % newLength;
+          newEntries[entryIndex].SetNextIndex(newSlots[newSlotIndex]);
+          newSlots[newSlotIndex] = entryIndex;
         }
       }
 
-      _length = newLength;
+      _slots = newSlots;
       _entries = newEntries;
-      _overflow = newOverflow;
     }
 
     private static int GrowSize(int oldLength) {
-      return Math.Max(2, (int) Math.Round((double) oldLength * 3 / 2));
+      return Math.Max(2, (int) Math.Round((double) oldLength * 4 / 2));
     }
 
-    private void StoreNewEntry(Entry[] newEntries, Overflow newOverflow, TValue value) {
-      var newLength = newEntries.Length;
-      var newIndex = (_comparer.GetHashCode(_getKey(value)) & int.MaxValue) % newLength;
-      var newEntry = newEntries[newIndex];
-      if (newEntry.IsValid) {
-        // Store at head of overflow list
-        var overflowIndex = newOverflow.Allocate();
-        newOverflow.Set(overflowIndex, newEntry);
-        newEntries[newIndex] = new Entry(value, overflowIndex);
-      } else {
-        // Store in entry
-        newEntries[newIndex] = new Entry(value, -1);
-      }
-    }
-
-    private EntryLocation? FindEntryLocation(TKey key, int hashCode) {
-      var index = (hashCode & int.MaxValue) % _length;
-      var entry = _entries[index];
-      if (!entry.IsValid) {
-        return null;
-      }
-
-      if (_comparer.Equals(key, _getKey(entry.Value))) {
-        return new EntryLocation(index, -1, -1);
-      }
-
-      var previousOverflowIndex = -1;
-      var overflowIndex = entry.OverflowIndex;
-      while (true) {
-        if (overflowIndex < 0) {
-          return null;
-        }
-
-        entry = _overflow.Get(overflowIndex);
-        if (!entry.IsValid) {
-          return null;
-        }
-
+    private EntryLocation FindEntryLocation(TKey key, int hashCode) {
+      var slotIndex = (hashCode & int.MaxValue) % _slots.Length;
+      var previousEntryIndex = -1;
+      for (var entryIndex = _slots[slotIndex]; entryIndex >= 0; ) {
+        var entry = _entries[entryIndex];
         if (_comparer.Equals(key, _getKey(entry.Value))) {
-          return new EntryLocation(index, previousOverflowIndex, overflowIndex);
+          return new EntryLocation(slotIndex, entryIndex, previousEntryIndex);
         }
 
-        previousOverflowIndex = overflowIndex;
-        overflowIndex = entry.OverflowIndex;
+        previousEntryIndex = entryIndex;
+        entryIndex = _entries[entryIndex].NextIndex;
       }
+
+      return new EntryLocation(-1, -1, -1);
     }
   }
 }

@@ -261,7 +261,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
 
-        var directoryNames = new Dictionary<DirectoryName, DirectoryData>(
+        //var directoryNames = new Dictionary<DirectoryName, DirectoryData>(
+        var directoryNames = SlimHashTable<DirectoryName, DirectoryData>.Create(
+          v => v.DirectoryName,
           directories.Count,
           // Note: We can use reference equality here because the directory
           // names are contructed unique.

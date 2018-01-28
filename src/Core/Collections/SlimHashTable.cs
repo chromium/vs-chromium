@@ -16,9 +16,13 @@ namespace VsChromium.Core.Collections {
   /// entries to store the items (chained with a "next index" value).
   /// </summary>
   public partial class SlimHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
+    // ReSharper disable once StaticMemberInGenericType
+    public static readonly ExponentialGrowthPolicy DefaultGrowthPolicy = ExponentialGrowthPolicy.Default;
+
     private readonly Func<TValue, TKey> _getKey;
     private readonly int _capacity;
     private readonly IEqualityComparer<TKey> _comparer;
+    private readonly ICollectionGrowthPolicy _growthPolicy;
     private readonly object _syncRoot = new object();
     /// <summary>
     /// Each entry is the "head" of the chain of entries whose hashcode maps to the entry.
@@ -44,21 +48,43 @@ namespace VsChromium.Core.Collections {
     private ValueCollection _values;
 
     public SlimHashTable(Func<TValue, TKey> keyProvider)
-      : this(keyProvider, 0, EqualityComparer<TKey>.Default) {
+      : this(keyProvider, 0, EqualityComparer<TKey>.Default, DefaultGrowthPolicy) {
+    }
+
+    public SlimHashTable(Func<TValue, TKey> keyProvider, ICollectionGrowthPolicy growthPolicy)
+      : this(keyProvider, 0, EqualityComparer<TKey>.Default, growthPolicy) {
     }
 
     public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity)
-      : this(keyProvider, capacity, EqualityComparer<TKey>.Default) {
+      : this(keyProvider, capacity, EqualityComparer<TKey>.Default, DefaultGrowthPolicy) {
     }
 
-    public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity, IEqualityComparer<TKey> comparer) {
+    public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity, IEqualityComparer<TKey> comparer)
+      : this(keyProvider, capacity, comparer, DefaultGrowthPolicy) {
+    }
+
+    public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity, ICollectionGrowthPolicy growthPolicy)
+      : this(keyProvider, capacity, EqualityComparer<TKey>.Default, growthPolicy) {
+    }
+
+    public SlimHashTable(Func<TValue, TKey> keyProvider, IEqualityComparer<TKey> comparer)
+      : this(keyProvider, 0, comparer, DefaultGrowthPolicy) {
+    }
+
+    public SlimHashTable(Func<TValue, TKey> keyProvider, IEqualityComparer<TKey> comparer, ICollectionGrowthPolicy growthPolicy)
+      : this(keyProvider, 0, comparer, growthPolicy) {
+    }
+
+    public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity, IEqualityComparer<TKey> comparer, ICollectionGrowthPolicy growthPolicy) {
       Invariants.CheckArgumentNotNull(keyProvider, nameof(keyProvider));
       Invariants.CheckArgument(capacity >= 0, nameof(capacity), "Capacity must be positive");
       Invariants.CheckArgumentNotNull(comparer, nameof(comparer));
+      Invariants.CheckArgumentNotNull(growthPolicy, nameof(growthPolicy));
 
       _getKey = keyProvider;
       _capacity = capacity;
       _comparer = comparer;
+      _growthPolicy = growthPolicy;
 
       var length = GetPrimeLength(capacity);
       Initialize(length);
@@ -318,8 +344,8 @@ namespace VsChromium.Core.Collections {
       return HashCode.GetPrime(capacity);
     }
 
-    private static int GrowSize(int oldLength) {
-      return Math.Max(2, (int) Math.Round((double) oldLength * 4 / 2));
+    private int GrowSize(int oldLength) {
+      return Math.Min(oldLength + 1, _growthPolicy.Grow(oldLength));
     }
 
     private static int GetBucketIndex(int hashcode, int length) {

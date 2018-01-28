@@ -16,7 +16,7 @@ namespace VsChromium.Server.FileSystemNames {
     public FileSystemNameFactory() {
       _dictionaries = new ConcurrentHashSet<Entry>[BucketCount];
       for (var i = 0; i < _dictionaries.Length; i++) {
-        _dictionaries[i] = new ConcurrentHashSet<Entry>(1024);
+        _dictionaries[i] = new ConcurrentHashSet<Entry>(1024, new LinearGrowthPolicy(2048));
       }
     }
 

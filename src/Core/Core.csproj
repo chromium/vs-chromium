@@ -44,10 +44,13 @@
     <Compile Include="Collections\ArrayUtilities.cs" />
     <Compile Include="Collections\ConcurrentBitArray.cs" />
     <Compile Include="Collections\ConcurrentHashSet.cs" />
+    <Compile Include="Collections\ExponentialGrowthPolicy.cs" />
     <Compile Include="Collections\IBitArray.cs" />
+    <Compile Include="Collections\ICollectionGrowthPolicy.cs" />
     <Compile Include="Collections\IReadOnlyMap.cs" />
     <Compile Include="Collections\ISlimHashTableParameters.cs" />
     <Compile Include="Collections\LeftRightItemPair.cs" />
+    <Compile Include="Collections\LinearGrowthPolicy.cs" />
     <Compile Include="Collections\ObjectPool.cs" />
     <Compile Include="Collections\PartitionedBitArray.cs" />
     <Compile Include="Collections\ReadOnlyMapSortedList.cs" />

@@ -36,6 +36,12 @@ namespace VsChromium.Server.FileSystemNames {
       return _dictionaries[name.Length % BucketCount].GetOrAdd(new Entry(name)).Value;
     }
 
+    public void ClearInternedStrings() {
+      for (var i = 0; i < _dictionaries.Length; i++) {
+        _dictionaries[i].Clear();
+      }
+    }
+
     private struct Entry : IEquatable<Entry> {
       private readonly int _hashCode;
       private readonly string _value;

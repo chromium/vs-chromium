@@ -22,5 +22,7 @@ namespace VsChromium.Server.FileSystemNames {
     /// parent directory and a simple file name.
     /// </summary>
     FileName CreateFileName(DirectoryName parent, string name);
+
+    void ClearInternedStrings();
   }
 }

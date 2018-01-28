@@ -34,6 +34,12 @@ namespace VsChromium.Server.FileSystem.Builder {
                                           CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested(); // cancellation
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
+        // Clear file name factory intern tables if no projects. We could be
+        // more aggressive at the expense of decreasing string interning.
+        if (projects.Count == 0) {
+          fileNameFactory.ClearInternedStrings();
+        }
+
         var projectRoots =
           projects
             .Distinct(new ProjectPathComparer())

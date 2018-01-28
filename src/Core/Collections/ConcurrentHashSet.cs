@@ -17,11 +17,17 @@ namespace VsChromium.Core.Collections {
 
     public ConcurrentHashSet(int capacity, IEqualityComparer<T> comparer) {
       _table = new SlimHashTable<T, T>(t => t, capacity, comparer);
-  }
+    }
 
     public T GetOrAdd(T value) {
       lock (_lock) {
         return _table.GetOrAdd(value, value);
+      }
+    }
+
+    public void Clear() {
+      lock (_lock) {
+        _table.Clear();
       }
     }
   }

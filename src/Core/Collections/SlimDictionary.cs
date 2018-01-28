@@ -8,7 +8,6 @@ using System.Linq;
 
 namespace VsChromium.Core.Collections {
   public partial class SlimDictionary<TKey, TValue> : IDictionary<TKey, TValue> {
-    private static readonly double DefaultLoadFactor = 0.9;
     private readonly object _syncRoot = new object();
     private readonly SlimHashTable<TKey, Entry> _table;
     private ValueCollection _values;
@@ -20,7 +19,7 @@ namespace VsChromium.Core.Collections {
     }
 
     public SlimDictionary(int capacity, IEqualityComparer<TKey> comparer) {
-      _table = new SlimHashTable<TKey, Entry>(new Parameters(), capacity, DefaultLoadFactor, comparer);
+      _table = new SlimHashTable<TKey, Entry>(t => t.Key, capacity, comparer);
     }
 
     public ICollection<TKey> Keys => _table.Keys;

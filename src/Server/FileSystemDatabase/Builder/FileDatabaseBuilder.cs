@@ -137,7 +137,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // the dictionary will be used in incremental updates where FileName instances
           // may be new instances from a complete file system enumeration.
           //var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
-          var files = SlimHashTable<FileName, FileWithContentsSnapshot>.Create(v => v.FileName, entities.Files.Count);
+          var files = new SlimHashTable<FileName, FileWithContentsSnapshot>(v => v.FileName, entities.Files.Count);
           var filesWithContentsArray = new FileWithContentsSnapshot[entities.Files.Count];
           var filesWithContentsIndex = 0;
           foreach (var kvp in entities.Files) {
@@ -262,7 +262,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
 
         //var directoryNames = new Dictionary<DirectoryName, DirectoryData>(
-        var directoryNames = SlimHashTable<DirectoryName, DirectoryData>.Create(
+        var directoryNames = new SlimHashTable<DirectoryName, DirectoryData>(
           v => v.DirectoryName,
           directories.Count,
           // Note: We can use reference equality here because the directory
@@ -276,7 +276,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         }
 
         //var files = new Dictionary<FileName, ProjectFileData>(
-        var files = SlimHashTable<FileName, ProjectFileData>.Create(
+        var files = new SlimHashTable<FileName, ProjectFileData>(
           v => v.FileName,
           directories.Count * 2,
           // Note: We can use reference equality here because the file names are

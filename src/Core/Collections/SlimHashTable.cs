@@ -20,6 +20,22 @@ namespace VsChromium.Core.Collections {
     private readonly int _capacity;
     private readonly IEqualityComparer<TKey> _comparer;
     private readonly object _syncRoot = new object();
+    /// <summary>
+    /// Each entry is the "head" of the chain of entries whose hashcode maps to the entry.
+    /// The "head" value is either -1, meaning that chain is empty, or an index into
+    /// the <see cref="_entries"/> table (pointing to the first entry of the chain).
+    /// <para>
+    /// Note that for performance reason, we actually store the "head" index value
+    /// with a <code>+1</code> offset, so that the range of values [-1, 0, ..., length -1] 
+    /// is actually stored as [0, 1, ..., length].</para>
+    /// <para>
+    /// The reason we do this is so that we don't have to initialize the array 
+    /// with "-1"  values (.NET arrays are initialized with 0 values).</para>
+    /// <para>
+    /// This implies reading a value from this array should be offset with a "-1"
+    /// (see <see cref="AdjustBucketIndexRead"/>, and writing should be offset with a "+1"
+    /// (see <see cref="AdjustBucketIndexWrite"/>).</para>
+    /// </summary>
     private int[] _buckets;
     private Entry[] _entries;
     private int _count;
@@ -50,9 +66,6 @@ namespace VsChromium.Core.Collections {
 
     private void Initialize(int length) {
       _buckets = new int[length];
-      for (var i = 0; i < _buckets.Length; i++) {
-        _buckets[i] = -1;
-      }
       _entries = new Entry[length];
       _freeListHead = -1;
       _count = 0;
@@ -100,7 +113,7 @@ namespace VsChromium.Core.Collections {
       var hashCode = _comparer.GetHashCode(key);
       var bucketIndex = GetBucketIndex(hashCode, _buckets.Length);
       var previousEntryIndex = -1;
-      for (var entryIndex = _buckets[bucketIndex]; entryIndex >= 0;) {
+      for (var entryIndex = AdjustBucketIndexRead(_buckets[bucketIndex]); entryIndex >= 0;) {
         var entry = _entries[entryIndex];
         if (_comparer.Equals(key, _getKey(entry.Value))) {
           // Entry was found, remove it
@@ -109,7 +122,7 @@ namespace VsChromium.Core.Collections {
             _entries[previousEntryIndex].SetNextIndex(_entries[entryIndex].NextIndex);
           } else {
             // Entry is first from bucket
-            _buckets[bucketIndex] = _entries[entryIndex].NextIndex;
+            _buckets[bucketIndex] = AdjustBucketIndexWrite(_entries[entryIndex].NextIndex);
           }
           _entries[entryIndex].Value = default(TValue);
           _entries[entryIndex].SetNextFreeIndex(_freeListHead);
@@ -148,7 +161,7 @@ namespace VsChromium.Core.Collections {
     public bool TryGetValue(TKey key, out TValue value) {
       var hashCode = _comparer.GetHashCode(key);
       var bucketIndex = GetBucketIndex(hashCode, _buckets.Length);
-      for (var entryIndex = _buckets[bucketIndex]; entryIndex >= 0;) {
+      for (var entryIndex = AdjustBucketIndexRead(_buckets[bucketIndex]); entryIndex >= 0;) {
         var entry = _entries[entryIndex];
         if (entry.HashCode == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
           value = entry.Value;
@@ -176,7 +189,7 @@ namespace VsChromium.Core.Collections {
     public TValue GetOrAdd(TKey key, TValue value) {
       var hashCode = _comparer.GetHashCode(key);
       var bucketIndex = GetBucketIndex(hashCode, _buckets.Length);
-      for (var entryIndex = _buckets[bucketIndex]; entryIndex >= 0;) {
+      for (var entryIndex = AdjustBucketIndexRead(_buckets[bucketIndex]); entryIndex >= 0;) {
         var entry = _entries[entryIndex];
         if (entry.HashCode == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
           return entry.Value;
@@ -191,7 +204,7 @@ namespace VsChromium.Core.Collections {
     public void UpdateOrAdd(TKey key, TValue value) {
       var hashCode = _comparer.GetHashCode(key);
       var bucketIndex = GetBucketIndex(hashCode, _buckets.Length);
-      for (var entryIndex = _buckets[bucketIndex]; entryIndex >= 0;) {
+      for (var entryIndex = AdjustBucketIndexRead(_buckets[bucketIndex]); entryIndex >= 0;) {
         var entry = _entries[entryIndex];
         if (entry.HashCode == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
           _entries[entryIndex].Value = value;
@@ -231,7 +244,7 @@ namespace VsChromium.Core.Collections {
     private void AddEntry(TKey key, TValue value, bool updateExistingAllowed) {
       var hashCode = _comparer.GetHashCode(key);
       var bucketIndex = GetBucketIndex(hashCode, _buckets.Length);
-      for (var entryIndex = _buckets[bucketIndex]; entryIndex >= 0;) {
+      for (var entryIndex = AdjustBucketIndexRead(_buckets[bucketIndex]); entryIndex >= 0;) {
         var entry = _entries[entryIndex];
         if (entry.HashCode == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
           if (!updateExistingAllowed) {
@@ -263,8 +276,8 @@ namespace VsChromium.Core.Collections {
         newEntryIndex = _count;
       }
 
-      _entries[newEntryIndex] = new Entry(value, hashCode, _buckets[bucketIndex]);
-      _buckets[bucketIndex] = newEntryIndex;
+      _entries[newEntryIndex] = new Entry(value, hashCode, AdjustBucketIndexRead(_buckets[bucketIndex]));
+      _buckets[bucketIndex] = AdjustBucketIndexWrite(newEntryIndex);
       _count++;
     }
 
@@ -277,9 +290,6 @@ namespace VsChromium.Core.Collections {
 
       var newLength = HashCode.GetPrime(GrowSize(oldLength));
       var newBuckets = new int[newLength];
-      for (var i = 0; i < newBuckets.Length; i++) {
-        newBuckets[i] = -1;
-      }
       var newEntries = new Entry[newLength];
       Array.Copy(_entries, newEntries, _entries.Length);
 
@@ -287,13 +297,21 @@ namespace VsChromium.Core.Collections {
         var oldEntry = oldEntries[entryIndex];
         if (oldEntry.IsValid) {
           var newBucketIndex = GetBucketIndex(oldEntry.HashCode, newLength);
-          newEntries[entryIndex].SetNextIndex(newBuckets[newBucketIndex]);
-          newBuckets[newBucketIndex] = entryIndex;
+          newEntries[entryIndex].SetNextIndex(AdjustBucketIndexRead(newBuckets[newBucketIndex]));
+          newBuckets[newBucketIndex] = AdjustBucketIndexWrite(entryIndex);
         }
       }
 
       _buckets = newBuckets;
       _entries = newEntries;
+    }
+
+    private static int AdjustBucketIndexRead(int index) {
+      return index - 1;
+    }
+
+    private static int AdjustBucketIndexWrite(int index) {
+      return index + 1;
     }
 
     private static int GetPrimeLength(int capacity) {

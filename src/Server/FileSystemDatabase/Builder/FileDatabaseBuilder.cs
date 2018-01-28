@@ -75,7 +75,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
               TimeSpan.FromSeconds(5.0),
               () => {
                 Logger.LogInfo("Creating intermedidate file database for partial progress reporting");
-                var database = CreateFileDatabse(entities, cancellationToken);
+                var database = CreateFileDatabase(entities, false, cancellationToken);
                 onIntermadiateResult(database);
               })
           };
@@ -83,7 +83,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Merge old state in new state and load all missing files
           LoadFileContents(entities, loadingContext, cancellationToken);
 
-          var result = CreateFileDatabse(entities, cancellationToken);
+          var result = CreateFileDatabase(entities, true, cancellationToken);
           onLoaded();
           return result;
         }
@@ -111,7 +111,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         onLoading();
         filesToRead.ForAll(x => {
           var newContents = _fileContentsFactory.ReadFileContents(x.FileName.FullPath);
-          fileDatabase.Files[x.FileName] = new FileWithContentsSnapshot(x.FileName, newContents);
+          DangerousUpdateFileTableEntry(fileDatabase, x.FileName, newContents);
         });
         onLoaded();
 
@@ -127,11 +127,29 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    private FileDatabaseSnapshot CreateFileDatabse(FileSystemEntities entities, CancellationToken cancellationToken) {
+    /// <summary>
+    /// Note: Concurrency: There are potentially many readers (search threads), but
+    /// only one writer (us). Updating the hash table with the line below assumes
+    /// that 1) the entry exists and 2) the hash table implementation does not
+    /// mutate any of its internal state when updating an existing entry.
+    /// <para>
+    /// 1) is verified because we the "filesToRead" collections only contains
+    ///    file names contained in this table.</para>
+    /// <para>
+    /// 2) is verified because the two possible implementations, <see cref="Dictionary{TKey,TValue}"/>
+    ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
+    /// </summary>
+    private static void DangerousUpdateFileTableEntry(FileDatabaseSnapshot fileDatabase, FileName fileName, FileContents newContents) {
+      fileDatabase.Files[fileName] = new FileWithContentsSnapshot(fileName, newContents);
+    }
+
+    private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities, bool notifyProgress, CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested();
       using (new TimeElapsedLogger("Freezing file database state", cancellationToken)) {
-        using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
-          progress.DisplayProgress((i, n) => "Finalizing index update");
+        var progress = notifyProgress ? _progressTrackerFactory.CreateIndeterminateTracker() : null;
+        try {
+          progress?.DisplayProgress((i, n) => "Finalizing index update");
+
           var directories = entities.Directories;
           // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
           // the dictionary will be used in incremental updates where FileName instances
@@ -149,7 +167,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             }
           }
 
-          var filesWithContents = new ListSegment<FileWithContentsSnapshot>(filesWithContentsArray, 0, filesWithContentsIndex);
+          var filesWithContents =
+            new ListSegment<FileWithContentsSnapshot>(filesWithContentsArray, 0, filesWithContentsIndex);
           var searchableContentsCollection = CreateFilePieces(filesWithContents, cancellationToken);
           FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
@@ -160,6 +179,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             directories.ToReadOnlyMap(),
             searchableContentsCollection,
             filesWithContents.Count);
+        }
+        finally {
+          progress?.Dispose();
         }
       }
     }

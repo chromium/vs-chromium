@@ -126,9 +126,7 @@ namespace VsChromium.Core.Collections {
     }
 
     public bool Contains(TKey key) {
-      var comparer = _comparer;
-      var hashCode = comparer.GetHashCode(key);
-
+      var hashCode = _comparer.GetHashCode(key);
       return FindEntryLocation(key, hashCode).IsValid;
     }
 
@@ -146,9 +144,7 @@ namespace VsChromium.Core.Collections {
     }
 
     public bool TryGetValue(TKey key, out TValue value) {
-      var comparer = _comparer;
-      var hashCode = comparer.GetHashCode(key);
-
+      var hashCode = _comparer.GetHashCode(key);
       var location = FindEntryLocation(key, hashCode);
       if (location.IsValid) {
         value = _entries[location.EntryIndex].Value;
@@ -164,8 +160,7 @@ namespace VsChromium.Core.Collections {
       var slotIndex = (hashCode & int.MaxValue) % _slots.Length;
       for (var entryIndex = _slots[slotIndex]; entryIndex >= 0;) {
         var entry = _entries[entryIndex];
-        var entryKey = _getKey(entry.Value);
-        if (_comparer.GetHashCode(entryKey) == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
+        if (entry.HashCode == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
           return entry.Value;
         }
         entryIndex = _entries[entryIndex].NextIndex;
@@ -185,7 +180,6 @@ namespace VsChromium.Core.Collections {
 
     public bool Remove(TKey key) {
       var hashCode = _comparer.GetHashCode(key);
-
       var location = FindEntryLocation(key, hashCode);
       if (!location.IsValid) {
         return false;
@@ -206,11 +200,10 @@ namespace VsChromium.Core.Collections {
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-      for (var i = 0; i < _slots.Length; i++) {
-        for (var entryIndex = _slots[i]; entryIndex >= 0;) {
-          var entry = _entries[entryIndex];
+      for (var i = 0; i < _count; i++) {
+        var entry = _entries[i];
+        if (entry.IsValid) {
           yield return new KeyValuePair<TKey, TValue>(_getKey(entry.Value), entry.Value);
-          entryIndex = entry.NextIndex;
         }
       }
     }
@@ -224,8 +217,7 @@ namespace VsChromium.Core.Collections {
       var slotIndex = (hashCode & int.MaxValue) % _slots.Length;
       for (var entryIndex = _slots[slotIndex]; entryIndex >= 0;) {
         var entry = _entries[entryIndex];
-        var entryKey = _getKey(entry.Value);
-        if (_comparer.GetHashCode(entryKey) == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
+        if (entry.HashCode == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
           if (!updateExistingAllowed) {
             Invariants.CheckArgument(false, nameof(key), "Key already exist in table");
           }
@@ -255,7 +247,7 @@ namespace VsChromium.Core.Collections {
         newEntryIndex = _count;
       }
 
-      _entries[newEntryIndex] = new Entry(value, _slots[slotIndex]);
+      _entries[newEntryIndex] = new Entry(value, hashCode, _slots[slotIndex]);
       _slots[slotIndex] = newEntryIndex;
       _count++;
     }
@@ -278,7 +270,7 @@ namespace VsChromium.Core.Collections {
       for (var entryIndex = 0; entryIndex < oldEntries.Length; entryIndex++) {
         var oldEntry = oldEntries[entryIndex];
         if (oldEntry.IsValid) {
-          var newSlotIndex = (_comparer.GetHashCode(_getKey(oldEntry.Value)) & int.MaxValue) % newLength;
+          var newSlotIndex = (oldEntry.HashCode & int.MaxValue) % newLength;
           newEntries[entryIndex].SetNextIndex(newSlots[newSlotIndex]);
           newSlots[newSlotIndex] = entryIndex;
         }

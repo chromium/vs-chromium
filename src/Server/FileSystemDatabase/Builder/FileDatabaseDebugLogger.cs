@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
@@ -20,7 +19,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private static readonly int LogContentsStats_ExtensionsList_Count = 10;
     private static readonly int LogContentsStats_ExtensionsList_File_Count = 25;
 
-    public static void LogFilePieces(ICollection<FileWithContents> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
+    public static void LogFilePieces(ICollection<FileWithContentsSnapshot> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
       if (LogPiecesStats && Logger.IsInfoEnabled) {
         Invariants.Assert(filePieces.All(x => x != null));
         Invariants.Assert(filePieces.Aggregate(0L, (c, x) => c + x.ByteLength) ==
@@ -29,7 +28,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           (index, range) => {
             Logger.LogInfo("Partition {0} has a size of {1}",
               index,
-              FormatSizeAsKB(filePieces
+              FormatSizeAsKb(filePieces
                 .Skip(range.Key)
                 .Take(range.Value)
                 .Aggregate(0L, (c, x) => c + x.ByteLength)));
@@ -37,14 +36,14 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    public static void LogFileContentsStats(IList<FileWithContents> filesWithContents) {
+    public static void LogFileContentsStats(IList<FileWithContentsSnapshot> filesWithContents) {
       if (LogContentsStats && Logger.IsInfoEnabled) {
         var sectionSeparator = new string('=', 180);
         Logger.LogInfo("{0}", sectionSeparator);
         Logger.LogInfo("Index statistics");
 
         Logger.LogInfo("  {0}", sectionSeparator);
-        Logger.LogInfo("  Part 1: Files larger than {0}", FormatSizeAsKB(LogContentsStats_LargeFile_Threshold_Bytes));
+        Logger.LogInfo("  Part 1: Files larger than {0}", FormatSizeAsKb(LogContentsStats_LargeFile_Threshold_Bytes));
 
         var bigFiles = filesWithContents
           .Where(x => x.Contents.ByteLength >= LogContentsStats_LargeFile_Threshold_Bytes)
@@ -54,7 +53,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         Logger.LogInfo("  {0}", sectionSeparator);
         Logger.LogInfo("  Part 2: File extensions that occupy more than {0}",
-          FormatSizeAsKB(LogContentsStats_FilesByExtensions_Threshold_Bytes));
+          FormatSizeAsKb(LogContentsStats_FilesByExtensions_Threshold_Bytes));
         var filesByExtensions = filesWithContents
           .GroupBy(x => x.FileName.RelativePath.Extension)
           .Select(g => {
@@ -69,7 +68,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         var filesByExtensionsReport = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
         filesByExtensionsReport.AddColumn("Extension", 70, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.RegularString);
         filesByExtensionsReport.AddColumn("File Count", 16, TextTableGenerator.Align.Right, TextTableGenerator.Stringifiers.DecimalGroupedInteger);
-        filesByExtensionsReport.AddColumn("Size", 16, TextTableGenerator.Align.Right, FormatSizeAsKB);
+        filesByExtensionsReport.AddColumn("Size", 16, TextTableGenerator.Align.Right, FormatSizeAsKb);
         filesByExtensionsReport.GenerateReport(filesByExtensions.Select(g => new List<object> { g.Item1, g.Item2, g.Item3 }));
 
         for (var i = 0; i < Math.Min(LogContentsStats_ExtensionsList_Count, filesByExtensions.Count); i++) {
@@ -86,10 +85,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    private static void LogFileContentsByPath(IEnumerable<FileWithContents> bigFiles) {
+    private static void LogFileContentsByPath(IEnumerable<FileWithContentsSnapshot> bigFiles) {
       var table = new TextTableGenerator(text => Logger.LogInfo("    {0}", text));
       table.AddColumn("Path", 140, TextTableGenerator.Align.Left, TextTableGenerator.Stringifiers.EllipsisString);
-      table.AddColumn("Size", 16, TextTableGenerator.Align.Right, FormatSizeAsKB);
+      table.AddColumn("Size", 16, TextTableGenerator.Align.Right, FormatSizeAsKb);
       var files = bigFiles
         .Select(file => new List<object> {
             file.FileName.FullPath,
@@ -98,11 +97,11 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       table.GenerateReport(files);
     }
 
-    private static string FormatSizeAsKB(TextTableGenerator.ColumnInfo columnInfo, object value) {
-      return FormatSizeAsKB(Convert.ToInt64(value));
+    private static string FormatSizeAsKb(TextTableGenerator.ColumnInfo columnInfo, object value) {
+      return FormatSizeAsKb(Convert.ToInt64(value));
     }
 
-    private static string FormatSizeAsKB(long value) {
+    private static string FormatSizeAsKb(long value) {
       return string.Format("{0:n0} KB", value / 1024);
     }
   }

@@ -87,7 +87,7 @@ namespace VsChromium.Core.Collections {
 
     public TValue this[TKey key] {
       get { return GetOrDefault(key); }
-      set { GetOrAdd(key, value); }
+      set { UpdateOrAdd(key, value); }
     }
 
     public ICollection<TKey> Keys => _keys ?? (_keys = new KeyCollection(this));
@@ -168,6 +168,21 @@ namespace VsChromium.Core.Collections {
 
       AddEntryWorker(value, slotIndex, hashCode);
       return value;
+    }
+
+    public void UpdateOrAdd(TKey key, TValue value) {
+      var hashCode = _comparer.GetHashCode(key);
+      var slotIndex = (hashCode & int.MaxValue) % _slots.Length;
+      for (var entryIndex = _slots[slotIndex]; entryIndex >= 0;) {
+        var entry = _entries[entryIndex];
+        if (entry.HashCode == hashCode && _comparer.Equals(key, _getKey(entry.Value))) {
+          _entries[entryIndex].Value = value;
+          return;
+        }
+        entryIndex = _entries[entryIndex].NextIndex;
+      }
+
+      AddEntryWorker(value, slotIndex, hashCode);
     }
 
     public void CopyTo<TArray>(TArray[] array, Func<TKey, TValue, TArray> convert, int arrayIndex) {

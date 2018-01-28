@@ -18,14 +18,14 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// </summary>
   public class FileDatabaseSnapshot : IFileDatabaseSnapshot {
     private readonly IReadOnlyMap<FullPath, string> _projectHashes;
-    private readonly IReadOnlyMap<FileName, FileWithContents> _files;
+    private readonly IDictionary<FileName, FileWithContentsSnapshot> _files;
     private readonly IList<FileName> _fileNames;
     private readonly IReadOnlyMap<DirectoryName, DirectoryData> _directories;
     private readonly IList<IFileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
     public FileDatabaseSnapshot(IReadOnlyMap<FullPath, string> projectHashes,
-      IReadOnlyMap<FileName, FileWithContents> files, IList<FileName> fileNames,
+      IDictionary<FileName, FileWithContentsSnapshot> files, IList<FileName> fileNames,
       IReadOnlyMap<DirectoryName, DirectoryData> directories, IList<IFileContentsPiece> fileContentsPieces,
       long searchableFileCount) {
       _projectHashes = projectHashes;
@@ -37,20 +37,17 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IReadOnlyMap<FullPath, string> ProjectHashes => _projectHashes;
-    public IReadOnlyMap<FileName, FileWithContents> Files => _files;
+    public IDictionary<FileName, FileWithContentsSnapshot> Files => _files;
     public IReadOnlyMap<DirectoryName, DirectoryData> Directories => _directories;
     public IList<FileName> FileNames => _fileNames;
     public IList<IFileContentsPiece> FileContentsPieces => _fileContentsPieces;
     public long SearchableFileCount => _searchableFileCount;
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans, int maxLength) {
-      var fileData = GetFileData(filename);
-      if (fileData == null)
+      var contents = GetFileContents(filename);
+      if (contents == null) {
         return Enumerable.Empty<FileExtract>();
-
-      var contents = fileData.Contents;
-      if (contents == null)
-        return Enumerable.Empty<FileExtract>();
+      }
 
       return contents.GetFileExtracts(maxLength, spans);
     }
@@ -60,18 +57,17 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public static bool IsContainedInSymLinkHelper(IReadOnlyMap<DirectoryName, DirectoryData> directories, DirectoryName name) {
-      var directoryName = (name as DirectoryName) ?? name.Parent;
-      if (directoryName == null)
+      if (name == null)
         return false;
 
       DirectoryData directoryData;
-      if (!directories.TryGetValue(directoryName, out directoryData))
+      if (!directories.TryGetValue(name, out directoryData))
         return false;
 
       if (directoryData.IsSymLink)
         return true;
 
-      var parent = directoryName.Parent;
+      var parent = name.Parent;
       if (parent == null)
         return false;
 
@@ -87,18 +83,17 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, DirectoryName name) {
-      var directoryName = (name as DirectoryName) ?? name.Parent;
-      if (directoryName == null)
+      if (name == null)
         return false;
 
       DirectoryData directoryData;
-      if (!directories.TryGetValue(directoryName, out directoryData))
+      if (!directories.TryGetValue(name, out directoryData))
         return false;
 
       if (directoryData.IsSymLink)
         return true;
 
-      var parent = directoryName.Parent;
+      var parent = name.Parent;
       if (parent == null)
         return false;
 
@@ -106,12 +101,14 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     /// <summary>
-    /// Return the <see cref="FileWithContents"/> instance associated to <paramref name="filename"/> or null if not present.
+    /// Return the <see cref="FileContents"/> instance associated to <paramref name="filename"/> or null if not present.
     /// </summary>
-    private FileWithContents GetFileData(FileName filename) {
-      FileWithContents result;
-      Files.TryGetValue(filename, out result);
-      return result;
+    private FileContents GetFileContents(FileName filename) {
+      FileWithContentsSnapshot result;
+      if (!Files.TryGetValue(filename, out result)) {
+        return null;
+      }
+      return result.Contents;
     }
   }
 }

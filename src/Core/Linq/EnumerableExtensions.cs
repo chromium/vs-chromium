@@ -263,6 +263,16 @@ namespace VsChromium.Core.Linq {
     /// <summary>
     /// Returns <code>defaultValue</code> when not found.
     /// </summary>
+    public static TValue? GetValueType<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key) where TValue : struct {
+      TValue result;
+      if (!dictionary.TryGetValue(key, out result))
+        return null;
+      return result;
+    }
+
+    /// <summary>
+    /// Returns <code>defaultValue</code> when not found.
+    /// </summary>
     public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value) {
       TValue result;
       if (dictionary.TryGetValue(key, out result)) {

@@ -175,7 +175,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// Note: This code inside this method is not the cleanest, but it is
     /// written in a way that tries to minimiz the # of large array allocations.
     /// </summary>
-    private static IList<IFileContentsPiece> CreateFilePieces(ICollection<FileWithContentsSnapshot> filesWithContents, CancellationToken cancellationToken) {
+    private static IList<FileContentsPiece> CreateFilePieces(ICollection<FileWithContentsSnapshot> filesWithContents, CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested();
 
       // Factory for file identifiers

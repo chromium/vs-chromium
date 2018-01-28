@@ -45,7 +45,7 @@ namespace VsChromium.Server.FileSystemDatabase {
         new Dictionary<FileName, FileWithContentsSnapshot>(),
         new List<FileName>(),
         new Dictionary<DirectoryName, DirectoryData>().ToReadOnlyMap(),
-        new List<IFileContentsPiece>(),
+        new List<FileContentsPiece>(),
         0);
     }
 

@@ -9,7 +9,12 @@ using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
-  public class FileContentsPiece : IFileContentsPiece {
+  /// <summary>
+  /// The most basic piece of contents that can be searched.
+  /// There is at least one instance per searchable file, and
+  /// there may be more than one if the file is large enough.
+  /// </summary>
+  public struct FileContentsPiece {
     private readonly FileName _fileName;
     private readonly FileContents _fileContents;
     private readonly int _fileId;
@@ -22,29 +27,33 @@ namespace VsChromium.Server.FileSystemContents {
       _textRange = textRange;
     }
 
-    public FileName FileName {
-      get { return _fileName; }
-    }
+    /// <summary>
+    /// The file name of the file this piece if part of.
+    /// </summary>
+    public FileName FileName => _fileName;
 
-    public FileContents FileContents {
-      get { return _fileContents; }
-    }
+    public FileContents FileContents => _fileContents;
 
-    public int FileId {
-      get { return _fileId; }
-    }
+    /// <summary>
+    /// A unique identifier of the file this piece is part of. This ID is
+    /// redundant with <see cref="FileName"/>, it is only needed for
+    /// performance, as comparing integers for equality is faster than comparing
+    /// filenames.
+    /// </summary>
+    public int FileId => _fileId;
 
-    public int ByteLength {
-      get { return _textRange.Length * _fileContents.CharacterSize; }
-    }
+    /// <summary>
+    /// The number of bytes in this piece. This is used for debugging only (i.e.
+    /// displaying # of bytes allocated).
+    /// </summary>
+    public int ByteLength => _textRange.Length * _fileContents.CharacterSize;
 
-    public IList<TextRange> FindAll(
-      CompiledTextSearchData compiledTextSearchData,
-      IOperationProgressTracker progressTracker) {
-      return _fileContents.FindAll(
-        compiledTextSearchData,
-        _textRange,
-        progressTracker);
+    /// <summary>
+    /// Find all occurrences of a search term passed in <paramref
+    /// name="compiledTextSearchData"/>.
+    /// </summary>
+    public IList<TextRange> FindAll(CompiledTextSearchData compiledTextSearchData, IOperationProgressTracker progressTracker) {
+      return _fileContents.FindAll(compiledTextSearchData, _textRange, progressTracker);
     }
   }
 }

@@ -21,12 +21,12 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IDictionary<FileName, FileWithContentsSnapshot> _files;
     private readonly IList<FileName> _fileNames;
     private readonly IReadOnlyMap<DirectoryName, DirectoryData> _directories;
-    private readonly IList<IFileContentsPiece> _fileContentsPieces;
+    private readonly IList<FileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
     public FileDatabaseSnapshot(IReadOnlyMap<FullPath, string> projectHashes,
       IDictionary<FileName, FileWithContentsSnapshot> files, IList<FileName> fileNames,
-      IReadOnlyMap<DirectoryName, DirectoryData> directories, IList<IFileContentsPiece> fileContentsPieces,
+      IReadOnlyMap<DirectoryName, DirectoryData> directories, IList<FileContentsPiece> fileContentsPieces,
       long searchableFileCount) {
       _projectHashes = projectHashes;
       _files = files;
@@ -40,7 +40,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     public IDictionary<FileName, FileWithContentsSnapshot> Files => _files;
     public IReadOnlyMap<DirectoryName, DirectoryData> Directories => _directories;
     public IList<FileName> FileNames => _fileNames;
-    public IList<IFileContentsPiece> FileContentsPieces => _fileContentsPieces;
+    public IList<FileContentsPiece> FileContentsPieces => _fileContentsPieces;
     public long SearchableFileCount => _searchableFileCount;
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans, int maxLength) {

@@ -21,7 +21,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
     public static void LogFilePieces(ICollection<FileWithContentsSnapshot> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
       if (LogPiecesStats && Logger.IsInfoEnabled) {
-        Invariants.Assert(filePieces.All(x => x != null));
+        Invariants.Assert(filePieces.All(x => x.FileContents != null));
         Invariants.Assert(filePieces.Aggregate(0L, (c, x) => c + x.ByteLength) ==
           filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
         filePieces.GetPartitionRanges(partitionCount).ForAll(

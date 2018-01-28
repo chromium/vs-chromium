@@ -31,7 +31,6 @@
     <Compile Include="FileSystemContents\ITextLineOffsets.cs" />
     <Compile Include="FileSystemContents\TextLineOffsetsImpl.cs" />
     <Compile Include="FileSystemDatabase\Builder\FileDatabaseDebugLogger.cs" />
-    <Compile Include="FileSystemContents\IFileContentsPiece.cs" />
     <Compile Include="FileSystemContents\FileContentsPiece.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />

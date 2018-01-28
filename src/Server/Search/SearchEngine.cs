@@ -208,7 +208,7 @@ namespace VsChromium.Server.Search {
     }
 
     private struct SearchableContentsResult {
-      public IFileContentsPiece FileContentsPiece { get; set; }
+      public FileContentsPiece FileContentsPiece { get; set; }
       public List<FilePositionSpan> Spans { get; set; }
     }
 

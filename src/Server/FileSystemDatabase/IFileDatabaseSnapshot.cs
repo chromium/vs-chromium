@@ -19,13 +19,13 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     /// <summary>
     /// Returns the list of entities with text contents suitable for text search.
-    /// For large files, there is more than one <see cref="IFileContentsPiece"/>
+    /// For large files, there is more than one <see cref="FileContentsPiece"/>
     /// entry per file.
     /// 
     /// Note: Return type is IList to allow efficient partitioning with
     /// ".AsParallel()".
     /// </summary>
-    IList<IFileContentsPiece> FileContentsPieces { get; }
+    IList<FileContentsPiece> FileContentsPieces { get; }
 
     /// <summary>
     /// The total number of file which can be searched for contents.

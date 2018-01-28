@@ -5,9 +5,7 @@
 using System;
 
 namespace VsChromium.Core.Collections {
-  public interface ISlimHashTableParameters<TKey, TValue> {
+  public interface ISlimHashTableParameters<out TKey, in TValue> {
     Func<TValue, TKey> KeyGetter { get; }
-    Action Locker { get; }
-    Action Unlnlocker { get; }
   }
 }

@@ -7,7 +7,9 @@ using System.Collections.Generic;
 using System.Threading;
 
 namespace VsChromium.Core.Collections {
-  public class ConcurrentHashSet<T> : SlimHashTable<T, T> {
+  public class ConcurrentHashSet<T> {
+    private readonly SlimHashTable<T, T> _table;
+    private readonly object _lock = new object();
 
     public ConcurrentHashSet() : this(0, 0.9, EqualityComparer<T>.Default) {
     }
@@ -15,12 +17,14 @@ namespace VsChromium.Core.Collections {
     public ConcurrentHashSet(int capacity, double loadFactor) : this(capacity, loadFactor, EqualityComparer<T>.Default) {
     }
 
-    public ConcurrentHashSet(int capacity, double loadFactor, IEqualityComparer<T> comparer)
-      : base(new Parameters(), capacity, loadFactor, comparer) {
-    }
+    public ConcurrentHashSet(int capacity, double loadFactor, IEqualityComparer<T> comparer) {
+      _table = new SlimHashTable<T, T>(new Parameters(), capacity, loadFactor, comparer);
+  }
 
     public T GetOrAdd(T value) {
-      return GetOrAdd(value, value);
+      lock (_lock) {
+        return _table.GetOrAdd(value, value);
+      }
     }
 
     private class Parameters : ISlimHashTableParameters<T, T> {

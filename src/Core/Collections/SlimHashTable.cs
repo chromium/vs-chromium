@@ -12,8 +12,6 @@ namespace VsChromium.Core.Collections {
   public partial class SlimHashTable<TKey, TValue> : IDictionary<TKey, TValue> {
     private static readonly double DefaultLoadFactor = 2.0;
     private readonly Func<TValue, TKey> _getKey;
-    private readonly Action _locker;
-    private readonly Action _unlocker;
     private readonly int _capacity;
     private readonly double _loadFactor;
     private readonly IEqualityComparer<TKey> _comparer;
@@ -33,14 +31,13 @@ namespace VsChromium.Core.Collections {
       : this(parameters, capacity, loadFactor, EqualityComparer<TKey>.Default) {
     }
 
-    public SlimHashTable(ISlimHashTableParameters<TKey, TValue> parameters, int capacity, double loadFactor, IEqualityComparer<TKey> comparer) {
+    public SlimHashTable(ISlimHashTableParameters<TKey, TValue> parameters, int capacity, double loadFactor,
+      IEqualityComparer<TKey> comparer) {
       Invariants.CheckArgumentNotNull(parameters, nameof(parameters));
       Invariants.CheckArgument(loadFactor >= 0.1, "Load factor is too small", nameof(loadFactor));
       Invariants.CheckArgumentNotNull(comparer, nameof(comparer));
 
       _getKey = parameters.KeyGetter;
-      _locker = parameters.Locker;
-      _unlocker = parameters.Unlnlocker;
       _capacity = capacity;
       _loadFactor = loadFactor;
       _comparer = comparer;
@@ -53,35 +50,26 @@ namespace VsChromium.Core.Collections {
       return new SlimHashTable<TKey, TValue>(new Parameters(keygetter), capacity, 1.0, EqualityComparer<TKey>.Default);
     }
 
-    public static SlimHashTable<TKey, TValue> Create(Func<TValue, TKey> keygetter, int capacity, IEqualityComparer<TKey> comparer) {
+    public static SlimHashTable<TKey, TValue> Create(Func<TValue, TKey> keygetter, int capacity,
+      IEqualityComparer<TKey> comparer) {
       return new SlimHashTable<TKey, TValue>(new Parameters(keygetter), capacity, 1.0, comparer);
     }
 
     private class Parameters : ISlimHashTableParameters<TKey, TValue> {
-      private readonly Func<TValue, TKey> _keygetter;
-
       public Parameters(Func<TValue, TKey> keygetter) {
-        _keygetter = keygetter;
+        KeyGetter = keygetter;
       }
 
-      public Func<TValue, TKey> KeyGetter => _keygetter;
-
-      public Action Locker {
-        get { return () => { }; }
-      }
-
-      public Action Unlnlocker {
-        get { return () => { }; }
-      }
+      public Func<TValue, TKey> KeyGetter { get; }
     }
 
     private static int GetPrimeLength(int capacity, double loadFactor) {
-      var targetCapacity = (int)(capacity / loadFactor);
+      var targetCapacity = (int) (capacity / loadFactor);
       return HashCode.GetPrime(targetCapacity);
     }
 
     private static int GetOverflowCapacity(int capacity, double loadFactor) {
-      var targetCapacity = (int)(capacity / loadFactor);
+      var targetCapacity = (int) (capacity / loadFactor);
       return Math.Max(0, capacity - targetCapacity);
     }
 
@@ -102,6 +90,7 @@ namespace VsChromium.Core.Collections {
         if (_keys == null) {
           _keys = new KeyCollection(this);
         }
+
         return _keys;
       }
     }
@@ -111,6 +100,7 @@ namespace VsChromium.Core.Collections {
         if (_values == null) {
           _values = new ValueCollection(this);
         }
+
         return _values;
       }
     }
@@ -131,14 +121,12 @@ namespace VsChromium.Core.Collections {
       var comparer = _comparer;
       var hashCode = comparer.GetHashCode(key);
 
-      using (new Locker(this)) {
-        var location = FindEntryLocation(key, hashCode);
-        if (location != null) {
-          Invariants.CheckArgument(false, nameof(key), "Key already exists in dictionary");
-        }
-
-        AddEntry(value, hashCode);
+      var location = FindEntryLocation(key, hashCode);
+      if (location != null) {
+        Invariants.CheckArgument(false, nameof(key), "Key already exists in dictionary");
       }
+
+      AddEntry(value, hashCode);
     }
 
     public void Add(KeyValuePair<TKey, TValue> item) {
@@ -146,12 +134,10 @@ namespace VsChromium.Core.Collections {
     }
 
     public void Clear() {
-      using (new Locker(this)) {
-        _count = 0;
-        _length = GetPrimeLength(_capacity, _loadFactor);
-        _entries = new Entry[_length];
-        _overflow = new Overflow(GetOverflowCapacity(_capacity, _loadFactor));
-      }
+      _count = 0;
+      _length = GetPrimeLength(_capacity, _loadFactor);
+      _entries = new Entry[_length];
+      _overflow = new Overflow(GetOverflowCapacity(_capacity, _loadFactor));
     }
 
     public bool Contains(KeyValuePair<TKey, TValue> item) {
@@ -159,16 +145,14 @@ namespace VsChromium.Core.Collections {
     }
 
     public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
-      CopyTo(array, (k,v) => new KeyValuePair<TKey, TValue>(k, v), arrayIndex);
+      CopyTo(array, (k, v) => new KeyValuePair<TKey, TValue>(k, v), arrayIndex);
     }
 
     public bool Contains(TKey key) {
       var comparer = _comparer;
       var hashCode = comparer.GetHashCode(key);
 
-      using (new Locker(this)) {
-        return FindEntryLocation(key, hashCode) != null;
-      }
+      return FindEntryLocation(key, hashCode) != null;
     }
 
     private bool ContainsValue(TValue item) {
@@ -180,6 +164,7 @@ namespace VsChromium.Core.Collections {
       if (!TryGetValue(key, out result)) {
         return default(TValue);
       }
+
       return result;
     }
 
@@ -187,14 +172,12 @@ namespace VsChromium.Core.Collections {
       var comparer = _comparer;
       var hashCode = comparer.GetHashCode(key);
 
-      using (new Locker(this)) {
-        var location = FindEntryLocation(key, hashCode);
-        if (location != null) {
-          value = location.Value.OverflowIndex >= 0
-            ? _overflow.Get(location.Value.OverflowIndex).Value
-            : _entries[location.Value.Index].Value;
-          return true;
-        }
+      var location = FindEntryLocation(key, hashCode);
+      if (location != null) {
+        value = location.Value.OverflowIndex >= 0
+          ? _overflow.Get(location.Value.OverflowIndex).Value
+          : _entries[location.Value.Index].Value;
+        return true;
       }
 
       value = default(TValue);
@@ -205,25 +188,22 @@ namespace VsChromium.Core.Collections {
       var comparer = _comparer;
       var hashCode = comparer.GetHashCode(key);
 
-      using (new Locker(this)) {
-        var location = FindEntryLocation(key, hashCode);
-        if (location != null) {
-          value = location.Value.OverflowIndex >= 0
-            ? _overflow.Get(location.Value.OverflowIndex).Value
-            : _entries[location.Value.Index].Value;
-          return value;
-        }
-        return AddEntry(value, hashCode);
+      var location = FindEntryLocation(key, hashCode);
+      if (location != null) {
+        value = location.Value.OverflowIndex >= 0
+          ? _overflow.Get(location.Value.OverflowIndex).Value
+          : _entries[location.Value.Index].Value;
+        return value;
       }
+
+      return AddEntry(value, hashCode);
     }
 
     public void CopyTo<TArray>(TArray[] array, Func<TKey, TValue, TArray> convert, int arrayIndex) {
-      using (new Locker(this)) {
-        var index = arrayIndex;
-        foreach (var kvp in this) {
-          array[index] = convert(kvp.Key, kvp.Value);
-          index++;
-        }
+      var index = arrayIndex;
+      foreach (var kvp in this) {
+        array[index] = convert(kvp.Key, kvp.Value);
+        index++;
       }
     }
 
@@ -231,43 +211,41 @@ namespace VsChromium.Core.Collections {
       var comparer = _comparer;
       var hashCode = comparer.GetHashCode(key);
 
-      using (new Locker(this)) {
-        var location = FindEntryLocation(key, hashCode);
-        if (location == null) {
-          return false;
-        }
+      var location = FindEntryLocation(key, hashCode);
+      if (location == null) {
+        return false;
+      }
 
-        var index = location.Value.Index;
-        var overflowIndex = location.Value.OverflowIndex;
-        var previousOverflowIndex = location.Value.PreviousOverflowIndex;
-        if (overflowIndex >= 0) {
-          if (previousOverflowIndex >= 0) {
-            // Remove entry contained in the overflow table
-            var entry = _overflow.Get(overflowIndex);
-            _overflow.Free(overflowIndex);
-            _overflow.SetOverflowIndex(previousOverflowIndex, entry.OverflowIndex);
-
-          } else {
-            // entry is first overflow entry
-            var entry = _overflow.Get(overflowIndex);
-            _overflow.Free(overflowIndex);
-            _entries[index] = new Entry(_entries[index].Value, entry.OverflowIndex);
-          }
+      var index = location.Value.Index;
+      var overflowIndex = location.Value.OverflowIndex;
+      var previousOverflowIndex = location.Value.PreviousOverflowIndex;
+      if (overflowIndex >= 0) {
+        if (previousOverflowIndex >= 0) {
+          // Remove entry contained in the overflow table
+          var entry = _overflow.Get(overflowIndex);
+          _overflow.Free(overflowIndex);
+          _overflow.SetOverflowIndex(previousOverflowIndex, entry.OverflowIndex);
 
         } else {
-          var entry = _entries[index];
-          if (entry.OverflowIndex >= 0) {
-            var overflowEntry = _overflow.Get(entry.OverflowIndex);
-            _entries[index] = overflowEntry;
-            _overflow.Free(entry.OverflowIndex);
-          } else {
-            _entries[index] = default(Entry);
-          }
+          // entry is first overflow entry
+          var entry = _overflow.Get(overflowIndex);
+          _overflow.Free(overflowIndex);
+          _entries[index] = new Entry(_entries[index].Value, entry.OverflowIndex);
         }
 
-        _count--;
-        return true;
+      } else {
+        var entry = _entries[index];
+        if (entry.OverflowIndex >= 0) {
+          var overflowEntry = _overflow.Get(entry.OverflowIndex);
+          _entries[index] = overflowEntry;
+          _overflow.Free(entry.OverflowIndex);
+        } else {
+          _entries[index] = default(Entry);
+        }
       }
+
+      _count--;
+      return true;
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
@@ -297,8 +275,9 @@ namespace VsChromium.Core.Collections {
       } else {
         _entries[index] = new Entry(value, -1);
       }
+
       _count++;
-      if ((float)_count / _entries.Length >= _loadFactor) {
+      if ((float) _count / _entries.Length >= _loadFactor) {
         Grow();
       }
 
@@ -318,7 +297,7 @@ namespace VsChromium.Core.Collections {
         var e = oldEntries[i];
         if (e.IsValid) {
           StoreNewEntry(newEntries, newOverflow, e.Value);
-          for(var overflowIndex = e.OverflowIndex; overflowIndex >= 0; overflowIndex = e.OverflowIndex) {
+          for (var overflowIndex = e.OverflowIndex; overflowIndex >= 0; overflowIndex = e.OverflowIndex) {
             e = _overflow.Get(overflowIndex);
             Invariants.Assert(e.IsValid);
             _overflow.Free(overflowIndex);
@@ -333,7 +312,7 @@ namespace VsChromium.Core.Collections {
     }
 
     private static int GrowSize(int oldLength) {
-      return Math.Max(2, (int)Math.Round((double)oldLength * 3 / 2));
+      return Math.Max(2, (int) Math.Round((double) oldLength * 3 / 2));
     }
 
     private void StoreNewEntry(Entry[] newEntries, Overflow newOverflow, TValue value) {

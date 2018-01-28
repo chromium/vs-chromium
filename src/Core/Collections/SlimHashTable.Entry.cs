@@ -6,9 +6,10 @@
 namespace VsChromium.Core.Collections {
   public partial class SlimHashTable<TKey, TValue> {
     private struct Entry {
-      internal TValue Value;
+      /// <summary>
+      /// The hashcode of the entry
+      /// </summary>
       internal readonly int HashCode;
-
       /// <summary>
       /// MinValue: entry is not valid, there is no next free index
       /// &lt;= -1: entry is not valid, next free index is (-value - 1)
@@ -17,6 +18,10 @@ namespace VsChromium.Core.Collections {
       /// MaxValue: entry is valid, but does not point to a next index
       /// </summary>
       private int _nextIndex;
+      /// <summary>
+      /// The stored value
+      /// </summary>
+      internal TValue Value;
 
       internal Entry(TValue value, int hashCode, int nextIndex) {
         Value = value;

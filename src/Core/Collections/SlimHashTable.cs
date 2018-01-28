@@ -49,6 +49,32 @@ namespace VsChromium.Core.Collections {
       _overflow = new Overflow(GetOverflowCapacity(capacity, loadFactor));
     }
 
+    public static SlimHashTable<TKey, TValue> Create(Func<TValue, TKey> keygetter, int capacity) {
+      return new SlimHashTable<TKey, TValue>(new Parameters(keygetter), capacity, 1.0, EqualityComparer<TKey>.Default);
+    }
+
+    public static SlimHashTable<TKey, TValue> Create(Func<TValue, TKey> keygetter, int capacity, IEqualityComparer<TKey> comparer) {
+      return new SlimHashTable<TKey, TValue>(new Parameters(keygetter), capacity, 1.0, comparer);
+    }
+
+    private class Parameters : ISlimHashTableParameters<TKey, TValue> {
+      private readonly Func<TValue, TKey> _keygetter;
+
+      public Parameters(Func<TValue, TKey> keygetter) {
+        _keygetter = keygetter;
+      }
+
+      public Func<TValue, TKey> KeyGetter => _keygetter;
+
+      public Action Locker {
+        get { return () => { }; }
+      }
+
+      public Action Unlnlocker {
+        get { return () => { }; }
+      }
+    }
+
     private static int GetPrimeLength(int capacity, double loadFactor) {
       var targetCapacity = (int)(capacity / loadFactor);
       return HashCode.GetPrime(targetCapacity);

@@ -136,9 +136,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
           // the dictionary will be used in incremental updates where FileName instances
           // may be new instances from a complete file system enumeration.
-          var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
+          //var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
+          var files = SlimHashTable<FileName, FileWithContents>.Create(v => v.FileName, entities.Files.Count);
           var filesWithContentsArray = new FileWithContents[entities.Files.Count];
-          int filesWithContentsIndex = 0;
+          var filesWithContentsIndex = 0;
           foreach (var kvp in entities.Files) {
             cancellationToken.ThrowIfCancellationRequested();
             var fileData = kvp.Value.FileWithContents;
@@ -272,7 +273,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             new DirectoryData(kvp.Value.DirectoryName, kvp.Value.IsSymLink));
         }
 
-        var files = new Dictionary<FileName, ProjectFileData>(
+        //var files = new Dictionary<FileName, ProjectFileData>(
+        var files = SlimHashTable<FileName, ProjectFileData>.Create(
+          v => v.FileName,
           directories.Count * 2,
           // Note: We can use reference equality here because the file names are
           // constructed unique and the dictionary will be discarded once we are

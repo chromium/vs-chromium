@@ -31,8 +31,6 @@ namespace VsChromium.Server.FileSystemNames {
   ///       Parent = null
   /// </summary>
   public abstract class DirectoryName : IComparable<DirectoryName>, IEquatable<DirectoryName> {
-    private static readonly StringBuilderPool StringBuilderPoolInstance = new StringBuilderPool();
-
     /// <summary>
     /// Returns the parent directory, or null if <see cref="IsAbsoluteName"/> is true.
     /// </summary>
@@ -79,11 +77,19 @@ namespace VsChromium.Server.FileSystemNames {
       return FullPath.Value;
     }
 
+    [ThreadStatic]
+    private static StringBuilder _dangerousThreadStaticStringBuilder;
+
     protected static RelativePath BuildRelativePath(DirectoryName name) {
-      using (var sbFromPool = StringBuilderPoolInstance.AcquireWithDisposable()) {
-        BuildRelativePath(sbFromPool.Value, name);
-        return new RelativePath(sbFromPool.Value.ToString());
+      // One time initializaion per thread
+      if (_dangerousThreadStaticStringBuilder == null) {
+        _dangerousThreadStaticStringBuilder = new StringBuilder(128);
       }
+
+      var sb = _dangerousThreadStaticStringBuilder;
+      sb.Clear();
+      BuildRelativePath(sb, name);
+      return new RelativePath(sb.ToString());
     }
 
     protected static void BuildRelativePath(StringBuilder sb, DirectoryName name) {

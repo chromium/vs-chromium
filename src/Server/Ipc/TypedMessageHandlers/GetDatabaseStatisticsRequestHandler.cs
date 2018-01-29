@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Search;
 
@@ -25,6 +26,12 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     public override TypedResponse Process(TypedRequest typedRequest) {
       var request = (GetDatabaseStatisticsRequest)typedRequest;
+
+      if (request.ForceGabageCollection) {
+        using (new TimeElapsedLogger("Forcing a full gabarge collection before returning statistics")) {
+          GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
+        }
+      }
 
       var snapshot = _snapshotManager.CurrentSnapshot;
       var database = _searchEngine.CurrentFileDatabaseSnapshot;

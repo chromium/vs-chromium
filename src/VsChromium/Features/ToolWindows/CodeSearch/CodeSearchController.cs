@@ -329,7 +329,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void ShowServerInfo() {
-      FetchDatabaseStatistics(response => {
+      FetchDatabaseStatistics(true, response => {
         var message = new StringBuilder();
         message.AppendFormat("Server status: {0}\r\n", GetIndexingServerStatusText(response));
         message.AppendLine();
@@ -664,14 +664,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void FetchDatabaseStatistics() {
-      FetchDatabaseStatistics(x => { });
+      FetchDatabaseStatistics(false, x => { });
     }
 
-    private void FetchDatabaseStatistics(Action<GetDatabaseStatisticsResponse> callback) {
+    private void FetchDatabaseStatistics(bool forceGarbageCollect, Action<GetDatabaseStatisticsResponse> callback) {
       _uiRequestProcessor.Post(
         new UIRequest {
           Id = "GetDatabaseStatisticsRequest",
-          Request = new GetDatabaseStatisticsRequest(),
+          Request = new GetDatabaseStatisticsRequest { ForceGabageCollection = forceGarbageCollect },
           OnSuccess = typedResponse => {
             var response = (GetDatabaseStatisticsResponse)typedResponse;
             DisplayIndexingServerStatus(response);

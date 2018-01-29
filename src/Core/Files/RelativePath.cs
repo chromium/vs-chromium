@@ -21,18 +21,19 @@ namespace VsChromium.Core.Files {
     public RelativePath(string relativePath) {
       Invariants.CheckArgumentNotNull(relativePath, nameof(relativePath));
       Invariants.CheckArgument(!PathHelpers.IsAbsolutePath(relativePath), nameof(relativePath), "Path must be relative.");
-      _relativePath = relativePath;
+      // Empty string is the same as the empty relative path
+      _relativePath = relativePath == "" ? null : relativePath;
     }
 
     /// <summary>
     /// Returns ture if this is the empty (default) relative path instance.
     /// </summary>
-    public bool IsEmpty { get { return string.IsNullOrEmpty(_relativePath); } }
+    public bool IsEmpty => _relativePath == null;
 
     /// <summary>
     /// Returns the string representation of the relative path.
     /// </summary>
-    public string Value { get { return _relativePath ?? ""; } }
+    public string Value => _relativePath ?? "";
 
     /// <summary>
     /// Return the file extension (including the dot).
@@ -48,11 +49,11 @@ namespace VsChromium.Core.Files {
     }
 
     /// <summary>
-    /// Returns the parent path or null if this is a root path.
+    /// Returns the parent path or <code>null</code> if this is the empty relative path
     /// </summary>
-    public RelativePath Parent {
+    public RelativePath? Parent {
       get {
-        var parent = PathHelpers.GetParent(_relativePath);
+        var parent = PathHelpers.GetParent(_relativePath ?? "");
         return parent == null ? default(RelativePath) : new RelativePath(parent);
       }
     }
@@ -65,6 +66,9 @@ namespace VsChromium.Core.Files {
     /// Returns a new relative path instance by appending <paramref name="name"/> to this instance.
     /// </summary>
     public RelativePath CreateChild(string name) {
+      if (_relativePath == null) {
+        return new RelativePath(name);
+      }
       return new RelativePath(PathHelpers.CombinePaths(_relativePath, name));
     }
 
@@ -79,6 +83,9 @@ namespace VsChromium.Core.Files {
     }
 
     public override int GetHashCode() {
+      if (_relativePath == null) {
+        return 0;
+      }
       return SystemPathComparer.Instance.StringComparer.GetHashCode(_relativePath);
     }
 

@@ -153,7 +153,11 @@ namespace VsChromium.Core.Files {
     /// <paramref name="path"/> is a top level directory.
     /// </summary>
     public static string GetParent(string path) {
-      return Path.GetDirectoryName(path);
+      var result = Path.GetDirectoryName(path);
+      if (result == "") {
+        return null;
+      }
+      return result;
     }
 
     /// <summary>

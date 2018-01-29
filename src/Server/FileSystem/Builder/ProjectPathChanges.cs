@@ -1,3 +1,7 @@
+// Copyright 2018 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +19,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     private readonly FullPath _projectPath;
     private readonly Dictionary<RelativePath, PathChangeKind> _map;
     private readonly Lazy<Dictionary<RelativePath, List<RelativePath>>> _createdChildren;
-    private readonly Lazy<Dictionary<RelativePath, List<RelativePath>> >_deletedChildren;
+    private readonly Lazy<Dictionary<RelativePath, List<RelativePath>>> _deletedChildren;
 
     public ProjectPathChanges(FullPath projectPath, IList<PathChangeEntry> entries) {
       _projectPath = projectPath;
@@ -27,12 +31,14 @@ namespace VsChromium.Server.FileSystem.Builder {
 
       _createdChildren = new Lazy<Dictionary<RelativePath, List<RelativePath>>>(() => _map
         .Where(x => x.Value == PathChangeKind.Created)
-        .GroupBy(x => x.Key.Parent)
+        .Where(x => x.Key.Parent != null)
+        .GroupBy(x => x.Key.Parent.Value)
         .ToDictionary(g => g.Key, g => g.Select(x => x.Key).ToList()));
 
       _deletedChildren = new Lazy<Dictionary<RelativePath, List<RelativePath>>>(() => _map
         .Where(x => x.Value == PathChangeKind.Deleted)
-        .GroupBy(x => x.Key.Parent)
+        .Where(x => x.Key.Parent != null)
+        .GroupBy(x => x.Key.Parent.Value)
         .ToDictionary(g => g.Key, g => g.Select(x => x.Key).ToList()));
     }
 

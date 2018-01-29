@@ -93,6 +93,9 @@ namespace VsChromium.Core.Files {
     /// comparer.
     /// </summary>
     public override int GetHashCode() {
+      if (_path == null) {
+        return 0;
+      }
       return SystemPathComparer.Instance.StringComparer.GetHashCode(_path);
     }
 

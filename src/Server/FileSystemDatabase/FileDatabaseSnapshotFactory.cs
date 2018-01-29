@@ -42,7 +42,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     public IFileDatabaseSnapshot CreateEmpty() {
       return new FileDatabaseSnapshot(
         new Dictionary<FullPath, string>().ToReadOnlyMap(),
-        new Dictionary<FileName, FileWithContentsSnapshot>(),
+        new Dictionary<FileName, FileWithContents>(),
         new List<FileName>(),
         new Dictionary<DirectoryName, DirectoryData>().ToReadOnlyMap(),
         new List<FileContentsPiece>(),

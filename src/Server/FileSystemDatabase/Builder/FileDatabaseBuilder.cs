@@ -140,7 +140,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
     /// </summary>
     private static void DangerousUpdateFileTableEntry(FileDatabaseSnapshot fileDatabase, FileName fileName, FileContents newContents) {
-      fileDatabase.Files[fileName] = new FileWithContentsSnapshot(fileName, newContents);
+      fileDatabase.Files[fileName] = new FileWithContents(fileName, newContents);
     }
 
     private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities, bool notifyProgress, CancellationToken cancellationToken) {
@@ -155,12 +155,12 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // the dictionary will be used in incremental updates where FileName instances
           // may be new instances from a complete file system enumeration.
           //var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
-          var files = new SlimHashTable<FileName, FileWithContentsSnapshot>(v => v.FileName, entities.Files.Count);
-          var filesWithContentsArray = new FileWithContentsSnapshot[entities.Files.Count];
+          var files = new SlimHashTable<FileName, FileWithContents>(v => v.FileName, entities.Files.Count);
+          var filesWithContentsArray = new FileWithContents[entities.Files.Count];
           var filesWithContentsIndex = 0;
           foreach (var kvp in entities.Files) {
             cancellationToken.ThrowIfCancellationRequested();
-            var fileData = new FileWithContentsSnapshot(kvp.Value.FileWithContents);
+            var fileData = new FileWithContents(kvp.Value.FileName, kvp.Value.Contents);
             files.Add(kvp.Key, fileData);
             if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
               filesWithContentsArray[filesWithContentsIndex++] = fileData;
@@ -168,7 +168,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           }
 
           var filesWithContents =
-            new ListSegment<FileWithContentsSnapshot>(filesWithContentsArray, 0, filesWithContentsIndex);
+            new ListSegment<FileWithContents>(filesWithContentsArray, 0, filesWithContentsIndex);
           var searchableContentsCollection = CreateFilePieces(filesWithContents, cancellationToken);
           FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
 
@@ -197,7 +197,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// Note: This code inside this method is not the cleanest, but it is
     /// written in a way that tries to minimiz the # of large array allocations.
     /// </summary>
-    private static IList<FileContentsPiece> CreateFilePieces(ICollection<FileWithContentsSnapshot> filesWithContents, CancellationToken cancellationToken) {
+    private static IList<FileContentsPiece> CreateFilePieces(ICollection<FileWithContents> filesWithContents, CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested();
 
       // Factory for file identifiers
@@ -205,7 +205,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       Func<int> fileIdFactory = () => currentFileId++;
 
       // Predicate to figure out if a file is "small"
-      Func<FileWithContentsSnapshot, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
+      Func<FileWithContents, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
 
       // Count the total # of small and large files, while splitting large files
       // into their fragments.
@@ -250,9 +250,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return filePieces;
     }
 
-    private static List<FileWithContentsSnapshot> FilterFilesWithContents(ICollection<FileWithContentsSnapshot> files) {
+    private static List<FileWithContents> FilterFilesWithContents(ICollection<FileWithContents> files) {
       // Create filesWithContents with minimum memory allocations and copying.
-      var filesWithContents = new List<FileWithContentsSnapshot>(files.Count);
+      var filesWithContents = new List<FileWithContents>(files.Count);
       filesWithContents.AddRange(files.Where(x => x.Contents != null && x.Contents.ByteLength > 0));
       return filesWithContents;
     }
@@ -260,7 +260,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// <summary>
     ///  Create chunks of 100KB for files larger than 100KB.
     /// </summary>
-    private static IEnumerable<FileContentsPiece> SplitFileContents(FileWithContentsSnapshot fileWithContents, int fileId) {
+    private static IEnumerable<FileContentsPiece> SplitFileContents(FileWithContents fileWithContents, int fileId) {
       var range = fileWithContents.Contents.TextRange;
       while (range.Length > 0) {
         // TODO(rpaquay): Be smarter and split around new lines characters.
@@ -308,7 +308,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         foreach (var directory in directories.ToForeachEnum()) {
           foreach (var fileName in directory.Value.ChildFiles.ToForeachEnum()) {
-            files.Add(fileName, new ProjectFileData(directory.Key, new FileWithContents(fileName, null)));
+            files.Add(fileName, new ProjectFileData(directory.Key, fileName, null));
           }
         }
 
@@ -344,7 +344,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       using (new TimeElapsedLogger("Loading file contents from disk", cancellationToken)) {
         using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
           entities.Files.AsParallelWrapper().ForAll(fileEntry => {
-            Invariants.Assert(fileEntry.Value.FileWithContents.Contents == null);
+            Invariants.Assert(fileEntry.Value.Contents == null);
 
             // ReSharper disable once AccessToDisposedClosure
             if (progress.Step()) {
@@ -361,7 +361,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
             var contents = LoadSingleFileContents(entities, loadingContext, fileEntry.Value);
             if (contents != null) {
-              fileEntry.Value.FileWithContents.UpdateContents(contents);
+              entities.Files[fileEntry.Key] = fileEntry.Value.WithContents(contents);
             }
           });
         }
@@ -439,7 +439,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return fileContents;
     }
 
-    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContentsSnapshot existingFileWithContents) {
+    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContents existingFileWithContents) {
       Invariants.Assert(existingFileWithContents.Contents != null);
 
       var fullPath = existingFileWithContents.FileName.FullPath;
@@ -469,27 +469,34 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// </summary>
     private struct ProjectFileData {
       private readonly IProject _project;
-      private readonly FileWithContents _fileWithContents;
+      private readonly FileName _fileName;
+      private readonly FileContents _contents;
 
-      public ProjectFileData(IProject project, FileWithContents fileWithContents) {
+      public ProjectFileData(IProject project, FileName fileName, FileContents contents) {
         _project = project;
-        _fileWithContents = fileWithContents;
+        _fileName = fileName;
+        _contents = contents;
       }
 
-      public IProject Project {
-        get { return _project; }
-      }
+      public IProject Project => _project;
 
-      public FileWithContents FileWithContents {
-        get { return _fileWithContents; }
-      }
+      /// <summary>
+      /// The file name. Note the file may not exist on disk anymore, or the file
+      /// maybe not be indexed. Use FileContent to look for the snapshot of the
+      /// file contents at index creation.
+      /// </summary>
+      public FileName FileName => _fileName;
 
-      public FileName FileName {
-        get { return _fileWithContents.FileName; }
-      }
+      /// <summary>
+      /// The file contents. May be null if this file is no part of the search
+      /// engine text index.
+      /// </summary>
+      public FileContents Contents => _contents;
 
-      public bool IsSearchable {
-        get { return _project.IsFileSearchable(_fileWithContents.FileName); }
+      public bool IsSearchable => _project.IsFileSearchable(_fileName);
+
+      public ProjectFileData WithContents(FileContents contents) {
+        return new ProjectFileData(_project, _fileName, contents);
       }
     }
 

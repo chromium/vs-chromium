@@ -18,14 +18,14 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// </summary>
   public class FileDatabaseSnapshot : IFileDatabaseSnapshot {
     private readonly IReadOnlyMap<FullPath, string> _projectHashes;
-    private readonly IDictionary<FileName, FileWithContentsSnapshot> _files;
+    private readonly IDictionary<FileName, FileWithContents> _files;
     private readonly IList<FileName> _fileNames;
     private readonly IReadOnlyMap<DirectoryName, DirectoryData> _directories;
     private readonly IList<FileContentsPiece> _fileContentsPieces;
     private readonly long _searchableFileCount;
 
     public FileDatabaseSnapshot(IReadOnlyMap<FullPath, string> projectHashes,
-      IDictionary<FileName, FileWithContentsSnapshot> files, IList<FileName> fileNames,
+      IDictionary<FileName, FileWithContents> files, IList<FileName> fileNames,
       IReadOnlyMap<DirectoryName, DirectoryData> directories, IList<FileContentsPiece> fileContentsPieces,
       long searchableFileCount) {
       _projectHashes = projectHashes;
@@ -37,7 +37,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IReadOnlyMap<FullPath, string> ProjectHashes => _projectHashes;
-    public IDictionary<FileName, FileWithContentsSnapshot> Files => _files;
+    public IDictionary<FileName, FileWithContents> Files => _files;
     public IReadOnlyMap<DirectoryName, DirectoryData> Directories => _directories;
     public IList<FileName> FileNames => _fileNames;
     public IList<FileContentsPiece> FileContentsPieces => _fileContentsPieces;
@@ -104,7 +104,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// Return the <see cref="FileContents"/> instance associated to <paramref name="filename"/> or null if not present.
     /// </summary>
     private FileContents GetFileContents(FileName filename) {
-      FileWithContentsSnapshot result;
+      FileWithContents result;
       if (!Files.TryGetValue(filename, out result)) {
         return null;
       }

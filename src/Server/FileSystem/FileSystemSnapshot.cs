@@ -13,6 +13,9 @@ namespace VsChromium.Server.FileSystem {
   /// known to the server at the time the snapshot was built.
   /// </summary>
   public class FileSystemSnapshot {
+    public static readonly FileSystemSnapshot Empty =
+      new FileSystemSnapshot(0, Enumerable.Empty<ProjectRootSnapshot>().ToReadOnlyCollection());
+
     private readonly int _version;
     private readonly ReadOnlyCollection<ProjectRootSnapshot> _projectRoots;
 
@@ -21,18 +24,8 @@ namespace VsChromium.Server.FileSystem {
       _projectRoots = projectRoots;
     }
 
-    public int Version {
-      get { return _version; }
-    }
+    public int Version => _version;
 
-    public IList<ProjectRootSnapshot> ProjectRoots {
-      get { return _projectRoots; }
-    }
-
-    public static FileSystemSnapshot Empty {
-      get {
-        return new FileSystemSnapshot(0, Enumerable.Empty<ProjectRootSnapshot>().ToReadOnlyCollection());
-      }
-    }
+    public IList<ProjectRootSnapshot> ProjectRoots => _projectRoots;
   }
 }

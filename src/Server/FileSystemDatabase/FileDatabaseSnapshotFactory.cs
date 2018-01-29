@@ -50,13 +50,22 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabaseSnapshot CreateIncremental(IFileDatabaseSnapshot previousDatabase,
-      FileSystemSnapshot newFileSystemSnapshot, FullPathChanges fullPathChanges,
-      Action onLoading, Action onLoaded,
+      FileSystemSnapshot newFileSystemSnapshot, Action onLoading, Action onLoaded,
+      Action<IFileDatabaseSnapshot> onIntermadiateResult,
+      CancellationToken cancellationToken) {
+
+      return CreateIncrementalWorker(previousDatabase, newFileSystemSnapshot, null, onLoading, onLoaded,
+        onIntermadiateResult,
+        cancellationToken);
+    }
+
+    public IFileDatabaseSnapshot CreateIncrementalWithFileSystemUpdates(IFileDatabaseSnapshot previousDatabase,
+      FileSystemSnapshot newFileSystemSnapshot, FullPathChanges fullPathChanges, Action onLoading, Action onLoaded,
       Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
-      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
-        .Build(previousDatabase, newFileSystemSnapshot, fullPathChanges,
-          onLoading, onLoaded, onIntermadiateResult, cancellationToken);
+      return CreateIncrementalWorker(previousDatabase, newFileSystemSnapshot, fullPathChanges, onLoading, onLoaded,
+        onIntermadiateResult,
+        cancellationToken);
     }
 
     /// <summary>
@@ -65,13 +74,23 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// snapshot" semantics but enables efficient updates for the most common
     /// type of file change events.
     /// </summary>
-    public IFileDatabaseSnapshot CreateWithChangedFiles(IFileDatabaseSnapshot previousDatabase,
+    public IFileDatabaseSnapshot CreateIncrementalWithModifiedFiles(IFileDatabaseSnapshot previousDatabase,
       FileSystemSnapshot fileSystemSnapshot, IList<ProjectFileName> changedFiles,
       Action onLoading, Action onLoaded,
       Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
       return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
         .BuildWithChangedFiles(previousDatabase, fileSystemSnapshot, changedFiles,
+          onLoading, onLoaded, onIntermadiateResult, cancellationToken);
+    }
+
+    private IFileDatabaseSnapshot CreateIncrementalWorker(IFileDatabaseSnapshot previousDatabase,
+      FileSystemSnapshot newFileSystemSnapshot, FullPathChanges fullPathChanges,
+      Action onLoading, Action onLoaded,
+      Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
+
+      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
+        .Build(previousDatabase, newFileSystemSnapshot, fullPathChanges,
           onLoading, onLoaded, onIntermadiateResult, cancellationToken);
     }
   }

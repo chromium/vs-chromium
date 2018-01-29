@@ -46,12 +46,5 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// containted in a symlink directory.
     /// </summary>
     bool IsContainedInSymLink(DirectoryName name);
-
-  }
-
-  public static class FieDatabaseSnapshotExtensions {
-    public static bool IsContainedInSymLink(this IFileDatabaseSnapshot snapshot, FileName name) {
-      return snapshot.IsContainedInSymLink(name.Parent);
-    }
   }
 }

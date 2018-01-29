@@ -47,7 +47,7 @@ namespace VsChromium.Core.Utility {
       _currentThreadIndent--;
     }
 
-    public static string GetOpenIndent(int indent) {
+    public static string GetCloseIndent(int indent) {
       switch (indent) {
         case 0:
           return "";
@@ -68,7 +68,7 @@ namespace VsChromium.Core.Utility {
       }
     }
 
-    public static string GetCloseIndent(int indent) {
+    public static string GetOpenIndent(int indent) {
       switch (indent) {
         case 0:
           return "";

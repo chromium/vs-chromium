@@ -32,6 +32,7 @@
     <Compile Include="FileSystemContents\TextLineOffsetsImpl.cs" />
     <Compile Include="FileSystemDatabase\Builder\FileDatabaseDebugLogger.cs" />
     <Compile Include="FileSystemContents\FileContentsPiece.cs" />
+    <Compile Include="FileSystemDatabase\FileDatabaseSnapshotExtensions.cs" />
     <Compile Include="FileSystemNames\AbsoluteDirectoryName.cs" />
     <Compile Include="FileSystemNames\RelativeDirectoryName.cs" />
     <Compile Include="FileSystem\DirectoryData.cs" />

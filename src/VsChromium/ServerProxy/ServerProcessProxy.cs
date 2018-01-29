@@ -106,7 +106,7 @@ namespace VsChromium.ServerProxy {
       var timeout = TimeSpan.FromSeconds(5.0);
 #endif
       Logger.LogInfo("AfterProxyCreated: Wait for TCP client connection from server process.");
-      if (!_waitForConnection.WaitOne(timeout)) {
+      if (!_waitForConnection.WaitOne(timeout) || _tcpClient == null) {
         throw new InvalidOperationException(
           string.Format("Child process did not connect to server within {0:n0} seconds.", timeout.TotalSeconds));
       }
@@ -154,7 +154,15 @@ namespace VsChromium.ServerProxy {
 
     private void ClientConnected(IAsyncResult result) {
       Logger.LogInfo("TCP Server received client connection.");
-      _tcpClient = _tcpListener.EndAcceptTcpClient(result);
+      try {
+        _tcpClient = _tcpListener.EndAcceptTcpClient(result);
+      }
+      catch (ObjectDisposedException e) {
+        Logger.LogWarn(e, "Error accepting connection from server: socket has been disposed.");
+      } catch (Exception e) {
+        Logger.LogError(e, "Error acceping connection from server process.");
+      }
+
       _waitForConnection.Set();
     }
 

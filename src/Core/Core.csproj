@@ -205,8 +205,10 @@
     <Compile Include="Ipc\TypedMessages\SearchFilePathsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemRequest.cs" />
     <Compile Include="Linq\ParallelQueryExtensions.cs" />
+    <Compile Include="Logging\AssertionFailedException.cs" />
     <Compile Include="Logging\Invariants.cs" />
     <Compile Include="Logging\NLogConfig.cs" />
+    <Compile Include="Logging\StackTraceException.cs" />
     <Compile Include="Utility\BoundedOperationLimiter.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Ipc\IpcRequest.cs" />

@@ -38,13 +38,12 @@ namespace VsChromium.Core.Logging {
 
     public static void Assert(bool condition, string message) {
       if (!condition) {
-        LogAssertionFailed(message);
+        Fail(message);
       }
-      Debug.Assert(condition, message);
     }
 
     public static Exception Fail(string message) {
-      LogAssertionFailed(message);
+      LogAssertionFailed(Environment.StackTrace, message);
       Debug.Assert(false, message);
       throw new AssertionFailedException(message);
     }
@@ -53,7 +52,7 @@ namespace VsChromium.Core.Logging {
       try {
         throw new ArgumentNullException(paramName, message);
       } catch (Exception e) {
-        Logger.LogError(e, "Argument null: {0}", e.Message);
+        LogFailure(e, Environment.StackTrace, "Argument null error");
         throw;
       }
     }
@@ -62,7 +61,7 @@ namespace VsChromium.Core.Logging {
       try {
         throw new ArgumentNullException(paramName);
       } catch (Exception e) {
-        Logger.LogError(e, "Argument null: {0}", e.Message);
+        LogFailure(e, Environment.StackTrace, "Argument null error");
         throw;
       }
     }
@@ -71,22 +70,19 @@ namespace VsChromium.Core.Logging {
       try {
         throw new ArgumentException(paramName, message);
       } catch (Exception e) {
-        Logger.LogError(e, "Argument: {0}", e.Message);
+        LogFailure(e, Environment.StackTrace, "Invalid argument error");
         throw;
       }
     }
 
-    private static void LogAssertionFailed(string message) {
-      try {
-        throw new AssertionFailedException(message);
-      } catch (Exception e) {
-        Logger.LogError(e, e.Message);
-      }
+    private static void LogFailure(Exception error, string stackTrace, string message) {
+      var e = new StackTraceException(message, stackTrace, error);
+      Logger.LogError(e, message);
     }
 
-    public class AssertionFailedException : Exception {
-      public AssertionFailedException(string message) : base(message) {
-      }
+    private static void LogAssertionFailed(string stackTrace, string message) {
+      var e = new AssertionFailedException(message, stackTrace);
+      Logger.LogError(e, message);
     }
   }
 }

@@ -32,6 +32,12 @@ namespace VsChromium.Core.Logging {
       }
     }
 
+    public static void CheckOperation(bool condition, string message) {
+      if (!condition) {
+        ThrowInvalidOperationException(message);
+      }
+    }
+
     public static void Assert(bool condition) {
       Assert(condition, "Assertion failed");
     }
@@ -52,7 +58,7 @@ namespace VsChromium.Core.Logging {
       try {
         throw new ArgumentNullException(paramName, message);
       } catch (Exception e) {
-        LogFailure(e, Environment.StackTrace, "Argument null error");
+        LogFailure(e, Environment.StackTrace, e.Message);
         throw;
       }
     }
@@ -61,7 +67,16 @@ namespace VsChromium.Core.Logging {
       try {
         throw new ArgumentNullException(paramName);
       } catch (Exception e) {
-        LogFailure(e, Environment.StackTrace, "Argument null error");
+        LogFailure(e, Environment.StackTrace, e.Message);
+        throw;
+      }
+    }
+
+    private static void ThrowInvalidOperationException(string message) {
+      try {
+        throw new InvalidOperationException(message);
+      } catch (Exception e) {
+        LogFailure(e, Environment.StackTrace, e.Message);
         throw;
       }
     }
@@ -70,7 +85,7 @@ namespace VsChromium.Core.Logging {
       try {
         throw new ArgumentException(paramName, message);
       } catch (Exception e) {
-        LogFailure(e, Environment.StackTrace, "Invalid argument error");
+        LogFailure(e, Environment.StackTrace, e.Message);
         throw;
       }
     }

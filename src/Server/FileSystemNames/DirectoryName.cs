@@ -4,7 +4,6 @@
 
 using System;
 using System.Text;
-using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 
@@ -77,22 +76,27 @@ namespace VsChromium.Server.FileSystemNames {
       return FullPath.Value;
     }
 
+    /// <summary>
+    /// We use a <see cref="ThreadStaticAttribute"/> field to GC memory allocations
+    /// during heavy parallel task execution.
+    /// </summary>
     [ThreadStatic]
     private static StringBuilder _dangerousThreadStaticStringBuilder;
 
     protected static RelativePath BuildRelativePath(DirectoryName name) {
-      // One time initializaion per thread
+      // Aquire the StringBuilder from thread static variable.
       if (_dangerousThreadStaticStringBuilder == null) {
         _dangerousThreadStaticStringBuilder = new StringBuilder(128);
       }
-
       var sb = _dangerousThreadStaticStringBuilder;
       sb.Clear();
+
+      // Build the relative path
       BuildRelativePath(sb, name);
       return new RelativePath(sb.ToString());
     }
 
-    protected static void BuildRelativePath(StringBuilder sb, DirectoryName name) {
+    internal static void BuildRelativePath(StringBuilder sb, DirectoryName name) {
       var a = name as AbsoluteDirectoryName;
       if (a != null) {
         return;

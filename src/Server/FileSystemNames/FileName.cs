@@ -3,11 +3,16 @@
 // found in the LICENSE file.
 
 using System;
+using System.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.FileSystemNames {
+  /// <summary>
+  /// A value type representing a file name as a pair of parent <see cref="DirectoryName"/>
+  /// and file name <see cref="String"/>.
+  /// </summary>
   public struct FileName : IEquatable<FileName>, IComparable<FileName> {
     private readonly DirectoryName _parent;
     private readonly string _name;
@@ -21,9 +26,45 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public DirectoryName Parent => _parent;
-    public RelativePath RelativePath => _parent.RelativePath.CreateChild(_name);
-    public FullPath FullPath => _parent.GetAbsolutePath().Combine(RelativePath);
+
     public string Name => _name;
+
+    public RelativePath RelativePath => BuildRelativePath();
+
+    public FullPath FullPath {
+      get {
+        Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
+        // ReSharper disable once PossibleNullReferenceException
+        return _parent.GetAbsolutePath().Combine(RelativePath);
+      }
+    }
+
+
+    /// <summary>
+    /// We use a <see cref="ThreadStaticAttribute"/> field to GC memory allocations
+    /// during heavy parallel task execution.
+    /// </summary>
+    [ThreadStatic]
+    private static StringBuilder _dangerousThreadStaticStringBuilder;
+
+    private RelativePath BuildRelativePath() {
+      Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
+
+      // Aquire the StringBuilder from thread static variable.
+      if (_dangerousThreadStaticStringBuilder == null) {
+        _dangerousThreadStaticStringBuilder = new StringBuilder(128);
+      }
+      var sb = _dangerousThreadStaticStringBuilder;
+      sb.Clear();
+
+      // Build the relative path
+      DirectoryName.BuildRelativePath(sb, _parent);
+      if (sb.Length > 0) {
+        sb.Append(PathHelpers.DirectorySeparatorChar);
+      }
+      sb.Append(_name);
+      return new RelativePath(sb.ToString());
+    }
 
     public override bool Equals(object obj) {
       if (obj is FileName) {
@@ -33,6 +74,9 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
     public override int GetHashCode() {
+      if (_parent == null) {
+        return 0;
+      }
       return HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
     }
 

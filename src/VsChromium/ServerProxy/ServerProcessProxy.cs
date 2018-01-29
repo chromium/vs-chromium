@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -28,6 +29,11 @@ namespace VsChromium.ServerProxy {
     private IpcStreamOverNetworkStream _ipcStream;
     private TcpClient _tcpClient;
     private TcpListener _tcpListener;
+    /// <summary>
+    /// If the server did not start successfully, store the exception here so it can
+    /// be thrown to the caller.
+    /// </summary>
+    private Exception _serverFatalException;
 
     [ImportingConstructor]
     public ServerProcessProxy(
@@ -44,7 +50,13 @@ namespace VsChromium.ServerProxy {
     }
 
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
-      CreateServerProcess();
+      CreateServerProcessAsync();
+
+      // Any request after a server failure results in a failed response to the caller
+      if (_serverFatalException != null) {
+        Task.Run(() => { OnRequestError(request, _serverFatalException); });
+        return;
+      }
 
       // Order is important below to avoid race conditions!
       _callbacks.Add(request, callback);
@@ -54,15 +66,9 @@ namespace VsChromium.ServerProxy {
     public event Action<IpcEvent> EventReceived;
 
     public void Dispose() {
-      if (_tcpListener != null) {
-        _tcpListener.Stop();
-      }
-      if (_tcpClient != null) {
-        _tcpClient.Close();
-      }
-      if (_serverProcessLauncher != null) {
-        _serverProcessLauncher.Dispose();
-      }
+      _tcpListener?.Stop();
+      _tcpClient?.Close();
+      _serverProcessLauncher?.Dispose();
     }
 
     private void OnEventReceived(IpcEvent obj) {
@@ -70,26 +76,26 @@ namespace VsChromium.ServerProxy {
       if (!(obj.Data is ProgressReportEvent)) {
         Logger.LogInfo("Event {0} of type \"{1}\" received from server.", obj.RequestId, obj.Data.GetType().Name);
       }
-      var handler = EventReceived;
-      if (handler != null)
-        handler(obj);
+      EventReceived?.Invoke(obj);
     }
 
-    private void CreateServerProcess() {
-        _serverProcessLauncher.CreateProxy(PreCreateProxy, AfterProxyCreated);
+    private void CreateServerProcessAsync() {
+      _serverProcessLauncher.CreateProxyAsync(PreCreateProxy, AfterProxyCreated);
     }
 
     /// <summary>
     /// Note: Calls are serialized by _serverProcessLauncher, so no need to lock
     /// </summary>
-    private IEnumerable<string> PreCreateProxy() {
+    private IList<string> PreCreateProxy() {
       Logger.LogInfo("PreCreateProxy");
 
+      // Create a listener socket, waiting for the server process to connect
       if (_tcpListener == null) {
         _tcpListener = CreateServerSocket();
       }
 
-      return new string[] {
+      // Return the port of the listening socket
+      return new[] {
         ((IPEndPoint) _tcpListener.LocalEndpoint).Port.ToString()
       };
     }
@@ -97,18 +103,45 @@ namespace VsChromium.ServerProxy {
     /// <summary>
     /// Note: Calls are serialized by _serverProcessLauncher, so no need to lock
     /// </summary>
-    private void AfterProxyCreated(CreateProcessResult serverProcess) {
-      Logger.LogInfo("AfterProxyCreated (pid={0}", serverProcess.Process.Id);
+    private void AfterProxyCreated(Exception exception, CreateProcessResult processResult) {
+      // If we could not create the server process, remember that fact
+      // and reply to all pending request with an error. New requests will
+      // also immediately get notified with an error.
+      if (processResult == null) {
+        _serverFatalException = exception;
+        ReplyToPendingRequestsWithServerError();
+        return;
+      }
+
+      // The server proxy process started, but the server itself need to connect
+      // back to use to open the communication socket. This may not happen in
+      // error cases. Create a background task to wait for the server, and
+      // start processing request 
+      var task = Task.Run(() => WaitForServerConnectionTask(processResult));
+      task.ContinueWith(t => {
+        if (t.Exception != null) {
+          _serverFatalException = t.Exception;
+          ReplyToPendingRequestsWithServerError();
+        }
+      }, TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    private void WaitForServerConnectionTask(CreateProcessResult processResult) {
+      Invariants.Assert(processResult != null);
+
+      Logger.LogInfo("AfterProxyCreated (pid={0}", processResult.Process.Id);
 #if PROFILE_SERVER
       var timeout = TimeSpan.FromSeconds(120.0);
-      System.Diagnostics.Trace.WriteLine(string.Format("You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds, ((IPEndPoint)_tcpListener.LocalEndpoint).Port));
+      System.Diagnostics.Trace.WriteLine(string.Format(
+        "You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds,
+        ((IPEndPoint) _tcpListener.LocalEndpoint).Port));
 #else
       var timeout = TimeSpan.FromSeconds(5.0);
 #endif
       Logger.LogInfo("AfterProxyCreated: Wait for TCP client connection from server process.");
       if (!_waitForConnection.WaitOne(timeout) || _tcpClient == null) {
         throw new InvalidOperationException(
-          string.Format("Child process did not connect to server within {0:n0} seconds.", timeout.TotalSeconds));
+          $"Child process did not connect to server within {timeout.TotalSeconds:n0} seconds.");
       }
 
       _ipcStream = new IpcStreamOverNetworkStream(_serializer, _tcpClient.GetStream());
@@ -131,9 +164,19 @@ namespace VsChromium.ServerProxy {
       _sendRequestsThread.Start(_ipcStream, _requestQueue);
     }
 
+    private void ReplyToPendingRequestsWithServerError() {
+      foreach (var x in _callbacks.RemoveAll()) {
+        Task.Run(() => SendErrorToCallback(x.Key, _serverFatalException, x.Value));
+      }
+    }
+
     private void OnRequestError(IpcRequest request, Exception error) {
       var callback = _callbacks.Remove(request.RequestId);
-      var response = ErrorResponseHelper.CreateIpcErrorResponse(request, error);
+      SendErrorToCallback(request.RequestId, error, callback);
+    }
+
+    private static void SendErrorToCallback(long requestId, Exception error, Action<IpcResponse> callback) {
+      var response = ErrorResponseHelper.CreateIpcErrorResponse(requestId, error);
       callback(response);
     }
 
@@ -156,8 +199,7 @@ namespace VsChromium.ServerProxy {
       Logger.LogInfo("TCP Server received client connection.");
       try {
         _tcpClient = _tcpListener.EndAcceptTcpClient(result);
-      }
-      catch (ObjectDisposedException e) {
+      } catch (ObjectDisposedException e) {
         Logger.LogWarn(e, "Error accepting connection from server: socket has been disposed.");
       } catch (Exception e) {
         Logger.LogError(e, "Error acceping connection from server process.");

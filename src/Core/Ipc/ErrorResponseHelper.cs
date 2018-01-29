@@ -7,9 +7,9 @@ using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Core.Ipc {
   public static class ErrorResponseHelper {
-    public static IpcResponse CreateIpcErrorResponse(IpcRequest request, Exception error) {
+    public static IpcResponse CreateIpcErrorResponse(long requestId, Exception error) {
       return new IpcResponse {
-        RequestId = request.RequestId,
+        RequestId = requestId,
         Protocol = IpcProtocols.Exception,
         Data = CreateErrorResponse(error)
       };

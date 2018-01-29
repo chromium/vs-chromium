@@ -8,6 +8,8 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Processes;
@@ -23,7 +25,9 @@ namespace VsChromium.ServerProxy {
     private readonly IProcessCreator _processCreator;
     private readonly IFileSystem _fileSystem;
     private readonly object _serverProcessLock = new object();
-    private CreateProcessResult _serverProcess;
+    private readonly CancellationTokenSource _processStartTokenSource = new CancellationTokenSource();
+    private Task _startServerTask;
+    private CreateProcessResult _createProcessResult;
 
     [ImportingConstructor]
     public ServerProcessLauncher(IProcessCreator processCreator, IFileSystem fileSystem) {
@@ -31,43 +35,64 @@ namespace VsChromium.ServerProxy {
       _fileSystem = fileSystem;
     }
 
-    public void CreateProxy(Func<IEnumerable<string>> preCreate, Action<CreateProcessResult> postCreate) {
-      if (_serverProcess == null) {
+    public void CreateProxyAsync(Func<IList<string>> preCreate, Action<Exception, CreateProcessResult> postCreate) {
+      if (_createProcessResult == null) {
         lock (_serverProcessLock) {
-          if (_serverProcess == null) {
-            CreateServerProcessWorker(preCreate, postCreate);
+          if (_createProcessResult == null) {
+            if (_startServerTask == null) {
+              // Run "pre-create" on the caller's synchronization context
+              var args = preCreate();
+
+              // Create the process on the thread pool
+              var createTask = Task.Run(() =>
+                CreateServerProcessWorkerTask(args, _processStartTokenSource.Token));
+
+              // Run "postCreate" on the caller's synchronization context
+              _startServerTask = createTask.ContinueWith(t => {
+                if (t.Status == TaskStatus.RanToCompletion) {
+                  postCreate(null, t.Result);
+                } else {
+                  var error = t.Exception ?? new AggregateException(new InvalidOperationException("Server process not created"));
+                  postCreate(error, null);
+                }
+              }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
           }
         }
       }
     }
 
     public void Dispose() {
-      if (_serverProcess != null) {
-        _serverProcess.Dispose();
-      }
+      _processStartTokenSource.Cancel();
+      _startServerTask?.Dispose();
+      _createProcessResult?.Dispose();
     }
 
-    private void CreateServerProcessWorker(Func<IEnumerable<string>> preCreate, Action<CreateProcessResult> postCreate) {
+    private CreateProcessResult CreateServerProcessWorkerTask(IList<string> args, CancellationToken token) {
+      token.ThrowIfCancellationRequested();
+
       Logger.LogInfo("Creating VsChromiumHost process.");
       var path = GetProcessPath();
       Logger.LogInfo("  Path={0}", path);
-      var serverPath = Path.Combine(Path.GetDirectoryName(path.Value), ServerName);
+      var serverPath = PathHelpers.CombinePaths(PathHelpers.GetParent(path.Value), ServerName);
       Logger.LogInfo("  Server path={0}", serverPath);
 
       var arguments = new List<string>();
       arguments.Add(serverPath);
-      arguments.AddRange(preCreate());
+      arguments.AddRange(args);
 #if PROFILE_SERVER
       arguments.Add("/profile-server");
 #endif
 
       var argumentLine = arguments.Aggregate("", (x, v) => x + QuoteArgument(v) + " ");
       Logger.LogInfo("  Arguments={0}", argumentLine);
-      _serverProcess = _processCreator.CreateProcess(path.Value, argumentLine,
+      _createProcessResult = _processCreator.CreateProcess(path.Value, argumentLine,
                                                      CreateProcessOptions.AttachDebugger |
                                                      CreateProcessOptions.BreakAwayFromJob);
-      Logger.LogInfo("VsChromiumHost process created (pid={0}).", _serverProcess.Process.Id);
-      postCreate(_serverProcess);
+      Logger.LogInfo("VsChromiumHost process created (pid={0}).", _createProcessResult.Process.Id);
+
+      token.ThrowIfCancellationRequested();
+      return _createProcessResult;
     }
 
     private string QuoteArgument(string argument) {
@@ -98,10 +123,10 @@ namespace VsChromium.ServerProxy {
       yield return serverFolder.Combine(new RelativePath("bin\\Release")).Combine(new RelativePath(ServerName));
     }
 
-    public int Priority { get { return 0; } }
+    int IPackagePostDispose.Priority => 0;
 
-    public void Run(IVisualStudioPackage package) {
-      this.Dispose();
+    void IPackagePostDispose.Run(IVisualStudioPackage package) {
+      Dispose();
     }
   }
 }

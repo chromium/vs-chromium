@@ -76,7 +76,8 @@
       </StackPanel>
     </Border>
 
-    <Grid DockPanel.Dock="Top" Margin="0" Background="{DynamicResource VsBrush.CommandBarGradient}" >
+    <!-- TOP TOOLBAR WITH BUTTONS -->
+    <Grid DockPanel.Dock="Top" Margin="0" Background="{DynamicResource VsBrush.CommandBarGradient}" IsEnabled="{Binding ServerHasStarted}" >
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
@@ -84,6 +85,15 @@
         <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
+      <Grid.Style>
+        <Style TargetType="Grid">
+          <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Opacity" Value="0.5" />
+            </Trigger>
+          </Style.Triggers>
+        </Style>
+      </Grid.Style>
       <StackPanel Margin="2" Grid.Row="0" Grid.Column="0" Orientation="Horizontal"  Background="{DynamicResource VsBrush.CommandBarGradient}" IsHitTestVisible="True">
         <!--<Separator Width="2" />-->
         <ToggleButton Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" Content="Aa" IsChecked="{Binding MatchCase}" IsTabStop="False" Foreground="{DynamicResource VsBrush.WindowText}">
@@ -254,7 +264,7 @@
     </Grid>
 
     <!-- SEARCH AREA -->
-    <Border DockPanel.Dock="Top" BorderBrush="Gray" BorderThickness="1,1,1,1">
+    <Border DockPanel.Dock="Top" BorderBrush="Gray" BorderThickness="1,1,1,1" >
       <Border.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
           <GradientStop Color="#33000000" Offset="0" />
@@ -263,7 +273,7 @@
       </Border.Background>
 
       <StackPanel HorizontalAlignment="Stretch" Margin="4,4,4,0" Orientation="Vertical">
-        <Grid HorizontalAlignment="Stretch" Margin="0">
+        <Grid HorizontalAlignment="Stretch" Margin="0" IsEnabled="{Binding ServerHasStarted}" >
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -274,6 +284,15 @@
             <ColumnDefinition Width="*" MinWidth="100" />
             <ColumnDefinition Width="Auto"/>
           </Grid.ColumnDefinitions>
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
           <!-- Row 0 -->
           <TextBlock Grid.Row="0" Grid.Column="0" Text="Search Code:" VerticalAlignment="Center" />
           <wpf:EditableComboBox Grid.Row="0" Grid.Column="1" x:Name="SearchCodeCombo">
@@ -343,6 +362,7 @@
       </StackPanel>
     </Border>
 
+    <!-- TREEVIEW TO SHOW RESULTS -->
     <!-- 'RootNode' is the property name of the control's DataContext instance. -->
     <TreeView
       ItemsSource="{Binding RootNodes}"

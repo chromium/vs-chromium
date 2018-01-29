@@ -56,19 +56,19 @@ namespace VsChromium.Server.Ipc {
       catch (OperationCanceledException e) {
         Logger.LogInfo("Request {0} of type \"{1}\" has been canceled.",
                    request.RequestId, request.Data.GetType().Name);
-        return ErrorResponseHelper.CreateIpcErrorResponse(request, e);
+        return ErrorResponseHelper.CreateIpcErrorResponse(request.RequestId, e);
       }
       catch (RecoverableErrorException e) {
         Logger.LogInfo("Request {0} of type \"{1}\" generated a recoverable error: {2}.",
                    request.RequestId, request.Data.GetType().Name, e.Message);
-        return ErrorResponseHelper.CreateIpcErrorResponse(request, e);
+        return ErrorResponseHelper.CreateIpcErrorResponse(request.RequestId, e);
       }
       catch (Exception e) {
         var message = string.Format("Error executing request {0} of type \"{1}\".",
                             request.RequestId, request.Data.GetType().Name);
         Logger.LogError(e, "{0}", message);
         var outer = new Exception(message, e);
-        return ErrorResponseHelper.CreateIpcErrorResponse(request, outer);
+        return ErrorResponseHelper.CreateIpcErrorResponse(request.RequestId, outer);
       }
     }
   }

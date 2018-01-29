@@ -34,6 +34,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string _serverStatusToolTipText;
     private bool _indexingPausedDueToError;
     private bool _indexingBusy;
+    private bool _serverHasStarted;
+    private bool _fileSystemTreeAvailable;
 
     public enum DisplayKind {
       InformationMessages,
@@ -51,8 +53,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       SetRootNodes(_informationMessagesNodes);
     }
 
+    public void SetInformationMessagesNoActivate(List<TreeViewItemViewModel> viewModel) {
+      _informationMessagesNodes = viewModel;
+    }
+
     public void SetInformationMessages(List<TreeViewItemViewModel> viewModel) {
       _informationMessagesNodes = viewModel;
+      SetRootNodes(_informationMessagesNodes);
     }
 
     public void SetSearchFilePathsResult(List<TreeViewItemViewModel> viewModel) {
@@ -312,10 +319,32 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     /// <summary>
-    /// Indicates if the server has entires in its file system tree, i.e. if
+    /// Indicates if the server has entries in its file system tree, i.e. if
     /// there are known project roots.
     /// </summary>
-    public bool FileSystemTreeAvailable { get; set; }
+    public bool FileSystemTreeAvailable {
+      get { return _fileSystemTreeAvailable; }
+      set {
+        if (_fileSystemTreeAvailable != value) {
+          _fileSystemTreeAvailable = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.FileSystemTreeAvailable));
+        }
+      }
+    }
+
+    /// <summary>
+    /// Indicates if the server has entries in its file system tree, i.e. if
+    /// there are known project roots.
+    /// </summary>
+    public bool ServerHasStarted {
+      get { return _serverHasStarted; }
+      set {
+        if (_serverHasStarted != value) {
+          _serverHasStarted = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.ServerHasStarted));
+        }
+      }
+    }
 
     public bool GotoPreviousEnabled {
       get { return ActiveDisplay != DisplayKind.InformationMessages; }

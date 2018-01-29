@@ -4,12 +4,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VsChromium.Core.Ipc;
 
 namespace VsChromium.ServerProxy {
   public class CallbackDictionary {
     private readonly Dictionary<long, Action<IpcResponse>> _callbacks = new Dictionary<long, Action<IpcResponse>>();
-    private readonly Object _lock = new object();
+    private readonly object _lock = new object();
 
     public void Add(IpcRequest request, Action<IpcResponse> callback) {
       lock (_lock) {
@@ -22,6 +23,14 @@ namespace VsChromium.ServerProxy {
         var result = _callbacks[requestId];
         _callbacks.Remove(requestId);
         return result;
+      }
+    }
+
+    public IList<KeyValuePair<long, Action<IpcResponse>>> RemoveAll() {
+      lock (_lock) {
+        var list = _callbacks.ToList();
+        _callbacks.Clear();
+        return list;
       }
     }
   }

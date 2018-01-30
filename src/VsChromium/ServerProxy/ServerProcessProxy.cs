@@ -55,15 +55,18 @@ namespace VsChromium.ServerProxy {
 
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
       CreateServerProcessAsync().ContinueWith(t => {
+        // Register callback so that we can reply with error if needed
+        _callbacks.Add(request, callback);
+
         if (t.Exception != null) {
           // Skip the "AggregateException"
           var error = t.Exception.InnerExceptions.Count == 1 ? t.Exception.InnerExceptions[0] : t.Exception;
 
-          OnProcessFatalError(new ErrorEventArgs(error));
+          // Reply error to callback (this will also fire general "server is down" event)
           HandleSendRequestError(request, error);
         } else {
-          // Order is important below to avoid race conditions!
-          _callbacks.Add(request, callback);
+          // The queue is guaranteed to be started at this point, so enqueue the request
+          // so it is sent to the server
           _requestQueue.Enqueue(request);
         }
       });
@@ -76,17 +79,16 @@ namespace VsChromium.ServerProxy {
     }
 
     private Task CreateServerProcessAsync() {
-      // Return existing process task
-      lock (this) {
-        if (_createProcessTask == null) {
-          var task = _serverProcessLauncher.CreateProxyAsync(PreCreateProxy());
-          _createProcessTask = task.ContinueWith(t => {
-             AfterProxyCreated(t.Result);
-          });
+      // Return existing or create new process task
+      if (_createProcessTask == null) {
+        lock (this) {
+          if (_createProcessTask == null) {
+            var task = _serverProcessLauncher.CreateProxyAsync(PreCreateProxy());
+            _createProcessTask = task.ContinueWith(t => { AfterProxyCreated(t.Result); });
+          }
         }
-
-        return _createProcessTask;
       }
+      return _createProcessTask;
     }
 
     private IList<string> PreCreateProxy() {

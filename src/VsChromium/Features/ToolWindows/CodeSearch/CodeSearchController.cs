@@ -151,7 +151,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public void Start() {
       // Server may not be started yet, so display a message as we wait for start-up
-      var items = CreateInfromationMessages("Waiting for VsChromium index server to start or respond");
+      var items = CreateInfromationMessages("Waiting for VsChromium index server to respond to first request");
       ViewModel.SetInformationMessages(items);
 
       // Send a request to server to ensure it is started and we have up to date

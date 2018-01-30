@@ -25,13 +25,5 @@ namespace VsChromium.ServerProxy {
         return result;
       }
     }
-
-    public IList<KeyValuePair<long, Action<IpcResponse>>> RemoveAll() {
-      lock (_lock) {
-        var list = _callbacks.ToList();
-        _callbacks.Clear();
-        return list;
-      }
-    }
   }
 }

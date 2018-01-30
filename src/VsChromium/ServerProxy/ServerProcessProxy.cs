@@ -30,11 +30,7 @@ namespace VsChromium.ServerProxy {
     private IpcStreamOverNetworkStream _ipcStream;
     private TcpClient _tcpClient;
     private TcpListener _tcpListener;
-    /// <summary>
-    /// If the server did not start successfully, store the exception here so it can
-    /// be thrown to the caller.
-    /// </summary>
-    private Exception _serverFatalException;
+    private Task _createProcessTask;
 
     [ImportingConstructor]
     public ServerProcessProxy(
@@ -55,17 +51,17 @@ namespace VsChromium.ServerProxy {
     public event EventHandler<ErrorEventArgs> ProcessFatalError;
 
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
-      CreateServerProcessAsync();
-
-      // Any request after a server failure results in a failed response to the caller
-      if (_serverFatalException != null) {
-        Task.Run(() => { OnRequestError(request, _serverFatalException); });
-        return;
-      }
-
-      // Order is important below to avoid race conditions!
-      _callbacks.Add(request, callback);
-      _requestQueue.Enqueue(request);
+      CreateServerProcessAsync().ContinueWith(t => {
+        if (t.Exception != null) {
+          var error = t.Exception.InnerExceptions.Count == 1 ? t.Exception.InnerExceptions[0] : t.Exception;
+          OnProcessFatalError(new ErrorEventArgs(error));
+          OnRequestError(request, error);
+        } else {
+          // Order is important below to avoid race conditions!
+          _callbacks.Add(request, callback);
+          _requestQueue.Enqueue(request);
+        }
+      });
     }
 
     public void Dispose() {
@@ -74,8 +70,18 @@ namespace VsChromium.ServerProxy {
       _serverProcessLauncher?.Dispose();
     }
 
-    private void CreateServerProcessAsync() {
-      _serverProcessLauncher.CreateProxyAsync(PreCreateProxy, AfterProxyCreated);
+    private Task CreateServerProcessAsync() {
+      // Return existing process task
+      lock (this) {
+        if (_createProcessTask == null) {
+          var task = _serverProcessLauncher.CreateProxyAsync(PreCreateProxy());
+          _createProcessTask = task.ContinueWith(t => {
+             AfterProxyCreated(t.Result);
+          });
+        }
+
+        return _createProcessTask;
+      }
     }
 
     private IList<string> PreCreateProxy() {
@@ -95,36 +101,12 @@ namespace VsChromium.ServerProxy {
       };
     }
 
-    private void AfterProxyCreated(Exception exception, CreateProcessResult processResult) {
-      //
-      // Note: Calls are serialized by _serverProcessLauncher, so no need to lock
-      //
-
-      // If we could not create the server process, remember that fact
-      // and reply to all pending request with an error. New requests will
-      // also immediately get notified with an error.
-      if (processResult == null) {
-        _serverFatalException = exception;
-        ReplyToPendingRequestsWithServerError();
-        OnProcessFatalError(new ErrorEventArgs(exception));
-        return;
-      }
-
+    private void AfterProxyCreated(CreateProcessResult processResult) {
       // The server proxy process started, but the server itself need to connect
       // back to use to open the communication socket. This may not happen in
       // error cases. Create a background task to wait for the server, and
       // start processing request 
-      var task = Task.Run(() => WaitForServerConnectionTask(processResult));
-      task.ContinueWith(t => {
-        if (t.Exception != null) {
-          var error = t.Exception.InnerExceptions.Count == 1 ? t.Exception.InnerExceptions[0] : t.Exception;
-          _serverFatalException = error;
-          ReplyToPendingRequestsWithServerError();
-          OnProcessFatalError(new ErrorEventArgs(error));
-        } else {
-          OnProcessStarted();
-        }
-      }, TaskScheduler.FromCurrentSynchronizationContext());
+      WaitForServerConnectionTask(processResult);
     }
 
     private void WaitForServerConnectionTask(CreateProcessResult processResult) {
@@ -163,12 +145,6 @@ namespace VsChromium.ServerProxy {
       Logger.LogInfo("AfterProxyCreated: Start send request thread..");
       _sendRequestsThread.RequestError += OnRequestError;
       _sendRequestsThread.Start(_ipcStream, _requestQueue);
-    }
-
-    private void ReplyToPendingRequestsWithServerError() {
-      foreach (var x in _callbacks.RemoveAll()) {
-        Task.Run(() => SendErrorToCallback(x.Key, _serverFatalException, x.Value));
-      }
     }
 
     private void OnRequestError(IpcRequest request, Exception error) {

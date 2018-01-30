@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using VsChromium.Core.Processes;
 
 namespace VsChromium.ServerProxy {
@@ -13,9 +14,6 @@ namespace VsChromium.ServerProxy {
     /// thread, with guarantee only one instance of the server process is
     /// created.
     /// </summary>
-    /// <param name="preCreate">Called just before the VsChromium server process is launched.
-    /// Returns a list of additional command line argument to pass to the process.</param>
-    /// <param name="postCreate">Called just after the process is launched.</param>
-    void CreateProxyAsync(Func<IList<string>> preCreate, Action<Exception, CreateProcessResult> postCreate);
+    Task<CreateProcessResult> CreateProxyAsync(IList<string> arguments);
   }
 }

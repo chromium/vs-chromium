@@ -9,6 +9,7 @@ using System.IO;
 namespace VsChromium.Core.Files {
   public partial class DirectoryChangeWatcher {
     private class RestartingState : State {
+      private static readonly bool _conservative = false;
       /// <summary>
       /// The date/time when we restarted watching files, but still observing disk activity before
       /// resuming notifications.
@@ -49,31 +50,37 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnWatcherErrorEvent(object sender, ErrorEventArgs args) {
+        // If there is another buffer overflow, go straight back to the error state,
+        // don't ever be conservative.
         return BackToErrorState();
       }
 
       public override State OnWatcherFileChangedEvent(object sender, FileSystemEventArgs args, PathKind pathKind) {
-        return BackToErrorState();
+        return BackToState();
       }
 
       public override State OnWatcherFileCreatedEvent(object sender, FileSystemEventArgs args, PathKind pathKind) {
-        return BackToErrorState();
+        return BackToState();
       }
 
       public override State OnWatcherFileDeletedEvent(object sender, FileSystemEventArgs args, PathKind pathKind) {
-        return BackToErrorState();
+        return BackToState();
       }
 
       public override State OnWatcherFileRenamedEvent(object sender, RenamedEventArgs args, PathKind pathKind) {
-        return BackToErrorState();
+        return BackToState();
       }
 
       public override State OnWatcherAdded(FullPath directory, DirectoryWatcherhEntry watcher) {
-        return BackToErrorState();
+        return BackToState();
       }
 
       public override State OnWatcherRemoved(FullPath directory, DirectoryWatcherhEntry watcher) {
-        return BackToErrorState();
+        return BackToState();
+      }
+
+      private State BackToState() {
+        return _conservative ? BackToErrorState() : this;
       }
 
       private State BackToErrorState() {

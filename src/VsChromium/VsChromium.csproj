@@ -266,7 +266,7 @@
     <Compile Include="Package\IShellHost.cs" />
     <Compile Include="Package\ReportServerProgress.cs" />
     <Compile Include="Package\ShellHost.cs" />
-    <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
+    <Compile Include="Threads\IDispatchThreadDelayedOperationExecutor.cs" />
     <Compile Include="Views\ITextDocumentTable.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchCodeCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />
@@ -305,9 +305,9 @@
     <Compile Include="Package\VsSolutionEventsHandler.cs" />
     <Compile Include="ServerProxy\FileSystemTreeSource.cs" />
     <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />
-    <Compile Include="Threads\IUIThread.cs" />
-    <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
-    <Compile Include="Threads\UIThread.cs" />
+    <Compile Include="Threads\IDispatchThread.cs" />
+    <Compile Include="Threads\DispatchThreadDelayedOperationExecutor.cs" />
+    <Compile Include="Threads\DispatchThread.cs" />
     <Compile Include="ToolsOptions\IToolsOptionsPageProvider.cs" />
     <Compile Include="ToolsOptions\CodingStyleOptions.cs">
       <SubType>Component</SubType>
@@ -362,16 +362,16 @@
     <Compile Include="Threads\ISendRequestsThread.cs" />
     <Compile Include="Threads\IDelayedOperationProcessor.cs" />
     <Compile Include="Threads\ISynchronizationContextProvider.cs" />
-    <Compile Include="Threads\IUIRequestProcessor.cs" />
+    <Compile Include="Threads\IDispatchThreadServerRequestExecutor.cs" />
     <Compile Include="Threads\ReceiveResponsesThread.cs" />
     <Compile Include="Threads\RequestQueue.cs" />
     <Compile Include="Threads\SendRequestsThread.cs" />
     <Compile Include="Threads\DelayedOperation.cs" />
     <Compile Include="Threads\DelayedOperationProcessor.cs" />
     <Compile Include="Threads\SynchronizationContextProvider.cs" />
-    <Compile Include="Threads\UIRequestProcessor.cs" />
+    <Compile Include="Threads\DispatchThreadServerRequestExecutor.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\FilePositionViewModel.cs" />
-    <Compile Include="Threads\UIRequest.cs" />
+    <Compile Include="Threads\DispatchThreadServerRequest.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\FileSystemEntryDataViewModelFactory.cs" />
     <Compile Include="Wpf\ILazyObservableCollection.cs" />
     <Compile Include="Wpf\IProgressBarTracker.cs" />

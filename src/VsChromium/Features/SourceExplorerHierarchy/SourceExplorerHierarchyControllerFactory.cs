@@ -22,11 +22,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IFileSystem _fileSystem;
     private readonly IClipboard _clipboard;
     private readonly IWindowsExplorer _windowsExplorer;
-    private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationProcessor _delayedOperationProcessor;
-    private readonly IUIThread _uiThread;
+    private readonly IDispatchThread _dispatchThread;
 
     [ImportingConstructor]
     public SourceExplorerHierarchyControllerFactory(
@@ -39,11 +39,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IFileSystem fileSystem,
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
-      IUIRequestProcessor uiRequestProcessor,
+      IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationProcessor delayedOperationProcessor,
-      IUIThread uiThread) {
+      IDispatchThread dispatchThread) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -53,11 +53,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _fileSystem = fileSystem;
       _clipboard = clipboard;
       _windowsExplorer = windowsExplorer;
-      _uiRequestProcessor = uiRequestProcessor;
+      _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationProcessor = delayedOperationProcessor;
-      _uiThread = uiThread;
+      _dispatchThread = dispatchThread;
     }
 
     public ISourceExplorerHierarchyController CreateController() {
@@ -71,11 +71,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _fileSystem,
         _clipboard,
         _windowsExplorer,
-        _uiRequestProcessor,
+        _dispatchThreadServerRequestExecutor,
         _eventBus,
         _globalSettingsProvider,
         _delayedOperationProcessor,
-        _uiThread);
+        _dispatchThread);
     }
   }
 }

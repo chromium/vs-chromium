@@ -11,14 +11,14 @@ using VsChromium.Core.Logging;
 using VsChromium.ServerProxy;
 
 namespace VsChromium.Threads {
-  [Export(typeof(IUIRequestProcessor))]
-  public class UIRequestProcessor : IUIRequestProcessor {
+  [Export(typeof(IDispatchThreadServerRequestExecutor))]
+  public class DispatchThreadServerRequestExecutor : IDispatchThreadServerRequestExecutor {
     private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
     private readonly IDelayedOperationProcessor _delayedOperationProcessor;
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
 
     [ImportingConstructor]
-    public UIRequestProcessor(ITypedRequestProcessProxy typedRequestProcessProxy,
+    public DispatchThreadServerRequestExecutor(ITypedRequestProcessProxy typedRequestProcessProxy,
                               IDelayedOperationProcessor delayedOperationProcessor,
                               ISynchronizationContextProvider synchronizationContextProvider) {
       _typedRequestProcessProxy = typedRequestProcessProxy;
@@ -28,7 +28,7 @@ namespace VsChromium.Threads {
       _typedRequestProcessProxy.ProcessFatalError += TypedRequestProcessProxyOnProcessFatalError;
     }
 
-    public void Post(UIRequest request) {
+    public void Post(DispatchThreadServerRequest request) {
       if (request == null)
         throw new ArgumentNullException("request");
       if (request.Id == null)
@@ -64,7 +64,7 @@ namespace VsChromium.Threads {
       _synchronizationContextProvider.UIContext.Post(() => OnProcessFatalError(args));
     }
 
-    private void OnRequestSuccess(UIRequest request, TypedResponse response) {
+    private void OnRequestSuccess(DispatchThreadServerRequest request, TypedResponse response) {
       if (request.OnReceive != null)
         Logger.WrapActionInvocation(request.OnReceive);
 
@@ -74,7 +74,7 @@ namespace VsChromium.Threads {
       }
     }
 
-    private void OnRequestError(UIRequest request, ErrorResponse errorResponse) {
+    private void OnRequestError(DispatchThreadServerRequest request, ErrorResponse errorResponse) {
       if (request.OnReceive != null)
         Logger.WrapActionInvocation(request.OnReceive);
 

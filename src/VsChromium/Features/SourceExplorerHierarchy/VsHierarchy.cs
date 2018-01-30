@@ -35,10 +35,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private uint _selectionEventsCookie;
     private bool _vsHierarchyActive;
 
-    public VsHierarchy(System.IServiceProvider serviceProvider, IVsGlyphService vsGlyphService, IUIThread uiThread) {
+    public VsHierarchy(System.IServiceProvider serviceProvider, IVsGlyphService vsGlyphService, IDispatchThread dispatchThread) {
       _serviceProvider = serviceProvider;
       _vsGlyphService = vsGlyphService;
-      _threadId = uiThread.ManagedThreadId;
+      _threadId = dispatchThread.ManagedThreadId;
       _logger = new VsHierarchyLogger(this);
     }
 

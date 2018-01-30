@@ -33,11 +33,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IFileSystem _fileSystem;
     private readonly IClipboard _clipboard;
     private readonly IWindowsExplorer _windowsExplorer;
-    private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationProcessor _delayedOperationProcessor;
-    private readonly IUIThread _uiThread;
+    private readonly IDispatchThread _dispatchThread;
     private readonly IVsHierarchyImpl _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
     /// <summary>
@@ -57,11 +57,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IFileSystem fileSystem,
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
-      IUIRequestProcessor uiRequestProcessor,
+      IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationProcessor delayedOperationProcessor,
-      IUIThread uiThread) {
+      IDispatchThread dispatchThread) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -70,16 +70,16 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _fileSystem = fileSystem;
       _clipboard = clipboard;
       _windowsExplorer = windowsExplorer;
-      _uiRequestProcessor = uiRequestProcessor;
+      _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationProcessor = delayedOperationProcessor;
-      _uiThread = uiThread;
+      _dispatchThread = dispatchThread;
 //      _hierarchy = new VsHierarchy(
       _hierarchy = new VsHierarchyAggregate(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService,
-        _uiThread);
+        _dispatchThread);
       _nodeTemplateFactory = new NodeTemplateFactory(vsGlyphService, imageSourceFactory);
     }
 
@@ -222,13 +222,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void RefreshFileSystemTree() {
-      var uiRequest = new UIRequest {
+      var uiRequest = new DispatchThreadServerRequest {
         Request = new RefreshFileSystemTreeRequest(),
         Id = "RefreshFileSystemTreeRequest",
         Delay = TimeSpan.FromSeconds(0.0),
       };
 
-      _uiRequestProcessor.Post(uiRequest);
+      _dispatchThreadServerRequestExecutor.Post(uiRequest);
     }
 
     private void ShowContextMenu(NodeViewModel node, IntPtr variantIn) {

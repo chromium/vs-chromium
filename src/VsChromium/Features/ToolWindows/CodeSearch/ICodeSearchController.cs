@@ -15,7 +15,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   /// Exposes services required by <see cref="CodeSearchItemViewModelBase"/> instances.
   /// </summary>
   public interface ICodeSearchController : IDisposable {
-    IUIRequestProcessor UIRequestProcessor { get; }
+    IDispatchThreadServerRequestExecutor DispatchThreadServerRequestExecutor { get; }
     IStandarImageSourceFactory StandarImageSourceFactory { get; }
     IClipboard Clipboard { get; }
     IWindowsExplorer WindowsExplorer { get; }

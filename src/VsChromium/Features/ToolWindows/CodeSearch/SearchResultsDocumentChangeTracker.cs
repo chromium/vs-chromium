@@ -14,7 +14,7 @@ using VsChromium.Views;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class SearchResultsDocumentChangeTracker {
-    private readonly IUIDelayedOperationProcessor _uiRequestProcessor;
+    private readonly IDispatchThreadDelayedOperationExecutor _dispatchThreadRequestExecutor;
     private readonly ITextDocumentTable _textDocumentTable;
     private readonly string _requestId = typeof(SearchResultsDocumentChangeTracker).Name + Guid.NewGuid();
     private readonly Dictionary<FullPath, DocumentChangeTrackingEntry> _trackingEntries = new Dictionary<FullPath, DocumentChangeTrackingEntry>();
@@ -22,9 +22,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _enabled;
 
     public SearchResultsDocumentChangeTracker(
-      IUIDelayedOperationProcessor uiRequestProcessor,
+      IDispatchThreadDelayedOperationExecutor dispatchThreadRequestExecutor,
       ITextDocumentTable textDocumentTable) {
-      _uiRequestProcessor = uiRequestProcessor;
+      _dispatchThreadRequestExecutor = dispatchThreadRequestExecutor;
       _textDocumentTable = textDocumentTable;
     }
 
@@ -35,7 +35,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _searchResults.Clear();
 
       // Delay to avoid processing results too often.
-      _uiRequestProcessor.Post(new DelayedOperation {
+      _dispatchThreadRequestExecutor.Post(new DelayedOperation {
         Id = _requestId,
         Delay = TimeSpan.FromSeconds(1.0),
         Action = () => CreateEntries(searchResults)

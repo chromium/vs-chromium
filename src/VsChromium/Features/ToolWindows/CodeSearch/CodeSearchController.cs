@@ -43,7 +43,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private readonly CodeSearchControl _control;
     private readonly IShellHost _shellHost;
-    private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     // ReSharper disable once NotAccessedField.Local
     private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
@@ -78,8 +78,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public CodeSearchController(
       CodeSearchControl control,
       IShellHost shellHost,
-      IUIRequestProcessor uiRequestProcessor,
-      IUIDelayedOperationProcessor uiDelayedOperationProcessor,
+      IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
+      IDispatchThreadDelayedOperationExecutor dispatchThreadDelayedOperationExecutor,
       IFileSystemTreeSource fileSystemTreeSource,
       ITypedRequestProcessProxy typedRequestProcessProxy,
       IProgressBarTracker progressBarTracker,
@@ -96,7 +96,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IDateTimeProvider dateTimeProvider) {
       _control = control;
       _shellHost = shellHost;
-      _uiRequestProcessor = uiRequestProcessor;
+      _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _fileSystemTreeSource = fileSystemTreeSource;
       _typedRequestProcessProxy = typedRequestProcessProxy;
       _progressBarTracker = progressBarTracker;
@@ -111,7 +111,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _adaptersFactoryService = adaptersFactoryService;
       _dateTimeProvider = dateTimeProvider;
       _searchResultDocumentChangeTracker = new SearchResultsDocumentChangeTracker(
-        uiDelayedOperationProcessor,
+        dispatchThreadDelayedOperationExecutor,
         textDocumentTable);
       _taskCancellation = new TaskCancellation();
 
@@ -130,8 +130,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
-      uiRequestProcessor.ProcessStarted += DispatchThreadServerRequestExecutorOnProcessStarted;
-      uiRequestProcessor.ProcessFatalError += DispatchThreadServerRequestExecutorOnProcessFatalError;
+      dispatchThreadServerRequestExecutor.ProcessStarted += DispatchThreadServerRequestExecutorOnProcessStarted;
+      dispatchThreadServerRequestExecutor.ProcessFatalError += DispatchThreadServerRequestExecutorOnProcessFatalError;
       fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
       fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
 
@@ -223,7 +223,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public CodeSearchViewModel ViewModel { get { return _control.ViewModel; } }
-    public IUIRequestProcessor UIRequestProcessor { get { return _uiRequestProcessor; } }
+    public IDispatchThreadServerRequestExecutor DispatchThreadServerRequestExecutor { get { return _dispatchThreadServerRequestExecutor; } }
     public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
     public IClipboard Clipboard { get { return _clipboard; } }
     public IWindowsExplorer WindowsExplorer { get { return _windowsExplorer; } }
@@ -375,7 +375,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void RefreshFileSystemTree() {
-      var uiRequest = new UIRequest {
+      var uiRequest = new DispatchThreadServerRequest {
         Request = new RefreshFileSystemTreeRequest(),
         Id = "RefreshFileSystemTreeRequest",
         Delay = TimeSpan.FromSeconds(0.0),
@@ -384,26 +384,26 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         }
       };
 
-      _uiRequestProcessor.Post(uiRequest);
+      _dispatchThreadServerRequestExecutor.Post(uiRequest);
     }
 
     public void PauseResumeIndexing() {
 
       var uiRequest = ViewModel.IndexingPaused
-        ? new UIRequest {
+        ? new DispatchThreadServerRequest {
           Request = new ResumeIndexingRequest(),
           Id = nameof(ResumeIndexingRequest),
           Delay = TimeSpan.FromSeconds(0.0),
           OnReceive = FetchDatabaseStatistics,
         }
-        : new UIRequest {
+        : new DispatchThreadServerRequest {
           Request = new PauseIndexingRequest(),
           Id = nameof(PauseIndexingRequest),
           Delay = TimeSpan.FromSeconds(0.0),
           OnReceive = FetchDatabaseStatistics,
         };
 
-      _uiRequestProcessor.Post(uiRequest);
+      _dispatchThreadServerRequestExecutor.Post(uiRequest);
     }
 
     private Span? TranslateLineColumnToSpan(IVsTextView vsTextView, int lineNumber, int columnNumber, int length) {
@@ -658,7 +658,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var id = Interlocked.Increment(ref _operationSequenceId);
       var progressId = string.Format("{0}-{1}", workerParams.OperationName, id);
       var sw = new Stopwatch();
-      var request = new UIRequest {
+      var request = new DispatchThreadServerRequest {
         // Note: Having a single ID for all searches ensures previous search
         // requests are superseeded.
         Id = "MetaSearch",
@@ -684,7 +684,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         }
       };
 
-      _uiRequestProcessor.Post(request);
+      _dispatchThreadServerRequestExecutor.Post(request);
     }
 
     private void FetchDatabaseStatistics() {
@@ -692,8 +692,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void FetchDatabaseStatistics(bool forceGarbageCollect, Action<GetDatabaseStatisticsResponse> callback) {
-      _uiRequestProcessor.Post(
-        new UIRequest {
+      _dispatchThreadServerRequestExecutor.Post(
+        new DispatchThreadServerRequest {
           Id = "GetDatabaseStatisticsRequest",
           Request = new GetDatabaseStatisticsRequest { ForceGabageCollection = forceGarbageCollect },
           OnSuccess = typedResponse => {

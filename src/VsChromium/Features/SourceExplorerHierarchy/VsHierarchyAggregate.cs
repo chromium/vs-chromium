@@ -12,7 +12,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
   public class VsHierarchyAggregate : IVsHierarchyImpl {
     private readonly IServiceProvider _serviceProvider;
     private readonly IVsGlyphService _vsGlyphService;
-    private readonly IUIThread _uiThread;
+    private readonly IDispatchThread _dispatchThread;
     private readonly List<VsHierarchyCommandHandler> _commandHandlers = new List<VsHierarchyCommandHandler>();
     private readonly List<VsHierarchy> _hierarchies = new List<VsHierarchy>();
     private readonly object _hierarchiesLock = new object();
@@ -21,10 +21,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public VsHierarchyAggregate(
       IServiceProvider serviceProvider,
       IVsGlyphService vsGlyphService,
-      IUIThread uiThread) {
+      IDispatchThread dispatchThread) {
       _serviceProvider = serviceProvider;
       _vsGlyphService = vsGlyphService;
-      _uiThread = uiThread;
+      _dispatchThread = dispatchThread;
       _version = 1;
     }
 
@@ -66,7 +66,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public VsHierarchy CreateHierarchy() {
-      var result = new VsHierarchy(_serviceProvider, _vsGlyphService, _uiThread);
+      var result = new VsHierarchy(_serviceProvider, _vsGlyphService, _dispatchThread);
       foreach (var handler in _commandHandlers) {
         result.AddCommandHandler(handler);
       }

@@ -11,20 +11,20 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
   [Export(typeof(IPackagePostInitializer))]
   public class SolutionExplorerHierarchyInitializer : IPackagePostInitializer {
     private readonly ISourceExplorerHierarchyControllerFactory _sourceExplorerHierarchyControllerFactory;
-    private readonly IUIDelayedOperationProcessor _uiDelayedOperationProcessor;
+    private readonly IDispatchThreadDelayedOperationExecutor _dispatchThreadDelayedOperationExecutor;
 
     [ImportingConstructor]
     public SolutionExplorerHierarchyInitializer(
       ISourceExplorerHierarchyControllerFactory sourceExplorerHierarchyControllerFactory,
-      IUIDelayedOperationProcessor uiDelayedOperationProcessor) {
+      IDispatchThreadDelayedOperationExecutor dispatchThreadDelayedOperationExecutor) {
       _sourceExplorerHierarchyControllerFactory = sourceExplorerHierarchyControllerFactory;
-      _uiDelayedOperationProcessor = uiDelayedOperationProcessor;
+      _dispatchThreadDelayedOperationExecutor = dispatchThreadDelayedOperationExecutor;
     }
 
     public int Priority { get { return 0; } }
 
     public void Run(IVisualStudioPackage package) {
-      _uiDelayedOperationProcessor.Post(new DelayedOperation {
+      _dispatchThreadDelayedOperationExecutor.Post(new DelayedOperation {
         Id = "SolutionExplorerHierarchyInitializer",
         Delay = TimeSpan.FromSeconds(2.0),
         Action = () => {

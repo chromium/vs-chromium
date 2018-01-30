@@ -155,7 +155,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           .ToList()
       };
 
-      var uiRequest = new UIRequest {
+      var uiRequest = new DispatchThreadServerRequest {
         Request = request,
         Id = "FileEntryViewModel-" + Path,
         Delay = TimeSpan.FromSeconds(0.0),
@@ -171,7 +171,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         }
       };
 
-      this.Controller.UIRequestProcessor.Post(uiRequest);
+      this.Controller.DispatchThreadServerRequestExecutor.Post(uiRequest);
     }
 
     protected override IEnumerable<TreeViewItemViewModel> GetChildren() {

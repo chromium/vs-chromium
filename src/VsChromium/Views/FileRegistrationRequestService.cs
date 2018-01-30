@@ -16,7 +16,7 @@ using VsChromium.Threads;
 namespace VsChromium.Views {
   [Export(typeof(IFileRegistrationRequestService))]
   public class FileRegistrationRequestService : IFileRegistrationRequestService {
-    private readonly IUIRequestProcessor _uiRequestProcessor;
+    private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IFileSystem _fileSystem;
     private readonly IEventBus _eventBus;
     private readonly ConcurrentDictionary<ITextDocument, TextDocumentEventHandlers> _documents =
@@ -29,10 +29,10 @@ namespace VsChromium.Views {
 
     [ImportingConstructor]
     public FileRegistrationRequestService(
-      IUIRequestProcessor uiRequestProcessor,
+      IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       IFileSystem fileSystem,
       IEventBus eventBus) {
-      _uiRequestProcessor = uiRequestProcessor;
+      _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _fileSystem = fileSystem;
       _eventBus = eventBus;
     }
@@ -92,28 +92,28 @@ namespace VsChromium.Views {
       if (!IsPhysicalFile(path))
         return;
 
-      var request = new UIRequest {
+      var request = new DispatchThreadServerRequest {
         Id = "RegisterFileRequest-" + path,
         Request = new RegisterFileRequest {
           FileName = path
         }
       };
 
-      _uiRequestProcessor.Post(request);
+      _dispatchThreadServerRequestExecutor.Post(request);
     }
 
     private void SendUnregisterFileRequest(string path) {
       if (!IsValidPath(path))
         return;
 
-      var request = new UIRequest {
+      var request = new DispatchThreadServerRequest {
         Id = "UnregisterFileRequest-" + path,
         Request = new UnregisterFileRequest {
           FileName = path
         }
       };
 
-      _uiRequestProcessor.Post(request);
+      _dispatchThreadServerRequestExecutor.Post(request);
     }
 
     private bool IsValidPath(string path) {

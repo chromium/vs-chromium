@@ -36,7 +36,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private ScrollViewer _treeViewScrollViewer;
 
     private readonly IProgressBarTracker _progressBarTracker;
-    private IUIRequestProcessor _uiRequestProcessor;
+    private IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private bool _swallowsRequestBringIntoView = true;
     private CodeSearchController _controller;
 
@@ -78,14 +78,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public void OnVsToolWindowCreated(IServiceProvider serviceProvider) {
       var componentModel = (IComponentModel)serviceProvider.GetService(typeof(SComponentModel));
 
-      _uiRequestProcessor = componentModel.DefaultExportProvider.GetExportedValue<IUIRequestProcessor>();
+      _dispatchThreadServerRequestExecutor = componentModel.DefaultExportProvider.GetExportedValue<IDispatchThreadServerRequestExecutor>();
 
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
       _controller = new CodeSearchController(
         this,
         componentModel.DefaultExportProvider.GetExportedValue<IShellHost>(),
-        _uiRequestProcessor,
-        componentModel.DefaultExportProvider.GetExportedValue<IUIDelayedOperationProcessor>(),
+        _dispatchThreadServerRequestExecutor,
+        componentModel.DefaultExportProvider.GetExportedValue<IDispatchThreadDelayedOperationExecutor>(),
         componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>(),
         componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>(),
         _progressBarTracker,

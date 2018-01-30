@@ -114,7 +114,7 @@ namespace VsChromium.ServerProxy {
 
       Logger.LogInfo("AfterProxyCreated (pid={0}", processResult.Process.Id);
 #if PROFILE_SERVER
-      var timeout = TimeSpan.FromSeconds(20.0);
+      var timeout = TimeSpan.FromSeconds(120.0);
       System.Diagnostics.Trace.WriteLine(string.Format(
         "You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds,
         ((IPEndPoint) _tcpListener.LocalEndpoint).Port));

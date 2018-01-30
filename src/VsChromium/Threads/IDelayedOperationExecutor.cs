@@ -7,7 +7,7 @@ namespace VsChromium.Threads {
   /// Allows asynchronous execution of actions on a background thread after a
   /// specified delay.
   /// </summary>
-  public interface IDelayedOperationProcessor {
+  public interface IDelayedOperationExecutor {
     /// <summary>
     /// Post an <paramref name="operation"/> to the queue for execution after
     /// the delay specified in the operation. If an operation with the same Id

@@ -11,15 +11,15 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 
 namespace VsChromium.Threads {
-  [Export(typeof(IDelayedOperationProcessor))]
-  public class DelayedOperationProcessor : IDelayedOperationProcessor {
+  [Export(typeof(IDelayedOperationExecutor))]
+  public class DelayedOperationExecutor : IDelayedOperationExecutor {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly AutoResetEvent _event = new AutoResetEvent(false);
     private readonly object _lock = new object();
     private readonly LinkedList<Entry> _requests = new LinkedList<Entry>();
 
     [ImportingConstructor]
-    public DelayedOperationProcessor(IDateTimeProvider dateTimeProvider) {
+    public DelayedOperationExecutor(IDateTimeProvider dateTimeProvider) {
       _dateTimeProvider = dateTimeProvider;
       new Thread(ThreadLoop) { IsBackground = true }.Start();
     }

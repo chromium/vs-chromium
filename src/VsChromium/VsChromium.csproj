@@ -360,14 +360,14 @@
     <Compile Include="Threads\IReceiveResponsesThread.cs" />
     <Compile Include="Threads\IRequestQueue.cs" />
     <Compile Include="Threads\ISendRequestsThread.cs" />
-    <Compile Include="Threads\IDelayedOperationProcessor.cs" />
+    <Compile Include="Threads\IDelayedOperationExecutor.cs" />
     <Compile Include="Threads\ISynchronizationContextProvider.cs" />
     <Compile Include="Threads\IDispatchThreadServerRequestExecutor.cs" />
     <Compile Include="Threads\ReceiveResponsesThread.cs" />
     <Compile Include="Threads\RequestQueue.cs" />
     <Compile Include="Threads\SendRequestsThread.cs" />
     <Compile Include="Threads\DelayedOperation.cs" />
-    <Compile Include="Threads\DelayedOperationProcessor.cs" />
+    <Compile Include="Threads\DelayedOperationExecutor.cs" />
     <Compile Include="Threads\SynchronizationContextProvider.cs" />
     <Compile Include="Threads\DispatchThreadServerRequestExecutor.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\FilePositionViewModel.cs" />

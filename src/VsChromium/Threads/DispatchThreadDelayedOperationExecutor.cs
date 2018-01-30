@@ -7,14 +7,14 @@ using System.ComponentModel.Composition;
 namespace VsChromium.Threads {
   [Export(typeof(IDispatchThreadDelayedOperationExecutor))]
   public class DispatchThreadDelayedOperationExecutor : IDispatchThreadDelayedOperationExecutor {
-    private readonly IDelayedOperationProcessor _delayedOperationProcessor;
+    private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
 
     [ImportingConstructor]
     public DispatchThreadDelayedOperationExecutor(
-      IDelayedOperationProcessor delayedOperationProcessor,
+      IDelayedOperationExecutor delayedOperationExecutor,
       ISynchronizationContextProvider synchronizationContextProvider) {
-      _delayedOperationProcessor = delayedOperationProcessor;
+      _delayedOperationExecutor = delayedOperationExecutor;
       _synchronizationContextProvider = synchronizationContextProvider;
     }
 
@@ -22,7 +22,7 @@ namespace VsChromium.Threads {
       var action = operation.Action;
       operation.Action = () =>
         _synchronizationContextProvider.UIContext.Post(action);
-      _delayedOperationProcessor.Post(operation);
+      _delayedOperationExecutor.Post(operation);
     }
   }
 }

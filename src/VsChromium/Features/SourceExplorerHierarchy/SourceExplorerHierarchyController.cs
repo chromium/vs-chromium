@@ -36,7 +36,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
-    private readonly IDelayedOperationProcessor _delayedOperationProcessor;
+    private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly IDispatchThread _dispatchThread;
     private readonly IVsHierarchyImpl _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
@@ -60,7 +60,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
-      IDelayedOperationProcessor delayedOperationProcessor,
+      IDelayedOperationExecutor delayedOperationExecutor,
       IDispatchThread dispatchThread) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
@@ -73,7 +73,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
-      _delayedOperationProcessor = delayedOperationProcessor;
+      _delayedOperationExecutor = delayedOperationExecutor;
       _dispatchThread = dispatchThread;
 //      _hierarchy = new VsHierarchy(
       _hierarchy = new VsHierarchyAggregate(
@@ -335,7 +335,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void PostApplyFileSystemTreeToVsHierarchy(FileSystemTree fileSystemTree) {
-      _delayedOperationProcessor.Post(
+      _delayedOperationExecutor.Post(
         new DelayedOperation {
           Id = "ApplyFileSystemTreeToVsHierarchy",
           Action = () => ApplyFileSystemTreeToVsHierarchy(fileSystemTree),

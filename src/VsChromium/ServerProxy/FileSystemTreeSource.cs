@@ -12,12 +12,12 @@ namespace VsChromium.ServerProxy {
   [Export(typeof(IFileSystemTreeSource))]
   public class FileSystemTreeSource : IFileSystemTreeSource {
     private readonly ITypedRequestProcessProxy _proxy;
-    private readonly IDelayedOperationProcessor _delayedOperationProcessor;
+    private readonly IDelayedOperationExecutor _delayedOperationExecutor;
 
     [ImportingConstructor]
-    public FileSystemTreeSource(ITypedRequestProcessProxy proxy, IDelayedOperationProcessor delayedOperationProcessor) {
+    public FileSystemTreeSource(ITypedRequestProcessProxy proxy, IDelayedOperationExecutor delayedOperationExecutor) {
       _proxy = proxy;
-      _delayedOperationProcessor = delayedOperationProcessor;
+      _delayedOperationExecutor = delayedOperationExecutor;
       _proxy.EventReceived += ProxyOnEventReceived;
     }
 
@@ -32,7 +32,7 @@ namespace VsChromium.ServerProxy {
       var evt = typedEvent as FileSystemScanFinished;
       if (evt != null) {
         if (evt.Error == null) {
-          _delayedOperationProcessor.Post(new DelayedOperation {
+          _delayedOperationExecutor.Post(new DelayedOperation {
             Id = "FetchFileSystemTree",
             Delay = TimeSpan.FromSeconds(0.1),
             Action = FetchFileSystemTree

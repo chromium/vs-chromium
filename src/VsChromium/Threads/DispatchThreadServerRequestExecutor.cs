@@ -14,15 +14,15 @@ namespace VsChromium.Threads {
   [Export(typeof(IDispatchThreadServerRequestExecutor))]
   public class DispatchThreadServerRequestExecutor : IDispatchThreadServerRequestExecutor {
     private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
-    private readonly IDelayedOperationProcessor _delayedOperationProcessor;
+    private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
 
     [ImportingConstructor]
     public DispatchThreadServerRequestExecutor(ITypedRequestProcessProxy typedRequestProcessProxy,
-                              IDelayedOperationProcessor delayedOperationProcessor,
+                              IDelayedOperationExecutor delayedOperationExecutor,
                               ISynchronizationContextProvider synchronizationContextProvider) {
       _typedRequestProcessProxy = typedRequestProcessProxy;
-      _delayedOperationProcessor = delayedOperationProcessor;
+      _delayedOperationExecutor = delayedOperationExecutor;
       _synchronizationContextProvider = synchronizationContextProvider;
       _typedRequestProcessProxy.ProcessStarted += TypedRequestProcessProxyOnProcessStarted;
       _typedRequestProcessProxy.ProcessFatalError += TypedRequestProcessProxyOnProcessFatalError;
@@ -50,7 +50,7 @@ namespace VsChromium.Threads {
         },
       };
 
-      _delayedOperationProcessor.Post(operation);
+      _delayedOperationExecutor.Post(operation);
     }
 
     public event EventHandler ProcessStarted;

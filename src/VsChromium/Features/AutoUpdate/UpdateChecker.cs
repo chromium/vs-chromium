@@ -15,7 +15,7 @@ namespace VsChromium.Features.AutoUpdate {
   public class UpdateChecker : IPackagePostInitializer {
     private readonly IPackageVersionProvider _packageVersionProvider;
     private readonly IUpdateInfoProvider _updateInfoProvider;
-    private readonly IDelayedOperationProcessor _delayedOperationProcessor;
+    private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly IEnumerable<IUpdateNotificationListener> _updateNotificationListeners;
     private int _sequenceNumber;
 
@@ -23,11 +23,11 @@ namespace VsChromium.Features.AutoUpdate {
     public UpdateChecker(
       IPackageVersionProvider packageVersionProvider,
       IUpdateInfoProvider updateInfoProvider,
-      IDelayedOperationProcessor delayedOperationProcessor,
+      IDelayedOperationExecutor delayedOperationExecutor,
       [ImportMany]IEnumerable<IUpdateNotificationListener> updateNotificationListeners) {
       _packageVersionProvider = packageVersionProvider;
       _updateInfoProvider = updateInfoProvider;
-      _delayedOperationProcessor = delayedOperationProcessor;
+      _delayedOperationExecutor = delayedOperationExecutor;
       _updateNotificationListeners = updateNotificationListeners;
     }
 
@@ -44,7 +44,7 @@ namespace VsChromium.Features.AutoUpdate {
         Delay = GetDelay(),
         Action = RunCheck
       };
-      _delayedOperationProcessor.Post(operation);
+      _delayedOperationExecutor.Post(operation);
     }
 
     private TimeSpan GetDelay() {

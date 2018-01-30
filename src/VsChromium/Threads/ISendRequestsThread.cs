@@ -15,6 +15,6 @@ namespace VsChromium.Threads {
     /// <summary>
     /// Fire when there is an error sending a request to the server.
     /// </summary>
-    event Action<IpcRequest, Exception> RequestError;
+    event Action<IpcRequest, Exception> SendRequestError;
   }
 }

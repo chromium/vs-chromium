@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -33,7 +32,7 @@ using VsChromium.Wpf;
 using TreeView = System.Windows.Controls.TreeView;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
-  public class CodeSearchController : ICodeSearchController {
+  public partial class CodeSearchController : ICodeSearchController {
     private static class OperationsIds {
       public const string FileSystemScanning = "file-system-scanning";
       public const string FilesLoading = "files-loading";
@@ -140,6 +139,20 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _refreshTimer.Tick += RefreshTimerOnTick;
     }
 
+    public CodeSearchViewModel ViewModel { get { return _control.ViewModel; } }
+    public IDispatchThreadServerRequestExecutor DispatchThreadServerRequestExecutor { get { return _dispatchThreadServerRequestExecutor; } }
+    public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
+    public IClipboard Clipboard { get { return _clipboard; } }
+    public IWindowsExplorer WindowsExplorer { get { return _windowsExplorer; } }
+    public GlobalSettings GlobalSettings { get { return _globalSettingsProvider.GlobalSettings; } }
+    public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
+    public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
+
+    public void Start() {
+      var items = CreateInfromationMessages("Waiting for VsChromium index server to start");
+      ViewModel.SetInformationMessages(items);
+    }
+
     public void Dispose() {
       Logger.LogInfo("{0} disposed.", GetType().FullName);
 
@@ -150,25 +163,257 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBus.UnregisterHandler(_eventBusCookie3);
     }
 
-    public void Start() {
-      ViewModel.ServerHasStarted = false;
-      var items = CreateInfromationMessages("Waiting for VsChromium index server to start");
-      ViewModel.SetInformationMessages(items);
+    public void PerformSearch(bool immediate) {
+      var searchCodeText = ViewModel.SearchCodeValue;
+      var searchFilePathsText = ViewModel.SearchFilePathsValue;
+
+      if (string.IsNullOrWhiteSpace(searchCodeText) &&
+          string.IsNullOrWhiteSpace(searchFilePathsText)) {
+        CancelSearch();
+        return;
+      }
+
+      if (string.IsNullOrWhiteSpace(searchCodeText)) {
+        SearchFilesPaths(searchFilePathsText, immediate);
+        return;
+      }
+
+      SearchCode(searchCodeText, searchFilePathsText, immediate);
+    }
+
+    public void QuickSearchCode(string searchPattern) {
+      if (!ViewModel.ServerIsRunning) {
+        return;
+      }
+      if (!string.IsNullOrEmpty(searchPattern)) {
+        _control.SearchCodeCombo.Text = searchPattern;
+      }
+      //_control.SearchFilePathsCombo.Text = "";
+      _control.SearchCodeCombo.Focus();
+      PerformSearch(true);
+    }
+
+    public void QuickFilePaths(string searchPattern) {
+      if (!ViewModel.ServerIsRunning) {
+        return;
+      }
+      //ExplorerControl.SearchCodeCombo.Text = "";
+      if (!string.IsNullOrEmpty(searchPattern)) {
+        _control.SearchFilePathsCombo.Text = searchPattern;
+      }
+      _control.SearchFilePathsCombo.Focus();
+      PerformSearch(true);
+    }
+
+    public void FocusQuickSearchCode() {
+      if (!ViewModel.ServerIsRunning) {
+        return;
+      }
+      //ExplorerControl.SearchFilePathsCombo.Text = "";
+      _control.SearchCodeCombo.Focus();
+      PerformSearch(true);
+    }
+
+    public void FocusQuickSearchFilePaths() {
+      if (!ViewModel.ServerIsRunning) {
+        return;
+      }
+      //ExplorerControl.SearchCodeCombo.Text = "";
+      _control.SearchFilePathsCombo.Focus();
+      PerformSearch(true);
+    }
+
+    public void CancelSearch() {
+      _searchResultDocumentChangeTracker.Disable();
+      ViewModel.SwitchToInformationMessages();
+    }
+
+    public void ShowServerInfo() {
+      FetchDatabaseStatistics(true, response => {
+        var message = new StringBuilder();
+        message.AppendFormat("Server status: {0}\r\n", GetIndexingServerStatusText(response));
+        message.AppendLine();
+        message.AppendFormat("{0}\r\n", GetIndexingServerStatusToolTipText(response));
+        message.AppendLine();
+        message.AppendFormat("Index state:\r\n");
+        message.AppendFormat("  Directory/project count: {0:n0}\r\n", response.ProjectCount);
+        message.AppendFormat("  Total file count: {0:n0}\r\n", response.FileCount);
+        message.AppendFormat("  Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
+        if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.SearchableFileCount > 0) {
+          message.AppendFormat("  Last updated: {0} ({1} {2})\r\n",
+            HumanReadableDuration(response.IndexLastUpdatedUtc),
+            response.IndexLastUpdatedUtc.ToLocalTime().ToShortDateString(),
+            response.IndexLastUpdatedUtc.ToLocalTime().ToLongTimeString());
+        } else {
+          message.AppendFormat("  Last updated: {0}\r\n", "n/a (index is empty)");
+        }
+        message.AppendLine();
+        message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
+        message.AppendFormat("Native memory usage: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
+        _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", message.ToString());
+      });
+    }
+
+    public void RefreshFileSystemTree() {
+      var uiRequest = new DispatchThreadServerRequest {
+        Request = new RefreshFileSystemTreeRequest(),
+        Id = "RefreshFileSystemTreeRequest",
+        Delay = TimeSpan.FromSeconds(0.0),
+        OnSend = () => {
+          _performSearchOnNextRefresh = true;
+        }
+      };
+
+      _dispatchThreadServerRequestExecutor.Post(uiRequest);
+    }
+
+    public void PauseResumeIndexing() {
+      var uiRequest = ViewModel.IndexingPaused
+        ? new DispatchThreadServerRequest {
+          Request = new ResumeIndexingRequest(),
+          Id = nameof(ResumeIndexingRequest),
+          Delay = TimeSpan.FromSeconds(0.0),
+          OnReceive = FetchDatabaseStatistics,
+        }
+        : new DispatchThreadServerRequest {
+          Request = new PauseIndexingRequest(),
+          Id = nameof(PauseIndexingRequest),
+          Delay = TimeSpan.FromSeconds(0.0),
+          OnReceive = FetchDatabaseStatistics,
+        };
+
+      _dispatchThreadServerRequestExecutor.Post(uiRequest);
+    }
+
+    public void OpenFileInEditor(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length) {
+      OpenFileInEditorWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber, length));
+    }
+
+    public void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span) {
+      OpenFileInEditorWorker(fileEntry, _ => span);
+    }
+
+    private void OpenFileInEditorWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
+      // Using "Post" is important: it allows the newly opened document to
+      // receive the focus.
+      SynchronizationContextProvider.UIContext.Post(() => {
+        // Note: This has to run on the UI thread!
+        OpenDocumentHelper.OpenDocument(fileEntry.Path, vsTextView => {
+          var span = spanProvider(vsTextView);
+          return _searchResultDocumentChangeTracker.TranslateSpan(fileEntry.GetFullPath(), span);
+        });
+      });
+    }
+
+    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length) {
+      OpenFileInEditorWithWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber, length));
+    }
+
+    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, Span? span) {
+      OpenFileInEditorWithWorker(fileEntry, _ => span);
+    }
+
+    /// <summary>
+    /// Navigate to the FileSystemTree directory entry corresponding to
+    /// <paramref name="relativePathEntry"/>. This is a no-op if the FileSystemTree
+    /// is already the currently active ViewModel.
+    /// </summary>
+    public void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry) {
+      var path = relativePathEntry.GetFullPath();
+      _eventBus.Fire("ShowInSolutionExplorer", relativePathEntry, new FilePathEventArgs {
+        FilePath = path
+      });
+    }
+
+    public void BringItemViewModelToView(TreeViewItemViewModel item) {
+      // We look for the tree view item corresponding to "item", swallowing
+      // the "BringIntoView" request to avoid flickering as we descend into
+      // the virtual tree and realize the sub-panels at each level.
+      _control.SwallowsRequestBringIntoView(true);
+      var treeViewItem = SelectTreeViewItem(_control.FileTreeView, item);
+
+      // If we found it, allow the "BringIntoView" requests to be handled
+      // and ask the tree view item to bring itself into view.
+      // Note: The "BrinIntoView" call is a no-op if the tree view item
+      // is already visible.
+      if (treeViewItem != null) {
+        _control.SwallowsRequestBringIntoView(false);
+        treeViewItem.BringIntoView();
+        _control.SwallowsRequestBringIntoView(true);
+      }
+    }
+
+    public TreeViewItem SelectTreeViewItem(TreeView treeView, TreeViewItemViewModel item) {
+      return WpfUtilities.SelectTreeViewItem(treeView, item);
+    }
+
+    public bool ExecuteOpenCommandForItem(TreeViewItemViewModel tvi) {
+      if (tvi == null)
+        return false;
+
+      if (!tvi.IsSelected)
+        return false;
+
+      {
+        var filePosition = tvi as FilePositionViewModel;
+        if (filePosition != null) {
+          filePosition.OpenCommand.Execute(filePosition);
+          return true;
+        }
+      }
+
+      {
+        var fileEntry = tvi as FileEntryViewModel;
+        if (fileEntry != null) {
+          fileEntry.OpenCommand.Execute(fileEntry);
+          return true;
+        }
+      }
+
+      {
+        var directoryEntry = tvi as DirectoryEntryViewModel;
+        if (directoryEntry != null) {
+          directoryEntry.OpenCommand.Execute(directoryEntry);
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    public bool HasNextLocation() {
+      return GetNextLocationEntry(Direction.Next) != null;
+    }
+
+    public bool HasPreviousLocation() {
+      return GetNextLocationEntry(Direction.Previous) != null;
+    }
+
+    public void NavigateToNextLocation() {
+      var nextItem = GetNextLocationEntry(Direction.Next);
+      NavigateToTreeViewItem(nextItem);
+    }
+
+    public void NavigateToPreviousLocation() {
+      var previousItem = GetNextLocationEntry(Direction.Previous);
+      NavigateToTreeViewItem(previousItem);
     }
 
     private void DispatchThreadServerRequestExecutorOnProcessStarted(object sender, EventArgs args) {
       ViewModel.ServerHasStarted = true;
+      ViewModel.ServerIsRunning = true;
       _refreshTimer.Start();
       _fileSystemTreeSource.Fetch();
     }
 
     private void DispatchThreadServerRequestExecutorOnProcessFatalError(object sender, ErrorEventArgs args) {
+      ViewModel.ServerIsRunning = false;
       ReportServerError(ErrorResponseHelper.CreateErrorResponse(args.GetException()));
     }
 
     private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
       WpfUtilities.Post(_control, () => {
-        ViewModel.ServerHasStarted = true;
+        ViewModel.ServerIsRunning = true;
         OnFileSystemTreeScanSuccess(fileSystemTree);
       });
     }
@@ -222,20 +467,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       settings.SearchIncludeSymLinks = model.IncludeSymLinks;
     }
 
-    public CodeSearchViewModel ViewModel { get { return _control.ViewModel; } }
-    public IDispatchThreadServerRequestExecutor DispatchThreadServerRequestExecutor { get { return _dispatchThreadServerRequestExecutor; } }
-    public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
-    public IClipboard Clipboard { get { return _clipboard; } }
-    public IWindowsExplorer WindowsExplorer { get { return _windowsExplorer; } }
-    public GlobalSettings GlobalSettings { get { return _globalSettingsProvider.GlobalSettings; } }
-    public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
-    public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
-
-    public void OnIndexingStateChanged() {
+    private void OnIndexingStateChanged() {
       FetchDatabaseStatistics();
     }
 
-    public void OnFileSystemTreeScanStarted() {
+    private void OnFileSystemTreeScanStarted() {
       // Display a generic "loading" message the first time a file system tree
       // is loaded.
       if (!ViewModel.FileSystemTreeAvailable) {
@@ -252,7 +488,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public void OnFileSystemTreeScanSuccess(FileSystemTree tree) {
+    private void OnFileSystemTreeScanSuccess(FileSystemTree tree) {
       ViewModel.FileSystemTreeAvailable = (tree.Root.Entries.Count > 0);
       _currentFileSystemTreeVersion = tree.Version;
 
@@ -315,11 +551,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    public void CancelSearch() {
-      _searchResultDocumentChangeTracker.Disable();
-      ViewModel.SwitchToInformationMessages();
-    }
-
     private void AddResultsOutdatedMessage() {
       // Don't do this for now because
       // 1) the message tends to be annoying
@@ -348,64 +579,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 #endif
     }
 
-    public void ShowServerInfo() {
-      FetchDatabaseStatistics(true, response => {
-        var message = new StringBuilder();
-        message.AppendFormat("Server status: {0}\r\n", GetIndexingServerStatusText(response));
-        message.AppendLine();
-        message.AppendFormat("{0}\r\n", GetIndexingServerStatusToolTipText(response));
-        message.AppendLine();
-        message.AppendFormat("Index state:\r\n");
-        message.AppendFormat("  Directory/project count: {0:n0}\r\n", response.ProjectCount);
-        message.AppendFormat("  Total file count: {0:n0}\r\n", response.FileCount);
-        message.AppendFormat("  Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
-        if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.SearchableFileCount > 0) {
-          message.AppendFormat("  Last updated: {0} ({1} {2})\r\n",
-            HumanReadableDuration(response.IndexLastUpdatedUtc),
-            response.IndexLastUpdatedUtc.ToLocalTime().ToShortDateString(),
-            response.IndexLastUpdatedUtc.ToLocalTime().ToLongTimeString());
-        } else {
-          message.AppendFormat("  Last updated: {0}\r\n", "n/a (index is empty)");
-        }
-        message.AppendLine();
-        message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
-        message.AppendFormat("Native memory usage: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
-        _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", message.ToString());
-      });
-    }
-
-    public void RefreshFileSystemTree() {
-      var uiRequest = new DispatchThreadServerRequest {
-        Request = new RefreshFileSystemTreeRequest(),
-        Id = "RefreshFileSystemTreeRequest",
-        Delay = TimeSpan.FromSeconds(0.0),
-        OnSend = () => {
-          _performSearchOnNextRefresh = true;
-        }
-      };
-
-      _dispatchThreadServerRequestExecutor.Post(uiRequest);
-    }
-
-    public void PauseResumeIndexing() {
-
-      var uiRequest = ViewModel.IndexingPaused
-        ? new DispatchThreadServerRequest {
-          Request = new ResumeIndexingRequest(),
-          Id = nameof(ResumeIndexingRequest),
-          Delay = TimeSpan.FromSeconds(0.0),
-          OnReceive = FetchDatabaseStatistics,
-        }
-        : new DispatchThreadServerRequest {
-          Request = new PauseIndexingRequest(),
-          Id = nameof(PauseIndexingRequest),
-          Delay = TimeSpan.FromSeconds(0.0),
-          OnReceive = FetchDatabaseStatistics,
-        };
-
-      _dispatchThreadServerRequestExecutor.Post(uiRequest);
-    }
-
     private Span? TranslateLineColumnToSpan(IVsTextView vsTextView, int lineNumber, int columnNumber, int length) {
       if (lineNumber < 0)
         return null;
@@ -429,35 +602,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return new Span(line.Start + columnNumber, length);
     }
 
-    public void OpenFileInEditor(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length) {
-      OpenFileInEditorWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber, length));
-    }
-
-    public void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span) {
-      OpenFileInEditorWorker(fileEntry, _ => span);
-    }
-
-    private void OpenFileInEditorWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
-      // Using "Post" is important: it allows the newly opened document to
-      // receive the focus.
-      SynchronizationContextProvider.UIContext.Post(() => {
-        // Note: This has to run on the UI thread!
-        OpenDocumentHelper.OpenDocument(fileEntry.Path, vsTextView => {
-          var span = spanProvider(vsTextView);
-          return _searchResultDocumentChangeTracker.TranslateSpan(fileEntry.GetFullPath(), span);
-        });
-      });
-    }
-
-    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length) {
-      OpenFileInEditorWithWorker(fileEntry, vsTextView => TranslateLineColumnToSpan(vsTextView, lineNumber, columnNumber, length));
-    }
-
-    public void OpenFileInEditorWith(FileEntryViewModel fileEntry, Span? span) {
-      OpenFileInEditorWithWorker(fileEntry, _ => span);
-    }
-
-    public void OpenFileInEditorWithWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
+    private void OpenFileInEditorWithWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
       SynchronizationContextProvider.UIContext.Post(() => {
@@ -551,103 +696,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
       TreeViewItemViewModel.ExpandNodes(messages, true);
       return messages;
-    }
-
-    /// <summary>
-    /// Navigate to the FileSystemTree directory entry corresponding to
-    /// <paramref name="relativePathEntry"/>. This is a no-op if the FileSystemTree
-    /// is already the currently active ViewModel.
-    /// </summary>
-    public void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry) {
-      var path = relativePathEntry.GetFullPath();
-      _eventBus.Fire("ShowInSolutionExplorer", relativePathEntry, new FilePathEventArgs {
-        FilePath = path
-      });
-    }
-
-    public void BringItemViewModelToView(TreeViewItemViewModel item) {
-      // We look for the tree view item corresponding to "item", swallowing
-      // the "BringIntoView" request to avoid flickering as we descend into
-      // the virtual tree and realize the sub-panels at each level.
-      _control.SwallowsRequestBringIntoView(true);
-      var treeViewItem = SelectTreeViewItem(_control.FileTreeView, item);
-
-      // If we found it, allow the "BringIntoView" requests to be handled
-      // and ask the tree view item to bring itself into view.
-      // Note: The "BrinIntoView" call is a no-op if the tree view item
-      // is already visible.
-      if (treeViewItem != null) {
-        _control.SwallowsRequestBringIntoView(false);
-        treeViewItem.BringIntoView();
-        _control.SwallowsRequestBringIntoView(true);
-      }
-    }
-
-    public TreeViewItem SelectTreeViewItem(TreeView treeView, TreeViewItemViewModel item) {
-      return WpfUtilities.SelectTreeViewItem(treeView, item);
-    }
-
-    public bool ExecuteOpenCommandForItem(TreeViewItemViewModel tvi) {
-      if (tvi == null)
-        return false;
-
-      if (!tvi.IsSelected)
-        return false;
-
-      {
-        var filePosition = tvi as FilePositionViewModel;
-        if (filePosition != null) {
-          filePosition.OpenCommand.Execute(filePosition);
-          return true;
-        }
-      }
-
-      {
-        var fileEntry = tvi as FileEntryViewModel;
-        if (fileEntry != null) {
-          fileEntry.OpenCommand.Execute(fileEntry);
-          return true;
-        }
-      }
-
-      {
-        var directoryEntry = tvi as DirectoryEntryViewModel;
-        if (directoryEntry != null) {
-          directoryEntry.OpenCommand.Execute(directoryEntry);
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    private class SearchWorkerParams {
-      /// <summary>
-      /// Simple short name of the operation (for debugging only).
-      /// </summary>
-      public string OperationName { get; set; }
-      /// <summary>
-      /// Short description of the operation (for display in status bar
-      /// progress)
-      /// </summary>
-      public string HintText { get; set; }
-      /// <summary>
-      /// The request to sent to the server
-      /// </summary>
-      public TypedRequest TypedRequest { get; set; }
-      /// <summary>
-      /// Amount of time to wait before sending the request to the server.
-      /// </summary>
-      public TimeSpan Delay { get; set; }
-      /// <summary>
-      /// Lambda invoked when the response to the request has been successfully
-      /// received from the server.
-      /// </summary>
-      public Action<TypedResponse, Stopwatch> ProcessResponse { get; set; }
-      /// <summary>
-      /// Lambda invoked when the request resulted in an error from the server.
-      /// </summary>
-      public Action<ErrorResponse, Stopwatch> ProcessError { get; set; }
     }
 
     private void SearchWorker(SearchWorkerParams workerParams) {
@@ -779,32 +827,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return string.Format("about {0:n0} hours ago", Math.Ceiling(span.TotalHours));
       }
       return "more than one day ago";
-    }
-
-    public void PerformSearch(bool immediate) {
-      var searchCodeText = ViewModel.SearchCodeValue;
-      var searchFilePathsText = ViewModel.SearchFilePathsValue;
-
-      if (string.IsNullOrWhiteSpace(searchCodeText) &&
-          string.IsNullOrWhiteSpace(searchFilePathsText)) {
-        CancelSearch();
-        return;
-      }
-
-      if (string.IsNullOrWhiteSpace(searchCodeText)) {
-        SearchFilesPaths(searchFilePathsText, immediate);
-        return;
-      }
-
-      SearchCode(searchCodeText, searchFilePathsText, immediate);
-    }
-
-    class FilePathSearchInfo {
-      [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-      public string RawSearchPattern { get; set; }
-      public string SearchPattern { get; set; }
-      public int LineNumber { get; set; }
-      public int ColumnNumber { get; set; }
     }
 
     private FilePathSearchInfo PreprocessFilePathSearchPattern(string searchPattern) {
@@ -1016,24 +1038,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
 
       return null;
-    }
-
-    public bool HasNextLocation() {
-      return GetNextLocationEntry(Direction.Next) != null;
-    }
-
-    public bool HasPreviousLocation() {
-      return GetNextLocationEntry(Direction.Previous) != null;
-    }
-
-    public void NavigateToNextLocation() {
-      var nextItem = GetNextLocationEntry(Direction.Next);
-      NavigateToTreeViewItem(nextItem);
-    }
-
-    public void NavigateToPreviousLocation() {
-      var previousItem = GetNextLocationEntry(Direction.Previous);
-      NavigateToTreeViewItem(previousItem);
     }
 
     private void NavigateToTreeViewItem(TreeViewItemViewModel item) {

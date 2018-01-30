@@ -77,7 +77,7 @@
     </Border>
 
     <!-- TOP TOOLBAR WITH BUTTONS -->
-    <Grid DockPanel.Dock="Top" Margin="0" Background="{DynamicResource VsBrush.CommandBarGradient}" IsEnabled="{Binding ServerHasStarted}" >
+    <Grid DockPanel.Dock="Top" Margin="0" Background="{DynamicResource VsBrush.CommandBarGradient}" IsEnabled="{Binding ServerIsRunning}" >
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
@@ -273,7 +273,7 @@
       </Border.Background>
 
       <StackPanel HorizontalAlignment="Stretch" Margin="4,4,4,0" Orientation="Vertical">
-        <Grid HorizontalAlignment="Stretch" Margin="0" IsEnabled="{Binding ServerHasStarted}" >
+        <Grid HorizontalAlignment="Stretch" Margin="0" IsEnabled="{Binding ServerIsRunning}" >
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />

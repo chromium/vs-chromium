@@ -18,23 +18,20 @@ namespace VsChromium.Threads {
     public void Start(IIpcStream ipcStream, IRequestQueue requestQueue) {
       _ipcStream = ipcStream;
       _requestQeueue = requestQueue;
-      new Thread(Run) {IsBackground = true}.Start();
+      new Thread(Run) { IsBackground = true }.Start();
     }
 
-    public event Action<IpcRequest, Exception> RequestError;
+    public event Action<IpcRequest, Exception> SendRequestError;
 
-    protected virtual void OnRequestError(IpcRequest request, Exception error) {
-      var handler = RequestError;
-      if (handler != null)
-        handler(request, error);
+    protected virtual void OnSendRequestError(IpcRequest request, Exception error) {
+      SendRequestError?.Invoke(request, error);
     }
 
     private void Run() {
       try {
         Logger.LogInfo("Starting SendRequests thread.");
         Loop();
-      }
-      finally {
+      } finally {
         _waitHandle.Set();
       }
     }
@@ -49,13 +46,11 @@ namespace VsChromium.Threads {
           }
           try {
             SendRequest(request);
-          }
-          catch (Exception e) {
-            OnRequestError(request, e);
+          } catch (Exception e) {
+            OnSendRequestError(request, e);
           }
         }
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
         Logger.LogError(e, "Exception in SendRequestsThread.");
         throw;
       }
@@ -64,8 +59,7 @@ namespace VsChromium.Threads {
     private void SendRequest(IpcRequest request) {
       try {
         _ipcStream.WriteRequest(request);
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
         throw new IpcRequestException(request, e);
       }
     }

@@ -34,6 +34,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private string _serverStatusToolTipText;
     private bool _indexingPausedDueToError;
     private bool _indexingBusy;
+    private bool _serverIsRunning;
     private bool _serverHasStarted;
     private bool _fileSystemTreeAvailable;
 
@@ -332,16 +333,22 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    /// <summary>
-    /// Indicates if the server has entries in its file system tree, i.e. if
-    /// there are known project roots.
-    /// </summary>
     public bool ServerHasStarted {
       get { return _serverHasStarted; }
       set {
         if (_serverHasStarted != value) {
           _serverHasStarted = value;
           OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.ServerHasStarted));
+        }
+      }
+    }
+
+    public bool ServerIsRunning {
+      get { return _serverIsRunning; }
+      set {
+        if (_serverIsRunning != value) {
+          _serverIsRunning = value;
+          OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.ServerIsRunning));
         }
       }
     }

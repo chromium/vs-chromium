@@ -28,6 +28,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     void ShowServerInfo();
 
     void PerformSearch(bool immediate);
+    void QuickSearchCode(string searchPattern);
+    void QuickFilePaths(string searchPattern);
+    void FocusQuickSearchCode();
+    void FocusQuickSearchFilePaths();
 
     void OpenFileInEditor(FileEntryViewModel fileEntry, Span? span);
     void OpenFileInEditor(FileEntryViewModel fileEntry, int lineNumber, int columnNumber, int length);

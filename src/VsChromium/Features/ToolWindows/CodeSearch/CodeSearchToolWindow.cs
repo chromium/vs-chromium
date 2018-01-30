@@ -53,7 +53,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ExplorerControl.OnVsToolWindowCreated(this);
 
       // Advise IVsWindowFrameNotify so we know when we get hidden, etc.
-      var frame = this.Frame as IVsWindowFrame2;
+      var frame = Frame as IVsWindowFrame2;
       if (frame != null) {
         _frameNotify = new VsWindowFrameNotifyHandler(frame);
         _frameNotify.Advise();
@@ -68,7 +68,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         // Add more here...
       };
 
-      var commandService = (IMenuCommandService)this.GetService(typeof(IMenuCommandService));
+      var commandService = (IMenuCommandService)GetService(typeof(IMenuCommandService));
       commands.ForEach(handler =>
           commandService.AddCommand(handler.ToOleMenuCommand()));
     }
@@ -140,13 +140,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     int IOleCommandTarget.QueryStatus(ref System.Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, System.IntPtr pCmdText) {
-      var impl = this.GetService(typeof(IMenuCommandService)) as IOleCommandTarget;
+      var impl = GetService(typeof(IMenuCommandService)) as IOleCommandTarget;
       return OleCommandTargetSpy.WrapQueryStatus(this, impl, ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
     }
 
-    int IOleCommandTarget.Exec(ref System.Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, System.IntPtr pvaIn, System.IntPtr pvaOut) {
-      var impl = this.GetService(typeof (IMenuCommandService)) as IOleCommandTarget;
-      return OleCommandTargetSpy.WrapExec(this, impl, ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+    int IOleCommandTarget.Exec(ref System.Guid pguidCmdGroup, uint nCmdId, uint nCmdexecopt, System.IntPtr pvaIn, System.IntPtr pvaOut) {
+      var impl = GetService(typeof (IMenuCommandService)) as IOleCommandTarget;
+      return OleCommandTargetSpy.WrapExec(this, impl, ref pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
     }
 
     public void CancelSearch() {
@@ -154,33 +154,19 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void QuickSearchCode(string searchPattern) {
-      if (!string.IsNullOrEmpty(searchPattern)) {
-        ExplorerControl.SearchCodeCombo.Text = searchPattern;
-      }
-      //ExplorerControl.SearchFilePathsCombo.Text = "";
-      ExplorerControl.SearchCodeCombo.Focus();
-      ExplorerControl.Controller.PerformSearch(true);
+      ExplorerControl.Controller.QuickSearchCode(searchPattern);
     }
 
     public void QuickSearchFilePaths(string searchPattern) {
-      //ExplorerControl.SearchCodeCombo.Text = "";
-      if (!string.IsNullOrEmpty(searchPattern)) {
-        ExplorerControl.SearchFilePathsCombo.Text = searchPattern;
-      }
-      ExplorerControl.SearchFilePathsCombo.Focus();
-      ExplorerControl.Controller.PerformSearch(true);
+      ExplorerControl.Controller.QuickFilePaths(searchPattern);
     }
 
     public void FocusQuickSearchCode() {
-      //ExplorerControl.SearchFilePathsCombo.Text = "";
-      ExplorerControl.SearchCodeCombo.Focus();
-      ExplorerControl.Controller.PerformSearch(true);
+      ExplorerControl.Controller.FocusQuickSearchCode();
     }
 
     public void FocusQuickSearchFilePaths() {
-      //ExplorerControl.SearchCodeCombo.Text = "";
-      ExplorerControl.SearchFilePathsCombo.Focus();
-      ExplorerControl.Controller.PerformSearch(true);
+      ExplorerControl.Controller.FocusQuickSearchFilePaths();
     }
   }
 }

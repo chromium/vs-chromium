@@ -53,9 +53,11 @@ namespace VsChromium.ServerProxy {
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
       CreateServerProcessAsync().ContinueWith(t => {
         if (t.Exception != null) {
+          // Skip the "AggregateException"
           var error = t.Exception.InnerExceptions.Count == 1 ? t.Exception.InnerExceptions[0] : t.Exception;
+
           OnProcessFatalError(new ErrorEventArgs(error));
-          OnRequestError(request, error);
+          HandleSendRequestError(request, error);
         } else {
           // Order is important below to avoid race conditions!
           _callbacks.Add(request, callback);
@@ -102,14 +104,6 @@ namespace VsChromium.ServerProxy {
     }
 
     private void AfterProxyCreated(CreateProcessResult processResult) {
-      // The server proxy process started, but the server itself need to connect
-      // back to use to open the communication socket. This may not happen in
-      // error cases. Create a background task to wait for the server, and
-      // start processing request 
-      WaitForServerConnectionTask(processResult);
-    }
-
-    private void WaitForServerConnectionTask(CreateProcessResult processResult) {
       Invariants.Assert(processResult != null);
 
       Logger.LogInfo("AfterProxyCreated (pid={0}", processResult.Process.Id);
@@ -143,18 +137,21 @@ namespace VsChromium.ServerProxy {
       _receiveResponsesThread.Start(_ipcStream);
 
       Logger.LogInfo("AfterProxyCreated: Start send request thread..");
-      _sendRequestsThread.RequestError += OnRequestError;
+      _sendRequestsThread.SendRequestError += HandleSendRequestError;
       _sendRequestsThread.Start(_ipcStream, _requestQueue);
+
+      // Server is fully started, notify consumers
+      OnProcessStarted();
     }
 
-    private void OnRequestError(IpcRequest request, Exception error) {
+    private void HandleSendRequestError(IpcRequest request, Exception error) {
       var callback = _callbacks.Remove(request.RequestId);
-      SendErrorToCallback(request.RequestId, error, callback);
-    }
-
-    private static void SendErrorToCallback(long requestId, Exception error, Action<IpcResponse> callback) {
-      var response = ErrorResponseHelper.CreateIpcErrorResponse(requestId, error);
+      var response = ErrorResponseHelper.CreateIpcErrorResponse(request.RequestId, error);
       callback(response);
+
+      // We assume the server is down as soon as there is an error
+      // sending a request.
+      OnProcessFatalError(new ErrorEventArgs(error));
     }
 
     private TcpListener CreateServerSocket() {

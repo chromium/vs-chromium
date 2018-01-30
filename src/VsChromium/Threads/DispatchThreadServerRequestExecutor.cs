@@ -56,6 +56,8 @@ namespace VsChromium.Threads {
     public event EventHandler ProcessStarted;
     public event EventHandler<ErrorEventArgs> ProcessFatalError;
 
+    public bool IsServerRunning => _typedRequestProcessProxy.IsServerRunning;
+
     private void TypedRequestProcessProxyOnProcessStarted(object sender, EventArgs args) {
       _synchronizationContextProvider.UIContext.Post(() => OnProcessStarted());
     }

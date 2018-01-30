@@ -39,5 +39,7 @@ namespace VsChromium.ServerProxy {
     /// the inability to start-up successfully.
     /// </summary>
     event EventHandler<ErrorEventArgs> ProcessFatalError;
+
+    bool IsServerRunning { get; }
   }
 }

@@ -14,5 +14,7 @@ namespace VsChromium.Threads {
 
     event EventHandler ProcessStarted;
     event EventHandler<ErrorEventArgs> ProcessFatalError;
+
+    bool IsServerRunning { get; }
   }
 }

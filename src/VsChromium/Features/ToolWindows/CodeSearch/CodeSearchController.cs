@@ -14,7 +14,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Controls;
-using System.Windows.Threading;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -59,7 +58,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly TaskCancellation _taskCancellation;
     private readonly SearchResultsDocumentChangeTracker _searchResultDocumentChangeTracker;
-    private readonly DispatcherTimer _refreshTimer;
     private readonly object _eventBusCookie1;
     private readonly object _eventBusCookie2;
     private readonly object _eventBusCookie3;
@@ -71,8 +69,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     /// For generating unique id n progress bar tracker.
     /// </summary>
     private int _operationSequenceId;
-
-    private GetDatabaseStatisticsResponse _lastIndexingServerStatistics;
 
     public CodeSearchController(
       CodeSearchControl control,
@@ -127,16 +123,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBusCookie2 = _eventBus.RegisterHandler("TextDocument-Closed", TextDocumentClosedHandler);
       _eventBusCookie3 = _eventBus.RegisterHandler("TextDocumentFile-FileActionOccurred", TextDocumentFileActionOccurred);
 
-      typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
+      typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_OnEventReceived;
 
-      dispatchThreadServerRequestExecutor.ProcessStarted += DispatchThreadServerRequestExecutorOnProcessStarted;
-      dispatchThreadServerRequestExecutor.ProcessFatalError += DispatchThreadServerRequestExecutorOnProcessFatalError;
+      dispatchThreadServerRequestExecutor.ProcessFatalError += DispatchThreadServerRequestExecutor_OnProcessFatalError;
+
       fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
       fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
-
-      _refreshTimer = new DispatcherTimer();
-      _refreshTimer.Interval = TimeSpan.FromSeconds(10);
-      _refreshTimer.Tick += RefreshTimerOnTick;
     }
 
     public CodeSearchViewModel ViewModel { get { return _control.ViewModel; } }
@@ -148,19 +140,23 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
     public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
 
-    public void Start() {
-      var items = CreateInfromationMessages("Waiting for VsChromium index server to start");
-      ViewModel.SetInformationMessages(items);
-    }
-
     public void Dispose() {
       Logger.LogInfo("{0} disposed.", GetType().FullName);
 
-      _refreshTimer.Stop();
       _globalSettingsProvider.GlobalSettings.PropertyChanged -= GlobalSettingsOnPropertyChanged;
       _eventBus.UnregisterHandler(_eventBusCookie1);
       _eventBus.UnregisterHandler(_eventBusCookie2);
       _eventBus.UnregisterHandler(_eventBusCookie3);
+    }
+
+    public void Start() {
+      // Server may not be started yet, so display a message as we wait for start-up
+      var items = CreateInfromationMessages("Waiting for VsChromium index server to start or respond");
+      ViewModel.SetInformationMessages(items);
+
+      // Send a request to server to ensure it is started and we have up to date
+      // information file system version, index, etc.
+      _fileSystemTreeSource.Fetch();
     }
 
     public void PerformSearch(bool immediate) {
@@ -399,20 +395,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       NavigateToTreeViewItem(previousItem);
     }
 
-    private void DispatchThreadServerRequestExecutorOnProcessStarted(object sender, EventArgs args) {
-      ViewModel.ServerHasStarted = true;
-      ViewModel.ServerIsRunning = true;
-      _refreshTimer.Start();
-      _fileSystemTreeSource.Fetch();
-    }
-
-    private void DispatchThreadServerRequestExecutorOnProcessFatalError(object sender, ErrorEventArgs args) {
+    private void DispatchThreadServerRequestExecutor_OnProcessFatalError(object sender, ErrorEventArgs args) {
       ViewModel.ServerIsRunning = false;
       ReportServerError(ErrorResponseHelper.CreateErrorResponse(args.GetException()));
     }
 
     private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
       WpfUtilities.Post(_control, () => {
+        ViewModel.ServerHasStarted = true;
         ViewModel.ServerIsRunning = true;
         OnFileSystemTreeScanSuccess(fileSystemTree);
       });
@@ -753,8 +743,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void DisplayIndexingServerStatus(GetDatabaseStatisticsResponse response) {
-      _lastIndexingServerStatistics = response;
-
       ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Yield;
       ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Yield;
       ViewModel.IndexingBusy = response.ServerStatus == IndexingServerStatus.Busy;
@@ -1047,15 +1035,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ExecuteOpenCommandForItem(item);
     }
 
-    private void RefreshTimerOnTick(object sender, EventArgs eventArgs) {
-      // Since time passed by since the last update, we need to refresh to UI
-      // as we show a duration since last index operation as part of the status.
-      if (_lastIndexingServerStatistics != null) {
-        DisplayIndexingServerStatus(_lastIndexingServerStatistics);
-      }
-    }
-
-    private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
+    private void TypedRequestProcessProxy_OnEventReceived(TypedEvent typedEvent) {
       DispatchFileSystemTreeScanStarted(typedEvent);
       DispatchFileSystemTreeScanFinished(typedEvent);
       DispatchSearchEngineFilesLoading(typedEvent);

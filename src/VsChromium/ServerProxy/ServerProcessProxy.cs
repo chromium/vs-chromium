@@ -31,6 +31,7 @@ namespace VsChromium.ServerProxy {
     private TcpClient _tcpClient;
     private TcpListener _tcpListener;
     private Task _createProcessTask;
+    private bool _isServerRunning;
 
     [ImportingConstructor]
     public ServerProcessProxy(
@@ -49,6 +50,8 @@ namespace VsChromium.ServerProxy {
     public event Action<IpcEvent> EventReceived;
     public event EventHandler ProcessStarted;
     public event EventHandler<ErrorEventArgs> ProcessFatalError;
+
+    public bool IsServerRunning => _isServerRunning;
 
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
       CreateServerProcessAsync().ContinueWith(t => {
@@ -141,6 +144,7 @@ namespace VsChromium.ServerProxy {
       _sendRequestsThread.Start(_ipcStream, _requestQueue);
 
       // Server is fully started, notify consumers
+      _isServerRunning = true;
       OnProcessStarted();
     }
 
@@ -151,6 +155,7 @@ namespace VsChromium.ServerProxy {
 
       // We assume the server is down as soon as there is an error
       // sending a request.
+      _isServerRunning = false;
       OnProcessFatalError(new ErrorEventArgs(error));
     }
 

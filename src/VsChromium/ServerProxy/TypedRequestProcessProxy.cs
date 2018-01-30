@@ -36,6 +36,8 @@ namespace VsChromium.ServerProxy {
     public event EventHandler ProcessStarted;
     public event EventHandler<ErrorEventArgs> ProcessFatalError;
 
+    public bool IsServerRunning => _serverProcessProxy.IsServerRunning;
+
     public void RunAsync(TypedRequest request, Action<TypedResponse> callback, Action<ErrorResponse> errorCallback) {
       var sw = Stopwatch.StartNew();
 

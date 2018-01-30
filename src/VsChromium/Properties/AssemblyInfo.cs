@@ -4,6 +4,7 @@
 
 using System.Reflection;
 using System.Runtime.InteropServices;
+using VsChromium.Core;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
@@ -16,7 +17,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("The Chromium Authors")]
 [assembly: AssemblyProduct("VsChromium")]
-[assembly: AssemblyCopyright("Copyright 2016 The Chromium Authors. All rights reserved.")]
+[assembly: AssemblyCopyright(VsChromiumVersion.Copyright)]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -37,5 +38,5 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion(VsChromium.Core.VsChromiumVersion.File)]
-[assembly: AssemblyFileVersion(VsChromium.Core.VsChromiumVersion.File)]
+[assembly: AssemblyVersion(VsChromiumVersion.File)]
+[assembly: AssemblyFileVersion(VsChromiumVersion.File)]

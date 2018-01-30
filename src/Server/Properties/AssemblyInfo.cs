@@ -15,7 +15,7 @@ using VsChromium.Core;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("The Chromium Authors")]
 [assembly: AssemblyProduct("VsChromium.Server")]
-[assembly: AssemblyCopyright("Copyright 2016 The Chromium Authors. All rights reserved.")]
+[assembly: AssemblyCopyright(VsChromiumVersion.Copyright)]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

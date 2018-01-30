@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
 using VsChromium.Core.Ipc;
 
 namespace VsChromium.ServerProxy {
@@ -20,10 +21,23 @@ namespace VsChromium.ServerProxy {
     /// unspecified thread.
     /// </summary>
     void RunAsync(IpcRequest request, Action<IpcResponse> callback);
+
     /// <summary>
     /// Event raised when the server proxy receives an event from the the
     /// VsChromium server. The event is fired on an unspecified thread.
     /// </summary>
     event Action<IpcEvent> EventReceived;
+
+    /// <summary>
+    /// Event fired when the server process has been successfully started
+    /// and confirmed to be responsive.
+    /// </summary>
+    event EventHandler ProcessStarted;
+
+    /// <summary>
+    /// Event fired when the server has encoutered a fatal error, including
+    /// the inability to start-up successfully.
+    /// </summary>
+    event EventHandler<ErrorEventArgs> ProcessFatalError;
   }
 }

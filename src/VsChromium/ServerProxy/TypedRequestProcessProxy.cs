@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -27,7 +28,13 @@ namespace VsChromium.ServerProxy {
       _serverProcessProxy = serverProcessProxy;
       _ipcRequestIdFactory = ipcRequestIdFactory;
       _serverProcessProxy.EventReceived += ServerProcessProxyOnEventReceived;
+      _serverProcessProxy.ProcessStarted += ServerProcessProxyOnProcessStarted;
+      _serverProcessProxy.ProcessFatalError += ServerProcessProxyOnProcessFatalError;
     }
+
+    public event Action<TypedEvent> EventReceived;
+    public event EventHandler ProcessStarted;
+    public event EventHandler<ErrorEventArgs> ProcessFatalError;
 
     public void RunAsync(TypedRequest request, Action<TypedResponse> callback, Action<ErrorResponse> errorCallback) {
       var sw = Stopwatch.StartNew();
@@ -56,8 +63,6 @@ namespace VsChromium.ServerProxy {
       });
     }
 
-    public event Action<TypedEvent> EventReceived;
-
     public void Dispose() {
       _serverProcessProxy.Dispose();
     }
@@ -66,12 +71,6 @@ namespace VsChromium.ServerProxy {
       var @event = ipcEvent.Data as TypedEvent;
       if (@event != null)
         OnEventReceived(@event);
-    }
-
-    protected virtual void OnEventReceived(TypedEvent obj) {
-      var handler = EventReceived;
-      if (handler != null)
-        handler(obj);
     }
 
     private void OnResponseReceived() {
@@ -91,6 +90,14 @@ namespace VsChromium.ServerProxy {
       }
 
       SendResponses(reponsesToSend);
+    }
+
+    private void ServerProcessProxyOnProcessStarted(object sender, EventArgs args) {
+      OnProcessStarted();
+    }
+
+    private void ServerProcessProxyOnProcessFatalError(object sender, ErrorEventArgs args) {
+      OnProcessFatalError(args);
     }
 
     private static void SendResponses(IEnumerable<BufferedResponse> reponsesToSend) {
@@ -126,6 +133,18 @@ namespace VsChromium.ServerProxy {
           return 1;
         return SequenceNumber.CompareTo(other.SequenceNumber);
       }
+    }
+
+    protected virtual void OnEventReceived(TypedEvent obj) {
+      EventReceived?.Invoke(obj);
+    }
+
+    protected virtual void OnProcessStarted() {
+      ProcessStarted?.Invoke(this, EventArgs.Empty);
+    }
+
+    protected virtual void OnProcessFatalError(ErrorEventArgs e) {
+      ProcessFatalError?.Invoke(this, e);
     }
   }
 }

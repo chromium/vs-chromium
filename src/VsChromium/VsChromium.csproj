@@ -266,6 +266,7 @@
     <Compile Include="Package\IShellHost.cs" />
     <Compile Include="Package\ReportServerProgress.cs" />
     <Compile Include="Package\ShellHost.cs" />
+    <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Views\ITextDocumentTable.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchCodeCommandHandler.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />
@@ -304,7 +305,6 @@
     <Compile Include="Package\VsSolutionEventsHandler.cs" />
     <Compile Include="ServerProxy\FileSystemTreeSource.cs" />
     <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />
-    <Compile Include="Threads\IUIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\IUIThread.cs" />
     <Compile Include="Threads\UIDelayedOperationProcessor.cs" />
     <Compile Include="Threads\UIThread.cs" />

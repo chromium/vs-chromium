@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 
@@ -27,5 +28,8 @@ namespace VsChromium.ServerProxy {
     /// VsChromium server. The event is fired on an unspecified thread.
     /// </summary>
     event Action<TypedEvent> EventReceived;
+
+    event EventHandler ProcessStarted;
+    event EventHandler<ErrorEventArgs> ProcessFatalError;
   }
 }

@@ -52,13 +52,11 @@ namespace VsChromium.ServerProxy {
     }
 
     protected virtual void OnErrorReceived(ErrorResponse obj) {
-      var handler = ErrorReceived;
-      if (handler != null) handler(obj);
+      ErrorReceived?.Invoke(obj);
     }
 
     protected virtual void OnTreeReceived(FileSystemTree obj) {
-      var handler = TreeReceived;
-      if (handler != null) handler(obj);
+      TreeReceived?.Invoke(obj);
     }
   }
 }

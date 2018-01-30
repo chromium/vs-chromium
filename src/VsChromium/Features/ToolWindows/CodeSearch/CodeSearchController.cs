@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -129,6 +130,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
 
+      uiRequestProcessor.ProcessStarted += DispatchThreadServerRequestExecutorOnProcessStarted;
+      uiRequestProcessor.ProcessFatalError += DispatchThreadServerRequestExecutorOnProcessFatalError;
       fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
       fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
 
@@ -145,6 +148,22 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBus.UnregisterHandler(_eventBusCookie1);
       _eventBus.UnregisterHandler(_eventBusCookie2);
       _eventBus.UnregisterHandler(_eventBusCookie3);
+    }
+
+    public void Start() {
+      ViewModel.ServerHasStarted = false;
+      var items = CreateInfromationMessages("Waiting for VsChromium index server to start");
+      ViewModel.SetInformationMessages(items);
+    }
+
+    private void DispatchThreadServerRequestExecutorOnProcessStarted(object sender, EventArgs args) {
+      ViewModel.ServerHasStarted = true;
+      _refreshTimer.Start();
+      _fileSystemTreeSource.Fetch();
+    }
+
+    private void DispatchThreadServerRequestExecutorOnProcessFatalError(object sender, ErrorEventArgs args) {
+      ReportServerError(ErrorResponseHelper.CreateErrorResponse(args.GetException()));
     }
 
     private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
@@ -513,12 +532,15 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           errorResponse.GetBaseError().Message);
         messages.Add(rootError);
       } else {
+        var message = ViewModel.ServerHasStarted
+          ? "There was an issue sending a request to the index server."
+          : "There was an issue starting the index server.";
         // In case of non recoverable error, display a generic "user friendly"
         // message, with nested nodes for exception messages.
         var rootError = new TextErrorItemViewModel(
           StandarImageSourceFactory,
           null,
-          "Error processing request. You may need to restart Visual Studio.");
+          message + " You may need to restart Visual Studio.");
         messages.Add(rootError);
 
         // Add all errors to the parent
@@ -527,6 +549,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           errorResponse = errorResponse.InnerError;
         }
       }
+      TreeViewItemViewModel.ExpandNodes(messages, true);
       return messages;
     }
 
@@ -1018,14 +1041,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         return;
       BringItemViewModelToView(item);
       ExecuteOpenCommandForItem(item);
-    }
-
-    public void Start() {
-      ViewModel.ServerHasStarted = false;
-      var items = CreateInfromationMessages("Waiting for VsChromium index server to start");
-      ViewModel.SetInformationMessages(items);
-      _refreshTimer.Start();
-      _fileSystemTreeSource.Fetch();
     }
 
     private void RefreshTimerOnTick(object sender, EventArgs eventArgs) {

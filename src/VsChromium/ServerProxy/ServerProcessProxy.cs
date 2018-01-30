@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -49,6 +50,10 @@ namespace VsChromium.ServerProxy {
       _serverProcessLauncher = serverProcessLauncher;
     }
 
+    public event Action<IpcEvent> EventReceived;
+    public event EventHandler ProcessStarted;
+    public event EventHandler<ErrorEventArgs> ProcessFatalError;
+
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
       CreateServerProcessAsync();
 
@@ -63,30 +68,20 @@ namespace VsChromium.ServerProxy {
       _requestQueue.Enqueue(request);
     }
 
-    public event Action<IpcEvent> EventReceived;
-
     public void Dispose() {
       _tcpListener?.Stop();
       _tcpClient?.Close();
       _serverProcessLauncher?.Dispose();
     }
 
-    private void OnEventReceived(IpcEvent obj) {
-      // Special case: progress report events are too noisy...
-      if (!(obj.Data is ProgressReportEvent)) {
-        Logger.LogInfo("Event {0} of type \"{1}\" received from server.", obj.RequestId, obj.Data.GetType().Name);
-      }
-      EventReceived?.Invoke(obj);
-    }
-
     private void CreateServerProcessAsync() {
       _serverProcessLauncher.CreateProxyAsync(PreCreateProxy, AfterProxyCreated);
     }
 
-    /// <summary>
-    /// Note: Calls are serialized by _serverProcessLauncher, so no need to lock
-    /// </summary>
     private IList<string> PreCreateProxy() {
+      //
+      // Note: Calls are serialized by _serverProcessLauncher, so no need to lock
+      //
       Logger.LogInfo("PreCreateProxy");
 
       // Create a listener socket, waiting for the server process to connect
@@ -100,16 +95,18 @@ namespace VsChromium.ServerProxy {
       };
     }
 
-    /// <summary>
-    /// Note: Calls are serialized by _serverProcessLauncher, so no need to lock
-    /// </summary>
     private void AfterProxyCreated(Exception exception, CreateProcessResult processResult) {
+      //
+      // Note: Calls are serialized by _serverProcessLauncher, so no need to lock
+      //
+
       // If we could not create the server process, remember that fact
       // and reply to all pending request with an error. New requests will
       // also immediately get notified with an error.
       if (processResult == null) {
         _serverFatalException = exception;
         ReplyToPendingRequestsWithServerError();
+        OnProcessFatalError(new ErrorEventArgs(exception));
         return;
       }
 
@@ -120,8 +117,12 @@ namespace VsChromium.ServerProxy {
       var task = Task.Run(() => WaitForServerConnectionTask(processResult));
       task.ContinueWith(t => {
         if (t.Exception != null) {
-          _serverFatalException = t.Exception;
+          var error = t.Exception.InnerExceptions.Count == 1 ? t.Exception.InnerExceptions[0] : t.Exception;
+          _serverFatalException = error;
           ReplyToPendingRequestsWithServerError();
+          OnProcessFatalError(new ErrorEventArgs(error));
+        } else {
+          OnProcessStarted();
         }
       }, TaskScheduler.FromCurrentSynchronizationContext());
     }
@@ -131,7 +132,7 @@ namespace VsChromium.ServerProxy {
 
       Logger.LogInfo("AfterProxyCreated (pid={0}", processResult.Process.Id);
 #if PROFILE_SERVER
-      var timeout = TimeSpan.FromSeconds(120.0);
+      var timeout = TimeSpan.FromSeconds(20.0);
       System.Diagnostics.Trace.WriteLine(string.Format(
         "You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds,
         ((IPEndPoint) _tcpListener.LocalEndpoint).Port));
@@ -220,6 +221,22 @@ namespace VsChromium.ServerProxy {
           (response.Data as IpcStringData).Text != (HelloWorldProtocol.Response.Data as IpcStringData).Text) {
         throw new InvalidOperationException("Server process did not send correct hello world message!");
       }
+    }
+
+    protected void OnEventReceived(IpcEvent obj) {
+      // Special case: progress report events are too noisy...
+      if (!(obj.Data is ProgressReportEvent)) {
+        Logger.LogInfo("Event {0} of type \"{1}\" received from server.", obj.RequestId, obj.Data.GetType().Name);
+      }
+      EventReceived?.Invoke(obj);
+    }
+
+    protected virtual void OnProcessStarted() {
+      ProcessStarted?.Invoke(this, EventArgs.Empty);
+    }
+
+    protected virtual void OnProcessFatalError(ErrorEventArgs e) {
+      ProcessFatalError?.Invoke(this, e);
     }
   }
 }

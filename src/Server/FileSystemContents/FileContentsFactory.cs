@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Server.NativeInterop;
@@ -25,7 +24,7 @@ namespace VsChromium.Server.FileSystemContents {
         return ReadFileContentsWorker(fileInfo);
       }
       catch (Exception e) {
-        Logger.LogWarn(e, "Error reading content of text file \"{0}\", skipping file.", path);
+        Logger.LogWarn(e, "Skipping file \"{0}\" because of an error reading its contents", path);
         return BinaryFileContents.Empty;
       }
     }

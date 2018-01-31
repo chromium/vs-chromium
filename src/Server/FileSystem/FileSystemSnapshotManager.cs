@@ -179,7 +179,6 @@ namespace VsChromium.Server.FileSystem {
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
       _taskExecutor.ExecuteAsync(token => {
         if (!_isPaused) {
-          Logger.LogInfo("FileSystemSnapshotManager: File changes received, enqueuing an incremental file system rescan");
           _pathsChangedQueue.Enqueue(changes);
           _flushPathChangesTaskQueue.Enqueue(FlushPathsChangedQueueTaskId, FlushPathsChangedQueueTask);
         }

@@ -66,6 +66,10 @@ namespace VsChromium.Server.FileSystemNames {
       return new RelativePath(sb.ToString());
     }
 
+    public override string ToString() {
+      return $"{FullPath}, RelativePath={RelativePath}";
+    }
+
     public override bool Equals(object obj) {
       if (obj is FileName) {
         return Equals((FileName) obj);

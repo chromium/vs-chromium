@@ -25,6 +25,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly Lazy<IList<FileName>> _fileNames;
     private readonly Lazy<IList<FileContentsPiece>> _fileContentsPieces;
     private readonly Lazy<long> _searchableFileCount;
+    private readonly Lazy<long> _totalFileContentsLength;
 
     public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes, 
       IDictionary<DirectoryName, DirectoryData> directories,
@@ -35,6 +36,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       _fileNames = new Lazy<IList<FileName>>(CreateFileNames);
       _fileContentsPieces = new Lazy<IList<FileContentsPiece>>(CreateFilePieces, LazyThreadSafetyMode.ExecutionAndPublication);
       _searchableFileCount = new Lazy<long>(CountFilesWithContents);
+      _totalFileContentsLength = new Lazy<long>(ComputeTotalFileContentsLength);
     }
 
     public IDictionary<FullPath, string> ProjectHashes => _projectHashes;
@@ -54,6 +56,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     public IList<FileName> FileNames => _fileNames.Value;
     public IList<FileContentsPiece> FileContentsPieces => _fileContentsPieces.Value;
     public long SearchableFileCount => _searchableFileCount.Value;
+    public long TotalFileContentsLength => _totalFileContentsLength.Value;
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans,
       int maxLength) {
@@ -112,6 +115,10 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private long CountFilesWithContents() {
       return _files.Values.Where(FileDatabaseBuilder.FileHasContents).Count();
+    }
+
+    private long ComputeTotalFileContentsLength() {
+      return _files.Values.Where(x => x.Contents != null).Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength);
     }
   }
 }

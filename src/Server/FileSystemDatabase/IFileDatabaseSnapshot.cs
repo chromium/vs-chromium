@@ -32,6 +32,8 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// </summary>
     long SearchableFileCount { get; }
 
+    long TotalFileContentsLength { get; }
+
     /// <summary>
     /// Returns the list of text extracts for a given <paramref
     /// name="fileName"/> and list of <paramref name="spans"/>. <paramref

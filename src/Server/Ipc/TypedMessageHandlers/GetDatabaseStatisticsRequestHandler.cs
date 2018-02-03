@@ -40,7 +40,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         ProjectCount = snapshot.ProjectRoots.Count,
         FileCount = database.FileNames.Count,
         SearchableFileCount = database.SearchableFileCount,
-        ServerNativeMemoryUsage = database.FileContentsPieces.Aggregate(0L, (x, piece) => x + piece.ByteLength),
+        ServerNativeMemoryUsage = database.TotalFileContentsLength,
         IndexLastUpdatedUtc = indexingServerState.LastIndexUpdateUtc,
         ServerGcMemoryUsage = GC.GetTotalMemory(false),
         ServerStatus = indexingServerState.Status,

@@ -41,6 +41,7 @@
     <Compile Include="NativeInterop\TestGetTextKind.cs" />
     <Compile Include="Server\TestFileContentsGetFileExtracts.cs" />
     <Compile Include="Server\TestFileSystemMock.cs" />
+    <Compile Include="Server\TestChromiumDiscoveryProvider.cs" />
     <Compile Include="Server\TestProjectFileDiscoveryProvider.cs" />
     <Compile Include="Server\TestSearchCode.cs" />
     <Compile Include="Server\Utils.cs" />

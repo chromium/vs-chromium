@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using VsChromium.Core.Files;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Core.Win32.Memory;
 
@@ -58,6 +59,10 @@ namespace VsChromium.Tests.Mocks {
         get { return _files; }
       }
 
+      public override string ToString() {
+        return $"dir {Name}";
+      }
+
       public DirectoryMock AddDirectory(string name) {
         // Only the root directory can contain directory separators.
         if (!IsRoot) {
@@ -65,10 +70,23 @@ namespace VsChromium.Tests.Mocks {
             throw new ArgumentException();
           }
         }
-        var dir = new DirectoryMock(this, name);
-        _directories.Add(dir);
+
+        var dir = _directories.FirstOrDefault(x => SystemPathComparer.EqualsNames(x.Name, name));
+        if (dir == null) {
+          dir = new DirectoryMock(this, name);
+          _directories.Add(dir);
+        }
         return dir;
       }
+
+      public DirectoryMock AddDirectories(string relativePath) {
+        var result = this;
+        foreach (var name in PathHelpers.SplitPath(relativePath)) {
+          result = result.AddDirectory(name);
+        }
+        return result;
+      }
+
 
       public bool IsRoot {
         get { return Parent == null; }
@@ -88,6 +106,10 @@ namespace VsChromium.Tests.Mocks {
       }
 
       public string Text { get; set; }
+
+      public override string ToString() {
+        return $"File {Name}";
+      }
 
     }
 
@@ -151,21 +173,12 @@ namespace VsChromium.Tests.Mocks {
       throw new ArgumentException();
     }
 
-    public IList<string> ReadAllLines(FullPath path) {
+    public string ReadText(FullPath path) {
       var entry = FindEntry(path) as FileMock;
       if (entry == null)
         throw new ArgumentException();
 
-      using (var stream = new StringReader(entry.Text)) {
-        var result = new List<string>();
-        while (true) {
-          var line = stream.ReadLine();
-          if (line == null)
-            break;
-          result.Add(line);
-        }
-        return result;
-      }
+      return entry.Text;
     }
 
     public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
@@ -173,7 +186,12 @@ namespace VsChromium.Tests.Mocks {
     }
 
     public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {
-      throw new NotImplementedException();
+      var entry = FindEntry(path) as DirectoryMock;
+      Invariants.CheckArgument(entry != null, nameof(path), "Invalid directory name");
+      return entry.Directories
+        .Select(x => new DirectoryEntry(x.Name, FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY))
+        .Concat(entry.Files.Select(x => new DirectoryEntry(x.Name, FILE_ATTRIBUTE.FILE_ATTRIBUTE_NORMAL)))
+        .ToList();
     }
 
     public IFileSystemWatcher CreateDirectoryWatcher(FullPath path) {
@@ -182,6 +200,10 @@ namespace VsChromium.Tests.Mocks {
 
     public DirectoryMock AddDirectory(string name) {
       return _rootDirectory.AddDirectory(name);
+    }
+
+    public DirectoryMock AddDirectories(string path) {
+      return _rootDirectory.AddDirectories(path);
     }
   }
 }

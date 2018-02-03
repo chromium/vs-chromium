@@ -30,6 +30,24 @@ namespace VsChromium.Tests.Server {
       Assert.IsFalse(project.SearchableFilesFilter.Include(new RelativePath("none.txt")));
     }
     [TestMethod]
+    public void DiscoverProjectFileFromProjectPathInWorks() {
+      var fileSystem = new FileSystemMock();
+      fileSystem
+        .AddDirectory(@"d:\foo")
+        .AddDirectory(@"bar")
+        .AddFile(@"test.txt", "some text content")
+        .Parent
+        .AddFile(ConfigurationFileNames.ProjectFileName, "invalid content");
+
+      var provider = new ProjectFileDiscoveryProvider(fileSystem);
+      var project = provider.GetProjectFromAnyPath(new FullPath(@"d:\foo\bar"));
+      Assert.IsNotNull(project);
+      Assert.AreEqual(@"d:\foo\bar", project.RootPath.Value);
+      Assert.IsTrue(project.FileFilter.Include(new RelativePath("none.txt")));
+      Assert.IsTrue(project.DirectoryFilter.Include(new RelativePath("none")));
+      Assert.IsFalse(project.SearchableFilesFilter.Include(new RelativePath("none.txt")));
+    }
+    [TestMethod]
     public void DiscoverProjectFileFiltersWorks() {
       var fileSystem = new FileSystemMock();
       fileSystem

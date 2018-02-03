@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace VsChromium.Core.Files {
@@ -27,5 +28,19 @@ namespace VsChromium.Core.Files {
       }
       return fileInfo.LastWriteTimeUtc;
     }
+
+    /// <summary>
+    /// Reads the full contents of a text file into a list of strings.
+    /// </summary>
+    public static IList<string> ReadAllLines(this IFileSystem fileSystem, FullPath path) {
+      var result = new List<string>();
+      using (var reader = new StringReader(fileSystem.ReadText(path))) {
+        for (var line = reader.ReadLine(); line != null; line = reader.ReadLine()) {
+          result.Add(line);
+        }
+      }
+      return result;
+    }
+
   }
 }

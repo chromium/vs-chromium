@@ -47,8 +47,8 @@ namespace VsChromium.Core.Files {
       return File.GetLastWriteTimeUtc(path.Value);
     }
 
-    public IList<string> ReadAllLines(FullPath path) {
-      return File.ReadAllLines(path.Value);
+    public string ReadText(FullPath path) {
+      return File.ReadAllText(path.Value);
     }
 
     public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {

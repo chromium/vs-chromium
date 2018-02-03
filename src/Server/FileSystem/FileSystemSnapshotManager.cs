@@ -292,7 +292,7 @@ namespace VsChromium.Server.FileSystem {
           _currentSnapshot = newSnapshot;
 
           if (Logger.IsInfoEnabled) {
-            Logger.LogInfo("FileSystemSnapshotManager: Scanned {0:n0} files in {1:n0} directories",
+            Logger.LogInfo("FileSystemSnapshotManager: New snapshot contains {0:n0} files in {1:n0} directories",
               newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountFileEntries(x.Directory)),
               newSnapshot.ProjectRoots.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x.Directory)));
           }
@@ -311,7 +311,7 @@ namespace VsChromium.Server.FileSystem {
     private FileSystemSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
       FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
 
-      using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes", cancellationToken)) {
+      using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes", cancellationToken, InfoLogger.Instance)) {
         // Compute new snapshot
         var newSnapshot = _fileSystemSnapshotBuilder.Compute(
           _fileSystemNameFactory,
@@ -331,15 +331,19 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private int CountFileEntries(DirectorySnapshot entry) {
-      return
-        entry.ChildFiles.Count +
-        entry.ChildDirectories.Aggregate(0, (acc, x) => acc + CountFileEntries(x));
+      var result = entry.ChildFiles.Count;
+      foreach (var x in entry.ChildDirectories.ToForeachEnum()) {
+        result += CountFileEntries(x);
+      }
+      return result;
     }
 
     private int CountDirectoryEntries(DirectorySnapshot entry) {
-      return
-        1 +
-        entry.ChildDirectories.Aggregate(0, (acc, x) => acc + CountDirectoryEntries(x));
+      var result = 1;
+      foreach (var x in entry.ChildDirectories.ToForeachEnum()) {
+        result += CountDirectoryEntries(x);
+      }
+      return result;
     }
   }
 }

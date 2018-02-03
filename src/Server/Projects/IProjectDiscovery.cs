@@ -7,10 +7,11 @@ using VsChromium.Core.Files;
 namespace VsChromium.Server.Projects {
   public interface IProjectDiscovery {
     /// <summary>
-    /// Returns the absolute path of the project containing |filename|.
-    /// Returns |null| if |filename| is not located within a local project directory.
+    /// Returns the <see cref="IProject"/> corresponding to the project
+    /// containing <paramref name="path"/>. Returns <code>null</code> if
+    /// <paramref name="path"/> is not located within a project directory.
     /// </summary>
-    IProject GetProject(FullPath filename);
+    IProject GetProjectFromAnyPath(FullPath path);
 
     IProject GetProjectFromRootPath(FullPath projectRootPath);
 

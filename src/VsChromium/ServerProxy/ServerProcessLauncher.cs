@@ -100,10 +100,11 @@ namespace VsChromium.ServerProxy {
       var folder = new FullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
       yield return folder.Combine(new RelativePath(ProxyServerName));
 
-      var serverFolder = folder.Parent.Parent;
-
-      yield return serverFolder.Combine(new RelativePath("bin\\Debug")).Combine(new RelativePath(ServerName));
-      yield return serverFolder.Combine(new RelativePath("bin\\Release")).Combine(new RelativePath(ServerName));
+      var serverFolder = folder.Parent?.Parent;
+      if (serverFolder != null) {
+        yield return serverFolder.Value.Combine(new RelativePath("bin\\Debug")).Combine(new RelativePath(ServerName));
+        yield return serverFolder.Value.Combine(new RelativePath("bin\\Release")).Combine(new RelativePath(ServerName));
+      }
     }
 
     int IPackagePostDispose.Priority => 0;

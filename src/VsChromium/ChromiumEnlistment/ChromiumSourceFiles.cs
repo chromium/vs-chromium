@@ -32,7 +32,7 @@ namespace VsChromium.ChromiumEnlistment {
 
     public bool ApplyCodingStyle(string filename) {
       var path = new FullPath(filename);
-      var root = _chromiumDiscoveryProvider.GetEnlistmentRootFromFilename(path, x => x);
+      var root = _chromiumDiscoveryProvider.GetEnlistmentRootFromAnyPath(path, x => x);
       if (root == default(FullPath))
         return false;
 

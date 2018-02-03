@@ -78,7 +78,7 @@ namespace VsChromium.Server.FileSystem {
 
     private IList<IProject> CollectAndSortProjectsFromRegisteredFiles() {
       return _registeredFiles
-        .Select(x => _projectDiscovery.GetProject(x))
+        .Select(x => _projectDiscovery.GetProjectFromAnyPath(x))
         .Where(x => x != null)
         .Distinct(new ProjectPathComparer())
         .OrderBy(x => x.RootPath)

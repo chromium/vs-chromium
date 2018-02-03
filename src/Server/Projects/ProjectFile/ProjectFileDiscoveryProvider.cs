@@ -18,7 +18,7 @@ namespace VsChromium.Server.Projects.ProjectFile {
   public class ProjectFileDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly IFileSystem _fileSystem;
     private readonly FullPathDictionary<Project> _knownProjectRootDirectories = new FullPathDictionary<Project>();
-    private readonly FullPathDictionary<object> _knownNonProjectDirectories = new FullPathDictionary<object>();
+    private readonly FullPathDictionary<object> _knownNonProjectPaths = new FullPathDictionary<object>();
     private readonly object _lock = new object();
 
     public int Priority { get { return 100; } }
@@ -32,15 +32,15 @@ namespace VsChromium.Server.Projects.ProjectFile {
       lock (_lock) {
         // Cache hit?
         var root = _knownProjectRootDirectories
-          .Where(x => PathHelpers.IsPrefix(path.Value, x.Key.Value))
-          .OrderByDescending(x => x.Key.Value.Length)
+          .Where(x => x.Key.ContainsPath(path))
+          .OrderByDescending(x => x.Key)
           .FirstOrDefault();
         if (root.Key != default(FullPath)) {
           return root.Value;
         }
 
         // Negative cache hit?
-        if (_knownNonProjectDirectories.Contains(path.Parent)) {
+        if (_knownNonProjectPaths.Contains(path)) {
           return null;
         }
 
@@ -59,26 +59,22 @@ namespace VsChromium.Server.Projects.ProjectFile {
     public void ValidateCache() {
       lock (_lock) {
         _knownProjectRootDirectories.Clear();
-        _knownNonProjectDirectories.Clear();
-
+        _knownNonProjectPaths.Clear();
       }
     }
 
-    private IProject GetProjectWorker(FullPath filepath) {
-      var directory = filepath.Parent;
-      if (_fileSystem.DirectoryExists(directory)) {
-        var project = filepath
-          .EnumerateParents()
-          .Select(CreateProject)
-          .FirstOrDefault(x => x != null);
-        if (project != null) {
-          _knownProjectRootDirectories.Add(project.RootPath, project);
-          return project;
-        }
+    private IProject GetProjectWorker(FullPath path) {
+      var project = path
+        .EnumeratePaths()
+        .Select(CreateProject)
+        .FirstOrDefault(x => x != null);
+      if (project != null) {
+        _knownProjectRootDirectories.Add(project.RootPath, project);
+        return project;
       }
 
       // No one in the parent chain is a Chromium directory.
-      filepath.EnumerateParents().ForAll(x => _knownNonProjectDirectories.Add(x, null));
+      path.EnumeratePaths().ForAll(x => _knownNonProjectPaths.Add(x, null));
       return null;
     }
 

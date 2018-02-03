@@ -98,7 +98,7 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     public static ProjectFileName CreateProjectFileFromFullPath(this IFileSystemNameFactory fileSystemNameFactory,
       IProjectDiscovery projectDiscovery, FullPath path) {
-      var project = projectDiscovery.GetProject(path);
+      var project = projectDiscovery.GetProjectFromAnyPath(path);
       if (project == null)
         return default(ProjectFileName);
 
@@ -139,8 +139,7 @@ namespace VsChromium.Server.FileSystem {
         directoryName = fileSystemNameFactory.CreateDirectoryName(directoryName, name);
       }
 
-      Invariants.Assert(false, "Unreachable code");
-      throw new InvalidOperationException();
+      throw Invariants.Fail("Unreachable code");
     }
   }
 }

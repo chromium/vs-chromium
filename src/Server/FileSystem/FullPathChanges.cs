@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystem {
       // Don't skip if any parent directory was newly created
       // (because new directories can contain files we don't know about yet).
       if (_createdDirectories.Value.Count > 0) {
-        foreach (var parentPath in path.EnumerateParents()) {
+        foreach (var parentPath in path.EnumeratePaths()) {
           if (_createdDirectories.Value.Contains(parentPath)) {
             return false;
           }

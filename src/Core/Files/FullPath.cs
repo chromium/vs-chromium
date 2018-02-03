@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Files {
@@ -23,12 +24,14 @@ namespace VsChromium.Core.Files {
     }
 
     /// <summary>
-    /// Returns the parent path or null if this is a root path.
+    /// Returns the parent path or <code>null</code> if this is a root path.
     /// </summary>
-    public FullPath Parent {
+    public FullPath? Parent {
       get {
         var parent = PathHelpers.GetParent(_path);
-        return parent == null ? default(FullPath) : new FullPath(parent);
+        if (parent == null)
+          return null;
+        return new FullPath(parent);
       }
     }
 
@@ -117,13 +120,26 @@ namespace VsChromium.Core.Files {
       }
       return false;
     }
+  }
+
+  public static class FullPathExtensions {
+    /// <summary>
+    /// Returns <code>true</code> if this path is <paramref name="childPath"/> or a
+    /// parent of <paramref name="childPath"/>.
+    /// </summary>
+    public static bool ContainsPath(this FullPath path, FullPath childPath) {
+      return EnumeratePaths(path).Any(parent => parent.Equals(childPath));
+    }
 
     /// <summary>
-    /// Returns the enumeration of the parent full path of this full path.
+    /// Enumerates all the paths from this <paramref name="path"/> to the root path,
+    /// e.g. for the <code>"c:\foo\bar\blah.txt"</code> path, returns the sequence
+    /// <code>"c:\foo\bar\blah.txt"</code>, <code>"c:\foo\bar"</code>,
+    /// <code>"c:\foo"</code>, <code>"c:\"</code>.
     /// </summary>
-    public IEnumerable<FullPath> EnumerateParents() {
-      for (var parent = Parent; parent != default(FullPath); parent = parent.Parent) {
-        yield return parent;
+    public static IEnumerable<FullPath> EnumeratePaths(this FullPath path) {
+      for (FullPath? item = path; item != null; item = item.Value.Parent) {
+        yield return item.Value;
       }
     }
   }

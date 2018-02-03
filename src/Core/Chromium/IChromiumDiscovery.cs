@@ -6,7 +6,7 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Core.Chromium {
   public interface IChromiumDiscovery {
-    FullPath GetEnlistmentRoot(FullPath filename);
+    FullPath? GetEnlistmentRootPath(FullPath path);
     void ValidateCache();
   }
 }

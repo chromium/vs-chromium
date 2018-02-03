@@ -32,7 +32,7 @@ namespace VsChromium.Server.Projects.Chromium {
     public int Priority { get { return -100; } }
 
     public IProject GetProjectFromAnyPath(FullPath path) {
-      return _chromiumDiscovery.GetEnlistmentRootFromFilename(path, CreateProject);
+      return _chromiumDiscovery.GetEnlistmentRootFromAnyPath(path, CreateProject);
     }
 
     public void ValidateCache() {

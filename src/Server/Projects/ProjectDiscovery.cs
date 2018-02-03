@@ -17,11 +17,11 @@ namespace VsChromium.Server.Projects {
       _providers = providers.OrderByDescending(x => x.Priority).ToArray();
     }
 
-    public IProject GetProject(FullPath filename) {
+    public IProject GetProjectFromAnyPath(FullPath path) {
       return _providers
-        .Select(t => t.GetProjectFromAnyPath(filename))
+        .Select(t => t.GetProjectFromAnyPath(path))
         .Where(project => project != null)
-        .OrderByDescending(p => p.RootPath.Value.Length)
+        .OrderByDescending(p => p.RootPath)
         .FirstOrDefault();
     }
 

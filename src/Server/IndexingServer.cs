@@ -22,6 +22,10 @@ namespace VsChromium.Server {
     private bool _indexing;
     private bool _pausedDueToError;
     private DateTime _lastIndexUpdateUtc = DateTime.MinValue;
+    /// <summary>
+    /// Note: Updated in the processing thread, read from any thread.
+    /// </summary>
+    private IndexingServerState _currentState;
 
     [ImportingConstructor]
     public IndexingServer(
@@ -40,13 +44,10 @@ namespace VsChromium.Server {
 
       searchEngine.FilesLoading += SearchEngineOnFilesLoading;
       searchEngine.FilesLoaded += SearchEngineOnFilesLoaded;
+      _currentState = GetCurrentState();
     }
 
-    public IndexingServerState CurrentState {
-      get {
-        return _stateChangeTaskQueue.ExecuteAndWait(token => GetCurrentState());
-      }
-    }
+    public IndexingServerState CurrentState => _currentState;
 
     private IndexingServerStatus GetStatus() {
       if (_indexing)
@@ -154,7 +155,8 @@ namespace VsChromium.Server {
     }
 
     protected virtual void OnStatusUpdated() {
-      var e = new IndexingServerStateUpdatedEventArgs { State = GetCurrentState() };
+      _currentState = GetCurrentState();
+      var e = new IndexingServerStateUpdatedEventArgs { State = _currentState };
       StateUpdated?.Invoke(this, e);
     }
 

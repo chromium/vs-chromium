@@ -29,7 +29,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     public FileSystemValidationResult ProcessPathsChangedEvent(IList<PathChangeEntry> changes) {
       // Skip files from filtered out directories
       var filteredChanges = changes
-        .Where(x => !PathIsExcluded(x))
+        .Where(x => !PathChangeShouldBeIgnored(x))
         .ToList();
 
       if (Logger.IsInfoEnabled) {
@@ -84,7 +84,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         SystemPathComparer.Instance.StringComparer.Equals(change.Path.FileName, ConfigurationFileNames.ProjectFileName);
     }
 
-    private bool PathIsExcluded(PathChangeEntry change) {
+    private bool PathChangeShouldBeIgnored(PathChangeEntry change) {
       // If path is root itself, it is never excluded.
       if (change.RelativePath.IsEmpty)
         return false;
@@ -93,7 +93,7 @@ namespace VsChromium.Server.FileSystem.Builder {
       if (project == null)
         return true;
 
-      // Split relative part into list of name components.
+      // Split relative path into list of name components.
       var names = PathHelpers.SplitPath(change.RelativePath.Value).ToList();
 
       // Check each relative path from root path to full path.
@@ -122,7 +122,9 @@ namespace VsChromium.Server.FileSystem.Builder {
                 exclude = fileShouldBeIgnored;
               }
               else if (info.IsDirectory) {
-                exclude = directoryShouldBeIgnored;
+                // For directories, a "Change" event can be ignored, as there is nothing
+                // to infer a last write time change to a directory.
+                exclude = directoryShouldBeIgnored || change.ChangeKind == PathChangeKind.Changed;
               }
               else {
                 // We don't know... Be conservative.

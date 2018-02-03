@@ -90,7 +90,7 @@ namespace VsChromium.Server.FileSystem.Builder {
       if (change.RelativePath.IsEmpty)
         return false;
 
-      var project = _projectDiscovery.GetProject(change.BasePath);
+      var project = _projectDiscovery.GetProjectFromRootPath(change.BasePath);
       if (project == null)
         return true;
 
@@ -144,7 +144,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     }
 
     private ProjectFileName CreateProjectFileNameFromChangeEntry(PathChangeEntry entry) {
-      var project = _projectDiscovery.GetProject(entry.BasePath);
+      var project = _projectDiscovery.GetProjectFromRootPath(entry.BasePath);
       if (project == null) {
         return default(ProjectFileName);
       }

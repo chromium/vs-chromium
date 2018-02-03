@@ -97,33 +97,31 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files", cancellationToken, InfoLogger.Instance)) {
         Invariants.Assert(previousFileDatabaseSnapshot is FileDatabaseSnapshot);
-        var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
+        var previousFileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.
         var filesToRead = changedFiles
-          .Where(x => x.Project.IsFileSearchable(x.FileName) && fileDatabase.Files.ContainsKey(x.FileName))
+          .Where(x => x.Project.IsFileSearchable(x.FileName) && previousFileDatabase.Files.ContainsKey(x.FileName))
           .ToList();
 
-        if (filesToRead.Count == 0)
+        if (filesToRead.Count == 0) {
+          Logger.LogInfo("None of the changed file is searchable, return previous database snapshot");
           return previousFileDatabaseSnapshot;
+        }
 
         // Read file contents.
         onLoading();
         filesToRead.ForAll(x => {
           var newContents = _fileContentsFactory.ReadFileContents(x.FileName.FullPath);
-          DangerousUpdateFileTableEntry(fileDatabase, x.FileName, newContents);
+          DangerousUpdateFileTableEntry(previousFileDatabase, x.FileName, newContents);
         });
         onLoaded();
 
         // Return new file database with updated file contents.
-        var filesWithContents = FilterFilesWithContents(fileDatabase.Files.Values);
         return new FileDatabaseSnapshot(
-          fileDatabase.ProjectHashes,
-          fileDatabase.Files,
-          fileDatabase.FileNames,
-          fileDatabase.Directories,
-          CreateFilePieces(filesWithContents, cancellationToken),
-          filesWithContents.Count);
+          previousFileDatabase.ProjectHashes,
+          previousFileDatabase.Directories,
+          previousFileDatabase.Files);
       }
     }
 
@@ -154,33 +152,14 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
           // the dictionary will be used in incremental updates where FileName instances
           // may be new instances from a complete file system enumeration.
-          //var files = new Dictionary<FileName, FileWithContents>(entities.Files.Count);
           var files = new SlimHashTable<FileName, FileWithContents>(v => v.FileName, entities.Files.Count);
-          var filesWithContentsArray = new FileWithContents[entities.Files.Count];
-          var filesWithContentsIndex = 0;
           foreach (var kvp in entities.Files) {
             cancellationToken.ThrowIfCancellationRequested();
-            var fileData = new FileWithContents(kvp.Value.FileName, kvp.Value.Contents);
-            files.Add(kvp.Key, fileData);
-            if (fileData.Contents != null && fileData.Contents.ByteLength > 0) {
-              filesWithContentsArray[filesWithContentsIndex++] = fileData;
-            }
+            files.Add(kvp.Key, new FileWithContents(kvp.Value.FileName, kvp.Value.Contents));
           }
 
-          var filesWithContents =
-            new ListSegment<FileWithContents>(filesWithContentsArray, 0, filesWithContentsIndex);
-          var searchableContentsCollection = CreateFilePieces(filesWithContents, cancellationToken);
-          FileDatabaseDebugLogger.LogFileContentsStats(filesWithContents);
-
-          return new FileDatabaseSnapshot(
-            entities.ProjectHashes.ToReadOnlyMap(),
-            files,
-            files.Keys.ToArray(),
-            directories.ToReadOnlyMap(),
-            searchableContentsCollection,
-            filesWithContents.Count);
-        }
-        finally {
+          return new FileDatabaseSnapshot(entities.ProjectHashes, directories, files);
+        } finally {
           progress?.Dispose();
         }
       }
@@ -197,11 +176,11 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// Note: This code inside this method is not the cleanest, but it is
     /// written in a way that tries to minimiz the # of large array allocations.
     /// </summary>
-    private static IList<FileContentsPiece> CreateFilePieces(ICollection<FileWithContents> filesWithContents, CancellationToken cancellationToken) {
-      cancellationToken.ThrowIfCancellationRequested();
+    public static IList<FileContentsPiece> CreateFilePieces(ICollection<FileWithContents> files) {
+      var filesWithContents = FilterFilesWithContents(files);
 
       // Factory for file identifiers
-      int currentFileId = 0;
+      var currentFileId = 0;
       Func<int> fileIdFactory = () => currentFileId++;
 
       // Predicate to figure out if a file is "small"
@@ -212,7 +191,6 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       var smallFilesCount = 0;
       var largeFiles = new List<FileContentsPiece>(filesWithContents.Count / 100);
       foreach (var fileData in filesWithContents) {
-        cancellationToken.ThrowIfCancellationRequested();
         if (isSmallFile(fileData)) {
           smallFilesCount++;
         } else {
@@ -220,8 +198,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           largeFiles.AddRange(splitFileContents);
         }
       }
+
       var totalFileCount = smallFilesCount + largeFiles.Count;
-      cancellationToken.ThrowIfCancellationRequested();
 
       // Store elements in their partitions
       // # of partitions = # of logical processors
@@ -233,9 +211,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       foreach (var item in largeFiles) {
         filePieces[generator.Next()] = item;
       }
+
       // Store small files
       foreach (var fileData in filesWithContents) {
-        cancellationToken.ThrowIfCancellationRequested();
         if (isSmallFile(fileData)) {
           var item = fileData.Contents.CreatePiece(
             fileData.FileName,
@@ -246,15 +224,18 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
 
       FileDatabaseDebugLogger.LogFilePieces(filesWithContents, filePieces, partitionCount);
-      // ReSharper disable once CoVariantArrayConversion
       return filePieces;
     }
 
     private static List<FileWithContents> FilterFilesWithContents(ICollection<FileWithContents> files) {
       // Create filesWithContents with minimum memory allocations and copying.
-      var filesWithContents = new List<FileWithContents>(files.Count);
-      filesWithContents.AddRange(files.Where(x => x.Contents != null && x.Contents.ByteLength > 0));
+      var filesWithContents = new List<FileWithContents>(files.Count / 4);
+      filesWithContents.AddRange(files.Where(FileHasContents));
       return filesWithContents;
+    }
+
+    public static bool FileHasContents(FileWithContents x) {
+      return x.Contents != null && x.Contents.ByteLength > 0;
     }
 
     /// <summary>
@@ -297,7 +278,6 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             new DirectoryData(kvp.Value.DirectoryName, kvp.Value.IsSymLink));
         }
 
-        //var files = new Dictionary<FileName, ProjectFileData>(
         var files = new SlimHashTable<FileName, ProjectFileData>(
           v => v.FileName,
           directories.Count * 2,
@@ -540,6 +520,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           index -= _count;
           index++;
         }
+
         return index;
       }
     }

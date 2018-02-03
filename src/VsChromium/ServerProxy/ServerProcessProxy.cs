@@ -118,13 +118,11 @@ namespace VsChromium.ServerProxy {
         "You have {0:n0} seconds to start the server process with a port argument of {1}.", timeout.TotalSeconds,
         ((IPEndPoint) _tcpListener.LocalEndpoint).Port));
 #else
-      var timeout = TimeSpan.FromSeconds(5.0);
+      var timeout = TimeSpan.FromSeconds(30.0);
 #endif
       Logger.LogInfo("AfterProxyCreated: Wait for TCP client connection from server process.");
-      if (!_waitForConnection.WaitOne(timeout) || _tcpClient == null) {
-        throw new InvalidOperationException(
-          $"Child process did not connect to server within {timeout.TotalSeconds:n0} seconds.");
-      }
+      var serverStartedSuccessfully = _waitForConnection.WaitOne(timeout) && _tcpClient != null;
+      Invariants.CheckOperation(serverStartedSuccessfully, $"Child process did not connect to server within {timeout.TotalSeconds:n0} seconds.");
 
       _ipcStream = new IpcStreamOverNetworkStream(_serializer, _tcpClient.GetStream());
 

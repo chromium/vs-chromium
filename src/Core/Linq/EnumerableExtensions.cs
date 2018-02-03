@@ -283,23 +283,6 @@ namespace VsChromium.Core.Linq {
       return value;
     }
 
-    /// <summary>
-    /// Returns <code>null</code> when not found.
-    /// </summary>
-    public static TValue GetValue<TKey, TValue>(this IReadOnlyMap<TKey, TValue> dictionary, TKey key) where TValue : class {
-      return dictionary.GetValue(key, null);
-    }
-
-    /// <summary>
-    /// Returns <code>defaultValue</code> when not found.
-    /// </summary>
-    public static TValue GetValue<TKey, TValue>(this IReadOnlyMap<TKey, TValue> dictionary, TKey key, TValue defaultValue) {
-      TValue result;
-      if (!dictionary.TryGetValue(key, out result))
-        return defaultValue;
-      return result;
-    }
-
     public static void RemoveWhere<TKey, TValue>(
       this IDictionary<TKey, TValue> source,
       Func<KeyValuePair<TKey, TValue>, bool> predicate) {

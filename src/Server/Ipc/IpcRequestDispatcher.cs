@@ -36,8 +36,8 @@ namespace VsChromium.Server.Ipc {
     private void ProcessRequestTask(IpcRequest request) {
       var sw = Stopwatch.StartNew();
       var response = ProcessOneRequest(request);
-      _ipcResponseQueue.Enqueue(response);
       sw.Stop();
+      _ipcResponseQueue.Enqueue(response);
 
       Logger.LogInfo("Request {0} of type \"{1}\" took {2:n0} msec to execute.",
                  request.RequestId, request.Data.GetType().Name, sw.ElapsedMilliseconds);

@@ -449,12 +449,12 @@ namespace VsChromium.Server.Search {
         } else {
           Logger.LogInfo($"Starting a full database update: " +
                          $"CurrentSnapshotVersion={_currentFileSystemSnapshotVersion}, " +
-                         $"PreviousUpdateCompleted={options.PreviousUpdateCompleted}, " + 
+                         $"PreviousUpdateCompleted={options.PreviousUpdateCompleted}, " +
                          $"PreviousSnapshotVersion={previousSnapshot.Version}, " +
                          $"FullPathChanges={fullPathChanges?.Entries.Count ?? -1}.");
           return CreateFullScan(newSnapshot, options, cancellationToken);
         }
-      }, cancellationToken);
+      });
     }
 
     private void UpdateFileContentsLongTask(FilesChangedEventArgs args, CancellationToken cancellationToken) {
@@ -475,11 +475,10 @@ namespace VsChromium.Server.Search {
                          $"ChangesFiles={args.ChangedFiles?.Count ?? -1}.");
           return CreateFullScan(args.FileSystemSnapshot, options, cancellationToken);
         }
-      }, cancellationToken);
+      });
     }
 
-    private void UpdateFileDatabase(FileSystemSnapshot fileSystemSnapshot,
-      Func<UpdateFileDatabaseOptions, IFileDatabaseSnapshot> updater, CancellationToken cancellationToken) {
+    private void UpdateFileDatabase(FileSystemSnapshot fileSystemSnapshot, Func<UpdateFileDatabaseOptions, IFileDatabaseSnapshot> updater) {
       Invariants.Assert(_inTaskQueueTask);
 
       var options = new UpdateFileDatabaseOptions();
@@ -503,13 +502,9 @@ namespace VsChromium.Server.Search {
         },
 
         Execute = info => {
-          using (new TimeElapsedLogger(
-            $"Computing new state of file database (allow incremental={options.PreviousUpdateCompleted})",
-            cancellationToken)) {
-            options.CurrentFileDatabase = _currentFileDatabase;
-            var newFileDatabase = updater(options);
-            ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
-          }
+          options.CurrentFileDatabase = _currentFileDatabase;
+          var newFileDatabase = updater(options);
+          ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
 
           OnFilesLoaded(new FilesLoadedResult {
             OperationInfo = info,

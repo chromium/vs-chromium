@@ -89,7 +89,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private IncrementalBuildResult RunImpl() {
-      using (new TimeElapsedLogger("Computing NodesViewModel with diffs")) {
+      using (new TimeElapsedLogger("Computing NodesViewModel with diffs", InfoLogger.Instance)) {
         _newNodeNextItemId = _oldNodes.MaxItemId + 1;
 
         SetupRootNode(_newNodes.RootNode);

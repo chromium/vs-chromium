@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -46,7 +47,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (!_enabled)
         return;
 
-      using (new TimeElapsedLogger("Creating document tracking entries for search results")) {
+      using (new TimeElapsedLogger("Creating document tracking entries for search results", InfoLogger.Instance)) {
         _searchResults.Clear();
         foreach (DirectoryEntry projectRoot in searchResults.Entries) {
           var rootPath = new FullPath(projectRoot.Name);

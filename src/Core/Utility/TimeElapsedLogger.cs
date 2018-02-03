@@ -12,31 +12,45 @@ namespace VsChromium.Core.Utility {
   /// Utility class to measure and log time spent in a block of code typically
   /// wrapped with a "using" statement of an instance of this class.
   /// </summary>
-  public struct TimeElapsedLogger : IDisposable {
+  public class TimeElapsedLogger : IDisposable {
+    private static readonly ILogLevelLogger DefaultLogger = DebugLogger.Instance;
+    private static readonly CancellationToken CancellationTokenInstance = new CancellationTokenSource().Token;
+
     [ThreadStatic]
     private static int _currentThreadIndent;
 
     private readonly string _description;
     private readonly CancellationToken _cancellationToken;
+    private readonly ILogLevelLogger _logger;
     private readonly Stopwatch _stopwatch;
 
-    public TimeElapsedLogger(string description) : this(description, new CancellationTokenSource().Token) {
+    public TimeElapsedLogger(string description)
+      : this(description, CancellationTokenInstance, DefaultLogger) {
     }
 
-    public TimeElapsedLogger(string description, CancellationToken cancellationToken) {
+    public TimeElapsedLogger(string description, CancellationToken cancellationToken)
+      : this(description, cancellationToken, DefaultLogger) {
+    }
+
+    public TimeElapsedLogger(string description, ILogLevelLogger logger) 
+      : this(description, CancellationTokenInstance, logger) {
+    }
+
+    public TimeElapsedLogger(string description, CancellationToken cancellationToken, ILogLevelLogger logger) {
       _currentThreadIndent++;
       _description = description;
       _cancellationToken = cancellationToken;
+      _logger = logger;
       _stopwatch = Stopwatch.StartNew();
-      if (Logger.IsInfoEnabled) {
-        Logger.LogInfo("{0}{1}.", GetOpenIndent(_currentThreadIndent), _description);
+      if (logger.Enabled) {
+        logger.Log("{0}{1}.", GetOpenIndent(_currentThreadIndent), _description);
       }
     }
 
     public void Dispose() {
       _stopwatch.Stop();
-      if (Logger.IsInfoEnabled) {
-        Logger.LogInfo(
+      if (_logger.Enabled) {
+        _logger.Log(
           "{0}{1} {2} {3:n0} msec - GC Memory: {4:n0} bytes.",
           GetCloseIndent(_currentThreadIndent),
           _description,
@@ -47,7 +61,7 @@ namespace VsChromium.Core.Utility {
       _currentThreadIndent--;
     }
 
-    public static string GetCloseIndent(int indent) {
+    public static string GetOpenIndent(int indent) {
       switch (indent) {
         case 0:
           return "";
@@ -68,7 +82,7 @@ namespace VsChromium.Core.Utility {
       }
     }
 
-    public static string GetOpenIndent(int indent) {
+    public static string GetCloseIndent(int indent) {
       switch (indent) {
         case 0:
           return "";

@@ -42,7 +42,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
     public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot, FullPathChanges fullPathChanges,
       Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
-      using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot", cancellationToken)) {
+      using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot", cancellationToken, InfoLogger.Instance)) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
           onLoading();
           progress.DisplayProgress((i, n) => "Preparing list of files to load from disk");
@@ -95,7 +95,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult,
       CancellationToken cancellationToken) {
 
-      using (new TimeElapsedLogger("Building file database from previous one and list of changed files", cancellationToken)) {
+      using (new TimeElapsedLogger("Building file database from previous one and list of changed files", cancellationToken, InfoLogger.Instance)) {
         Invariants.Assert(previousFileDatabaseSnapshot is FileDatabaseSnapshot);
         var fileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
 

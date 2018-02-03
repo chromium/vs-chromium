@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +11,7 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
@@ -54,72 +54,76 @@ namespace VsChromium.Server.FileSystem.Builder {
         }
       }
 
-      var projectPath = _fileSystemNameFactory.CreateAbsoluteDirectoryName(_project.RootPath);
-      return CreateDirectorySnapshot(projectPath, false);
+      return CreateProjectDirectorySnapshot();
+    }
+
+    private DirectorySnapshot CreateProjectDirectorySnapshot() {
+      using (new TimeElapsedLogger($"Creating directory snapshot from file system files of \"{_project.RootPath}\"", _cancellationToken)) {
+        var projectPath = _fileSystemNameFactory.CreateAbsoluteDirectoryName(_project.RootPath);
+        return CreateDirectorySnapshot(projectPath, false);
+      }
     }
 
     private DirectorySnapshot CreateDirectorySnapshot(DirectoryName directory, bool isSymLink) {
+      _cancellationToken.ThrowIfCancellationRequested();
+
       var directoriesWithFiles = TraverseFileSystem(directory, isSymLink).ToList();
 
-      using (new TimeElapsedLogger("Creating directory snapshot from file system files", _cancellationToken)) {
+      // We sort entries by directory name *descending* to make sure we process
+      // directories bottom up, so that we know
+      // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
+      // 2) we create instances of child directories before their parent.
+      _progress.DisplayProgress((i, n) => $"Sorting files of directory {directory.FullPath}");
+      directoriesWithFiles.Sort((x, y) => -x.DirectoryData.DirectoryName.CompareTo(y.DirectoryData.DirectoryName));
+
+      // Build map from parent directory -> list of child directories
+      var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
+      directoriesWithFiles.ForAll(x => {
         _cancellationToken.ThrowIfCancellationRequested();
+        var directoryName = x.DirectoryData.DirectoryName;
 
-        // We sort entries by directory name *descending* to make sure we process
-        // directories bottom up, so that we know
-        // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
-        // 2) we create instances of child directories before their parent.
-        _progress.DisplayProgress((i, n) => $"Sorting files of directory {_project.RootPath.Value}");
-        directoriesWithFiles.Sort((x, y) => -x.DirectoryData.DirectoryName.CompareTo(y.DirectoryData.DirectoryName));
+        // Ignore root project directory name
+        if (directoryName.IsAbsoluteName)
+          return;
 
-        // Build map from parent directory -> list of child directories
-        var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
-        directoriesWithFiles.ForAll(x => {
-          _cancellationToken.ThrowIfCancellationRequested();
-          var directoryName = x.DirectoryData.DirectoryName;
+        GetOrCreateList(directoriesToChildDirectories, directoryName.Parent)
+          .Add(directoryName);
+      });
 
-          // Ignore root project directory name
-          if (directoryName.IsAbsoluteName)
-            return;
+      // Build directory snapshots for each directory entry, using an
+      // intermediate map to enable connecting snapshots to their parent.
+      var directoriesToSnapshot = new Dictionary<DirectoryName, DirectorySnapshot>();
+      var directorySnapshots = directoriesWithFiles.Select(entry => {
+        _cancellationToken.ThrowIfCancellationRequested();
+        if (_progress.Step()) {
+          _progress.DisplayProgress((i, n) => $"Processing files and directories of directory {_project.RootPath.Value}");
+        }
 
-          GetOrCreateList(directoriesToChildDirectories, directoryName.Parent)
-            .Add(directoryName);
-        });
+        var directoryData = entry.DirectoryData;
+        var childFileNames = entry.FileNames;
 
-        // Build directory snapshots for each directory entry, using an
-        // intermediate map to enable connecting snapshots to their parent.
-        var directoriesToSnapshot = new Dictionary<DirectoryName, DirectorySnapshot>();
-        var directorySnapshots = directoriesWithFiles.Select(entry => {
-          _cancellationToken.ThrowIfCancellationRequested();
-          if (_progress.Step()) {
-            _progress.DisplayProgress((i, n) => $"Processing files and directories of directory {_project.RootPath.Value}");
-          }
+        var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryData.DirectoryName)
+          .Select(x => directoriesToSnapshot[x])
+          .OrderBy(x => x.DirectoryName.Name)
+          .ToReadOnlyList();
 
-          var directoryData = entry.DirectoryData;
-          var childFileNames = entry.FileNames;
+        // TODO(rpaquay): Not clear the lines below are a perf win, even though
+        // they do not hurt correctness.
+        // Remove children since we processed them
+        //GetOrEmptyList(directoriesToChildDirectories, directoryName)
+        //  .ForAll(x => directoriesToSnapshot.Remove(x));
 
-          var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryData.DirectoryName)
-            .Select(x => directoriesToSnapshot[x])
-            .OrderBy(x => x.DirectoryName.Name)
-            .ToReadOnlyList();
+        var result = new DirectorySnapshot(directoryData, childDirectories, childFileNames);
+        directoriesToSnapshot.Add(directoryData.DirectoryName, result);
+        return result;
+      })
+        .ToList();
 
-          // TODO(rpaquay): Not clear the lines below are a perf win, even though
-          // they do not hurt correctness.
-          // Remove children since we processed them
-          //GetOrEmptyList(directoriesToChildDirectories, directoryName)
-          //  .ForAll(x => directoriesToSnapshot.Remove(x));
-
-          var result = new DirectorySnapshot(directoryData, childDirectories, childFileNames);
-          directoriesToSnapshot.Add(directoryData.DirectoryName, result);
-          return result;
-        })
-          .ToList();
-
-        // Since we sort directories by name descending, the last entry is always the
-        // entry correcsponding to the project root.
-        Invariants.Assert(directorySnapshots.Count >= 1);
-        Invariants.Assert(directorySnapshots.Last().DirectoryName.Equals(directory));
-        return directorySnapshots.Last();
-      }
+      // Since we sort directories by name descending, the last entry is always the
+      // entry correcsponding to the project root.
+      Invariants.Assert(directorySnapshots.Count >= 1);
+      Invariants.Assert(directorySnapshots.Last().DirectoryName.Equals(directory));
+      return directorySnapshots.Last();
     }
 
     private DirectorySnapshot ApplyDirectorySnapshotDelta(DirectorySnapshot oldDirectory) {
@@ -231,11 +235,11 @@ namespace VsChromium.Server.FileSystem.Builder {
     /// <summary>
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
-    private IEnumerable<DirectoryWithFiles> TraverseFileSystem(DirectoryName startDirectoryName, bool isSymLink) {
-      using (new TimeElapsedLogger("Traversing directory to collect directory/file names", _cancellationToken)) {
-        var rootDir = new DirectoryData(startDirectoryName, isSymLink);
+    private IEnumerable<DirectoryWithFiles> TraverseFileSystem(DirectoryName directoryName, bool isSymLink) {
+      using (new TimeElapsedLogger($"Traversing directory \"{directoryName.FullPath}\" to collect directory/file names", _cancellationToken)) {
+        var directory = new DirectoryData(directoryName, isSymLink);
         var bag = new ConcurrentBag<DirectoryWithFiles>();
-        var task = TraverseDirectoryAsync(rootDir, bag, _cancellationToken);
+        var task = TraverseDirectoryAsync(directory, bag, _cancellationToken);
         task.Wait(_cancellationToken);
         return bag;
       }
@@ -243,7 +247,7 @@ namespace VsChromium.Server.FileSystem.Builder {
 
     private Task TraverseDirectoryAsync(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, CancellationToken token) {
       var directoryTask = Task.Run(() => ProcessDirectory(directory, bag, token), token);
-      return ContinueWithTask(directoryTask, t => Task.WhenAll(t.Result), token);
+      return directoryTask.ContinueWithTask(t => Task.WhenAll(t.Result), token);
     }
 
     private List<Task> ProcessDirectory(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, CancellationToken token) {
@@ -281,26 +285,6 @@ namespace VsChromium.Server.FileSystem.Builder {
       }
 
       return allTasks;
-    }
-
-    public static Task ContinueWithTask<T>(Task<T> task, Func<Task<T>, Task> continuationFunction, CancellationToken cancellationToken) {
-      var tcs = new TaskCompletionSource<object>();
-      task.ContinueWith(t => {
-        if (cancellationToken.IsCancellationRequested) {
-          tcs.TrySetCanceled();
-        } else {
-          continuationFunction(t).ContinueWith(t2 => {
-            if (cancellationToken.IsCancellationRequested || t2.IsCanceled) {
-              tcs.TrySetCanceled();
-            } else if (t2.Exception != null) {
-              tcs.TrySetException(t2.Exception);
-            } else {
-              tcs.TrySetResult(null);
-            }
-          });
-        }
-      });
-      return tcs.Task;
     }
 
     private struct DirectoryWithFiles {

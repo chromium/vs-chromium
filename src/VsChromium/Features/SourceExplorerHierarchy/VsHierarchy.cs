@@ -104,7 +104,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         nodes.Count,
         (changes == null ? -1 : changes.AddedItems.Count),
         (changes == null ? -1 : changes.DeletedItems.Count));
-      using (new TimeElapsedLogger(description)) {
+      using (new TimeElapsedLogger(description, InfoLogger.Instance)) {
         // Simple case: empty hiererchy
         if (nodes.RootNode.GetChildrenCount() == 0) {
           if (!ReferenceEquals(nodes, _nodes)) {

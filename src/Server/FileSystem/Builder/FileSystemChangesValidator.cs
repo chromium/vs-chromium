@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
@@ -43,7 +42,7 @@ namespace VsChromium.Server.FileSystem.Builder {
       }
 
       if (filteredChanges.Count == 0) {
-        Logger.LogInfo("All changes have been filtered out.");
+        //Logger.LogInfo("All changes have been filtered out.");
 
         return new FileSystemValidationResult {
           Kind = FileSystemValidationResultKind.NoChanges

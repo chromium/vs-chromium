@@ -29,9 +29,22 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     /// <summary>
     /// The total number of file which can be searched for contents.
+    /// This is the same value of the number of unique files contained in
+    /// <see cref="FileContentsPieces"/>
     /// </summary>
     long SearchableFileCount { get; }
 
+    /// <summary>
+    /// The total number of file names in <see cref="FileNames"/>. This value
+    /// is faster to compute than <see cref="FileNames"/>.Count
+    /// </summary>
+    long FileNameCount { get; }
+
+    /// <summary>
+    /// The total number of bytes contained in the files that can be searched.
+    /// This is the same value as the sum of bytes from the pieces contained
+    /// in <see cref="FileContentsPieces"/>, but faster to compute.
+    /// </summary>
     long TotalFileContentsLength { get; }
 
     /// <summary>

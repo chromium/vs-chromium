@@ -56,6 +56,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     public IList<FileName> FileNames => _fileNames.Value;
     public IList<FileContentsPiece> FileContentsPieces => _fileContentsPieces.Value;
     public long SearchableFileCount => _searchableFileCount.Value;
+    public long FileNameCount => _files.Count;
     public long TotalFileContentsLength => _totalFileContentsLength.Value;
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans,

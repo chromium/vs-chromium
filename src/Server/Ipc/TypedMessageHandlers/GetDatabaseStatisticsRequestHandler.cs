@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel.Composition;
-using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
@@ -38,7 +37,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var indexingServerState = _indexingServer.CurrentState;
       return new GetDatabaseStatisticsResponse {
         ProjectCount = snapshot.ProjectRoots.Count,
-        FileCount = database.FileNames.Count,
+        FileCount = database.FileNameCount,
         SearchableFileCount = database.SearchableFileCount,
         ServerNativeMemoryUsage = database.TotalFileContentsLength,
         IndexLastUpdatedUtc = indexingServerState.LastIndexUpdateUtc,

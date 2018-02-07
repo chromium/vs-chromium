@@ -1,0 +1,26 @@
+﻿<platformUi:DialogWindow x:Class="VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo.IndexServerInfoDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch"
+             xmlns:platformUi="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.12.0"
+             xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.12.0"
+             xmlns:indexServerInfo="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo"
+             mc:Ignorable="d" 
+             d:DesignHeight="200" d:DesignWidth="600"
+             Width="600" Height="400"
+             Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
+             Background="{DynamicResource {x:Static vsfx:VsBrushes.WindowKey}}">
+  <platformUi:DialogWindow.DataContext>
+    <indexServerInfo:IndexServerInfoViewModel />
+  </platformUi:DialogWindow.DataContext>
+  <DockPanel>
+    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" Background="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarGradientKey}}" >
+      <Button HorizontalAlignment="Right" Width="80" Height="24" Margin="0,10,16,10">OK</Button>
+    </StackPanel>
+    <StackPanel Orientation="Vertical" Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolboxBackgroundKey}}">
+      <TextBlock Margin="20,20,20,20" Text="{Binding ServerStatus}"></TextBlock>
+    </StackPanel>
+  </DockPanel>
+</platformUi:DialogWindow>

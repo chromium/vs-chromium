@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
@@ -22,6 +23,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Features.BuildOutputAnalyzer;
 using VsChromium.Features.SourceExplorerHierarchy;
+using VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
@@ -225,7 +227,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void ShowServerInfo() {
+      var xamlDialog = new IndexServerInfoDialog();
+      xamlDialog.HasMinimizeButton = false;
+      xamlDialog.HasMaximizeButton = true;
+      xamlDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+      //xamlDialog.ViewModel.ServerStatus = GetIndexingServerStatusText(response);
+
       FetchDatabaseStatistics(true, response => {
+
         var message = new StringBuilder();
         message.AppendFormat("Server status: {0}\r\n", GetIndexingServerStatusText(response));
         message.AppendLine();
@@ -246,8 +255,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         message.AppendLine();
         message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
         message.AppendFormat("Native memory usage: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
+        xamlDialog.ViewModel.ServerStatus = message.ToString();
+
         _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", message.ToString());
       });
+      xamlDialog.ShowModal();
     }
 
     public void RefreshFileSystemTree() {

@@ -265,6 +265,10 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.FilePathSearchInfo.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.SearchWorkerParams.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoDialog.xaml.cs">
+      <DependentUpon>IndexServerInfoDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoViewModel.cs" />
     <Compile Include="Package\IShellHost.cs" />
     <Compile Include="Package\ReportServerProgress.cs" />
     <Compile Include="Package\ShellHost.cs" />
@@ -444,6 +448,10 @@
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\LongLineChecker.cs" />
     <Compile Include="Views\TextSnapshotLineExtensions.cs" />
     <Compile Include="VsPackage.cs" />
+    <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Features\AttachToChrome\AttachDialog.resx">

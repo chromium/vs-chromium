@@ -41,7 +41,7 @@
               <TextBlock Text=" largest file extension groups of files with searchable text contents" />
             </StackPanel>
           </Label>
-          <ListView x:Name="ListView" ItemsSource="{Binding FilesByExtensionDetails}">
+          <ListView x:Name="FilesByExtensionListView" ItemsSource="{Binding FilesByExtensionDetails}">
             <ListView.View>
               <GridView>
                 <GridViewColumn Width="120" DisplayMemberBinding="{Binding FileExtension}">

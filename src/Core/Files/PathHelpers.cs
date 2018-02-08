@@ -213,6 +213,10 @@ namespace VsChromium.Core.Files {
       }
       return path;
     }
+
+    public static string GetExtension(string path) {
+      return Path.GetExtension(path) ?? "";
+    }
   }
 
   /// <summary>

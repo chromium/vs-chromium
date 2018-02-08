@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
-  public partial class IndexServerInfoDialog {
-    public IndexServerInfoDialog() {
+  /// <summary>
+  /// Interaction logic for ProjectDetailsControl.xaml
+  /// </summary>
+  public partial class ProjectDetailsControl {
+    public ProjectDetailsControl() {
       InitializeComponent();
     }
-
-    public IndexServerInfoViewModel ViewModel => (IndexServerInfoViewModel)DataContext;
   }
 }

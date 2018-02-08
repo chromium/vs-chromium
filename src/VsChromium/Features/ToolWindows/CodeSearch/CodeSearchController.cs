@@ -229,19 +229,25 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public void ShowServerInfo() {
 
-      var xamlDialog = new IndexServerInfoDialog();
-      xamlDialog.HasMinimizeButton = false;
-      xamlDialog.HasMaximizeButton = false;
-      xamlDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+      var infoDialog = new IndexServerInfoDialog();
+      infoDialog.HasMinimizeButton = false;
+      infoDialog.HasMaximizeButton = false;
+      infoDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+      bool isClosed = false;
+      infoDialog.Closed += (sender, args) => isClosed = true;
 
       FetchDatabaseStatistics(true, response => {
-        xamlDialog.ViewModel.ProjectCount = response.ProjectCount;
-        xamlDialog.ViewModel.IndexDetailsInvoked += ViewModelOnIndexDetailsInvoked;
+        if (isClosed) {
+          return;
+        }
+        infoDialog.ViewModel.ProjectCount = response.ProjectCount;
+        infoDialog.ViewModel.IndexDetailsInvoked += ViewModelOnIndexDetailsInvoked;
         var message = new StringBuilder();
         message.AppendFormat("-- {0} --\r\n", GetIndexingServerStatusText(response));
         message.AppendLine();
         message.AppendFormat("{0}\r\n", GetIndexingServerStatusToolTipText(response));
-        xamlDialog.ViewModel.ServerStatus = message.ToString().TrimSuffix("\r\n");
+        infoDialog.ViewModel.ServerStatus = message.ToString().TrimSuffix("\r\n");
         message.Clear();
 
         message.AppendFormat("Directory/project count: {0:n0}\r\n", response.ProjectCount);
@@ -255,18 +261,39 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         } else {
           message.AppendFormat("Last updated: {0}\r\n", "n/a (index is empty)");
         }
-        xamlDialog.ViewModel.IndexStatus = message.ToString().TrimSuffix("\r\n");
+        infoDialog.ViewModel.IndexStatus = message.ToString().TrimSuffix("\r\n");
         message.Clear();
 
         message.AppendFormat("Managed memory: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
         message.AppendFormat("Native memory: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
-        xamlDialog.ViewModel.MemoryStatus = message.ToString().TrimSuffix("\r\n");
+        infoDialog.ViewModel.MemoryStatus = message.ToString().TrimSuffix("\r\n");
       });
-      xamlDialog.ShowModal();
+
+      infoDialog.ShowModal();
     }
 
     private void ViewModelOnIndexDetailsInvoked(object sender, EventArgs eventArgs) {
-      _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", "Hello");
+      _dispatchThreadServerRequestExecutor.Post(
+        new DispatchThreadServerRequest {
+          Id = Guid.NewGuid().ToString(),
+          Request = new GetDatabaseDetailsRequest(),
+          OnSuccess = typedResponse => {
+            var response = (GetDatabaseDetailsResponse)typedResponse;
+            ShowIndexDetails(response);
+          }
+        });
+    }
+
+    private void ShowIndexDetails(GetDatabaseDetailsResponse response) {
+      var infoDialog = new IndexDetailsDialog();
+      infoDialog.HasMinimizeButton = false;
+      infoDialog.HasMaximizeButton = false;
+      infoDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+      infoDialog.ViewModel.Projects.AddRange(response.Projects);
+      if (infoDialog.ViewModel.Projects.Count > 0) {
+        infoDialog.ViewModel.SelectedProject = infoDialog.ViewModel.Projects[0];
+      }
+      infoDialog.ShowDialog();
     }
 
     public void RefreshFileSystemTree() {

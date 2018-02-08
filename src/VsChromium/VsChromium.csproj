@@ -238,10 +238,17 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.FilePathSearchInfo.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.SearchWorkerParams.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexDetailsDialog.xaml.cs">
+      <DependentUpon>IndexDetailsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexDetailsViewModel.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoDialog.xaml.cs">
       <DependentUpon>IndexServerInfoDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectDetailsControl.xaml.cs">
+      <DependentUpon>ProjectDetailsControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ViewModelBase.cs" />
     <Compile Include="Package\IShellHost.cs" />
     <Compile Include="Package\ReportServerProgress.cs" />
@@ -422,7 +429,15 @@
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\LongLineChecker.cs" />
     <Compile Include="Views\TextSnapshotLineExtensions.cs" />
     <Compile Include="VsPackage.cs" />
+    <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexDetailsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectDetailsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

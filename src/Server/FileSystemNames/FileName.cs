@@ -31,6 +31,14 @@ namespace VsChromium.Server.FileSystemNames {
 
     public RelativePath RelativePath => BuildRelativePath();
 
+    public FullPath BasePath {
+      get {
+        Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
+        // ReSharper disable once PossibleNullReferenceException
+        return _parent.GetAbsolutePath();
+      }
+    }
+
     public FullPath FullPath {
       get {
         Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");

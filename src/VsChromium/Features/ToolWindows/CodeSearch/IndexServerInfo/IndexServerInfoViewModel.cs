@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Windows.Input;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
   public class IndexServerInfoViewModel : ViewModelBase {

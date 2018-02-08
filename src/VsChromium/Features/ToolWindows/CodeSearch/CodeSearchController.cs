@@ -281,8 +281,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         new DispatchThreadServerRequest {
           Id = Guid.NewGuid().ToString(),
           Request = new GetDatabaseDetailsRequest(),
-          OnReceive = () => WpfUtilities.Post(parentDialog, () => parentDialog.Cursor = prevCursor),
-          OnSuccess = typedResponse => {
+          OnThreadPoolReceive = () => WpfUtilities.Post(parentDialog, () => parentDialog.Cursor = prevCursor),
+          OnDispatchThreadSuccess = typedResponse => {
             var response = (GetDatabaseDetailsResponse)typedResponse;
             ShowIndexDetails(response);
           }
@@ -307,7 +307,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         Request = new RefreshFileSystemTreeRequest(),
         Id = "RefreshFileSystemTreeRequest",
         Delay = TimeSpan.FromSeconds(0.0),
-        OnSend = () => {
+        OnThreadPoolSend = () => {
           _performSearchOnNextRefresh = true;
         }
       };
@@ -321,13 +321,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           Request = new ResumeIndexingRequest(),
           Id = nameof(ResumeIndexingRequest),
           Delay = TimeSpan.FromSeconds(0.0),
-          OnReceive = FetchDatabaseStatistics,
+          OnThreadPoolReceive = FetchDatabaseStatistics,
         }
         : new DispatchThreadServerRequest {
           Request = new PauseIndexingRequest(),
           Id = nameof(PauseIndexingRequest),
           Delay = TimeSpan.FromSeconds(0.0),
-          OnReceive = FetchDatabaseStatistics,
+          OnThreadPoolReceive = FetchDatabaseStatistics,
         };
 
       _dispatchThreadServerRequestExecutor.Post(uiRequest);
@@ -754,20 +754,20 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         Id = "MetaSearch",
         Request = workerParams.TypedRequest,
         Delay = workerParams.Delay,
-        OnSend = () => {
+        OnThreadPoolSend = () => {
           sw.Start();
           _progressBarTracker.Start(progressId, workerParams.HintText);
         },
-        OnReceive = () => {
+        OnThreadPoolReceive = () => {
           sw.Stop();
           _progressBarTracker.Stop(progressId);
         },
-        OnSuccess = typedResponse => {
+        OnDispatchThreadSuccess = typedResponse => {
           if (cancellationToken.IsCancellationRequested)
             return;
           workerParams.ProcessResponse(typedResponse, sw);
         },
-        OnError = errorResponse => {
+        OnDispatchThreadError = errorResponse => {
           if (cancellationToken.IsCancellationRequested)
             return;
           workerParams.ProcessError(errorResponse, sw);
@@ -786,7 +786,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         new DispatchThreadServerRequest {
           Id = "GetDatabaseStatisticsRequest",
           Request = new GetDatabaseStatisticsRequest { ForceGabageCollection = forceGarbageCollect },
-          OnSuccess = typedResponse => {
+          OnDispatchThreadSuccess = typedResponse => {
             var response = (GetDatabaseStatisticsResponse)typedResponse;
             DisplayIndexingServerStatus(response);
             callback(response);

@@ -159,7 +159,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         Request = request,
         Id = "FileEntryViewModel-" + Path,
         Delay = TimeSpan.FromSeconds(0.0),
-        OnSuccess = (typedResponse) => {
+        OnDispatchThreadSuccess = (typedResponse) => {
           var response = (GetFileExtractsResponse)typedResponse;
           positions
             .Zip(response.FileExtracts, (x, y) => new {

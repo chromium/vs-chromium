@@ -33,25 +33,25 @@ namespace VsChromium.Threads {
     /// (Optional) Action executed on a background thread when the request delay
     /// has expired, just before the request is sent to the server.
     /// </summary>
-    public Action OnSend { get; set; }
+    public Action OnThreadPoolSend { get; set; }
 
     /// <summary>
     /// (Optional) Action executed on a brackground thread when a response
     /// (either sucess, error or cancellation) is received from the server, just
-    /// before calling <see cref="OnSuccess"/> or <see cref="OnError"/>.
+    /// before calling <see cref="OnDispatchThreadSuccess"/> or <see cref="OnDispatchThreadError"/>.
     /// </summary>
-    public Action OnReceive { get; set; }
+    public Action OnThreadPoolReceive { get; set; }
 
     /// <summary>
     /// (Optional) Action executed on the UI thread once the server request has
     /// been successfully executed.
     /// </summary>
-    public Action<TypedResponse> OnSuccess { get; set; }
+    public Action<TypedResponse> OnDispatchThreadSuccess { get; set; }
 
     /// <summary>
     /// (Optional) Action executed on the UI thread if request processing
     /// resulted in an error.
     /// </summary>
-    public Action<ErrorResponse> OnError { get; set; }
+    public Action<ErrorResponse> OnDispatchThreadError { get; set; }
   }
 }

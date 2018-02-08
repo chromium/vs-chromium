@@ -41,8 +41,8 @@ namespace VsChromium.Threads {
         Delay = request.Delay,
         // Action executed on a background thread when delay has expired.
         Action = () => {
-          if (request.OnSend != null)
-            Logger.WrapActionInvocation(request.OnSend);
+          if (request.OnThreadPoolSend != null)
+            Logger.WrapActionInvocation(request.OnThreadPoolSend);
 
           _typedRequestProcessProxy.RunAsync(request.Request,
             response => OnRequestSuccess(request, response),
@@ -67,25 +67,25 @@ namespace VsChromium.Threads {
     }
 
     private void OnRequestSuccess(DispatchThreadServerRequest request, TypedResponse response) {
-      if (request.OnReceive != null)
-        Logger.WrapActionInvocation(request.OnReceive);
+      if (request.OnThreadPoolReceive != null)
+        Logger.WrapActionInvocation(request.OnThreadPoolReceive);
 
-      if (request.OnSuccess != null) {
+      if (request.OnDispatchThreadSuccess != null) {
         _synchronizationContextProvider.UIContext.Post(() =>
-          request.OnSuccess(response));
+          request.OnDispatchThreadSuccess(response));
       }
     }
 
     private void OnRequestError(DispatchThreadServerRequest request, ErrorResponse errorResponse) {
-      if (request.OnReceive != null)
-        Logger.WrapActionInvocation(request.OnReceive);
+      if (request.OnThreadPoolReceive != null)
+        Logger.WrapActionInvocation(request.OnThreadPoolReceive);
 
-      if (request.OnError != null) {
+      if (request.OnDispatchThreadError != null) {
         _synchronizationContextProvider.UIContext.Post(() => {
           if (errorResponse.IsOperationCanceled()) {
             // UIRequest are cancelable at any point.
           } else {
-            request.OnError(errorResponse);
+            request.OnDispatchThreadError(errorResponse);
           }
         });
       }

@@ -15,6 +15,8 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
@@ -242,7 +244,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         }
         infoDialog.ViewModel.ProjectCount = response.ProjectCount;
-        infoDialog.ViewModel.IndexDetailsInvoked += ViewModelOnIndexDetailsInvoked;
+        infoDialog.ViewModel.IndexDetailsInvoked += (sender, args) => ViewModelOnIndexDetailsInvoked(infoDialog);
         var message = new StringBuilder();
         message.AppendFormat("-- {0} --\r\n", GetIndexingServerStatusText(response));
         message.AppendLine();
@@ -272,15 +274,19 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       infoDialog.ShowModal();
     }
 
-    private void ViewModelOnIndexDetailsInvoked(object sender, EventArgs eventArgs) {
+    private void ViewModelOnIndexDetailsInvoked(FrameworkElement parentDialog) {
+      var prevCursor = parentDialog.Cursor;
+      parentDialog.Cursor = Cursors.Wait;
       _dispatchThreadServerRequestExecutor.Post(
         new DispatchThreadServerRequest {
           Id = Guid.NewGuid().ToString(),
           Request = new GetDatabaseDetailsRequest(),
+          OnReceive = () => WpfUtilities.Post(parentDialog, () => parentDialog.Cursor = prevCursor),
           OnSuccess = typedResponse => {
             var response = (GetDatabaseDetailsResponse)typedResponse;
             ShowIndexDetails(response);
           }
+
         });
     }
 

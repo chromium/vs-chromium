@@ -37,7 +37,7 @@
           <Label DockPanel.Dock="Left">Project details</Label>
           <Separator Margin="4,0,0,0"></Separator>
         </DockPanel>
-        <local:ProjectIndexDetailsControl DataContext="{Binding SelectedProject}" />
+        <local:DirectoryIndexDetailsControl DataContext="{Binding SelectedProject.DirectoryDetails}" />
       </DockPanel>
     </DockPanel>
   </DockPanel>

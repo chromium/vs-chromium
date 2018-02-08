@@ -280,7 +280,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _dispatchThreadServerRequestExecutor.Post(
         new DispatchThreadServerRequest {
           Id = Guid.NewGuid().ToString(),
-          Request = new GetDatabaseDetailsRequest(),
+          Request = new GetDatabaseDetailsRequest {
+            MaxFilesByExtensionDetailsCount = 500,
+            MaxLargeFilesDetailsCount = 4000,
+          },
           OnThreadPoolReceive = () => WpfUtilities.Post(parentDialog, () => parentDialog.Cursor = prevCursor),
           OnDispatchThreadSuccess = typedResponse => {
             var response = (GetDatabaseDetailsResponse)typedResponse;

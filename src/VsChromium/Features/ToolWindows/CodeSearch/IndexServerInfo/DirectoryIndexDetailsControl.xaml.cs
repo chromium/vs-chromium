@@ -12,11 +12,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
   /// <summary>
   /// Interaction logic for ProjectDetailsControl.xaml
   /// </summary>
-  public partial class ProjectIndexDetailsControl {
+  public partial class DirectoryIndexDetailsControl {
     private GridViewColumnHeader _listViewSortCol;
     private SortAdorner _listViewSortAdorner;
 
-    public ProjectIndexDetailsControl() {
+    private GridViewColumnHeader _largeFileListViewSortCol;
+    private SortAdorner _largeFilesListViewSortAdorner;
+
+    public DirectoryIndexDetailsControl() {
       InitializeComponent();
     }
 
@@ -36,6 +39,24 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
       _listViewSortAdorner = new SortAdorner(_listViewSortCol, newDir);
       AdornerLayer.GetAdornerLayer(_listViewSortCol).Add(_listViewSortAdorner);
       ListView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+    }
+
+    private void LargeFilesListViewColumnHeader_Click(object sender, RoutedEventArgs e) {
+      GridViewColumnHeader column = (sender as GridViewColumnHeader);
+      string sortBy = column.Tag.ToString();
+      if (_largeFileListViewSortCol != null) {
+        AdornerLayer.GetAdornerLayer(_largeFileListViewSortCol).Remove(_largeFilesListViewSortAdorner);
+        LargeFilesListView.Items.SortDescriptions.Clear();
+      }
+
+      ListSortDirection newDir = ListSortDirection.Ascending;
+      if (_largeFileListViewSortCol == column && _largeFilesListViewSortAdorner.Direction == newDir)
+        newDir = ListSortDirection.Descending;
+
+      _largeFileListViewSortCol = column;
+      _largeFilesListViewSortAdorner = new SortAdorner(_largeFileListViewSortCol, newDir);
+      AdornerLayer.GetAdornerLayer(_largeFileListViewSortCol).Add(_largeFilesListViewSortAdorner);
+      LargeFilesListView.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
     }
 
     public class SortAdorner : Adorner {

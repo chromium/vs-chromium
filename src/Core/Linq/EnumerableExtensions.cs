@@ -247,6 +247,48 @@ namespace VsChromium.Core.Linq {
       public static readonly ReadOnlyCollection<TSource> Instance = new ReadOnlyCollection<TSource>(new TSource[0]);
     }
 
+    public static IEnumerable<TSource> TakeOrderBy<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
+      var heap = new MaxHeap<TSource>(count, new OrderByComparer<TSource, TKey>(keySelector));
+      return TakeByOrderImpl<TSource, TKey>(source, count, heap);
+    }
+
+    public static IEnumerable<TSource> TakeOrderByDescending<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
+      var heap = new MinHeap<TSource>(count, new OrderByComparer<TSource, TKey>(keySelector));
+      return TakeByOrderImpl<TSource, TKey>(source, count, heap);
+    }
+
+    private static IEnumerable<TSource> TakeByOrderImpl<TSource, TKey>(IEnumerable<TSource> source, int count, IHeap<TSource> heap) {
+      foreach (var item in source) {
+        heap.Add(item);
+        if (heap.Count > count) {
+          // Remove minimum/maximum value
+          heap.Remove();
+        }
+      }
+
+      return heap.ConsumeHeap().Reverse();
+    }
+
+    private static IEnumerable<TSource> ConsumeHeap<TSource>(this IHeap<TSource> heap) {
+      while (heap.Count > 0) {
+        yield return heap.Remove();
+      }
+    }
+
+    public class OrderByComparer<TSource, TKey> : IComparer<TSource> {
+      private readonly Func<TSource, TKey> _keySelector;
+      private readonly Comparer<TKey> _comparer;
+
+      public OrderByComparer(Func<TSource, TKey> keySelector) {
+        _keySelector = keySelector;
+        _comparer = Comparer<TKey>.Default;
+      }
+
+      public int Compare(TSource x, TSource y) {
+        return _comparer.Compare(_keySelector(x), _keySelector(y));
+      }
+    }
+
     /// <summary>
     /// Returns <code>null</code> when not found.
     /// </summary>

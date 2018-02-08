@@ -31,6 +31,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\TestEnumerableExtensions.cs" />
     <Compile Include="Core\TestConversion.cs" />
     <Compile Include="Core\TestPathHelpers.cs" />
     <Compile Include="Core\TestSlimHashTable.cs" />

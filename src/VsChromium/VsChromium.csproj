@@ -248,8 +248,8 @@
     </Compile>
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoViewModel.cs" />
     <Compile Include="Wpf\NumberValueConverter.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectIndexDetailsControl.xaml.cs">
-      <DependentUpon>ProjectIndexDetailsControl.xaml</DependentUpon>
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\DirectoryIndexDetailsControl.xaml.cs">
+      <DependentUpon>DirectoryIndexDetailsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Wpf\ViewModelBase.cs" />
     <Compile Include="Package\IShellHost.cs" />
@@ -439,7 +439,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectIndexDetailsControl.xaml">
+    <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\DirectoryIndexDetailsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

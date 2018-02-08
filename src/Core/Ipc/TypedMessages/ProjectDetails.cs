@@ -6,11 +6,15 @@ using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
-  public class GetDatabaseDetailsRequest : TypedRequest {
+  public class ProjectDetails {
+    public ProjectDetails() {
+      DirectoryDetails = new DirectoryDetails();
+    }
+
     [ProtoMember(1)]
-    public int MaxFilesByExtensionDetailsCount { get; set; }
+    public string RootPath { get; set; }
 
     [ProtoMember(2)]
-    public int MaxLargeFilesDetailsCount { get; set; }
+    public DirectoryDetails DirectoryDetails { get; set; }
   }
 }

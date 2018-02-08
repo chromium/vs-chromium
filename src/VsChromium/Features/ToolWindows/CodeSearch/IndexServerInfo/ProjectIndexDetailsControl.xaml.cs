@@ -6,8 +6,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
   /// <summary>
   /// Interaction logic for ProjectDetailsControl.xaml
   /// </summary>
-  public partial class ProjectDetailsControl {
-    public ProjectDetailsControl() {
+  public partial class ProjectIndexDetailsControl {
+    public ProjectIndexDetailsControl() {
       InitializeComponent();
     }
   }

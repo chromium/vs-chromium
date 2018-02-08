@@ -6,18 +6,18 @@
              xmlns:local="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo"
              xmlns:platformUi="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.12.0"
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.12.0"
-             Title="VsChromium Code Search Index Details"
+             Title="VsChromium Index Details"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
   <platformUi:DialogWindow.DataContext>
     <local:IndexDetailsViewModel/>
   </platformUi:DialogWindow.DataContext>
   <DockPanel>
-    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" Background="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarGradientKey}}" >
-      <Separator HorizontalAlignment="Stretch" Background="{DynamicResource {x:Static vsfx:VsBrushes.ScrollBarBackgroundKey}}" />
+    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" >
+      <Separator HorizontalAlignment="Stretch" />
       <Button HorizontalAlignment="Right" Width="80" Height="24" Margin="0,10,10,10" IsCancel="True" IsDefault="True">OK</Button>
     </StackPanel>
-    <DockPanel Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolboxBackgroundKey}}" Margin="10,10,10,0" >
+    <DockPanel Margin="10,10,10,0" >
       <DockPanel DockPanel.Dock="Top">
         <TextBlock DockPanel.Dock="Left">Select project:</TextBlock>
         <ComboBox x:Name="ProjectItem"  DockPanel.Dock="Top" Margin="10,0,0,0"
@@ -26,13 +26,12 @@
                   SelectedItem="{Binding SelectedProject}"></ComboBox>
       </DockPanel>
       <DockPanel>
-        <DockPanel DockPanel.Dock="Top" Margin="0,10,0,4">
+        <DockPanel DockPanel.Dock="Top" Margin="0,12,0,8">
           <TextBlock DockPanel.Dock="Left">Project details</TextBlock>
           <Separator Margin="4,0,0,0"></Separator>
         </DockPanel>
-        <local:ProjectDetailsControl DataContext="{Binding SelectedProject}" />
+        <local:ProjectIndexDetailsControl DataContext="{Binding SelectedProject}" />
       </DockPanel>
     </DockPanel>
   </DockPanel>
 </platformUi:DialogWindow>
-

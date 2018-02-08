@@ -5,7 +5,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
+namespace VsChromium.Wpf {
   public class ViewModelBase : INotifyPropertyChanged {
     public event PropertyChangedEventHandler PropertyChanged;
 

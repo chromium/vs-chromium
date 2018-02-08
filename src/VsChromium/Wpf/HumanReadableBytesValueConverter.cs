@@ -6,7 +6,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
+namespace VsChromium.Wpf {
   public class HumanReadableBytesValueConverter : IValueConverter {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
       var byteCount = (long)value;

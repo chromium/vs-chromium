@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Wpf;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
   public class IndexDetailsViewModel : ViewModelBase {

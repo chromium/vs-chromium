@@ -238,7 +238,7 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.FilePathSearchInfo.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.SearchWorkerParams.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\HumanReadableBytesValueConverter.cs" />
+    <Compile Include="Wpf\HumanReadableBytesValueConverter.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexDetailsDialog.xaml.cs">
       <DependentUpon>IndexDetailsDialog.xaml</DependentUpon>
     </Compile>
@@ -247,11 +247,11 @@
       <DependentUpon>IndexServerInfoDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoViewModel.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\NumberValueConverter.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectDetailsControl.xaml.cs">
-      <DependentUpon>ProjectDetailsControl.xaml</DependentUpon>
+    <Compile Include="Wpf\NumberValueConverter.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectIndexDetailsControl.xaml.cs">
+      <DependentUpon>ProjectIndexDetailsControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ViewModelBase.cs" />
+    <Compile Include="Wpf\ViewModelBase.cs" />
     <Compile Include="Package\IShellHost.cs" />
     <Compile Include="Package\ReportServerProgress.cs" />
     <Compile Include="Package\ShellHost.cs" />
@@ -439,7 +439,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectDetailsControl.xaml">
+    <Page Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectIndexDetailsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

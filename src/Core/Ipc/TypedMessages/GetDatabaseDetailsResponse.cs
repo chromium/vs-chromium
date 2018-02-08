@@ -48,6 +48,5 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(3)]
     public long FilesByteLength { get; set; }
-
   }
 }

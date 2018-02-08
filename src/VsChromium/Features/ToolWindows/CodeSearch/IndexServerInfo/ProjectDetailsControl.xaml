@@ -7,7 +7,11 @@
              xmlns:typedMessages="clr-namespace:VsChromium.Core.Ipc.TypedMessages;assembly=VsChromium.Core"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=typedMessages:ProjectDetails, IsDesignTimeCreatable=True}"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="300" d:DesignWidth="600">
+  <UserControl.Resources>
+    <local:HumanReadableBytesValueConverter x:Key="HumanReadableBytesValueConverter" />
+    <local:NumberValueConverter x:Key="NumberValueConverter" />
+  </UserControl.Resources>
   <DockPanel>
     <TextBlock DockPanel.Dock="Top">Files sorted by extension and total size</TextBlock>
     <TextBlock DockPanel.Dock="Top" Text="{Binding RootPath}" />
@@ -15,10 +19,27 @@
       <ListView.View>
         <GridView>
           <GridViewColumn Header="Extension" Width="120" DisplayMemberBinding="{Binding FileExtension}" />
-          <GridViewColumn Header="File count" Width="120" DisplayMemberBinding="{Binding FileCount}" />
-          <GridViewColumn Header="File size" Width="120" DisplayMemberBinding="{Binding FilesByteLength}" />
+          <GridViewColumn Header="File count" Width="120">
+            <GridViewColumn.CellTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding FileCount, Converter={StaticResource NumberValueConverter}}" TextAlignment="Right"/>
+              </DataTemplate>
+            </GridViewColumn.CellTemplate>
+          </GridViewColumn>
+          <GridViewColumn Header="File size" Width="120">
+            <GridViewColumn.CellTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding FilesByteLength, Converter={StaticResource HumanReadableBytesValueConverter}}" TextAlignment="Right"/>
+              </DataTemplate>
+            </GridViewColumn.CellTemplate>
+          </GridViewColumn>
         </GridView>
       </ListView.View>
+      <ListView.ItemContainerStyle>
+        <Style TargetType="ListViewItem">
+          <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+      </ListView.ItemContainerStyle>
     </ListView>
   </DockPanel>
 </UserControl>

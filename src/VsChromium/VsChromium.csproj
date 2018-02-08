@@ -238,6 +238,7 @@
     <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.FilePathSearchInfo.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.SearchWorkerParams.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\HumanReadableBytesValueConverter.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexDetailsDialog.xaml.cs">
       <DependentUpon>IndexDetailsDialog.xaml</DependentUpon>
     </Compile>
@@ -246,6 +247,7 @@
       <DependentUpon>IndexServerInfoDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\IndexServerInfoViewModel.cs" />
+    <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\NumberValueConverter.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\IndexServerInfo\ProjectDetailsControl.xaml.cs">
       <DependentUpon>ProjectDetailsControl.xaml</DependentUpon>
     </Compile>

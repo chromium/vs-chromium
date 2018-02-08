@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemDatabase;
@@ -43,18 +44,23 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     private ProjectDetails CreateProjectDetails(ProjectRootSnapshot project, IFileDatabaseSnapshot database) {
-      var projectFileNames = new HashSet<FileName>(database.FileNames.Where(x => x.BasePath.Equals(project.Project.RootPath)));
-      var projectFileContents = database.FileContentsPieces
+      var fileDatabse = (FileDatabaseSnapshot) database;
+
+      var projectFileNames = fileDatabse.FileNames
+        .Where(x => x.BasePath.Equals(project.Project.RootPath))
+        .ToHashSet();
+
+      var projectFileContents = fileDatabse.Files.Values
         .Where(x => projectFileNames.Contains(x.FileName))
-        .Select(x => new FileWithContents(x.FileName, x.FileContents))
-        .Distinct(new FileWithContentsComparer())
-        .ToDictionary(x => x.FileName, x => x);
+        .Where(x => x.HasContents())
+        .ToList();
+
       return new ProjectDetails() {
         RootPath = project.Project.RootPath.Value,
         FileCount = projectFileNames.Count,
         SearchableFileCount = projectFileContents.Count,
-        SearchableFileByteLength = projectFileContents.Values.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
-        FilesByExtensionDetails = projectFileContents.Values
+        SearchableFileByteLength = projectFileContents.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
+        FilesByExtensionDetails = projectFileContents
           .GroupBy(x => GetFileExtension(x.FileName))
           .Select(g => new FileByExtensionDetails {
             FileExtension = g.Key,
@@ -64,16 +70,6 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
           .OrderByDescending(x => x.FilesByteLength)
           .ToList()
       };
-    }
-
-    private class FileWithContentsComparer : IEqualityComparer<FileWithContents> {
-      public bool Equals(FileWithContents x, FileWithContents y) {
-        return x.FileName.Equals(y.FileName);
-      }
-
-      public int GetHashCode(FileWithContents obj) {
-        return obj.FileName.GetHashCode();
-      }
     }
 
     private string GetFileExtension(FileName fileName) {

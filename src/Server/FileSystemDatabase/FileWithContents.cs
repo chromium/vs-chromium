@@ -37,4 +37,10 @@ namespace VsChromium.Server.FileSystemDatabase {
       return $"{_fileName} - {_contents?.ByteLength ?? -1:n0} bytes";
     }
   }
+
+  public static class FileWithContentsExtensions {
+    public static bool HasContents(this FileWithContents x) {
+      return x.Contents != null && x.Contents.ByteLength > 0;
+    }
+  }
 }

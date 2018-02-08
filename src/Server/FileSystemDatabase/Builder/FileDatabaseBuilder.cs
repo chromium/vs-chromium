@@ -235,7 +235,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     public static bool FileHasContents(FileWithContents x) {
-      return x.Contents != null && x.Contents.ByteLength > 0;
+      return x.HasContents();
     }
 
     /// <summary>

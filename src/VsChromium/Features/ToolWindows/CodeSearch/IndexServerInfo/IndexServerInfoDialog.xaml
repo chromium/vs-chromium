@@ -9,6 +9,7 @@
              xmlns:indexServerInfo="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo"
              mc:Ignorable="d" 
              d:DesignHeight="200" d:DesignWidth="600"
+             Title="VsChromium Indexing Server Information"
              Width="600" Height="400"
              Foreground="{DynamicResource {x:Static vsfx:VsBrushes.WindowTextKey}}"
              Background="{DynamicResource {x:Static vsfx:VsBrushes.WindowKey}}">
@@ -17,10 +18,30 @@
   </platformUi:DialogWindow.DataContext>
   <DockPanel>
     <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" Background="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarGradientKey}}" >
-      <Button HorizontalAlignment="Right" Width="80" Height="24" Margin="0,10,16,10">OK</Button>
+      <Separator HorizontalAlignment="Stretch" Background="{DynamicResource {x:Static vsfx:VsBrushes.ScrollBarBackgroundKey}}" />
+      <Button HorizontalAlignment="Right" Width="80" Height="24" Margin="0,10,16,10" IsCancel="True" IsDefault="True">OK</Button>
     </StackPanel>
-    <StackPanel Orientation="Vertical" Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolboxBackgroundKey}}">
-      <TextBlock Margin="20,20,20,20" Text="{Binding ServerStatus}"></TextBlock>
+    <StackPanel Orientation="Vertical" Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolboxBackgroundKey}}" Margin="20,20,20,20" >
+      <DockPanel Margin="0,5,0,5">
+        <TextBlock FontSize="14" FontStretch="Expanded">Server Status</TextBlock>
+        <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="{DynamicResource {x:Static vsfx:VsBrushes.ScrollBarBackgroundKey}}" />
+      </DockPanel>
+      <TextBlock  Margin="8,0,0,0" Text="{Binding ServerStatus}"></TextBlock>
+      <DockPanel Margin="0,20,0,5">
+        <TextBlock FontSize="14" FontStretch="Expanded">Index size</TextBlock>
+        <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="{DynamicResource {x:Static vsfx:VsBrushes.ScrollBarBackgroundKey}}" />
+      </DockPanel>
+      <DockPanel Margin="8,0,0,0">
+        <TextBlock Text="{Binding IndexStatus}"></TextBlock>
+        <Button HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="5,0,5,0" Width="80" Height="24"
+                Command="{Binding IndexDetailsCommand}">Details...</Button>
+      </DockPanel>
+      <DockPanel Margin="0,20,0,5">
+        <TextBlock FontSize="14" FontStretch="Expanded">Memory usage</TextBlock>
+        <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Background="{DynamicResource {x:Static vsfx:VsBrushes.ScrollBarBackgroundKey}}" />
+      </DockPanel>
+      <TextBlock  Margin="8,0,0,0" Text="{Binding MemoryStatus}"></TextBlock>
     </StackPanel>
   </DockPanel>
 </platformUi:DialogWindow>

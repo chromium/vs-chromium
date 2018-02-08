@@ -2,30 +2,55 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System;
+using System.Windows.Input;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
-  public class IndexServerInfoViewModel : INotifyPropertyChanged {
+  public class IndexServerInfoViewModel : ViewModelBase {
     private string _serverStatus;
+    private string _indexStatus;
+    private string _memoryStatus;
+    private int _projectCount;
+    private CommandDelegate _indexDetailsCommand;
 
-    public event PropertyChangedEventHandler PropertyChanged;
-
+    public event EventHandler IndexDetailsInvoked;
+     
     public string ServerStatus {
       get { return _serverStatus; }
       set { UpdateProperty(ref _serverStatus, value); }
     }
 
-    protected void UpdateProperty<T>(ref T propertyField, T value, [CallerMemberName] string propertyName = null) {
-      if (Equals(propertyField, value)) {
-        return;
-      }
-
-      propertyField = value;
-      OnPropertyChanged(propertyName);
+    public string IndexStatus {
+      get { return _indexStatus; }
+      set { UpdateProperty(ref _indexStatus, value); }
     }
-    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null) {
-      PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    public int ProjectCount {
+      get { return _projectCount; }
+      set {
+        UpdateProperty(ref _projectCount, value);
+        IndexDetailsCommand.Refresh();
+      }
+    }
+
+    public string MemoryStatus {
+      get { return _memoryStatus; }
+      set { UpdateProperty(ref _memoryStatus, value); }
+    }
+
+    public CommandDelegate IndexDetailsCommand {
+      get {
+        return _indexDetailsCommand ?? (_indexDetailsCommand =
+                 new CommandDelegate(o => OnIndexDetailsInvoked(), o => IndexDetailsCanExecute()));
+      }
+    }
+
+    private bool IndexDetailsCanExecute() {
+      return ProjectCount > 0;
+    }
+
+    protected virtual void OnIndexDetailsInvoked() {
+      IndexDetailsInvoked?.Invoke(this, EventArgs.Empty);
     }
   }
 }

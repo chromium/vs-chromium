@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.VisualStudio.Shell;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -227,39 +228,45 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void ShowServerInfo() {
+
       var xamlDialog = new IndexServerInfoDialog();
       xamlDialog.HasMinimizeButton = false;
-      xamlDialog.HasMaximizeButton = true;
+      xamlDialog.HasMaximizeButton = false;
       xamlDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-      //xamlDialog.ViewModel.ServerStatus = GetIndexingServerStatusText(response);
 
       FetchDatabaseStatistics(true, response => {
-
+        xamlDialog.ViewModel.ProjectCount = response.ProjectCount;
+        xamlDialog.ViewModel.IndexDetailsInvoked += ViewModelOnIndexDetailsInvoked;
         var message = new StringBuilder();
-        message.AppendFormat("Server status: {0}\r\n", GetIndexingServerStatusText(response));
+        message.AppendFormat("-- {0} --\r\n", GetIndexingServerStatusText(response));
         message.AppendLine();
         message.AppendFormat("{0}\r\n", GetIndexingServerStatusToolTipText(response));
-        message.AppendLine();
-        message.AppendFormat("Index state:\r\n");
-        message.AppendFormat("  Directory/project count: {0:n0}\r\n", response.ProjectCount);
-        message.AppendFormat("  Total file count: {0:n0}\r\n", response.FileCount);
-        message.AppendFormat("  Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
+        xamlDialog.ViewModel.ServerStatus = message.ToString().TrimSuffix("\r\n");
+        message.Clear();
+
+        message.AppendFormat("Directory/project count: {0:n0}\r\n", response.ProjectCount);
+        message.AppendFormat("Total file count: {0:n0}\r\n", response.FileCount);
+        message.AppendFormat("Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
         if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.SearchableFileCount > 0) {
-          message.AppendFormat("  Last updated: {0} ({1} {2})\r\n",
+          message.AppendFormat("Last updated: {0} ({1} {2})\r\n",
             HumanReadableDuration(response.IndexLastUpdatedUtc),
             response.IndexLastUpdatedUtc.ToLocalTime().ToShortDateString(),
             response.IndexLastUpdatedUtc.ToLocalTime().ToLongTimeString());
         } else {
-          message.AppendFormat("  Last updated: {0}\r\n", "n/a (index is empty)");
+          message.AppendFormat("Last updated: {0}\r\n", "n/a (index is empty)");
         }
-        message.AppendLine();
-        message.AppendFormat("Managed memory usage: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
-        message.AppendFormat("Native memory usage: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
-        xamlDialog.ViewModel.ServerStatus = message.ToString();
+        xamlDialog.ViewModel.IndexStatus = message.ToString().TrimSuffix("\r\n");
+        message.Clear();
 
-        _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", message.ToString());
+        message.AppendFormat("Managed memory: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
+        message.AppendFormat("Native memory: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
+        xamlDialog.ViewModel.MemoryStatus = message.ToString().TrimSuffix("\r\n");
       });
       xamlDialog.ShowModal();
+    }
+
+    private void ViewModelOnIndexDetailsInvoked(object sender, EventArgs eventArgs) {
+      _shellHost.ShowInfoMessageBox("VsChromium Indexing Server Information", "Hello");
     }
 
     public void RefreshFileSystemTree() {

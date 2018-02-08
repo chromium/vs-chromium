@@ -28,13 +28,22 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       Logger.WrapActionInvocation(() => _action(parameter));
     }
 
-    public event EventHandler CanExecuteChanged { add { } remove { } }
+    public void Refresh() {
+      OnCanExecuteChanged();
+    }
+
+    public event EventHandler CanExecuteChanged;
 
     public static ICommand Create(Action<object> action) {
       return new CommandDelegate(action);
     }
+
     public static ICommand Create(Action<object> action, Func<object, bool> canExecute) {
       return new CommandDelegate(action, canExecute);
+    }
+
+    protected virtual void OnCanExecuteChanged() {
+      CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
   }
 }

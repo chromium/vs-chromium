@@ -330,7 +330,7 @@ namespace VsChromium.Server.FileSystem {
       }
     }
 
-    private int CountFileEntries(DirectorySnapshot entry) {
+    public static int CountFileEntries(DirectorySnapshot entry) {
       var result = entry.ChildFiles.Count;
       foreach (var x in entry.ChildDirectories.ToForeachEnum()) {
         result += CountFileEntries(x);
@@ -338,7 +338,7 @@ namespace VsChromium.Server.FileSystem {
       return result;
     }
 
-    private int CountDirectoryEntries(DirectorySnapshot entry) {
+    public static int CountDirectoryEntries(DirectorySnapshot entry) {
       var result = 1;
       foreach (var x in entry.ChildDirectories.ToForeachEnum()) {
         result += CountDirectoryEntries(x);

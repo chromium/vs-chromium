@@ -14,19 +14,46 @@
     <wpf:NumberValueConverter x:Key="NumberValueConverter" />
   </UserControl.Resources>
   <DockPanel>
-    <TextBlock Margin="0,4,0,4" DockPanel.Dock="Top">Files sorted by extension and total size</TextBlock>
+    <Grid DockPanel.Dock="Top">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Label Grid.Row="0" Grid.Column="0" Content="Number of scanned directories:" />
+      <Label Grid.Row="0" Grid.Column="1" Content="{Binding DirectoryCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+      <Label Grid.Row="1" Grid.Column="0" Content="Number of scanned files:" />
+      <Label Grid.Row="1" Grid.Column="1" Content="{Binding FileCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+      <Label Grid.Row="2" Grid.Column="0" Content="Number of files with searchable text contents:" />
+      <Label Grid.Row="2" Grid.Column="1" Content="{Binding SearchableFileCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+    </Grid>
+    <Label DockPanel.Dock="Top">List of files with searchable text contents, grouped by file extension</Label>
     <ListView x:Name="ListView" ItemsSource="{Binding FilesByExtensionDetails}">
       <ListView.View>
         <GridView>
-          <GridViewColumn Header="Extension" Width="120" DisplayMemberBinding="{Binding FileExtension}" />
-          <GridViewColumn Header="File count" Width="120">
+          <GridViewColumn Width="120" DisplayMemberBinding="{Binding FileExtension}">
+            <GridViewColumn.Header>
+              <GridViewColumnHeader Tag="FileExtension" Click="ListViewColumnHeader_Click">File Extension</GridViewColumnHeader>
+            </GridViewColumn.Header>
+          </GridViewColumn>
+          <GridViewColumn Width="120">
+            <GridViewColumn.Header>
+              <GridViewColumnHeader Tag="FileCount" Click="ListViewColumnHeader_Click">File Count</GridViewColumnHeader>
+            </GridViewColumn.Header>
             <GridViewColumn.CellTemplate>
               <DataTemplate>
                 <TextBlock Text="{Binding FileCount, Converter={StaticResource NumberValueConverter}}" TextAlignment="Right"/>
               </DataTemplate>
             </GridViewColumn.CellTemplate>
           </GridViewColumn>
-          <GridViewColumn Header="File size" Width="120">
+          <GridViewColumn Width="120">
+            <GridViewColumn.Header>
+              <GridViewColumnHeader Tag="FilesByteLength" Click="ListViewColumnHeader_Click">Total File Size</GridViewColumnHeader>
+            </GridViewColumn.Header>
             <GridViewColumn.CellTemplate>
               <DataTemplate>
                 <TextBlock Text="{Binding FilesByteLength, Converter={StaticResource HumanReadableBytesValueConverter}}" TextAlignment="Right"/>
@@ -43,3 +70,4 @@
     </ListView>
   </DockPanel>
 </UserControl>
+

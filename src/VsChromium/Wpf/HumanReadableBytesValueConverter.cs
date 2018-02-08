@@ -12,7 +12,7 @@ namespace VsChromium.Wpf {
       var byteCount = (long)value;
 
       if (byteCount < 1024) {
-        return $"{byteCount:n0} Bytes";
+        return $"{byteCount:n0} B";
       }
 
       if (byteCount < 1024 * 1024) {

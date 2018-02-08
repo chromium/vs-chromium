@@ -57,7 +57,8 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
       return new ProjectDetails() {
         RootPath = project.Project.RootPath.Value,
-        FileCount = projectFileNames.Count,
+        DirectoryCount = FileSystemSnapshotManager.CountDirectoryEntries(project.Directory), 
+        FileCount = FileSystemSnapshotManager.CountFileEntries(project.Directory),
         SearchableFileCount = projectFileContents.Count,
         SearchableFileByteLength = projectFileContents.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
         FilesByExtensionDetails = projectFileContents

@@ -26,15 +26,18 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public string RootPath { get; set; }
 
     [ProtoMember(2)]
-    public long FileCount { get; set; }
+    public long DirectoryCount { get; set; }
 
     [ProtoMember(3)]
-    public long SearchableFileCount { get; set; }
+    public long FileCount { get; set; }
 
     [ProtoMember(4)]
-    public long SearchableFileByteLength { get; set; }
+    public long SearchableFileCount { get; set; }
 
     [ProtoMember(5)]
+    public long SearchableFileByteLength { get; set; }
+
+    [ProtoMember(6)]
     public List<FileByExtensionDetails> FilesByExtensionDetails { get; set; }
   }
 

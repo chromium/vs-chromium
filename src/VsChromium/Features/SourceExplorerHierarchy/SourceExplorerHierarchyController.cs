@@ -173,10 +173,16 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         Execute = args => _windowsExplorer.OpenFolder(args.Node.FullPath)
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowProjectIndexDetails),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = args => ShowProjectIndexDetails(args.Node.FullPath)
+      });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowIndexDetails),
         IsEnabled = node => node is DirectoryNodeViewModel,
         Execute = args => ShowIndexDetails(args.Node.FullPath)
       });
+
 
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPath),
@@ -234,6 +240,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       };
 
       _dispatchThreadServerRequestExecutor.Post(uiRequest);
+    }
+
+    private void ShowProjectIndexDetails(string path) {
+      ShowIndexDetails(path);
     }
 
     private void ShowIndexDetails(string path) {

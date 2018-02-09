@@ -128,7 +128,7 @@ namespace VsChromium.Core.Files {
     /// parent of <paramref name="childPath"/>.
     /// </summary>
     public static bool ContainsPath(this FullPath path, FullPath childPath) {
-      return EnumeratePaths(path).Any(parent => parent.Equals(childPath));
+      return PathHelpers.IsPrefix(path.Value, childPath.Value);
     }
 
     /// <summary>

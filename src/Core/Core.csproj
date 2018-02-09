@@ -147,6 +147,8 @@
     <Compile Include="Ipc\TypedMessages\GetDatabaseDetailsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDatabaseStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDatabaseStatisticsResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDirectoryDetailsRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDirectoryDetailsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\IndexingServerStateChangedEvent.cs" />

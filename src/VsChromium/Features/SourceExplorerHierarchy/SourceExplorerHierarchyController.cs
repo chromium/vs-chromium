@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Windows;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -16,6 +17,7 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
@@ -172,6 +174,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         IsEnabled = node => node is DirectoryNodeViewModel,
         Execute = args => _windowsExplorer.OpenFolder(args.Node.FullPath)
       });
+      hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowIndexDetails),
+        IsEnabled = node => node is DirectoryNodeViewModel,
+        Execute = args => ShowIndexDetails(args.Node.FullPath)
+      });
 
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPath),
@@ -229,6 +236,30 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       };
 
       _dispatchThreadServerRequestExecutor.Post(uiRequest);
+    }
+
+    private void ShowIndexDetails(string path) {
+      var detailsDialog = new DirectoryDetailsDialog();
+      detailsDialog.HasMinimizeButton = false;
+      detailsDialog.HasMaximizeButton = false;
+      detailsDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+      var uiRequest = new DispatchThreadServerRequest {
+        Id = Guid.NewGuid().ToString(),
+        Delay = TimeSpan.FromSeconds(0.0),
+        Request = new GetDirectoryDetailsRequest {
+          Path = path,
+          MaxFilesByExtensionDetailsCount = 500,
+          MaxLargeFilesDetailsCount = 4000
+        },
+        OnDispatchThreadSuccess = typedResponse => {
+          var response = (GetDirectoryDetailsResponse)typedResponse;
+          detailsDialog.ViewModel.DirectoryDetails = response.DirectoryDetails;
+        },
+      };
+
+      _dispatchThreadServerRequestExecutor.Post(uiRequest);
+      detailsDialog.ShowDialog();
     }
 
     private void ShowContextMenu(NodeViewModel node, IntPtr variantIn) {

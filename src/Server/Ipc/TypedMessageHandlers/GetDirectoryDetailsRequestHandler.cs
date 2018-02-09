@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Files;
@@ -17,39 +16,36 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
   [Export(typeof(ITypedMessageRequestHandler))]
-  public class GetDatabaseDetailsRequestHandler : TypedMessageRequestHandler {
+  public class GetDirectoryDetailsRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 
     [ImportingConstructor]
-    public GetDatabaseDetailsRequestHandler(IFileSystemSnapshotManager snapshotManager, ISearchEngine searchEngine) {
+    public GetDirectoryDetailsRequestHandler(IFileSystemSnapshotManager snapshotManager, ISearchEngine searchEngine) {
       _snapshotManager = snapshotManager;
       _searchEngine = searchEngine;
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      var request = (GetDatabaseDetailsRequest)typedRequest;
+      var request = (GetDirectoryDetailsRequest)typedRequest;
       request.MaxFilesByExtensionDetailsCount = Math.Min(request.MaxFilesByExtensionDetailsCount, int.MaxValue);
       request.MaxLargeFilesDetailsCount = Math.Min(request.MaxLargeFilesDetailsCount, int.MaxValue);
 
+      var directoryPath = new FullPath(request.Path);
       var snapshot = _snapshotManager.CurrentSnapshot;
       var database = _searchEngine.CurrentFileDatabaseSnapshot;
-      return new GetDatabaseDetailsResponse {
-        Projects = CreateProjectsDetails(request, snapshot, database).ToList()
+      var projectSnapshot = snapshot.ProjectRoots.FirstOrDefault(x => x.Project.RootPath.ContainsPath(directoryPath));
+      return new GetDirectoryDetailsResponse {
+        DirectoryDetails = CreateDirectoryDetails(request, directoryPath, projectSnapshot, database)
       };
     }
 
-    private IEnumerable<ProjectDetails> CreateProjectsDetails(GetDatabaseDetailsRequest request,
-      FileSystemSnapshot snapshot, IFileDatabaseSnapshot database) {
-      return snapshot.ProjectRoots.Select(project => CreateProjectDetails(request, project, database));
-    }
-
-    private ProjectDetails CreateProjectDetails(GetDatabaseDetailsRequest request, ProjectRootSnapshot project,
-      IFileDatabaseSnapshot database) {
-      var fileDatabse = (FileDatabaseSnapshot) database;
+    private DirectoryDetails CreateDirectoryDetails(GetDirectoryDetailsRequest request, FullPath directoryPath,
+      ProjectRootSnapshot project, IFileDatabaseSnapshot database) {
+      var fileDatabse = (FileDatabaseSnapshot)database;
 
       var projectFileNames = fileDatabse.FileNames
-        .Where(x => x.BasePath.Equals(project.Project.RootPath))
+        .Where(x => directoryPath.ContainsPath(x.FullPath))
         .ToHashSet();
 
       var projectFiles = fileDatabse.Files.Values
@@ -60,9 +56,9 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         .Where(x => x.HasContents())
         .ToList();
 
-      var directoryDetails = new DirectoryDetails {
-        Path = project.Project.RootPath.Value,
-        DirectoryCount = FileSystemSnapshotManager.CountDirectoryEntries(project.Directory), 
+      return new DirectoryDetails {
+        Path = directoryPath.Value,
+        DirectoryCount = FileSystemSnapshotManager.CountDirectoryEntries(project.Directory),
         FileCount = FileSystemSnapshotManager.CountFileEntries(project.Directory),
         SearchableFileCount = projectFileContents.Count,
         SearchableFileByteLength = projectFileContents.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
@@ -90,10 +86,6 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
             ByteLength = ((BinaryFileContents)x.Contents).BinaryFileSize
           })
           .ToList()
-      };
-      return new ProjectDetails {
-        RootPath = project.Project.RootPath.Value,
-        DirectoryDetails = directoryDetails
       };
     }
 

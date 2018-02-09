@@ -19,6 +19,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoInclude(21, typeof(PauseIndexingRequest))]
   [ProtoInclude(22, typeof(ResumeIndexingRequest))]
   [ProtoInclude(23, typeof(GetDatabaseDetailsRequest))]
+  [ProtoInclude(24, typeof(GetDirectoryDetailsRequest))]
   public class TypedRequest : TypedMessage {
   }
 }

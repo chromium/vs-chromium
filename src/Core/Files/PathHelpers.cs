@@ -39,7 +39,7 @@ namespace VsChromium.Core.Files {
     /// Return <code>true</code> if <paramref name="prefix"/> is a path prefix
     /// of <paramref name="path"/>
     /// </summary>
-    public static bool IsPrefix(string path, string prefix) {
+    public static bool IsPrefix(string prefix, string path) {
       var result = SystemPathComparer.Instance.IndexOf(path, prefix, 0, path.Length);
       if (result < 0)
         return false;

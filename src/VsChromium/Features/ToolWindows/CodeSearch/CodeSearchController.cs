@@ -289,7 +289,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             var response = (GetDatabaseDetailsResponse)typedResponse;
             ShowIndexDetails(response);
           }
-
         });
     }
 

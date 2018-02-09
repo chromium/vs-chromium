@@ -126,7 +126,7 @@ namespace VsChromium.Tests.Mocks {
     private EntryMock FindEntry(FullPath path) {
       var current = _rootDirectory
         .Directories
-        .FirstOrDefault(x => PathHelpers.IsPrefix(path.Value, x.Name));
+        .FirstOrDefault(x => PathHelpers.IsPrefix(x.Name, path.Value));
       if (current == null)
         return null;
       var splitPath = PathHelpers.SplitPrefix(path.Value, current.Name);

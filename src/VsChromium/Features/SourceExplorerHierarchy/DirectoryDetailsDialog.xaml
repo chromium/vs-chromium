@@ -1,0 +1,37 @@
+﻿<platformUi:DialogWindow x:Class="VsChromium.Features.SourceExplorerHierarchy.DirectoryDetailsDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo"
+             xmlns:platformUi="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.12.0"
+             xmlns:sourceExplorerHierarchy="clr-namespace:VsChromium.Features.SourceExplorerHierarchy"
+             Title="VsChromium Directory Index Details"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300"
+             Cursor="{Binding Cursor}">
+  <platformUi:DialogWindow.Resources>
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+  </platformUi:DialogWindow.Resources>
+  <platformUi:DialogWindow.DataContext>
+    <sourceExplorerHierarchy:DirectoryDetailsViewModel/>
+  </platformUi:DialogWindow.DataContext>
+  <DockPanel>
+    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" >
+      <Separator HorizontalAlignment="Stretch" />
+      <Button HorizontalAlignment="Right" Width="80" Height="24" Margin="0,10,10,10" IsCancel="True" IsDefault="True">Close</Button>
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top"
+                Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}">
+      <Label Content="Retrieving index details for directory: " />
+      <Label Content="{Binding DirectoryDetails.Path}" />
+    </StackPanel>
+    <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="10"
+                 Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}"></ProgressBar>
+    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" >
+      <Label Content="Directory details: " />
+      <Label Content="{Binding DirectoryDetails.Path}" />
+    </StackPanel>
+    <local:DirectoryIndexDetailsControl DataContext="{Binding DirectoryDetails}" />
+  </DockPanel>
+</platformUi:DialogWindow>

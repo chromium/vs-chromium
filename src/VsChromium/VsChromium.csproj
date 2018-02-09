@@ -199,6 +199,7 @@
     <Compile Include="Features\QuickSearch\QuickSearchFilePathsHandler.cs" />
     <Compile Include="Features\QuickSearch\QuickSearchCodeHandler.cs" />
     <Compile Include="Features\QuickSearch\SelectionHelpers.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\DirectoryDetailsViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\FilePathEventArgs.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IIncrementalHierarchyBuilder.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalBuildResult.cs" />
@@ -206,6 +207,9 @@
     <Compile Include="Features\SourceExplorerHierarchy\FileNodeViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilder.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilderAggregate.cs" />
+    <Compile Include="Features\SourceExplorerHierarchy\DirectoryDetailsDialog.xaml.cs">
+      <DependentUpon>DirectoryDetailsDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Features\SourceExplorerHierarchy\INodeTemplateFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyController.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyControllerFactory.cs" />
@@ -393,6 +397,10 @@
     <Compile Include="Wpf\IHierarchyObject.cs" />
     <Compile Include="Views\WindowsExplorer.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
+    <Page Include="Features\SourceExplorerHierarchy\DirectoryDetailsDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -24,18 +24,24 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public long FileCount { get; set; }
 
     [ProtoMember(4)]
-    public long SearchableFileCount { get; set; }
+    public long SearchableFilesCount { get; set; }
 
     [ProtoMember(5)]
-    public long SearchableFileByteLength { get; set; }
+    public long SearchableFilesByteLength { get; set; }
 
     [ProtoMember(6)]
-    public List<FileByExtensionDetails> SearchableFilesByExtensionDetails { get; set; }
+    public long BinaryFilesCount { get; set; }
 
     [ProtoMember(7)]
-    public List<LargeFileDetails> LargeSearchableFilesDetails { get; set; }
+    public long BinaryFilesByteLength { get; set; }
 
     [ProtoMember(8)]
+    public List<FileByExtensionDetails> SearchableFilesByExtensionDetails { get; set; }
+
+    [ProtoMember(9)]
+    public List<LargeFileDetails> LargeSearchableFilesDetails { get; set; }
+
+    [ProtoMember(10)]
     public List<LargeFileDetails> LargeBinaryFilesDetails { get; set; }
   }
 }

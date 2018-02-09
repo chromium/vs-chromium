@@ -68,43 +68,57 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       var directoryPath = baseDirectory.DirectoryName.FullPath;
       var fileDatabse = (FileDatabaseSnapshot)database;
 
-      var projectFileNames = fileDatabse.FileNames
+      var directoryFileNames = fileDatabse.FileNames
         .Where(x => directoryPath.ContainsPath(x.FullPath))
         .ToHashSet();
 
-      var projectFiles = fileDatabse.Files.Values
-        .Where(x => projectFileNames.Contains(x.FileName))
+      var directoryFiles = fileDatabse.Files.Values
+        .Where(x => directoryFileNames.Contains(x.FileName))
         .ToList();
 
-      var projectFileContents = projectFiles
+      var searchableFiles = directoryFiles
         .Where(x => x.HasContents())
+        .ToList();
+
+      var binaryFiles = directoryFiles
+        .Where(x => (x.Contents is BinaryFileContents) && (((BinaryFileContents)x.Contents).BinaryFileSize > 0))
         .ToList();
 
       return new DirectoryDetails {
         Path = directoryPath.Value,
+
         DirectoryCount = FileSystemSnapshotManager.CountDirectoryEntries(baseDirectory),
+
         FileCount = FileSystemSnapshotManager.CountFileEntries(baseDirectory),
-        SearchableFileCount = projectFileContents.Count,
-        SearchableFileByteLength = projectFileContents.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
-        SearchableFilesByExtensionDetails = projectFileContents
+
+        SearchableFilesCount = searchableFiles.Count,
+
+        SearchableFilesByteLength = searchableFiles.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
+
+        BinaryFilesCount = binaryFiles.Count,
+
+        BinaryFilesByteLength = binaryFiles.Aggregate(0L, (acc, x) => acc + ((BinaryFileContents)x.Contents).BinaryFileSize),
+
+        SearchableFilesByExtensionDetails = searchableFiles
           .GroupBy(x => GetFileExtension(x.FileName))
           .Select(g => new FileByExtensionDetails {
             FileExtension = g.Key,
             FileCount = g.Count(),
             FilesByteLength = g.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength)
           })
-          .TakeOrderByDescending(maxFilesByExtensionDetailsCount, x => x.FilesByteLength)
+          .OrderByDescendingThenTake(maxFilesByExtensionDetailsCount, x => x.FilesByteLength)
           .ToList(),
-        LargeSearchableFilesDetails = projectFileContents
-          .TakeOrderByDescending(maxLargeFilesDetailsCount, x => x.Contents.ByteLength)
+
+        LargeSearchableFilesDetails = searchableFiles
+          .OrderByDescendingThenTake(maxLargeFilesDetailsCount, x => x.Contents.ByteLength)
           .Select(x => new LargeFileDetails {
             RelativePath = GetRelativePath(directoryPath, x.FileName.FullPath),
             ByteLength = x.Contents.ByteLength
           })
           .ToList(),
-        LargeBinaryFilesDetails = projectFiles
-          .Where(x => (x.Contents is BinaryFileContents) && (((BinaryFileContents)x.Contents).BinaryFileSize > 0))
-          .TakeOrderByDescending(maxLargeFilesDetailsCount, x => ((BinaryFileContents)x.Contents).BinaryFileSize)
+
+        LargeBinaryFilesDetails = binaryFiles
+          .OrderByDescendingThenTake(maxLargeFilesDetailsCount, x => ((BinaryFileContents)x.Contents).BinaryFileSize)
           .Select(x => new LargeFileDetails {
             RelativePath = GetRelativePath(directoryPath, x.FileName.FullPath),
             ByteLength = ((BinaryFileContents)x.Contents).BinaryFileSize

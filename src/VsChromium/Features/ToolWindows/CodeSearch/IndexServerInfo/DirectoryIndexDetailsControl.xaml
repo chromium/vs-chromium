@@ -17,20 +17,37 @@
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />
-        <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <Label Grid.Row="0" Grid.Column="0" Content="Number of scanned directories:" />
+      <Label Grid.Row="0" Grid.Column="0" Content="Number of directories scanned:" />
       <Label Grid.Row="0" Grid.Column="1" Content="{Binding DirectoryCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
-      <Label Grid.Row="1" Grid.Column="0" Content="Number of scanned files:" />
+      <Label Grid.Row="1" Grid.Column="0" Content="Number of files scanned:" />
       <Label Grid.Row="1" Grid.Column="1" Content="{Binding FileCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
-      <Label Grid.Row="2" Grid.Column="0" Content="Number of files with searchable text contents:" />
-      <Label Grid.Row="2" Grid.Column="1" Content="{Binding SearchableFileCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+      <StackPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Orientation="Horizontal" Margin="10,0,10,0">
+        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+      </StackPanel>
+      <Label Grid.Row="0" Grid.Column="3" Content="Number of searchable files:" />
+      <Label Grid.Row="0" Grid.Column="4" Content="{Binding SearchableFilesCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+      <Label Grid.Row="1" Grid.Column="3" Content="Total size of searchable files:" />
+      <Label Grid.Row="1" Grid.Column="4" Content="{Binding SearchableFilesByteLength, Converter={StaticResource HumanReadableBytesValueConverter}}" HorizontalAlignment="Right" />
+      <StackPanel Grid.Row="0" Grid.Column="5" Grid.RowSpan="2" Orientation="Horizontal" Margin="10,0,10,0">
+        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+      </StackPanel>
+      <Label Grid.Row="0" Grid.Column="6" Content="Number of binary files:" />
+      <Label Grid.Row="0" Grid.Column="7" Content="{Binding BinaryFilesCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+      <Label Grid.Row="1" Grid.Column="6" Content="Total size of binary files:" />
+      <Label Grid.Row="1" Grid.Column="7" Content="{Binding BinaryFilesByteLength, Converter={StaticResource HumanReadableBytesValueConverter}}" HorizontalAlignment="Right" />
     </Grid>
-    <TabControl>
+    <TabControl Margin="0,8,0,0">
       <TabItem Header="Files grouped by extension">
         <DockPanel>
           <Label DockPanel.Dock="Top">

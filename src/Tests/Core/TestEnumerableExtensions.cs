@@ -12,7 +12,7 @@ namespace VsChromium.Tests.Core {
     [TestMethod]
     public void TakeOrderByWorks() {
       var numbers = new[] { 5, 6, 7, 1, 8, 9, 10, 3, 13, 14, 2 };
-      var o1 = numbers.TakeOrderBy(5, x => x).ToList();
+      var o1 = numbers.OrderByThenTake(5, x => x).ToList();
 
       Assert.AreEqual(5, o1.Count);
       Assert.AreEqual(1, o1[0]);
@@ -25,7 +25,7 @@ namespace VsChromium.Tests.Core {
     [TestMethod]
     public void TakeOrderByDescendingWorks() {
       var numbers = new[] { 5, 6, 7, 1, 8, 9, 10, 3, 13, 14, 2 };
-      var o1 = numbers.TakeOrderByDescending(5, x => x).ToList();
+      var o1 = numbers.OrderByDescendingThenTake(5, x => x).ToList();
 
       Assert.AreEqual(5, o1.Count);
       Assert.AreEqual(14, o1[0]);

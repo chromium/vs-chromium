@@ -247,17 +247,17 @@ namespace VsChromium.Core.Linq {
       public static readonly ReadOnlyCollection<TSource> Instance = new ReadOnlyCollection<TSource>(new TSource[0]);
     }
 
-    public static IEnumerable<TSource> TakeOrderBy<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
-      var heap = new MaxHeap<TSource>(count, new OrderByComparer<TSource, TKey>(keySelector));
-      return TakeByOrderImpl<TSource, TKey>(source, count, heap);
+    public static IEnumerable<TSource> OrderByThenTake<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
+      var heap = new MaxHeap<TSource>(count + 1, new OrderByComparer<TSource, TKey>(keySelector));
+      return OrderByThenTakeImpl<TSource, TKey>(source, count, heap);
     }
 
-    public static IEnumerable<TSource> TakeOrderByDescending<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
-      var heap = new MinHeap<TSource>(count, new OrderByComparer<TSource, TKey>(keySelector));
-      return TakeByOrderImpl<TSource, TKey>(source, count, heap);
+    public static IEnumerable<TSource> OrderByDescendingThenTake<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
+      var heap = new MinHeap<TSource>(count + 1, new OrderByComparer<TSource, TKey>(keySelector));
+      return OrderByThenTakeImpl<TSource, TKey>(source, count, heap);
     }
 
-    private static IEnumerable<TSource> TakeByOrderImpl<TSource, TKey>(IEnumerable<TSource> source, int count, IHeap<TSource> heap) {
+    private static IEnumerable<TSource> OrderByThenTakeImpl<TSource, TKey>(IEnumerable<TSource> source, int count, IHeap<TSource> heap) {
       foreach (var item in source) {
         heap.Add(item);
         if (heap.Count > count) {

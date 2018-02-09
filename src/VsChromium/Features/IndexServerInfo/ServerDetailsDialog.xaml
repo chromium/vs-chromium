@@ -27,12 +27,8 @@
       <DockPanel Margin="10,10,10,0" >
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" >
           <Label >Select project:</Label>
-          <ComboBox x:Name="ProjectItem" Margin="10,0,0,0"
-                  ItemsSource="{Binding Projects}"
-                  DisplayMemberPath="RootPath"
-                  VerticalAlignment="Center"
-                  VerticalContentAlignment="Center"
-                  SelectedItem="{Binding SelectedProject}"></ComboBox>
+          <ComboBox Margin="10,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                  ItemsSource="{Binding Projects}" DisplayMemberPath="Details.RootPath" SelectedItem="{Binding SelectedProject}"></ComboBox>
         </StackPanel>
         <indexServerInfo:ProjectDetailsControl DataContext="{Binding SelectedProject}" />
       </DockPanel>

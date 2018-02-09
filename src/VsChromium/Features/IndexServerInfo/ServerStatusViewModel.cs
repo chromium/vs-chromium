@@ -30,6 +30,7 @@ namespace VsChromium.Features.IndexServerInfo {
       get { return _projectCount; }
       set {
         UpdateProperty(ref _projectCount, value);
+        IndexDetailsCommand.Refresh();
       }
     }
 

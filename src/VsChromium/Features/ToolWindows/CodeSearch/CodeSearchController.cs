@@ -316,7 +316,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       dialog.HasMinimizeButton = false;
       dialog.HasMaximizeButton = false;
       dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-      dialog.ViewModel = projectDetailsViewModel.Details.ConfigurationDetails;
+      dialog.ViewModel = projectDetailsViewModel.Details;
       dialog.ShowModal();
     }
 

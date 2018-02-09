@@ -8,11 +8,11 @@ namespace VsChromium.Features.IndexServerInfo {
   public partial class ProjectConfigurationDetailsDialog {
     public ProjectConfigurationDetailsDialog() {
       InitializeComponent();
-      DataContext = new ProjectConfigurationDetails();
+      DataContext = new ProjectDetails();
     }
 
-    public ProjectConfigurationDetails ViewModel {
-      get { return (ProjectConfigurationDetails) DataContext; }
+    public ProjectDetails ViewModel {
+      get { return (ProjectDetails) DataContext; }
       set { DataContext = value; }
     }
   }

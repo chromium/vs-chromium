@@ -9,8 +9,9 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class DirectoryDetails {
     public DirectoryDetails() {
-      FilesByExtensionDetails = new List<FileByExtensionDetails>();
-      LargeFilesDetails = new List<LargeFileDetails>();
+      SearchableFilesByExtensionDetails = new List<FileByExtensionDetails>();
+      LargeSearchableFilesDetails = new List<LargeFileDetails>();
+      LargeBinaryFilesDetails = new List<LargeFileDetails>();
     }
 
     [ProtoMember(1)]
@@ -29,9 +30,12 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public long SearchableFileByteLength { get; set; }
 
     [ProtoMember(6)]
-    public List<FileByExtensionDetails> FilesByExtensionDetails { get; set; }
+    public List<FileByExtensionDetails> SearchableFilesByExtensionDetails { get; set; }
 
     [ProtoMember(7)]
-    public List<LargeFileDetails> LargeFilesDetails { get; set; }
+    public List<LargeFileDetails> LargeSearchableFilesDetails { get; set; }
+
+    [ProtoMember(8)]
+    public List<LargeFileDetails> LargeBinaryFilesDetails { get; set; }
   }
 }

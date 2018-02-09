@@ -55,7 +55,7 @@ namespace VsChromium.Server.FileSystemContents {
 #endif
         case NativeMethods.TextKind.TextKind_ProbablyBinary:
           block.Dispose();
-          return new BinaryFileContents(fileInfo.LastWriteTimeUtc);
+          return new BinaryFileContents(fileInfo.LastWriteTimeUtc, fileInfo.Length);
 
         default:
           Invariants.Assert(false);

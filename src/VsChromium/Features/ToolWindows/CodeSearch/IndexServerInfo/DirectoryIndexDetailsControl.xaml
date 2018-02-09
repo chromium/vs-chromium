@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo"
              xmlns:typedMessages="clr-namespace:VsChromium.Core.Ipc.TypedMessages;assembly=VsChromium.Core"
              xmlns:wpf="clr-namespace:VsChromium.Wpf"
              mc:Ignorable="d" 
@@ -37,11 +36,11 @@
           <Label DockPanel.Dock="Top">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="List of the "/>
-              <TextBlock Text="{Binding FilesByExtensionDetails.Count, Converter={StaticResource NumberValueConverter}}" />
+              <TextBlock Text="{Binding SearchableFilesByExtensionDetails.Count, Converter={StaticResource NumberValueConverter}}" />
               <TextBlock Text=" largest file extension groups of files with searchable text contents" />
             </StackPanel>
           </Label>
-          <ListView x:Name="FilesByExtensionListView" ItemsSource="{Binding FilesByExtensionDetails}">
+          <ListView x:Name="FilesByExtensionListView" ItemsSource="{Binding SearchableFilesByExtensionDetails}">
             <ListView.View>
               <GridView>
                 <GridViewColumn Width="120" DisplayMemberBinding="{Binding FileExtension}">
@@ -85,11 +84,11 @@
           <Label DockPanel.Dock="Top">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="List of the "/>
-              <TextBlock Text="{Binding LargeFilesDetails.Count, Converter={StaticResource NumberValueConverter}}" />
+              <TextBlock Text="{Binding LargeSearchableFilesDetails.Count, Converter={StaticResource NumberValueConverter}}" />
               <TextBlock Text=" largest files with searchable text contents" />
             </StackPanel>
           </Label>
-          <ListView x:Name="LargeFilesListView" ItemsSource="{Binding LargeFilesDetails}">
+          <ListView x:Name="LargeFilesListView" ItemsSource="{Binding LargeSearchableFilesDetails}">
             <ListView.View>
               <GridView>
                 <GridViewColumn Width="450" DisplayMemberBinding="{Binding RelativePath}">
@@ -117,7 +116,45 @@
           </ListView>
         </DockPanel>
       </TabItem>
-    </TabControl>
+
+      <TabItem Header="Binary files">
+        <DockPanel>
+          <Label DockPanel.Dock="Top">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="List of the "/>
+              <TextBlock Text="{Binding LargeBinaryFilesDetails.Count, Converter={StaticResource NumberValueConverter}}" />
+              <TextBlock Text=" largest files that have been auto detected as binary files" />
+            </StackPanel>
+          </Label>
+          <ListView x:Name="LargeBinaryFilesListView" ItemsSource="{Binding LargeBinaryFilesDetails}">
+            <ListView.View>
+              <GridView>
+                <GridViewColumn Width="450" DisplayMemberBinding="{Binding RelativePath}">
+                  <GridViewColumn.Header>
+                    <GridViewColumnHeader Tag="RelativePath" Click="LargeBinaryFilesListViewColumnHeader_Click">Relative Path</GridViewColumnHeader>
+                  </GridViewColumn.Header>
+                </GridViewColumn>
+                <GridViewColumn Width="120">
+                  <GridViewColumn.Header>
+                    <GridViewColumnHeader Tag="ByteLength" Click="LargeBinaryFilesListViewColumnHeader_Click">File Size</GridViewColumnHeader>
+                  </GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding ByteLength, Converter={StaticResource HumanReadableBytesValueConverter}}" TextAlignment="Right"/>
+                    </DataTemplate>
+                  </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+              </GridView>
+            </ListView.View>
+            <ListView.ItemContainerStyle>
+              <Style TargetType="ListViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+              </Style>
+            </ListView.ItemContainerStyle>
+          </ListView>
+        </DockPanel>
+      </TabItem>
+      </TabControl>
 
   </DockPanel>
 </UserControl>

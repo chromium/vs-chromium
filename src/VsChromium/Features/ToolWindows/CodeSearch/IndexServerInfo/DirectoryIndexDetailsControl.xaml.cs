@@ -15,12 +15,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
   public partial class DirectoryIndexDetailsControl {
     private readonly Sorter _filesByExtensionListViewSorter;
     private readonly Sorter _largeFilesListViewSorter;
+    private readonly Sorter _largeBinaryFilesListViewSorter;
 
     public DirectoryIndexDetailsControl() {
       InitializeComponent();
       _filesByExtensionListViewSorter = new Sorter(FilesByExtensionListView);
       _largeFilesListViewSorter = new Sorter(LargeFilesListView);
-
+      _largeBinaryFilesListViewSorter = new Sorter(LargeBinaryFilesListView);
     }
 
     private void ListViewColumnHeader_Click(object sender, RoutedEventArgs e) {
@@ -29,6 +30,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
 
     private void LargeFilesListViewColumnHeader_Click(object sender, RoutedEventArgs e) {
       _largeFilesListViewSorter.HeaderClick(sender);
+    }
+
+    private void LargeBinaryFilesListViewColumnHeader_Click(object sender, RoutedEventArgs e) {
+      _largeBinaryFilesListViewSorter.HeaderClick(sender);
     }
 
     public class Sorter {

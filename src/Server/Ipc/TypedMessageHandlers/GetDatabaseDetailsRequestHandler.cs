@@ -10,6 +10,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
+using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Search;
@@ -51,8 +52,11 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         .Where(x => x.BasePath.Equals(project.Project.RootPath))
         .ToHashSet();
 
-      var projectFileContents = fileDatabse.Files.Values
+      var projectFiles = fileDatabse.Files.Values
         .Where(x => projectFileNames.Contains(x.FileName))
+        .ToList();
+
+      var projectFileContents = projectFiles
         .Where(x => x.HasContents())
         .ToList();
 
@@ -62,7 +66,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         FileCount = FileSystemSnapshotManager.CountFileEntries(project.Directory),
         SearchableFileCount = projectFileContents.Count,
         SearchableFileByteLength = projectFileContents.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
-        FilesByExtensionDetails = projectFileContents
+        SearchableFilesByExtensionDetails = projectFileContents
           .GroupBy(x => GetFileExtension(x.FileName))
           .Select(g => new FileByExtensionDetails {
             FileExtension = g.Key,
@@ -71,11 +75,19 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
           })
           .TakeOrderByDescending(request.MaxFilesByExtensionDetailsCount, x => x.FilesByteLength)
           .ToList(),
-        LargeFilesDetails = projectFileContents
+        LargeSearchableFilesDetails = projectFileContents
           .TakeOrderByDescending(request.MaxLargeFilesDetailsCount, x => x.Contents.ByteLength)
           .Select(x => new LargeFileDetails {
             RelativePath = x.FileName.RelativePath.Value,
-            ByteLength = x.Contents.ByteLength,
+            ByteLength = x.Contents.ByteLength
+          })
+          .ToList(),
+        LargeBinaryFilesDetails = projectFiles
+          .Where(x => (x.Contents is BinaryFileContents) && (((BinaryFileContents)x.Contents).BinaryFileSize > 0))
+          .TakeOrderByDescending(request.MaxLargeFilesDetailsCount, x => ((BinaryFileContents)x.Contents).BinaryFileSize)
+          .Select(x => new LargeFileDetails {
+            RelativePath = x.FileName.RelativePath.Value,
+            ByteLength = ((BinaryFileContents)x.Contents).BinaryFileSize
           })
           .ToList()
       };

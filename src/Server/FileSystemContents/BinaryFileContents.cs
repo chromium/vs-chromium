@@ -10,6 +10,8 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
   public class BinaryFileContents : FileContents {
+    private readonly long _byteLength;
+
     private static readonly Lazy<FileContentsMemory> LazyEmptyContentsMemory = new Lazy<FileContentsMemory>(() => {
       var block = HeapAllocStatic.Alloc(1);
       Marshal.WriteByte(block.Pointer, 0);
@@ -17,14 +19,15 @@ namespace VsChromium.Server.FileSystemContents {
     });
 
     private static readonly Lazy<BinaryFileContents> LazyEmpty = new Lazy<BinaryFileContents>(() => 
-      new BinaryFileContents(DateTime.MinValue));
+      new BinaryFileContents(DateTime.MinValue, -1));
     
     public static BinaryFileContents Empty {
       get { return LazyEmpty.Value; }
     }
 
-    public BinaryFileContents(DateTime utcLastModified)
+    public BinaryFileContents(DateTime utcLastModified, long byteLength)
       : base(LazyEmptyContentsMemory.Value, utcLastModified) {
+      _byteLength = byteLength;
     }
 
     protected override ITextLineOffsets GetFileOffsets() {
@@ -33,6 +36,10 @@ namespace VsChromium.Server.FileSystemContents {
 
     public override byte CharacterSize {
       get { return 1; }
+    }
+
+    public long BinaryFileSize {
+      get { return _byteLength; }
     }
 
     protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container) {

@@ -3,15 +3,12 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Features.IndexServerInfo {
-  /// <summary>
-  /// Interaction logic for IndexDetailsDialog.xaml
-  /// </summary>
   public partial class DirectoryDetailsDialog {
     public DirectoryDetailsDialog() {
       InitializeComponent();
-      DataContext = new DirectoryIndexDetailsViewModel();
+      DataContext = new DirectoryDetailsViewModel();
     }
 
-    public DirectoryIndexDetailsViewModel ViewModel => (DirectoryIndexDetailsViewModel) DataContext;
+    public DirectoryDetailsViewModel ViewModel => (DirectoryDetailsViewModel) DataContext;
   }
 }

@@ -125,13 +125,11 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
             RelativePath = GetRelativePath(directoryPath, x.FileName.FullPath),
             ByteLength = ((BinaryFileContents)x.Contents).BinaryFileSize
           })
-          .ToList(),
-
-        ProjectConfigurationDetails = CreateProjectConfigurationDetails(projectSnapshot)
+          .ToList()
       };
     }
 
-    private static ProjectConfigurationDetails CreateProjectConfigurationDetails(ProjectRootSnapshot project) {
+    public static ProjectConfigurationDetails CreateProjectConfigurationDetails(ProjectRootSnapshot project) {
       return new ProjectConfigurationDetails {
         IgnorePathsSection = CreateSectionDetails(project.Project.IgnorePathsConfiguration),
         IgnoreSearchableFilesSection = CreateSectionDetails(project.Project.IgnoreSearchableFilesConfiguration),

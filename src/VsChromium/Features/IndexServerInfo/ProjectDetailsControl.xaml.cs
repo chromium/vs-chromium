@@ -4,11 +4,10 @@
 
 
 namespace VsChromium.Features.IndexServerInfo {
-  public partial class IndexServerInfoDialog {
-    public IndexServerInfoDialog() {
+  public partial class ProjectDetailsControl {
+
+    public ProjectDetailsControl() {
       InitializeComponent();
     }
-
-    public IndexServerInfoViewModel ViewModel => (IndexServerInfoViewModel)DataContext;
   }
 }

@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
-using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemDatabase;
@@ -45,9 +44,12 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       GetDatabaseDetailsRequest request) {
       return new ProjectDetails {
         RootPath = project.Project.RootPath.Value,
+
         DirectoryDetails = GetDirectoryDetailsRequestHandler.CreateDirectoryDetails(database, project,
           project.Directory,
-          request.MaxFilesByExtensionDetailsCount, request.MaxLargeFilesDetailsCount)
+          request.MaxFilesByExtensionDetailsCount, request.MaxLargeFilesDetailsCount),
+
+        ConfigurationDetails = GetDirectoryDetailsRequestHandler.CreateProjectConfigurationDetails(project)
       };
     }
   }

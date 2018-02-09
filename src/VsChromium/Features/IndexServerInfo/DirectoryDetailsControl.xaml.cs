@@ -9,15 +9,12 @@ using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace VsChromium.Features.IndexServerInfo {
-  /// <summary>
-  /// Interaction logic for ProjectDetailsControl.xaml
-  /// </summary>
-  public partial class DirectoryIndexDetailsControl {
+  public partial class DirectoryDetailsControl {
     private readonly Sorter _filesByExtensionListViewSorter;
     private readonly Sorter _largeFilesListViewSorter;
     private readonly Sorter _largeBinaryFilesListViewSorter;
 
-    public DirectoryIndexDetailsControl() {
+    public DirectoryDetailsControl() {
       InitializeComponent();
       _filesByExtensionListViewSorter = new Sorter(FilesByExtensionListView);
       _largeFilesListViewSorter = new Sorter(LargeFilesListView);

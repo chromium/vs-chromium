@@ -12,7 +12,6 @@ namespace VsChromium.Core.Ipc.TypedMessages {
       SearchableFilesByExtensionDetails = new List<FileByExtensionDetails>();
       LargeSearchableFilesDetails = new List<LargeFileDetails>();
       LargeBinaryFilesDetails = new List<LargeFileDetails>();
-      ProjectConfigurationDetails = new ProjectConfigurationDetails();
     }
 
     [ProtoMember(1)]
@@ -44,8 +43,5 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(10)]
     public List<LargeFileDetails> LargeBinaryFilesDetails { get; set; }
-
-    [ProtoMember(11)]
-    public ProjectConfigurationDetails ProjectConfigurationDetails { get; set; }
   }
 }

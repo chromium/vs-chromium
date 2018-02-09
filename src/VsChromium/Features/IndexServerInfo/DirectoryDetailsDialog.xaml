@@ -14,21 +14,25 @@
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
   </platformUi:DialogWindow.Resources>
   <platformUi:DialogWindow.DataContext>
-    <indexServerInfo:DirectoryIndexDetailsViewModel/>
+    <indexServerInfo:DirectoryDetailsViewModel/>
   </platformUi:DialogWindow.DataContext>
   <DockPanel>
-    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" Background="LightGray">
+    <!-- CLOSE BUTTON -->
+    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom">
       <Button HorizontalAlignment="Right" Width="80" Height="24"
               Margin="0,10,10,10" IsCancel="True" IsDefault="True">Close</Button>
     </StackPanel>
+    <!-- "MAIN CONTENTS" LAYERS -->
     <Grid>
+      <!-- DIRECTORY DETAILS LAYER -->
       <DockPanel>
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" >
           <Label Content="Directory details: " />
           <Label Content="{Binding DirectoryDetails.Path}" />
         </StackPanel>
-        <indexServerInfo:DirectoryIndexDetailsControl DataContext="{Binding DirectoryDetails}" />
+        <indexServerInfo:DirectoryDetailsControl DataContext="{Binding DirectoryDetails}" />
       </DockPanel>
+      <!-- "PLEASE WAIT..." LAYER -->
       <Border BorderBrush="Black" BorderThickness="1" Background="#80000000" 
                 Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}" >
         <Grid>

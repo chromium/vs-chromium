@@ -1,4 +1,4 @@
-﻿<platformUi:DialogWindow x:Class="VsChromium.Features.IndexServerInfo.IndexServerInfoDialog"
+﻿<platformUi:DialogWindow x:Class="VsChromium.Features.IndexServerInfo.ServerStatusDialog"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -10,7 +10,7 @@
              Title="VsChromium Indexing Server Information"
              Width="600" Height="400">
   <platformUi:DialogWindow.DataContext>
-    <indexServerInfo1:IndexServerInfoViewModel />
+    <indexServerInfo1:ServerStatusViewModel />
   </platformUi:DialogWindow.DataContext>
   <DockPanel>
     <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" >

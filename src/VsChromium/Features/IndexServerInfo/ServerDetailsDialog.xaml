@@ -1,4 +1,4 @@
-﻿<platformUi:DialogWindow x:Class="VsChromium.Features.IndexServerInfo.IndexDetailsDialog"
+﻿<platformUi:DialogWindow x:Class="VsChromium.Features.IndexServerInfo.ServerDetailsDialog"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -10,19 +10,22 @@
              Width="800" Height="600"
              d:DesignHeight="300" d:DesignWidth="300">
   <platformUi:DialogWindow.DataContext>
-    <indexServerInfo:ServerIndexDetailsViewModel/>
+    <indexServerInfo:ServerDetailsViewModel/>
   </platformUi:DialogWindow.DataContext>
   <platformUi:DialogWindow.Resources>
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
   </platformUi:DialogWindow.Resources>
   <DockPanel>
+    <!-- CLOSE BUTTON -->
     <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" >
       <Button HorizontalAlignment="Right" Width="80" Height="24" 
               Margin="0,10,10,10" IsCancel="True" IsDefault="True">Close</Button>
     </StackPanel>
+    <!-- MAIN CONTENT LAYERS -->
     <Grid>
+      <!-- PROJECTS DETAILS LAYER -->
       <DockPanel Margin="10,10,10,0" >
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" >
           <Label >Select project:</Label>
           <ComboBox x:Name="ProjectItem" Margin="10,0,0,0"
                   ItemsSource="{Binding Projects}"
@@ -31,14 +34,10 @@
                   VerticalContentAlignment="Center"
                   SelectedItem="{Binding SelectedProject}"></ComboBox>
         </StackPanel>
-        <DockPanel>
-          <DockPanel DockPanel.Dock="Top" Margin="0,4,0,0">
-            <Label DockPanel.Dock="Left">Project details</Label>
-            <Separator Margin="4,0,0,0"></Separator>
-          </DockPanel>
-          <indexServerInfo:DirectoryIndexDetailsControl DataContext="{Binding SelectedProject.DirectoryDetails}" />
-        </DockPanel>
+        <indexServerInfo:ProjectDetailsControl DataContext="{Binding SelectedProject}" />
       </DockPanel>
+
+      <!-- "PLEASE WAIT..." LAYER-->
       <Border BorderBrush="Black" BorderThickness="1" Background="#80000000" 
               Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}" >
         <Grid>

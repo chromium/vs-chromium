@@ -9,6 +9,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   public class ProjectDetails {
     public ProjectDetails() {
       DirectoryDetails = new DirectoryDetails();
+      ConfigurationDetails = new ProjectConfigurationDetails();
     }
 
     [ProtoMember(1)]
@@ -16,5 +17,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(2)]
     public DirectoryDetails DirectoryDetails { get; set; }
+
+    [ProtoMember(3)]
+    public ProjectConfigurationDetails ConfigurationDetails { get; set; }
   }
 }

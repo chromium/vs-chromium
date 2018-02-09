@@ -196,10 +196,20 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
+    <Compile Include="Features\IndexServerInfo\ProjectDetailsViewModel.cs" />
+    <Compile Include="Features\IndexServerInfo\ProjectDetailsControl.xaml.cs">
+      <DependentUpon>ProjectDetailsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Features\IndexServerInfo\ProjectConfigurationSectionDetailsControl.xaml.cs">
+      <DependentUpon>ProjectConfigurationSectionDetailsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml.cs">
+      <DependentUpon>ProjectConfigurationDetailsDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Features\QuickSearch\QuickSearchFilePathsHandler.cs" />
     <Compile Include="Features\QuickSearch\QuickSearchCodeHandler.cs" />
     <Compile Include="Features\QuickSearch\SelectionHelpers.cs" />
-    <Compile Include="Features\IndexServerInfo\DirectoryIndexDetailsViewModel.cs" />
+    <Compile Include="Features\IndexServerInfo\DirectoryDetailsViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\FilePathEventArgs.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IIncrementalHierarchyBuilder.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalBuildResult.cs" />
@@ -207,8 +217,8 @@
     <Compile Include="Features\SourceExplorerHierarchy\FileNodeViewModel.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilder.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilderAggregate.cs" />
-    <Compile Include="Features\IndexServerInfo\DirectoryIndexDetailsDialog.xaml.cs">
-      <DependentUpon>DirectoryIndexDetailsDialog.xaml</DependentUpon>
+    <Compile Include="Features\IndexServerInfo\DirectoryDetailsDialog.xaml.cs">
+      <DependentUpon>DirectoryDetailsDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\SourceExplorerHierarchy\INodeTemplateFactory.cs" />
     <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyController.cs" />
@@ -243,17 +253,17 @@
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.FilePathSearchInfo.cs" />
     <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.SearchWorkerParams.cs" />
     <Compile Include="Wpf\HumanReadableBytesValueConverter.cs" />
-    <Compile Include="Features\IndexServerInfo\ServerIndexDetailsDialog.xaml.cs">
-      <DependentUpon>ServerIndexDetailsDialog.xaml</DependentUpon>
+    <Compile Include="Features\IndexServerInfo\ServerDetailsDialog.xaml.cs">
+      <DependentUpon>ServerDetailsDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\IndexServerInfo\ServerIndexDetailsViewModel.cs" />
-    <Compile Include="Features\IndexServerInfo\IndexServerInfoDialog.xaml.cs">
-      <DependentUpon>IndexServerInfoDialog.xaml</DependentUpon>
+    <Compile Include="Features\IndexServerInfo\ServerDetailsViewModel.cs" />
+    <Compile Include="Features\IndexServerInfo\ServerStatusDialog.xaml.cs">
+      <DependentUpon>ServerStatusDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\IndexServerInfo\IndexServerInfoViewModel.cs" />
+    <Compile Include="Features\IndexServerInfo\ServerStatusViewModel.cs" />
     <Compile Include="Wpf\NumberValueConverter.cs" />
-    <Compile Include="Features\IndexServerInfo\DirectoryIndexDetailsControl.xaml.cs">
-      <DependentUpon>DirectoryIndexDetailsControl.xaml</DependentUpon>
+    <Compile Include="Features\IndexServerInfo\DirectoryDetailsControl.xaml.cs">
+      <DependentUpon>DirectoryDetailsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Wpf\ViewModelBase.cs" />
     <Compile Include="Package\IShellHost.cs" />
@@ -397,7 +407,19 @@
     <Compile Include="Wpf\IHierarchyObject.cs" />
     <Compile Include="Views\WindowsExplorer.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
-    <Page Include="Features\IndexServerInfo\DirectoryIndexDetailsDialog.xaml">
+    <Page Include="Features\IndexServerInfo\ProjectDetailsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Features\IndexServerInfo\ProjectConfigurationSectionDetailsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Features\IndexServerInfo\DirectoryDetailsDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -439,15 +461,15 @@
     <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\LongLineChecker.cs" />
     <Compile Include="Views\TextSnapshotLineExtensions.cs" />
     <Compile Include="VsPackage.cs" />
-    <Page Include="Features\IndexServerInfo\ServerIndexDetailsDialog.xaml">
+    <Page Include="Features\IndexServerInfo\ServerDetailsDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Features\IndexServerInfo\IndexServerInfoDialog.xaml">
+    <Page Include="Features\IndexServerInfo\ServerStatusDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Features\IndexServerInfo\DirectoryIndexDetailsControl.xaml">
+    <Page Include="Features\IndexServerInfo\DirectoryDetailsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

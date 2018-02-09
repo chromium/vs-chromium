@@ -2,25 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Core.Ipc.TypedMessages;
+using System.Collections.Generic;
 using VsChromium.Wpf;
 
 namespace VsChromium.Features.IndexServerInfo {
-  public class DirectoryIndexDetailsViewModel : ViewModelBase {
-    private DirectoryDetails _directoryDetails;
+  public class ServerDetailsViewModel : ViewModelBase {
+    private ProjectDetailsViewModel _selectedProject;
     private bool _waiting = true;
+
+    public List<ProjectDetailsViewModel> Projects { get; } = new List<ProjectDetailsViewModel>();
 
     public bool Waiting {
       get { return _waiting; }
       set { UpdateProperty(ref _waiting, value); }
     }
 
-    public DirectoryDetails DirectoryDetails {
-      get { return _directoryDetails; }
-      set {
-        UpdateProperty(ref _directoryDetails, value);
-        Waiting = (value == null);
-      }
+    public ProjectDetailsViewModel SelectedProject {
+      get { return _selectedProject; }
+      set { UpdateProperty(ref _selectedProject, value); }
     }
   }
 }

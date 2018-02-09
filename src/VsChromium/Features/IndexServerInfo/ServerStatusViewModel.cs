@@ -7,14 +7,14 @@ using VsChromium.Features.ToolWindows.CodeSearch;
 using VsChromium.Wpf;
 
 namespace VsChromium.Features.IndexServerInfo {
-  public class IndexServerInfoViewModel : ViewModelBase {
+  public class ServerStatusViewModel : ViewModelBase {
     private string _serverStatus;
     private string _indexStatus;
     private string _memoryStatus;
     private int _projectCount;
     private CommandDelegate _indexDetailsCommand;
 
-    public event EventHandler IndexDetailsInvoked;
+    public event EventHandler ShowServerDetailsInvoked;
      
     public string ServerStatus {
       get { return _serverStatus; }
@@ -30,7 +30,6 @@ namespace VsChromium.Features.IndexServerInfo {
       get { return _projectCount; }
       set {
         UpdateProperty(ref _projectCount, value);
-        IndexDetailsCommand.Refresh();
       }
     }
 
@@ -51,7 +50,7 @@ namespace VsChromium.Features.IndexServerInfo {
     }
 
     protected virtual void OnIndexDetailsInvoked() {
-      IndexDetailsInvoked?.Invoke(this, EventArgs.Empty);
+      ShowServerDetailsInvoked?.Invoke(this, EventArgs.Empty);
     }
   }
 }

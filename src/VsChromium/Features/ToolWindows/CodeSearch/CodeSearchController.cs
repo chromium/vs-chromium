@@ -23,6 +23,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Features.BuildOutputAnalyzer;
+using VsChromium.Features.IndexServerInfo;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
@@ -30,8 +31,6 @@ using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
-using IndexDetailsDialog = VsChromium.Features.IndexServerInfo.IndexDetailsDialog;
-using IndexServerInfoDialog = VsChromium.Features.IndexServerInfo.IndexServerInfoDialog;
 using TreeView = System.Windows.Controls.TreeView;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
@@ -230,7 +229,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public void ShowServerInfo() {
 
-      var infoDialog = new IndexServerInfoDialog();
+      var infoDialog = new ServerStatusDialog();
       infoDialog.HasMinimizeButton = false;
       infoDialog.HasMaximizeButton = false;
       infoDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -243,7 +242,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           return;
         }
         infoDialog.ViewModel.ProjectCount = response.ProjectCount;
-        infoDialog.ViewModel.IndexDetailsInvoked += (sender, args) => ViewModelOnIndexDetailsInvoked(infoDialog);
+        infoDialog.ViewModel.ShowServerDetailsInvoked += (sender, args) => OnShowServerDetailsInvoked();
         var message = new StringBuilder();
         message.AppendFormat("-- {0} --\r\n", GetIndexingServerStatusText(response));
         message.AppendLine();
@@ -273,12 +272,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       infoDialog.ShowModal();
     }
 
-    private void ViewModelOnIndexDetailsInvoked(FrameworkElement parentDialog) {
-      var infoDialog = new IndexDetailsDialog();
-      infoDialog.HasMinimizeButton = false;
-      infoDialog.HasMaximizeButton = false;
-      infoDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+    private void OnShowServerDetailsInvoked() {
+      // Prepare the dialog window
+      var dialog = new ServerDetailsDialog();
+      dialog.HasMinimizeButton = false;
+      dialog.HasMaximizeButton = false;
+      dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
+      // Post async-request to fetch the server details
       _dispatchThreadServerRequestExecutor.Post(
         new DispatchThreadServerRequest {
           Id = Guid.NewGuid().ToString(),
@@ -289,19 +290,34 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           },
           OnDispatchThreadError = error => {
             // TODO: Display error message
-            infoDialog.ViewModel.Waiting = false;
+            dialog.ViewModel.Waiting = false;
           },
           OnDispatchThreadSuccess = typedResponse => {
             var response = (GetDatabaseDetailsResponse)typedResponse;
-            infoDialog.ViewModel.Projects.AddRange(response.Projects);
-            if (infoDialog.ViewModel.Projects.Count > 0) {
-              infoDialog.ViewModel.SelectedProject = infoDialog.ViewModel.Projects[0];
+            var projectDetails = response.Projects.Select(x => new ProjectDetailsViewModel() {Details = x}).ToList();
+            foreach (var x in projectDetails) {
+              x.ShowProjectConfigurationInvoked += (sender, args) => { ShowProjectConfiguration(x); };
             }
-            infoDialog.ViewModel.Waiting = false;
+            dialog.ViewModel.Projects.AddRange(projectDetails);
+            if (dialog.ViewModel.Projects.Count > 0) {
+              dialog.ViewModel.SelectedProject = dialog.ViewModel.Projects[0];
+            }
+            dialog.ViewModel.Waiting = false;
           }
         });
 
-      infoDialog.ShowModal();
+      // Show the dialog right away, waiting for a response for the above request
+      // (The dialog shows a "Please wait..." message while waiting)
+      dialog.ShowModal();
+    }
+
+    private void ShowProjectConfiguration(ProjectDetailsViewModel projectDetailsViewModel) {
+      var dialog = new ProjectConfigurationDetailsDialog();
+      dialog.HasMinimizeButton = false;
+      dialog.HasMaximizeButton = false;
+      dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+      dialog.ViewModel = projectDetailsViewModel.Details.ConfigurationDetails;
+      dialog.ShowModal();
     }
 
     public void RefreshFileSystemTree() {

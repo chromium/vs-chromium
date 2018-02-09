@@ -8,6 +8,7 @@
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.12.0"
              Title="VsChromium Index Details"
              mc:Ignorable="d" 
+             Width="800" Height="600"
              d:DesignHeight="300" d:DesignWidth="300">
   <platformUi:DialogWindow.DataContext>
     <local:IndexDetailsViewModel/>

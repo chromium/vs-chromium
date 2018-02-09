@@ -252,14 +252,19 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           MaxFilesByExtensionDetailsCount = 500,
           MaxLargeFilesDetailsCount = 4000
         },
+        OnDispatchThreadError = error => {
+          //TODO: Display error message
+          detailsDialog.ViewModel.Waiting = false;
+        },
         OnDispatchThreadSuccess = typedResponse => {
           var response = (GetDirectoryDetailsResponse)typedResponse;
           detailsDialog.ViewModel.DirectoryDetails = response.DirectoryDetails;
+          detailsDialog.ViewModel.Waiting = false;
         },
       };
 
       _dispatchThreadServerRequestExecutor.Post(uiRequest);
-      detailsDialog.ShowDialog();
+      detailsDialog.ShowModal();
     }
 
     private void ShowContextMenu(NodeViewModel node, IntPtr variantIn) {

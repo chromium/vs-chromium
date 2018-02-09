@@ -275,33 +275,34 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void ViewModelOnIndexDetailsInvoked(FrameworkElement parentDialog) {
-      var prevCursor = parentDialog.Cursor;
-      parentDialog.Cursor = Cursors.Wait;
-      _dispatchThreadServerRequestExecutor.Post(
-        new DispatchThreadServerRequest {
-          Id = Guid.NewGuid().ToString(),
-          Request = new GetDatabaseDetailsRequest {
-            MaxFilesByExtensionDetailsCount = 500,
-            MaxLargeFilesDetailsCount = 4000,
-          },
-          OnThreadPoolReceive = () => WpfUtilities.Post(parentDialog, () => parentDialog.Cursor = prevCursor),
-          OnDispatchThreadSuccess = typedResponse => {
-            var response = (GetDatabaseDetailsResponse)typedResponse;
-            ShowIndexDetails(response);
-          }
-        });
-    }
-
-    private void ShowIndexDetails(GetDatabaseDetailsResponse response) {
       var infoDialog = new IndexDetailsDialog();
       infoDialog.HasMinimizeButton = false;
       infoDialog.HasMaximizeButton = false;
       infoDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-      infoDialog.ViewModel.Projects.AddRange(response.Projects);
-      if (infoDialog.ViewModel.Projects.Count > 0) {
-        infoDialog.ViewModel.SelectedProject = infoDialog.ViewModel.Projects[0];
-      }
-      infoDialog.ShowDialog();
+
+      _dispatchThreadServerRequestExecutor.Post(
+        new DispatchThreadServerRequest {
+          Id = Guid.NewGuid().ToString(),
+          Delay = TimeSpan.Zero,
+          Request = new GetDatabaseDetailsRequest {
+            MaxFilesByExtensionDetailsCount = 500,
+            MaxLargeFilesDetailsCount = 4000,
+          },
+          OnDispatchThreadError = error => {
+            // TODO: Display error message
+            infoDialog.ViewModel.Waiting = false;
+          },
+          OnDispatchThreadSuccess = typedResponse => {
+            var response = (GetDatabaseDetailsResponse)typedResponse;
+            infoDialog.ViewModel.Projects.AddRange(response.Projects);
+            if (infoDialog.ViewModel.Projects.Count > 0) {
+              infoDialog.ViewModel.SelectedProject = infoDialog.ViewModel.Projects[0];
+            }
+            infoDialog.ViewModel.Waiting = false;
+          }
+        });
+
+      infoDialog.ShowModal();
     }
 
     public void RefreshFileSystemTree() {

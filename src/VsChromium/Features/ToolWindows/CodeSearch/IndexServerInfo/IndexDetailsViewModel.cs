@@ -9,8 +9,14 @@ using VsChromium.Wpf;
 namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
   public class IndexDetailsViewModel : ViewModelBase {
     private ProjectDetails _selectedProject;
+    private bool _waiting = true;
 
     public List<ProjectDetails> Projects { get; } = new List<ProjectDetails>();
+
+    public bool Waiting {
+      get { return _waiting; }
+      set { UpdateProperty(ref _waiting, value); }
+    }
 
     public ProjectDetails SelectedProject {
       get { return _selectedProject; }

@@ -8,8 +8,8 @@
              xmlns:sourceExplorerHierarchy="clr-namespace:VsChromium.Features.SourceExplorerHierarchy"
              Title="VsChromium Directory Index Details"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300"
-             Cursor="{Binding Cursor}">
+             d:DesignHeight="300" d:DesignWidth="800"
+             Width="800" Height="600">
   <platformUi:DialogWindow.Resources>
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
   </platformUi:DialogWindow.Resources>
@@ -17,21 +17,26 @@
     <sourceExplorerHierarchy:DirectoryDetailsViewModel/>
   </platformUi:DialogWindow.DataContext>
   <DockPanel>
-    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" >
-      <Separator HorizontalAlignment="Stretch" />
-      <Button HorizontalAlignment="Right" Width="80" Height="24" Margin="0,10,10,10" IsCancel="True" IsDefault="True">Close</Button>
+    <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" Background="LightGray">
+      <Button HorizontalAlignment="Right" Width="80" Height="24"
+              Margin="0,10,10,10" IsCancel="True" IsDefault="True">Close</Button>
     </StackPanel>
-    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top"
-                Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}">
-      <Label Content="Retrieving index details for directory: " />
-      <Label Content="{Binding DirectoryDetails.Path}" />
-    </StackPanel>
-    <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Height="10"
-                 Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}"></ProgressBar>
-    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" >
-      <Label Content="Directory details: " />
-      <Label Content="{Binding DirectoryDetails.Path}" />
-    </StackPanel>
-    <local:DirectoryIndexDetailsControl DataContext="{Binding DirectoryDetails}" />
+    <Grid>
+      <DockPanel>
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" >
+          <Label Content="Directory details: " />
+          <Label Content="{Binding DirectoryDetails.Path}" />
+        </StackPanel>
+        <local:DirectoryIndexDetailsControl DataContext="{Binding DirectoryDetails}" />
+      </DockPanel>
+      <Border BorderBrush="Black" BorderThickness="1" Background="#80000000" 
+                Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}" >
+        <Grid>
+          <TextBlock Margin="0" TextWrapping="Wrap" Text="Please Wait..."
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       FontSize="24" FontWeight="Bold" Foreground="#7EFFFFFF"/>
+        </Grid>
+      </Border>
+    </Grid>
   </DockPanel>
 </platformUi:DialogWindow>

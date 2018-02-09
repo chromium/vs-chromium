@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
@@ -11,6 +12,10 @@ namespace VsChromium.Server.Projects {
     IDirectoryFilter DirectoryFilter { get; }
     IFileFilter FileFilter { get; }
     ISearchableFilesFilter SearchableFilesFilter { get; }
+
+    IConfigurationSectionContents IgnorePathsConfiguration { get; }
+    IConfigurationSectionContents IgnoreSearchableFilesConfiguration { get; }
+    IConfigurationSectionContents IncludeSearchableFilesConfiguration { get; }
 
     /// <summary>
     /// An opaque string unique to the project configuration.

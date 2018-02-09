@@ -41,14 +41,14 @@ namespace VsChromium.Server.Projects.Chromium {
 
     private Project CreateProject(FullPath rootPath) {
       var configurationProvider = _configurationSectionProvider;
-      var section1 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SourceExplorerIgnoreObsolete);
-      var section2 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesIgnore);
-      var section3 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesInclude);
-      var fileFilter = new FileFilter(section1);
-      var directoryFilter = new DirectoryFilter(section1);
-      var searchableFilesFilter = new SearchableFilesFilter(section2, section3);
-      var hash = MD5Hash.CreateHash(section1.Contents.Concat(section2.Contents).Concat(section3.Contents));
-      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter, hash);
+      var ignorePathsSection = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SourceExplorerIgnoreObsolete);
+      var ignoreSearchableFilesSection = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesIgnore);
+      var includeSearchableFilesSection = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesInclude);
+      var fileFilter = new FileFilter(ignorePathsSection);
+      var directoryFilter = new DirectoryFilter(ignorePathsSection);
+      var searchableFilesFilter = new SearchableFilesFilter(ignoreSearchableFilesSection, includeSearchableFilesSection);
+      var hash = MD5Hash.CreateHash(ignorePathsSection.Contents.Concat(ignoreSearchableFilesSection.Contents).Concat(includeSearchableFilesSection.Contents));
+      return new Project(rootPath, ignorePathsSection, ignoreSearchableFilesSection, includeSearchableFilesSection, fileFilter, directoryFilter, searchableFilesFilter, hash);
     }
   }
 }

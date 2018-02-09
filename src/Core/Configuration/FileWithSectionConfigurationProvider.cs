@@ -20,6 +20,7 @@ namespace VsChromium.Core.Configuration {
 
     public IConfigurationSectionContents GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
       return new ConfigurationSectionContents(
+        _fileWithSections.FilePath,
         sectionName,
         _fileWithSections.ReadSection(sectionName, postProcessing).ToReadOnlyCollection());
     }

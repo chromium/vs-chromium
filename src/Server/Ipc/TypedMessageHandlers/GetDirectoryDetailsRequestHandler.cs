@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Linq;
+using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -45,7 +46,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
       var database = _searchEngine.CurrentFileDatabaseSnapshot;
       return new GetDirectoryDetailsResponse {
-        DirectoryDetails = CreateDirectoryDetails(database, directorySnaphot,
+        DirectoryDetails = CreateDirectoryDetails(database, projectSnapshot, directorySnaphot,
           request.MaxFilesByExtensionDetailsCount, request.MaxLargeFilesDetailsCount)
       };
     }
@@ -64,6 +65,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public static DirectoryDetails CreateDirectoryDetails(IFileDatabaseSnapshot database,
+      ProjectRootSnapshot projectSnapshot,
       DirectorySnapshot baseDirectory, int maxFilesByExtensionDetailsCount, int maxLargeFilesDetailsCount) {
       var directoryPath = baseDirectory.DirectoryName.FullPath;
       var fileDatabse = (FileDatabaseSnapshot)database;
@@ -123,7 +125,25 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
             RelativePath = GetRelativePath(directoryPath, x.FileName.FullPath),
             ByteLength = ((BinaryFileContents)x.Contents).BinaryFileSize
           })
-          .ToList()
+          .ToList(),
+
+        ProjectConfigurationDetails = CreateProjectConfigurationDetails(projectSnapshot)
+      };
+    }
+
+    private static ProjectConfigurationDetails CreateProjectConfigurationDetails(ProjectRootSnapshot project) {
+      return new ProjectConfigurationDetails {
+        IgnorePathsSection = CreateSectionDetails(project.Project.IgnorePathsConfiguration),
+        IgnoreSearchableFilesSection = CreateSectionDetails(project.Project.IgnoreSearchableFilesConfiguration),
+        IncludeSearchableFilesSection = CreateSectionDetails(project.Project.IncludeSearchableFilesConfiguration)
+      };
+    }
+
+    private static ProjectConfigurationSectionDetails CreateSectionDetails(IConfigurationSectionContents section) {
+      return new ProjectConfigurationSectionDetails {
+        ContainingFilePath = section.ContainingFilePath.Value,
+        Name = section.Name,
+        Contents = section.Contents.Aggregate((acc, s1) => acc + "\r\n" + s1)
       };
     }
 

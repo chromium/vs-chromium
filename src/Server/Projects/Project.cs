@@ -2,11 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
   public class Project : IProject {
     private readonly FullPath _rootPath;
+    private readonly IConfigurationSectionContents _pathsIgnoreConfiguration;
+    private readonly IConfigurationSectionContents _searchableFilesIgnoreConfiguration;
+    private readonly IConfigurationSectionContents _searchableFilesIncludeConfiguration;
     private readonly IDirectoryFilter _directoryFilter;
     private readonly IFileFilter _fileFilter;
     private readonly ISearchableFilesFilter _searchableFilesFilter;
@@ -14,21 +18,30 @@ namespace VsChromium.Server.Projects {
 
     public Project(
       FullPath rootPath,
+      IConfigurationSectionContents pathsIgnoreConfiguration,
+      IConfigurationSectionContents searchableFilesIgnoreConfiguration,
+      IConfigurationSectionContents searchableFilesIncludeConfiguration,
       IFileFilter fileFilter,
       IDirectoryFilter directoryFilter,
       ISearchableFilesFilter searchableFilesFilter,
       string hash) {
       _rootPath = rootPath;
+      _pathsIgnoreConfiguration = pathsIgnoreConfiguration;
+      _searchableFilesIncludeConfiguration = searchableFilesIncludeConfiguration;
+      _searchableFilesIgnoreConfiguration = searchableFilesIgnoreConfiguration;
       _directoryFilter = directoryFilter;
       _fileFilter = fileFilter;
       _searchableFilesFilter = searchableFilesFilter;
       _hash = hash;
     }
 
-    public FullPath RootPath { get { return _rootPath; } }
-    public IFileFilter FileFilter { get { return _fileFilter; } }
-    public IDirectoryFilter DirectoryFilter { get { return _directoryFilter; } }
-    public ISearchableFilesFilter SearchableFilesFilter { get { return _searchableFilesFilter; } }
-    public string VersionHash { get { return _hash; } }
+    public FullPath RootPath => _rootPath;
+    public IFileFilter FileFilter => _fileFilter;
+    public IDirectoryFilter DirectoryFilter => _directoryFilter;
+    public ISearchableFilesFilter SearchableFilesFilter => _searchableFilesFilter;
+    public IConfigurationSectionContents IgnorePathsConfiguration => _pathsIgnoreConfiguration;
+    public IConfigurationSectionContents IgnoreSearchableFilesConfiguration => _searchableFilesIgnoreConfiguration;
+    public IConfigurationSectionContents IncludeSearchableFilesConfiguration => _searchableFilesIncludeConfiguration;
+    public string VersionHash => _hash;
   }
 }

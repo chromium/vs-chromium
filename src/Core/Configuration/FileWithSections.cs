@@ -29,6 +29,10 @@ namespace VsChromium.Core.Configuration {
       get { return _hash.Value; }
     }
 
+    public FullPath FilePath {
+      get { return _filename; }
+    }
+
     private string ComputeHash() {
       return MD5Hash.CreateHash(_fileLines.Value);
     }

@@ -155,6 +155,8 @@
     <Compile Include="Ipc\TypedMessages\LargeFileDetails.cs" />
     <Compile Include="Ipc\TypedMessages\PauseIndexingRequest.cs" />
     <Compile Include="Ipc\TypedMessages\PauseResumeIndexingResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\ProjectConfigurationDetails.cs" />
+    <Compile Include="Ipc\TypedMessages\ProjectConfigurationSectionDetails.cs" />
     <Compile Include="Ipc\TypedMessages\ProjectDetails.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeRequest.cs" />
     <Compile Include="Ipc\TypedMessages\RefreshFileSystemTreeResponse.cs" />

@@ -21,8 +21,12 @@ namespace VsChromium.Core.Configuration {
 
     public IConfigurationSectionContents GetSection(string sectionName, Func<IEnumerable<string>, IEnumerable<string>> postProcessing) {
       var filename = new RelativePath(sectionName);
-      var contents = _configurationFileLocator.ReadFile(filename, (path, lines) => postProcessing(lines)).ToReadOnlyCollection();
-      return new ConfigurationSectionContents(sectionName, contents);
+      var filePath = default(FullPath);
+      var contents = _configurationFileLocator.ReadFile(filename, (path, lines) => {
+        filePath = path;
+        return postProcessing(lines);
+      }).ToReadOnlyCollection();
+      return new ConfigurationSectionContents(filePath, "", contents);
     }
   }
 }

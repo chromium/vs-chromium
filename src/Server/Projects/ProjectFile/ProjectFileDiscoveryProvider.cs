@@ -85,10 +85,11 @@ namespace VsChromium.Server.Projects.ProjectFile {
     /// </summary>
     private Project CreateProject(FullPath rootPath) {
       var projectFilePath = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileName));
-      var sectionName = ConfigurationSectionNames.SourceExplorerIgnore;
+
+      var ignorePathsSectionName = ConfigurationSectionNames.SourceExplorerIgnore;
       if (!_fileSystem.FileExists(projectFilePath)) {
         projectFilePath = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileNameObsolete));
-        sectionName = ConfigurationSectionNames.SourceExplorerIgnoreObsolete;
+        ignorePathsSectionName = ConfigurationSectionNames.SourceExplorerIgnoreObsolete;
         if (!_fileSystem.FileExists(projectFilePath)) {
           return null;
         }
@@ -96,13 +97,13 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
       var fileWithSections = new FileWithSections(_fileSystem, projectFilePath);
       var configurationProvider = new FileWithSectionConfigurationProvider(fileWithSections);
-      var s1 = ConfigurationSectionContents.Create(configurationProvider, sectionName);
-      var s2 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesIgnore);
-      var s3 = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesInclude);
-      var fileFilter = new FileFilter(s1);
-      var directoryFilter = new DirectoryFilter(s1);
-      var searchableFilesFilter = new SearchableFilesFilter(s2, s3);
-      return new Project(rootPath, fileFilter, directoryFilter, searchableFilesFilter, fileWithSections.Hash);
+      var ignorePathsSection = ConfigurationSectionContents.Create(configurationProvider, ignorePathsSectionName);
+      var ignoreSearchableFilesSection = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesIgnore);
+      var includeSearchableFilesSection = ConfigurationSectionContents.Create(configurationProvider, ConfigurationSectionNames.SearchableFilesInclude);
+      var fileFilter = new FileFilter(ignorePathsSection);
+      var directoryFilter = new DirectoryFilter(ignorePathsSection);
+      var searchableFilesFilter = new SearchableFilesFilter(ignoreSearchableFilesSection, includeSearchableFilesSection);
+      return new Project(rootPath, ignorePathsSection, ignoreSearchableFilesSection, includeSearchableFilesSection, fileFilter, directoryFilter, searchableFilesFilter, fileWithSections.Hash);
     }
   }
 }

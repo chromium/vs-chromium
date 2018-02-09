@@ -18,7 +18,7 @@
       <Separator Grid.Column="1" Margin="4,0,4,0" />
       <Button Grid.Column="2" Padding="6,0,6,0" Content="View configuration..." Command="{Binding ShowProjectConfigurationCommand}"/>
     </Grid>
-    <indexServerInfo:DirectoryDetailsControl DataContext="{Binding Details.DirectoryDetails}" />
+    <indexServerInfo:DirectoryDetailsControl DataContext="{Binding ProjectDetails.DirectoryDetails}" />
   </DockPanel>
 </UserControl>
 

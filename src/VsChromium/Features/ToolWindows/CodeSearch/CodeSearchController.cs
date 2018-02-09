@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.Editor;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System;
@@ -12,9 +11,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Windows;
 using System.Windows.Controls;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
@@ -43,7 +40,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private readonly CodeSearchControl _control;
-    private readonly IShellHost _shellHost;
     private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
     // ReSharper disable once NotAccessedField.Local
@@ -58,7 +54,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IBuildOutputParser _buildOutputParser;
     private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IShowServerInfoService _showServerInfoService;
     private readonly TaskCancellation _taskCancellation;
     private readonly SearchResultsDocumentChangeTracker _searchResultDocumentChangeTracker;
     private readonly object _eventBusCookie1;
@@ -75,7 +71,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     public CodeSearchController(
       CodeSearchControl control,
-      IShellHost shellHost,
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       IDispatchThreadDelayedOperationExecutor dispatchThreadDelayedOperationExecutor,
       IFileSystemTreeSource fileSystemTreeSource,
@@ -91,9 +86,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IGlobalSettingsProvider globalSettingsProvider,
       IBuildOutputParser buildOutputParser,
       IVsEditorAdaptersFactoryService adaptersFactoryService,
-      IDateTimeProvider dateTimeProvider) {
+      IShowServerInfoService showServerInfoService) {
       _control = control;
-      _shellHost = shellHost;
       _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _fileSystemTreeSource = fileSystemTreeSource;
       _typedRequestProcessProxy = typedRequestProcessProxy;
@@ -107,7 +101,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _globalSettingsProvider = globalSettingsProvider;
       _buildOutputParser = buildOutputParser;
       _adaptersFactoryService = adaptersFactoryService;
-      _dateTimeProvider = dateTimeProvider;
+      _showServerInfoService = showServerInfoService;
       _searchResultDocumentChangeTracker = new SearchResultsDocumentChangeTracker(
         dispatchThreadDelayedOperationExecutor,
         textDocumentTable);
@@ -134,14 +128,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
     }
 
-    public CodeSearchViewModel ViewModel { get { return _control.ViewModel; } }
-    public IDispatchThreadServerRequestExecutor DispatchThreadServerRequestExecutor { get { return _dispatchThreadServerRequestExecutor; } }
-    public IStandarImageSourceFactory StandarImageSourceFactory { get { return _standarImageSourceFactory; } }
-    public IClipboard Clipboard { get { return _clipboard; } }
-    public IWindowsExplorer WindowsExplorer { get { return _windowsExplorer; } }
-    public GlobalSettings GlobalSettings { get { return _globalSettingsProvider.GlobalSettings; } }
-    public ISynchronizationContextProvider SynchronizationContextProvider { get { return _synchronizationContextProvider; } }
-    public IOpenDocumentHelper OpenDocumentHelper { get { return _openDocumentHelper; } }
+    public CodeSearchViewModel ViewModel => _control.ViewModel;
+    public IDispatchThreadServerRequestExecutor DispatchThreadServerRequestExecutor => _dispatchThreadServerRequestExecutor;
+    public IStandarImageSourceFactory StandarImageSourceFactory => _standarImageSourceFactory;
+    public IClipboard Clipboard => _clipboard;
+    public IWindowsExplorer WindowsExplorer => _windowsExplorer;
+    public GlobalSettings GlobalSettings => _globalSettingsProvider.GlobalSettings;
+    public ISynchronizationContextProvider SynchronizationContextProvider => _synchronizationContextProvider;
+    public IOpenDocumentHelper OpenDocumentHelper => _openDocumentHelper;
 
     public void Dispose() {
       Logger.LogInfo("{0} disposed.", GetType().FullName);
@@ -228,96 +222,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void ShowServerInfo() {
-
-      var infoDialog = new ServerStatusDialog();
-      infoDialog.HasMinimizeButton = false;
-      infoDialog.HasMaximizeButton = false;
-      infoDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-
-      bool isClosed = false;
-      infoDialog.Closed += (sender, args) => isClosed = true;
-
-      FetchDatabaseStatistics(true, response => {
-        if (isClosed) {
-          return;
-        }
-        infoDialog.ViewModel.ProjectCount = response.ProjectCount;
-        infoDialog.ViewModel.ShowServerDetailsInvoked += (sender, args) => OnShowServerDetailsInvoked();
-        var message = new StringBuilder();
-        message.AppendFormat("-- {0} --\r\n", GetIndexingServerStatusText(response));
-        message.AppendLine();
-        message.AppendFormat("{0}\r\n", GetIndexingServerStatusToolTipText(response));
-        infoDialog.ViewModel.ServerStatus = message.ToString().TrimSuffix("\r\n");
-        message.Clear();
-
-        message.AppendFormat("Directory/project count: {0:n0}\r\n", response.ProjectCount);
-        message.AppendFormat("Total file count: {0:n0}\r\n", response.FileCount);
-        message.AppendFormat("Searchable file count: {0:n0}\r\n", response.SearchableFileCount);
-        if (response.IndexLastUpdatedUtc != DateTime.MinValue && response.SearchableFileCount > 0) {
-          message.AppendFormat("Last updated: {0} ({1} {2})\r\n",
-            HumanReadableDuration(response.IndexLastUpdatedUtc),
-            response.IndexLastUpdatedUtc.ToLocalTime().ToShortDateString(),
-            response.IndexLastUpdatedUtc.ToLocalTime().ToLongTimeString());
-        } else {
-          message.AppendFormat("Last updated: {0}\r\n", "n/a (index is empty)");
-        }
-        infoDialog.ViewModel.IndexStatus = message.ToString().TrimSuffix("\r\n");
-        message.Clear();
-
-        message.AppendFormat("Managed memory: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
-        message.AppendFormat("Native memory: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
-        infoDialog.ViewModel.MemoryStatus = message.ToString().TrimSuffix("\r\n");
-      });
-
-      infoDialog.ShowModal();
-    }
-
-    private void OnShowServerDetailsInvoked() {
-      // Prepare the dialog window
-      var dialog = new ServerDetailsDialog();
-      dialog.HasMinimizeButton = false;
-      dialog.HasMaximizeButton = false;
-      dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-
-      // Post async-request to fetch the server details
-      _dispatchThreadServerRequestExecutor.Post(
-        new DispatchThreadServerRequest {
-          Id = Guid.NewGuid().ToString(),
-          Delay = TimeSpan.Zero,
-          Request = new GetDatabaseDetailsRequest {
-            MaxFilesByExtensionDetailsCount = 500,
-            MaxLargeFilesDetailsCount = 4000,
-          },
-          OnDispatchThreadError = error => {
-            // TODO: Display error message
-            dialog.ViewModel.Waiting = false;
-          },
-          OnDispatchThreadSuccess = typedResponse => {
-            var response = (GetDatabaseDetailsResponse)typedResponse;
-            var projectDetails = response.Projects.Select(x => new ProjectDetailsViewModel() {Details = x}).ToList();
-            foreach (var x in projectDetails) {
-              x.ShowProjectConfigurationInvoked += (sender, args) => { ShowProjectConfiguration(x); };
-            }
-            dialog.ViewModel.Projects.AddRange(projectDetails);
-            if (dialog.ViewModel.Projects.Count > 0) {
-              dialog.ViewModel.SelectedProject = dialog.ViewModel.Projects[0];
-            }
-            dialog.ViewModel.Waiting = false;
-          }
-        });
-
-      // Show the dialog right away, waiting for a response for the above request
-      // (The dialog shows a "Please wait..." message while waiting)
-      dialog.ShowModal();
-    }
-
-    private void ShowProjectConfiguration(ProjectDetailsViewModel projectDetailsViewModel) {
-      var dialog = new ProjectConfigurationDetailsDialog();
-      dialog.HasMinimizeButton = false;
-      dialog.HasMaximizeButton = false;
-      dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-      dialog.ViewModel = projectDetailsViewModel.Details;
-      dialog.ShowModal();
+      _showServerInfoService.ShowServerStatusDialog();
     }
 
     public void RefreshFileSystemTree() {
@@ -796,95 +701,16 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void FetchDatabaseStatistics() {
-      FetchDatabaseStatistics(false, x => { });
+      _showServerInfoService.FetchDatabaseStatistics(false, UpdateIndexingServerToolbarStatus);
     }
 
-    private void FetchDatabaseStatistics(bool forceGarbageCollect, Action<GetDatabaseStatisticsResponse> callback) {
-      _dispatchThreadServerRequestExecutor.Post(
-        new DispatchThreadServerRequest {
-          Id = "GetDatabaseStatisticsRequest",
-          Request = new GetDatabaseStatisticsRequest { ForceGabageCollection = forceGarbageCollect },
-          OnDispatchThreadSuccess = typedResponse => {
-            var response = (GetDatabaseStatisticsResponse)typedResponse;
-            DisplayIndexingServerStatus(response);
-            callback(response);
-          }
-        });
-    }
-
-    private void DisplayIndexingServerStatus(GetDatabaseStatisticsResponse response) {
+    private void UpdateIndexingServerToolbarStatus(GetDatabaseStatisticsResponse response) {
       ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Yield;
       ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Yield;
       ViewModel.IndexingBusy = response.ServerStatus == IndexingServerStatus.Busy;
-      ViewModel.IndexStatusText = GetIndexStatusText(response);
-      ViewModel.IndexingServerStateText = GetIndexingServerStatusText(response);
-      ViewModel.ServerStatusToolTipText = GetIndexingServerStatusToolTipText(response);
-    }
-
-    private string GetIndexStatusText(GetDatabaseStatisticsResponse response) {
-      var memoryUsageMb = (double)response.ServerNativeMemoryUsage / 1024L / 1024L;
-      var message = String.Format("Index: {0:n0} files - {1:n0} MB", response.SearchableFileCount, memoryUsageMb);
-      return message;
-    }
-
-    private static string GetIndexingServerStatusText(GetDatabaseStatisticsResponse response) {
-      switch (response.ServerStatus) {
-        case IndexingServerStatus.Idle:
-          return "Idle";
-        case IndexingServerStatus.Paused:
-          return "Paused";
-        case IndexingServerStatus.Yield:
-          return "Yield";
-        case IndexingServerStatus.Busy:
-          return "Busy";
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
-    }
-
-    private string GetIndexingServerStatusToolTipText(GetDatabaseStatisticsResponse response) {
-      switch (response.ServerStatus) {
-        case IndexingServerStatus.Idle:
-          return "The server is idle and the index is up to date.\r\n" +
-                 "The index is automatically updated as files change on disk.";
-        case IndexingServerStatus.Paused:
-          return "The server is paused and the index may be out of date.\r\n" +
-                 "The index is not automatically updated as files change on disk.\r\n" +
-                 "Press the \"Run\" button to resume automatic indexing now.";
-        case IndexingServerStatus.Yield:
-          return "The server is paused due to heavy disk activity and the index may be out of date.\r\n" +
-                 "The index is not automatically updated as files change on disk.\r\n" +
-                 "The server will attempt to update the index in a few minutes.\r\n" +
-                 "Press the \"Run\" button to resume automatic indexing now.";
-        case IndexingServerStatus.Busy:
-          return "The server is working on updating the index to match the contents of files on disk.\r\n" +
-                 "Press the \"Pause\" button to pause indexing.";
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
-    }
-
-    private string HumanReadableDuration(DateTime utcTime) {
-      var span = _dateTimeProvider.UtcNow - utcTime;
-      if (span.TotalSeconds <= 5) {
-        return "a few seconds ago";
-      }
-      if (span.TotalSeconds <= 50) {
-        return "less than 1 minute ago";
-      }
-      if (span.TotalMinutes <= 1) {
-        return "about 1 minute ago";
-      }
-      if (span.TotalMinutes <= 60) {
-        return string.Format("about {0:n0} minutes ago", Math.Ceiling(span.TotalMinutes));
-      }
-      if (span.TotalHours <= 1.5) {
-        return "about one hour ago";
-      }
-      if (span.TotalHours <= 24) {
-        return string.Format("about {0:n0} hours ago", Math.Ceiling(span.TotalHours));
-      }
-      return "more than one day ago";
+      ViewModel.IndexStatusText = _showServerInfoService.GetIndexStatusText(response);
+      ViewModel.IndexingServerStateText = _showServerInfoService.GetIndexingServerStatusText(response);
+      ViewModel.ServerStatusToolTipText = _showServerInfoService.GetIndexingServerStatusToolTipText(response);
     }
 
     private FilePathSearchInfo PreprocessFilePathSearchPattern(string searchPattern) {

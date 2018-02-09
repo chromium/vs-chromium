@@ -151,6 +151,8 @@
     <Compile Include="Ipc\TypedMessages\GetDirectoryDetailsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\GetProjectDetailsRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetProjectDetailsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\IndexingServerStateChangedEvent.cs" />
     <Compile Include="Ipc\TypedMessages\LargeFileDetails.cs" />
     <Compile Include="Ipc\TypedMessages\PauseIndexingRequest.cs" />

@@ -37,20 +37,8 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     private IEnumerable<ProjectDetails> CreateProjectsDetails(GetDatabaseDetailsRequest request,
       FileSystemSnapshot snapshot, IFileDatabaseSnapshot database) {
-      return snapshot.ProjectRoots.Select(project => CreateProjectDetails(database, project, request));
-    }
-
-    private ProjectDetails CreateProjectDetails(IFileDatabaseSnapshot database, ProjectRootSnapshot project,
-      GetDatabaseDetailsRequest request) {
-      return new ProjectDetails {
-        RootPath = project.Project.RootPath.Value,
-
-        DirectoryDetails = GetDirectoryDetailsRequestHandler.CreateDirectoryDetails(database, project,
-          project.Directory,
-          request.MaxFilesByExtensionDetailsCount, request.MaxLargeFilesDetailsCount),
-
-        ConfigurationDetails = GetDirectoryDetailsRequestHandler.CreateProjectConfigurationDetails(project)
-      };
+      return snapshot.ProjectRoots.Select(project => GetProjectDetailsRequestHandler.CreateProjectDetails(database,
+        project, request.MaxFilesByExtensionDetailsCount, request.MaxLargeFilesDetailsCount));
     }
   }
 }

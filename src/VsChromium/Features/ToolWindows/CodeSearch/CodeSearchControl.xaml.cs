@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Editor;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,13 +13,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
-using Microsoft.VisualStudio.ComponentModelHost;
-using Microsoft.VisualStudio.Editor;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Features.BuildOutputAnalyzer;
+using VsChromium.Features.IndexServerInfo;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
@@ -83,7 +83,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var standarImageSourceFactory = componentModel.DefaultExportProvider.GetExportedValue<IStandarImageSourceFactory>();
       _controller = new CodeSearchController(
         this,
-        componentModel.DefaultExportProvider.GetExportedValue<IShellHost>(),
         _dispatchThreadServerRequestExecutor,
         componentModel.DefaultExportProvider.GetExportedValue<IDispatchThreadDelayedOperationExecutor>(),
         componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>(),
@@ -99,7 +98,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         componentModel.DefaultExportProvider.GetExportedValue<IGlobalSettingsProvider>(),
         componentModel.DefaultExportProvider.GetExportedValue<IBuildOutputParser>(),
         componentModel.DefaultExportProvider.GetExportedValue<IVsEditorAdaptersFactoryService>(),
-        componentModel.DefaultExportProvider.GetExportedValue<IDateTimeProvider>());
+        componentModel.DefaultExportProvider.GetExportedValue<IShowServerInfoService>());
       _controller.Start();
       // TODO(rpaquay): leaky abstraction. We need this because the ViewModel
       // exposes pictures from Visual Studio resources.
@@ -239,7 +238,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void TreeViewScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) {
-      Invariants.Assert(this._treeViewScrollViewer != null);
+      Invariants.Assert(_treeViewScrollViewer != null);
 
       if (_treeViewResetHorizScroll) {
         _treeViewScrollViewer.ScrollToHorizontalOffset(_treeViewHorizScrollPos);

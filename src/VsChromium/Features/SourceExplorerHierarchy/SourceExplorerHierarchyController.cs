@@ -16,6 +16,7 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Features.IndexServerInfo;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
 using VsChromium.ServerProxy;
@@ -37,7 +38,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationExecutor _delayedOperationExecutor;
-    private readonly IDispatchThread _dispatchThread;
+    private readonly IShowServerInfoService _showServerInfoService;
     private readonly IVsHierarchyImpl _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
     /// <summary>
@@ -61,7 +62,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationExecutor delayedOperationExecutor,
-      IDispatchThread dispatchThread) {
+      IDispatchThread dispatchThread,
+      IShowServerInfoService showServerInfoService) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -74,12 +76,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationExecutor = delayedOperationExecutor;
-      _dispatchThread = dispatchThread;
+      _showServerInfoService = showServerInfoService;
 //      _hierarchy = new VsHierarchy(
       _hierarchy = new VsHierarchyAggregate(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService,
-        _dispatchThread);
+        dispatchThread);
       _nodeTemplateFactory = new NodeTemplateFactory(vsGlyphService, imageSourceFactory);
     }
 
@@ -180,7 +182,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowIndexDetails),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => ShowIndexDetails(args.Node.FullPath)
+        Execute = args => ShowDirectoryIndexDetails(args.Node.FullPath)
       });
 
 
@@ -243,36 +245,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void ShowProjectIndexDetails(string path) {
-      ShowIndexDetails(path);
+      _showServerInfoService.ShowProjectIndexDetailsDialog(path);
     }
 
-    private void ShowIndexDetails(string path) {
-      var detailsDialog = new IndexServerInfo.DirectoryDetailsDialog();
-      detailsDialog.HasMinimizeButton = false;
-      detailsDialog.HasMaximizeButton = false;
-      detailsDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-
-      var uiRequest = new DispatchThreadServerRequest {
-        Id = Guid.NewGuid().ToString(),
-        Delay = TimeSpan.FromSeconds(0.0),
-        Request = new GetDirectoryDetailsRequest {
-          Path = path,
-          MaxFilesByExtensionDetailsCount = 500,
-          MaxLargeFilesDetailsCount = 4000
-        },
-        OnDispatchThreadError = error => {
-          //TODO: Display error message
-          detailsDialog.ViewModel.Waiting = false;
-        },
-        OnDispatchThreadSuccess = typedResponse => {
-          var response = (GetDirectoryDetailsResponse)typedResponse;
-          detailsDialog.ViewModel.DirectoryDetails = response.DirectoryDetails;
-          detailsDialog.ViewModel.Waiting = false;
-        },
-      };
-
-      _dispatchThreadServerRequestExecutor.Post(uiRequest);
-      detailsDialog.ShowModal();
+    private void ShowDirectoryIndexDetails(string path) {
+      _showServerInfoService.ShowDirectoryIndexDetailsDialog(path);
     }
 
     private void ShowContextMenu(NodeViewModel node, IntPtr variantIn) {
@@ -317,7 +294,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       int hresult = shell.ShowContextMenu(0, ref groupGuid, menuId, pointsIn, null);
       if (!ErrorHandler.Succeeded(hresult)) {
         Logger.LogHResult(hresult, "Error showing context menu.");
-        return;
       }
     }
 

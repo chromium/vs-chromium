@@ -5,5 +5,6 @@
 namespace VsChromium.Package {
   public interface IShellHost {
     void ShowInfoMessageBox(string title, string message);
+    void ShowErrorMessageBox(string title, string message);
   }
 }

@@ -196,6 +196,10 @@
     <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
     <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
+    <Compile Include="Features\IndexServerInfo\IShowServerInfoService.cs" />
+    <Compile Include="Features\IndexServerInfo\ProjectDetailsDialog.xaml.cs">
+      <DependentUpon>ProjectDetailsDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Features\IndexServerInfo\ProjectDetailsViewModel.cs" />
     <Compile Include="Features\IndexServerInfo\ProjectDetailsControl.xaml.cs">
       <DependentUpon>ProjectDetailsControl.xaml</DependentUpon>
@@ -206,6 +210,7 @@
     <Compile Include="Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml.cs">
       <DependentUpon>ProjectConfigurationDetailsDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Features\IndexServerInfo\ShowServerInfoService.cs" />
     <Compile Include="Features\QuickSearch\QuickSearchFilePathsHandler.cs" />
     <Compile Include="Features\QuickSearch\QuickSearchCodeHandler.cs" />
     <Compile Include="Features\QuickSearch\SelectionHelpers.cs" />
@@ -407,6 +412,10 @@
     <Compile Include="Wpf\IHierarchyObject.cs" />
     <Compile Include="Views\WindowsExplorer.cs" />
     <Compile Include="Wpf\WpfUtilities.cs" />
+    <Page Include="Features\IndexServerInfo\ProjectDetailsDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Features\IndexServerInfo\ProjectDetailsControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

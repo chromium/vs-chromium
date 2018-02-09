@@ -129,22 +129,6 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       };
     }
 
-    public static ProjectConfigurationDetails CreateProjectConfigurationDetails(ProjectRootSnapshot project) {
-      return new ProjectConfigurationDetails {
-        IgnorePathsSection = CreateSectionDetails(project.Project.IgnorePathsConfiguration),
-        IgnoreSearchableFilesSection = CreateSectionDetails(project.Project.IgnoreSearchableFilesConfiguration),
-        IncludeSearchableFilesSection = CreateSectionDetails(project.Project.IncludeSearchableFilesConfiguration)
-      };
-    }
-
-    private static ProjectConfigurationSectionDetails CreateSectionDetails(IConfigurationSectionContents section) {
-      return new ProjectConfigurationSectionDetails {
-        ContainingFilePath = section.ContainingFilePath.Value,
-        Name = section.Name,
-        Contents = section.Contents.Aggregate((acc, s1) => acc + "\r\n" + s1)
-      };
-    }
-
     private static string GetRelativePath(FullPath parentPath, FullPath path) {
       return PathHelpers.SplitPrefix(path.Value, parentPath.Value).Suffix;
     }

@@ -4,6 +4,7 @@
 
 using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
+using VsChromium.Features.IndexServerInfo;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
@@ -27,6 +28,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly IDispatchThread _dispatchThread;
+    private readonly IShowServerInfoService _showServerInfoService;
 
     [ImportingConstructor]
     public SourceExplorerHierarchyControllerFactory(
@@ -43,7 +45,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationExecutor delayedOperationExecutor,
-      IDispatchThread dispatchThread) {
+      IDispatchThread dispatchThread,
+      IShowServerInfoService showServerInfoService) {
       _synchronizationContextProvider = synchronizationContextProvider;
       _fileSystemTreeSource = fileSystemTreeSource;
       _visualStudioPackageProvider = visualStudioPackageProvider;
@@ -58,6 +61,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationExecutor = delayedOperationExecutor;
       _dispatchThread = dispatchThread;
+      _showServerInfoService = showServerInfoService;
     }
 
     public ISourceExplorerHierarchyController CreateController() {
@@ -75,7 +79,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _eventBus,
         _globalSettingsProvider,
         _delayedOperationExecutor,
-        _dispatchThread);
+        _dispatchThread,
+        _showServerInfoService);
     }
   }
 }

@@ -9,14 +9,23 @@ using VsChromium.Wpf;
 
 namespace VsChromium.Features.IndexServerInfo {
   public class ProjectDetailsViewModel : ViewModelBase {
-    private ProjectDetails _selectedProject = new ProjectDetails();
+    private ProjectDetails _projectDetails;
+    private bool _waiting = true;
     private CommandDelegate _showProjectConfigurationCommand;
 
     public event EventHandler ShowProjectConfigurationInvoked;
 
-    public ProjectDetails Details {
-      get { return _selectedProject; }
-      set { UpdateProperty(ref _selectedProject, value); }
+    public bool Waiting {
+      get { return _waiting; }
+      set { UpdateProperty(ref _waiting, value); }
+    }
+
+    public ProjectDetails ProjectDetails {
+      get { return _projectDetails; }
+      set {
+        UpdateProperty(ref _projectDetails, value);
+        Waiting = (value == null);
+      }
     }
 
     public CommandDelegate ShowProjectConfigurationCommand {

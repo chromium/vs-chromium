@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Files;
+using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
@@ -33,15 +34,38 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
       var directoryPath = new FullPath(request.Path);
       var snapshot = _snapshotManager.CurrentSnapshot;
-      var database = _searchEngine.CurrentFileDatabaseSnapshot;
       var projectSnapshot = snapshot.ProjectRoots.FirstOrDefault(x => x.Project.RootPath.ContainsPath(directoryPath));
+      if (projectSnapshot == null) {
+        throw new RecoverableErrorException($"Directory \"{request.Path}\" not found in index");
+      }
+      var directorySnaphot = FindDirectorySnapshot(directoryPath, projectSnapshot);
+      if (directorySnaphot == null) {
+        throw new RecoverableErrorException($"Directory \"{request.Path}\" not found in index");
+      }
+
+      var database = _searchEngine.CurrentFileDatabaseSnapshot;
       return new GetDirectoryDetailsResponse {
-        DirectoryDetails = CreateDirectoryDetails(request, directoryPath, projectSnapshot, database)
+        DirectoryDetails = CreateDirectoryDetails(database, directorySnaphot,
+          request.MaxFilesByExtensionDetailsCount, request.MaxLargeFilesDetailsCount)
       };
     }
 
-    private DirectoryDetails CreateDirectoryDetails(GetDirectoryDetailsRequest request, FullPath directoryPath,
-      ProjectRootSnapshot project, IFileDatabaseSnapshot database) {
+    private DirectorySnapshot FindDirectorySnapshot(FullPath directoryPath, ProjectRootSnapshot projectSnapshot) {
+      var splitPath = PathHelpers.SplitPrefix(directoryPath.Value, projectSnapshot.Project.RootPath.Value);
+      var current = projectSnapshot.Directory;
+      foreach (var name in PathHelpers.SplitPath(splitPath.Suffix)) {
+        current = current.ChildDirectories
+          .FirstOrDefault(x => SystemPathComparer.EqualsNames(name, x.DirectoryName.Name));
+        if (current == null) {
+          return null;
+        }
+      }
+      return current;
+    }
+
+    public static DirectoryDetails CreateDirectoryDetails(IFileDatabaseSnapshot database,
+      DirectorySnapshot baseDirectory, int maxFilesByExtensionDetailsCount, int maxLargeFilesDetailsCount) {
+      var directoryPath = baseDirectory.DirectoryName.FullPath;
       var fileDatabse = (FileDatabaseSnapshot)database;
 
       var projectFileNames = fileDatabse.FileNames
@@ -58,8 +82,8 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
       return new DirectoryDetails {
         Path = directoryPath.Value,
-        DirectoryCount = FileSystemSnapshotManager.CountDirectoryEntries(project.Directory),
-        FileCount = FileSystemSnapshotManager.CountFileEntries(project.Directory),
+        DirectoryCount = FileSystemSnapshotManager.CountDirectoryEntries(baseDirectory),
+        FileCount = FileSystemSnapshotManager.CountFileEntries(baseDirectory),
         SearchableFileCount = projectFileContents.Count,
         SearchableFileByteLength = projectFileContents.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength),
         SearchableFilesByExtensionDetails = projectFileContents
@@ -69,27 +93,31 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
             FileCount = g.Count(),
             FilesByteLength = g.Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength)
           })
-          .TakeOrderByDescending(request.MaxFilesByExtensionDetailsCount, x => x.FilesByteLength)
+          .TakeOrderByDescending(maxFilesByExtensionDetailsCount, x => x.FilesByteLength)
           .ToList(),
         LargeSearchableFilesDetails = projectFileContents
-          .TakeOrderByDescending(request.MaxLargeFilesDetailsCount, x => x.Contents.ByteLength)
+          .TakeOrderByDescending(maxLargeFilesDetailsCount, x => x.Contents.ByteLength)
           .Select(x => new LargeFileDetails {
-            RelativePath = x.FileName.RelativePath.Value,
+            RelativePath = GetRelativePath(directoryPath, x.FileName.FullPath),
             ByteLength = x.Contents.ByteLength
           })
           .ToList(),
         LargeBinaryFilesDetails = projectFiles
           .Where(x => (x.Contents is BinaryFileContents) && (((BinaryFileContents)x.Contents).BinaryFileSize > 0))
-          .TakeOrderByDescending(request.MaxLargeFilesDetailsCount, x => ((BinaryFileContents)x.Contents).BinaryFileSize)
+          .TakeOrderByDescending(maxLargeFilesDetailsCount, x => ((BinaryFileContents)x.Contents).BinaryFileSize)
           .Select(x => new LargeFileDetails {
-            RelativePath = x.FileName.RelativePath.Value,
+            RelativePath = GetRelativePath(directoryPath, x.FileName.FullPath),
             ByteLength = ((BinaryFileContents)x.Contents).BinaryFileSize
           })
           .ToList()
       };
     }
 
-    private string GetFileExtension(FileName fileName) {
+    private static string GetRelativePath(FullPath parentPath, FullPath path) {
+      return PathHelpers.SplitPrefix(path.Value, parentPath.Value).Suffix;
+    }
+
+    private static string GetFileExtension(FileName fileName) {
       var ext = PathHelpers.GetExtension(fileName.Name);
       if (string.IsNullOrEmpty(ext)) {
         return fileName.Name;

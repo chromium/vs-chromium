@@ -8,7 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
+namespace VsChromium.Features.IndexServerInfo {
   /// <summary>
   /// Interaction logic for ProjectDetailsControl.xaml
   /// </summary>
@@ -46,8 +46,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
       }
 
       public void HeaderClick(object sender) {
-        GridViewColumnHeader column = (sender as GridViewColumnHeader);
-        string sortBy = column.Tag.ToString();
+        var column = (sender as GridViewColumnHeader);
+        var sortBy = column.Tag.ToString();
         if (_listViewSortCol != null) {
           AdornerLayer.GetAdornerLayer(_listViewSortCol).Remove(_listViewSortAdorner);
           _listView.Items.SortDescriptions.Clear();
@@ -75,7 +75,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
 
       public SortAdorner(UIElement element, ListSortDirection dir)
         : base(element) {
-        this.Direction = dir;
+        Direction = dir;
       }
 
       protected override void OnRender(DrawingContext drawingContext) {
@@ -92,7 +92,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
         drawingContext.PushTransform(transform);
 
         Geometry geometry = ascGeometry;
-        if (this.Direction == ListSortDirection.Descending)
+        if (Direction == ListSortDirection.Descending)
           geometry = descGeometry;
         drawingContext.DrawGeometry(Brushes.Black, null, geometry);
 

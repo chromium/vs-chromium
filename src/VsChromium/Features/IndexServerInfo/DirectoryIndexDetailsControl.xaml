@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo.DirectoryIndexDetailsControl"
+﻿<UserControl x:Class="VsChromium.Features.IndexServerInfo.DirectoryIndexDetailsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -28,10 +28,10 @@
         <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <Label Grid.Row="0" Grid.Column="0" Content="Number of directories scanned:" />
-      <Label Grid.Row="0" Grid.Column="1" Content="{Binding DirectoryCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
-      <Label Grid.Row="1" Grid.Column="0" Content="Number of files scanned:" />
-      <Label Grid.Row="1" Grid.Column="1" Content="{Binding FileCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+      <Label Grid.Row="0" Grid.Column="0" Content="Number of files scanned:" />
+      <Label Grid.Row="0" Grid.Column="1" Content="{Binding FileCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
+      <Label Grid.Row="1" Grid.Column="0" Content="Number of directories scanned:" />
+      <Label Grid.Row="1" Grid.Column="1" Content="{Binding DirectoryCount, Converter={StaticResource NumberValueConverter}}" HorizontalAlignment="Right" />
       <StackPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Orientation="Horizontal" Margin="10,0,10,0">
         <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
       </StackPanel>

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 
-namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
+namespace VsChromium.Features.IndexServerInfo {
   public partial class IndexServerInfoDialog {
     public IndexServerInfoDialog() {
       InitializeComponent();

@@ -3,9 +3,10 @@
 // found in the LICENSE file.
 
 using System;
+using VsChromium.Features.ToolWindows.CodeSearch;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
+namespace VsChromium.Features.IndexServerInfo {
   public class IndexServerInfoViewModel : ViewModelBase {
     private string _serverStatus;
     private string _indexStatus;

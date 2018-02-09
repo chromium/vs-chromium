@@ -5,8 +5,8 @@
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.SourceExplorerHierarchy {
-  public class DirectoryDetailsViewModel : ViewModelBase {
+namespace VsChromium.Features.IndexServerInfo {
+  public class DirectoryIndexDetailsViewModel : ViewModelBase {
     private DirectoryDetails _directoryDetails;
     private bool _waiting = true;
 

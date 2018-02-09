@@ -1,16 +1,16 @@
-﻿<platformUi:DialogWindow x:Class="VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo.IndexDetailsDialog"
+﻿<platformUi:DialogWindow x:Class="VsChromium.Features.IndexServerInfo.IndexDetailsDialog"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo"
              xmlns:platformUi="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.12.0"
+             xmlns:indexServerInfo="clr-namespace:VsChromium.Features.IndexServerInfo"
              Title="VsChromium Index Details"
              mc:Ignorable="d" 
              Width="800" Height="600"
              d:DesignHeight="300" d:DesignWidth="300">
   <platformUi:DialogWindow.DataContext>
-    <local:IndexDetailsViewModel/>
+    <indexServerInfo:ServerIndexDetailsViewModel/>
   </platformUi:DialogWindow.DataContext>
   <platformUi:DialogWindow.Resources>
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -36,7 +36,7 @@
             <Label DockPanel.Dock="Left">Project details</Label>
             <Separator Margin="4,0,0,0"></Separator>
           </DockPanel>
-          <local:DirectoryIndexDetailsControl DataContext="{Binding SelectedProject.DirectoryDetails}" />
+          <indexServerInfo:DirectoryIndexDetailsControl DataContext="{Binding SelectedProject.DirectoryDetails}" />
         </DockPanel>
       </DockPanel>
       <Border BorderBrush="Black" BorderThickness="1" Background="#80000000" 

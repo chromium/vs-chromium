@@ -2,28 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
-using System.ComponentModel;
-using System.ComponentModel.Design;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Windows;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using System;
+using System.ComponentModel;
+using System.ComponentModel.Design;
+using System.Runtime.InteropServices;
+using System.Windows;
 using VsChromium.Commands;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
-using VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo;
 using VsChromium.Package;
+using VsChromium.Package.CommandHandler;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
-using VsChromium.Package.CommandHandler;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class SourceExplorerHierarchyController : ISourceExplorerHierarchyController {
@@ -239,7 +237,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void ShowIndexDetails(string path) {
-      var detailsDialog = new DirectoryDetailsDialog();
+      var detailsDialog = new IndexServerInfo.DirectoryDetailsDialog();
       detailsDialog.HasMinimizeButton = false;
       detailsDialog.HasMaximizeButton = false;
       detailsDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;

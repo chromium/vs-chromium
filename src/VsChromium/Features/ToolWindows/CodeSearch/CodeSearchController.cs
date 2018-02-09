@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System;
@@ -15,9 +16,6 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using Microsoft.VisualStudio.PlatformUI;
-using Microsoft.VisualStudio.Shell;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -26,13 +24,14 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Features.BuildOutputAnalyzer;
 using VsChromium.Features.SourceExplorerHierarchy;
-using VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo;
 using VsChromium.Package;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;
 using VsChromium.Wpf;
+using IndexDetailsDialog = VsChromium.Features.IndexServerInfo.IndexDetailsDialog;
+using IndexServerInfoDialog = VsChromium.Features.IndexServerInfo.IndexServerInfoDialog;
 using TreeView = System.Windows.Controls.TreeView;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {

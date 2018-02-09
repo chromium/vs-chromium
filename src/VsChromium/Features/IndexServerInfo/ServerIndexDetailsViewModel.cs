@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Wpf;
 
-namespace VsChromium.Features.ToolWindows.CodeSearch.IndexServerInfo {
-  public class IndexDetailsViewModel : ViewModelBase {
+namespace VsChromium.Features.IndexServerInfo {
+  public class ServerIndexDetailsViewModel : ViewModelBase {
     private ProjectDetails _selectedProject;
     private bool _waiting = true;
 

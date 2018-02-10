@@ -25,10 +25,14 @@
     <Grid>
       <!-- DIRECTORY DETAILS LAYER -->
       <DockPanel Margin="10,10,10,0" >
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" >
-          <Label Content="Directory details: " />
-          <Label Content="{Binding DirectoryDetails.Path}" />
-        </StackPanel>
+        <Grid DockPanel.Dock="Top" >
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Label Grid.Column="0" Content="Directory: " />
+          <TextBox Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding DirectoryDetails.Path}" />
+        </Grid>
         <indexServerInfo:DirectoryDetailsControl DataContext="{Binding DirectoryDetails}" />
       </DockPanel>
       <!-- "PLEASE WAIT..." LAYER -->

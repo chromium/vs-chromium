@@ -21,7 +21,7 @@ namespace VsChromium.Commands {
     CmdidCopyRelativePathPosix = 0x133,
     CmdidOpenFolderInExplorer = 0x134,
     CmdidShowProjectIndexDetails = 0x135,
-    CmdidShowIndexDetails = 0x136,
+    CmdidShowDirectoryIndexDetails = 0x136,
     CmdidCopyFileFullPath = 0x140,
     CmdidCopyFileRelativePath = 0x142,
     CmdidCopyFileFullPathPosix = 0x141,

@@ -23,6 +23,9 @@
     <Label Grid.Row="1" Grid.Column="0" Content="Configuration section name:" />
     <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding Name}"></TextBox>
     <Label Grid.Row="2" Grid.Column="0" Content="Configuration section contents:" />
-    <TextBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" IsReadOnly="True" Text="{Binding Contents}"></TextBox>
+    <TextBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
+             ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+             IsReadOnly="True" Foreground="DarkBlue"
+             Text="{Binding Contents}" FontFamily="Consolas"></TextBox>
   </Grid>
 </UserControl>

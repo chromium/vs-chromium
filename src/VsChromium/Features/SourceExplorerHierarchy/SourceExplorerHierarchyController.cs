@@ -180,7 +180,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         Execute = args => ShowProjectIndexDetails(args.Node.FullPath)
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
-        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowIndexDetails),
+        CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowDirectoryIndexDetails),
         IsEnabled = node => node is DirectoryNodeViewModel,
         Execute = args => ShowDirectoryIndexDetails(args.Node.FullPath)
       });

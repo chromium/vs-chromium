@@ -23,12 +23,16 @@
     </StackPanel>
     <!-- "MAIN CONTENTS" LAYERS -->
     <Grid>
-      <!-- DIRECTORY DETAILS LAYER -->
+      <!-- PROJECT DETAILS LAYER -->
       <DockPanel  Margin="10,10,10,0" >
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" >
-          <Label Content="Project: " />
-          <Label Content="{Binding ProjectDetails.RootPath}" />
-        </StackPanel>
+        <Grid DockPanel.Dock="Top" >
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Label Grid.Column="0" Content="Project: " />
+          <TextBox Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding ProjectDetails.RootPath}" />
+        </Grid>
         <indexServerInfo:ProjectDetailsControl />
       </DockPanel>
       <!-- "PLEASE WAIT..." LAYER -->

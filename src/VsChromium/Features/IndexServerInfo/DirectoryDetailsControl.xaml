@@ -60,10 +60,15 @@
           <ListView x:Name="FilesByExtensionListView" ItemsSource="{Binding SearchableFilesByExtensionDetails}">
             <ListView.View>
               <GridView>
-                <GridViewColumn Width="120" DisplayMemberBinding="{Binding FileExtension}">
+                <GridViewColumn Width="120">
                   <GridViewColumn.Header>
                     <GridViewColumnHeader Tag="FileExtension" Click="ListViewColumnHeader_Click">File Extension</GridViewColumnHeader>
                   </GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding FileExtension}" />
+                    </DataTemplate>
+                  </GridViewColumn.CellTemplate>
                 </GridViewColumn>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>
@@ -108,10 +113,15 @@
           <ListView x:Name="LargeFilesListView" ItemsSource="{Binding LargeSearchableFilesDetails}">
             <ListView.View>
               <GridView>
-                <GridViewColumn Width="450" DisplayMemberBinding="{Binding RelativePath}">
+                <GridViewColumn Width="450">
                   <GridViewColumn.Header>
                     <GridViewColumnHeader Tag="RelativePath" Click="LargeFilesListViewColumnHeader_Click">Relative Path</GridViewColumnHeader>
                   </GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding RelativePath}" />
+                    </DataTemplate>
+                  </GridViewColumn.CellTemplate>
                 </GridViewColumn>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>
@@ -146,10 +156,15 @@
           <ListView x:Name="LargeBinaryFilesListView" ItemsSource="{Binding LargeBinaryFilesDetails}">
             <ListView.View>
               <GridView>
-                <GridViewColumn Width="450" DisplayMemberBinding="{Binding RelativePath}">
+                <GridViewColumn Width="450" >
                   <GridViewColumn.Header>
                     <GridViewColumnHeader Tag="RelativePath" Click="LargeBinaryFilesListViewColumnHeader_Click">Relative Path</GridViewColumnHeader>
                   </GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding RelativePath}"/>
+                    </DataTemplate>
+                  </GridViewColumn.CellTemplate>
                 </GridViewColumn>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>

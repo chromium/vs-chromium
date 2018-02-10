@@ -31,7 +31,8 @@
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <Label Grid.Column="0" Content="Project: " />
-          <TextBox Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding ProjectDetails.RootPath}" />
+          <TextBox Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center"
+                   Text="{Binding ProjectDetails.RootPath}" FontFamily="Consolas" />
         </Grid>
         <indexServerInfo:ProjectDetailsControl />
       </DockPanel>

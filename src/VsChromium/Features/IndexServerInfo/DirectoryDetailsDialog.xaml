@@ -31,7 +31,8 @@
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <Label Grid.Column="0" Content="Directory: " />
-          <TextBox Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding DirectoryDetails.Path}" />
+          <TextBox Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center"
+                   Text="{Binding DirectoryDetails.Path}" FontFamily="Consolas" />
         </Grid>
         <indexServerInfo:DirectoryDetailsControl DataContext="{Binding DirectoryDetails}" />
       </DockPanel>

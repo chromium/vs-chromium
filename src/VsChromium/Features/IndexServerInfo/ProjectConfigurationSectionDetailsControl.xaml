@@ -4,9 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:typedMessages="clr-namespace:VsChromium.Core.Ipc.TypedMessages;assembly=VsChromium.Core"
+             xmlns:indexServerInfo="clr-namespace:VsChromium.Features.IndexServerInfo"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=typedMessages:ProjectConfigurationSectionDetails, IsDesignTimeCreatable=True}"
              d:DesignHeight="300" d:DesignWidth="600">
+  <UserControl.Resources>
+    <indexServerInfo:SectioNameValueConverter x:Key="SectioNameValueConverter" />
+  </UserControl.Resources>
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
@@ -19,13 +23,20 @@
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <Label Grid.Row="0" Grid.Column="0" Content="Configuration file:" />
-    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding ContainingFilePath}"></TextBox>
-    <Label Grid.Row="1" Grid.Column="0" Content="Configuration section name:" />
-    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center" Text="{Binding Name}"></TextBox>
-    <Label Grid.Row="2" Grid.Column="0" Content="Configuration section contents:" />
+    <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center"
+             Text="{Binding ContainingFilePath}" FontFamily="Consolas" />
+
+    <Label Grid.Row="1" Grid.Column="0" Content="Section name:" />
+    <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" VerticalAlignment="Center"
+             Text="{Binding Name, Converter={StaticResource SectioNameValueConverter}}" FontFamily="Consolas" />
+
+    <Label Grid.Row="2" Grid.Column="0" Content="Section contents:" />
     <TextBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
              ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"
              IsReadOnly="True" Foreground="DarkBlue"
              Text="{Binding Contents}" FontFamily="Consolas"></TextBox>
   </Grid>
 </UserControl>
+
+
+

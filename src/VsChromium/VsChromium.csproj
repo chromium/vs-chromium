@@ -270,6 +270,7 @@
     <Compile Include="Features\IndexServerInfo\DirectoryDetailsControl.xaml.cs">
       <DependentUpon>DirectoryDetailsControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Features\IndexServerInfo\SectioNameValueConverter.cs" />
     <Compile Include="Wpf\ViewModelBase.cs" />
     <Compile Include="Package\IShellHost.cs" />
     <Compile Include="Package\ReportServerProgress.cs" />

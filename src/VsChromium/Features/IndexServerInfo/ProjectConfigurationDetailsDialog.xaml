@@ -26,7 +26,8 @@
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0" Content="Project: " />
-        <TextBox Grid.Column="1" VerticalAlignment="Center" IsReadOnly="true" Text="{Binding RootPath}" />
+        <TextBox Grid.Column="1" VerticalAlignment="Center" IsReadOnly="true"
+                 Text="{Binding RootPath}" FontFamily="Consolas" />
       </Grid>
 
       <!-- PROJECT CONFIGURATION TABS -->

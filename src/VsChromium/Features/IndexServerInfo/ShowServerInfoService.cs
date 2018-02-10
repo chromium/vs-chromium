@@ -135,8 +135,8 @@ namespace VsChromium.Features.IndexServerInfo {
           MaxLargeFilesDetailsCount = 4000
         },
         OnDispatchThreadError = error => {
-          //TODO: Display error message
           dialog.ViewModel.Waiting = false;
+          _shellHost.ShowErrorMessageBox("Error", error.Message);
         },
         OnDispatchThreadSuccess = typedResponse => {
           var response = (GetProjectDetailsResponse)typedResponse;
@@ -165,8 +165,8 @@ namespace VsChromium.Features.IndexServerInfo {
           MaxLargeFilesDetailsCount = 4000
         },
         OnDispatchThreadError = error => {
-          //TODO: Display error message
           detailsDialog.ViewModel.Waiting = false;
+          _shellHost.ShowErrorMessageBox("Error", error.Message);
         },
         OnDispatchThreadSuccess = typedResponse => {
           var response = (GetDirectoryDetailsResponse)typedResponse;

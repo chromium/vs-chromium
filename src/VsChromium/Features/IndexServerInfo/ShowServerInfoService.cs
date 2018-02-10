@@ -117,7 +117,7 @@ namespace VsChromium.Features.IndexServerInfo {
 
     public void ShowProjectIndexDetailsDialog(string path) {
       // Prepare the dialog window
-      var dialog = new IndexServerInfo.ProjectDetailsDialog();
+      var dialog = new ProjectDetailsDialog();
       dialog.HasMinimizeButton = false;
       dialog.HasMaximizeButton = false;
       dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -151,12 +151,14 @@ namespace VsChromium.Features.IndexServerInfo {
     }
 
     public void ShowDirectoryIndexDetailsDialog(string path) {
-      var detailsDialog = new IndexServerInfo.DirectoryDetailsDialog();
-      detailsDialog.HasMinimizeButton = false;
-      detailsDialog.HasMaximizeButton = false;
-      detailsDialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+      // Prepare the dialog window
+      var dialog = new DirectoryDetailsDialog();
+      dialog.HasMinimizeButton = false;
+      dialog.HasMaximizeButton = false;
+      dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-      var uiRequest = new DispatchThreadServerRequest {
+      // Post async-request to fetch the project details
+      _dispatchThreadServerRequestExecutor.Post(new DispatchThreadServerRequest {
         Id = Guid.NewGuid().ToString(),
         Delay = TimeSpan.FromSeconds(0.0),
         Request = new GetDirectoryDetailsRequest {
@@ -165,18 +167,19 @@ namespace VsChromium.Features.IndexServerInfo {
           MaxLargeFilesDetailsCount = 4000
         },
         OnDispatchThreadError = error => {
-          detailsDialog.ViewModel.Waiting = false;
+          dialog.ViewModel.Waiting = false;
           _shellHost.ShowErrorMessageBox("Error", error.Message);
         },
         OnDispatchThreadSuccess = typedResponse => {
-          var response = (GetDirectoryDetailsResponse)typedResponse;
-          detailsDialog.ViewModel.DirectoryDetails = response.DirectoryDetails;
-          detailsDialog.ViewModel.Waiting = false;
+          var response1 = (GetDirectoryDetailsResponse)typedResponse;
+          dialog.ViewModel.DirectoryDetails = response1.DirectoryDetails;
+          dialog.ViewModel.Waiting = false;
         },
-      };
+      });
 
-      _dispatchThreadServerRequestExecutor.Post(uiRequest);
-      detailsDialog.ShowModal();
+      // Show the dialog right away, waiting for a response for the above request
+      // (The dialog shows a "Please wait..." message while waiting)
+      dialog.ShowModal();
     }
 
     private void ShowProjectConfiguration(ProjectDetailsViewModel projectDetailsViewModel) {
@@ -265,6 +268,5 @@ namespace VsChromium.Features.IndexServerInfo {
       }
       return "more than one day ago";
     }
-
   }
 }

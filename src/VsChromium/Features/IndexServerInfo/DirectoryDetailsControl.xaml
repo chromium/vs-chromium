@@ -66,7 +66,7 @@
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
-                      <TextBlock Text="{Binding FileExtension}" />
+                      <TextBlock Text="{Binding FileExtension}" TextTrimming="CharacterEllipsis" />
                     </DataTemplate>
                   </GridViewColumn.CellTemplate>
                 </GridViewColumn>
@@ -119,7 +119,7 @@
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
-                      <TextBlock Text="{Binding RelativePath}" />
+                      <TextBlock Text="{Binding RelativePath}" TextTrimming="CharacterEllipsis" />
                     </DataTemplate>
                   </GridViewColumn.CellTemplate>
                 </GridViewColumn>
@@ -162,7 +162,7 @@
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
-                      <TextBlock Text="{Binding RelativePath}"/>
+                      <TextBlock Text="{Binding RelativePath}" TextTrimming="CharacterEllipsis" />
                     </DataTemplate>
                   </GridViewColumn.CellTemplate>
                 </GridViewColumn>

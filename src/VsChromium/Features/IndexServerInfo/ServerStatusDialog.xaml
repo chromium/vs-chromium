@@ -8,6 +8,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="200" d:DesignWidth="600"
              Title="VsChromium Indexing Server Information"
+             ResizeMode="CanResizeWithGrip"
              Width="600" Height="400">
   <platformUi:DialogWindow.DataContext>
     <indexServerInfo1:ServerStatusViewModel />

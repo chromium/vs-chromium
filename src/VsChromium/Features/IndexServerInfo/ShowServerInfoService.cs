@@ -42,7 +42,12 @@ namespace VsChromium.Features.IndexServerInfo {
           return;
         }
         dialog.ViewModel.ProjectCount = response.ProjectCount;
-        dialog.ViewModel.ShowServerDetailsInvoked += (sender, args) => OnShowServerDetailsInvoked();
+        dialog.ViewModel.ShowServerDetailsInvoked += (sender, args) => {
+          // Close dialog to avoid too many nested modal dialogs, which can be
+          // confusing.
+          dialog.Close();
+          OnShowServerDetailsInvoked();
+        };
         var message = new StringBuilder();
         message.AppendFormat("-- {0} --\r\n", GetIndexingServerStatusText(response));
         message.AppendLine();

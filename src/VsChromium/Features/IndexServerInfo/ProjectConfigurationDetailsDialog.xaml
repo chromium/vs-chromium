@@ -7,6 +7,7 @@
              xmlns:indexServerInfo="clr-namespace:VsChromium.Features.IndexServerInfo"
              xmlns:typedMessages="clr-namespace:VsChromium.Core.Ipc.TypedMessages;assembly=VsChromium.Core"
              Title="VsChromium Project Configuration Details"
+             ResizeMode="CanResizeWithGrip"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=typedMessages:ProjectDetails, IsDesignTimeCreatable=True}"
              d:DesignHeight="300" d:DesignWidth="800"

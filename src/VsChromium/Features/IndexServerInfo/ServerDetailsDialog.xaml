@@ -6,6 +6,7 @@
              xmlns:platformUi="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.12.0"
              xmlns:indexServerInfo="clr-namespace:VsChromium.Features.IndexServerInfo"
              Title="VsChromium Index Details"
+             ResizeMode="CanResizeWithGrip"
              mc:Ignorable="d" 
              Width="800" Height="600"
              d:DesignHeight="300" d:DesignWidth="300">

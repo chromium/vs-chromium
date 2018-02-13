@@ -72,7 +72,9 @@
                 </GridViewColumn>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>
-                    <GridViewColumnHeader Tag="FileCount" Click="ListViewColumnHeader_Click">File Count</GridViewColumnHeader>
+                    <GridViewColumnHeader Tag="FileCount" 
+                                          wpf:ListViewSorter.InitialSortOrder="Descending"
+                                          Click="ListViewColumnHeader_Click">File Count</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -82,7 +84,10 @@
                 </GridViewColumn>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>
-                    <GridViewColumnHeader Tag="FilesByteLength" Click="ListViewColumnHeader_Click">Total File Size</GridViewColumnHeader>
+                    <GridViewColumnHeader Tag="FilesByteLength"
+                                          wpf:ListViewSorter.InitialSortOrder="Descending"
+                                          wpf:ListViewSorter.InitialSortColumn="True"
+                                          Click="ListViewColumnHeader_Click">Total File Size</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -125,7 +130,10 @@
                 </GridViewColumn>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>
-                    <GridViewColumnHeader Tag="ByteLength" Click="LargeFilesListViewColumnHeader_Click">File Size</GridViewColumnHeader>
+                    <GridViewColumnHeader Tag="ByteLength"
+                                          wpf:ListViewSorter.InitialSortOrder="Descending"
+                                          wpf:ListViewSorter.InitialSortColumn="True"
+                                          Click="LargeFilesListViewColumnHeader_Click">File Size</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -168,7 +176,10 @@
                 </GridViewColumn>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>
-                    <GridViewColumnHeader Tag="ByteLength" Click="LargeBinaryFilesListViewColumnHeader_Click">File Size</GridViewColumnHeader>
+                    <GridViewColumnHeader Tag="ByteLength"
+                                          wpf:ListViewSorter.InitialSortOrder="Descending" 
+                                          wpf:ListViewSorter.InitialSortColumn="True"
+                                          Click="LargeBinaryFilesListViewColumnHeader_Click">File Size</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>

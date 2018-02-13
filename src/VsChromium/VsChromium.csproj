@@ -266,6 +266,7 @@
       <DependentUpon>ServerStatusDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\IndexServerInfo\ServerStatusViewModel.cs" />
+    <Compile Include="Wpf\ListViewSorter.cs" />
     <Compile Include="Wpf\NumberValueConverter.cs" />
     <Compile Include="Features\IndexServerInfo\DirectoryDetailsControl.xaml.cs">
       <DependentUpon>DirectoryDetailsControl.xaml</DependentUpon>

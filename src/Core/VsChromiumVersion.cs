@@ -4,7 +4,7 @@
 
 namespace VsChromium.Core {
   public static class VsChromiumVersion {
-    public const string Product = "0.9.29";
+    public const string Product = "0.9.30";
     public const string File = Product + ".0";
     public const string Copyright = "Copyright © 2018 The Chromium Authors.All rights reserved.";
   }

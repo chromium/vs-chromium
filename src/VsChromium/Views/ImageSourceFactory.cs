@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Internal.VisualStudio.PlatformUI;
 using VsChromium.Core.Files;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Shell;
 
 namespace VsChromium.Views {
@@ -59,6 +60,7 @@ namespace VsChromium.Views {
     public Icon GetFileExtensionIcon(string fileExtension) {
       const string keyPrefix = "__files__";
       return _icons.GetOrAdd(keyPrefix + fileExtension, name => {
+        Logger.LogInfo("Creating icon for file extension {0}", fileExtension);
         var image = GetFileExtensionImageSource(fileExtension);
         return ImageSourceToIcon(image);
       }).Item2;

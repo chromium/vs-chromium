@@ -16,6 +16,15 @@
   <platformUi:DialogWindow.DataContext>
     <indexServerInfo1:ServerStatusViewModel />
   </platformUi:DialogWindow.DataContext>
+  <platformUi:DialogWindow.Style>
+    <Style TargetType="platformUi:DialogWindow">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Waiting}" Value="False">
+          <Setter Property="SizeToContent" Value="Height" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+  </platformUi:DialogWindow.Style>
   <DockPanel>
     <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom" >
       <Separator HorizontalAlignment="Stretch" />

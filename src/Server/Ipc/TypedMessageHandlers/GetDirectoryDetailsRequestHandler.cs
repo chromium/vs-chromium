@@ -5,7 +5,6 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Linq;
-using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -117,6 +116,16 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
             RelativePath = GetRelativePath(directoryPath, x.FileName.FullPath),
             ByteLength = x.Contents.ByteLength
           })
+          .ToList(),
+
+        BinaryFilesByExtensionDetails = binaryFiles
+          .GroupBy(x => GetFileExtension(x.FileName))
+          .Select(g => new FileByExtensionDetails {
+            FileExtension = g.Key,
+            FileCount = g.Count(),
+            FilesByteLength = g.Aggregate(0L, (acc, x) => acc + ((BinaryFileContents)x.Contents).BinaryFileSize)
+          })
+          .OrderByDescendingThenTake(maxFilesByExtensionDetailsCount, x => x.FilesByteLength)
           .ToList(),
 
         LargeBinaryFilesDetails = binaryFiles

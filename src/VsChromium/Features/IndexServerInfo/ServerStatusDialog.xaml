@@ -10,6 +10,9 @@
              Title="VsChromium Indexing Server Information"
              ResizeMode="CanResizeWithGrip"
              Width="600" Height="400">
+  <platformUi:DialogWindow.Resources>
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+  </platformUi:DialogWindow.Resources>
   <platformUi:DialogWindow.DataContext>
     <indexServerInfo1:ServerStatusViewModel />
   </platformUi:DialogWindow.DataContext>
@@ -18,27 +21,38 @@
       <Separator HorizontalAlignment="Stretch" />
       <Button HorizontalAlignment="Right" Width="80" Height="24" Margin="0,10,16,10" IsCancel="True" IsDefault="True">Close</Button>
     </StackPanel>
-    <StackPanel Orientation="Vertical" Margin="16,16,16,16" >
-      <DockPanel Margin="0,5,0,5">
-        <TextBlock FontSize="14" FontStretch="Expanded">Server Status</TextBlock>
-        <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
-      </DockPanel>
-      <TextBlock  Margin="8,0,0,0" Text="{Binding ServerStatus}"></TextBlock>
-      <DockPanel Margin="0,20,0,5">
-        <TextBlock FontSize="14" FontStretch="Expanded">Index size</TextBlock>
-        <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
-      </DockPanel>
-      <DockPanel Margin="8,0,0,0">
-        <TextBlock Text="{Binding IndexStatus}"></TextBlock>
-        <Button HorizontalAlignment="Right" VerticalAlignment="Bottom"
+    <Grid>
+      <StackPanel Orientation="Vertical" Margin="16,16,16,16" >
+        <DockPanel Margin="0,5,0,5">
+          <TextBlock FontSize="14" FontStretch="Expanded">Server Status</TextBlock>
+          <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+        </DockPanel>
+        <TextBlock  Margin="8,0,0,0" Text="{Binding ServerStatus}"></TextBlock>
+        <DockPanel Margin="0,20,0,5">
+          <TextBlock FontSize="14" FontStretch="Expanded">Index size</TextBlock>
+          <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+        </DockPanel>
+        <DockPanel Margin="8,0,0,0">
+          <TextBlock Text="{Binding IndexStatus}"></TextBlock>
+          <Button HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Margin="5,0,0,0" Width="80" Height="24"
                 Command="{Binding IndexDetailsCommand}">Details...</Button>
-      </DockPanel>
-      <DockPanel Margin="0,20,0,5">
-        <TextBlock FontSize="14" FontStretch="Expanded">Memory usage</TextBlock>
-        <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
-      </DockPanel>
-      <TextBlock  Margin="8,0,0,0" Text="{Binding MemoryStatus}"></TextBlock>
-    </StackPanel>
+        </DockPanel>
+        <DockPanel Margin="0,20,0,5">
+          <TextBlock FontSize="14" FontStretch="Expanded">Memory usage</TextBlock>
+          <Separator Margin="5,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+        </DockPanel>
+        <TextBlock  Margin="8,0,0,0" Text="{Binding MemoryStatus}"></TextBlock>
+      </StackPanel>
+      <!-- "PLEASE WAIT..." LAYER -->
+      <Border BorderBrush="Black" BorderThickness="1" Background="#80000000" 
+            Visibility="{Binding Waiting, Converter={StaticResource BooleanToVisibilityConverter}}" >
+        <Grid>
+          <TextBlock Margin="0" TextWrapping="Wrap" Text="Please Wait..."
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   FontSize="24" FontWeight="Bold" Foreground="#7EFFFFFF"/>
+        </Grid>
+      </Border>
+    </Grid>
   </DockPanel>
 </platformUi:DialogWindow>

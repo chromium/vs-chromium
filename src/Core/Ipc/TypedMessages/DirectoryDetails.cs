@@ -11,6 +11,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public DirectoryDetails() {
       SearchableFilesByExtensionDetails = new List<FileByExtensionDetails>();
       LargeSearchableFilesDetails = new List<LargeFileDetails>();
+      BinaryFilesByExtensionDetails = new List<FileByExtensionDetails>();
       LargeBinaryFilesDetails = new List<LargeFileDetails>();
     }
 
@@ -42,6 +43,9 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public List<LargeFileDetails> LargeSearchableFilesDetails { get; set; }
 
     [ProtoMember(10)]
+    public List<FileByExtensionDetails> BinaryFilesByExtensionDetails { get; set; }
+
+    [ProtoMember(11)]
     public List<LargeFileDetails> LargeBinaryFilesDetails { get; set; }
   }
 }

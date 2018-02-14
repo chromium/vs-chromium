@@ -12,37 +12,41 @@ namespace VsChromium.Features.IndexServerInfo {
   public partial class DirectoryDetailsControl {
     private readonly ListViewSorter _filesByExtensionListViewSorter;
     private readonly ListViewSorter _largeFilesListViewSorter;
+    private readonly ListViewSorter _binaryFilesByExtensionListViewSorter;
     private readonly ListViewSorter _largeBinaryFilesListViewSorter;
 
     public DirectoryDetailsControl() {
       InitializeComponent();
-      _filesByExtensionListViewSorter = new ListViewSorter(FilesByExtensionListView, nameof(FilesByExtensionListView));
-      _largeFilesListViewSorter = new ListViewSorter(LargeFilesListView, nameof(LargeFilesListView));
-      _largeBinaryFilesListViewSorter = new ListViewSorter(LargeBinaryFilesListView, nameof(LargeBinaryFilesListView));
+      _filesByExtensionListViewSorter = new ListViewSorter(FilesByExtensionListView);
+      _largeFilesListViewSorter = new ListViewSorter(LargeFilesListView);
+      _binaryFilesByExtensionListViewSorter = new ListViewSorter(BinaryFilesByExtensionListView);
+      _largeBinaryFilesListViewSorter = new ListViewSorter(LargeBinaryFilesListView);
     }
 
-    private void ListViewColumnHeader_Click(object sender, RoutedEventArgs e) {
+    private void FilesByExtension_ListView_ColumnHeader_Click(object sender, RoutedEventArgs e) {
       _filesByExtensionListViewSorter.HeaderClick(sender);
     }
 
-    private void LargeFilesListViewColumnHeader_Click(object sender, RoutedEventArgs e) {
+    private void LargeFiles_ListView_ColumnHeader_Click(object sender, RoutedEventArgs e) {
       _largeFilesListViewSorter.HeaderClick(sender);
     }
 
-    private void LargeBinaryFilesListViewColumnHeader_Click(object sender, RoutedEventArgs e) {
+    private void BinaryFilesByExtension_ListView_ColumnHeader_Click(object sender, RoutedEventArgs e) {
+      _binaryFilesByExtensionListViewSorter.HeaderClick(sender);
+    }
+
+    private void LargeBinaryFiles_ListView_ColumnHeader_Click(object sender, RoutedEventArgs e) {
       _largeBinaryFilesListViewSorter.HeaderClick(sender);
     }
 
     public class ListViewSorter {
       private readonly ListView _listView;
-      private readonly string _name;
       private bool _firstLoad = true;
       private GridViewColumnHeader _currentSortedColumnHeader;
       private SortAdorner _currentAdorner;
 
-      public ListViewSorter(ListView listView, string name) {
+      public ListViewSorter(ListView listView) {
         _listView = listView;
-        _name = name;
         _listView.Loaded += (sender, args) => OnListViewLoaded();
       }
 

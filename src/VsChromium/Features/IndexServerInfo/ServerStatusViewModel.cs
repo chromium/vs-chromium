@@ -12,10 +12,17 @@ namespace VsChromium.Features.IndexServerInfo {
     private string _indexStatus;
     private string _memoryStatus;
     private int _projectCount;
+    private bool _waiting = true;
+
     private CommandDelegate _indexDetailsCommand;
 
     public event EventHandler ShowServerDetailsInvoked;
-     
+
+    public bool Waiting {
+      get { return _waiting; }
+      set { UpdateProperty(ref _waiting, value); }
+    }
+
     public string ServerStatus {
       get { return _serverStatus; }
       set { UpdateProperty(ref _serverStatus, value); }

@@ -62,7 +62,7 @@
               <GridView>
                 <GridViewColumn Width="120">
                   <GridViewColumn.Header>
-                    <GridViewColumnHeader Tag="FileExtension" Click="ListViewColumnHeader_Click">File Extension</GridViewColumnHeader>
+                    <GridViewColumnHeader Tag="FileExtension" Click="FilesByExtension_ListView_ColumnHeader_Click">File Extension</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -74,7 +74,7 @@
                   <GridViewColumn.Header>
                     <GridViewColumnHeader Tag="FileCount" 
                                           wpf:ListViewSorter.InitialSortOrder="Descending"
-                                          Click="ListViewColumnHeader_Click">File Count</GridViewColumnHeader>
+                                          Click="FilesByExtension_ListView_ColumnHeader_Click">File Count</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -87,7 +87,7 @@
                     <GridViewColumnHeader Tag="FilesByteLength"
                                           wpf:ListViewSorter.InitialSortOrder="Descending"
                                           wpf:ListViewSorter.InitialSortColumn="True"
-                                          Click="ListViewColumnHeader_Click">Total File Size</GridViewColumnHeader>
+                                          Click="FilesByExtension_ListView_ColumnHeader_Click">Total File Size</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -120,7 +120,7 @@
               <GridView>
                 <GridViewColumn Width="450">
                   <GridViewColumn.Header>
-                    <GridViewColumnHeader Tag="RelativePath" Click="LargeFilesListViewColumnHeader_Click">Relative Path</GridViewColumnHeader>
+                    <GridViewColumnHeader Tag="RelativePath" Click="LargeFiles_ListView_ColumnHeader_Click">Relative Path</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -133,7 +133,7 @@
                     <GridViewColumnHeader Tag="ByteLength"
                                           wpf:ListViewSorter.InitialSortOrder="Descending"
                                           wpf:ListViewSorter.InitialSortColumn="True"
-                                          Click="LargeFilesListViewColumnHeader_Click">File Size</GridViewColumnHeader>
+                                          Click="LargeFiles_ListView_ColumnHeader_Click">File Size</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -152,7 +152,65 @@
         </DockPanel>
       </TabItem>
 
-      <TabItem Header="Binary files">
+      <TabItem Header="Binary files grouped by extension">
+        <DockPanel>
+          <Label DockPanel.Dock="Top">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="List of the "/>
+              <TextBlock Text="{Binding BinaryFilesByExtensionDetails.Count, Converter={StaticResource NumberValueConverter}}" />
+              <TextBlock Text=" largest file extension groups of binary files" />
+            </StackPanel>
+          </Label>
+          <ListView x:Name="BinaryFilesByExtensionListView" ItemsSource="{Binding BinaryFilesByExtensionDetails}">
+            <ListView.View>
+              <GridView>
+                <GridViewColumn Width="120">
+                  <GridViewColumn.Header>
+                    <GridViewColumnHeader Tag="FileExtension" Click="BinaryFilesByExtension_ListView_ColumnHeader_Click">File Extension</GridViewColumnHeader>
+                  </GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding FileExtension}" TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn Width="120">
+                  <GridViewColumn.Header>
+                    <GridViewColumnHeader Tag="FileCount" 
+                                          wpf:ListViewSorter.InitialSortOrder="Descending"
+                                          Click="BinaryFilesByExtension_ListView_ColumnHeader_Click">File Count</GridViewColumnHeader>
+                  </GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding FileCount, Converter={StaticResource NumberValueConverter}}" TextAlignment="Right"/>
+                    </DataTemplate>
+                  </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn Width="120">
+                  <GridViewColumn.Header>
+                    <GridViewColumnHeader Tag="FilesByteLength"
+                                          wpf:ListViewSorter.InitialSortOrder="Descending"
+                                          wpf:ListViewSorter.InitialSortColumn="True"
+                                          Click="BinaryFilesByExtension_ListView_ColumnHeader_Click">Total File Size</GridViewColumnHeader>
+                  </GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding FilesByteLength, Converter={StaticResource HumanReadableBytesValueConverter}}" TextAlignment="Right"/>
+                    </DataTemplate>
+                  </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+              </GridView>
+            </ListView.View>
+            <ListView.ItemContainerStyle>
+              <Style TargetType="ListViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+              </Style>
+            </ListView.ItemContainerStyle>
+          </ListView>
+        </DockPanel>
+      </TabItem>
+
+      <TabItem Header="Largest Binary files">
         <DockPanel>
           <Label DockPanel.Dock="Top">
             <StackPanel Orientation="Horizontal">
@@ -166,7 +224,7 @@
               <GridView>
                 <GridViewColumn Width="450" >
                   <GridViewColumn.Header>
-                    <GridViewColumnHeader Tag="RelativePath" Click="LargeBinaryFilesListViewColumnHeader_Click">Relative Path</GridViewColumnHeader>
+                    <GridViewColumnHeader Tag="RelativePath" Click="LargeBinaryFiles_ListView_ColumnHeader_Click">Relative Path</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -179,7 +237,7 @@
                     <GridViewColumnHeader Tag="ByteLength"
                                           wpf:ListViewSorter.InitialSortOrder="Descending" 
                                           wpf:ListViewSorter.InitialSortColumn="True"
-                                          Click="LargeBinaryFilesListViewColumnHeader_Click">File Size</GridViewColumnHeader>
+                                          Click="LargeBinaryFiles_ListView_ColumnHeader_Click">File Size</GridViewColumnHeader>
                   </GridViewColumn.Header>
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>

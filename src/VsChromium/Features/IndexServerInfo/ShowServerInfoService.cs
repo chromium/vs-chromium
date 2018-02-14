@@ -33,14 +33,17 @@ namespace VsChromium.Features.IndexServerInfo {
       dialog.HasMinimizeButton = false;
       dialog.HasMaximizeButton = false;
       dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+      dialog.ViewModel.Waiting = true;
 
-      bool isClosed = false;
+      var isClosed = false;
       dialog.Closed += (sender, args) => isClosed = true;
 
       FetchDatabaseStatistics(true, response => {
         if (isClosed) {
           return;
         }
+
+        dialog.ViewModel.Waiting = false;
         dialog.ViewModel.ProjectCount = response.ProjectCount;
         dialog.ViewModel.ShowServerDetailsInvoked += (sender, args) => {
           // Close dialog to avoid too many nested modal dialogs, which can be
@@ -199,7 +202,7 @@ namespace VsChromium.Features.IndexServerInfo {
     public void FetchDatabaseStatistics(bool forceGarbageCollect, Action<GetDatabaseStatisticsResponse> callback) {
       _dispatchThreadServerRequestExecutor.Post(
         new DispatchThreadServerRequest {
-          Id = "GetDatabaseStatisticsRequest",
+          Id = Guid.NewGuid().ToString(),
           Request = new GetDatabaseStatisticsRequest { ForceGabageCollection = forceGarbageCollect },
           OnDispatchThreadSuccess = typedResponse => {
             var response = (GetDatabaseStatisticsResponse)typedResponse;

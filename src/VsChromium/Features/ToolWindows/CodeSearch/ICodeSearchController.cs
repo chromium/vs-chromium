@@ -25,7 +25,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     void RefreshFileSystemTree();
     void PauseResumeIndexing();
-    void ShowServerInfo();
+    void ShowServerInfo(bool forceGarbageCollection);
 
     void PerformSearch(bool immediate);
     void QuickSearchCode(string searchPattern);

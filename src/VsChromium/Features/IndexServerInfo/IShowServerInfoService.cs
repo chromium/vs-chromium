@@ -7,11 +7,11 @@ using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.IndexServerInfo {
   public interface IShowServerInfoService {
-    void ShowServerStatusDialog();
+    void ShowServerStatusDialog(bool forceGarbageCollection);
     void ShowProjectIndexDetailsDialog(string path);
     void ShowDirectoryIndexDetailsDialog(string path);
 
-    void FetchDatabaseStatistics(bool forceGarbageCollect, Action<GetDatabaseStatisticsResponse> callback);
+    void FetchDatabaseStatistics(Action<GetDatabaseStatisticsResponse> callback);
 
     string GetIndexStatusText(GetDatabaseStatisticsResponse response);
     string GetIndexingServerStatusText(GetDatabaseStatisticsResponse response);

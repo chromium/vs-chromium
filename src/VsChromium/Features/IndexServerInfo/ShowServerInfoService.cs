@@ -28,7 +28,7 @@ namespace VsChromium.Features.IndexServerInfo {
       _shellHost = shellHost;
     }
 
-    public void ShowServerStatusDialog() {
+    public void ShowServerStatusDialog(bool forceGarbageCollection) {
       var dialog = new ServerStatusDialog();
       dialog.HasMinimizeButton = false;
       dialog.HasMaximizeButton = false;
@@ -38,7 +38,7 @@ namespace VsChromium.Features.IndexServerInfo {
       var isClosed = false;
       dialog.Closed += (sender, args) => isClosed = true;
 
-      FetchDatabaseStatistics(true, response => {
+      FetchDatabaseStatisticsImpl(Guid.NewGuid().ToString(), TimeSpan.Zero, forceGarbageCollection, response => {
         if (isClosed) {
           return;
         }
@@ -69,11 +69,12 @@ namespace VsChromium.Features.IndexServerInfo {
         } else {
           message.AppendFormat("Last updated: {0}\r\n", "n/a (index is empty)");
         }
+
         dialog.ViewModel.IndexStatus = message.ToString().TrimSuffix("\r\n");
         message.Clear();
 
-        message.AppendFormat("Managed memory: {0:n2} MB\r\n", (double)response.ServerGcMemoryUsage / (1024 * 1024));
-        message.AppendFormat("Native memory: {0:n2} MB\r\n", (double)response.ServerNativeMemoryUsage / (1024 * 1024));
+        message.AppendFormat("Managed memory: {0:n2} MB\r\n", (double) response.ServerGcMemoryUsage / (1024 * 1024));
+        message.AppendFormat("Native memory: {0:n2} MB\r\n", (double) response.ServerNativeMemoryUsage / (1024 * 1024));
         dialog.ViewModel.MemoryStatus = message.ToString().TrimSuffix("\r\n");
       });
 
@@ -101,19 +102,19 @@ namespace VsChromium.Features.IndexServerInfo {
             dialog.ViewModel.Waiting = false;
           },
           OnDispatchThreadSuccess = typedResponse => {
-            var response = (GetDatabaseDetailsResponse)typedResponse;
+            var response = (GetDatabaseDetailsResponse) typedResponse;
             var projectDetails = response.Projects.Select(x => new ProjectDetailsViewModel {
               ProjectDetails = x
             }).ToList();
             foreach (var x in projectDetails) {
-              x.ShowProjectConfigurationInvoked += (sender, args) => {
-                ShowProjectConfiguration(x);
-              };
+              x.ShowProjectConfigurationInvoked += (sender, args) => { ShowProjectConfiguration(x); };
             }
+
             dialog.ViewModel.Projects.AddRange(projectDetails);
             if (dialog.ViewModel.Projects.Count > 0) {
               dialog.ViewModel.SelectedProject = dialog.ViewModel.Projects[0];
             }
+
             dialog.ViewModel.Waiting = false;
           }
         });
@@ -147,7 +148,7 @@ namespace VsChromium.Features.IndexServerInfo {
           _shellHost.ShowErrorMessageBox("Error", error.Message);
         },
         OnDispatchThreadSuccess = typedResponse => {
-          var response = (GetProjectDetailsResponse)typedResponse;
+          var response = (GetProjectDetailsResponse) typedResponse;
           dialog.ViewModel.ProjectDetails = response.ProjectDetails;
           dialog.ViewModel.Waiting = false;
         },
@@ -179,7 +180,7 @@ namespace VsChromium.Features.IndexServerInfo {
           _shellHost.ShowErrorMessageBox("Error", error.Message);
         },
         OnDispatchThreadSuccess = typedResponse => {
-          var response1 = (GetDirectoryDetailsResponse)typedResponse;
+          var response1 = (GetDirectoryDetailsResponse) typedResponse;
           dialog.ViewModel.DirectoryDetails = response1.DirectoryDetails;
           dialog.ViewModel.Waiting = false;
         },
@@ -199,20 +200,12 @@ namespace VsChromium.Features.IndexServerInfo {
       dialog.ShowModal();
     }
 
-    public void FetchDatabaseStatistics(bool forceGarbageCollect, Action<GetDatabaseStatisticsResponse> callback) {
-      _dispatchThreadServerRequestExecutor.Post(
-        new DispatchThreadServerRequest {
-          Id = Guid.NewGuid().ToString(),
-          Request = new GetDatabaseStatisticsRequest { ForceGabageCollection = forceGarbageCollect },
-          OnDispatchThreadSuccess = typedResponse => {
-            var response = (GetDatabaseStatisticsResponse)typedResponse;
-            callback(response);
-          }
-        });
+    public void FetchDatabaseStatistics(Action<GetDatabaseStatisticsResponse> callback) {
+      FetchDatabaseStatisticsImpl(nameof(FetchDatabaseStatistics), null, false, callback);
     }
 
     public string GetIndexStatusText(GetDatabaseStatisticsResponse response) {
-      var memoryUsageMb = (double)response.ServerNativeMemoryUsage / 1024L / 1024L;
+      var memoryUsageMb = (double) response.ServerNativeMemoryUsage / 1024L / 1024L;
       var message = String.Format("Index: {0:n0} files - {1:n0} MB", response.SearchableFileCount, memoryUsageMb);
       return message;
     }
@@ -259,22 +252,47 @@ namespace VsChromium.Features.IndexServerInfo {
       if (span.TotalSeconds <= 5) {
         return "a few seconds ago";
       }
+
       if (span.TotalSeconds <= 50) {
         return "less than 1 minute ago";
       }
+
       if (span.TotalMinutes <= 1) {
         return "about 1 minute ago";
       }
+
       if (span.TotalMinutes <= 60) {
         return string.Format("about {0:n0} minutes ago", Math.Ceiling(span.TotalMinutes));
       }
+
       if (span.TotalHours <= 1.5) {
         return "about one hour ago";
       }
+
       if (span.TotalHours <= 24) {
         return string.Format("about {0:n0} hours ago", Math.Ceiling(span.TotalHours));
       }
+
       return "more than one day ago";
+    }
+
+    public void FetchDatabaseStatisticsImpl(string requestId, TimeSpan? delay, bool forceGarbageCollect,
+      Action<GetDatabaseStatisticsResponse> callback) {
+      var request = new DispatchThreadServerRequest {
+        Id = requestId,
+        Request = new GetDatabaseStatisticsRequest {
+          ForceGabageCollection = forceGarbageCollect
+        },
+        OnDispatchThreadSuccess = typedResponse => {
+          var response = (GetDatabaseStatisticsResponse) typedResponse;
+          callback(response);
+        }
+      };
+      if (delay != null) {
+        request.Delay = delay.Value;
+      }
+
+      _dispatchThreadServerRequestExecutor.Post(request);
     }
   }
 }

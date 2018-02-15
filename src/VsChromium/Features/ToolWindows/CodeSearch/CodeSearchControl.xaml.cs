@@ -329,7 +329,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void ServerInfo_Click(object sender, RoutedEventArgs e) {
-      Logger.WrapActionInvocation(() => Controller.ShowServerInfo());
+      var forceGarbageCollection = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+      Logger.WrapActionInvocation(() => Controller.ShowServerInfo(forceGarbageCollection));
     }
   }
 }

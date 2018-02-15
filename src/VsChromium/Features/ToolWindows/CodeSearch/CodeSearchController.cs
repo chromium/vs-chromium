@@ -221,8 +221,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.SwitchToInformationMessages();
     }
 
-    public void ShowServerInfo() {
-      _showServerInfoService.ShowServerStatusDialog();
+    public void ShowServerInfo(bool forceGarbageCollection) {
+      _showServerInfoService.ShowServerStatusDialog(forceGarbageCollection);
     }
 
     public void RefreshFileSystemTree() {
@@ -701,7 +701,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void FetchDatabaseStatistics() {
-      _showServerInfoService.FetchDatabaseStatistics(false, UpdateIndexingServerToolbarStatus);
+      _showServerInfoService.FetchDatabaseStatistics(UpdateIndexingServerToolbarStatus);
     }
 
     private void UpdateIndexingServerToolbarStatus(GetDatabaseStatisticsResponse response) {

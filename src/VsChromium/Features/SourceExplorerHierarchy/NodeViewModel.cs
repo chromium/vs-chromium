@@ -2,14 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.IO;
-using System.Text;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 
@@ -34,37 +32,17 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public bool IsExpanded { get; set; }
     public NodeViewModelTemplate Template { get; set; }
 
-    public int ImageIndex {
-      get { return Template.ImageIndex; }
-    }
-    public int OpenFolderImageIndex {
-      get { return Template.OpenFolderImageIndex; }
-    }
-    public Icon Icon {
-      get { return Template.Icon; }
-    }
-    public Icon OpenFolderIcon {
-      get { return Template.OpenFolderIcon; }
-    }
-    public bool ExpandByDefault {
-      get { return Template.ExpandByDefault; }
-    }
+    public int ImageIndex => Template.ImageIndex;
+    public int OpenFolderImageIndex => Template.OpenFolderImageIndex;
+    public Icon Icon => Template.Icon;
+    public Icon OpenFolderIcon => Template.OpenFolderIcon;
+    public bool ExpandByDefault => Template.ExpandByDefault;
+    public bool IsRoot => ItemId == VsHierarchyNodes.RootNodeItemId;
 
-    public bool IsRoot {
-      get {
-        return ItemId == VsHierarchyNodes.RootNodeItemId;
-      }
-    }
 
-    protected abstract IList<NodeViewModel> ChildrenImpl { get; }
+    public IList<NodeViewModel> Children => ChildrenImpl;
 
-    public IList<NodeViewModel> Children {
-      get { return ChildrenImpl; }
-    }
-
-    public NodeViewModel Parent {
-      get { return _parent; }
-    }
+    public NodeViewModel Parent => _parent;
 
     public string FullPath {
       get {
@@ -74,48 +52,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
+
+    public FullPath Path => new FullPath(FullPath);
+
     public string RelativePath {
       get {
         var sb = new StringBuilder(260);
         AppendRelativePath(sb);
         return sb.ToString();
       }
-    }
-
-    private void AppendFullPath(StringBuilder sb) {
-      if (string.IsNullOrEmpty(this.Name))
-        return;
-
-      if (PathHelpers.IsAbsolutePath(this.Name)) {
-        sb.Append(this.Name);
-        return;
-      }
-
-      if (_parent == null)
-        return;
-
-      _parent.AppendFullPath(sb);
-      if (sb.Length > 0) {
-        sb.Append(Path.DirectorySeparatorChar);
-      }
-      sb.Append(this.Name);
-    }
-
-    private void AppendRelativePath(StringBuilder sb) {
-      if (string.IsNullOrEmpty(this.Name))
-        return;
-
-      if (PathHelpers.IsAbsolutePath(this.Name))
-        return;
-
-      if (_parent == null)
-        return;
-
-      _parent.AppendRelativePath(sb);
-      if (sb.Length > 0) {
-        sb.Append(Path.DirectorySeparatorChar);
-      }
-      sb.Append(this.Name);
     }
 
     public uint GetFirstChildItemId() {
@@ -160,59 +105,23 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       ChildrenImpl.Add(node);
     }
 
-    private IntPtr GetIconHandleForImageIndex(int imageIndex) {
-      return IntPtr.Zero;
-    }
-
-    private IntPtr GetIconHandle() {
-      var icon = this.Icon;
-      if (icon != null)
-        return icon.Handle;
-      return GetIconHandleForImageIndex(GetImageIndex());
-    }
-
-    private IntPtr GetOpenFolderIconHandle() {
-      var icon = OpenFolderIcon;
-      if (Icon != null && icon != null)
-        return icon.Handle;
-      return GetIconHandleForImageIndex(GetOpenFolderImageIndex());
-    }
-
     public int GetChildrenCount() {
       return ChildrenImpl.Count;
     }
 
-    private int GetImageIndex() {
-      return ImageIndex;
-    }
-
-    private int GetOpenFolderImageIndex() {
-      return OpenFolderImageIndex;
-    }
-
-    private bool FindNodeByMonikerHelper(NodeViewModel parentNode, string searchMoniker, out NodeViewModel foundNode) {
-      foundNode = null;
-      if (parentNode == null)
-        return false;
-
-      if (SystemPathComparer.Instance.StringComparer.Equals(parentNode.FullPath, searchMoniker)) {
-        foundNode = parentNode;
-        return true;
-      }
-
-      foreach (var child in parentNode.ChildrenImpl) {
-        if (FindNodeByMonikerHelper(child, searchMoniker, out foundNode)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
     public bool FindNodeByMoniker(string searchMoniker, out NodeViewModel node) {
       node = null;
-      if (!IsRoot)
+      if (!IsRoot) {
         return false;
-      return FindNodeByMonikerHelper(this, searchMoniker, out node);
+      }
+
+      FullPath path;
+      try {
+        path = new FullPath(searchMoniker);
+      } catch (Exception) {
+        return false;
+      }
+      return FindNodeByMonikerHelper(this, path, out node);
     }
 
     public string GetMkDocument() {
@@ -246,7 +155,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           pvar = GetFirstChildItemId();
           break;
         case (int)__VSHPROPID.VSHPROPID_Expanded:
-          pvar = (this.IsExpanded ? 1 : 0);
+          pvar = (IsExpanded ? 1 : 0);
           break;
         case (int)__VSHPROPID.VSHPROPID_ItemDocCookie:
           pvar = ItemId;
@@ -305,6 +214,95 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           return VSConstants.E_NOTIMPL;
       }
       return VSConstants.S_OK;
+    }
+
+    protected abstract IList<NodeViewModel> ChildrenImpl { get; }
+
+    private void AppendFullPath(StringBuilder sb) {
+      if (string.IsNullOrEmpty(Name))
+        return;
+
+      if (PathHelpers.IsAbsolutePath(Name)) {
+        sb.Append(Name);
+        return;
+      }
+
+      if (_parent == null)
+        return;
+
+      _parent.AppendFullPath(sb);
+      if (sb.Length > 0) {
+        sb.Append(System.IO.Path.DirectorySeparatorChar);
+      }
+      sb.Append(Name);
+    }
+
+    private void AppendRelativePath(StringBuilder sb) {
+      if (string.IsNullOrEmpty(Name))
+        return;
+
+      if (PathHelpers.IsAbsolutePath(Name))
+        return;
+
+      if (_parent == null)
+        return;
+
+      _parent.AppendRelativePath(sb);
+      if (sb.Length > 0) {
+        sb.Append(System.IO.Path.DirectorySeparatorChar);
+      }
+      sb.Append(Name);
+    }
+
+    private IntPtr GetIconHandleForImageIndex() {
+      return IntPtr.Zero;
+    }
+
+    private IntPtr GetIconHandle() {
+      var icon = Icon;
+      if (icon != null)
+        return icon.Handle;
+      return GetIconHandleForImageIndex();
+    }
+
+    private IntPtr GetOpenFolderIconHandle() {
+      var icon = OpenFolderIcon;
+      if (Icon != null && icon != null)
+        return icon.Handle;
+      return GetIconHandleForImageIndex();
+    }
+
+    private int GetImageIndex() {
+      return ImageIndex;
+    }
+
+    private int GetOpenFolderImageIndex() {
+      return OpenFolderImageIndex;
+    }
+
+    private bool FindNodeByMonikerHelper(NodeViewModel node, FullPath path, out NodeViewModel foundNode) {
+      var nodePath = node.Path;
+
+      // Path found?
+      if (nodePath.Equals(path)) {
+        foundNode = node;
+        return true;
+      }
+
+      // If node is not a parent, bail out
+      if (!nodePath.ContainsPath(path)) {
+        foundNode = null;
+        return false;
+      }
+
+      // Examine children nodes
+      foreach (var child in node.ChildrenImpl) {
+        if (FindNodeByMonikerHelper(child, path, out foundNode)) {
+          return true;
+        }
+      }
+      foundNode = null;
+      return false;
     }
   }
 }

@@ -316,15 +316,34 @@ namespace VsChromium.Core.Linq {
       return result;
     }
 
-    /// <summary>
-    /// Returns <code>defaultValue</code> when not found.
-    /// </summary>
     public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value) {
       TValue result;
       if (dictionary.TryGetValue(key, out result)) {
         return result;
       }
 
+      dictionary[key] = value;
+      return value;
+    }
+
+    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> valueFactory) {
+      TValue result;
+      if (dictionary.TryGetValue(key, out result)) {
+        return result;
+      }
+
+      var value = valueFactory(key);
+      dictionary[key] = value;
+      return value;
+    }
+
+    public static TValue GetOrAdd<TKey, TValue, TState>(this IDictionary<TKey, TValue> dictionary, TKey key, TState state, Func<TKey, TState, TValue> valueFactory) {
+      TValue result;
+      if (dictionary.TryGetValue(key, out result)) {
+        return result;
+      }
+
+      var value = valueFactory(key, state);
       dictionary[key] = value;
       return value;
     }

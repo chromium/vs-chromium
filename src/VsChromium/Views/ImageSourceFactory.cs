@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using Microsoft.Internal.VisualStudio.PlatformUI;
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Microsoft.Internal.VisualStudio.PlatformUI;
 using VsChromium.Core.Files;
+using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Shell;
 
@@ -20,18 +21,34 @@ namespace VsChromium.Views {
     private static readonly Lazy<IImageSourceFactory> InstanceFactory =
       new Lazy<IImageSourceFactory>(() => new ImageSourceFactory());
 
-    public static IImageSourceFactory Instance {
-      get { return InstanceFactory.Value; }
-    }
+    public static IImageSourceFactory Instance => InstanceFactory.Value;
 
-    private readonly ConcurrentDictionary<string, BitmapImage> _images =
-      new ConcurrentDictionary<string, BitmapImage>(SystemPathComparer.Instance.StringComparer);
+    /// <summary>
+    /// Resource name -> <see cref="BitmapSource"/>
+    /// </summary>
+    private readonly IDictionary<string, BitmapImage> _resourceImages =
+      new Dictionary<string, BitmapImage>(SystemPathComparer.Instance.StringComparer);
 
-    private readonly ConcurrentDictionary<string, Tuple<SafeIconHandle, Icon>> _icons =
-      new ConcurrentDictionary<string, Tuple<SafeIconHandle, Icon>>(SystemPathComparer.Instance.StringComparer);
+    /// <summary>
+    /// Resource name -> <see cref="Icon"/>
+    /// </summary>
+    private readonly IDictionary<string, KeyValuePair<SafeIconHandle, Icon>> _resourceIcons =
+      new Dictionary<string, KeyValuePair<SafeIconHandle, Icon>>(SystemPathComparer.Instance.StringComparer);
+
+    /// <summary>
+    /// File Extension -> (ImageId, <see cref="ImageSource"/>)
+    /// </summary>
+    private readonly IDictionary<string, KeyValuePair<string, ImageSource>> _fileExtensionImageSources =
+      new Dictionary<string, KeyValuePair<string, ImageSource>>(SystemPathComparer.Instance.StringComparer);
+
+    /// <summary>
+    /// ImageId -> <see cref="Icon"/>
+    /// </summary>
+    private readonly IDictionary<string, KeyValuePair<SafeIconHandle, Icon>> _imageSourceIdIcons =
+      new Dictionary<string, KeyValuePair<SafeIconHandle, Icon>>(SystemPathComparer.Instance.StringComparer);
 
     public ImageSource GetImageSource(string resourceName) {
-      return _images.GetOrAdd(resourceName, name => {
+      return _resourceImages.GetOrAdd(resourceName, name => {
         var bitmapImage = new BitmapImage();
         bitmapImage.BeginInit();
         bitmapImage.UriSource = GetUri(string.Format("Views/Images/{0}.png", name));
@@ -41,38 +58,49 @@ namespace VsChromium.Views {
     }
 
     public Icon GetIcon(string resourceName) {
-      return _icons.GetOrAdd(resourceName, name => {
+      return _resourceIcons.GetOrAdd(resourceName, name => {
         var image = GetImageSource(name);
         return ImageSourceToIcon(image);
-      }).Item2;
+      }).Value;
     }
 
     public ImageSource GetFileExtensionImageSource(string fileExtension) {
-      var list = DefaultIconImageList.Instance;
-      ImageSource source = list.GetImage(fileExtension);
-      if (source == null)
-        source = list.GetImage(".txt");
-      if (source == null)
-        source = GetImageSource("TexTDocument");
-      return source;
+      return GetImageSourceForFileExtension(fileExtension).Value;
     }
 
     public Icon GetFileExtensionIcon(string fileExtension) {
-      const string keyPrefix = "__files__";
-      return _icons.GetOrAdd(keyPrefix + fileExtension, name => {
-        Logger.LogInfo("Creating icon for file extension {0}", fileExtension);
-        var image = GetFileExtensionImageSource(fileExtension);
-        return ImageSourceToIcon(image);
-      }).Item2;
+      var kvp = _fileExtensionImageSources.GetOrAdd(fileExtension, GetImageSourceForFileExtension);
+
+      return _imageSourceIdIcons.GetOrAdd(kvp.Key, kvp.Value, (key, value) => {
+        Logger.LogInfo("Creating icon for resource id {0}", key);
+        return ImageSourceToIcon(value);
+      }).Value;
     }
 
-    private static Tuple<SafeIconHandle, Icon> ImageSourceToIcon(ImageSource source) {
+    private KeyValuePair<string, ImageSource> GetImageSourceForFileExtension(string fileExtension) {
+      var list = DefaultIconImageList.Instance;
+      ImageSource source = list.GetImage(fileExtension);
+      if (source != null) {
+        return new KeyValuePair<string, ImageSource>(fileExtension, source);
+      }
+
+      source = list.GetImage(".txt");
+      if (source != null) {
+        return new KeyValuePair<string, ImageSource>(".txt", source);
+      }
+
+      source = GetImageSource("TextDocument");
+      Invariants.CheckOperation(source != null, "Text Document icon is missing");
+      return new KeyValuePair<string, ImageSource>("TextDocument", source);
+    }
+
+    private static KeyValuePair<SafeIconHandle, Icon> ImageSourceToIcon(ImageSource source) {
       var image = source as BitmapSource;
       if (image == null)
         throw new InvalidOperationException();
       IntPtr hIcon = ImageHelper.BitmapFromBitmapSource(image).GetHicon();
       var iconHandle = new SafeIconHandle(hIcon);
-      return Tuple.Create(iconHandle, Icon.FromHandle(hIcon));
+      return new KeyValuePair<SafeIconHandle, Icon>(iconHandle, Icon.FromHandle(hIcon));
     }
 
     private static Uri GetUri(string filePath) {

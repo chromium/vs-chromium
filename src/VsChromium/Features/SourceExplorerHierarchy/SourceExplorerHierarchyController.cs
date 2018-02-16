@@ -9,7 +9,6 @@ using System;
 using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
-using System.Windows;
 using VsChromium.Commands;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc;
@@ -41,6 +40,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IShowServerInfoService _showServerInfoService;
     private readonly IVsHierarchyImpl _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
+    private readonly NodeViewModelLoader _nodeViewModelLoader;
+
     /// <summary>
     /// Keeps track of the latest file system tree version received from the
     /// server, so that we can ensure only the latest update wins in case of
@@ -59,6 +60,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
+      ITypedRequestProcessProxy typedRequestProcessProxy,
       IEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationExecutor delayedOperationExecutor,
@@ -77,12 +79,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationExecutor = delayedOperationExecutor;
       _showServerInfoService = showServerInfoService;
-//      _hierarchy = new VsHierarchy(
+      _nodeTemplateFactory = new NodeTemplateFactory(vsGlyphService, imageSourceFactory);
+      _nodeViewModelLoader = new NodeViewModelLoader(typedRequestProcessProxy);
       _hierarchy = new VsHierarchyAggregate(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService,
+        _imageSourceFactory,
+        _nodeTemplateFactory,
+        _nodeViewModelLoader,
         dispatchThread);
-      _nodeTemplateFactory = new NodeTemplateFactory(vsGlyphService, imageSourceFactory);
     }
 
     public void Activate() {

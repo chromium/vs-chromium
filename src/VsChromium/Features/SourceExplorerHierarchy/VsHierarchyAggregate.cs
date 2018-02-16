@@ -7,29 +7,43 @@ using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Linq;
 using VsChromium.Threads;
+using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class VsHierarchyAggregate : IVsHierarchyImpl {
     private readonly IServiceProvider _serviceProvider;
     private readonly IVsGlyphService _vsGlyphService;
+    private readonly IImageSourceFactory _imageSourceFactory;
+    private readonly NodeTemplateFactory _nodeTemplateFactory;
+    private readonly INodeViewModelLoader _nodeViewModelLoader;
     private readonly IDispatchThread _dispatchThread;
     private readonly List<VsHierarchyCommandHandler> _commandHandlers = new List<VsHierarchyCommandHandler>();
     private readonly List<VsHierarchy> _hierarchies = new List<VsHierarchy>();
     private readonly object _hierarchiesLock = new object();
     private int _version;
 
-    public VsHierarchyAggregate(
-      IServiceProvider serviceProvider,
+    public VsHierarchyAggregate(IServiceProvider serviceProvider,
       IVsGlyphService vsGlyphService,
+      IImageSourceFactory imageSourceFactory,
+      NodeTemplateFactory nodeTemplateFactory,
+      INodeViewModelLoader nodeViewModelLoader,
       IDispatchThread dispatchThread) {
       _serviceProvider = serviceProvider;
       _vsGlyphService = vsGlyphService;
+      _imageSourceFactory = imageSourceFactory;
+      _nodeTemplateFactory = nodeTemplateFactory;
+      _nodeViewModelLoader = nodeViewModelLoader;
       _dispatchThread = dispatchThread;
       _version = 1;
     }
 
-    public int Version { get { return _version; } }
-    public bool IsEmpty { get { return _hierarchies.Count == 0; } }
+    public int Version {
+      get { return _version; }
+    }
+
+    public bool IsEmpty {
+      get { return _hierarchies.Count == 0; }
+    }
 
     public void AddCommandHandler(VsHierarchyCommandHandler handler) {
       _commandHandlers.Add(handler);
@@ -66,10 +80,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public VsHierarchy CreateHierarchy() {
-      var result = new VsHierarchy(_serviceProvider, _vsGlyphService, _dispatchThread);
+      var result = new VsHierarchy(_serviceProvider, _vsGlyphService, _imageSourceFactory, _nodeTemplateFactory,
+        _nodeViewModelLoader, _dispatchThread);
       foreach (var handler in _commandHandlers) {
         result.AddCommandHandler(handler);
       }
+
       return result;
     }
   }

@@ -14,9 +14,10 @@ using VsChromium.Core.Logging;
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public abstract class NodeViewModel {
     public const int NoImage = -1;
-    private NodeViewModel _parent;
+    private readonly NodeViewModel _parent;
 
-    protected NodeViewModel() {
+    protected NodeViewModel(NodeViewModel parent) {
+      _parent = parent;
       DocCookie = uint.MaxValue;
       ChildIndex = -1; // No set
       ItemId = VSConstants.VSITEMID_NIL;
@@ -39,6 +40,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public bool ExpandByDefault => Template.ExpandByDefault;
     public bool IsRoot => ItemId == VsHierarchyNodes.RootNodeItemId;
     public NodeViewModel Parent => _parent;
+    public bool ChildrenLoaded { get; set; }
     public IList<NodeViewModel> Children => ChildrenImpl;
     public FullPath FullPath => new FullPath(FullPathString);
 
@@ -95,28 +97,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public void AddChild(NodeViewModel node) {
-      node._parent = this;
-      node.ChildIndex = ChildrenImpl.Count;
-      ChildrenImpl.Add(node);
+      AddChildImpl(node);
     }
+
+    protected abstract void AddChildImpl(NodeViewModel node);
 
     public int GetChildrenCount() {
       return ChildrenImpl.Count;
-    }
-
-    public bool FindNodeByMoniker(string searchMoniker, out NodeViewModel node) {
-      node = null;
-      if (!IsRoot) {
-        return false;
-      }
-
-      FullPath path;
-      try {
-        path = new FullPath(searchMoniker);
-      } catch (Exception) {
-        return false;
-      }
-      return FindNodeByMonikerHelper(this, path, out node);
     }
 
     public string GetMkDocument() {
@@ -273,31 +260,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     private int GetOpenFolderImageIndex() {
       return OpenFolderImageIndex;
-    }
-
-    private bool FindNodeByMonikerHelper(NodeViewModel node, FullPath path, out NodeViewModel foundNode) {
-      var nodePath = node.FullPath;
-
-      // Path found?
-      if (nodePath.Equals(path)) {
-        foundNode = node;
-        return true;
-      }
-
-      // If node is not a parent, bail out
-      if (!nodePath.ContainsPath(path)) {
-        foundNode = null;
-        return false;
-      }
-
-      // Examine children nodes
-      foreach (var child in node.ChildrenImpl) {
-        if (FindNodeByMonikerHelper(child, path, out foundNode)) {
-          return true;
-        }
-      }
-      foundNode = null;
-      return false;
     }
   }
 }

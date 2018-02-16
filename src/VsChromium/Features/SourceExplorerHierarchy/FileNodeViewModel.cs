@@ -4,11 +4,18 @@
 
 using System.Collections.Generic;
 using VsChromium.Core.Collections;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class FileNodeViewModel : NodeViewModel {
-    protected override IList<NodeViewModel> ChildrenImpl {
-      get { return ArrayUtilities.EmptyList<NodeViewModel>.Instance; }
+    public FileNodeViewModel(NodeViewModel parent) : base(parent) {
+      Invariants.CheckArgumentNotNull(parent, nameof(parent));
+    }
+
+    protected override IList<NodeViewModel> ChildrenImpl => ArrayUtilities.EmptyList<NodeViewModel>.Instance;
+
+    protected override void AddChildImpl(NodeViewModel node) {
+      Invariants.CheckOperation(false, "Cannot add child node to a file node");
     }
   }
 }

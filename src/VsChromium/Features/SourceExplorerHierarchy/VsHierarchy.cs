@@ -179,7 +179,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           Invariants.Assert(deletedNode != null);
           Invariants.Assert(deletedNode.Parent != null);
           if (_logger.LogNodeChangesActivity) {
-            _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.FullPath);
+            _logger.Log("Deleting node {0,7}-\"{1}\"", deletedNode.ItemId, deletedNode.FullPathString);
           }
 
           // PERF: avoid allocation
@@ -202,13 +202,13 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           Invariants.Assert(addedNode != null);
           Invariants.Assert(addedNode.Parent != null);
           if (_logger.LogNodeChangesActivity) {
-            _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.FullPath);
-            _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.FullPath);
+            _logger.Log("Adding node {0,7}-\"{1}\"", addedNode.ItemId, addedNode.FullPathString);
+            _logger.Log("   child of {0,7}-\"{1}\"", addedNode.Parent.ItemId, addedNode.Parent.FullPathString);
             _logger.Log(
               "    next to {0,7}-\"{1}\"",
               previousSiblingItemId,
               (previousSiblingItemId != VSConstants.VSITEMID_NIL
-                ? nodes.GetNode(previousSiblingItemId).FullPath
+                ? nodes.GetNode(previousSiblingItemId).FullPathString
                 : "nil"));
           }
 
@@ -577,21 +577,21 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (!_nodes.FindNode(itemid, out node))
         return VSConstants.E_FAIL;
 
-      if (string.IsNullOrEmpty(node.FullPath))
+      if (string.IsNullOrEmpty(node.FullPathString))
         return VSConstants.E_NOTIMPL;
       IVsUIHierarchy hierarchy;
       uint itemid1;
 
-      if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.FullPath, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
+      if (!VsShellUtilities.IsDocumentOpen(_serviceProvider, node.FullPathString, rguidLogicalView, out hierarchy, out itemid1, out ppWindowFrame)) {
         IVsHierarchy hierOpen;
         int isDocInProj;
-        IsDocumentInAnotherProject(node.FullPath, out hierOpen, out itemid1, out isDocInProj);
+        IsDocumentInAnotherProject(node.FullPathString, out hierOpen, out itemid1, out isDocInProj);
         if (hierOpen == null) {
-          hresult = OpenItemViaMiscellaneousProject(flags, node.FullPath, ref rguidLogicalView, out ppWindowFrame);
+          hresult = OpenItemViaMiscellaneousProject(flags, node.FullPathString, ref rguidLogicalView, out ppWindowFrame);
         } else {
           var vsProject3 = hierOpen as IVsProject3;
           hresult = vsProject3 == null
-            ? OpenItemViaMiscellaneousProject(flags, node.FullPath, ref rguidLogicalView, out ppWindowFrame)
+            ? OpenItemViaMiscellaneousProject(flags, node.FullPathString, ref rguidLogicalView, out ppWindowFrame)
             : vsProject3.OpenItem(itemid1, ref rguidLogicalView, punkDocDataExisting, out ppWindowFrame);
         }
       }

@@ -38,22 +38,17 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public Icon OpenFolderIcon => Template.OpenFolderIcon;
     public bool ExpandByDefault => Template.ExpandByDefault;
     public bool IsRoot => ItemId == VsHierarchyNodes.RootNodeItemId;
-
-
-    public IList<NodeViewModel> Children => ChildrenImpl;
-
     public NodeViewModel Parent => _parent;
+    public IList<NodeViewModel> Children => ChildrenImpl;
+    public FullPath FullPath => new FullPath(FullPathString);
 
-    public string FullPath {
+    public string FullPathString {
       get {
         var sb = new StringBuilder(260);
         AppendFullPath(sb);
         return sb.ToString();
       }
     }
-
-
-    public FullPath Path => new FullPath(FullPath);
 
     public string RelativePath {
       get {
@@ -125,7 +120,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public string GetMkDocument() {
-      return FullPath;
+      return FullPathString;
     }
 
     public int SetProperty(int propid, object var) {
@@ -281,7 +276,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private bool FindNodeByMonikerHelper(NodeViewModel node, FullPath path, out NodeViewModel foundNode) {
-      var nodePath = node.Path;
+      var nodePath = node.FullPath;
 
       // Path found?
       if (nodePath.Equals(path)) {

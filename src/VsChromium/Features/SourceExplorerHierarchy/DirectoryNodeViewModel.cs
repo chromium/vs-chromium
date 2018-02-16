@@ -8,8 +8,15 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
   public class DirectoryNodeViewModel : NodeViewModel {
     private readonly List<NodeViewModel> _childrenList = new List<NodeViewModel>();
 
-    protected override IList<NodeViewModel> ChildrenImpl {
-      get { return _childrenList; }
+    public DirectoryNodeViewModel(NodeViewModel parent) : base(parent) {
+    }
+
+    protected override IList<NodeViewModel> ChildrenImpl => _childrenList;
+
+    protected override void AddChildImpl(NodeViewModel node) {
+      ChildrenLoaded = true;
+      node.ChildIndex = _childrenList.Count;
+      _childrenList.Add(node);
     }
   }
 }

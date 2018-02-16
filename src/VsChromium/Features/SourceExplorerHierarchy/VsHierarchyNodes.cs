@@ -8,27 +8,36 @@ using System.Collections.Generic;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
+  /// <summary>
+  /// The set of <see cref="NodeViewModel"/> nodes displayed in a single instance
+  /// of <see cref="VsHierarchy"/>. The nodes have unique IDs requires for interacting
+  /// with Visual Studio hierarchy API.
+  /// 
+  /// Intances of VsHierarchyNodes are not multi-thread safe, but thread ownerhip
+  /// can change between initial construction and lazy exansion of nodes.
+  /// 
+  /// <para>Nodes are never removed, but can be added over time as the set of visible
+  /// nodes increases (i.e. as <see cref="DirectoryNodeViewModel"/> are expanded
+  /// </para>
+  /// </summary>
   public class VsHierarchyNodes {
     public const uint RootNodeItemId = unchecked((uint)-2);
+
     private readonly Dictionary<uint, NodeViewModel> _itemIdMap = new Dictionary<uint, NodeViewModel>();
-    private readonly NodeViewModel _rootNode = new DirectoryNodeViewModel();
+    private readonly NodeViewModel _rootNode;
     private uint _maxItemId = 5; // Arbitrary number not too close to 0.
 
     public VsHierarchyNodes() {
+      _rootNode = new RootNodeViewModel();
       _rootNode.ItemId = RootNodeItemId;
       AddNode(_rootNode);
     }
 
-    public NodeViewModel RootNode { get { return _rootNode; } }
+    public NodeViewModel RootNode => _rootNode;
+    public bool IsEmpty => _rootNode.GetChildrenCount() == 0;
+    public uint MaxItemId => _maxItemId;
+    public int Count => _itemIdMap.Count;
 
-    public bool IsEmpty {
-      get {
-        return _rootNode.GetChildrenCount() == 0;
-      }
-    }
-
-    public uint MaxItemId { get { return _maxItemId; } }
-    public int Count { get { return _itemIdMap.Count; } }
 
     public void AddNode(NodeViewModel node) {
       Invariants.Assert(node.ItemId != VSConstants.VSITEMID_NIL);
@@ -47,12 +56,17 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public bool FindNode(uint itemid, out NodeViewModel node) {
       node = null;
-      if (itemid == 0 || itemid == VSConstants.VSITEMID_NIL || itemid == VSConstants.VSITEMID_SELECTION)
+      if (itemid == 0 || itemid == VSConstants.VSITEMID_NIL || itemid == VSConstants.VSITEMID_SELECTION) {
+        node = null;
         return false;
-      if (itemid != RootNodeItemId)
-        return _itemIdMap.TryGetValue(itemid, out node);
-      node = _rootNode;
-      return node != null;
+      }
+
+      if (itemid == RootNodeItemId) {
+        node = _rootNode;
+        return true;
+      }
+
+      return _itemIdMap.TryGetValue(itemid, out node);
     }
   }
 }

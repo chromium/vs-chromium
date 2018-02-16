@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
@@ -199,26 +198,38 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       Invariants.Assert(entry != null);
       Invariants.Assert(parent != null);
 
-      var directoryEntry = entry as DirectoryEntry;
-      var node = directoryEntry != null
-        ? (NodeViewModel)new DirectoryNodeViewModel()
-        : (NodeViewModel)new FileNodeViewModel();
-
-      node.Caption = entry.Name;
-      node.Name = entry.Name;
-      if (PathHelpers.IsAbsolutePath(node.Name)) {
-        node.Template = _templateFactory.ProjectTemplate;
-      } else if (directoryEntry != null) {
-        node.Template = _templateFactory.DirectoryTemplate;
-      } else {
-        var extension = Path.GetExtension(entry.Name);
-        Invariants.Assert(extension != null);
-        node.Template = _templateFactory.GetFileTemplate(extension);
+      var node = CreateNodeViewModel(_templateFactory, entry, parent);
+      if (node is FileNodeViewModel) {
         if (node.Template.Icon == null) {
+          var extension = Path.GetExtension(entry.Name);
+          Invariants.Assert(extension != null);
           if (!_fileTemplatesToInitialize.ContainsKey(extension)) {
             _fileTemplatesToInitialize.Add(extension, node.Template);
           }
         }
+      }
+      return node;
+    }
+
+    public static NodeViewModel CreateNodeViewModel(INodeTemplateFactory templateFactory, FileSystemEntry entry, NodeViewModel parent) {
+      Invariants.Assert(entry != null);
+      Invariants.Assert(parent != null);
+
+      var directoryEntry = entry as DirectoryEntry;
+      var node = directoryEntry != null
+        ? (NodeViewModel)new DirectoryNodeViewModel(parent)
+        : (NodeViewModel)new FileNodeViewModel(parent);
+
+      node.Caption = entry.Name;
+      node.Name = entry.Name;
+      if (PathHelpers.IsAbsolutePath(node.Name)) {
+        node.Template = templateFactory.ProjectTemplate;
+      } else if (directoryEntry != null) {
+        node.Template = templateFactory.DirectoryTemplate;
+      } else {
+        var extension = Path.GetExtension(entry.Name);
+        Invariants.Assert(extension != null);
+        node.Template = templateFactory.GetFileTemplate(extension);
       }
       return node;
     }

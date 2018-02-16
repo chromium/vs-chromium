@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;

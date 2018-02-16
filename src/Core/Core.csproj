@@ -149,6 +149,8 @@
     <Compile Include="Ipc\TypedMessages\GetDatabaseStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryDetailsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryDetailsResponse.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDirectoryEntriesRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDirectoryEntriesResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetDirectoryStatisticsResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetProjectDetailsRequest.cs" />

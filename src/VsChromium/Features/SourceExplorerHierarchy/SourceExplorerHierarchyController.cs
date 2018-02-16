@@ -152,12 +152,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPath),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.FullPath)
+        Execute = args => _clipboard.SetText(args.Node.FullPathString)
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFullPathPosix),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPathString))
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyRelativePath),
@@ -172,29 +172,29 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenFolderInExplorer),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => _windowsExplorer.OpenFolder(args.Node.FullPath)
+        Execute = args => _windowsExplorer.OpenFolder(args.Node.FullPathString)
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowProjectIndexDetails),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => ShowProjectIndexDetails(args.Node.FullPath)
+        Execute = args => ShowProjectIndexDetails(args.Node.FullPathString)
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidShowDirectoryIndexDetails),
         IsEnabled = node => node is DirectoryNodeViewModel,
-        Execute = args => ShowDirectoryIndexDetails(args.Node.FullPath)
+        Execute = args => ShowDirectoryIndexDetails(args.Node.FullPathString)
       });
 
 
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPath),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(args.Node.FullPath)
+        Execute = args => _clipboard.SetText(args.Node.FullPathString)
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileFullPathPosix),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPath))
+        Execute = args => _clipboard.SetText(PathHelpers.ToPosix(args.Node.FullPathString))
       });
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidCopyFileRelativePath),
@@ -209,7 +209,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       hierarchy.AddCommandHandler(new VsHierarchyCommandHandler {
         CommandId = new CommandID(GuidList.GuidVsChromiumCmdSet, (int)PkgCmdIdList.CmdidOpenContainingFolder),
         IsEnabled = node => node is FileNodeViewModel,
-        Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.FullPath)
+        Execute = args => _windowsExplorer.OpenContainingFolder(args.Node.FullPathString)
       });
     }
 
@@ -300,12 +300,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private void OpenDocument(VsHierarchy hierarchy, NodeViewModel node, bool openWith = false) {
       Logger.WrapActionInvocation(
         () => {
-          if (!_fileSystem.FileExists(new FullPath(node.FullPath)))
+          if (!_fileSystem.FileExists(new FullPath(node.FullPathString)))
             return;
           if (openWith)
-            _openDocumentHelper.OpenDocumentWith(node.FullPath, hierarchy, node.ItemId, view => null);
+            _openDocumentHelper.OpenDocumentWith(node.FullPathString, hierarchy, node.ItemId, view => null);
           else
-            _openDocumentHelper.OpenDocument(node.FullPath, view => null);
+            _openDocumentHelper.OpenDocument(node.FullPathString, view => null);
         });
     }
 

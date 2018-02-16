@@ -162,7 +162,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return rootNode.Name;
       } else {
         Invariants.Assert(rootNode.Children.Count > 0);
-        return rootNode.Children[0].FullPath;
+        return rootNode.Children[0].FullPathString;
       }
     }
   }

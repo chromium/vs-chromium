@@ -372,7 +372,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       var builder = CreateIncrementalBuilder(fileSystemTree);
       var applyChanges = builder.ComputeChangeApplier();
 
-      _synchronizationContextProvider.UIContext.Post(() => {
+      _synchronizationContextProvider.DispatchThreadContext.Post(() => {
         var result = applyChanges(_latestFileSystemTreeVersion);
         if (result == ApplyChangesResult.Retry) {
           PostApplyFileSystemTreeToVsHierarchy(fileSystemTree);

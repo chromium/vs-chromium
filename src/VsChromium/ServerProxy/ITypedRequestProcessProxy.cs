@@ -23,6 +23,7 @@ namespace VsChromium.ServerProxy {
     /// called on an unspecified thread.
     /// </summary>
     void RunAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback);
+
     /// <summary>
     /// Event raised when the server proxy receives an event from the the
     /// VsChromium server. The event is fired on an unspecified thread.

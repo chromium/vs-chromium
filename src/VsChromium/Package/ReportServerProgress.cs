@@ -40,7 +40,7 @@ namespace VsChromium.Package {
       if (progressReportEvent == null)
         return;
 
-      _synchronizationContextProvider.UIContext.Post(() =>
+      _synchronizationContextProvider.DispatchThreadContext.Post(() =>
         _statusBar.ReportProgress(progressReportEvent.DisplayText, progressReportEvent.Completed, progressReportEvent.Total));
     }
   }

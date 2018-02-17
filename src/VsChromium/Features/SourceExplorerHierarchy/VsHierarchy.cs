@@ -78,29 +78,29 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public void Dispose() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       Close();
     }
 
     public void Disable() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       // Reset nodes to avoid holding onto memory if we had an active hierarchy.
       SetNodes(new VsHierarchyNodes(), null);
     }
 
     public void Disconnect() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       CloseVsHierarchy();
     }
 
     public void Reconnect() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       CloseVsHierarchy();
       SetNodes(_nodes, null);
     }
 
     public void SetNodes(VsHierarchyNodes newNodes, VsHierarchyChanges changes) {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       var description = string.Format("SetNodes(node count={0}, added={1}, deleted={2})",
         newNodes.Count,
         (changes == null ? -1 : changes.AddedItems.Count),
@@ -251,7 +251,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public void SelectNode(NodeViewModel node) {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(_serviceProvider);
       if (uiHierarchyWindow == null)
         return;
@@ -262,7 +262,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void RefreshAll() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       foreach (IVsHierarchyEvents vsHierarchyEvents in EventSinks) {
         vsHierarchyEvents.OnInvalidateItems(_nodes.RootNode.ItemId);
       }
@@ -271,7 +271,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void ExpandNode(NodeViewModel node) {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       var uiHierarchyWindow = VsHierarchyUtilities.GetSolutionExplorer(_serviceProvider);
       if (uiHierarchyWindow == null)
         return;
@@ -292,7 +292,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void OpenVsHierarchy() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       if (_vsHierarchyActive)
         return;
       var vsSolution2 = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
@@ -320,7 +320,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void CloseVsHierarchy() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       if (!_vsHierarchyActive)
         return;
       var vsSolution2 = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution2;
@@ -332,7 +332,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void Open() {
-      CheckOnUIThread();
+      CheckOnDispatchThread();
       if (!(this is IVsSelectionEvents))
         return;
       IVsMonitorSelection monitorSelection =
@@ -342,9 +342,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       monitorSelection.AdviseSelectionEvents(this as IVsSelectionEvents, out this._selectionEventsCookie);
     }
 
-    private void CheckOnUIThread() {
+    private void CheckOnDispatchThread() {
       if (Thread.CurrentThread.ManagedThreadId != _threadId) {
-        throw new InvalidOperationException("VsHierarchy method should have been called on UI thread.");
+        throw new InvalidOperationException("VsHierarchy method should have been called on Dispatch (UI) thread.");
       }
     }
 

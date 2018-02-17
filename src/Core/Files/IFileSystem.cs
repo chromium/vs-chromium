@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Files;
 using VsChromium.Core.Win32.Memory;
 

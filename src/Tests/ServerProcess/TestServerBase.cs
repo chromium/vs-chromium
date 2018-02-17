@@ -19,7 +19,7 @@ namespace VsChromium.Tests.ServerProcess {
     //protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5000.0);
     protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5.0);
 
-    protected static FileSystemTree GetFileSystemFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
+    protected static FileSystemTree_Obsolete GetFileSystemFromServer(ITypedRequestProcessProxy server, FileInfo testFile) {
       SendFileSystemRequest(server, testFile, SendRegisterFileRequest);
       var tree = SendGetFileSystemRequest(server);
 
@@ -32,7 +32,7 @@ namespace VsChromium.Tests.ServerProcess {
       return tree;
     }
 
-    protected static FileSystemTree SendGetFileSystemRequest(ITypedRequestProcessProxy server) {
+    protected static FileSystemTree_Obsolete SendGetFileSystemRequest(ITypedRequestProcessProxy server) {
       var response = SendRequest<GetFileSystemResponse>(server, new GetFileSystemRequest {
         KnownVersion = -1
       }, ServerResponseTimeout)();

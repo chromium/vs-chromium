@@ -43,20 +43,20 @@ namespace VsChromium.ServerProxy {
 
     private void FetchFileSystemTree() {
       _proxy.RunAsync(
-        new GetFileSystemRequest(),
+        new GetFileSystemTreeRequest(),
         typedResponse => {
-          var response = (GetFileSystemResponse)typedResponse;
+          var response = (GetFileSystemTreeResponse)typedResponse;
           OnTreeReceived(response.Tree);
         },
         OnErrorReceived);
     }
 
-    protected virtual void OnErrorReceived(ErrorResponse obj) {
-      ErrorReceived?.Invoke(obj);
-    }
-
     protected virtual void OnTreeReceived(FileSystemTree obj) {
       TreeReceived?.Invoke(obj);
+    }
+
+    protected virtual void OnErrorReceived(ErrorResponse obj) {
+      ErrorReceived?.Invoke(obj);
     }
   }
 }

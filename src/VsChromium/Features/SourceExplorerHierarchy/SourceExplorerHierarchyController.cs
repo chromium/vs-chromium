@@ -38,7 +38,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly IShowServerInfoService _showServerInfoService;
-    private readonly IVsHierarchyImpl _hierarchy;
+    private readonly VsHierarchyAggregate _hierarchy;
     private readonly NodeTemplateFactory _nodeTemplateFactory;
     private readonly NodeViewModelLoader _nodeViewModelLoader;
 
@@ -381,26 +381,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private IIncrementalHierarchyBuilder CreateIncrementalBuilder(FileSystemTree fileSystemTree) {
-      var vsHierarchy = _hierarchy as VsHierarchy;
-      if (vsHierarchy != null) {
-        return new IncrementalHierarchyBuilder(
-          _nodeTemplateFactory,
-          vsHierarchy,
-          fileSystemTree,
-          _imageSourceFactory);
-      }
-
-      var vsHierarchyAggregate = _hierarchy as VsHierarchyAggregate;
-      if (vsHierarchyAggregate != null) {
-        return new IncrementalHierarchyBuilderAggregate(
-          _nodeTemplateFactory,
-          vsHierarchyAggregate,
-          fileSystemTree,
-          _imageSourceFactory);
-      }
-
-      Invariants.Assert(false);
-      return null;
+      return new IncrementalHierarchyBuilderAggregate(
+        _nodeTemplateFactory,
+        _hierarchy,
+        fileSystemTree,
+        _nodeViewModelLoader,
+        _imageSourceFactory);
     }
 
 

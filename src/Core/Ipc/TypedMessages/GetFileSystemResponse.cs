@@ -8,6 +8,6 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class GetFileSystemResponse : TypedResponse {
     [ProtoMember(1)]
-    public FileSystemTree Tree { get; set; }
+    public FileSystemTree_Obsolete Tree { get; set; }
   }
 }

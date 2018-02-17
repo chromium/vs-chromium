@@ -64,6 +64,7 @@
     <Compile Include="IndexingServer.cs" />
     <Compile Include="IndexingServerState.cs" />
     <Compile Include="IndexingServerStateUpdatedEventArgs.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\GetFileSystemTreeRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDatabaseDetailsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDirectoryDetailsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetProjectDetailsRequestHandler.cs" />

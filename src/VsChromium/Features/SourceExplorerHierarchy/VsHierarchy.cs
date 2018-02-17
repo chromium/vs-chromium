@@ -9,10 +9,8 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
-using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using VsChromium.Commands;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
@@ -68,8 +66,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     public bool IsEmpty => Nodes.IsEmpty;
 
-    public async void SelectNodeByFilePath(string path) {
-      NodeViewModel node = await FindNodeByMoniker(Nodes.RootNode, path);
+    public void SelectNodeByFilePath(string path) {
+      NodeViewModel node = FindNodeByMoniker(Nodes.RootNode, path);
       if (node != null) {
         SelectNode(node);
       }
@@ -440,8 +438,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           // Dynamically load children (if they are not loaded yet)
           var directoryNode = node as DirectoryNodeViewModel;
           if (directoryNode != null) {
-            var task = EnsureChildrenLoadedAsync(directoryNode);
-            task.Wait();
+            LoadDirectoryNodeChildren(directoryNode);
           }
           goto default;
 
@@ -733,7 +730,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private Task<NodeViewModel> FindNodeByMoniker(NodeViewModel node, string searchMoniker) {
+    private NodeViewModel FindNodeByMoniker(NodeViewModel node, string searchMoniker) {
       FullPath path;
       try {
         path = new FullPath(searchMoniker);
@@ -743,7 +740,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return FindNodeByMonikerHelper(node, path);
     }
 
-    private async Task<NodeViewModel> FindNodeByMonikerHelper(NodeViewModel node, FullPath path) {
+    private NodeViewModel FindNodeByMonikerHelper(NodeViewModel node, FullPath path) {
       var nodePath = node.FullPath;
 
       // Path found?
@@ -762,12 +759,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
 
       // Examine children nodes
-      if (!await EnsureChildrenLoadedAsync(directoryNode)) {
-        return null;
-      }
-
+      LoadDirectoryNodeChildren(directoryNode);
       foreach (var child in node.Children) {
-        var result = await FindNodeByMonikerHelper(child, path);
+        var result = FindNodeByMonikerHelper(child, path);
         if (result != null) {
           return result;
         }
@@ -776,44 +770,39 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return null;
     }
 
-    private async Task<bool> EnsureChildrenLoadedAsync(DirectoryNodeViewModel directoryNode) {
+    private void LoadDirectoryNodeChildren(DirectoryNodeViewModel directoryNode) {
       if (directoryNode.ChildrenLoaded) {
-        return true;
+        return;
       }
 
-      var version = _nodesVersion;
-      var directoryEntry = await _nodeViewModelLoader.LoadChildrenAsync(directoryNode);
-      if (version != _nodesVersion) {
-        //TODO: Figure out behavior is nodes have changed in between call
-        return false;
-      }
-
+      var directoryEntry = _nodeViewModelLoader.LoadChildrenAsync(directoryNode).Result;
       if (directoryEntry == null) {
-        return false;
+        return;
       }
 
       var children = directoryEntry.Entries
-        .Select(x => {
-          var node = IncrementalHierarchyBuilder.CreateNodeViewModel(_nodeTemplateFactory, x, directoryNode);
+        .Select(childEntry => {
+          var node = IncrementalHierarchyBuilder.CreateNodeViewModel(_nodeTemplateFactory, childEntry, directoryNode);
+
+          // Initialize template icon if needed
           if (node is FileNodeViewModel) {
             if (node.Template.Icon == null) {
-              var extension = Path.GetExtension(x.Name);
+              var extension = PathHelpers.GetExtension(childEntry.Name);
               Invariants.Assert(extension != null);
               node.Template.Icon = _imageSourceFactory.GetFileExtensionIcon(extension);
             }
           }
-          return new FileNodeViewModel(directoryNode);
+
+          return node;
         })
-        .Cast<NodeViewModel>()
         .ToList();
 
       foreach (var child in children) {
+        child.ItemId = _nodes.MaxItemId + 1;
         _nodes.AddNode(child);
-        directoryNode.AddChild(child);
       }
-      NotifyAddedNodes(children);
 
-      return true;
+      directoryNode.SetChildren(children);
     }
   }
 }

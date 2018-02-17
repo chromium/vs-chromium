@@ -454,7 +454,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private void OnFileSystemTreeScanSuccess(FileSystemTree tree) {
-      ViewModel.FileSystemTreeAvailable = (tree.Root.Entries.Count > 0);
+      ViewModel.FileSystemTreeAvailable = (tree.Projects.Count > 0);
       _currentFileSystemTreeVersion = tree.Version;
 
       if (ViewModel.FileSystemTreeAvailable) {

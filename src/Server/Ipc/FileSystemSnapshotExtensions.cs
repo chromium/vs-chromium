@@ -6,11 +6,26 @@ using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Ipc {
   public static class FileSystemSnapshotExtensions {
-    public static  FileSystemTree ToIpcFileSystemTree(this FileSystemSnapshot tree) {
-      return new FileSystemTree {
+    public static FileSystemTree_Obsolete ToIpcFileSystemTree(this FileSystemSnapshot tree) {
+      return new FileSystemTree_Obsolete {
         Version = tree.Version,
         Root = BuildFileSystemTreeRoot(tree)
       };
+    }
+
+    public static FileSystemTree ToIpcCompactFileSystemTree(this FileSystemSnapshot tree) {
+      return new FileSystemTree {
+        Version = tree.Version,
+        Projects = BuildCompactProjectEntries(tree)
+      };
+    }
+
+    private static List<ProjectEntry> BuildCompactProjectEntries(FileSystemSnapshot tree) {
+      return tree.ProjectRoots
+        .Select(x => new ProjectEntry {
+          RootPath = x.Project.RootPath.Value
+        })
+        .ToList();
     }
 
     private static DirectoryEntry BuildFileSystemTreeRoot(FileSystemSnapshot fileSystemSnapshot) {

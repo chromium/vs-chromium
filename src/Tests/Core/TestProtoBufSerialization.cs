@@ -110,14 +110,14 @@ namespace VsChromium.Tests.Core {
       Logger.LogMemoryStats();
     }
 
-    private FileSystemTree CreateBigFileSystemTree() {
+    private FileSystemTree_Obsolete CreateBigFileSystemTree() {
       var sw = Stopwatch.StartNew();
       var root = new DirectoryEntry();
       CreateBigFileSystem(root, 0);
       sw.Stop();
       Trace.WriteLine(string.Format("Create a tree with {0:n0} elements in {1} msec.", CountTreeSize(root),
                                     sw.ElapsedMilliseconds));
-      return new FileSystemTree {
+      return new FileSystemTree_Obsolete {
         Version = 1,
         Root = root
       };

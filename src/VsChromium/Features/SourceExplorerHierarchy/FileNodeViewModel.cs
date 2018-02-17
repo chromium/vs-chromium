@@ -13,6 +13,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     protected override IList<NodeViewModel> ChildrenImpl => ArrayUtilities.EmptyList<NodeViewModel>.Instance;
+    protected override bool IsExpandable => false;
 
     protected override void AddChildImpl(NodeViewModel node) {
       Invariants.CheckOperation(false, "Cannot add child node to a file node");

@@ -24,7 +24,7 @@ namespace VsChromium.Tests.ServerProcess {
       }
     }
 
-    private void AssertTreeIsEmpty(FileSystemTree tree) {
+    private void AssertTreeIsEmpty(FileSystemTree_Obsolete tree) {
       Assert.IsNotNull(tree.Root);
       Assert.IsNotNull(tree.Root.Name);
       Assert.AreEqual("", tree.Root.Name);

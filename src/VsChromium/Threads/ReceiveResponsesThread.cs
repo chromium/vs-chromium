@@ -4,6 +4,7 @@
 
 using System;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Threading;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;
@@ -11,7 +12,6 @@ using VsChromium.Core.Logging;
 namespace VsChromium.Threads {
   [Export(typeof(IReceiveResponsesThread))]
   public class ReceiveResponsesThread : IReceiveResponsesThread {
-    private readonly EventWaitHandle _waitHandle = new ManualResetEvent(false);
     private IIpcStream _ipcStream;
 
     [ImportingConstructor]
@@ -20,25 +20,17 @@ namespace VsChromium.Threads {
 
     public void Start(IIpcStream ipcStream) {
       _ipcStream = ipcStream;
-      new Thread(Run) {IsBackground = true}.Start();
-    }
-
-    public void WaitOne() {
-      _waitHandle.WaitOne();
+      new Thread(Run) { IsBackground = true }.Start();
     }
 
     public event Action<IpcResponse> ResponseReceived;
-
     public event Action<IpcEvent> EventReceived;
+    public event EventHandler<ErrorEventArgs> FatalError;
 
     private void Run() {
-      try {
-        Logger.LogInfo("Starting ReceiveResponses thread.");
-        Loop();
-      }
-      finally {
-        _waitHandle.Set();
-      }
+      Logger.LogInfo("ReceiveRequestsThread: Starting thread");
+      Loop();
+      Logger.LogInfo("ReceiveRequestsThread: Terminating thread");
     }
 
     private void Loop() {
@@ -46,7 +38,7 @@ namespace VsChromium.Threads {
         while (true) {
           var response = _ipcStream.ReadResponse();
           if (response == null) {
-            Logger.LogInfo("EOF reached on stdin. Time to terminate server.");
+            Logger.LogInfo("ReceiveRequestsThread: EOF reached on ipc stream, exiting thread loop");
             break;
           }
 
@@ -57,23 +49,22 @@ namespace VsChromium.Threads {
             OnResponseReceived(response);
           }
         }
-      }
-      catch (Exception e) {
-        Logger.LogError(e, "Exception in ReceiveRequestsThread.");
-        throw;
+      } catch (Exception e) {
+        Logger.LogError(e, "ReceiveRequestsThread: unexpected exception, exting thread loop");
+        OnFatalError(new ErrorEventArgs(e));
       }
     }
 
     protected virtual void OnResponseReceived(IpcResponse obj) {
-      var handler = ResponseReceived;
-      if (handler != null)
-        handler(obj);
+      ResponseReceived?.Invoke(obj);
     }
 
     protected virtual void OnEventReceived(IpcEvent obj) {
-      var handler = EventReceived;
-      if (handler != null)
-        handler(obj);
+      EventReceived?.Invoke(obj);
+    }
+
+    protected virtual void OnFatalError(ErrorEventArgs e) {
+      FatalError?.Invoke(this, e);
     }
   }
 }

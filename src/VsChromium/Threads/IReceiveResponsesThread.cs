@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.IO;
 using VsChromium.Core.Ipc;
 
 namespace VsChromium.Threads {
@@ -11,9 +12,9 @@ namespace VsChromium.Threads {
   /// </summary>
   public interface IReceiveResponsesThread {
     void Start(IIpcStream ipcStream);
-    void WaitOne();
 
     event Action<IpcResponse> ResponseReceived;
     event Action<IpcEvent> EventReceived;
+    event EventHandler<ErrorEventArgs> FatalError;
   }
 }

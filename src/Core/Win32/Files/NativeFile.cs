@@ -41,8 +41,9 @@ namespace VsChromium.Core.Win32.Files {
       using (
         var fileHandle = NativeMethods.CreateFile(path.Value, NativeAccessFlags.GenericRead, FileShare.ReadWrite | FileShare.Delete, IntPtr.Zero,
                                                   FileMode.Open, 0, IntPtr.Zero)) {
-        if (fileHandle.IsInvalid)
+        if (fileHandle.IsInvalid) {
           throw new Win32Exception();
+        }
 
         // Note: We are limited to 2GB files by design.
         var maxLen = int.MaxValue - trailingByteCount;

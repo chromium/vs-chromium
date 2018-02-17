@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.ComponentModel;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
@@ -22,6 +23,10 @@ namespace VsChromium.Server.FileSystemContents {
       try {
         var fileInfo = _fileSystem.GetFileInfoSnapshot(path);
         return ReadFileContentsWorker(fileInfo);
+      }
+      catch (Win32Exception e) {
+        Logger.LogWarn("Skipping file \"{0}\": {1}", path, e.Message);
+        return BinaryFileContents.Empty;
       }
       catch (Exception e) {
         Logger.LogWarn(e, "Skipping file \"{0}\" because of an error reading its contents", path);

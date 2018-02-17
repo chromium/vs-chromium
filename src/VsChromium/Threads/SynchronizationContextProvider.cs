@@ -17,6 +17,6 @@ namespace VsChromium.Threads {
       _threadId = dispatchThread.ManagedThreadId;
     }
 
-    public ISynchronizationContext UIContext => _context;
+    public ISynchronizationContext DispatchThreadContext => _context;
   }
 }

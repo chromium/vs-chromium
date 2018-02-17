@@ -4,6 +4,6 @@
 
 namespace VsChromium.Threads {
   public interface ISynchronizationContextProvider {
-    ISynchronizationContext UIContext { get; }
+    ISynchronizationContext DispatchThreadContext { get; }
   }
 }

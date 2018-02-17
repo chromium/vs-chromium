@@ -267,7 +267,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void OpenFileInEditorWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
-      SynchronizationContextProvider.UIContext.Post(() => {
+      SynchronizationContextProvider.DispatchThreadContext.Post(() => {
         // Note: This has to run on the UI thread!
         OpenDocumentHelper.OpenDocument(fileEntry.Path, vsTextView => {
           var span = spanProvider(vsTextView);
@@ -570,7 +570,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void OpenFileInEditorWithWorker(FileEntryViewModel fileEntry, Func<IVsTextView, Span?> spanProvider) {
       // Using "Post" is important: it allows the newly opened document to
       // receive the focus.
-      SynchronizationContextProvider.UIContext.Post(() => {
+      SynchronizationContextProvider.DispatchThreadContext.Post(() => {
         // Note: This has to run on the UI thread!
         OpenDocumentHelper.OpenDocumentWith(fileEntry.Path, null, 0, vsTextView => {
           var span = spanProvider(vsTextView);

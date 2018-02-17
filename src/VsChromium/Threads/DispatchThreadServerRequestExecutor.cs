@@ -59,11 +59,11 @@ namespace VsChromium.Threads {
     public bool IsServerRunning => _typedRequestProcessProxy.IsServerRunning;
 
     private void TypedRequestProcessProxyOnProcessStarted(object sender, EventArgs args) {
-      _synchronizationContextProvider.UIContext.Post(() => OnProcessStarted());
+      _synchronizationContextProvider.DispatchThreadContext.Post(() => OnProcessStarted());
     }
 
     private void TypedRequestProcessProxyOnProcessFatalError(object sender, ErrorEventArgs args) {
-      _synchronizationContextProvider.UIContext.Post(() => OnProcessFatalError(args));
+      _synchronizationContextProvider.DispatchThreadContext.Post(() => OnProcessFatalError(args));
     }
 
     private void OnRequestSuccess(DispatchThreadServerRequest request, TypedResponse response) {
@@ -71,7 +71,7 @@ namespace VsChromium.Threads {
         Logger.WrapActionInvocation(request.OnThreadPoolReceive);
 
       if (request.OnDispatchThreadSuccess != null) {
-        _synchronizationContextProvider.UIContext.Post(() =>
+        _synchronizationContextProvider.DispatchThreadContext.Post(() =>
           request.OnDispatchThreadSuccess(response));
       }
     }
@@ -81,7 +81,7 @@ namespace VsChromium.Threads {
         Logger.WrapActionInvocation(request.OnThreadPoolReceive);
 
       if (request.OnDispatchThreadError != null) {
-        _synchronizationContextProvider.UIContext.Post(() => {
+        _synchronizationContextProvider.DispatchThreadContext.Post(() => {
           if (errorResponse.IsOperationCanceled()) {
             // UIRequest are cancelable at any point.
           } else {

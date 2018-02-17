@@ -26,11 +26,11 @@ namespace VsChromium.ServerProxy {
     private readonly IRequestQueue _requestQueue;
     private readonly ISendRequestsThread _sendRequestsThread;
     private readonly IProtoBufSerializer _serializer;
+    private readonly Lazy<Task> _createProcessTask;
     private readonly ManualResetEvent _waitForConnection = new ManualResetEvent(false);
     private IpcStreamOverNetworkStream _ipcStream;
     private TcpClient _tcpClient;
     private TcpListener _tcpListener;
-    private Task _createProcessTask;
     private bool _isServerRunning;
 
     [ImportingConstructor]
@@ -45,6 +45,7 @@ namespace VsChromium.ServerProxy {
       _requestQueue = requestQueue;
       _sendRequestsThread = sendRequestsThread;
       _serverProcessLauncher = serverProcessLauncher;
+      _createProcessTask = new Lazy<Task>(CreateProcessLazyWorker, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     public event Action<IpcEvent> EventReceived;
@@ -55,21 +56,25 @@ namespace VsChromium.ServerProxy {
 
     public void RunAsync(IpcRequest request, Action<IpcResponse> callback) {
       CreateServerProcessAsync().ContinueWith(t => {
-        // Register callback so that we can reply with error if needed
-        _callbacks.Add(request, callback);
+          // Register callback so that we can reply with error if needed
+          _callbacks.Add(request, callback);
 
-        if (t.Exception != null) {
-          // Skip the "AggregateException"
-          var error = t.Exception.InnerExceptions.Count == 1 ? t.Exception.InnerExceptions[0] : t.Exception;
+          if (t.Exception != null) {
+            // Skip the "AggregateException"
+            var error = t.Exception.InnerExceptions.Count == 1 ? t.Exception.InnerExceptions[0] : t.Exception;
 
-          // Reply error to callback (this will also fire general "server is down" event)
-          HandleSendRequestError(request, error);
-        } else {
-          // The queue is guaranteed to be started at this point, so enqueue the request
-          // so it is sent to the server
-          _requestQueue.Enqueue(request);
-        }
-      });
+            // Reply error to callback (this will also fire general "server is down" event)
+            HandleSendRequestError(request, error);
+          } else {
+            // The queue is guaranteed to be started at this point, so enqueue the request
+            // so it is sent to the server
+            _requestQueue.Enqueue(request);
+          }
+        },
+        new CancellationToken(),
+        TaskContinuationOptions.ExecuteSynchronously,
+        // Make sure to run on thread pool even if called from a UI thread
+        TaskScheduler.Default);
     }
 
     public void Dispose() {
@@ -78,17 +83,19 @@ namespace VsChromium.ServerProxy {
       _serverProcessLauncher?.Dispose();
     }
 
+    /// <summary>
+    /// Return existing or create new process task
+    /// </summary>
+    /// <returns></returns>
     private Task CreateServerProcessAsync() {
-      // Return existing or create new process task
-      if (_createProcessTask == null) {
-        lock (this) {
-          if (_createProcessTask == null) {
-            var task = _serverProcessLauncher.CreateProxyAsync(PreCreateProxy());
-            _createProcessTask = task.ContinueWith(t => { AfterProxyCreated(t.Result); });
-          }
-        }
-      }
-      return _createProcessTask;
+      return _createProcessTask.Value;
+    }
+
+    private Task CreateProcessLazyWorker() {
+      var task = _serverProcessLauncher.CreateProxyAsync(PreCreateProxy());
+      return task.ContinueWith(t => AfterProxyCreated(t.Result),
+        // Make sure to run on thread pool even if called from a UI thread
+        TaskScheduler.Default);
     }
 
     private IList<string> PreCreateProxy() {
@@ -137,6 +144,7 @@ namespace VsChromium.ServerProxy {
         callback(response);
       };
       _receiveResponsesThread.EventReceived += @event => { OnEventReceived(@event); };
+      _receiveResponsesThread.FatalError += (sender, args) => { HandleReceiveThreadFatalError(args); };
       _receiveResponsesThread.Start(_ipcStream);
 
       Logger.LogInfo("AfterProxyCreated: Start send request thread..");
@@ -146,6 +154,18 @@ namespace VsChromium.ServerProxy {
       // Server is fully started, notify consumers
       _isServerRunning = true;
       OnProcessStarted();
+    }
+
+    private void HandleReceiveThreadFatalError(ErrorEventArgs args) {
+      // Terminate all pending requests with errors
+      foreach (var kvp in _callbacks.RemoveAll()) {
+        var response = ErrorResponseHelper.CreateIpcErrorResponse(kvp.Key, args.GetException());
+        kvp.Value(response);
+      }
+      // We assume the server is down as soon as there is an error
+      // sending a request.
+      _isServerRunning = false;
+      OnProcessFatalError(args);
     }
 
     private void HandleSendRequestError(IpcRequest request, Exception error) {

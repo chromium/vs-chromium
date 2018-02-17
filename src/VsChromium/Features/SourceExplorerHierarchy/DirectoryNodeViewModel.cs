@@ -13,10 +13,27 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     protected override IList<NodeViewModel> ChildrenImpl => _childrenList;
 
+    protected override bool IsExpandable => _childrenList.Count > 0 || !ChildrenLoaded;
+
     protected override void AddChildImpl(NodeViewModel node) {
       ChildrenLoaded = true;
       node.ChildIndex = _childrenList.Count;
       _childrenList.Add(node);
+    }
+
+    public List<NodeViewModel> CopyChildren() {
+      lock (_childrenList) {
+        return new List<NodeViewModel>(_childrenList);
+      }
+    }
+
+    public void SetChildren(List<NodeViewModel> children) {
+      ChildrenLoaded = true;
+      lock (_childrenList) {
+        foreach (var child in children) {
+          AddChildImpl(child);
+        }
+      }
     }
   }
 }

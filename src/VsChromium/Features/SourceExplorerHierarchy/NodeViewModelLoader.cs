@@ -19,13 +19,17 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     public Task<DirectoryEntry> LoadChildrenAsync(DirectoryNodeViewModel parentNode) {
       var tcs = new TaskCompletionSource<DirectoryEntry>();
 
-      var path = parentNode.FullPath.Value;
+      var path = parentNode.FullPath;
+      for (NodeViewModel node = parentNode; node != null; node = node.Parent) {
+        if (node is RootNodeViewModel) {
+          path = node.FullPath;
+          break;
+        }
+      }
       var relativePath = parentNode.RelativePath;
-      //TODO: Hack!
-      path = path.Substring(0, path.Length - relativePath.Length);
 
       var request = new GetDirectoryEntriesRequest {
-        ProjectPath = path,
+        ProjectPath = path.Value,
         DirectoryRelativePath = relativePath
       };
       _typedRequestProcessProxy.RunAsync(request,

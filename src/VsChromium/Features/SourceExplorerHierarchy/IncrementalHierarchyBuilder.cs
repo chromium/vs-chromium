@@ -18,23 +18,31 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly INodeTemplateFactory _templateFactory;
     private readonly VsHierarchy _hierarchy;
     private readonly VsHierarchyNodes _oldNodes;
-    private readonly FileSystemTree _fileSystemTree;
+    private readonly FullPath _projectPath;
+    private readonly int _treeVersion;
+    private readonly INodeViewModelLoader _nodeViewModelLoader;
     private readonly IImageSourceFactory _imageSourceFactory;
     private readonly VsHierarchyNodes _newNodes = new VsHierarchyNodes();
     private readonly VsHierarchyChanges _changes = new VsHierarchyChanges();
+
     private readonly Dictionary<string, NodeViewModelTemplate> _fileTemplatesToInitialize =
       new Dictionary<string, NodeViewModelTemplate>(SystemPathComparer.Instance.StringComparer);
+
     private uint _newNodeNextItemId;
 
     public IncrementalHierarchyBuilder(
       INodeTemplateFactory nodeTemplateFactory,
       VsHierarchy hierarchy,
-      FileSystemTree fileSystemTree,
+      FullPath projectPath,
+      int treeVersion,
+      INodeViewModelLoader nodeViewModelLoader,
       IImageSourceFactory imageSourceFactory) {
       _templateFactory = nodeTemplateFactory;
       _hierarchy = hierarchy;
       _oldNodes = hierarchy.Nodes;
-      _fileSystemTree = fileSystemTree;
+      _projectPath = projectPath;
+      _treeVersion = treeVersion;
+      _nodeViewModelLoader = nodeViewModelLoader;
       _imageSourceFactory = imageSourceFactory;
     }
 
@@ -51,7 +59,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         ApplyChanges(buildResult, hierarchyVersion, latestFileSystemTreeVersion);
     }
 
-    private ApplyChangesResult ApplyChanges(IncrementalBuildResult buildResult, int hierarchyVersion, int latestFileSystemTreeVersion) {
+    private ApplyChangesResult ApplyChanges(IncrementalBuildResult buildResult, int hierarchyVersion,
+      int latestFileSystemTreeVersion) {
       // We need to load these images on the main UI thread
       buildResult.FileTemplatesToInitialize.ForAll(item => {
         item.Value.Icon = _imageSourceFactory.GetFileExtensionIcon(item.Key);
@@ -62,7 +71,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         Logger.LogInfo(
           "Updating VsHierarchy nodes for version {0} and file system tree version {1}",
           hierarchyVersion,
-          _fileSystemTree.Version);
+          _treeVersion);
         _hierarchy.SetNodes(buildResult.NewNodes, buildResult.Changes);
         return ApplyChangesResult.Done;
       }
@@ -71,14 +80,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         "VsHierarchy nodes have been updated concurrently, re-run or skip operation." +
         " Node verions={0}-{1}, Tree versions:{2}-{3}.",
         hierarchyVersion, _hierarchy.Version,
-        _fileSystemTree.Version, latestFileSystemTreeVersion);
+        _treeVersion, latestFileSystemTreeVersion);
 
       // If the version of the hieararchy has changed since when we started,
       // another thread has passed us.  This means the decisions we made
       // about the changes to apply are incorrect at this point. So, we run
       // again if we are processing the latest known version of the file
       // system tree, as we should be the winner (eventually)
-      if (_fileSystemTree.Version == latestFileSystemTreeVersion) {
+      if (_treeVersion == latestFileSystemTreeVersion) {
         // Termination notes: We make this call only when the VsHierarchy
         // version changes between the time we capture it and this point.
         return ApplyChangesResult.Retry;
@@ -93,25 +102,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
         SetupRootNode(_newNodes.RootNode);
 
-        if (_fileSystemTree != null) {
-          // If only 1 child, merge root node and root path entries
-          if (_fileSystemTree.Root.Entries.Count == 1) {
-            var rootEntry = _fileSystemTree.Root.Entries[0] as DirectoryEntry;
-            Invariants.Assert(rootEntry != null);
+        // Update root node
+        var rootNode = _newNodes.RootNode;
+        rootNode.Name = _projectPath.Value;
+        rootNode.Caption = string.Format("Source Explorer - {0}", _projectPath.Value);
+        rootNode.Template = _templateFactory.ProjectTemplate;
 
-            // Update root node
-            var rootNode = _newNodes.RootNode;
-            rootNode.Name = rootEntry.Name;
-            rootNode.Caption = string.Format("Source Explorer - {0}", rootEntry.Name);
-            rootNode.Template = _templateFactory.ProjectTemplate;
-
-            // Add children nodes
-            AddNodeForChildren(rootEntry, _oldNodes.RootNode, _newNodes.RootNode);
-          } else {
-            // Add all child directories of the file system tree
-            AddNodeForChildren(_fileSystemTree.Root, _oldNodes.RootNode, _newNodes.RootNode);
-          }
-        }
+        // Add children nodes
+        AddNodeForChildren(_oldNodes.RootNode, _newNodes.RootNode);
 
         return new IncrementalBuildResult {
           OldNodes = _oldNodes,
@@ -122,13 +120,28 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void AddNodeForChildren(FileSystemEntry entry, NodeViewModel oldParent, NodeViewModel newParent) {
-      Invariants.Assert(entry != null);
+    private void AddNodeForChildren(NodeViewModel oldParent, NodeViewModel newParent) {
+      Invariants.Assert(oldParent != null);
       Invariants.Assert(newParent != null);
       Invariants.Assert(newParent.Children.Count == 0);
 
+      var oldParentDirectory = oldParent as DirectoryNodeViewModel;
+      if (oldParentDirectory == null) {
+        return;
+      }
+
+      var newParentDirectory = newParent as DirectoryNodeViewModel;
+      if (newParentDirectory == null) {
+        return;
+      }
+
+      var oldParentChildrenList = oldParentDirectory.CopyChildren();
+      if (oldParentChildrenList.Count == 0 && !oldParent.IsRoot) {
+        return;
+      }
+
       // Create children nodes
-      var directoryEntry = entry as DirectoryEntry;
+      var directoryEntry = _nodeViewModelLoader.LoadChildrenAsync(newParentDirectory).Result;
       if (directoryEntry != null) {
         foreach (var childEntry in directoryEntry.Entries.ToForeachEnum()) {
           var child = CreateNodeViewModel(childEntry, newParent);
@@ -142,26 +155,25 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // System.Reflection.Type to handle the fact a directory can be deleted
       // and then a name with the same name can be added. We need to consider
       // that as a pair of "delete/add" instead of a "no-op".
-      var diffs = ArrayUtilities.BuildArrayDiffs(
-        oldParent == null ? ArrayUtilities.EmptyList<NodeViewModel>.Instance : oldParent.Children,
-        newParent.Children,
+      var diffs = ArrayUtilities.BuildArrayDiffs(oldParentChildrenList, newParent.Children,
         NodeTypeAndNameComparer.Instance);
 
+      // Mark deleted items
       foreach (var item in diffs.LeftOnlyItems.ToForeachEnum()) {
         _changes.DeletedItems.Add(item.ItemId);
       }
 
+      // Mark added items
       foreach (var newChild in diffs.RightOnlyItems.ToForeachEnum()) {
         newChild.ItemId = _newNodeNextItemId;
         _newNodeNextItemId++;
         newChild.IsExpanded = newParent.IsRoot;
         _newNodes.AddNode(newChild);
 
-        if (oldParent != null) {
-          _changes.AddedItems.Add(newChild.ItemId);
-        }
+        _changes.AddedItems.Add(newChild.ItemId);
       }
 
+      // Commons items don't need updating, just adding to the new parent
       foreach (var pair in diffs.CommonItems.ToForeachEnum()) {
         pair.RigthtItem.ItemId = pair.LeftItem.ItemId;
         pair.RigthtItem.IsExpanded = pair.LeftItem.IsExpanded;
@@ -172,16 +184,18 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       if (directoryEntry != null) {
         Invariants.Assert(directoryEntry.Entries.Count == newParent.Children.Count);
         for (var i = 0; i < newParent.Children.Count; i++) {
-          var childEntry = directoryEntry.Entries[i];
           var newChildNode = newParent.Children[i];
           var oldChildNode = GetCommonOldNode(newParent, i, diffs, newChildNode);
 
-          AddNodeForChildren(childEntry, oldChildNode, newChildNode);
+          if (oldChildNode != null) {
+            AddNodeForChildren(oldChildNode, newChildNode);
+          }
         }
       }
     }
 
-    private static NodeViewModel GetCommonOldNode(NodeViewModel newParent, int index, ArrayDiffsResult<NodeViewModel> diffs, NodeViewModel newChildNode) {
+    private static NodeViewModel GetCommonOldNode(NodeViewModel newParent, int index,
+      ArrayDiffsResult<NodeViewModel> diffs, NodeViewModel newChildNode) {
       if (diffs.CommonItems.Count == newParent.Children.Count) {
         return diffs.CommonItems[index].LeftItem;
       }
@@ -208,10 +222,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           }
         }
       }
+
       return node;
     }
 
-    public static NodeViewModel CreateNodeViewModel(INodeTemplateFactory templateFactory, FileSystemEntry entry, NodeViewModel parent) {
+    public static NodeViewModel CreateNodeViewModel(INodeTemplateFactory templateFactory, FileSystemEntry entry,
+      NodeViewModel parent) {
       Invariants.Assert(entry != null);
       Invariants.Assert(parent != null);
 
@@ -231,6 +247,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         Invariants.Assert(extension != null);
         node.Template = templateFactory.GetFileTemplate(extension);
       }
+
       return node;
     }
 

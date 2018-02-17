@@ -16,16 +16,19 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly INodeTemplateFactory _templateFactory;
     private readonly VsHierarchyAggregate _hierarchy;
     private readonly FileSystemTree _fileSystemTree;
+    private readonly INodeViewModelLoader _nodeViewModelLoader;
     private readonly IImageSourceFactory _imageSourceFactory;
 
     public IncrementalHierarchyBuilderAggregate(
       INodeTemplateFactory nodeTemplateFactory,
       VsHierarchyAggregate hierarchy,
       FileSystemTree fileSystemTree,
+      INodeViewModelLoader nodeViewModelLoader,
       IImageSourceFactory imageSourceFactory) {
       _templateFactory = nodeTemplateFactory;
       _hierarchy = hierarchy;
       _fileSystemTree = fileSystemTree;
+      _nodeViewModelLoader = nodeViewModelLoader;
       _imageSourceFactory = imageSourceFactory;
     }
 
@@ -33,7 +36,6 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       public string RootPath { get; set; }
       public VsHierarchy Hierarchy { get; set; }
       public IncrementalHierarchyBuilder Builder { get; set; }
-      public FileSystemTree FileSystemTree { get; set; }
       public Func<int, ApplyChangesResult> ChangeApplier;
     }
 
@@ -48,9 +50,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       // For removed hierarchies: create (empty) tree and compute nodes
       List<RootEntry> rootEntries = CreateRootEntries(oldHierarchies).ToList();
 
-      rootEntries.ForAll(entry => {
-        entry.ChangeApplier = entry.Builder.ComputeChangeApplier();
-      });
+      rootEntries.ForAll(entry => { entry.ChangeApplier = entry.Builder.ComputeChangeApplier(); });
 
       return latestFileSystemTreeVersion => {
         // Apply if nobody beat us to is.
@@ -97,59 +97,40 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       foreach (var hierarchy in oldHierarchies) {
         var rootPath = GetHierarchyRootPath(hierarchy);
 
-        var directoryEntry = _fileSystemTree.Root.Entries.FirstOrDefault(x => x.Name == rootPath);
-        if (directoryEntry == null) {
+        var projectEntry = _fileSystemTree.Projects
+          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(x.RootPath, rootPath));
+        if (projectEntry == null) {
           // Hierarchy should be deleted, as its root does not exist in new tree
-          var fakeTree = new FileSystemTree {
-            Version = _fileSystemTree.Version,
-            Root = new DirectoryEntry() {
-              Name = _fileSystemTree.Root.Name,
-              Entries = new List<FileSystemEntry>()
-            }
-          };
           yield return new RootEntry {
             RootPath = rootPath,
-            FileSystemTree = fakeTree,
             Hierarchy = hierarchy,
-            Builder = new IncrementalHierarchyBuilder(_templateFactory, hierarchy, fakeTree, _imageSourceFactory)
+            Builder = new IncrementalHierarchyBuilder(_templateFactory, hierarchy, new FullPath(rootPath),
+              _fileSystemTree.Version, _nodeViewModelLoader, _imageSourceFactory)
           };
         } else {
           // Hierarchy should be updated with new root entry
-          var fakeTree = new FileSystemTree {
-            Version = _fileSystemTree.Version,
-            Root = new DirectoryEntry() {
-              Name = _fileSystemTree.Root.Name,
-              Entries = new List<FileSystemEntry> { directoryEntry }
-            }
-          };
           yield return new RootEntry {
             RootPath = rootPath,
-            FileSystemTree = fakeTree,
             Hierarchy = hierarchy,
-            Builder = new IncrementalHierarchyBuilder(_templateFactory, hierarchy, fakeTree, _imageSourceFactory)
+            Builder = new IncrementalHierarchyBuilder(_templateFactory, hierarchy, new FullPath(rootPath),
+              _fileSystemTree.Version, _nodeViewModelLoader, _imageSourceFactory)
           };
         }
       }
 
       // Look for new hierarchies
-      foreach (var directoryEntry in _fileSystemTree.Root.Entries) {
-        var rootPath = directoryEntry.Name;
-        var hierarchy = oldHierarchies.FirstOrDefault(x => GetHierarchyRootPath(x) == rootPath);
+      foreach (var projectEntry in _fileSystemTree.Projects) {
+        var rootPath = projectEntry.RootPath;
+        var hierarchy = oldHierarchies
+          .FirstOrDefault(x => SystemPathComparer.Instance.StringComparer.Equals(GetHierarchyRootPath(x), rootPath));
         if (hierarchy == null) {
           // A new hierarchy should be created
-          var fakeTree = new FileSystemTree {
-            Version = _fileSystemTree.Version,
-            Root = new DirectoryEntry() {
-              Name = _fileSystemTree.Root.Name,
-              Entries = new List<FileSystemEntry> { directoryEntry }
-            }
-          };
           var newHierarchy = _hierarchy.CreateHierarchy();
           yield return new RootEntry {
             RootPath = rootPath,
-            FileSystemTree = fakeTree,
             Hierarchy = newHierarchy,
-            Builder = new IncrementalHierarchyBuilder(_templateFactory, newHierarchy, fakeTree, _imageSourceFactory)
+            Builder = new IncrementalHierarchyBuilder(_templateFactory, newHierarchy, new FullPath(rootPath),
+              _fileSystemTree.Version, _nodeViewModelLoader, _imageSourceFactory)
           };
         }
       }

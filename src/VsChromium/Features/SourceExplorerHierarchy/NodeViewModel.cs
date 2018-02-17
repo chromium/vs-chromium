@@ -177,7 +177,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           pvar = (ExpandByDefault ? 1 : 0);
           break;
         case (int)__VSHPROPID.VSHPROPID_Expandable:
-          pvar = ChildrenImpl.Count > 0;
+          pvar = IsExpandable;
           break;
         case (int)__VSHPROPID.VSHPROPID_IconIndex: {
             int imageIndex = GetImageIndex();
@@ -199,6 +199,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     protected abstract IList<NodeViewModel> ChildrenImpl { get; }
+    protected abstract bool IsExpandable { get; }
 
     private void AppendFullPath(StringBuilder sb) {
       if (string.IsNullOrEmpty(Name))

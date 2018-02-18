@@ -40,14 +40,17 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot, FullPathChanges fullPathChanges,
-      Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
-      using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot", cancellationToken, InfoLogger.Instance)) {
+    public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot,
+      FullPathChanges fullPathChanges,
+      Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult,
+      CancellationToken cancellationToken) {
+      using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot",
+        cancellationToken, InfoLogger.Instance)) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
           onLoading();
           progress.DisplayProgress((i, n) => "Preparing list of files to load from disk");
 
-          var fileDatabase = (FileDatabaseSnapshot)previousDatabase;
+          var fileDatabase = (FileDatabaseSnapshot) previousDatabase;
 
           // Compute list of files from tree
           var entities = ComputeFileSystemEntities(newSnapshot, cancellationToken);
@@ -95,9 +98,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult,
       CancellationToken cancellationToken) {
 
-      using (new TimeElapsedLogger("Building file database from previous one and list of changed files", cancellationToken, InfoLogger.Instance)) {
+      using (new TimeElapsedLogger("Building file database from previous one and list of changed files",
+        cancellationToken, InfoLogger.Instance)) {
         Invariants.Assert(previousFileDatabaseSnapshot is FileDatabaseSnapshot);
-        var previousFileDatabase = (FileDatabaseSnapshot)previousFileDatabaseSnapshot;
+        var previousFileDatabase = (FileDatabaseSnapshot) previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.
         var filesToRead = changedFiles
@@ -125,23 +129,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    /// <summary>
-    /// Note: Concurrency: There are potentially many readers (search threads), but
-    /// only one writer (us). Updating the hash table with the line below assumes
-    /// that 1) the entry exists and 2) the hash table implementation does not
-    /// mutate any of its internal state when updating an existing entry.
-    /// <para>
-    /// 1) is verified because we the "filesToRead" collections only contains
-    ///    file names contained in this table.</para>
-    /// <para>
-    /// 2) is verified because the two possible implementations, <see cref="Dictionary{TKey,TValue}"/>
-    ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
-    /// </summary>
-    private static void DangerousUpdateFileTableEntry(FileDatabaseSnapshot fileDatabase, FileName fileName, FileContents newContents) {
-      fileDatabase.Files[fileName] = new FileWithContents(fileName, newContents);
-    }
-
-    private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities, bool notifyProgress, CancellationToken cancellationToken) {
+    private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities, bool notifyProgress,
+      CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested();
       using (new TimeElapsedLogger("Freezing file database state", cancellationToken)) {
         var progress = notifyProgress ? _progressTrackerFactory.CreateIndeterminateTracker() : null;
@@ -159,7 +148,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           }
 
           return new FileDatabaseSnapshot(entities.ProjectHashes, directories, files);
-        } finally {
+        }
+        finally {
           progress?.Dispose();
         }
       }
@@ -259,8 +249,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       public IDictionary<FullPath, string> ProjectHashes { get; set; }
     }
 
-    private FileSystemEntities ComputeFileSystemEntities(FileSystemSnapshot snapshot, CancellationToken cancellationToken) {
-      using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree", cancellationToken)) {
+    private FileSystemEntities ComputeFileSystemEntities(FileSystemSnapshot snapshot,
+      CancellationToken cancellationToken) {
+      using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree",
+        cancellationToken)) {
 
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
 
@@ -320,7 +312,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       public PartialProgressReporter PartialProgressReporter;
     }
 
-    private void LoadFileContents(FileSystemEntities entities, FileContentsLoadingContext loadingContext, CancellationToken cancellationToken) {
+    private void LoadFileContents(FileSystemEntities entities, FileContentsLoadingContext loadingContext,
+      CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Loading file contents from disk", cancellationToken)) {
         using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
           entities.Files.AsParallelWrapper().ForAll(fileEntry => {
@@ -341,14 +334,49 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
             var contents = LoadSingleFileContents(entities, loadingContext, fileEntry.Value);
             if (contents != null) {
-              entities.Files[fileEntry.Key] = fileEntry.Value.WithContents(contents);
+              DangerousUpdateFileSystemEntitiesEntry(entities, fileEntry, contents);
             }
           });
         }
       }
+
       Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files.",
         loadingContext.LoadedTextFileCount,
         loadingContext.LoadedBinaryFileCount);
+    }
+
+    /// <summary>
+    /// Note: Concurrency: Updating an entry of the <see cref="FileSystemEntities.Files"/> table
+    /// in this method assumes that 1) the entry exists and 2) the hash table implementation does not
+    /// mutate any of its internal state when updating an existing entry.
+    /// 
+    /// <para>
+    /// 1) is verified by virtue of the <see cref="LoadFileContents"/> method implementation.</para>
+    /// 
+    /// <para>
+    /// 2) is verified because the two possible implementations, <see cref="Dictionary{TKey,TValue}"/>
+    ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
+    /// </summary>
+    private static void DangerousUpdateFileSystemEntitiesEntry(FileSystemEntities entities,
+      KeyValuePair<FileName, ProjectFileData> fileEntry, FileContents contents) {
+      entities.Files[fileEntry.Key] = fileEntry.Value.WithContents(contents);
+    }
+
+    /// <summary>
+    /// Note: Concurrency: There are potentially many readers (search threads), but
+    /// only one writer (us). Updating the hash table with the line below assumes
+    /// that 1) the entry exists and 2) the hash table implementation does not
+    /// mutate any of its internal state when updating an existing entry.
+    /// <para>
+    /// 1) is verified because we the "filesToRead" collections only contains
+    ///    file names contained in this table.</para>
+    /// <para>
+    /// 2) is verified because the two possible implementations, <see cref="Dictionary{TKey,TValue}"/>
+    ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
+    /// </summary>
+    private static void DangerousUpdateFileTableEntry(FileDatabaseSnapshot fileDatabase, FileName fileName,
+      FileContents newContents) {
+      fileDatabase.Files[fileName] = new FileWithContents(fileName, newContents);
     }
 
     private FileContents LoadSingleFileContents(
@@ -379,8 +407,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         isSearchable = projectFileData.IsSearchable;
       }
 
-      if (!isSearchable)
+      if (!isSearchable) {
         return null;
+      }
 
       // If the file has not changed since the previous snapshot, we can re-use
       // the former file contents snapshot.
@@ -416,10 +445,12 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       } else {
         Interlocked.Increment(ref loadingContext.LoadedTextFileCount);
       }
+
       return fileContents;
     }
 
-    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges, FileWithContents existingFileWithContents) {
+    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges,
+      FileWithContents existingFileWithContents) {
       Invariants.Assert(existingFileWithContents.Contents != null);
 
       var fullPath = existingFileWithContents.FileName.FullPath;

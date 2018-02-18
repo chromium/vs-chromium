@@ -38,7 +38,24 @@ namespace VsChromium.ServerProxy {
 
     public bool IsServerRunning => _serverProcessProxy.IsServerRunning;
 
-    public void RunAsync(TypedRequest request, Action<TypedResponse> callback, Action<ErrorResponse> errorCallback) {
+    public void RunAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback) {
+      // Note: We capture the value outside the RunAsync callback.
+      var localSequenceNumber = Interlocked.Increment(ref _currentSequenceNumber);
+
+      RunAsyncWorker(request, successCallback, errorCallback, localSequenceNumber, response => {
+        lock (_lock) {
+          _bufferedResponses.Add(response);
+        }
+        OnResponseReceived();
+      });
+    }
+
+    public void RunUnbufferedAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback) {
+      RunAsyncWorker(request, successCallback, errorCallback, -1, SendResponse);
+    }
+
+    public void RunAsyncWorker(TypedRequest request, Action<TypedResponse> successCallback,
+      Action<ErrorResponse> errorCallback, long sequenceNumber, Action<BufferedResponse> processResponse) {
       var sw = Stopwatch.StartNew();
 
       var ipcRequest = new IpcRequest {
@@ -47,21 +64,16 @@ namespace VsChromium.ServerProxy {
         Data = request
       };
 
-      // Note: We capture the value outside the RunAsync callback.
-      var localSequenceNumber = Interlocked.Increment(ref _currentSequenceNumber);
-
       _serverProcessProxy.RunAsync(ipcRequest, ipcResponse => {
-        lock (_lock) {
-          _bufferedResponses.Add(new BufferedResponse {
-            SequenceNumber = localSequenceNumber,
-            IpcRequest = ipcRequest,
-            IpcResponse = ipcResponse,
-            SuccessCallback = callback,
-            ErrorCallback = errorCallback,
-            Elapsed = sw.Elapsed
-          });
-        }
-        OnResponseReceived();
+        var response = new BufferedResponse {
+          SequenceNumber = sequenceNumber,
+          IpcRequest = ipcRequest,
+          IpcResponse = ipcResponse,
+          SuccessCallback = successCallback,
+          ErrorCallback = errorCallback,
+          Elapsed = sw.Elapsed
+        };
+        processResponse(response);
       });
     }
 
@@ -103,23 +115,25 @@ namespace VsChromium.ServerProxy {
     }
 
     private static void SendResponses(IEnumerable<BufferedResponse> reponsesToSend) {
-      reponsesToSend.ForAll(bufferedResponse => {
-        Logger.LogInfo("Server request {0} of type \"{1}\" took {2:n0} msec to execute.",
-          bufferedResponse.IpcRequest.RequestId,
-          bufferedResponse.IpcRequest.Data.GetType().Name,
-          bufferedResponse.Elapsed.TotalMilliseconds);
+      reponsesToSend.ForAll(SendResponse);
+    }
 
-        if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.TypedMessage) {
-          bufferedResponse.SuccessCallback((TypedResponse)bufferedResponse.IpcResponse.Data);
-        }
-        else if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.Exception) {
-          bufferedResponse.ErrorCallback((ErrorResponse)bufferedResponse.IpcResponse.Data);
-        } else {
-          var error = new InvalidOperationException(string.Format("Unknown response protocol: {0}", bufferedResponse.IpcResponse.Protocol));
-          var errorResponse = ErrorResponseHelper.CreateErrorResponse(error);
-          bufferedResponse.ErrorCallback(errorResponse);
-        }
-      });
+    private static void SendResponse(BufferedResponse bufferedResponse) {
+      Logger.LogInfo("Server request {0} of type \"{1}\" took {2:n0} msec to execute.",
+        bufferedResponse.IpcRequest.RequestId,
+        bufferedResponse.IpcRequest.Data.GetType().Name,
+        bufferedResponse.Elapsed.TotalMilliseconds);
+
+      if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.TypedMessage) {
+        bufferedResponse.SuccessCallback((TypedResponse) bufferedResponse.IpcResponse.Data);
+      } else if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.Exception) {
+        bufferedResponse.ErrorCallback((ErrorResponse) bufferedResponse.IpcResponse.Data);
+      } else {
+        var error = new InvalidOperationException(string.Format("Unknown response protocol: {0}",
+          bufferedResponse.IpcResponse.Protocol));
+        var errorResponse = ErrorResponseHelper.CreateErrorResponse(error);
+        bufferedResponse.ErrorCallback(errorResponse);
+      }
     }
 
     public class BufferedResponse : IComparable<BufferedResponse> {

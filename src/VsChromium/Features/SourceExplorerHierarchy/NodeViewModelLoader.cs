@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -16,26 +18,33 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _typedRequestProcessProxy = typedRequestProcessProxy;
     }
 
-    public Task<DirectoryEntry> LoadChildrenAsync(DirectoryNodeViewModel parentNode) {
+    public DirectoryEntry LoadChildren(DirectoryNodeViewModel node) {
       var tcs = new TaskCompletionSource<DirectoryEntry>();
 
-      var path = parentNode.FullPath;
-      for (NodeViewModel node = parentNode; node != null; node = node.Parent) {
-        if (node is RootNodeViewModel) {
-          path = node.FullPath;
-          break;
-        }
-      }
-      var relativePath = parentNode.RelativePath;
-
       var request = new GetDirectoryEntriesRequest {
-        ProjectPath = path.Value,
-        DirectoryRelativePath = relativePath
+        ProjectPath = node.GetProjectPath().Value,
+        DirectoryRelativePath = node.RelativePath
       };
-      _typedRequestProcessProxy.RunAsync(request,
+      _typedRequestProcessProxy.RunUnbufferedAsync(request,
         response => { LoadChildrenCallback(tcs, response); },
         response => { LoadChildrenErrorCallback(tcs, response); });
-      return tcs.Task;
+
+      return tcs.Task.Result;
+    }
+
+    public List<LoadChildrenEntry> LoadChildrenMultiple(
+      RootNodeViewModel projectNode, ICollection<DirectoryNodeViewModel> nodes) {
+      var tcs = new TaskCompletionSource<List<LoadChildrenEntry>>();
+
+      var request = new GetDirectoryEntriesMultipleRequest {
+        ProjectPath = projectNode.GetProjectPath().Value,
+        RelativePathList = nodes.Select(x => x.RelativePath).ToList()
+      };
+      _typedRequestProcessProxy.RunUnbufferedAsync(request,
+        response => { LoadChildrenMultipleCallback(tcs, nodes, response); },
+        response => { LoadChildrenMultipleErrorCallback(tcs, response); });
+
+      return tcs.Task.Result;
     }
 
     private void LoadChildrenCallback(TaskCompletionSource<DirectoryEntry> tcs, TypedResponse typedResponse) {
@@ -49,6 +58,30 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void LoadChildrenErrorCallback(TaskCompletionSource<DirectoryEntry> tcs, ErrorResponse response) {
+      tcs.TrySetException(response.CreateException());
+    }
+
+    private void LoadChildrenMultipleCallback(TaskCompletionSource<List<LoadChildrenEntry>> tcs,
+      IEnumerable<DirectoryNodeViewModel> nodes, TypedResponse typedResponse) {
+      try {
+        var response = (GetDirectoryEntriesMultipleResponse) typedResponse;
+
+        // Note: # of entries in response matches # of nodes in the request
+        using (var e = nodes.GetEnumerator()) {
+          var result = response.DirectoryEntryList.Select(entry => {
+            e.MoveNext();
+            return new LoadChildrenEntry(e.Current, entry);
+          }).ToList();
+          tcs.TrySetResult(result);
+        }
+      }
+      catch (Exception e) {
+        tcs.TrySetException(e);
+      }
+    }
+
+    private void LoadChildrenMultipleErrorCallback(TaskCompletionSource<List<LoadChildrenEntry>> tcs,
+      ErrorResponse response) {
       tcs.TrySetException(response.CreateException());
     }
   }

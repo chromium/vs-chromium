@@ -263,4 +263,18 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return OpenFolderImageIndex;
     }
   }
+
+  public static class NodeViewModelExtensions {
+    public static FullPath GetProjectPath(this NodeViewModel node) {
+      Invariants.CheckArgumentNotNull(node, nameof(node));
+
+      for (; node != null; node = node.Parent) {
+        if (node is RootNodeViewModel) {
+          return node.FullPath;
+        }
+      }
+
+      throw Invariants.Fail("Unable to determine project path of node");
+    }
+  }
 }

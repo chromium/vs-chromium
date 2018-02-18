@@ -144,6 +144,8 @@
     <Compile Include="Ipc\TypedMessages\FileSystemTree.cs" />
     <Compile Include="Ipc\TypedMessages\DirectoryDetails.cs" />
     <Compile Include="Ipc\TypedMessages\FileByExtensionDetails.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDirectoryEntriesMultipleRequest.cs" />
+    <Compile Include="Ipc\TypedMessages\GetDirectoryEntriesMultipleResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemTreeRequest.cs" />
     <Compile Include="Ipc\TypedMessages\GetFileSystemTreeResponse.cs" />
     <Compile Include="Ipc\TypedMessages\GetDatabaseDetailsRequest.cs" />

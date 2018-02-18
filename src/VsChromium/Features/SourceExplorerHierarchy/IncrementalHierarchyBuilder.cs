@@ -141,7 +141,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
 
       // Create children nodes
-      var directoryEntry = _nodeViewModelLoader.LoadChildrenAsync(newParentDirectory).Result;
+      var directoryEntry = _nodeViewModelLoader.LoadChildren(newParentDirectory);
       if (directoryEntry != null) {
         foreach (var childEntry in directoryEntry.Entries.ToForeachEnum()) {
           var child = CreateNodeViewModel(childEntry, newParent);

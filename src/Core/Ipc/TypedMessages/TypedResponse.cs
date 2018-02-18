@@ -21,6 +21,7 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoInclude(23, typeof(GetDirectoryDetailsResponse))]
   [ProtoInclude(24, typeof(GetFileSystemTreeResponse))]
   [ProtoInclude(25, typeof(GetDirectoryEntriesResponse))]
+  [ProtoInclude(26, typeof(GetDirectoryEntriesMultipleResponse))]
   public class TypedResponse : TypedMessage {
   }
 }

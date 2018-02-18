@@ -775,7 +775,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return;
       }
 
-      var directoryEntry = _nodeViewModelLoader.LoadChildrenAsync(directoryNode).Result;
+      var directoryEntry = _nodeViewModelLoader.LoadChildren(directoryNode);
       if (directoryEntry == null) {
         return;
       }

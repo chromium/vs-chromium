@@ -17,12 +17,23 @@ namespace VsChromium.ServerProxy {
   public interface ITypedRequestProcessProxy : IDisposable {
     /// <summary>
     /// Posts a request to be sent to the VsChromium server process, and calls
-    /// "successCallback" when the corresponding response is received. Responses
-    /// are guaranteed to be called in the same order as the requests are
-    /// posted. RunAsync can be called on any thread. "successCallback" will be
-    /// called on an unspecified thread.
+    /// <paramref name="successCallback"/> when the corresponding response is received,
+    /// or <paramref name="errorCallback"/> if an error occurred.
+    /// 
+    /// <para>Responses are guaranteed to be called in the same order as the requests are
+    /// posted. RunAsync can be called on any thread. <paramref name="successCallback"/>
+    /// will be called on an unspecified thread.</para>
     /// </summary>
     void RunAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback);
+
+    /// <summary>
+    /// Same as <see cref="RunAsync"/>, except responsed are dispatched as soon as they are received,
+    /// irrespective of the send order.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="successCallback"></param>
+    /// <param name="errorCallback"></param>
+    void RunUnbufferedAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback);
 
     /// <summary>
     /// Event raised when the server proxy receives an event from the the

@@ -17,5 +17,9 @@ namespace VsChromium.Core.Ipc {
 
     [ProtoMember(3)]
     public IpcMessageData Data { get; set; }
+
+    public override string ToString() {
+      return Data?.ToString() ?? GetType().Name;
+    }
   }
 }

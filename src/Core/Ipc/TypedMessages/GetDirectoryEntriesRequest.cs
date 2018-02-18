@@ -12,5 +12,9 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(2)]
     public string DirectoryRelativePath { get; set; }
+
+    public override string ToString() {
+      return $"{base.ToString()} : Project=\"{ProjectPath}\" RelativePath=\"{DirectoryRelativePath}\"";
+    }
   }
 }

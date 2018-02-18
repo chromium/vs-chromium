@@ -17,5 +17,9 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     [ProtoMember(2)]
     public List<string> RelativePathList { get; set; }
+
+    public override string ToString() {
+      return $"{base.ToString()} : Project=\"{ProjectPath}\", # of Paths={RelativePathList.Count}";
+    }
   }
 }

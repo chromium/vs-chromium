@@ -119,9 +119,9 @@ namespace VsChromium.ServerProxy {
     }
 
     private static void SendResponse(BufferedResponse bufferedResponse) {
-      Logger.LogInfo("Server request {0} of type \"{1}\" took {2:n0} msec to execute.",
+      Logger.LogInfo("Server request #{0} ({1}) took {2:n0} msec to execute.",
         bufferedResponse.IpcRequest.RequestId,
-        bufferedResponse.IpcRequest.Data.GetType().Name,
+        GetRequestDescription(bufferedResponse.IpcRequest),
         bufferedResponse.Elapsed.TotalMilliseconds);
 
       if (bufferedResponse.IpcResponse.Protocol == IpcProtocols.TypedMessage) {
@@ -133,6 +133,15 @@ namespace VsChromium.ServerProxy {
           bufferedResponse.IpcResponse.Protocol));
         var errorResponse = ErrorResponseHelper.CreateErrorResponse(error);
         bufferedResponse.ErrorCallback(errorResponse);
+      }
+    }
+
+    private static string GetRequestDescription(IpcRequest request) {
+      try {
+        return request.ToString();
+      }
+      catch (Exception) {
+        return request.Data.GetType().Name;
       }
     }
 

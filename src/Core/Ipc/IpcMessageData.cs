@@ -11,5 +11,9 @@ namespace VsChromium.Core.Ipc {
   [ProtoInclude(11, typeof(TypedMessage))]
   [ProtoInclude(12, typeof(ErrorResponse))]
   public class IpcMessageData {
+
+    public override string ToString() {
+      return GetType().Name;
+    }
   }
 }

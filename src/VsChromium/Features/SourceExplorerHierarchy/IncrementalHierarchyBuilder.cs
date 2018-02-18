@@ -108,8 +108,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         rootNode.Caption = string.Format("Source Explorer - {0}", _projectPath.Value);
         rootNode.Template = _templateFactory.ProjectTemplate;
 
+        // Optimistically retrieve list of entries of previously existing tree nodes
+        var previouslyLoadedChildren = RetrievePreviouslyLoadedChildren(_oldNodes.RootNode);
+
         // Add children nodes
-        AddNodeForChildren(_oldNodes.RootNode, _newNodes.RootNode);
+        AddNodeForChildren(previouslyLoadedChildren, _oldNodes.RootNode, _newNodes.RootNode);
 
         return new IncrementalBuildResult {
           OldNodes = _oldNodes,
@@ -120,7 +123,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void AddNodeForChildren(NodeViewModel oldParent, NodeViewModel newParent) {
+    private void AddNodeForChildren(IDictionary<RelativePath, DirectoryEntry> previouslyLoadedChildren,
+      NodeViewModel oldParent, NodeViewModel newParent) {
       Invariants.Assert(oldParent != null);
       Invariants.Assert(newParent != null);
       Invariants.Assert(newParent.Children.Count == 0);
@@ -136,12 +140,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
 
       var oldParentChildrenList = oldParentDirectory.CopyChildren();
+      // Note: The "IsRoot" test is to ensure we always load children of the root node
+      // so that the returned hierarchy is not empty.
       if (oldParentChildrenList.Count == 0 && !oldParent.IsRoot) {
         return;
       }
 
       // Create children nodes
-      var directoryEntry = _nodeViewModelLoader.LoadChildren(newParentDirectory);
+      var directoryEntry = LoadNewNodeChildren(previouslyLoadedChildren, newParentDirectory);
       if (directoryEntry != null) {
         foreach (var childEntry in directoryEntry.Entries.ToForeachEnum()) {
           var child = CreateNodeViewModel(childEntry, newParent);
@@ -188,10 +194,47 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           var oldChildNode = GetCommonOldNode(newParent, i, diffs, newChildNode);
 
           if (oldChildNode != null) {
-            AddNodeForChildren(oldChildNode, newChildNode);
+            AddNodeForChildren(previouslyLoadedChildren, oldChildNode, newChildNode);
           }
         }
       }
+    }
+
+    private IDictionary<RelativePath, DirectoryEntry> RetrievePreviouslyLoadedChildren(RootNodeViewModel rootNode) {
+      var result = new Dictionary<RelativePath, DirectoryEntry>();
+
+      // Special case for "fake" empty hierarchy
+      if (rootNode.Children.Count > 0) {
+        var directoryNodes = new List<DirectoryNodeViewModel>();
+        CollectChildrenLoadedDirectoryNodes(rootNode, directoryNodes);
+
+        var entries = _nodeViewModelLoader.LoadChildrenMultiple(rootNode, directoryNodes);
+        foreach (var entry in entries) {
+          result.Add(new RelativePath(entry.Node.RelativePath), entry.Entry);
+        }
+      }
+
+      return result;
+    }
+
+    private void CollectChildrenLoadedDirectoryNodes(NodeViewModel node, List<DirectoryNodeViewModel> directoryNodes) {
+      var directoryNode = node as DirectoryNodeViewModel;
+      if (directoryNode != null && directoryNode.ChildrenLoaded) {
+        directoryNodes.Add(directoryNode);
+        foreach (var childNode in directoryNode.Children) {
+          CollectChildrenLoadedDirectoryNodes(childNode, directoryNodes);
+        }
+      }
+    }
+
+    private DirectoryEntry LoadNewNodeChildren(IDictionary<RelativePath, DirectoryEntry> previouslyLoadedChildren,
+      DirectoryNodeViewModel newParentDirectory) {
+      var directoryEntry = previouslyLoadedChildren.GetValue(new RelativePath(newParentDirectory.RelativePath));
+      if (directoryEntry == null) {
+        directoryEntry = _nodeViewModelLoader.LoadChildren(newParentDirectory);
+      }
+
+      return directoryEntry;
     }
 
     private static NodeViewModel GetCommonOldNode(NodeViewModel newParent, int index,
@@ -233,8 +276,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       var directoryEntry = entry as DirectoryEntry;
       var node = directoryEntry != null
-        ? (NodeViewModel)new DirectoryNodeViewModel(parent)
-        : (NodeViewModel)new FileNodeViewModel(parent);
+        ? (NodeViewModel) new DirectoryNodeViewModel(parent)
+        : (NodeViewModel) new FileNodeViewModel(parent);
 
       node.Caption = entry.Name;
       node.Name = entry.Name;

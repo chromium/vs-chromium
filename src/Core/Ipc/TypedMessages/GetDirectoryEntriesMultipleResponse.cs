@@ -9,10 +9,17 @@ namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class GetDirectoryEntriesMultipleResponse : TypedResponse {
     public GetDirectoryEntriesMultipleResponse() {
-      DirectoryEntryList = new List<DirectoryEntry>();
+      DirectoryEntries = new List<OptionalDirectoryEntry>();
     }
 
+    /// <summary>
+    /// One entry per path passed in the <see cref="GetDirectoryEntriesMultipleRequest"/>.
+    /// 
+    /// <para>If the path does not exist in the current file system snapshot, the 
+    /// <see cref="OptionalDirectoryEntry.HasValue"/> properties of the corresponding
+    /// <see cref="OptionalDirectoryEntry"/> entry in the list is <code>false</code>.</para>
+    /// </summary>
     [ProtoMember(1)]
-    public List<DirectoryEntry> DirectoryEntryList { get; set; }
+    public List<OptionalDirectoryEntry> DirectoryEntries { get; set; }
   }
 }

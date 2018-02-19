@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
 using ProtoBuf;
+using System.Collections.Generic;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
@@ -16,8 +16,10 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     [ProtoMember(1)]
     public List<FileSystemEntry> Entries { get; set; }
 
+    public bool IsEmpty => string.IsNullOrEmpty(Name);
+
     public override string ToString() {
-      return string.Format("dir:\"{0}\", {1} children", Name ?? string.Empty, Entries.Count);
+      return $"dir: \"{Name}\", {Entries.Count} children";
     }
   }
 }

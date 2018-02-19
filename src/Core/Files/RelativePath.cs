@@ -53,8 +53,11 @@ namespace VsChromium.Core.Files {
     /// </summary>
     public RelativePath? Parent {
       get {
-        var parent = PathHelpers.GetParent(_relativePath ?? "");
-        return parent == null ? default(RelativePath) : new RelativePath(parent);
+        if (_relativePath == null) {
+          return null;
+        }
+        var parent = PathHelpers.GetParent(_relativePath);
+        return parent == null ? Empty : new RelativePath(parent);
       }
     }
 

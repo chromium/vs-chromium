@@ -141,6 +141,7 @@
     <Compile Include="Ipc\IpcEvent.cs" />
     <Compile Include="Ipc\IpcMessage.cs" />
     <Compile Include="Ipc\RecoverableErrorException.cs" />
+    <Compile Include="Ipc\TypedMessages\OptionalDirectoryEntry.cs" />
     <Compile Include="Ipc\TypedMessages\FileSystemTree.cs" />
     <Compile Include="Ipc\TypedMessages\DirectoryDetails.cs" />
     <Compile Include="Ipc\TypedMessages\FileByExtensionDetails.cs" />

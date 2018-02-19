@@ -32,9 +32,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return tcs.Task.Result;
     }
 
-    public List<LoadChildrenEntry> LoadChildrenMultiple(
+    public List<LoadChildrenResult> LoadChildrenMultiple(
       RootNodeViewModel projectNode, ICollection<DirectoryNodeViewModel> nodes) {
-      var tcs = new TaskCompletionSource<List<LoadChildrenEntry>>();
+      var tcs = new TaskCompletionSource<List<LoadChildrenResult>>();
 
       var request = new GetDirectoryEntriesMultipleRequest {
         ProjectPath = projectNode.GetProjectPath().Value,
@@ -61,16 +61,16 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       tcs.TrySetException(response.CreateException());
     }
 
-    private void LoadChildrenMultipleCallback(TaskCompletionSource<List<LoadChildrenEntry>> tcs,
+    private void LoadChildrenMultipleCallback(TaskCompletionSource<List<LoadChildrenResult>> tcs,
       IEnumerable<DirectoryNodeViewModel> nodes, TypedResponse typedResponse) {
       try {
         var response = (GetDirectoryEntriesMultipleResponse) typedResponse;
 
         // Note: # of entries in response matches # of nodes in the request
         using (var e = nodes.GetEnumerator()) {
-          var result = response.DirectoryEntryList.Select(entry => {
+          var result = response.DirectoryEntries.Select(entry => {
             e.MoveNext();
-            return new LoadChildrenEntry(e.Current, entry);
+            return new LoadChildrenResult(e.Current, entry.HasValue ? entry.Value : null);
           }).ToList();
           tcs.TrySetResult(result);
         }
@@ -80,7 +80,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void LoadChildrenMultipleErrorCallback(TaskCompletionSource<List<LoadChildrenEntry>> tcs,
+    private void LoadChildrenMultipleErrorCallback(TaskCompletionSource<List<LoadChildrenResult>> tcs,
       ErrorResponse response) {
       tcs.TrySetException(response.CreateException());
     }

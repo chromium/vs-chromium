@@ -20,7 +20,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public override TypedResponse Process(TypedRequest typedRequest) {
-      var request = (GetDirectoryEntriesRequest) typedRequest;
+      var request = (GetDirectoryEntriesRequest)typedRequest;
 
       var projectPath = new FullPath(request.ProjectPath);
       var project = _snapshotManager.CurrentSnapshot.ProjectRoots
@@ -32,14 +32,14 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     public static DirectoryEntry CreateDirectoryEntry(ProjectRootSnapshot project, string relativePath) {
-      var entry = FindDirectorySnapshot(project, relativePath);
-      if (entry == null) {
+      var directorySnapshot = FindDirectorySnapshot(project, relativePath);
+      if (directorySnapshot == null) {
         return null;
       }
 
       return new DirectoryEntry {
-          Name = entry.DirectoryName.RelativePath.Value,
-          Entries = BuildEntries(entry),
+        Name = directorySnapshot.DirectoryName.RelativePath.Value,
+        Entries = BuildEntries(directorySnapshot),
       };
     }
 

@@ -26,10 +26,17 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
         .FirstOrDefault(x => x.Project.RootPath.Equals(projectPath));
 
       return new GetDirectoryEntriesMultipleResponse {
-        DirectoryEntryList = request.RelativePathList
-          .Select(x => GetDirectoryEntriesRequestHandler.CreateDirectoryEntry(project, x))
+        DirectoryEntries = request.RelativePathList
+          .Select(relativePath => MapDirectoryEntry(project, relativePath))
           .ToList()
       };
+    }
+
+    private static OptionalDirectoryEntry MapDirectoryEntry(ProjectRootSnapshot project, string relativePath) {
+      var directoryEntry = GetDirectoryEntriesRequestHandler.CreateDirectoryEntry(project, relativePath);
+      return directoryEntry == null
+        ? new OptionalDirectoryEntry { HasValue = false }
+        : new OptionalDirectoryEntry { HasValue = true, Value = directoryEntry };
     }
   }
 }

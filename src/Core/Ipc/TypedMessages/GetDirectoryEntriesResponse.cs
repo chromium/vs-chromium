@@ -7,6 +7,10 @@ using ProtoBuf;
 namespace VsChromium.Core.Ipc.TypedMessages {
   [ProtoContract]
   public class GetDirectoryEntriesResponse : TypedResponse {
+    /// <summary>
+    /// <code>null</code> if the requested directory is not found in the
+    /// active file system snapshpt.
+    /// </summary>
     [ProtoMember(1)]
     public DirectoryEntry DirectoryEntry { get; set; }
   }

@@ -40,10 +40,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       _progressTrackerFactory = progressTrackerFactory;
     }
 
-    public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase, FileSystemSnapshot newSnapshot,
-      FullPathChanges fullPathChanges,
-      Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult,
-      CancellationToken cancellationToken) {
+    public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase,
+                                       FileSystemSnapshot newSnapshot,
+                                       FullPathChanges fullPathChanges,
+                                       Action onLoading,
+                                       Action onLoaded,
+                                       Action<IFileDatabaseSnapshot> onIntermadiateResult,
+                                       CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Building file database from previous one and file system tree snapshot",
         cancellationToken, InfoLogger.Instance)) {
         using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
@@ -94,10 +97,12 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     public IFileDatabaseSnapshot BuildWithChangedFiles(IFileDatabaseSnapshot previousFileDatabaseSnapshot,
-      FileSystemSnapshot fileSystemSnapshot, IEnumerable<ProjectFileName> changedFiles,
-      Action onLoading, Action onLoaded, Action<IFileDatabaseSnapshot> onIntermadiateResult,
-      CancellationToken cancellationToken) {
-
+                                                       FileSystemSnapshot fileSystemSnapshot,
+                                                       IEnumerable<ProjectFileName> changedFiles,
+                                                       Action onLoading,
+                                                       Action onLoaded,
+                                                       Action<IFileDatabaseSnapshot> onIntermadiateResult,
+                                                       CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Building file database from previous one and list of changed files",
         cancellationToken, InfoLogger.Instance)) {
         Invariants.Assert(previousFileDatabaseSnapshot is FileDatabaseSnapshot);
@@ -129,8 +134,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
     }
 
-    private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities, bool notifyProgress,
-      CancellationToken cancellationToken) {
+    private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities,
+                                                    bool notifyProgress,
+                                                    CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested();
       using (new TimeElapsedLogger("Freezing file database state", cancellationToken)) {
         var progress = notifyProgress ? _progressTrackerFactory.CreateIndeterminateTracker() : null;
@@ -250,7 +256,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     private FileSystemEntities ComputeFileSystemEntities(FileSystemSnapshot snapshot,
-      CancellationToken cancellationToken) {
+                                                         CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Computing tables of directory names and file names from FileSystemTree",
         cancellationToken)) {
 
@@ -312,8 +318,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       public PartialProgressReporter PartialProgressReporter;
     }
 
-    private void LoadFileContents(FileSystemEntities entities, FileContentsLoadingContext loadingContext,
-      CancellationToken cancellationToken) {
+    private void LoadFileContents(FileSystemEntities entities,
+                                  FileContentsLoadingContext loadingContext,
+                                  CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Loading file contents from disk", cancellationToken)) {
         using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
           entities.Files.AsParallelWrapper().ForAll(fileEntry => {
@@ -358,7 +365,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
     /// </summary>
     private static void DangerousUpdateFileSystemEntitiesEntry(FileSystemEntities entities,
-      KeyValuePair<FileName, ProjectFileData> fileEntry, FileContents contents) {
+                                                               KeyValuePair<FileName, ProjectFileData> fileEntry,
+                                                               FileContents contents) {
       entities.Files[fileEntry.Key] = fileEntry.Value.WithContents(contents);
     }
 
@@ -374,21 +382,21 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// 2) is verified because the two possible implementations, <see cref="Dictionary{TKey,TValue}"/>
     ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
     /// </summary>
-    private static void DangerousUpdateFileTableEntry(FileDatabaseSnapshot fileDatabase, FileName fileName,
-      FileContents newContents) {
+    private static void DangerousUpdateFileTableEntry(FileDatabaseSnapshot fileDatabase,
+                                                      FileName fileName,
+                                                      FileContents newContents) {
       fileDatabase.Files[fileName] = new FileWithContents(fileName, newContents);
     }
 
-    private FileContents LoadSingleFileContents(
-      FileSystemEntities entities,
-      FileContentsLoadingContext loadingContext,
-      ProjectFileData projectFileData) {
-
+    private FileContents LoadSingleFileContents(FileSystemEntities entities,
+                                                FileContentsLoadingContext loadingContext,
+                                                ProjectFileData projectFileData) {
       var fileName = projectFileData.FileName;
-      var oldFileData = loadingContext.OldFileDatabaseSnapshot.Files.GetValueType(fileName);
+      var file = loadingContext.OldFileDatabaseSnapshot.Files.GetValueType(fileName);
 
-      // If the file was never loaded before, just load it
-      if (oldFileData == null || oldFileData.Value.Contents == null) {
+      // If the file was never loaded before, just load it (after performing a
+      // "isSearchable" check).
+      if (file?.Contents == null) {
         return LoadSingleFileContentsWorker(loadingContext, projectFileData);
       }
 
@@ -413,17 +421,15 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
       // If the file has not changed since the previous snapshot, we can re-use
       // the former file contents snapshot.
-      if (IsFileContentsUpToDate(entities, loadingContext.FullPathChanges, oldFileData.Value)) {
-        return oldFileData.Value.Contents;
+      if (IsFileContentsUpToDate(entities, loadingContext.FullPathChanges, file.Value)) {
+        return file.Value.Contents;
       }
 
       return LoadSingleFileContentsWorker(loadingContext, projectFileData);
     }
 
-    private FileContents LoadSingleFileContentsWorker(
-      FileContentsLoadingContext loadingContext,
-      ProjectFileData projectFileData) {
-
+    private FileContents LoadSingleFileContentsWorker(FileContentsLoadingContext loadingContext,
+                                                      ProjectFileData projectFileData) {
       // If project configuration has not changed, the file is still not
       // searchable, irrelevant to calling "IsSearchable".
       if (loadingContext.FullPathChanges != null) {
@@ -434,8 +440,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
 
       // This is an expensive call, hopefully avoided by the code above.
-      if (!projectFileData.IsSearchable)
+      if (!projectFileData.IsSearchable) {
         return null;
+      }
 
       loadingContext.PartialProgressReporter.ReportProgress();
 
@@ -449,8 +456,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return fileContents;
     }
 
-    private bool IsFileContentsUpToDate(FileSystemEntities entities, FullPathChanges fullPathChanges,
-      FileWithContents existingFileWithContents) {
+    private bool IsFileContentsUpToDate(FileSystemEntities entities,
+                                        FullPathChanges fullPathChanges,
+                                        FileWithContents existingFileWithContents) {
       Invariants.Assert(existingFileWithContents.Contents != null);
 
       var fullPath = existingFileWithContents.FileName.FullPath;
@@ -459,9 +467,12 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         // We don't get file change events for file in symlinks, so we can't
         // rely on fullPathChanges contents for our heuristic of avoiding file
         // system access.
-        if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(entities.Directories, existingFileWithContents.FileName)) {
-          return fullPathChanges.ShouldSkipLoadFileContents(fullPath);
-        }
+        // Actually, since we cannot reliable detect changes in symlinks, we enable this
+        // optimization anyways, as we rely on the user to manually refresh the index
+        // (that results in a "null" value for fullPathChanges)
+        //if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(entities.Directories, existingFileWithContents.FileName)) {
+        return fullPathChanges.ShouldSkipLoadFileContents(fullPath);
+        //}
       }
 
       // Do the "expensive" check by going to the file system.

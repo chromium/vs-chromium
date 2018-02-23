@@ -86,7 +86,9 @@ namespace VsChromium.Core.Chromium {
         if (file.Equals("delegate_execute.exe", StringComparison.CurrentCultureIgnoreCase))
           return ProcessCategory.DelegateExecute;
         else if (file.Equals("chrome.exe", StringComparison.CurrentCultureIgnoreCase)) {
-          if (_commandLine.Contains("--type=renderer"))
+          if (_commandLine.Contains("--extension-process"))
+            return ProcessCategory.Extension;
+          else if (_commandLine.Contains("--type=renderer"))
             return ProcessCategory.Renderer;
           else if (_commandLine.Contains("--type=plugin"))
             return ProcessCategory.Plugin;
@@ -100,6 +102,10 @@ namespace VsChromium.Core.Chromium {
             return ProcessCategory.PpapiBroker;
           else if (_commandLine.Any(arg => arg.StartsWith("-ServerName")))
             return ProcessCategory.MetroViewer;
+          else if (_commandLine.Contains("--type=crashpad-handler"))
+            return ProcessCategory.Crashpad;
+          else if (_commandLine.Contains("--type=utility"))
+            return ProcessCategory.Utility;
           else
             return ProcessCategory.Browser;
         } else

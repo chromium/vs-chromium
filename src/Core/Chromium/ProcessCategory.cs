@@ -14,6 +14,9 @@ namespace VsChromium.Core.Chromium {
     DelegateExecute,
     MetroViewer,
     Service,
+    Crashpad,
+    Utility,
+    Extension,
     Other
   }
 

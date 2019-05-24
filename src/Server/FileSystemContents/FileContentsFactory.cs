@@ -25,7 +25,7 @@ namespace VsChromium.Server.FileSystemContents {
         return ReadFileContentsWorker(fileInfo);
       }
       catch (Win32Exception e) {
-        Logger.LogWarn("Skipping file \"{0}\": {1}", path, e.Message);
+        Logger.LogWarn("Skipping file \"{0}\": {1} ({2})", path, e.Message, e.NativeErrorCode);
         return BinaryFileContents.Empty;
       }
       catch (Exception e) {

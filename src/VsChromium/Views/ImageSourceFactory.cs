@@ -78,6 +78,8 @@ namespace VsChromium.Views {
     }
 
     private KeyValuePair<string, ImageSource> GetImageSourceForFileExtension(string fileExtension) {
+      // TODO: Fix this to work with v14 for VS SDK
+      /*
       var list = DefaultIconImageList.Instance;
       ImageSource source = list.GetImage(fileExtension);
       if (source != null) {
@@ -88,8 +90,9 @@ namespace VsChromium.Views {
       if (source != null) {
         return new KeyValuePair<string, ImageSource>(".txt", source);
       }
+      */
 
-      source = GetImageSource("TextDocument");
+      ImageSource source = GetImageSource("TextDocument");
       Invariants.CheckOperation(source != null, "Text Document icon is missing");
       return new KeyValuePair<string, ImageSource>("TextDocument", source);
     }

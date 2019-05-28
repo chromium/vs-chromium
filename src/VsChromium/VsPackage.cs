@@ -6,6 +6,8 @@ using System;
 using System.ComponentModel.Design;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -19,7 +21,7 @@ using VsChromium.ToolsOptions;
 using IServiceProvider = System.IServiceProvider;
 
 namespace VsChromium {
-  [PackageRegistration(UseManagedResourcesOnly = true)]
+  [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
   [InstalledProductRegistration("#110", "#112", VsChromium.Core.VsChromiumVersion.Product, IconResourceID = 400)]
   // When in development mode, update the version # below every time there is a change to the .VSCT file,
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
@@ -61,9 +63,9 @@ namespace VsChromium {
     new[] { "VS Chromium", "Chrome", "Coding Style", "Style" },
     SupportsProfiles = true)
   ]
-  [ProvideAutoLoad(UIContextGuids80.EmptySolution)]
-  [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
-  public sealed class VsPackage : Microsoft.VisualStudio.Shell.Package, IVisualStudioPackage, IOleCommandTarget {
+  [ProvideAutoLoad(VSConstants.UICONTEXT.EmptySolution_string, PackageAutoLoadFlags.BackgroundLoad)]
+  [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
+  public sealed class VsPackage : AsyncPackage, IVisualStudioPackage, IOleCommandTarget {
     private readonly IDisposeContainer _disposeContainer = new DisposeContainer();
 
     public VsPackage() {
@@ -157,10 +159,16 @@ namespace VsChromium {
       base.Dispose(disposing);
     }
 
-    protected override void Initialize() {
+    protected override async System.Threading.Tasks.Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress) {
+      // Switches to the UI thread in order to consume some services used in command initialization
+      await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+      InitializeUIThread();
+    }
+
+    private void InitializeUIThread() {
       Logger.LogInfo("{0}.Initialize()", this.GetType().FullName);
 
-      base.Initialize();
       try {
         PreInitialize();
         PostInitialize();

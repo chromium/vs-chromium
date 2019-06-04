@@ -65,7 +65,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
       return new ProjectConfigurationSectionDetails {
         ContainingFilePath = section.ContainingFilePath.Value,
         Name = section.Name,
-        Contents = section.Contents.Aggregate((acc, s1) => acc + "\r\n" + s1)
+        Contents = section.Contents.Aggregate("", (acc, s1) => acc + "\r\n" + s1)
       };
     }
   }

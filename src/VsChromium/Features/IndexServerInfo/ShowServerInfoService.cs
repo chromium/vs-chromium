@@ -98,8 +98,8 @@ namespace VsChromium.Features.IndexServerInfo {
             MaxLargeFilesDetailsCount = 4000,
           },
           OnDispatchThreadError = error => {
-            // TODO: Display error message
             dialog.ViewModel.Waiting = false;
+            _shellHost.ShowErrorMessageBox("Error retrieving server index details", error);
           },
           OnDispatchThreadSuccess = typedResponse => {
             var response = (GetDatabaseDetailsResponse) typedResponse;
@@ -145,7 +145,7 @@ namespace VsChromium.Features.IndexServerInfo {
         },
         OnDispatchThreadError = error => {
           dialog.ViewModel.Waiting = false;
-          _shellHost.ShowErrorMessageBox("Error", error.Message);
+          _shellHost.ShowErrorMessageBox("Error retrieving project index details", error);
         },
         OnDispatchThreadSuccess = typedResponse => {
           var response = (GetProjectDetailsResponse) typedResponse;
@@ -177,7 +177,7 @@ namespace VsChromium.Features.IndexServerInfo {
         },
         OnDispatchThreadError = error => {
           dialog.ViewModel.Waiting = false;
-          _shellHost.ShowErrorMessageBox("Error", error.Message);
+          _shellHost.ShowErrorMessageBox("Error retrieving server index details for directory", error);
         },
         OnDispatchThreadSuccess = typedResponse => {
           var response1 = (GetDirectoryDetailsResponse) typedResponse;

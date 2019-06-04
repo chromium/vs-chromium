@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using VsChromium.Core.Files;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Logging {
@@ -32,6 +33,21 @@ namespace VsChromium.Core.Logging {
 
     public static string FileName { get; set; }
     public static string Id { get; set; }
+
+    public static string LogInfoPath {
+      get { return GetLogFilePath(""); }
+    }
+
+    public static string LogErrorPath {
+      get { return GetLogFilePath(".errors"); }
+    }
+
+    private static string GetLogFilePath(string suffix) {
+      var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+      var dirName = "VsChromium";
+      return String.Format("{0}",
+        PathHelpers.CombinePaths(PathHelpers.CombinePaths(appData, dirName), FileName + suffix + ".log"));
+    }
 
     public static bool IsDebugEnabled { get; set; }
     public static bool IsInfoEnabled { get; set; }

@@ -334,16 +334,42 @@ namespace VsChromium.Server.Search {
         })
         .ToReadOnlyCollection();
 
-      var matcher = new AnyPathMatcher(patterns.Select(PatternParser.ParsePattern));
+      // Split patterns into "include" and "exclude" patterns.
+      // "exclude" patterns are defined as any pattern starting with "-".
+      var includePatterns = patterns.Where(x => !x.StartsWith("-")).ToList();
+      var excludePatterns = patterns
+        .Except(includePatterns)
+        .Select(x => x.Substring(1))
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .ToList();
+
+      // If no include pattern, assume implicit "*"
+      if (includePatterns.Count == 0) {
+        includePatterns.Add("*");
+      }
+      var includeMatcher = new AnyPathMatcher(includePatterns.Select(PatternParser.ParsePattern));
+
+      // Perf: Use "null" matcher if exclude pattern list is empty
+      var excludeMatcher = (excludePatterns.Count == 0 ?
+          null :
+          new AnyPathMatcher(excludePatterns.Select(PatternParser.ParsePattern)));
 
       var comparer = searchParams.MatchCase ? PathComparerRegistry.CaseSensitive : PathComparerRegistry.CaseInsensitive;
       if (patterns.Any(x => x.Contains(Path.DirectorySeparatorChar))) {
         return new SearchPreProcessResult<T> {
-          Matcher = (item) => matchRelativeName(matcher, item, comparer)
+          Matcher = (item) => {
+            if (excludeMatcher != null && matchRelativeName(excludeMatcher, item, comparer))
+              return false;
+            return matchRelativeName(includeMatcher, item, comparer);
+          }
         };
       } else {
         return new SearchPreProcessResult<T> {
-          Matcher = (item) => matchName(matcher, item, comparer)
+          Matcher = (item) => {
+            if (excludeMatcher != null && matchName(excludeMatcher, item, comparer))
+              return false;
+            return matchName(includeMatcher, item, comparer);
+          }
         };
       }
     }

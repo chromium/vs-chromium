@@ -321,27 +321,23 @@ namespace VsChromium.Server.Search {
         .Split(new[] { ';' })
         .Where(x => !string.IsNullOrWhiteSpace(x.Trim()))
         .Select(x => x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar))
-        .Select(x => {
-          // Exception to ".gitignore" syntax: If the search string doesn't contain any special
-          // character, surround the pattern with "*" so that we match sub-strings.
-          // TODO(rpaquay): What about "."? Special or not?
-          if (x.IndexOf(Path.DirectorySeparatorChar) < 0 && x.IndexOf('*') < 0) {
-            if (!searchParams.MatchWholeWord) {
-              x = "*" + x + "*";
-            }
-          }
-          return x;
-        })
-        .ToReadOnlyCollection();
+        .ToList();
 
       // Split patterns into "include" and "exclude" patterns.
       // "exclude" patterns are defined as any pattern starting with "-".
-      var includePatterns = patterns.Where(x => !x.StartsWith("-")).ToList();
+      var includePatterns = patterns
+        .Where(x => !x.StartsWith("-"))
+        .ToList();
+
       var excludePatterns = patterns
-        .Except(includePatterns)
+        .Where(x => x.StartsWith("-"))
         .Select(x => x.Substring(1))
         .Where(x => !string.IsNullOrWhiteSpace(x))
         .ToList();
+
+      // Process qouble quotes, and add implicit wildcards if needed
+      includePatterns = MapQuotesAndImplicitWildcards(searchParams, includePatterns).ToList();
+      excludePatterns = MapQuotesAndImplicitWildcards(searchParams, excludePatterns).ToList();
 
       // If no include pattern, assume implicit "*"
       if (includePatterns.Count == 0) {
@@ -372,6 +368,33 @@ namespace VsChromium.Server.Search {
           }
         };
       }
+    }
+
+    private IEnumerable<string> MapQuotesAndImplicitWildcards(SearchParams searchParams, IEnumerable<string> patterns) {
+      return patterns.Select(x => {
+          // Exception to ".gitignore" syntax: If the search string doesn't contain any special
+          // character, surround the pattern with "*" so that we match sub-strings.
+          // TODO(rpaquay): What about "."? Special or not?
+          if (x.IndexOf(Path.DirectorySeparatorChar) < 0 && x.IndexOf('*') < 0 && !IsSurroundedByDoubleQuotes(x)) {
+            if (!searchParams.MatchWholeWord) {
+              x = "*" + x + "*";
+            }
+          }
+          return x;
+        })
+        .Select(x => RemoveSurroundingDoubleQuotes(x))
+        .Where(x => !string.IsNullOrEmpty(x));
+    }
+
+    private string RemoveSurroundingDoubleQuotes(string text) {
+      if (IsSurroundedByDoubleQuotes(text)) {
+        return text.Substring(1, text.Length - 2);
+      }
+      return text;
+    }
+
+    private bool IsSurroundedByDoubleQuotes(string text) {
+      return (text.Length > 2) && (text[0] == '"') && (text[text.Length - 1] == '"');
     }
 
     private SearchPreProcessResult<T> PreProcessFileSystemNameRegularExpressionSearch<T>(SearchParams searchParams,

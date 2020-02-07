@@ -185,6 +185,7 @@
     <Compile Include="Threads\ThreadPool.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="Configuration\ChromiumEnlistmentDetection.patterns">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

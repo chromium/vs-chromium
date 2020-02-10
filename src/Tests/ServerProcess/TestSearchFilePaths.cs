@@ -55,6 +55,38 @@ namespace VsChromium.Tests.ServerProcess {
     }
 
     [TestMethod]
+    public void DoubleQuotesWorks() {
+      const string fileName = "";
+      const string searchPattern = "\"present_three_times.txt\"";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 0);
+    }
+
+    [TestMethod]
+    public void ImplicitWildcardWorks() {
+      const string fileName = "";
+      const string searchPattern = "readme";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 2);
+    }
+
+    [TestMethod]
+    public void ImplicitWildcardAndExlusionWorks() {
+      const string fileName = "";
+      const string searchPattern = "-readme";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
+    }
+
+    [TestMethod]
+    public void DoubleQuotesAndExlusionWorks() {
+      const string fileName = "";
+      const string searchPattern = "-\"readme\"";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 11);
+    }
+
+    [TestMethod]
     public void SemiColonSeparatorWithWildcardWorks() {
       const string searchPattern = "*.txt;*.py";
       const string fileName = "";
@@ -63,8 +95,64 @@ namespace VsChromium.Tests.ServerProcess {
     }
 
     [TestMethod]
-    public void SemiColonSeparatorWithPartialNamesWorks() {
+    public void SemiColonSeparatorWithImplicitWildcardWorks() {
       const string searchPattern = ".txt;.py";
+      const string fileName = "";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorSingleDoubleQuotesWorks() {
+      const string searchPattern = ".txt;\".py\"";
+      const string fileName = "";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 8);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorSingleDoubleQuotes2Works() {
+      const string searchPattern = "\".txt\";.py";
+      const string fileName = "";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 1);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorDoubleQuotesWorks() {
+      const string searchPattern = "\".txt\";\".py\"";
+      const string fileName = "";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 0);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorWithExclusionWorks() {
+      const string searchPattern = ".txt;.py;-presubmit";
+      const string fileName = "";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 8);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorWithExclusionsOnlyWorks() {
+      const string searchPattern = "-presubmit;-readme";
+      const string fileName = "";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 8);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorWithExclusionAndIncludingDoubleQuotesWorks() {
+      const string searchPattern = ".txt;.py;-\"presubmit.py\"";
+      const string fileName = "";
+
+      VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 8);
+    }
+
+    [TestMethod]
+    public void SemiColonSeparatorWithExclusionAndExcludingDoubleQuotesWorks() {
+      const string searchPattern = ".txt;.py;-\"presubmit\"";
       const string fileName = "";
 
       VerifySearchFilePathsResponse(_server, searchPattern, _testFile.Directory, fileName, 9);
@@ -74,8 +162,8 @@ namespace VsChromium.Tests.ServerProcess {
       ITypedRequestProcessProxy server,
       string searchPattern,
       DirectoryInfo chromiumDirectory,
-      string fileName,
-      int occurrenceCount) {
+      string expectedFileName,
+      int expectedOccurrenceCount) {
       var response = SendRequest<SearchFilePathsResponse>(server, new SearchFilePathsRequest {
         SearchParams = new SearchParams {
           SearchString = searchPattern,
@@ -86,15 +174,19 @@ namespace VsChromium.Tests.ServerProcess {
       Assert.IsNotNull(response.SearchResult);
       Assert.IsNotNull(response.SearchResult.Entries);
 
-      Assert.AreEqual(1, response.SearchResult.Entries.Count);
-      var chromiumEntry = response.SearchResult.Entries[0] as DirectoryEntry;
-      Assert.IsNotNull(chromiumEntry);
-      Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.Name);
+      if (expectedOccurrenceCount == 0) {
+        Assert.AreEqual(0, response.SearchResult.Entries.Count);
+      } else {
+        Assert.AreEqual(1, response.SearchResult.Entries.Count);
+        var chromiumEntry = response.SearchResult.Entries[0] as DirectoryEntry;
+        Assert.IsNotNull(chromiumEntry);
+        Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.Name);
 
-      chromiumEntry.Entries.ForAll(x => Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name)));
-      Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
-      if (fileName != "") {
-        Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count(x => Path.GetFileName(x.Name) == fileName));
+        chromiumEntry.Entries.ForAll(x => Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name)));
+        Assert.AreEqual(expectedOccurrenceCount, chromiumEntry.Entries.Count);
+        if (expectedFileName != "") {
+          Assert.AreEqual(expectedOccurrenceCount, chromiumEntry.Entries.Count(x => Path.GetFileName(x.Name) == expectedFileName));
+        }
       }
     }
   }

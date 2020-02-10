@@ -1,0 +1,6 @@
+[SourceExplorer.ignore]
+
+[SearchableFiles.include]
+*
+
+[SearchableFiles.ignore]

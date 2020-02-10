@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="a10cf7af-5f0a-4502-b44b-51ff1b7c8a87" Version="0.9.31" Language="en-US" Publisher="The Chromium Authors" />
+    <Identity Id="a10cf7af-5f0a-4502-b44b-51ff1b7c8a87" Version="0.9.32" Language="en-US" Publisher="The Chromium Authors" />
     <DisplayName>VsChromium</DisplayName>
     <Description xml:space="preserve">Collection of tools to help contributing code to the Chromium project.</Description>
     <License>LICENSE</License>

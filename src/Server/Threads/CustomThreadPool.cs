@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Threads;
 
 namespace VsChromium.Server.Threads {
   [Export(typeof(ICustomThreadPool))]
@@ -16,12 +17,13 @@ namespace VsChromium.Server.Threads {
     private readonly object _lock = new object();
     private readonly ThreadPool _threadPool;
 
-    public CustomThreadPool() {
-      _threadPool = new ThreadPool(10);
+    [ImportingConstructor]
+    public CustomThreadPool(IDateTimeProvider dateTimeProvider)
+      : this(dateTimeProvider, 10) {
     }
 
-    public CustomThreadPool(int capacity) {
-      _threadPool = new ThreadPool(capacity);
+    public CustomThreadPool(IDateTimeProvider dateTimeProvider, int capacity) {
+      _threadPool = new ThreadPool(dateTimeProvider, capacity);
     }
 
     public void RunAsync(Action task) {

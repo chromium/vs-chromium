@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using VsChromium.Core.Threads;
 
 namespace VsChromium.Server.Threads {
   public class ThreadPool {
@@ -13,9 +14,9 @@ namespace VsChromium.Server.Threads {
     private readonly AutoResetEvent _threadReleasedEvent = new AutoResetEvent(false);
     private readonly List<ThreadObject> _threads = new List<ThreadObject>();
 
-    public ThreadPool(int capacity) {
+    public ThreadPool(IDateTimeProvider dateTimeProvider, int capacity) {
       _capacity = capacity;
-      _threads.AddRange(Enumerable.Range(0, capacity).Select(i => new ThreadObject(i, this)));
+      _threads.AddRange(Enumerable.Range(0, capacity).Select(i => new ThreadObject(this, i, dateTimeProvider)));
     }
 
     public int Capacity { get { return _capacity; } }

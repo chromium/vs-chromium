@@ -31,6 +31,10 @@ namespace VsChromium.Server.Threads {
       }
     }
 
+    public ThreadObject TryAcquireThread() {
+      return TryGetThread();
+    }
+
     private ThreadObject TryGetThread() {
       lock (_lock) {
         if (_threads.Count == 0)

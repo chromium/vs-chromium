@@ -5,17 +5,18 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Linq;
-using System.Threading;
-using VsChromium.Core.Linq;
+using System.Threading.Tasks;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 
 namespace VsChromium.Server.Threads {
   [Export(typeof(ICustomThreadPool))]
   public class CustomThreadPool : ICustomThreadPool {
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly object _lock = new object();
     private readonly ThreadPool _threadPool;
+    private readonly object _queueLock = new object();
+    private readonly Queue<Action> _taskQueue = new Queue<Action>();
 
     [ImportingConstructor]
     public CustomThreadPool(IDateTimeProvider dateTimeProvider)
@@ -23,106 +24,94 @@ namespace VsChromium.Server.Threads {
     }
 
     public CustomThreadPool(IDateTimeProvider dateTimeProvider, int capacity) {
+      _dateTimeProvider = dateTimeProvider;
       _threadPool = new ThreadPool(dateTimeProvider, capacity);
     }
 
     public void RunAsync(Action task) {
-      var thread = AcquireThread();
-      thread.RunAsync(() => ExecuteTaskAndReleaseThread(thread, task));
+      RunAsync(task, TimeSpan.Zero);
     }
 
-    public IEnumerable<TDest> RunInParallel<TSource, TDest>(
-      IList<TSource> source,
-      Func<TSource, TDest> selector,
-      CancellationToken token) {
-      lock (_lock) {
-        return RunInParallelWorker(source, selector, token);
+    public void RunAsync(Action task, TimeSpan delay) {
+      if (delay > TimeSpan.Zero) {
+        // Call ourselves after delay
+        // Note: This is a "cheap" way of delaying execution without blocking a thread.
+        //       The caveat is that this is done with the default TaskScheduler, meaning
+        //       The task may be delayed even more if lots of tasks are already running.
+        //       Given that the caller ask for a delay, it seems reasonable compromise.
+        //       The other option would have been to write custom with some sort of
+        //       timer usage.
+        Task.Delay(delay).ContinueWith(_ => RunAsync(task, TimeSpan.Zero));
+      } else {
+        // Enqueue
+        lock (_queueLock) {
+          _taskQueue.Enqueue(task);
+        }
+
+        // Process queue if any available thread
+        ProcessQueueAsync();
       }
     }
 
-    private IEnumerable<TDest> RunInParallelWorker<TSource, TDest>(
-      IList<TSource> source,
-      Func<TSource, TDest> selector,
-      CancellationToken token) {
-      var partitions = source
-        .PartitionByChunks(_threadPool.Capacity)
-        .Select(items => new Partition<TSource, TDest> {
-          Items = items,
-          ThreadObject = null,
-          WaitHandle = new ManualResetEvent(false),
-          Selector = selector,
-          Result = new List<TDest>()
-        })
-        .ToList();
+    private void ProcessQueueAsync() {
+      var thread = TryAcquireThread();
+      if (thread != null) {
+        thread.RunAsync(() => ProcessQueueAndReleaseThread(thread));
+      }
+    }
 
+    private void ProcessQueueAndReleaseThread(ThreadObject thread) {
       try {
-        partitions.ForAll(t => t.ThreadObject = AcquireThread());
-        partitions.ForAll(t => RunPartitionAsync(t, token));
-        partitions.ForAll(t => t.WaitHandle.WaitOne());
-        token.ThrowIfCancellationRequested();
-        var errors = partitions.Select(x => x.Exception).Where(x => x != null).ToList();
-        if (errors.Any()) {
-          throw new AggregateException(errors);
-        }
-        return partitions.SelectMany(t => t.Result);
-      }
-      finally {
-        partitions.ForAll(x => {
-          if (x.ThreadObject != null)
-            ReleaseThread(x.ThreadObject);
-          x.WaitHandle.Dispose();
-        });
-      }
-    }
-
-    private static void RunPartitionAsync<TSource, TDest>(Partition<TSource, TDest> partition, CancellationToken token) {
-      partition.ThreadObject.RunAsync(() => {
-        try {
-          foreach (var item in partition.Items) {
-            if (token.IsCancellationRequested)
-              break;
-            var destItem = partition.Selector(item);
-            if (destItem != null)
-              partition.Result.Add(destItem);
-          }
-        }
-        catch (Exception e) {
-          partition.Exception = e;
-        }
-        finally {
-          partition.WaitHandle.Set();
-        }
-      });
-    }
-
-    private void ExecuteTaskAndReleaseThread(ThreadObject thread, Action task) {
-      try {
-        task();
-      }
-      catch (Exception e) {
-        // TODO(rpaquay): Do we want to propage the exception here?
-        Logger.LogError(e, "Error executing task on custom thread pool.");
-      }
-      finally {
+        ProcessQueue();
+      } finally {
         ReleaseThread(thread);
       }
+
+      // There may have been more items enqueued concurrently: Mote tasks may have been
+      // enueue we may have been
+      // releasing the thread while
+      // schedule another queue processing if needed
+      bool queueIsEmpty;
+      lock (_queueLock) {
+        queueIsEmpty = _taskQueue.Count == 0;
+      }
+      if (!queueIsEmpty) {
+        ProcessQueueAsync();
+      }
     }
 
-    private ThreadObject AcquireThread() {
-      return _threadPool.AcquireThread();
+    private void ProcessQueue() {
+      // Process all items in the queue. This happens concurrently on
+      // all active threads of the thread pool.
+      while (true) {
+        Action task = TryGetTaskFromQueue();
+
+        // Queue is empty, bail
+        if (task == null) {
+          break;
+        }
+
+        try {
+          task();
+        } catch (Exception e) {
+          // TODO(rpaquay): Do we want to propage the exception here?
+          Logger.LogError(e, "Error executing task on custom thread pool.");
+        }
+      }
+    }
+
+    private Action TryGetTaskFromQueue() {
+      lock (_queueLock) {
+        return (_taskQueue.Count == 0) ? null : _taskQueue.Dequeue();
+      }
+    }
+
+    private ThreadObject TryAcquireThread() {
+      return _threadPool.TryAcquireThread();
     }
 
     private void ReleaseThread(ThreadObject thread) {
       thread.Release();
-    }
-
-    public class Partition<TSource, TDest> {
-      public IList<TSource> Items { get; set; }
-      public ThreadObject ThreadObject { get; set; }
-      public ManualResetEvent WaitHandle { get; set; }
-      public List<TDest> Result { get; set; }
-      public Exception Exception { get; set; }
-      public Func<TSource, TDest> Selector { get; set; }
     }
   }
 }

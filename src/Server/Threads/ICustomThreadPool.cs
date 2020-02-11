@@ -15,9 +15,6 @@ namespace VsChromium.Server.Threads {
   public interface ICustomThreadPool {
     void RunAsync(Action task);
 
-    IEnumerable<TDest> RunInParallel<TSource, TDest>(
-      IList<TSource> source,
-      Func<TSource, TDest> selector,
-      CancellationToken token);
+    void RunAsync(Action task, TimeSpan delay);
   }
 }

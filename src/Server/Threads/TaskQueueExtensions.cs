@@ -11,17 +11,5 @@ namespace VsChromium.Server.Threads {
     public static void ExecuteAsync(this ITaskQueue queue, Action<CancellationToken> task) {
       queue.Enqueue(new TaskId("Unique"), task);
     }
-
-    public static T ExecuteAndWait<T>(this ITaskQueue queue, Func<CancellationToken, T> task) {
-      var result = default(T);
-      var e = new ManualResetEvent(false);
-      queue.ExecuteAsync(token => {
-        result = task(token);
-        e.Set();
-      });
-      e.WaitOne();
-      Invariants.Assert(result != null);
-      return result;
-    }
   }
 }

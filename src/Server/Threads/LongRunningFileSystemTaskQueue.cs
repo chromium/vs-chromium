@@ -17,7 +17,11 @@ namespace VsChromium.Server.Threads {
     }
 
     public void Enqueue(TaskId id, Action<CancellationToken> task) {
-      _taskQueue.Enqueue(id, task);
+      Enqueue(id, task, TimeSpan.Zero);
+    }
+
+    public void Enqueue(TaskId id, Action<CancellationToken> task, TimeSpan delay) {
+      _taskQueue.Enqueue(id, task, delay);
     }
 
     public void CancelCurrentTask() {

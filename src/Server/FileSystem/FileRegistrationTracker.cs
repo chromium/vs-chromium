@@ -49,7 +49,7 @@ namespace VsChromium.Server.FileSystem {
     public void UnregisterFileAsync(FullPath path) {
       Logger.LogInfo("Unregister path \"{0}\"", path);
       _pendingFileRegistrations.Enqueue(FileRegistrationKind.Unregister, path);
-      _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask);
+      _taskQueue.Enqueue(FlushFileRegistrationQueueTaskId, FlushFileRegistrationQueueTask, TimeSpan.FromSeconds(3));
     }
 
     public void RefreshAsync(Action<IList<IProject>> callback) {

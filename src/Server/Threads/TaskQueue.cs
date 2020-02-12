@@ -14,10 +14,10 @@ namespace VsChromium.Server.Threads {
     private readonly string _description;
     private readonly ICustomThreadPool _customThreadPool;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly TaskEntryQueue _tasks = new TaskEntryQueue();
+    private readonly TaskEntryQueue _taskQueue = new TaskEntryQueue();
+    private readonly object _lock = new object();
     private readonly CancellationTokenTracker _taskCancellationTracker = new CancellationTokenTracker();
     private volatile TaskEntry _runningTask;
-    private readonly object _lock = new object();
 
     public TaskQueue(string description, ICustomThreadPool customThreadPool, IDateTimeProvider dateTimeProvider) {
       _description = description;
@@ -26,28 +26,25 @@ namespace VsChromium.Server.Threads {
     }
 
     public void Enqueue(TaskId id, Action<CancellationToken> task) {
+      Enqueue(id, task, TimeSpan.Zero);
+    }
+
+    public void Enqueue(TaskId id, Action<CancellationToken> task, TimeSpan delay) {
       var entry = new TaskEntry {
         Id = id,
-        EnqueuedDateTimeUtc = _dateTimeProvider.UtcNow,
         Action = task,
+        Delay = delay,
+        EnqueuedDateTimeUtc = _dateTimeProvider.UtcNow,
         StopWatch = new Stopwatch(),
       };
 
       Logger.LogDebug("Queue \"{0}\": Enqueuing task \"{1}\"", _description, entry.Id.Description);
 
-      bool isFirstTask;
       lock (_lock) {
-        if (_runningTask == null) {
-          _runningTask = entry;
-          isFirstTask = true;
-        } else {
-          _tasks.Enqueue(entry);
-          isFirstTask = false;
-        }
+        _taskQueue.Enqueue(entry);
       }
 
-      if (isFirstTask)
-        RunTaskAsync(entry);
+      RunNextTaskIfAvailableAsync(null);
     }
 
     public void CancelCurrentTask() {
@@ -56,54 +53,78 @@ namespace VsChromium.Server.Threads {
 
     public void CancelAll() {
       lock (_lock) {
-        _tasks.Clear();
+        _taskQueue.Clear();
       }
       _taskCancellationTracker.CancelCurrent();
     }
 
-    private void RunTaskAsync(TaskEntry entry) {
+    private void RunTaskAsync(TaskEntry task) {
+      Invariants.Assert(ReferenceEquals(_runningTask, task));
       _customThreadPool.RunAsync(() => {
+        Invariants.Assert(ReferenceEquals(_runningTask, task));
         try {
           if (Logger.IsDebugEnabled) {
             Logger.LogDebug("Queue \"{0}\": Executing task \"{1}\" after waiting for {2:n0} msec",
               _description,
-              entry.Id.Description,
-              (_dateTimeProvider.UtcNow - entry.EnqueuedDateTimeUtc).TotalMilliseconds);
+              task.Id.Description,
+              (_dateTimeProvider.UtcNow - task.EnqueuedDateTimeUtc).TotalMilliseconds);
           }
 
-          entry.StopWatch.Start();
-          entry.Action(_taskCancellationTracker.NewToken());
-        }
-        finally {
-          OnTaskFinished(entry);
+          task.StopWatch.Start();
+          task.Action(_taskCancellationTracker.NewToken());
+        } finally {
+          Invariants.Assert(ReferenceEquals(_runningTask, task));
+          task.StopWatch.Stop();
+          if (Logger.IsDebugEnabled) {
+            Logger.LogDebug("Queue \"{0}\": Executed task \"{1}\" in {2:n0} msec",
+              _description,
+              task.Id.Description,
+              task.StopWatch.ElapsedMilliseconds);
+          }
+          RunNextTaskIfAvailableAsync(task);
         }
       });
     }
 
-    private void OnTaskFinished(TaskEntry task) {
-      task.StopWatch.Stop();
-      if (Logger.IsDebugEnabled) {
-        Logger.LogDebug("Queue \"{0}\": Executed task \"{1}\" in {2:n0} msec",
-          _description,
-          task.Id.Description,
-          task.StopWatch.ElapsedMilliseconds);
-      }
-
-      TaskEntry nextTask;
+    private void RunNextTaskIfAvailableAsync(TaskEntry task) {
+      TaskEntryQueue.DequeueResult queueEntry;
       lock (_lock) {
-        Invariants.Assert(ReferenceEquals(_runningTask, task));
-        nextTask = _runningTask = _tasks.Dequeue();
+        if (task == null) {
+          // If there is a running task, bail, because we will be called again when the running task
+          // finishes.
+          if (_runningTask != null) {
+            return;
+          }
+        } else {
+          Invariants.Assert(ReferenceEquals(_runningTask, task));
+        }
+        queueEntry = _taskQueue.Dequeue(_dateTimeProvider.UtcNow);
+        _runningTask = queueEntry.TaskEntry; // May be null if only pdelayed tasks
       }
 
-      if (nextTask != null)
-        RunTaskAsync(nextTask);
+      if (queueEntry.TaskEntry != null) {
+        // If there is a task available, run it
+        RunTaskAsync(queueEntry.TaskEntry);
+      } else if (queueEntry.HasPending) {
+        // Run this method in a little while if there are pending tasks
+        _customThreadPool.RunAsync(() => RunNextTaskIfAvailableAsync(null), TimeSpan.FromMilliseconds(50));
+      }
     }
 
-    private class TaskEntryQueue {
-      private readonly Dictionary<object, LinkedListNode<TaskEntry>> _map =
-        new Dictionary<object, LinkedListNode<TaskEntry>>();
+    /// <summary>
+    /// A collection of <see cref="TaskEntry"/> that behaves like a queue
+    /// for <see cref="Enqueue(TaskEntry)"/> and <see cref="Dequeue"/>,
+    /// operations, but also ensures that there is only one <see cref="TaskEntry"/>
+    /// value per <see cref="TaskId"/> key.
+    /// </summary>
+    private class TaskEntryQueue
+    {
+      private readonly Dictionary<TaskId, LinkedListNode<TaskEntry>> _map =
+        new Dictionary<TaskId, LinkedListNode<TaskEntry>>();
 
       private readonly LinkedList<TaskEntry> _queue = new LinkedList<TaskEntry>();
+
+      public bool IsEmpty { get { return _queue.Count == 0; } }
 
       public void Enqueue(TaskEntry entry) {
         LinkedListNode<TaskEntry> currentEntry;
@@ -115,14 +136,27 @@ namespace VsChromium.Server.Threads {
         _map.Add(entry.Id, newEntry);
       }
 
-      public TaskEntry Dequeue() {
-        if (_queue.Count == 0)
-          return null;
+      public struct DequeueResult
+      {
+        public bool HasPending;
+        public TaskEntry TaskEntry;
+      }
 
-        var result = _queue.First.Value;
-        _queue.RemoveFirst();
-        _map.Remove(result.Id);
-        return result;
+      public DequeueResult Dequeue(DateTime utcNow) {
+        for (var node = _queue.First; node != null; node = node.Next) {
+          var entry = node.Value;
+          if ((entry.Delay <= TimeSpan.Zero) || ((utcNow - entry.EnqueuedDateTimeUtc) >= entry.Delay)) {
+            _queue.Remove(node);
+            _map.Remove(entry.Id);
+            return new DequeueResult() {
+              HasPending = _queue.Count > 0,
+              TaskEntry = entry,
+            };
+          }
+        }
+        return new DequeueResult() {
+          HasPending = _queue.Count > 0
+        };
       }
 
       public void Clear() {
@@ -131,9 +165,11 @@ namespace VsChromium.Server.Threads {
       }
     }
 
-    private class TaskEntry {
+    private class TaskEntry
+    {
       public TaskId Id { get; set; }
       public Action<CancellationToken> Action { get; set; }
+      public TimeSpan Delay { get; set; }
       public DateTime EnqueuedDateTimeUtc { get; set; }
       public Stopwatch StopWatch { get; set; }
     }

@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,9,32,0
- PRODUCTVERSION 0,9,32,0
+ FILEVERSION 0,9,33,0
+ PRODUCTVERSION 0,9,33,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "The Chromium Authors"
             VALUE "FileDescription", "Dynamic library containing performance sensitive functions - used by VsChromiumServer."
-            VALUE "FileVersion", "0.9.32.0"
+            VALUE "FileVersion", "0.9.33.0"
             VALUE "InternalName", "VsChromium.Native.dll"
             VALUE "LegalCopyright", "Copyright 2018 The Chromium Authors. All rights reserved."
             VALUE "OriginalFilename", "VsChromium.Native.dll"
             VALUE "ProductName", "VsChromium"
-            VALUE "ProductVersion", "0.9.32.0"
+            VALUE "ProductVersion", "0.9.33.0"
         END
     END
     BLOCK "VarFileInfo"

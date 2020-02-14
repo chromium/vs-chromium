@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Memory;
@@ -91,11 +92,15 @@ namespace VsChromium.Core.Win32.Files {
       }
 
       using (fileHandle) {
-        // 8KB is large enough to hold about 80 entries of average size (the size depends on the
-        // length of the filename), which is a reasonable compromise in terms of stack usages
-        // vs # of calls to the API.
-        const int bufferSize = 8192;
-        byte* bufferAddress = stackalloc byte[bufferSize];
+        if (ntQueryDirectoryFileHeap == null) {
+          // 64KB is large enough to hold about 600 entries of average size (the size depends on the
+          // length of the filename), which is a reasonable compromise in terms of stack usages
+          // vs # of calls to the API.
+          // This is also the max. size for pre-Windows 10 versions of Windows.
+          ntQueryDirectoryFileHeap = HeapAllocStatic.Alloc(64 * 1024);
+        }
+        int bufferSize = ntQueryDirectoryFileHeap.ByteLength;
+        byte* bufferAddress = (byte *)ntQueryDirectoryFileHeap.DangerousGetHandle().ToPointer();
 
         // Invoke NtQueryDirectoryFile to fill the initial buffer
         NTSTATUS status = InvokeNtQueryDirectoryFile(fileHandle, bufferAddress, bufferSize);
@@ -221,5 +226,9 @@ namespace VsChromium.Core.Win32.Files {
     private static bool SkipSpecialEntry(DirectoryEntry entry) {
       return (entry.IsDirectory) && (entry.Name.Equals(".") || entry.Name.Equals(".."));
     }
+
+    [ThreadStatic]
+    private static SafeHeapBlockHandle ntQueryDirectoryFileHeap;
+
   }
 }

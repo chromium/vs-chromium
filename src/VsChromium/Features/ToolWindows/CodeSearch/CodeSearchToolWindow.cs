@@ -2,12 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using EnvDTE;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.TextManager.Interop;
 using VsChromium.Commands;
 using VsChromium.Features.AutoUpdate;
 using VsChromium.Package.CommandHandler;
@@ -26,6 +33,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
   [Guid(GuidList.GuidCodeSearchToolWindowString)]
   public class CodeSearchToolWindow : ToolWindowPane, IOleCommandTarget {
     private VsWindowFrameNotifyHandler _frameNotify;
+    private IVsTextManager _txtMgr;
+    private IComponentModel _componentModel;
+    private IVsEditorAdaptersFactoryService _editorAdaptersFactoryService;
+    private EnvDTE.WindowEvents WindowEvents { get; set; }
 
     /// <summary>
     /// Standard constructor for the tool window.
@@ -48,10 +59,52 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ExplorerControl = new CodeSearchControl();
     }
 
+    private string GetSelectedOrWord()
+    {
+      string selection = string.Empty;
+      IVsTextView vTextView = null;
+      int mustHaveFocus = 1;
+      _txtMgr.GetActiveView(mustHaveFocus, null, out vTextView);
+      if (vTextView == null)
+        return selection;
+      vTextView.GetSelectedText(out selection);
+      if (!selection.Equals(""))
+        return selection;
+      var textView = _editorAdaptersFactoryService.GetWpfTextView(vTextView);
+      var viewadatper = _editorAdaptersFactoryService.GetViewAdapter(textView);
+      if (textView == null || viewadatper == null)
+        return selection;
+      var position = textView.Caret.Position.BufferPosition;
+      position = position.TranslateTo(textView.TextSnapshot, PointTrackingMode.Positive);
+      TextSpan[] spans = new TextSpan[1];
+      var containingline = position.GetContainingLine();
+      if (ErrorHandler.Failed(viewadatper.GetWordExtent(containingline.LineNumber, position - containingline.Start, (uint)WORDEXTFLAGS.WORDEXT_CURRENT, spans)))
+        return selection;
+      var wordstring = string.Empty;
+      var span = spans[0];
+      vTextView.GetTextStream(span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex, out wordstring);
+      return wordstring;
+    }
+
     public override void OnToolWindowCreated() {
       base.OnToolWindowCreated();
       ExplorerControl.OnVsToolWindowCreated(this);
+      _txtMgr = (IVsTextManager)GetService(typeof(SVsTextManager));
+      _componentModel = (IComponentModel)GetService(typeof(SComponentModel));
+      _editorAdaptersFactoryService = (IVsEditorAdaptersFactoryService)_componentModel.GetService<IVsEditorAdaptersFactoryService>();
 
+      EnvDTE.DTE dte = (EnvDTE.DTE)GetService(typeof(EnvDTE.DTE));
+      EnvDTE80.Events2 events = (EnvDTE80.Events2)dte.Events;
+      this.WindowEvents = (EnvDTE.WindowEvents)events.get_WindowEvents(null);
+      this.WindowEvents.WindowActivated += (Window GotFocus, Window LostFocus) => {
+        if (GotFocus.ObjectKind.ToString().ToLower().Equals("{" + GuidList.GuidCodeSearchToolWindowString + "}"))
+        {
+          var word = GetSelectedOrWord();
+          if (word.Equals(""))
+            return;
+          ExplorerControl.SearchCodeCombo.Text = GetSelectedOrWord();
+        }
+      };
       // Advise IVsWindowFrameNotify so we know when we get hidden, etc.
       var frame = Frame as IVsWindowFrame2;
       if (frame != null) {

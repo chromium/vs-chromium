@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace VsChromium.Features.ToolWindows {
     private readonly LazyObservableCollection<TreeViewItemViewModel> _children;
     private bool _isExpanded;
     private bool _isSelected;
+    private Action<TreeViewItemViewModel> _lazeselect;
 
     /// <summary>
     /// This is used to create the DummyChild instance.
@@ -137,6 +139,11 @@ namespace VsChromium.Features.ToolWindows {
       });
     }
 
+    public Action<TreeViewItemViewModel> LazySelect
+    {   get { if (_lazeselect == null) return (TreeViewItemViewModel x) => { }; else return _lazeselect; }
+        set { _lazeselect = value; }
+    }
+
     public static void ExpandAll(TreeViewItemViewModel item) {
       item.IsExpanded = true;
       item.Children.ForAll(ExpandAll);
@@ -195,8 +202,9 @@ namespace VsChromium.Features.ToolWindows {
         result.Text = string.Format("(Click to expand {0:n0} additional items...)",
                                     ChildrenCount - HardCodedSettings.MaxExpandedTreeViewItemCount);
       result.Selected += () => {
-        var node = _children.ExpandLazyNode();
-        node.IsSelected = true;
+          var node = _children.ExpandLazyNode();
+          node.IsSelected = true;
+          _children.ForAll(x => LazySelect(x));
       };
       return result;
     }

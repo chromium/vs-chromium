@@ -37,6 +37,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private bool _serverIsRunning;
     private bool _serverHasStarted;
     private bool _fileSystemTreeAvailable;
+    private bool _expandall;
 
     public enum DisplayKind {
       InformationMessages,
@@ -156,6 +157,36 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           "Regular expressions are currently {0}.",
           UseRegex ? "enabled" : "disabled");
       }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public bool ExpandAll
+    {
+        get { return _expandall; }
+        set
+        {
+            if (_expandall != value)
+            {
+                _expandall = value;
+                OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.ExpandAll));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Databound!
+    /// </summary>
+    public string ExpandAllTip
+    {
+        get
+        {
+            return string.Format(
+                "Toggle expand all search results. " +
+                "Currently {0}.",
+                _expandall ? "yes" : "no");
+        }
     }
 
     /// <summary>

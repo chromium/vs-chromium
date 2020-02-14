@@ -421,6 +421,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ViewModel.DisplayFontSize = setting.DisplayFont.Size;
       ViewModel.PathFontFamily = setting.PathFont.FontFamily.Name;
       ViewModel.PathFontSize = setting.PathFont.Size;
+      ViewModel.ExpandAll = setting.ExpandAll;
     }
 
     private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs args) {
@@ -430,6 +431,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       settings.SearchMatchWholeWord = model.MatchWholeWord;
       settings.SearchUseRegEx = model.UseRegex;
       settings.SearchIncludeSymLinks = model.IncludeSymLinks;
+      settings.ExpandAll = model.ExpandAll;
     }
 
     private void OnIndexingStateChanged() {
@@ -772,7 +774,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             msg += ", Column " + (searchInfo.ColumnNumber + 1);
           }
           var limitMsg = CreateMaxResultsHitMessage(response.HitCount, maxResults);
-          var viewModel = CreateSearchFilePathsResult(searchInfo, response.SearchResult, msg, limitMsg, true);
+          var viewModel = CreateSearchFilePathsResult(searchInfo, response.SearchResult, msg, limitMsg, ViewModel.ExpandAll);
           _searchResultDocumentChangeTracker.Disable();
           ViewModel.SetSearchFilePathsResult(viewModel);
         }
@@ -812,7 +814,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             msg += string.Format(", File Paths: \"{0}\"", filePathPattern);
           }
           var limitMsg = CreateMaxResultsHitMessage(response.HitCount, maxResults);
-          bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
+          bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults || ViewModel.ExpandAll;
           var result = CreateSearchCodeResultViewModel(response.SearchResults, msg, limitMsg, expandAll);
           ViewModel.SetSearchCodeResult(result);
           _searchResultDocumentChangeTracker.Enable(response.SearchResults);

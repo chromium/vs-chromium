@@ -236,7 +236,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     /// Enumerate directories and files under the project path of |projet|.
     /// </summary>
     private IEnumerable<DirectoryWithFiles> TraverseFileSystem(DirectoryName directoryName, bool isSymLink) {
-      using (new TimeElapsedLogger($"Traversing directory \"{directoryName.FullPath}\" to collect directory/file names", _cancellationToken)) {
+      using (new TimeElapsedLogger($"Traversing directory \"{directoryName.FullPath}\" to collect directory/file names", _cancellationToken, InfoLogger.Instance)) {
         var directory = new DirectoryData(directoryName, isSymLink);
         var bag = new ConcurrentBag<DirectoryWithFiles>();
         var task = TraverseDirectoryAsync(directory, bag, _cancellationToken);

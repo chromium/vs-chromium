@@ -26,10 +26,15 @@ namespace VsChromium.Core.Win32.Strings {
       var decoder = Encoding.UTF8.GetDecoder();
       var charCount = decoder.GetCharCount(start, byteLength, true);
       var newBlock = HeapAllocStatic.Alloc(charCount * sizeof(char));
-      var result = decoder.GetChars(start, byteLength, (char*)newBlock.Pointer.ToPointer(),
-                                    charCount, true);
-      if (result != charCount) {
-        throw new Exception("Error converting UTF8 string to UTF16 string.");
+      try {
+        var result = decoder.GetChars(start, byteLength, (char*)newBlock.Pointer.ToPointer(),
+                                      charCount, true);
+        if (result != charCount) {
+          throw new Exception("Error converting UTF8 string to UTF16 string.");
+        }
+      } catch (Exception) {
+        newBlock.Dispose();
+        throw;
       }
       return newBlock;
     }
@@ -45,10 +50,15 @@ namespace VsChromium.Core.Win32.Strings {
       var encoder = Encoding.UTF8.GetEncoder();
       var byteCount = encoder.GetByteCount(start, (int)charCount, true);
       var newBlock = HeapAllocStatic.Alloc(byteCount);
-      var result = encoder.GetBytes(start, (int)charCount, (byte*)newBlock.Pointer.ToPointer(),
-                                    byteCount, true);
-      if (result != byteCount) {
-        throw new Exception("Error converting string from UTF16 to UTF8.");
+      try {
+        var result = encoder.GetBytes(start, (int)charCount, (byte*)newBlock.Pointer.ToPointer(),
+                                      byteCount, true);
+        if (result != byteCount) {
+          throw new Exception("Error converting string from UTF16 to UTF8.");
+        }
+      } catch (Exception) {
+        newBlock.Dispose();
+        throw;
       }
       return newBlock;
     }
@@ -57,7 +67,7 @@ namespace VsChromium.Core.Win32.Strings {
       if (value == null)
         throw new ArgumentException();
 
-      fixed(char* start = value) {
+      fixed (char* start = value) {
         var block = Utf16ToUtf8(start, start + value.Length);
         return block;
       }

@@ -49,13 +49,18 @@ namespace VsChromium.Core.Win32.Files {
         }
         var len = (int)Math.Min(maxLen, fileSize);
         var heap = HeapAllocStatic.Alloc(len + trailingByteCount);
-        var bytesRead = new int[1];
+        try {
+          var bytesRead = new int[1];
 
-        if (!NativeMethods.ReadFile(fileHandle, heap.Pointer, len, bytesRead, null))
-          throw new Win32Exception();
+          if (!NativeMethods.ReadFile(fileHandle, heap.Pointer, len, bytesRead, null))
+            throw new Win32Exception();
 
-        if (bytesRead[0] != len)
-          throw new Exception("File read operation didn't read the whole file");
+          if (bytesRead[0] != len)
+            throw new Exception("File read operation didn't read the whole file");
+        } catch (Exception) {
+          heap.Dispose();
+          throw;
+        }
 
         return heap;
       }

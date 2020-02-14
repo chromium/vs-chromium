@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,20 +11,10 @@ using System.Runtime.InteropServices;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Memory;
+using static VsChromium.Core.Win32.Files.NativeMethods;
 
 namespace VsChromium.Core.Win32.Files {
   public static class NativeFile {
-    // http://msdn.microsoft.com/en-us/library/windows/desktop/ms681382(v=vs.85).aspx
-    public enum Win32Errors {
-      ERROR_SUCCESS = 0,
-      ERROR_INVALID_FUNCTION = 1,
-      ERROR_FILE_NOT_FOUND = 2,
-      ERROR_PATH_NOT_FOUND = 3,
-      ERROR_ACCESS_DENIED = 5,
-      ERROR_INVALID_DRIVE = 15,
-      ERROR_NO_MORE_FILES = 18,
-    }
-
     /// <summary>
     /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
     /// </summary>
@@ -39,8 +30,13 @@ namespace VsChromium.Core.Win32.Files {
 
     private static SafeHeapBlockHandle ReadFileWorker(FullPath path, long fileSize, int trailingByteCount) {
       using (
-        var fileHandle = NativeMethods.CreateFile(path.Value, NativeAccessFlags.GenericRead, FileShare.ReadWrite | FileShare.Delete, IntPtr.Zero,
-                                                  FileMode.Open, 0, IntPtr.Zero)) {
+        var fileHandle = NativeMethods.CreateFile(path.Value,
+          NativeAccessFlags.GenericRead,
+          FileShare.ReadWrite | FileShare.Delete,
+          IntPtr.Zero,
+          FileMode.Open,
+          0,
+          IntPtr.Zero)) {
         if (fileHandle.IsInvalid) {
           throw new Win32Exception();
         }
@@ -68,63 +64,154 @@ namespace VsChromium.Core.Win32.Files {
     /// Note: For testability, this function should be called through <see cref="IFileSystem"/>.
     /// </summary>
     public static unsafe List<DirectoryEntry> GetDirectoryEntries(string path) {
-      // Buidl search pattern (on the stack) as path + "\\*" + '\0'
-      var charCount = path.Length + 2 + 1;
-      char* patternBuffer = stackalloc char[charCount];
-      char* dest = patternBuffer;
-      fixed (char* pathPtr = path) {
-        char* src = pathPtr;
-        while ((*dest = *src) != 0) {
-          dest++;
-          src++;
-        }
-      }
-      *dest++ = '\\';
-      *dest++ = '*';
-      *dest++ = '\0';
+      var directoryEntries = new List<DirectoryEntry>();
 
-      var result = new List<DirectoryEntry>();
-
-      // Start enumerating files
-      WIN32_FIND_DATA data;
-      var findHandle = NativeMethods.FindFirstFileEx(
-        patternBuffer,
-        NativeMethods.FINDEX_INFO_LEVELS.FindExInfoBasic,
-        out data,
-        NativeMethods.FINDEX_SEARCH_OPS.FindExSearchNameMatch,
+      // Open the file with the special FILE_LIST_DIRECTORY access to enable reading
+      // the contents of the directory file (i.e. the list of directory entries).
+      // Note that the FILE_FLAG_BACKUP_SEMANTICS is also important to ensure this
+      // call succeeds.
+      var fileHandle = NativeMethods.CreateFile(path,
+        NativeAccessFlags.FILE_LIST_DIRECTORY,
+        FileShare.Read | FileShare.Write | FileShare.Delete,
         IntPtr.Zero,
-        NativeMethods.FINDEX_ADDITIONAL_FLAGS.FindFirstExLargeFetch);
-        if (findHandle.IsInvalid) {
-          var lastWin32Error = Marshal.GetLastWin32Error();
-          if (lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
-              lastWin32Error != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
-              lastWin32Error != (int)Win32Errors.ERROR_ACCESS_DENIED &&
-              lastWin32Error != (int)Win32Errors.ERROR_NO_MORE_FILES) {
-            throw new LastWin32ErrorException(lastWin32Error, 
-              string.Format("Error enumerating files at \"{0}\".", path));
-          }
-          return result;
+        FileMode.Open,
+        NativeMethods.FILE_FLAG_BACKUP_SEMANTICS,
+        IntPtr.Zero);
+      if (fileHandle.IsInvalid) {
+        var lastWin32Error = Marshal.GetLastWin32Error();
+        if (lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
+            lastWin32Error != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
+            lastWin32Error != (int)Win32Errors.ERROR_ACCESS_DENIED) {
+          throw new LastWin32ErrorException(lastWin32Error,
+            string.Format("Error enumerating files at \"{0}\".", path));
         }
 
-      using (findHandle) {
-        AddResult(ref data, result);
-        while (NativeMethods.FindNextFile(findHandle, out data)) {
-          AddResult(ref data, result);
-        }
-        var lastWin32Error = Marshal.GetLastWin32Error();
-        if (lastWin32Error != (int)Win32Errors.ERROR_SUCCESS &&
-            lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
-            lastWin32Error != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
-            lastWin32Error != (int)Win32Errors.ERROR_NO_MORE_FILES) {
-          throw new LastWin32ErrorException(lastWin32Error,
-            string.Format("Error during enumeration of files at \"{0}\".", path));
-        }
+        // Skip this directory
+        return directoryEntries;
       }
-      return result;
+
+      using (fileHandle) {
+        // 8KB is large enough to hold about 80 entries of average size (the size depends on the
+        // length of the filename), which is a reasonable compromise in terms of stack usages
+        // vs # of calls to the API.
+        const int bufferSize = 8192;
+        byte* bufferAddress = stackalloc byte[bufferSize];
+
+        // Invoke NtQueryDirectoryFile to fill the initial buffer
+        NTSTATUS status = InvokeNtQueryDirectoryFile(fileHandle, bufferAddress, bufferSize);
+        if (!NativeMethods.NT_SUCCESS(status)) {
+          // On the first invokcation, NtQueryDirectoryFile returns STATUS_INVALID_PARAMETER when
+          // asked to enumerate an invalid directory (ie it is a file
+          // instead of a directory).  Verify that is the actual cause
+          // of the error.
+          if (status == NTSTATUS.STATUS_INVALID_PARAMETER) {
+            FileAttributes attributes = NativeMethods.GetFileAttributes(path);
+            if ((attributes & FileAttributes.Directory) == 0) {
+              status = NTSTATUS.STATUS_NOT_A_DIRECTORY;
+            }
+          }
+
+          throw ThrowInvokeNtQueryDirectoryFileError(path, status);
+        }
+
+        // Process entries from the buffer, and invoke NtQueryDirectoryFile as long as there are
+        // more entries to enumerate.
+        while (true) {
+          ProcessFileInformationBuffer(directoryEntries, bufferAddress, bufferSize);
+
+          status = InvokeNtQueryDirectoryFile(fileHandle, bufferAddress, bufferSize);
+          if (!NativeMethods.NT_SUCCESS(status)) {
+            if (status == NTSTATUS.STATUS_NO_MORE_FILES) {
+              // Success, enumeration finished
+              break;
+            } else {
+              throw ThrowInvokeNtQueryDirectoryFileError(path, status);
+            }
+          }
+        }
+      } // using fileHandle
+
+      return directoryEntries;
     }
 
-    private static void AddResult(ref WIN32_FIND_DATA data, List<DirectoryEntry> entries) {
-      var entry = new DirectoryEntry(data.cFileName, (FILE_ATTRIBUTE)data.dwFileAttributes);
+    /// <summary>
+    /// Invoke the <see cref="NativeMethods.NtQueryDirectoryFile"/> function with parameters
+    /// adequate for retrieving the next set of <see cref="FILE_ID_FULL_DIR_INFORMATION"/>
+    /// entries
+    /// </summary>
+    private static unsafe NTSTATUS InvokeNtQueryDirectoryFile(SafeFileHandle fileHandle, byte* bufferAddress, int bufferSize) {
+      IO_STATUS_BLOCK statusBlock = new IO_STATUS_BLOCK();
+
+      NTSTATUS status = NativeMethods.NtQueryDirectoryFile(
+        fileHandle, // FileHandle
+        IntPtr.Zero, // Event
+        IntPtr.Zero, // ApcRoutine
+        IntPtr.Zero, // ApcContext
+        ref statusBlock, // IoStatusBlock
+        new IntPtr(bufferAddress), // FileInformation
+        (uint)bufferSize, // Length
+        FILE_INFORMATION_CLASS.FileIdFullDirectoryInformation, // FileInformationClass
+        false, // ReturnSingleEntry
+        IntPtr.Zero, // FileName
+        false); // RestartScan
+
+      return status;
+    }
+
+    private static unsafe Exception ThrowInvokeNtQueryDirectoryFileError(string path, NTSTATUS status) {
+      uint win32ErrorCode = NativeMethods.RtlNtStatusToDosError(status);
+      throw new LastWin32ErrorException((int)win32ErrorCode,
+        string.Format("Error during enumeration of files at \"{0}\".", path));
+    }
+
+    /// <summary>
+    /// Process all instances of <see cref="FILE_ID_FULL_DIR_INFORMATION"/> stored in memory
+    /// <paramref name="currentBuffer"/>.
+    /// </summary>
+    private static unsafe void ProcessFileInformationBuffer(List<DirectoryEntry> directoryEntries, byte* buffer, int bufferSize) {
+      var currentBuffer = buffer;
+      var endBuffer = buffer + bufferSize;
+      while (true) {
+        // Check buffer overrun
+        if (currentBuffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_FILENAME_LENGTH > endBuffer) {
+          throw new InvalidDataException("The buffer from NtQueryDirectoryFile is too small or contains invalid data");
+        }
+
+        // Add entry from current offset
+        string fileName = getFileNameFromFileIdFullDirInformation(currentBuffer);
+        var fileAttrs = (FILE_ATTRIBUTE)GetInt(currentBuffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_FILE_ATTRIBUTES);
+        AddDirectoryEntry(directoryEntries, fileName, fileAttrs);
+
+        // Go to next entry (if there is one)
+        int nextOffset = GetInt(currentBuffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_NEXT_ENTRY_OFFSET);
+        if (nextOffset == 0) {
+          break;
+        }
+        currentBuffer += nextOffset;
+      }
+    }
+
+    private static unsafe String getFileNameFromFileIdFullDirInformation(byte* buffer) {
+      // Read the character count
+      int nameLengthInBytes = GetInt(buffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_FILENAME_LENGTH);
+      if ((nameLengthInBytes % 2) != 0) {
+        throw new InvalidDataException("FileNameLength is not a multiple of 2");
+      }
+
+      // Create the string
+      return GetString(buffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_FILENAME, nameLengthInBytes / 2);
+    }
+
+    private static unsafe int GetInt(byte* buffer) {
+      return *(int*)buffer;
+    }
+
+    private static unsafe string GetString(byte* buffer, int charCount) {
+      return new String((char*)buffer, 0, charCount);
+    }
+
+    private static void AddDirectoryEntry(List<DirectoryEntry> entries, string fileName, FILE_ATTRIBUTE attrs) {
+      var entry = new DirectoryEntry(fileName, attrs);
       if (SkipSpecialEntry(entry))
         return;
 

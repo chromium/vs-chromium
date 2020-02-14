@@ -66,7 +66,7 @@ namespace VsChromium.Core.Win32.Files {
     }
 
     private void ThrowOnError() {
-      if (_win32Error != (int) NativeFile.Win32Errors.ERROR_SUCCESS) {
+      if (_win32Error != (int) NativeMethods.Win32Errors.ERROR_SUCCESS) {
         try {
           throw new Win32Exception(_win32Error);
         }

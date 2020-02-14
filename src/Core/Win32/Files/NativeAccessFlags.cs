@@ -7,6 +7,7 @@ using System;
 namespace VsChromium.Core.Win32.Files {
   [Flags]
   public enum NativeAccessFlags : uint {
+    FILE_LIST_DIRECTORY = 1,
     GenericWrite = 0x40000000,
     GenericRead = 0x80000000
   }

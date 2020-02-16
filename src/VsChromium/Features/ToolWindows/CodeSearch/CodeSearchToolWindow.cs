@@ -102,7 +102,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           var word = GetSelectedOrWord();
           if (word.Equals(""))
             return;
-          ExplorerControl.SearchCodeCombo.Text = GetSelectedOrWord();
+          ExplorerControl.SearchCodeCombo.Text = word;
         }
       };
       // Advise IVsWindowFrameNotify so we know when we get hidden, etc.

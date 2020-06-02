@@ -10,7 +10,6 @@ using VsChromium.Core.Threads;
 
 namespace VsChromium.Server.Threads {
   public class ThreadObject {
-    private readonly ThreadPool _threadPool;
     private readonly int _id;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly AutoResetEvent _taskAvailable = new AutoResetEvent(false);
@@ -18,18 +17,15 @@ namespace VsChromium.Server.Threads {
     private Thread _thread;
     private readonly object _threadLock = new object();
 
-    public ThreadObject(ThreadPool threadPool, int id, IDateTimeProvider dateTimeProvider) {
+    public ThreadObject(int id, IDateTimeProvider dateTimeProvider) {
       _dateTimeProvider = dateTimeProvider;
       _id = id;
-      _threadPool = threadPool;
     }
 
     private void ThreadLoop() {
-      lock (_threadLock) {
-        Debug.Assert(_thread != null);
-        Debug.Assert(Thread.CurrentThread == _thread);
-      }
       while (true) {
+        Invariants.Assert(_thread == Thread.CurrentThread);
+
         bool signaled = _taskAvailable.WaitOne(TimeSpan.FromSeconds(5));
         if (!signaled) {
           // Exit thread, it's been idle for 5 seconds
@@ -43,13 +39,13 @@ namespace VsChromium.Server.Threads {
           Logger.LogError(e, "Error executing task on custom thread pool.");
         }
         finally {
+          // Reset to "null" to prevent holding on to task when it is not needed anymore
           _currentTask = null;
         }
       }
+
       // Exit thread
-      lock (_threadLock) {
-        _thread = null;
-      }
+      _thread = null;
     }
 
     /// <summary>
@@ -57,6 +53,15 @@ namespace VsChromium.Server.Threads {
     ///  be used by one thread at a time.
     /// </summary>
     public void RunAsync(Action task) {
+      Invariants.CheckArgumentNotNull(task, "task");
+      Invariants.CheckOperation(_thread != Thread.CurrentThread, "RunAsync cannot be called on the thread pool thread");
+      Invariants.CheckOperation(_currentTask == null, "RunAsync can only be used once per thread object");
+
+      // Set task and wake up thread
+      _currentTask = task;
+      _taskAvailable.Set();
+
+      // Ensure thread is started
       if (_thread == null) {
         lock (_threadLock) {
           if (_thread == null) {
@@ -68,18 +73,6 @@ namespace VsChromium.Server.Threads {
           }
         }
       }
-
-      _currentTask = task;
-      _taskAvailable.Set();
-    }
-
-    /// <summary>
-    /// Note: This method does not need any locking/thread safety guard, because a thread object will ever only
-    ///  be used by one thread at a time.
-    /// </summary>
-    public void Release() {
-      _currentTask = null;
-      _threadPool.ReleaseThread(this);
     }
   }
 }

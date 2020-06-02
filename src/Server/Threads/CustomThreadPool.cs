@@ -14,7 +14,7 @@ namespace VsChromium.Server.Threads {
   public class CustomThreadPool : ICustomThreadPool {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly object _lock = new object();
-    private readonly ThreadPool _threadPool;
+    private readonly ThreadConcurrentBag _threadBag;
     private readonly object _queueLock = new object();
     private readonly Queue<Action> _taskQueue = new Queue<Action>();
 
@@ -25,7 +25,7 @@ namespace VsChromium.Server.Threads {
 
     public CustomThreadPool(IDateTimeProvider dateTimeProvider, int capacity) {
       _dateTimeProvider = dateTimeProvider;
-      _threadPool = new ThreadPool(dateTimeProvider, capacity);
+      _threadBag = new ThreadConcurrentBag(dateTimeProvider, capacity);
     }
 
     public void RunAsync(Action task) {
@@ -60,24 +60,25 @@ namespace VsChromium.Server.Threads {
       }
     }
 
-    private void ProcessQueueAndReleaseThread(ThreadObject thread) {
+    /// <summary>
+    /// Note: This code runs on the thread managed by <paramref name="threadObject"/>
+    /// </summary>
+    private void ProcessQueueAndReleaseThread(ThreadObject threadObject) {
       try {
         ProcessQueue();
       } finally {
-        ReleaseThread(thread);
+        ReleaseThread(threadObject);
       }
 
-      // There may have been more items enqueued concurrently: Mote tasks may have been
-      // enueue we may have been
-      // releasing the thread while
-      // schedule another queue processing if needed
-      bool queueIsEmpty;
-      lock (_queueLock) {
-        queueIsEmpty = _taskQueue.Count == 0;
-      }
-      if (!queueIsEmpty) {
-        ProcessQueueAsync();
-      }
+      //// More tasks may have been enqued while releasing the thread 
+      //bool queueIsEmpty;
+      //lock (_queueLock) {
+      //  queueIsEmpty = _taskQueue.Count == 0;
+      //}
+      //// Schedule another queue processing if needed
+      //if (!queueIsEmpty) {
+      //  ProcessQueueAsync();
+      //}
     }
 
     private void ProcessQueue() {
@@ -107,11 +108,11 @@ namespace VsChromium.Server.Threads {
     }
 
     private ThreadObject TryAcquireThread() {
-      return _threadPool.TryAcquireThread();
+      return _threadBag.TryAcquireThread();
     }
 
     private void ReleaseThread(ThreadObject thread) {
-      thread.Release();
+      _threadBag.ReleaseThread(thread);
     }
   }
 }

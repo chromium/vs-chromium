@@ -4,38 +4,22 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using VsChromium.Core.Threads;
 
 namespace VsChromium.Server.Threads {
-  public class ThreadPool {
+  public class ThreadConcurrentBag {
     private readonly int _capacity;
     private readonly object _lock = new object();
-    private readonly AutoResetEvent _threadReleasedEvent = new AutoResetEvent(false);
     private readonly List<ThreadObject> _threads = new List<ThreadObject>();
 
-    public ThreadPool(IDateTimeProvider dateTimeProvider, int capacity) {
+    public ThreadConcurrentBag(IDateTimeProvider dateTimeProvider, int capacity) {
       _capacity = capacity;
-      _threads.AddRange(Enumerable.Range(0, capacity).Select(i => new ThreadObject(this, i, dateTimeProvider)));
+      _threads.AddRange(Enumerable.Range(0, capacity).Select(i => new ThreadObject(i, dateTimeProvider)));
     }
 
     public int Capacity { get { return _capacity; } }
 
-    public ThreadObject AcquireThread() {
-      while (true) {
-        var threadObject = TryGetThread();
-        if (threadObject != null)
-          return threadObject;
-
-        _threadReleasedEvent.WaitOne();
-      }
-    }
-
     public ThreadObject TryAcquireThread() {
-      return TryGetThread();
-    }
-
-    private ThreadObject TryGetThread() {
       lock (_lock) {
         if (_threads.Count == 0)
           return null;
@@ -51,7 +35,6 @@ namespace VsChromium.Server.Threads {
       lock (_lock) {
         _threads.Add(threadObject);
       }
-      _threadReleasedEvent.Set();
     }
   }
 }

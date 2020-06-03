@@ -181,8 +181,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server.cs" />
-    <Compile Include="Threads\ThreadObject.cs" />
-    <Compile Include="Threads\ThreadPool.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Configuration\ChromiumEnlistmentDetection.patterns">

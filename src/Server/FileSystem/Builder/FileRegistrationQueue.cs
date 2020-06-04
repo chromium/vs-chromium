@@ -10,10 +10,51 @@ using VsChromium.Core.Files;
 
 namespace VsChromium.Server.FileSystem.Builder {
   public class FileRegistrationQueue {
+    /// <summary>
+    /// Set this flag to enable debugging of the file registration request received by the server over time.
+    /// 
+    /// <para>Note: Use this for debugging purposes only as all requests are kept in memory</para>
+    /// </summary>
+    private static bool Debug_KeepAllItems = false;
     private readonly ConcurrentBufferQueue<FileRegistrationEntry> _queue = new ConcurrentBufferQueue<FileRegistrationEntry>();
+    private readonly ConcurrentBufferQueue<FileRegistrationEntry> _allItemsQueue;
+
+    public FileRegistrationQueue() {
+      _allItemsQueue = (Debug_KeepAllItems ?  = new ConcurrentBufferQueue<FileRegistrationEntry>() : null);
+    }
 
     public void Enqueue(FileRegistrationKind registrationKind, FullPath path) {
+      if (_allItemsQueue != null) {
+        _allItemsQueue.Enqueue(new FileRegistrationEntry(path, registrationKind));
+      }
       _queue.Enqueue(new FileRegistrationEntry(path, registrationKind));
+    }
+
+    public IList<FullPath> MergedItems {
+      get {
+        if (_allItemsQueue == null) {
+          throw new InvalidOperationException("Set the Debug_KeepAllItems flag to enable this method");
+        }
+        HashSet<FullPath> entries = new HashSet<FullPath>();
+        foreach (var entry in _allItemsQueue.GetCopy()) {
+          switch (entry.Kind) {
+            case FileRegistrationKind.Register:
+              entries.Add(entry.Path);
+              break;
+            case FileRegistrationKind.Unregister:
+              entries.Remove(entry.Path);
+              break;
+          }
+        }
+        return entries.OrderBy(x => x).ToList();
+      }
+    }
+
+    public IList<FileRegistrationEntry> GetEntries(string pattern) {
+      if (_allItemsQueue == null) {
+        throw new InvalidOperationException("Set the Debug_KeepAllItems flag to enable this method");
+      }
+      return _allItemsQueue.GetCopy().Where(x => x.Path.Value.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
     }
 
     public IList<FileRegistrationEntry> DequeueAll() {
@@ -82,6 +123,10 @@ namespace VsChromium.Server.FileSystem.Builder {
 
     public FileRegistrationKind Kind {
       get { return _kind; }
+    }
+
+    public override string ToString() {
+      return String.Format("{0}: {1}", _kind, _path);
     }
   }
 

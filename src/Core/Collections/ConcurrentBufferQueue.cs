@@ -1,5 +1,8 @@
+// Copyright 2020 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace VsChromium.Core.Collections {
   /// <summary>
@@ -17,6 +20,11 @@ namespace VsChromium.Core.Collections {
       }
     }
 
+    /// <summary>
+    /// Get the contents of the queue, clearing the queue. This is an atomic operation
+    /// with a runtime complexity of O(1), as there is no copy involved.
+    /// </summary>
+    /// <returns></returns>
     public IList<T> DequeueAll() {
       List<T> temp;
       lock (_lock) {
@@ -27,6 +35,22 @@ namespace VsChromium.Core.Collections {
         _items = new List<T>();
       }
       return temp;
+    }
+
+    /// <summary>
+    /// Get a copy of contents of the queue. This should only be used for debugging purposes,
+    /// as this operation can be slow for large queues, i.e. runtime and memory complexity is O(n).
+    /// </summary>
+    /// <returns></returns>
+    public IList<T> GetCopy() {
+      lock (_lock) {
+        if (_items.Count == 0) {
+          return EmptyList;
+        }
+        var result = new List<T>(_items.Count);
+        result.AddRange(_items);
+        return result;
+      }
     }
 
     public void Clear() {

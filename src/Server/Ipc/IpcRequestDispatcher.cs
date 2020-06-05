@@ -18,22 +18,34 @@ namespace VsChromium.Server.Ipc {
     private readonly ICustomThreadPool _customThreadPool;
     private readonly IIpcResponseQueue _ipcResponseQueue;
     private readonly IEnumerable<IProtocolHandler> _protocolHandlers;
+    private readonly ITaskQueue _sequentialTaskQueue;
 
     [ImportingConstructor]
     public IpcRequestDispatcher(
       ICustomThreadPool customThreadPool,
+      ITaskQueueFactory taskQueueFactory,
       IIpcResponseQueue ipcResponseQueue,
       [ImportMany] IEnumerable<IProtocolHandler> protocolHandlers) {
       _customThreadPool = customThreadPool;
       _ipcResponseQueue = ipcResponseQueue;
       _protocolHandlers = protocolHandlers;
+      _sequentialTaskQueue = taskQueueFactory.CreateQueue("IpcRequestDispatcher sequential requests queue");
     }
 
     public void ProcessRequestAsync(IpcRequest request) {
-      _customThreadPool.RunAsync(() => ProcessRequestTask(request));
+      if (request.RunOnSequentialQueue) {
+        // Run on queue, with a unique ID since each request is unique
+        _sequentialTaskQueue.Enqueue(new TaskId(String.Format("RequestId={0}", request.RequestId)), t => ProcessRequestWorker(request));
+      } else {
+        _customThreadPool.RunAsync(() => ProcessRequestWorker(request));
+      }
     }
 
-    private void ProcessRequestTask(IpcRequest request) {
+    /// <summary>
+    /// Process one request synchronously (on a background thread) and sends the response back
+    /// to the response queue (i.e. communication pipe)
+    /// </summary>
+    private void ProcessRequestWorker(IpcRequest request) {
       var sw = Stopwatch.StartNew();
       var response = ProcessOneRequest(request);
       sw.Stop();

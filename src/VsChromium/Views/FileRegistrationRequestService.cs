@@ -94,6 +94,7 @@ namespace VsChromium.Views {
 
       var request = new DispatchThreadServerRequest {
         Id = "RegisterFileRequest-" + path,
+        RunOnSequentialQueue = true,
         Request = new RegisterFileRequest {
           FileName = path
         }
@@ -108,6 +109,7 @@ namespace VsChromium.Views {
 
       var request = new DispatchThreadServerRequest {
         Id = "UnregisterFileRequest-" + path,
+        RunOnSequentialQueue = true,
         Request = new UnregisterFileRequest {
           FileName = path
         }

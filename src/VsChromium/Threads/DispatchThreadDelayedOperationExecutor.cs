@@ -20,8 +20,9 @@ namespace VsChromium.Threads {
 
     public void Post(DelayedOperation operation) {
       var action = operation.Action;
-      operation.Action = () =>
+      operation.Action = () => {
         _synchronizationContextProvider.DispatchThreadContext.Post(action);
+      };
       _delayedOperationExecutor.Post(operation);
     }
   }

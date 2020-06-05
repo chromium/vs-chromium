@@ -243,12 +243,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ? new DispatchThreadServerRequest {
           Request = new ResumeIndexingRequest(),
           Id = nameof(ResumeIndexingRequest),
+          RunOnSequentialQueue = true,
           Delay = TimeSpan.FromSeconds(0.0),
           OnThreadPoolReceive = FetchDatabaseStatistics,
         }
         : new DispatchThreadServerRequest {
           Request = new PauseIndexingRequest(),
           Id = nameof(PauseIndexingRequest),
+          RunOnSequentialQueue = true,
           Delay = TimeSpan.FromSeconds(0.0),
           OnThreadPoolReceive = FetchDatabaseStatistics,
         };

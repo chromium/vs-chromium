@@ -13,7 +13,7 @@ namespace VsChromium.Server.Threads {
     /// <summary>
     /// Enqueue a new task to be run sequentially after all currently enqueue tasks have been
     /// run. If a task with the same <see cref="TaskId"/> is enqueued and not currently executing,
-    /// it it removed from the queue before the new task is enqueued.
+    /// it is removed from the queue before the new task is enqueued.
     /// </summary>
     void Enqueue(TaskId id, Action<CancellationToken> task);
 

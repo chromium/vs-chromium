@@ -38,11 +38,11 @@ namespace VsChromium.ServerProxy {
 
     public bool IsServerRunning => _serverProcessProxy.IsServerRunning;
 
-    public void RunAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback) {
+    public void RunAsync(TypedRequest request, RunAsyncOptions options, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback) {
       // Note: We capture the value outside the RunAsync callback.
       var localSequenceNumber = Interlocked.Increment(ref _currentSequenceNumber);
 
-      RunAsyncWorker(request, successCallback, errorCallback, localSequenceNumber, response => {
+      RunAsyncWorker(request, options, successCallback, errorCallback, localSequenceNumber, response => {
         lock (_lock) {
           _bufferedResponses.Add(response);
         }
@@ -50,17 +50,18 @@ namespace VsChromium.ServerProxy {
       });
     }
 
-    public void RunUnbufferedAsync(TypedRequest request, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback) {
-      RunAsyncWorker(request, successCallback, errorCallback, -1, SendResponse);
+    public void RunUnbufferedAsync(TypedRequest request, RunAsyncOptions options, Action<TypedResponse> successCallback, Action<ErrorResponse> errorCallback) {
+      RunAsyncWorker(request, options, successCallback, errorCallback, -1, SendResponse);
     }
 
-    public void RunAsyncWorker(TypedRequest request, Action<TypedResponse> successCallback,
+    public void RunAsyncWorker(TypedRequest request, RunAsyncOptions options, Action<TypedResponse> successCallback,
       Action<ErrorResponse> errorCallback, long sequenceNumber, Action<BufferedResponse> processResponse) {
       var sw = Stopwatch.StartNew();
 
       var ipcRequest = new IpcRequest {
         RequestId = _ipcRequestIdFactory.GetNextId(),
         Protocol = IpcProtocols.TypedMessage,
+        RunOnSequentialQueue = (options & RunAsyncOptions.RunOnSequentialQueue) != 0,
         Data = request
       };
 

@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Views {
   public interface ITextDocumentTable {
     ITextDocument GetOpenDocument(FullPath path);
+    IList<FullPath> GetOpenDocuments();
   }
 }

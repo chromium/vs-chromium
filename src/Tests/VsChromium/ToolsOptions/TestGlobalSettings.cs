@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Package;
 using VsChromium.Settings;
+using VsChromium.Threads;
 using VsChromium.ToolsOptions;
 
 namespace VsChromium.Tests.VsChromium.ToolsOptions {
@@ -17,7 +18,7 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
     public void GlobalSettingsCopyToToolsOptionsWorks() {
       var provider = new GlobalSettingsProvider(
         new ToolsOptionsPageProviderMock(),
-        new EventBus());
+        new EventBus(new MyProvider()));
 
       // Force reading settings from empty tools|options pages.
       var x = provider.GlobalSettings.EnableSourceExplorerHierarchy;
@@ -39,6 +40,19 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
       private readonly ConcurrentDictionary<Type, object> _objects  = new ConcurrentDictionary<Type, object>(); 
       public T GetToolsOptionsPage<T>() where T : DialogPage, new() {
         return (T)_objects.GetOrAdd(typeof (T), key => new T());
+      }
+    }
+
+    public class MyProvider : ISynchronizationContextProvider {
+      public ISynchronizationContext DispatchThreadContext {
+        get {
+          return new MyContext();
+        }
+      }
+
+      public class MyContext : ISynchronizationContext {
+        public void Post(Action action) {
+        }
       }
     }
   }

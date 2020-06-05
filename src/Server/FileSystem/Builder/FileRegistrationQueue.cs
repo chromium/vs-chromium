@@ -20,7 +20,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     private readonly ConcurrentBufferQueue<FileRegistrationEntry> _allItemsQueue;
 
     public FileRegistrationQueue() {
-      _allItemsQueue = (Debug_KeepAllItems ?  = new ConcurrentBufferQueue<FileRegistrationEntry>() : null);
+      _allItemsQueue = (Debug_KeepAllItems ? new ConcurrentBufferQueue<FileRegistrationEntry>() : null);
     }
 
     public void Enqueue(FileRegistrationKind registrationKind, FullPath path) {

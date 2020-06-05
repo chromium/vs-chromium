@@ -25,6 +25,11 @@ namespace VsChromium.Views {
       _textDocumentFactoryService.TextDocumentDisposed += TextDocumentFactoryServiceOnTextDocumentDisposed;
     }
 
+    /// <summary>
+    /// Note: Starting VS 2019 (2017?), this event handler can be called on any thread, not just the UI thread.
+    /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
+    /// This means the implementation needs to be thread-safe.
+    /// </summary>
     private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, TextDocumentEventArgs textDocumentEventArgs) {
       if (textDocumentEventArgs.TextDocument != null) {
         _fileRegistrationRequestService.RegisterTextDocument(textDocumentEventArgs.TextDocument);
@@ -38,6 +43,11 @@ namespace VsChromium.Views {
       }
     }
 
+    /// <summary>
+    /// Note: Starting VS 2019 (2017?), this event handler can be called on any thread, not just the UI thread.
+    /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
+    /// This means the implementation needs to be thread-safe.
+    /// </summary>
     private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, TextDocumentEventArgs textDocumentEventArgs) {
       if (textDocumentEventArgs.TextDocument != null) {
         _fileRegistrationRequestService.UnregisterTextDocument(textDocumentEventArgs.TextDocument);

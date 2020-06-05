@@ -6,12 +6,19 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using VsChromium.Core.Logging;
+using VsChromium.Threads;
 
 namespace VsChromium.Package {
   [Export(typeof(IEventBus))]
   public class EventBus : IEventBus {
+    private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly Dictionary<string, List<Entry>> _handlers = new Dictionary<string, List<Entry>>();
     private readonly object _lock = new object();
+
+    [ImportingConstructor]
+    public EventBus(ISynchronizationContextProvider synchronizationContextProvider) {
+      _synchronizationContextProvider = synchronizationContextProvider;
+    }
 
     private class Entry {
       private readonly string _eventName;
@@ -68,10 +75,12 @@ namespace VsChromium.Package {
         temp = entries.ToArray();
       }
 
-      foreach (var item in temp) {
-        var localItem = item;
-        Logger.WrapActionInvocation(() => localItem.Handler(sender, args));
-      }
+      _synchronizationContextProvider.DispatchThreadContext.Post(() => {
+        foreach (var item in temp) {
+          var localItem = item;
+          Logger.WrapActionInvocation(() => localItem.Handler(sender, args));
+        }
+      });
     }
   }
 }

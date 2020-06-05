@@ -7,6 +7,11 @@ using Microsoft.VisualStudio.Text;
 namespace VsChromium.Views {
   /// <summary>
   /// Register/Unregister files with server.
+  /// <para>
+  /// Note: Starting VS 2019 (2017?), methods can be called on any thread, not just the UI thread.
+  /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
+  /// This means the implementation needs to be thread-safe.
+  /// </para>
   /// </summary>
   public interface IFileRegistrationRequestService {
     void RegisterTextDocument(ITextDocument document);

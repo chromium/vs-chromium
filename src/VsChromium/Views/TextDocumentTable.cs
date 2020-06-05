@@ -17,22 +17,48 @@ namespace VsChromium.Views {
   [Export(typeof(ITextDocumentTable))]
   public class TextDocumentTable : ITextDocumentTable {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IFileSystem _fileSystem;
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;
     private readonly IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService;
-    private readonly Lazy<bool> _firstRun; 
+    private readonly Lazy<bool> _firstRun;
+    private readonly object _openDocumentsLock = new object();
     private readonly Dictionary<FullPath, ITextDocument> _openDocuments = new Dictionary<FullPath, ITextDocument>();
 
     [ImportingConstructor]
     public TextDocumentTable(
       [Import(typeof(SVsServiceProvider))]IServiceProvider serviceProvider,
+      IFileSystem fileSystem,
       ITextDocumentFactoryService textDocumentFactoryService,
       IVsEditorAdaptersFactoryService vsEditorAdaptersFactoryService) {
       _serviceProvider = serviceProvider;
+      _fileSystem = fileSystem;
       _textDocumentFactoryService = textDocumentFactoryService;
       _vsEditorAdaptersFactoryService = vsEditorAdaptersFactoryService;
       textDocumentFactoryService.TextDocumentCreated += TextDocumentFactoryServiceOnTextDocumentCreated;
       textDocumentFactoryService.TextDocumentDisposed += TextDocumentFactoryServiceOnTextDocumentDisposed;
       _firstRun = new Lazy<bool>(FetchRunningDocumentTable);
+    }
+
+    public ITextDocument GetOpenDocument(FullPath path) {
+      lock (_openDocumentsLock) {
+        var fetchFromRdtOnce = _firstRun.Value;
+        return _openDocuments.GetValue(path);
+      }
+    }
+
+    public IList<FullPath> GetOpenDocuments() {
+      var result = new List<FullPath>();
+      var rdt = new RunningDocumentTable(_serviceProvider);
+      foreach (var info in rdt) {
+        if (FullPath.IsValid(info.Moniker)) {
+          var path = new FullPath(info.Moniker);
+          var fi = _fileSystem.GetFileInfoSnapshot(path);
+          if (fi.Exists && fi.IsFile) {
+            result.Add(path);
+          }
+        }
+      }
+      return result;
     }
 
     private bool FetchRunningDocumentTable() {
@@ -75,38 +101,49 @@ namespace VsChromium.Views {
       if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
         var document = (ITextDocument)sender;
 
-        if (FullPath.IsValid(args.FilePath)) {
-          var newPath = new FullPath(args.FilePath);
-          _openDocuments[newPath] = document;
-        }
+        lock (_openDocumentsLock) {
+          if (FullPath.IsValid(args.FilePath)) {
+            var newPath = new FullPath(args.FilePath);
+            _openDocuments[newPath] = document;
+          }
 
-        if (FullPath.IsValid(document.FilePath)) {
-          var oldPath = new FullPath(document.FilePath);
-          _openDocuments.Remove(oldPath);
+          if (FullPath.IsValid(document.FilePath)) {
+            var oldPath = new FullPath(document.FilePath);
+            _openDocuments.Remove(oldPath);
+          }
         }
       }
     }
 
+    /// <summary>
+    /// Note: Starting VS 2019 (2017?), this event handler can be called on any thread, not just the UI thread.
+    /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
+    /// This means the implementation needs to be thread-safe.
+    /// </summary>
     private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, TextDocumentEventArgs args) {
       var document = args.TextDocument;
       document.FileActionOccurred += TextDocumentOnFileActionOccurred;
       if (FullPath.IsValid(document.FilePath)) {
         var path = new FullPath(document.FilePath);
-        _openDocuments[path] = document;
+        lock (_openDocumentsLock) {
+          _openDocuments[path] = document;
+        }
       }
     }
 
+    /// <summary>
+    /// Note: Starting VS 2019 (2017?), this event handler can be called on any thread, not just the UI thread.
+    /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
+    /// This means the implementation needs to be thread-safe.
+    /// </summary>
     private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, TextDocumentEventArgs args) {
       var document = args.TextDocument;
       if (FullPath.IsValid(document.FilePath)) {
         var path = new FullPath(document.FilePath);
-        _openDocuments.Remove(path);
+        lock (_openDocumentsLock) {
+          _openDocuments.Remove(path);
+        }
       }
-    }
-
-    public ITextDocument GetOpenDocument(FullPath path) {
-      var fetchFromRdtOnce = _firstRun.Value;
-      return _openDocuments.GetValue(path);
     }
   }
 }

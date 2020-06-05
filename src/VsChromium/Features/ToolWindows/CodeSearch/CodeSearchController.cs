@@ -68,6 +68,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     /// For generating unique id n progress bar tracker.
     /// </summary>
     private int _operationSequenceId;
+    private readonly ITextDocumentTable _textDocumentTable;
 
     public CodeSearchController(
       CodeSearchControl control,
@@ -97,6 +98,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _clipboard = clipboard;
       _synchronizationContextProvider = synchronizationContextProvider;
       _openDocumentHelper = openDocumentHelper;
+      _textDocumentTable = textDocumentTable;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _buildOutputParser = buildOutputParser;
@@ -126,6 +128,27 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
       fileSystemTreeSource.TreeReceived += FileSystemTreeSource_OnTreeReceived;
       fileSystemTreeSource.ErrorReceived += FileSystemTreeSource_OnErrorReceived;
+
+      //TODO
+      EnqueueDelayedFeatchRunningDocumentTable(dispatchThreadDelayedOperationExecutor);
+    }
+
+    private void EnqueueDelayedFeatchRunningDocumentTable(IDispatchThreadDelayedOperationExecutor dispatchThreadDelayedOperationExecutor) {
+      dispatchThreadDelayedOperationExecutor.Post(new DelayedOperation {
+        Id = "Fetch RDT",
+        Delay = TimeSpan.FromSeconds(10),
+        Action = () => {
+          FetchRDT();
+          EnqueueDelayedFeatchRunningDocumentTable(dispatchThreadDelayedOperationExecutor);
+        }
+      });
+    }
+
+    private void FetchRDT() {
+      var openFiles = _textDocumentTable.GetOpenDocuments();
+      foreach(var path in openFiles) {
+        Logger.LogInfo("Open file: \"{0}\"", path);
+      }
     }
 
     public CodeSearchViewModel ViewModel => _control.ViewModel;
@@ -243,12 +266,14 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         ? new DispatchThreadServerRequest {
           Request = new ResumeIndexingRequest(),
           Id = nameof(ResumeIndexingRequest),
+          RunOnSequentialQueue = true,
           Delay = TimeSpan.FromSeconds(0.0),
           OnThreadPoolReceive = FetchDatabaseStatistics,
         }
         : new DispatchThreadServerRequest {
           Request = new PauseIndexingRequest(),
           Id = nameof(PauseIndexingRequest),
+          RunOnSequentialQueue = true,
           Delay = TimeSpan.FromSeconds(0.0),
           OnThreadPoolReceive = FetchDatabaseStatistics,
         };

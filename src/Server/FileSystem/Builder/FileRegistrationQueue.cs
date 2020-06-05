@@ -15,12 +15,17 @@ namespace VsChromium.Server.FileSystem.Builder {
     /// 
     /// <para>Note: Use this for debugging purposes only as all requests are kept in memory</para>
     /// </summary>
-    private static bool Debug_KeepAllItems = false;
-    private readonly ConcurrentBufferQueue<FileRegistrationEntry> _queue = new ConcurrentBufferQueue<FileRegistrationEntry>();
+    private static bool Debug_KeepAllItems = true;
+    /// <summary>
+    /// This is only active (and non-null) when <see cref="Debug_KeepAllItems"/> is set to <code>true</code>
+    /// at build time.
+    /// </summary>
     private readonly ConcurrentBufferQueue<FileRegistrationEntry> _allItemsQueue;
 
+    private readonly ConcurrentBufferQueue<FileRegistrationEntry> _queue = new ConcurrentBufferQueue<FileRegistrationEntry>();
+
     public FileRegistrationQueue() {
-      _allItemsQueue = (Debug_KeepAllItems ?  = new ConcurrentBufferQueue<FileRegistrationEntry>() : null);
+      _allItemsQueue = (Debug_KeepAllItems ? new ConcurrentBufferQueue<FileRegistrationEntry>() : null);
     }
 
     public void Enqueue(FileRegistrationKind registrationKind, FullPath path) {

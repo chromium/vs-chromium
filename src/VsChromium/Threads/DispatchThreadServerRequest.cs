@@ -30,6 +30,15 @@ namespace VsChromium.Threads {
     public TypedRequest Request { get; set; }
 
     /// <summary>
+    /// (Optional) Ensures the request is processed on the sequential
+    /// queue on the server (i.e. all requests with this flag will always be
+    /// executed sequentially on the server).
+    /// 
+    /// <para>See <see cref="VsChromium.ServerProxy.RunAsyncOptions.RunOnSequentialQueue"/></para>
+    /// </summary>
+    public bool RunOnSequentialQueue { get; set; }
+
+    /// <summary>
     /// (Optional) Action executed on a background thread when the request delay
     /// has expired, just before the request is sent to the server.
     /// </summary>

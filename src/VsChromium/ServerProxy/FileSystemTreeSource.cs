@@ -44,6 +44,7 @@ namespace VsChromium.ServerProxy {
     private void FetchFileSystemTree() {
       _proxy.RunAsync(
         new GetFileSystemTreeRequest(),
+        RunAsyncOptions.Default,
         typedResponse => {
           var response = (GetFileSystemTreeResponse)typedResponse;
           OnTreeReceived(response.Tree);

@@ -12,6 +12,9 @@ namespace VsChromium.Core.Ipc {
     [ProtoMember(1)]
     public long RequestId { get; set; }
 
+    /// <summary>
+    /// See <see cref="IpcProtocols"/>
+    /// </summary>
     [ProtoMember(2)]
     public string Protocol { get; set; }
 

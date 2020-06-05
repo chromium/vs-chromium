@@ -64,6 +64,14 @@ namespace VsChromium.Views {
       }
     }
 
+    public void RegisterFile(string path) {
+      SendRegisterFileRequest(path);
+    }
+
+    public void UnregisterFile(string path) {
+      SendUnregisterFileRequest(path);
+    }
+
     private void TextDocumentOnOpen(ITextDocument textDocument, EventArgs args) {
       _eventBus.Fire("TextDocument-Open", textDocument, args);
     }
@@ -80,20 +88,13 @@ namespace VsChromium.Views {
       _eventBus.Fire("TextDocumentFile-FileActionOccurred", sender, args);
     }
 
-    public void RegisterFile(string path) {
-      SendRegisterFileRequest(path);
-    }
-
-    public void UnregisterFile(string path) {
-      SendUnregisterFileRequest(path);
-    }
-
     private void SendRegisterFileRequest(string path) {
       if (!IsPhysicalFile(path))
         return;
 
       var request = new DispatchThreadServerRequest {
         Id = "RegisterFileRequest-" + path,
+        RunOnSequentialQueue = true,
         Request = new RegisterFileRequest {
           FileName = path
         }
@@ -108,6 +109,7 @@ namespace VsChromium.Views {
 
       var request = new DispatchThreadServerRequest {
         Id = "UnregisterFileRequest-" + path,
+        RunOnSequentialQueue = true,
         Request = new UnregisterFileRequest {
           FileName = path
         }

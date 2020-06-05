@@ -44,7 +44,7 @@ namespace VsChromium.Threads {
           if (request.OnThreadPoolSend != null)
             Logger.WrapActionInvocation(request.OnThreadPoolSend);
 
-          _typedRequestProcessProxy.RunAsync(request.Request,
+          _typedRequestProcessProxy.RunAsync(request.Request, GetRunAsycOptions(request),
             response => OnRequestSuccess(request, response),
             errorResponse => OnRequestError(request, errorResponse));
         },
@@ -97,6 +97,14 @@ namespace VsChromium.Threads {
 
     protected virtual void OnProcessFatalError(ErrorEventArgs e) {
       ProcessFatalError?.Invoke(this, e);
+    }
+
+    private RunAsyncOptions GetRunAsycOptions(DispatchThreadServerRequest request) {
+      RunAsyncOptions options = default(RunAsyncOptions);
+      if (request.RunOnSequentialQueue) {
+        options |= RunAsyncOptions.RunOnSequentialQueue;
+      }
+      return options;
     }
   }
 }

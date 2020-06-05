@@ -25,7 +25,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         ProjectPath = node.GetProjectPath().Value,
         DirectoryRelativePath = node.RelativePath
       };
-      _typedRequestProcessProxy.RunUnbufferedAsync(request,
+      _typedRequestProcessProxy.RunUnbufferedAsync(request, RunAsyncOptions.Default,
         response => { LoadChildrenCallback(tcs, response); },
         response => { LoadChildrenErrorCallback(tcs, response); });
 
@@ -40,7 +40,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         ProjectPath = projectNode.GetProjectPath().Value,
         RelativePathList = nodes.Select(x => x.RelativePath).ToList()
       };
-      _typedRequestProcessProxy.RunUnbufferedAsync(request,
+      _typedRequestProcessProxy.RunUnbufferedAsync(request, RunAsyncOptions.Default,
         response => { LoadChildrenMultipleCallback(tcs, nodes, response); },
         response => { LoadChildrenMultipleErrorCallback(tcs, response); });
 

@@ -3,55 +3,39 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using Microsoft.VisualStudio.Text;
 using VsChromium.Package;
 
 namespace VsChromium.Views {
   [Export(typeof(IPackagePostInitializer))]
   public class TextDocumentFactoryObserver : IPackagePostInitializer {
-    private readonly ITextDocumentFactoryService _textDocumentFactoryService;
+    private readonly ITextDocumentTable _textDocumentTable;
     private readonly IFileRegistrationRequestService _fileRegistrationRequestService;
 
     [ImportingConstructor]
-    public TextDocumentFactoryObserver(ITextDocumentFactoryService textDocumentFactoryService, IFileRegistrationRequestService fileRegistrationRequestService) {
-      _textDocumentFactoryService = textDocumentFactoryService;
+    public TextDocumentFactoryObserver(ITextDocumentTable textDocumentTable, IFileRegistrationRequestService fileRegistrationRequestService) {
+      _textDocumentTable = textDocumentTable;
       _fileRegistrationRequestService = fileRegistrationRequestService;
     }
 
     public int Priority { get { return 0; } }
 
     public void Run(IVisualStudioPackage package) {
-      _textDocumentFactoryService.TextDocumentCreated += TextDocumentFactoryServiceOnTextDocumentCreated;
-      _textDocumentFactoryService.TextDocumentDisposed += TextDocumentFactoryServiceOnTextDocumentDisposed;
+      _textDocumentTable.OpenDocumentCreated += TextDocumentTable_DocumentOpened;
+      _textDocumentTable.OpenDocumentClosed += TextDocumentTable_DocumentClosed;
+      _textDocumentTable.OpenDocumentRenamed += TextDocumentTable_DocumentRenamed;
     }
 
-    /// <summary>
-    /// Note: Starting VS 2019 (2017?), this event handler can be called on any thread, not just the UI thread.
-    /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
-    /// This means the implementation needs to be thread-safe.
-    /// </summary>
-    private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, TextDocumentEventArgs textDocumentEventArgs) {
-      if (textDocumentEventArgs.TextDocument != null) {
-        _fileRegistrationRequestService.RegisterTextDocument(textDocumentEventArgs.TextDocument);
-        textDocumentEventArgs.TextDocument.FileActionOccurred += (o, args) => {
-          if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
-            var document = (ITextDocument)o;
-            _fileRegistrationRequestService.RegisterFile(args.FilePath);
-            _fileRegistrationRequestService.UnregisterFile(document.FilePath);
-          }
-        };
-      }
+    private void TextDocumentTable_DocumentOpened(object sender, OpenDocumentEventArgs textDocumentEventArgs) {
+      _fileRegistrationRequestService.RegisterTextDocument(textDocumentEventArgs.OpenDocument.TextDocument);
     }
 
-    /// <summary>
-    /// Note: Starting VS 2019 (2017?), this event handler can be called on any thread, not just the UI thread.
-    /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
-    /// This means the implementation needs to be thread-safe.
-    /// </summary>
-    private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, TextDocumentEventArgs textDocumentEventArgs) {
-      if (textDocumentEventArgs.TextDocument != null) {
-        _fileRegistrationRequestService.UnregisterTextDocument(textDocumentEventArgs.TextDocument);
-      }
+    private void TextDocumentTable_DocumentClosed(object sender, OpenDocumentEventArgs textDocumentEventArgs) {
+      _fileRegistrationRequestService.UnregisterTextDocument(textDocumentEventArgs.OpenDocument.TextDocument);
+    }
+
+    private void TextDocumentTable_DocumentRenamed(object sender, OpenDocumentRenamedEventArgs textDocumentEventArgs) {
+      _fileRegistrationRequestService.UnregisterFile(textDocumentEventArgs.OldPath.Value);
+      _fileRegistrationRequestService.RegisterFile(textDocumentEventArgs.OpenDocument.Path.Value);
     }
   }
 }

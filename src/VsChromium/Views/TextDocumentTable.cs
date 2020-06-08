@@ -24,6 +24,12 @@ namespace VsChromium.Views {
     private readonly object _openDocumentsLock = new object();
     private readonly Dictionary<FullPath, ITextDocument> _openDocuments = new Dictionary<FullPath, ITextDocument>();
 
+    public event EventHandler<OpenDocumentEventArgs> OpenDocumentCreated;
+    public event EventHandler<OpenDocumentEventArgs> OpenDocumentClosed;
+    public event EventHandler<OpenDocumentEventArgs> OpenDocumentSavedToDisk;
+    public event EventHandler<OpenDocumentEventArgs> OpenDocumentLoadedFromDisk;
+    public event EventHandler<OpenDocumentRenamedEventArgs> OpenDocumentRenamed;
+
     [ImportingConstructor]
     public TextDocumentTable(
       [Import(typeof(SVsServiceProvider))]IServiceProvider serviceProvider,
@@ -39,23 +45,25 @@ namespace VsChromium.Views {
       _firstRun = new Lazy<bool>(FetchRunningDocumentTable);
     }
 
-    public ITextDocument GetOpenDocument(FullPath path) {
+    public OpenDocument GetOpenDocument(FullPath path) {
       lock (_openDocumentsLock) {
         var fetchFromRdtOnce = _firstRun.Value;
-        return _openDocuments.GetValue(path);
+        var textDoc = _openDocuments.GetValue(path);
+        if (textDoc == null) {
+          return null;
+        } else {
+          return new OpenDocument(path, textDoc);
+        }
       }
     }
 
-    public IList<FullPath> GetOpenDocuments() {
-      var result = new List<FullPath>();
+    public IList<OpenDocument> GetOpenDocuments() {
+      var result = new List<OpenDocument>();
       var rdt = new RunningDocumentTable(_serviceProvider);
       foreach (var info in rdt) {
-        if (FullPath.IsValid(info.Moniker)) {
-          var path = new FullPath(info.Moniker);
-          var fi = _fileSystem.GetFileInfoSnapshot(path);
-          if (fi.Exists && fi.IsFile) {
-            result.Add(path);
-          }
+        var textDocument = GetTextDocumentFromRTDEntry(info);
+        if (textDocument != null) {
+          result.Add(textDocument);
         }
       }
       return result;
@@ -64,55 +72,46 @@ namespace VsChromium.Views {
     private bool FetchRunningDocumentTable() {
       var rdt = new RunningDocumentTable(_serviceProvider);
       foreach (var info in rdt) {
-        // Get doc data
-        if (!FullPath.IsValid(info.Moniker))
-          continue;
-
-        var path = new FullPath(info.Moniker);
-        if (_openDocuments.ContainsKey(path))
-          continue;
-
-        // Get vs buffer
-        IVsTextBuffer docData = null;
-        try {
-          docData = info.DocData as IVsTextBuffer;
+        var textDocument = GetTextDocumentFromRTDEntry(info);
+        if (textDocument != null) {
+          lock (_openDocumentsLock) {
+            _openDocuments[textDocument.Path] = textDocument.TextDocument;
+          }
         }
-        catch (Exception e) {
-          Logger.LogWarn(e, "Error getting IVsTextBuffer for document {0}, skipping document", path);
-        }
-        if (docData == null)
-          continue;
-
-        // Get ITextDocument
-        var textBuffer = _vsEditorAdaptersFactoryService.GetDocumentBuffer(docData);
-        if (textBuffer == null)
-          continue;
-
-        ITextDocument document;
-        if (!_textDocumentFactoryService.TryGetTextDocument(textBuffer, out document))
-          continue;
-
-        _openDocuments[path] = document;
       }
       return true;
     }
 
-    private void TextDocumentOnFileActionOccurred(object sender, TextDocumentFileActionEventArgs args) {
-      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
-        var document = (ITextDocument)sender;
-
-        lock (_openDocumentsLock) {
-          if (FullPath.IsValid(args.FilePath)) {
-            var newPath = new FullPath(args.FilePath);
-            _openDocuments[newPath] = document;
-          }
-
-          if (FullPath.IsValid(document.FilePath)) {
-            var oldPath = new FullPath(document.FilePath);
-            _openDocuments.Remove(oldPath);
-          }
-        }
+    private OpenDocument GetTextDocumentFromRTDEntry(RunningDocumentInfo info) {
+      // Get doc data
+      if (!FullPath.IsValid(info.Moniker)) {
+        return null;
       }
+      var path = new FullPath(info.Moniker);
+
+      // Get vs buffer
+      IVsTextBuffer docData = null;
+      try {
+        docData = info.DocData as IVsTextBuffer;
+      }
+      catch (Exception e) {
+        Logger.LogWarn(e, "Error getting IVsTextBuffer for document {0}, skipping document", path);
+      }
+      if (docData == null) {
+        return null;
+      }
+
+      // Get ITextDocument
+      var textBuffer = _vsEditorAdaptersFactoryService.GetDocumentBuffer(docData);
+      if (textBuffer == null) {
+        return null;
+      }
+
+      ITextDocument document;
+      if (!_textDocumentFactoryService.TryGetTextDocument(textBuffer, out document)) {
+        return null;
+      }
+      return new OpenDocument(path, document);
     }
 
     /// <summary>
@@ -120,7 +119,7 @@ namespace VsChromium.Views {
     /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
     /// This means the implementation needs to be thread-safe.
     /// </summary>
-    private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, TextDocumentEventArgs args) {
+    private void TextDocumentFactoryServiceOnTextDocumentCreated(object sender, Microsoft.VisualStudio.Text.TextDocumentEventArgs args) {
       var document = args.TextDocument;
       document.FileActionOccurred += TextDocumentOnFileActionOccurred;
       if (FullPath.IsValid(document.FilePath)) {
@@ -128,6 +127,7 @@ namespace VsChromium.Views {
         lock (_openDocumentsLock) {
           _openDocuments[path] = document;
         }
+        OnDocumentCreated(new OpenDocumentEventArgs(new OpenDocument(path, document)));
       }
     }
 
@@ -136,14 +136,76 @@ namespace VsChromium.Views {
     /// For example, when using "Find In Files" feature of VS, which runs on many threads in parallel.
     /// This means the implementation needs to be thread-safe.
     /// </summary>
-    private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, TextDocumentEventArgs args) {
+    private void TextDocumentFactoryServiceOnTextDocumentDisposed(object sender, Microsoft.VisualStudio.Text.TextDocumentEventArgs args) {
       var document = args.TextDocument;
       if (FullPath.IsValid(document.FilePath)) {
         var path = new FullPath(document.FilePath);
         lock (_openDocumentsLock) {
           _openDocuments.Remove(path);
         }
+        OnDocumentClosed(new OpenDocumentEventArgs(new OpenDocument(path, document)));
       }
+    }
+
+    private void TextDocumentOnFileActionOccurred(object sender, TextDocumentFileActionEventArgs args) {
+      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
+        var document = (ITextDocument)sender;
+
+        FullPath? newPath = ValidatePath(args.FilePath);
+        FullPath? oldPath = ValidatePath(document.FilePath);
+
+        // Common case: rename of valid file to valid file
+        if (newPath != null && oldPath != null) {
+          lock (_openDocumentsLock) {
+            _openDocuments.Remove(oldPath.Value);
+            _openDocuments[newPath.Value] = document;
+          }
+          OnDocumentRenamed(new OpenDocumentRenamedEventArgs(oldPath.Value, new OpenDocument(newPath.Value, document)));
+        }
+
+        // Rename from invalid file to valid file
+        if (newPath != null && oldPath == null) {
+          lock (_openDocumentsLock) {
+            _openDocuments[newPath.Value] = document;
+          }
+          OnDocumentCreated(new OpenDocumentEventArgs(new OpenDocument(newPath.Value, document)));
+        }
+
+        // Rename from valid file to invalid file
+        if (newPath == null && oldPath != null) {
+          lock (_openDocumentsLock) {
+            _openDocuments.Remove(oldPath.Value);
+          }
+          OnDocumentClosed(new OpenDocumentEventArgs(new OpenDocument(oldPath.Value, document)));
+        }
+      }
+    }
+
+    private FullPath? ValidatePath(string filePath) {
+      if (FullPath.IsValid(filePath)) {
+        return new FullPath(filePath);
+      }
+      return null;
+    }
+
+    protected virtual void OnDocumentCreated(OpenDocumentEventArgs e) {
+      OpenDocumentCreated?.Invoke(this, e);
+    }
+
+    protected virtual void OnDocumentClosed(OpenDocumentEventArgs e) {
+      OpenDocumentClosed?.Invoke(this, e);
+    }
+
+    protected virtual void OnDocumentSavedToDisk(OpenDocumentEventArgs e) {
+      OpenDocumentSavedToDisk?.Invoke(this, e);
+    }
+
+    protected virtual void OnOpenDocumentLoadedFromDisk(OpenDocumentEventArgs e) {
+      OpenDocumentLoadedFromDisk?.Invoke(this, e);
+    }
+
+    protected virtual void OnDocumentRenamed(OpenDocumentRenamedEventArgs e) {
+      OpenDocumentRenamed?.Invoke(this, e);
     }
   }
 }

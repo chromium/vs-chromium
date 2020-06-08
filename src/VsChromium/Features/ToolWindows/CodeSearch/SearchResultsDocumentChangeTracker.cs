@@ -62,7 +62,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
               if (document != null) {
                 var entry = new DocumentChangeTrackingEntry(spans);
                 _trackingEntries[path] = entry;
-                entry.CreateTrackingSpans(document.TextBuffer);
+                entry.CreateTrackingSpans(document.TextDocument.TextBuffer);
               }
             }
           }

@@ -14,12 +14,24 @@ namespace VsChromium.Core.Threads {
         if (cancellationToken.IsCancellationRequested) {
           tcs.TrySetCanceled();
         } else {
-          continuationFunction(t).ContinueWith(t2 => {
+          // This block ensures we terminate "tcs" if "continuationFunction" throws
+          Task newTask = null;
+          try {
+            newTask = continuationFunction(t);
+          }
+          catch (Exception e) {
+            tcs.TrySetException(e);
+          }
+
+          // Continue only if the new task is valid
+          newTask?.ContinueWith(t2 => {
             if (cancellationToken.IsCancellationRequested || t2.IsCanceled) {
               tcs.TrySetCanceled();
-            } else if (t2.Exception != null) {
+            }
+            else if (t2.Exception != null) {
               tcs.TrySetException(t2.Exception);
-            } else {
+            }
+            else {
               tcs.TrySetResult(null);
             }
           });

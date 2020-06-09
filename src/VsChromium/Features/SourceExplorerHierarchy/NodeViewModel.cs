@@ -6,6 +6,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using VsChromium.Core.Files;
@@ -134,6 +135,10 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
           break;
         case (int)__VSHPROPID.VSHPROPID_FirstVisibleChild:
         case (int)__VSHPROPID.VSHPROPID_FirstChild:
+          // Special to prevent Visual Studio hangs when Resharper calls into Solution Explorer
+          if (this is RootNodeViewModel && IsResharperCaller()) {
+            return VSConstants.E_NOTIMPL;
+          }
           pvar = GetFirstChildItemId();
           break;
         case (int)__VSHPROPID.VSHPROPID_Expanded:
@@ -200,6 +205,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
     protected abstract IList<NodeViewModel> ChildrenImpl { get; }
     protected abstract bool IsExpandable { get; }
+
+    private static bool IsResharperCaller() {
+      var stackTrace = new StackTrace().ToString();
+      return stackTrace.Contains("JetBrains.VsIntegration.");
+    }
 
     private void AppendFullPath(StringBuilder sb) {
       if (string.IsNullOrEmpty(Name))

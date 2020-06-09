@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.ServerProxy;
@@ -19,6 +20,11 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     public DirectoryEntry LoadChildren(DirectoryNodeViewModel node) {
+      // "fake" root node does not support loading children dynamically (they should have been set manually)
+      if (string.IsNullOrEmpty(node.FullPathString)) {
+        return null;
+      }
+
       var tcs = new TaskCompletionSource<DirectoryEntry>();
 
       var request = new GetDirectoryEntriesRequest {
@@ -32,8 +38,14 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return tcs.Task.Result;
     }
 
-    public List<LoadChildrenResult> LoadChildrenMultiple(
+    public IList<LoadChildrenResult> LoadChildrenMultiple(
       RootNodeViewModel projectNode, ICollection<DirectoryNodeViewModel> nodes) {
+      // "fake" root node does not support loading children dynamically (they should have been set manually)
+      if (string.IsNullOrEmpty(projectNode.FullPathString)) {
+        return ArrayUtilities.EmptyList<LoadChildrenResult>.Instance;
+      }
+
+
       var tcs = new TaskCompletionSource<List<LoadChildrenResult>>();
 
       var request = new GetDirectoryEntriesMultipleRequest {

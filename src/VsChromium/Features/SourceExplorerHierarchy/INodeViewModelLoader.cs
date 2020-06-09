@@ -17,7 +17,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     /// </summary>
     DirectoryEntry LoadChildren(DirectoryNodeViewModel node);
 
-    List<LoadChildrenResult> LoadChildrenMultiple(RootNodeViewModel projectNode,
+    IList<LoadChildrenResult> LoadChildrenMultiple(RootNodeViewModel projectNode,
       ICollection<DirectoryNodeViewModel> nodes);
   }
 }

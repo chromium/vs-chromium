@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
+using VsChromium.Core.Win32.Files;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
@@ -260,8 +262,7 @@ namespace VsChromium.Server.FileSystem.Builder {
             directory.DirectoryName.RelativePath.Value));
         }
 
-        var childEntries =
-          _fileSystem.GetDirectoryEntries(_project.RootPath.Combine(directory.DirectoryName.RelativePath));
+        var childEntries = GetDirectoryEntries(directory);
         var childFileNames = new List<FileName>();
         // Note: Use "for" loop to avoid memory allocations.
         for (var i = 0; i < childEntries.Count; i++) {
@@ -285,6 +286,16 @@ namespace VsChromium.Server.FileSystem.Builder {
       }
 
       return allTasks;
+    }
+
+    private IList<DirectoryEntry> GetDirectoryEntries(DirectoryData directory) {
+      try {
+        return _fileSystem.GetDirectoryEntries(_project.RootPath.Combine(directory.DirectoryName.RelativePath));
+      }
+      catch (Exception e) {
+        Logger.LogWarn(e, "Skipping directory due to error");
+        return ArrayUtilities.EmptyList<DirectoryEntry>.Instance;
+      }
     }
 
     private struct DirectoryWithFiles {

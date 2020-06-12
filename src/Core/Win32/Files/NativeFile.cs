@@ -84,15 +84,8 @@ namespace VsChromium.Core.Win32.Files {
         IntPtr.Zero);
       if (fileHandle.IsInvalid) {
         var lastWin32Error = Marshal.GetLastWin32Error();
-        if (lastWin32Error != (int)Win32Errors.ERROR_FILE_NOT_FOUND &&
-            lastWin32Error != (int)Win32Errors.ERROR_PATH_NOT_FOUND &&
-            lastWin32Error != (int)Win32Errors.ERROR_ACCESS_DENIED) {
-          throw new LastWin32ErrorException(lastWin32Error,
-            string.Format("Error enumerating files at \"{0}\".", path));
-        }
-
-        // Skip this directory
-        return directoryEntries;
+        throw new LastWin32ErrorException(lastWin32Error,
+          string.Format("Error enumerating files at \"{0}\".", path));
       }
 
       using (fileHandle) {

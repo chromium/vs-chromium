@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -289,11 +290,16 @@ namespace VsChromium.Server.FileSystem.Builder {
     }
 
     private IList<DirectoryEntry> GetDirectoryEntries(DirectoryData directory) {
+      var path = _project.RootPath.Combine(directory.DirectoryName.RelativePath);
       try {
-        return _fileSystem.GetDirectoryEntries(_project.RootPath.Combine(directory.DirectoryName.RelativePath));
+        return _fileSystem.GetDirectoryEntries(path);
+      }
+      catch (Win32Exception e) {
+        Logger.LogWarn("Skipping directory \"{0}\": {1} ({2})", path, e.Message, e.NativeErrorCode);
+        return ArrayUtilities.EmptyList<DirectoryEntry>.Instance;
       }
       catch (Exception e) {
-        Logger.LogWarn(e, "Skipping directory due to error");
+        Logger.LogWarn(e, "Skipping directory \"{0}\"", path);
         return ArrayUtilities.EmptyList<DirectoryEntry>.Instance;
       }
     }

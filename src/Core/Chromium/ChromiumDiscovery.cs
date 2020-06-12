@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
+using VsChromium.Core.Logging;
 using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Core.Chromium {
@@ -37,9 +39,15 @@ namespace VsChromium.Core.Chromium {
       }
 
       // We need to ensure that all pattern lines are covered by at least one file/directory of |path|.
-      var entries = _fileSystem.GetDirectoryEntries(path);
-      return chromiumEnlistmentFilePatterns.PathMatcherEntries
-        .All(item => MatchFileOrDirectory(item, entries));
+      try {
+        var entries = _fileSystem.GetDirectoryEntries(path);
+        return chromiumEnlistmentFilePatterns.PathMatcherEntries
+          .All(item => MatchFileOrDirectory(item, entries));
+      }
+      catch (Exception e) {
+        Logger.LogWarn(e, "Error detecting chromium root directory, skipping directory \"{0}\"", path);
+        return false;
+      }
     }
 
     private static bool MatchFileOrDirectory(IPathMatcher item, IList<DirectoryEntry> entries) {

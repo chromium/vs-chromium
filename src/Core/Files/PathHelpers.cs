@@ -117,6 +117,10 @@ namespace VsChromium.Core.Files {
     /// method should only be used in assertion code.
     /// </summary>
     public static bool IsAbsolutePath(string path) {
+      if (string.IsNullOrEmpty(path)) {
+        return false;
+      }
+
       // Quick & dirty check, but faster than "Path.IsPathRooted".
       var l = path.Length;
 

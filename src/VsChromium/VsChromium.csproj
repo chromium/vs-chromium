@@ -326,9 +326,9 @@
     <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerRegistration.cs" />
     <Compile Include="Package\CommandHandler\SimplePackageCommandHandler.cs" />
     <Compile Include="Package\DisposeContainer.cs" />
-    <Compile Include="Package\EventBus.cs" />
+    <Compile Include="Package\DispatchThreadEventBus.cs" />
     <Compile Include="Package\IDisposeContainer.cs" />
-    <Compile Include="Package\IEventBus.cs" />
+    <Compile Include="Package\IDispatchThreadEventBus.cs" />
     <Compile Include="Package\VsSolutionEventsHandler.cs" />
     <Compile Include="ServerProxy\FileSystemTreeSource.cs" />
     <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />

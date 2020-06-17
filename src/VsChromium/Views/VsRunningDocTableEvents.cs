@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -22,27 +23,33 @@ namespace VsChromium.Views {
     }
 
     /// <summary>
-    /// The document has been opened and loaded in the Running Document Table
+    /// A document has been opened and loaded in the Running Document Table, or a previously
+    /// opened document has been reloaded from disk
     /// </summary>
-    public event EventHandler<VsDocumentEventArgs> DocumentOpened;
+    public event EventHandler<DocumentLoadedEventArgs> DocumentLoaded;
     /// <summary>
-    /// The document has been closed and removed from the Running Document Table
+    /// A document has been closed and removed from the Running Document Table
     /// </summary>
-    public event EventHandler<VsDocumentEventArgs> DocumentClosed;
+    public event EventHandler<DocumentClosedEventArgs> DocumentClosed;
     /// <summary>
-    /// An open document has been renamed, i.e. the path has changed
+    /// A document has been renamed, i.e. the path has changed
     /// </summary>
-    public event EventHandler<VsDocumentRenameEventArgs> DocumentRenamed;
+    public event EventHandler<DocumentRenamedEventArgs> DocumentRenamed;
 
     #region IVsRunningDocTableEvents3 implementation
 
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public int OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining) {
-      // Note: We rely on attribute changes instead, since we want to detect lazy loading
+      // Note: We rely on attribute changes instead, since we want to detect lazy loading of document and projects
       return VSConstants.S_OK;
     }
 
     public int OnAfterAttributeChangeEx(uint docCookie, uint grfAttribs, IVsHierarchy pHierOld, uint itemidOld, string pszMkDocumentOld, IVsHierarchy pHierNew, uint itemidNew, string pszMkDocumentNew) {
+      // See https://bit.ly/30BFKvJ (Roslyn RunningDocumentTableEventTracker implementation)
       // Either RDTA_DocDataReloaded or RDTA_DocumentInitialized will be triggered if there's a lazy load and the document is now available.
+      // See https://devdiv.visualstudio.com/DevDiv/_workitems/edit/937712 for a scenario where we do need the RDTA_DocumentInitialized check.
+      // We still check for RDTA_DocDataReloaded because the RDT will mark something as initialized as soon as there is something in the doc data,
+      // but that might still not be associated with an ITextBuffer.
       if (IsAttributeFlagSet(grfAttribs, __VSRDTATTRIB.RDTA_DocDataReloaded) || IsAttributeFlagSet(grfAttribs, __VSRDTATTRIB3.RDTA_DocumentInitialized)) {
         var path = PathFromDocCookie(docCookie);
         if (path != null) {
@@ -51,7 +58,7 @@ namespace VsChromium.Views {
           var buffer = TextBufferFromCookie(docCookie);
           if (buffer != null) {
             Logger.LogDebug("Document opened: \"{0}\"", path.Value);
-            OnDocumentOpened(new VsDocumentEventArgs(path.Value));
+            OnDocumentLoaded(new DocumentLoadedEventArgs(path.Value, buffer));
           }
         }
       }
@@ -59,11 +66,12 @@ namespace VsChromium.Views {
       // Did we rename?
       if (IsAttributeFlagSet(grfAttribs, __VSRDTATTRIB.RDTA_MkDocument)) {
         if (IsDocumentInitialized(docCookie)) {
+          var textBuffer = TextBufferFromCookie(docCookie);
           var oldPath = PathFromMoniker(pszMkDocumentOld);
           var newPath = PathFromMoniker(pszMkDocumentNew);
-          if (oldPath != null && newPath != null) {
+          if (textBuffer != null && oldPath != null && newPath != null) {
             Logger.LogDebug("Document renamed from \"{0}\" to \"{1}\"", oldPath.Value, newPath.Value);
-            OnDocumentRenamed(new VsDocumentRenameEventArgs(oldPath.Value, newPath.Value));
+            OnDocumentRenamed(new DocumentRenamedEventArgs(textBuffer, oldPath.Value, newPath.Value));
           }
         }
       }
@@ -71,6 +79,7 @@ namespace VsChromium.Views {
       return VSConstants.S_OK;
     }
 
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public int OnBeforeLastDocumentUnlock(uint docCookie,
                                           uint dwRDTLockType,
                                           uint dwReadLocksRemaining,
@@ -82,7 +91,7 @@ namespace VsChromium.Views {
           var path = PathFromDocCookie(docCookie);
           if (path != null) {
               Logger.LogDebug("Document closed: \"{0}\"", path.Value);
-              OnDocumentClosed(new VsDocumentEventArgs(path.Value));
+              OnDocumentClosed(new DocumentClosedEventArgs(path.Value));
           }
         }
       });
@@ -111,15 +120,15 @@ namespace VsChromium.Views {
 
     #endregion
 
-    protected virtual void OnDocumentOpened(VsDocumentEventArgs e) {
-      DocumentOpened?.Invoke(this, e);
+    protected virtual void OnDocumentLoaded(DocumentLoadedEventArgs e) {
+      DocumentLoaded?.Invoke(this, e);
     }
 
-    protected virtual void OnDocumentClosed(VsDocumentEventArgs e) {
+    protected virtual void OnDocumentClosed(DocumentClosedEventArgs e) {
       DocumentClosed?.Invoke(this, e);
     }
 
-    protected virtual void OnDocumentRenamed(VsDocumentRenameEventArgs e) {
+    protected virtual void OnDocumentRenamed(DocumentRenamedEventArgs e) {
       DocumentRenamed?.Invoke(this, e);
     }
 
@@ -163,20 +172,33 @@ namespace VsChromium.Views {
     }
   }
 
-  public class VsDocumentEventArgs : EventArgs {
-    public VsDocumentEventArgs(FullPath path) {
+  
+  public class DocumentLoadedEventArgs : EventArgs {
+    public DocumentLoadedEventArgs(FullPath path, ITextBuffer textBuffer) {
+      Path = path;
+      TextBuffer = textBuffer;
+    }
+
+    public FullPath Path { get; }
+    public ITextBuffer TextBuffer { get; }
+  }
+
+  public class DocumentClosedEventArgs : EventArgs {
+    public DocumentClosedEventArgs(FullPath path) {
       Path = path;
     }
 
-    public FullPath Path { get; private set; }
+    public FullPath Path { get; }
   }
 
-  public class VsDocumentRenameEventArgs : EventArgs {
-    public VsDocumentRenameEventArgs(FullPath oldPath, FullPath newPath) {
+  public class DocumentRenamedEventArgs : EventArgs {
+    public DocumentRenamedEventArgs(ITextBuffer textBuffer, FullPath oldPath, FullPath newPath) {
+      TextBuffer = textBuffer;
       OldPath = oldPath;
       NewPath = newPath;
     }
 
+    public ITextBuffer TextBuffer { get; }
     public FullPath OldPath { get; private set; }
     public FullPath NewPath { get; private set; }
   }

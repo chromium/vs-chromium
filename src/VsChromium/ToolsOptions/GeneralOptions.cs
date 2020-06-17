@@ -69,8 +69,8 @@ namespace VsChromium.ToolsOptions {
         return;
       }
 
-      var bus = componentModel.DefaultExportProvider.GetExportedValue<IEventBus>();
-      bus.Fire("ToolsOptionsPageApply", this, new EventArgs());
+      var bus = componentModel.DefaultExportProvider.GetExportedValue<IDispatchThreadEventBus>();
+      bus.PostEvent(EventNames.ToolsOptions.PageApply, this, new EventArgs());
     }
 
     [Category(CodeSearchUserInterfaceCategory)]

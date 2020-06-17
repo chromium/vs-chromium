@@ -25,7 +25,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
-    private readonly IEventBus _eventBus;
+    private readonly IDispatchThreadEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly IDispatchThread _dispatchThread;
@@ -44,7 +44,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IWindowsExplorer windowsExplorer,
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       ITypedRequestProcessProxy typedRequestProcessProxy,
-      IEventBus eventBus,
+      IDispatchThreadEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationExecutor delayedOperationExecutor,
       IDispatchThread dispatchThread,

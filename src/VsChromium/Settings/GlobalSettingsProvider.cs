@@ -14,7 +14,7 @@ namespace VsChromium.Settings {
   [Export(typeof(IGlobalSettingsProvider))]
   public class GlobalSettingsProvider : IGlobalSettingsProvider {
     private readonly IToolsOptionsPageProvider _visualStudioPackageProvider;
-    private readonly IEventBus _eventBus;
+    private readonly IDispatchThreadEventBus _eventBus;
     private readonly Lazy<GlobalSettings> _globalSettings;
     private readonly int _writeThreadId = Thread.CurrentThread.ManagedThreadId;
     private bool _swallowGlobalSettingsPropertyChangeNotifications;
@@ -22,7 +22,7 @@ namespace VsChromium.Settings {
     [ImportingConstructor]
     public GlobalSettingsProvider(
       IToolsOptionsPageProvider visualStudioPackageProvider,
-      IEventBus eventBus) {
+      IDispatchThreadEventBus eventBus) {
       _visualStudioPackageProvider = visualStudioPackageProvider;
       _eventBus = eventBus;
       _globalSettings = new Lazy<GlobalSettings>(CreateGlobalSettings);
@@ -70,7 +70,7 @@ namespace VsChromium.Settings {
       result.PropertyChanged += GlobalSettingsPropertyChangedHandler;
 
       // Ensure changes to the VS Settings are reflected to the GlobalSettings object.
-      _eventBus.RegisterHandler("ToolsOptionsPageApply", ToolsOptionsPageApplyHandler);
+      _eventBus.RegisterHandler(EventNames.ToolsOptions.PageApply, ToolsOptionsPageApplyHandler);
 
       return result;
     }

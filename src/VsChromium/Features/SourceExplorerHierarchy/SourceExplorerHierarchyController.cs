@@ -34,7 +34,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IClipboard _clipboard;
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
-    private readonly IEventBus _eventBus;
+    private readonly IDispatchThreadEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationExecutor _delayedOperationExecutor;
     private readonly IShowServerInfoService _showServerInfoService;
@@ -61,7 +61,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IWindowsExplorer windowsExplorer,
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       ITypedRequestProcessProxy typedRequestProcessProxy,
-      IEventBus eventBus,
+      IDispatchThreadEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationExecutor delayedOperationExecutor,
       IDispatchThread dispatchThread,
@@ -111,7 +111,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       RegisterHierarchyCommands(_hierarchy);
 
       _nodeTemplateFactory.Activate();
-      _eventBus.RegisterHandler("ShowInSolutionExplorer", ShowInSolutionExplorerHandler);
+      _eventBus.RegisterHandler(EventNames.SolutionExplorer.ShowFile, ShowInSolutionExplorerHandler);
 
       _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
       SynchronizeHierarchy();

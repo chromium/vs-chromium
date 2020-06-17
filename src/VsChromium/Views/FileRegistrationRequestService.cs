@@ -18,7 +18,7 @@ namespace VsChromium.Views {
   public class FileRegistrationRequestService : IFileRegistrationRequestService {
     private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IFileSystem _fileSystem;
-    private readonly IEventBus _eventBus;
+    private readonly IDispatchThreadEventBus _eventBus;
     private readonly ConcurrentDictionary<ITextDocument, TextDocumentEventHandlers> _documents =
       new ConcurrentDictionary<ITextDocument, TextDocumentEventHandlers>(ReferenceEqualityComparer<ITextDocument>.Instance);
 
@@ -31,7 +31,7 @@ namespace VsChromium.Views {
     public FileRegistrationRequestService(
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       IFileSystem fileSystem,
-      IEventBus eventBus) {
+      IDispatchThreadEventBus eventBus) {
       _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _fileSystem = fileSystem;
       _eventBus = eventBus;
@@ -65,19 +65,19 @@ namespace VsChromium.Views {
     }
 
     private void TextDocumentOnOpen(ITextDocument textDocument, EventArgs args) {
-      _eventBus.Fire("TextDocument-Open", textDocument, args);
+      _eventBus.PostEvent(EventNames.TextDocument.DocumentOpened, textDocument, args);
     }
 
     private void TextDocumentOnClosed(ITextDocument textDocument, EventArgs args) {
-      _eventBus.Fire("TextDocument-Closed", textDocument, args);
+      _eventBus.PostEvent(EventNames.TextDocument.DocumentClosed, textDocument, args);
     }
 
     private void TextBufferOnChangedLowPriority(ITextDocument textDocument, TextContentChangedEventArgs args) {
-      _eventBus.Fire("TextDocument-Changed", textDocument, args);
+      _eventBus.PostEvent(EventNames.TextDocument.DocumentChanged, textDocument, args);
     }
 
     private void FileActionOccurred(object sender, TextDocumentFileActionEventArgs args) {
-      _eventBus.Fire("TextDocumentFile-FileActionOccurred", sender, args);
+      _eventBus.PostEvent(EventNames.TextDocument.DocumentFileActionOccurred, sender, args);
     }
 
     public void RegisterFile(string path) {

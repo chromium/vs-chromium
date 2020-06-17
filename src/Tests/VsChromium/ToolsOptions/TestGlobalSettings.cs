@@ -18,7 +18,7 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
     public void GlobalSettingsCopyToToolsOptionsWorks() {
       var provider = new GlobalSettingsProvider(
         new ToolsOptionsPageProviderMock(),
-        new EventBus(new MyProvider()));
+        new DispatchThreadEventBus(new MyProvider()));
 
       // Force reading settings from empty tools|options pages.
       var x = provider.GlobalSettings.EnableSourceExplorerHierarchy;

@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Linq;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -17,7 +18,6 @@ using VsChromium.Core.Logging;
 namespace VsChromium.Views {
   [Export(typeof(ITextDocumentTable))]
   public class TextDocumentTable : ITextDocumentTable {
-    private readonly IFileSystem _fileSystem;
     private readonly ITextDocumentFactoryService _textDocumentFactoryService;
     private readonly IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService;
     private readonly RunningDocumentTable _runningDocumentTable;
@@ -29,10 +29,8 @@ namespace VsChromium.Views {
     [ImportingConstructor]
     public TextDocumentTable(
       [Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider,
-      IFileSystem fileSystem,
       ITextDocumentFactoryService textDocumentFactoryService,
       IVsEditorAdaptersFactoryService vsEditorAdaptersFactoryService) {
-      _fileSystem = fileSystem;
       _textDocumentFactoryService = textDocumentFactoryService;
       _vsEditorAdaptersFactoryService = vsEditorAdaptersFactoryService;
       _firstRun = new Lazy<bool>(FetchRunningDocumentTable);
@@ -41,7 +39,7 @@ namespace VsChromium.Views {
       var vsDocTable = serviceProvider.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable4;
       if (vsDocTable != null) {
         var runningDocTableEvents = new VsRunningDocTableEvents(vsDocTable, vsEditorAdaptersFactoryService);
-        runningDocTableEvents.DocumentOpened += RunningDocTableEventsOnDocumentOpened;
+        runningDocTableEvents.DocumentLoaded += RunningDocTableEventsOnDocumentLoaded;
         runningDocTableEvents.DocumentClosed += RunningDocTableEventsOnDocumentClosed;
         runningDocTableEvents.DocumentRenamed += RunningDocTableEventsOnDocumentRenamed;
         _runningDocTableEventsCookie = _runningDocumentTable.Advise(runningDocTableEvents);
@@ -53,7 +51,7 @@ namespace VsChromium.Views {
 
     public event EventHandler<TextDocumentEventArgs> TextDocumentOpened;
     public event EventHandler<TextDocumentEventArgs> TextDocumentClosed;
-    public event EventHandler<VsDocumentRenameEventArgs> TextDocumentRenamed;
+    public event EventHandler<TextDocumentRenamedEventArgs> TextDocumentRenamed;
 
     public void Dispose() {
       Dispose(true);
@@ -67,18 +65,10 @@ namespace VsChromium.Views {
       }
     }
 
-    public IList<FullPath> GetOpenDocuments() {
-      var result = new List<FullPath>();
-      foreach (var info in _runningDocumentTable) {
-        if (FullPath.IsValid(info.Moniker)) {
-          var path = new FullPath(info.Moniker);
-          var fi = _fileSystem.GetFileInfoSnapshot(path);
-          if (fi.Exists && fi.IsFile) {
-            result.Add(path);
-          }
-        }
+    public IList<ITextDocument> GetOpenDocuments() {
+      lock (_openDocumentsLock) {
+        return _openDocuments.Values.ToList();
       }
-      return result;
     }
 
     protected virtual void Dispose(bool disposing) {
@@ -90,52 +80,60 @@ namespace VsChromium.Views {
       }
     }
 
-    private void RunningDocTableEventsOnDocumentOpened(object sender, VsDocumentEventArgs e) {
-      var path = e.Path;
-      var info = _runningDocumentTable.GetDocumentInfo(path.Value);
+    private void RunningDocTableEventsOnDocumentLoaded(object sender, DocumentLoadedEventArgs e) {
+      var document = TextDocumentFromTextBuffer(e.TextBuffer);
+      if (document == null) {
+        Logger.LogInfo("Ignoring 'document loaded' event because the is no ITextDocument available: \"{0}\"", e.Path);
+        return;
+      }
 
-      // Call handlers
-      var document = GetTextDocument(info);
-      if (document != null) {
-        document.FileActionOccurred += TextDocumentOnFileActionOccurred;
-        // Add to table
-        lock (_openDocumentsLock) {
-          _openDocuments[path] = document;
+      // Add to table (before invoking handlers). Note that this handler can be called
+      // for both initial loading, as well as any reloading from disk. We want to call handlers
+      // only once.
+      bool added = false;
+      lock (_openDocumentsLock) {
+        if (!_openDocuments.ContainsKey(e.Path)) {
+          _openDocuments[e.Path] = document;
+          added = true;
         }
-        // Call handlers
-        OnTextDocumentOpened(new TextDocumentEventArgs(document));
+      }
+      if (added) {
+        OnTextDocumentOpened(new TextDocumentEventArgs(e.Path, document));
       }
     }
 
-    private void RunningDocTableEventsOnDocumentClosed(object sender, VsDocumentEventArgs e) {
-      var path = e.Path;
-      var info = _runningDocumentTable.GetDocumentInfo(path.Value);
-
-      // Call handlers
-      var document = GetTextDocument(info);
-      if (document != null) {
-        OnTextDocumentClosed(new TextDocumentEventArgs(document));
+    private void RunningDocTableEventsOnDocumentClosed(object sender, DocumentClosedEventArgs e) {
+      // Find document from out table, ignore if not found
+      var document = TryLookupDocument(e.Path);
+      if (document == null) {
+        Logger.LogInfo("A document we don't know about was closed: \"{0}\"", e.Path);
+        return;
       }
+
+      // Call handlers (before removing from table)
+      OnTextDocumentClosed(new TextDocumentEventArgs(e.Path, document));
 
       // Remove from table
       lock (_openDocumentsLock) {
-        _openDocuments.Remove(path);
+        _openDocuments.Remove(e.Path);
       }
     }
 
-    private void RunningDocTableEventsOnDocumentRenamed(object sender, VsDocumentRenameEventArgs e) {
-      lock (_openDocumentsLock) {
-        ITextDocument doc;
-        if (!_openDocuments.TryGetValue(e.OldPath, out doc)) {
-          doc = null;
-        }
-        if (doc != null) {
-          _openDocuments[e.NewPath] = doc;
-          _openDocuments.Remove(e.OldPath);
-        }
+    private void RunningDocTableEventsOnDocumentRenamed(object sender, DocumentRenamedEventArgs e) {
+      // Find document from out table, ignore if not found
+      var document = TryLookupDocument(e.OldPath);
+      if (document == null) {
+        Logger.LogInfo("A document we don't know about was renamed: \"{0}\"", e.OldPath);
+        return;
       }
 
-      OnTextDocumentRenamed(e);
+      // Update table (before invoking handlers)
+      lock (_openDocumentsLock) {
+        _openDocuments[e.NewPath] = document;
+        _openDocuments.Remove(e.OldPath);
+      }
+
+      OnTextDocumentRenamed(new TextDocumentRenamedEventArgs(document, e.OldPath, e.NewPath));
     }
 
     private ITextDocument GetTextDocument(RunningDocumentInfo info) {
@@ -158,11 +156,23 @@ namespace VsChromium.Views {
         return null;
       }
 
+      return TextDocumentFromTextBuffer(textBuffer);
+    }
+
+    private ITextDocument TextDocumentFromTextBuffer(ITextBuffer textBuffer) {
       ITextDocument document;
       if (!_textDocumentFactoryService.TryGetTextDocument(textBuffer, out document)) {
         return null;
       }
 
+      return document;
+    }
+
+    private ITextDocument TryLookupDocument(FullPath path) {
+      ITextDocument document;
+      lock (_openDocumentsLock) {
+        _openDocuments.TryGetValue(path, out document);
+      }
       return document;
     }
 
@@ -186,24 +196,6 @@ namespace VsChromium.Views {
       return true;
     }
 
-    private void TextDocumentOnFileActionOccurred(object sender, TextDocumentFileActionEventArgs args) {
-      if (args.FileActionType.HasFlag(FileActionTypes.DocumentRenamed)) {
-        var document = (ITextDocument) sender;
-
-        lock (_openDocumentsLock) {
-          if (FullPath.IsValid(args.FilePath)) {
-            var newPath = new FullPath(args.FilePath);
-            _openDocuments[newPath] = document;
-          }
-
-          if (FullPath.IsValid(document.FilePath)) {
-            var oldPath = new FullPath(document.FilePath);
-            _openDocuments.Remove(oldPath);
-          }
-        }
-      }
-    }
-
     protected virtual void OnTextDocumentOpened(TextDocumentEventArgs e) {
       Logger.WrapActionInvocation(() => { TextDocumentOpened?.Invoke(this, e); });
     }
@@ -212,8 +204,8 @@ namespace VsChromium.Views {
       Logger.WrapActionInvocation(() => { TextDocumentClosed?.Invoke(this, e); });
     }
 
-    protected virtual void OnTextDocumentRenamed(VsDocumentRenameEventArgs e) {
-      TextDocumentRenamed?.Invoke(this, e);
+    protected virtual void OnTextDocumentRenamed(TextDocumentRenamedEventArgs e) {
+      Logger.WrapActionInvocation(() => { TextDocumentRenamed?.Invoke(this, e); });
     }
   }
 }

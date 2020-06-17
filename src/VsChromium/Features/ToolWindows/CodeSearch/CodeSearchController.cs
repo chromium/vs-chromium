@@ -50,7 +50,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly IClipboard _clipboard;
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IOpenDocumentHelper _openDocumentHelper;
-    private readonly IEventBus _eventBus;
+    private readonly IDispatchThreadEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IBuildOutputParser _buildOutputParser;
     private readonly IVsEditorAdaptersFactoryService _adaptersFactoryService;
@@ -82,7 +82,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ISynchronizationContextProvider synchronizationContextProvider,
       IOpenDocumentHelper openDocumentHelper,
       ITextDocumentTable textDocumentTable,
-      IEventBus eventBus,
+      IDispatchThreadEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IBuildOutputParser buildOutputParser,
       IVsEditorAdaptersFactoryService adaptersFactoryService,
@@ -116,9 +116,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       // Ensure changes to global settings are synchronized to ViewModel
       _globalSettingsProvider.GlobalSettings.PropertyChanged += GlobalSettingsOnPropertyChanged;
 
-      _eventBusCookie1 = _eventBus.RegisterHandler("TextDocument-Open", TextDocumentOpenHandler);
-      _eventBusCookie2 = _eventBus.RegisterHandler("TextDocument-Closed", TextDocumentClosedHandler);
-      _eventBusCookie3 = _eventBus.RegisterHandler("TextDocumentFile-FileActionOccurred", TextDocumentFileActionOccurred);
+      _eventBusCookie1 = _eventBus.RegisterHandler(EventNames.TextDocument.DocumentOpened, TextDocumentOpenHandler);
+      _eventBusCookie2 = _eventBus.RegisterHandler(EventNames.TextDocument.DocumentClosed, TextDocumentClosedHandler);
+      _eventBusCookie3 = _eventBus.RegisterHandler(EventNames.TextDocument.DocumentFileActionOccurred, TextDocumentFileActionOccurred);
 
       typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_OnEventReceived;
 
@@ -293,7 +293,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     /// </summary>
     public void ShowInSourceExplorer(FileSystemEntryViewModel relativePathEntry) {
       var path = relativePathEntry.GetFullPath();
-      _eventBus.Fire("ShowInSolutionExplorer", relativePathEntry, new FilePathEventArgs {
+      _eventBus.PostEvent(EventNames.SolutionExplorer.ShowFile, relativePathEntry, new FilePathEventArgs {
         FilePath = path
       });
     }

@@ -34,7 +34,7 @@ namespace VsChromium.Views {
       _fileRegistrationRequestService.UnregisterTextDocument(textDocumentEventArgs.TextDocument);
     }
 
-    private void TextTextDocumentFactoryServiceOnTextDocumentRenamed(object sender, VsDocumentRenameEventArgs e) {
+    private void TextTextDocumentFactoryServiceOnTextDocumentRenamed(object sender, TextDocumentRenamedEventArgs e) {
       _fileRegistrationRequestService.RegisterFile(e.NewPath.Value);
       _fileRegistrationRequestService.UnregisterFile(e.OldPath.Value);
     }

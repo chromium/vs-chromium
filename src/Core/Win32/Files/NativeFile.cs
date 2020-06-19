@@ -156,7 +156,7 @@ namespace VsChromium.Core.Win32.Files {
       return status;
     }
 
-    private static unsafe Exception ThrowInvokeNtQueryDirectoryFileError(string path, NTSTATUS status) {
+    private static Exception ThrowInvokeNtQueryDirectoryFileError(string path, NTSTATUS status) {
       uint win32ErrorCode = NativeMethods.RtlNtStatusToDosError(status);
       throw new LastWin32ErrorException((int)win32ErrorCode,
         string.Format("Error during enumeration of files at \"{0}\".", path));
@@ -172,11 +172,12 @@ namespace VsChromium.Core.Win32.Files {
       while (true) {
         // Check buffer overrun
         if (currentBuffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_FILENAME_LENGTH > endBuffer) {
-          throw new InvalidDataException("The buffer from NtQueryDirectoryFile is too small or contains invalid data");
+          throw new Win32Exception((int)Win32Errors.ERROR_INVALID_FUNCTION,
+            "The buffer from NtQueryDirectoryFile is too small or contains invalid data");
         }
 
         // Add entry from current offset
-        string fileName = getFileNameFromFileIdFullDirInformation(currentBuffer);
+        string fileName = GetFileNameFromFileIdFullDirInformation(currentBuffer);
         var fileAttrs = (FILE_ATTRIBUTE)GetInt(currentBuffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_FILE_ATTRIBUTES);
         AddDirectoryEntry(directoryEntries, fileName, fileAttrs);
 
@@ -189,7 +190,7 @@ namespace VsChromium.Core.Win32.Files {
       }
     }
 
-    private static unsafe String getFileNameFromFileIdFullDirInformation(byte* buffer) {
+    private static unsafe String GetFileNameFromFileIdFullDirInformation(byte* buffer) {
       // Read the character count
       int nameLengthInBytes = GetInt(buffer + FILE_ID_FULL_DIR_INFORMATION.OFFSETOF_FILENAME_LENGTH);
       if ((nameLengthInBytes % 2) != 0) {

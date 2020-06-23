@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Generic;
-using System.Threading;
 
 namespace VsChromium.Server.Threads {
   /// <summary>

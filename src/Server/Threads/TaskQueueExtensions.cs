@@ -4,7 +4,6 @@
 
 using System;
 using System.Threading;
-using VsChromium.Core.Logging;
 
 namespace VsChromium.Server.Threads {
   public static class TaskQueueExtensions {

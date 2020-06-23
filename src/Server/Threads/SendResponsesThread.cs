@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel.Composition;
-using System.Diagnostics;
 using System.Threading;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;

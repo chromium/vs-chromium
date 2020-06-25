@@ -300,8 +300,8 @@
               <TextBlock>
                 Type text pattern to search for.
                 <LineBreak/>
-                For simple text searches, the pattern may include wildcards characters ('*'), e.g. 
-                &quot;sometext&quot;, &quot;some*text&quot;, &quot;some\*text&quot;, &quot;some*other*text&quot;.
+                For simple text searches, the pattern may include wildcard characters ('*'), e.g. 
+                &quot;sometext&quot;, &quot;some*text&quot;, &quot;some*other*text&quot;.
                 <LineBreak/>
                 For regular expression searches, the pattern is a regular expression.
               </TextBlock>
@@ -324,10 +324,11 @@
           <wpf:EditableComboBox Grid.Row="1" Grid.Column="1" x:Name="SearchFilePathsCombo">
             <wpf:EditableComboBox.ToolTip>
               <TextBlock>
-                Type pattern(s) for filtering search results. For multiple
-                patterns, use the ';' separator.
+                Type pattern(s) for filtering search results. To exclude files/paths, use
+                the &quot;-&quot; prefix. For multiple patterns, use the ';' separator. 
                 <LineBreak/>
                 For simple file name matches, type '*' and letters only.
+                <LineBreak/>
                 For full path matches, type "glob" patterns using the supported
                 special characters '*', '**', '/' and '\'. For example, 
                 '*.txt', '**/foo.txt', '/src', 'foo/*', '*.txt;*.log'.

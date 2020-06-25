@@ -64,7 +64,7 @@ namespace VsChromium.Server.Search {
       var range1 = new TextRange(
         lineExtent.Position,
         match.Position - lineExtent.Position);
-      var entriesInterval1 = _parsedSearchString.EntriesBeforeMainEntry;
+      var entriesInterval1 = _parsedSearchString.EntriesBeforeLongestEntry;
       var foundRange1 = entriesInterval1.Any()
         ? CheckEntriesInRange(range1, entriesInterval1)
         : match;
@@ -72,7 +72,7 @@ namespace VsChromium.Server.Search {
       var range2 = new TextRange(
         match.EndPosition,
         lineExtent.EndPosition - match.EndPosition);
-      var entriesInterval2 = _parsedSearchString.EntriesAfterMainEntry;
+      var entriesInterval2 = _parsedSearchString.EntriesAfterLongestEntry;
       var foundRange2 = entriesInterval2.Any()
         ? CheckEntriesInRange(range2, entriesInterval2)
         : match;

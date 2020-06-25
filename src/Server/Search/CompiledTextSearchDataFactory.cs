@@ -40,7 +40,7 @@ namespace VsChromium.Server.Search {
               "Search pattern must contain at least {0} characters",
               MinimumSearchPatternLength));
         }
-        parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "");
+        parsedSearchString = _searchStringParser.Parse(searchParams.SearchString ?? "", SearchStringParserOptions.SupportsAsterisk);
       }
 
       var searchContentsAlgorithms = CreateSearchAlgorithms(
@@ -60,9 +60,9 @@ namespace VsChromium.Server.Search {
 
     private List<ICompiledTextSearchContainer> CreateSearchAlgorithms(
       ParsedSearchString parsedSearchString, SearchProviderOptions options) {
-      return parsedSearchString.EntriesBeforeMainEntry
-        .Concat(new[] { parsedSearchString.MainEntry })
-        .Concat(parsedSearchString.EntriesAfterMainEntry)
+      return parsedSearchString.EntriesBeforeLongestEntry
+        .Concat(new[] { parsedSearchString.LongestEntry })
+        .Concat(parsedSearchString.EntriesAfterLongestEntry)
         .OrderBy(x => x.Index)
         .Select(entry => _compiledTextSearchProviderFactory.CreateProvider(entry.Text, options))
         .ToList();

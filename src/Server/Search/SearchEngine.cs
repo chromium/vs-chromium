@@ -406,7 +406,7 @@ namespace VsChromium.Server.Search {
         return null;
 
       var data = _compiledTextSearchDataFactory.Create(searchParams, x => true);
-      var provider = data.GetSearchContainer(data.ParsedSearchString.MainEntry);
+      var provider = data.GetSearchContainer(data.ParsedSearchString.LongestEntry);
       var matcher = new CompiledTextSearchProviderPathMatcher(provider);
       var comparer = searchParams.MatchCase ? PathComparerRegistry.CaseSensitive : PathComparerRegistry.CaseInsensitive;
       if (pattern.Contains('/') || pattern.Contains("\\\\")) {

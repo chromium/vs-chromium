@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystemContents {
 
       var textFragment = CreateFragmentFromRange(textRange);
       var providerForMainEntry = compiledTextSearchData
-        .GetSearchContainer(compiledTextSearchData.ParsedSearchString.MainEntry);
+        .GetSearchContainer(compiledTextSearchData.ParsedSearchString.LongestEntry);
       var textSearch = GetCompiledTextSearch(providerForMainEntry);
       var postProcessSearchHit = CreateFilterForOtherEntries(compiledTextSearchData);
       var result = textSearch.FindAll(textFragment, postProcessSearchHit, progressTracker);
@@ -93,8 +93,8 @@ namespace VsChromium.Server.FileSystemContents {
 
     private Func<TextRange, TextRange?> CreateFilterForOtherEntries(
       CompiledTextSearchData compiledTextSearchData) {
-      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeMainEntry.Count == 0 &&
-          compiledTextSearchData.ParsedSearchString.EntriesAfterMainEntry.Count == 0) {
+      if (compiledTextSearchData.ParsedSearchString.EntriesBeforeLongestEntry.Count == 0 &&
+          compiledTextSearchData.ParsedSearchString.EntriesAfterLongestEntry.Count == 0) {
         return x => x;
       }
 

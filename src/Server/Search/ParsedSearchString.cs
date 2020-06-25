@@ -6,32 +6,38 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace VsChromium.Server.Search {
+  /// <summary>
+  /// The result of <see cref="ISearchStringParser.Parse"/>.
+  /// </summary>
   public class ParsedSearchString {
-    private readonly Entry _mainEntry;
-    private readonly IList<Entry> _entriesBeforeMainEntry;
-    private readonly IList<Entry> _entriesAfterMainEntry;
+    public ParsedSearchString(Entry longestEntry, IEnumerable<Entry> entriesBeforeLongestEntry, IEnumerable<Entry> entriesAfterLongestEntry) {
+      LongestEntry = longestEntry;
+      EntriesBeforeLongestEntry = entriesBeforeLongestEntry.OrderBy(x => x.Index).ToList();
+      EntriesAfterLongestEntry = entriesAfterLongestEntry.OrderBy(x => x.Index).ToList();
+    }
+
+    /// <summary>
+    /// The longest, hence first, sub-string to search for when performing a search
+    /// </summary>
+    public Entry LongestEntry { get; }
+    /// <summary>
+    /// List of sub-strings to match before the <see cref="LongestEntry"/>
+    /// </summary>
+    public IList<Entry> EntriesBeforeLongestEntry { get; }
+    /// <summary>
+    /// List of sub-strings to match after the <see cref="LongestEntry"/>
+    /// </summary>
+    public IList<Entry> EntriesAfterLongestEntry { get; }
 
     public class Entry {
+      /// <summary>
+      /// The text that was part of the original search string
+      /// </summary>
       public string Text { get; set; }
+      /// <summary>
+      /// The sequence number of this entry wrt to the initial search string
+      /// </summary>
       public int Index { get; set; }
-    }
-
-    public ParsedSearchString(Entry mainEntry, IEnumerable<Entry> entriesBeforeMainEntry, IEnumerable<Entry> entriesAfterMainEntry) {
-      _mainEntry = mainEntry;
-      _entriesBeforeMainEntry = entriesBeforeMainEntry.OrderBy(x => x.Index).ToList();
-      _entriesAfterMainEntry = entriesAfterMainEntry.OrderBy(x => x.Index).ToList();
-    }
-
-    public Entry MainEntry {
-      get { return _mainEntry; }
-    }
-
-    public IList<Entry> EntriesBeforeMainEntry {
-      get { return _entriesBeforeMainEntry; }
-    }
-
-    public IList<Entry> EntriesAfterMainEntry {
-      get { return _entriesAfterMainEntry; }
     }
   }
 }

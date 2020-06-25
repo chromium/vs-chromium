@@ -22,41 +22,6 @@
 # * "!" is not supported.
 # ==========================================================================================
 
-# This directory contains big (10MB+) json files
-third_party/trace-viewer/test_data/
-
-# 27MB
-cld2_generated_*.cc
-
-# 20MB
-third_party\boringssl\crypto_test_data.cc
-
-# Big json files (10+MB)
-third_party/trace-viewer/test_data/*.json
-third_party/catapult/tracing/test_data/*.json
-chrome/browser/resources/tracing/tests/*.json
-
-# orderfile files
-chrome/build/*.orderfile
-
-# Blink bindings
-out/*/gen/blink/bindings/
-out/*/gen/webcore/bindings/
-out/*/gen/webkit/bindings/
-
-# WebKit has a lot of test files
-/third_party/WebKit/LayoutTests/
-
-# pnacl and nacl stuff
-/out/*/obj/ppapi/
-/out/*/nacl_test_data/
-
-# VK tables (150+MB)
-third_party/deqp/src/**/master.txt
-third_party/deqp/src/**/*-master.txt
-third_party/deqp/src/**/vk-default.txt
-third_party/deqp/src/**/es30-lmp*.txt
-third_party/deqp/src/**/es31-lmp*.txt
 
 #
 # File extensions of files to ignore.
@@ -66,7 +31,6 @@ third_party/deqp/src/**/es31-lmp*.txt
 # clang compiler (see https://reviews.llvm.org/D36238)
 *.obj-*
 *.pack
-*.rsp
 *.pch
 # clang compiler (see https://reviews.llvm.org/D36238)
 *.pch-*
@@ -74,7 +38,6 @@ third_party/deqp/src/**/es31-lmp*.txt
 *.ilk
 *.exe
 *.dll
-*.a
 *.sdf
 *.opensdf
 *.o
@@ -84,66 +47,14 @@ third_party/deqp/src/**/es31-lmp*.txt
 *.res
 *.tgz
 *.gz
-*.ninja
-*.s
 *.mo
 *.so
 *.so.*
-*.d
-*.debug
-*.dic
-*.tlog
-*.pyd
-*.bdic
-*.bz2
-*.bdic
-*.info
-*.data
-*.tmp
-*.exp
-*.xtb
-*.pm
-*.ninja_deps
-*.stamp
-*.zip
-*.crx
-*.adm
-*.cct
-*.pod
-*.ucm
-*.jar
-*.ninja_log
-*.svg
-*.test
-*.adml
-*.webm
-*.aff
-*.dat
-*.filters
-*.pcm
-*.pexe
-*.xib
-*.out
-*.suo
-*.patch
-*.sym
-*.dmp
-*.rtpdump
-*.output
-*.po
-*.pdf
-*.raw
-*.ai
 *.gif
 *.png
 *.jpg
 *.jpeg
 *.ogg
 *.ex_
-*.yuv
-*.rgb
 *.mp4
 *.ac3
-*.utf8
-*.dae
-*.pyc

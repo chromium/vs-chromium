@@ -22,11 +22,5 @@
 # * Support "*" and "**" wildcards
 # * NO support for "!"
 # ==========================================================================================
-#
 
-# WebKit has a lot of test files
-/third_party/WebKit/LayoutTests/
-
-# .git, etc. directories
-.*/
-
+.git/

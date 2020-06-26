@@ -110,23 +110,23 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
-    public void EscapeWildcardWorks() {
+    public void EscapeWildcardIsIgnored() {
       const string searchPattern = @"foo\* bar";
 
-      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 7, 8);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 0);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 7, 8);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 0);
     }
 
     [TestMethod]
-    public void EscapeWildcardWorks2() {
+    public void EscapeWildcardIsIgnored2() {
       const string searchPattern = @"foo\*\\bar";
 
-      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 1, 39, 8);
+      VerifySearchCodeResponse(searchPattern, Options.MatchCase, 0);
 
       var searchPatternLower = searchPattern.ToLowerInvariant();
-      VerifySearchCodeResponse(searchPatternLower, Options.None, 1, 39, 8);
+      VerifySearchCodeResponse(searchPatternLower, Options.None, 0);
     }
 
     [TestMethod]

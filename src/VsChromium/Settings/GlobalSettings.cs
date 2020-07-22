@@ -29,6 +29,7 @@ namespace VsChromium.Settings {
     private Font _displayFont;
     private Font _textExtractFont;
     private Font _pathFont;
+    private bool _expandall;
 
     public event PropertyChangedEventHandler PropertyChanged;
 
@@ -193,6 +194,18 @@ namespace VsChromium.Settings {
         _searchUnderstandBuildOutputPaths = value;
         OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.SearchUnderstandBuildOutputPaths));
       }
+    }
+    public bool ExpandAll
+    {
+        get { return _expandall; }
+        set
+        {
+            if (value == _expandall)
+                return;
+
+            _expandall = value;
+            OnPropertyChanged(ReflectionUtils.GetPropertyName(this, x => x.ExpandAll));
+        }
     }
 
     #region Chromium Coding Style

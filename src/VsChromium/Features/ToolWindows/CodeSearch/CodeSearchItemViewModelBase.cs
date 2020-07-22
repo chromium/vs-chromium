@@ -12,6 +12,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         bool lazyLoadChildren)
       : base(controller.StandarImageSourceFactory, parent, lazyLoadChildren) {
       _controller = controller;
+      var con = controller as CodeSearchController;
+      if (con != null && con.ViewModel.ExpandAll)
+        LazySelect = (TreeViewItemViewModel x) => { ExpandAll(x); };
     }
 
     public ICodeSearchController Controller { get { return _controller; } }

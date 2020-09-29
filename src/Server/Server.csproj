@@ -12,6 +12,8 @@
     <FileAlignment>512</FileAlignment>
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <UseVSHostingProcess>false</UseVSHostingProcess>
@@ -183,6 +185,7 @@
     <Compile Include="Server.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="Configuration\ChromiumEnlistmentDetection.patterns">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

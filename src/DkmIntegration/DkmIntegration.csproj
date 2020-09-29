@@ -10,6 +10,8 @@
     <RootNamespace>VsChromium.DkmIntegration</RootNamespace>
     <AssemblyName>VsChromium.DkmIntegration</AssemblyName>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Dia.Interop, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL" Condition="'$(VSTarget)' != '10.0'">

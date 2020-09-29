@@ -27,170 +27,178 @@ namespace VsChromium.Features.AttachToChrome {
     /// the contents of this method with the code editor.
     /// </summary>
     private void InitializeComponent() {
-      this.listViewProcesses = new System.Windows.Forms.ListView();
-      this.columnHeaderProcess = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.columnHeaderPid = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.columnHeaderTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.columnHeaderType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.columnHeaderArch = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.columnHeaderCmdLine = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.buttonAttach = new System.Windows.Forms.Button();
-      this.buttonCancel = new System.Windows.Forms.Button();
-      this.groupBox1 = new System.Windows.Forms.GroupBox();
-      this.buttonRefresh = new System.Windows.Forms.Button();
-      this.checkBoxAttachToNewChildren = new System.Windows.Forms.CheckBox();
-      this.checkBoxAttachToRunningChildren = new System.Windows.Forms.CheckBox();
-      this.groupBox1.SuspendLayout();
-      this.SuspendLayout();
-      // 
-      // listViewProcesses
-      // 
-      this.listViewProcesses.AllowColumnReorder = true;
-      this.listViewProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.listViewProcesses = new System.Windows.Forms.ListView();
+            this.columnHeaderProcess = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderPid = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderArch = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderCmdLine = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.buttonAttach = new System.Windows.Forms.Button();
+            this.buttonCancel = new System.Windows.Forms.Button();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.buttonRefresh = new System.Windows.Forms.Button();
+            this.checkBoxAttachToNewChildren = new System.Windows.Forms.CheckBox();
+            this.checkBoxAttachToRunningChildren = new System.Windows.Forms.CheckBox();
+            this.columnHeaderPrivateMemory = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.groupBox1.SuspendLayout();
+            this.SuspendLayout();
+            // 
+            // listViewProcesses
+            // 
+            this.listViewProcesses.AllowColumnReorder = true;
+            this.listViewProcesses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-      this.listViewProcesses.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.listViewProcesses.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeaderProcess,
             this.columnHeaderPid,
             this.columnHeaderTitle,
             this.columnHeaderType,
             this.columnHeaderArch,
+            this.columnHeaderPrivateMemory,
             this.columnHeaderCmdLine});
-      this.listViewProcesses.FullRowSelect = true;
-      this.listViewProcesses.HideSelection = false;
-      this.listViewProcesses.Location = new System.Drawing.Point(14, 27);
-      this.listViewProcesses.Name = "listViewProcesses";
-      this.listViewProcesses.Size = new System.Drawing.Size(726, 251);
-      this.listViewProcesses.TabIndex = 0;
-      this.listViewProcesses.UseCompatibleStateImageBehavior = false;
-      this.listViewProcesses.View = System.Windows.Forms.View.Details;
-      this.listViewProcesses.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listViewProcesses_ColumnClick);
-      // 
-      // columnHeaderProcess
-      // 
-      this.columnHeaderProcess.Text = "Executable";
-      this.columnHeaderProcess.Width = 65;
-      // 
-      // columnHeaderPid
-      // 
-      this.columnHeaderPid.Text = "PID";
-      this.columnHeaderPid.Width = 30;
-      // 
-      // columnHeaderTitle
-      // 
-      this.columnHeaderTitle.Text = "Title";
-      this.columnHeaderTitle.Width = 32;
-      // 
-      // columnHeaderType
-      // 
-      this.columnHeaderType.Text = "Type";
-      // 
-      // columnHeaderArch
-      // 
-      this.columnHeaderArch.Text = "Architecture";
-      this.columnHeaderArch.Width = 77;
-      // 
-      // columnHeaderCmdLine
-      // 
-      this.columnHeaderCmdLine.Text = "Command Line";
-      this.columnHeaderCmdLine.Width = 668;
-      // 
-      // buttonAttach
-      // 
-      this.buttonAttach.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.buttonAttach.DialogResult = System.Windows.Forms.DialogResult.OK;
-      this.buttonAttach.Location = new System.Drawing.Point(564, 365);
-      this.buttonAttach.Name = "buttonAttach";
-      this.buttonAttach.Size = new System.Drawing.Size(100, 25);
-      this.buttonAttach.TabIndex = 2;
-      this.buttonAttach.Text = "Attach";
-      this.buttonAttach.UseVisualStyleBackColor = true;
-      this.buttonAttach.Click += new System.EventHandler(this.buttonAttach_Click);
-      // 
-      // buttonCancel
-      // 
-      this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-      this.buttonCancel.Location = new System.Drawing.Point(670, 365);
-      this.buttonCancel.Name = "buttonCancel";
-      this.buttonCancel.Size = new System.Drawing.Size(100, 25);
-      this.buttonCancel.TabIndex = 3;
-      this.buttonCancel.Text = "Cancel";
-      this.buttonCancel.UseVisualStyleBackColor = true;
-      // 
-      // groupBox1
-      // 
-      this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.listViewProcesses.FullRowSelect = true;
+            this.listViewProcesses.HideSelection = false;
+            this.listViewProcesses.Location = new System.Drawing.Point(14, 27);
+            this.listViewProcesses.Name = "listViewProcesses";
+            this.listViewProcesses.Size = new System.Drawing.Size(726, 251);
+            this.listViewProcesses.TabIndex = 0;
+            this.listViewProcesses.UseCompatibleStateImageBehavior = false;
+            this.listViewProcesses.View = System.Windows.Forms.View.Details;
+            this.listViewProcesses.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listViewProcesses_ColumnClick);
+            // 
+            // columnHeaderProcess
+            // 
+            this.columnHeaderProcess.Text = "Executable";
+            this.columnHeaderProcess.Width = 65;
+            // 
+            // columnHeaderPid
+            // 
+            this.columnHeaderPid.Text = "PID";
+            this.columnHeaderPid.Width = 30;
+            // 
+            // columnHeaderTitle
+            // 
+            this.columnHeaderTitle.Text = "Title";
+            this.columnHeaderTitle.Width = 32;
+            // 
+            // columnHeaderType
+            // 
+            this.columnHeaderType.Text = "Type";
+            // 
+            // columnHeaderArch
+            // 
+            this.columnHeaderArch.Text = "Architecture";
+            this.columnHeaderArch.Width = 77;
+            // 
+            // columnHeaderCmdLine
+            // 
+            this.columnHeaderCmdLine.Text = "Command Line";
+            this.columnHeaderCmdLine.Width = 668;
+            // 
+            // buttonAttach
+            // 
+            this.buttonAttach.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonAttach.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.buttonAttach.Location = new System.Drawing.Point(564, 365);
+            this.buttonAttach.Name = "buttonAttach";
+            this.buttonAttach.Size = new System.Drawing.Size(100, 25);
+            this.buttonAttach.TabIndex = 2;
+            this.buttonAttach.Text = "Attach";
+            this.buttonAttach.UseVisualStyleBackColor = true;
+            this.buttonAttach.Click += new System.EventHandler(this.buttonAttach_Click);
+            // 
+            // buttonCancel
+            // 
+            this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.buttonCancel.Location = new System.Drawing.Point(670, 365);
+            this.buttonCancel.Name = "buttonCancel";
+            this.buttonCancel.Size = new System.Drawing.Size(100, 25);
+            this.buttonCancel.TabIndex = 3;
+            this.buttonCancel.Text = "Cancel";
+            this.buttonCancel.UseVisualStyleBackColor = true;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-      this.groupBox1.Controls.Add(this.buttonRefresh);
-      this.groupBox1.Controls.Add(this.checkBoxAttachToNewChildren);
-      this.groupBox1.Controls.Add(this.listViewProcesses);
-      this.groupBox1.Controls.Add(this.checkBoxAttachToRunningChildren);
-      this.groupBox1.Location = new System.Drawing.Point(12, 27);
-      this.groupBox1.Name = "groupBox1";
-      this.groupBox1.Size = new System.Drawing.Size(756, 332);
-      this.groupBox1.TabIndex = 5;
-      this.groupBox1.TabStop = false;
-      this.groupBox1.Text = "Available Processes";
-      // 
-      // buttonRefresh
-      // 
-      this.buttonRefresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-      this.buttonRefresh.Location = new System.Drawing.Point(658, 284);
-      this.buttonRefresh.Name = "buttonRefresh";
-      this.buttonRefresh.Size = new System.Drawing.Size(82, 25);
-      this.buttonRefresh.TabIndex = 6;
-      this.buttonRefresh.Text = "Refresh";
-      this.buttonRefresh.UseVisualStyleBackColor = true;
-      this.buttonRefresh.Click += new System.EventHandler(this.buttonRefresh_Click);
-      // 
-      // checkBoxAttachToNewChildren
-      // 
-      this.checkBoxAttachToNewChildren.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.checkBoxAttachToNewChildren.AutoSize = true;
-      this.checkBoxAttachToNewChildren.Checked = true;
-      this.checkBoxAttachToNewChildren.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.checkBoxAttachToNewChildren.Location = new System.Drawing.Point(14, 307);
-      this.checkBoxAttachToNewChildren.Name = "checkBoxAttachToNewChildren";
-      this.checkBoxAttachToNewChildren.Size = new System.Drawing.Size(279, 17);
-      this.checkBoxAttachToNewChildren.TabIndex = 8;
-      this.checkBoxAttachToNewChildren.Text = "Also attach to new child processes when they spawn.";
-      this.checkBoxAttachToNewChildren.UseVisualStyleBackColor = true;
-      // 
-      // checkBoxAttachToRunningChildren
-      // 
-      this.checkBoxAttachToRunningChildren.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.checkBoxAttachToRunningChildren.AutoSize = true;
-      this.checkBoxAttachToRunningChildren.Checked = true;
-      this.checkBoxAttachToRunningChildren.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.checkBoxAttachToRunningChildren.Location = new System.Drawing.Point(14, 284);
-      this.checkBoxAttachToRunningChildren.Name = "checkBoxAttachToRunningChildren";
-      this.checkBoxAttachToRunningChildren.Size = new System.Drawing.Size(250, 17);
-      this.checkBoxAttachToRunningChildren.TabIndex = 7;
-      this.checkBoxAttachToRunningChildren.Text = "Automatically attach to running child processes.";
-      this.checkBoxAttachToRunningChildren.UseVisualStyleBackColor = true;
-      // 
-      // AttachDialog
-      // 
-      this.AcceptButton = this.buttonAttach;
-      this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-      this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.CancelButton = this.buttonCancel;
-      this.ClientSize = new System.Drawing.Size(782, 402);
-      this.ControlBox = false;
-      this.Controls.Add(this.groupBox1);
-      this.Controls.Add(this.buttonCancel);
-      this.Controls.Add(this.buttonAttach);
-      this.MaximizeBox = false;
-      this.MinimizeBox = false;
-      this.Name = "AttachDialog";
-      this.ShowInTaskbar = false;
-      this.Text = "Attach to Chrome";
-      this.Load += new System.EventHandler(this.AttachDialog_Load);
-      this.groupBox1.ResumeLayout(false);
-      this.groupBox1.PerformLayout();
-      this.ResumeLayout(false);
+            this.groupBox1.Controls.Add(this.buttonRefresh);
+            this.groupBox1.Controls.Add(this.checkBoxAttachToNewChildren);
+            this.groupBox1.Controls.Add(this.listViewProcesses);
+            this.groupBox1.Controls.Add(this.checkBoxAttachToRunningChildren);
+            this.groupBox1.Location = new System.Drawing.Point(12, 27);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(756, 332);
+            this.groupBox1.TabIndex = 5;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Available Processes";
+            // 
+            // buttonRefresh
+            // 
+            this.buttonRefresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonRefresh.Location = new System.Drawing.Point(658, 284);
+            this.buttonRefresh.Name = "buttonRefresh";
+            this.buttonRefresh.Size = new System.Drawing.Size(82, 25);
+            this.buttonRefresh.TabIndex = 6;
+            this.buttonRefresh.Text = "Refresh";
+            this.buttonRefresh.UseVisualStyleBackColor = true;
+            this.buttonRefresh.Click += new System.EventHandler(this.buttonRefresh_Click);
+            // 
+            // checkBoxAttachToNewChildren
+            // 
+            this.checkBoxAttachToNewChildren.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBoxAttachToNewChildren.AutoSize = true;
+            this.checkBoxAttachToNewChildren.Checked = true;
+            this.checkBoxAttachToNewChildren.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxAttachToNewChildren.Location = new System.Drawing.Point(14, 307);
+            this.checkBoxAttachToNewChildren.Name = "checkBoxAttachToNewChildren";
+            this.checkBoxAttachToNewChildren.Size = new System.Drawing.Size(279, 17);
+            this.checkBoxAttachToNewChildren.TabIndex = 8;
+            this.checkBoxAttachToNewChildren.Text = "Also attach to new child processes when they spawn.";
+            this.checkBoxAttachToNewChildren.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxAttachToRunningChildren
+            // 
+            this.checkBoxAttachToRunningChildren.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBoxAttachToRunningChildren.AutoSize = true;
+            this.checkBoxAttachToRunningChildren.Checked = true;
+            this.checkBoxAttachToRunningChildren.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxAttachToRunningChildren.Location = new System.Drawing.Point(14, 284);
+            this.checkBoxAttachToRunningChildren.Name = "checkBoxAttachToRunningChildren";
+            this.checkBoxAttachToRunningChildren.Size = new System.Drawing.Size(250, 17);
+            this.checkBoxAttachToRunningChildren.TabIndex = 7;
+            this.checkBoxAttachToRunningChildren.Text = "Automatically attach to running child processes.";
+            this.checkBoxAttachToRunningChildren.UseVisualStyleBackColor = true;
+            // 
+            // columnHeaderPrivateMemory
+            // 
+            this.columnHeaderPrivateMemory.Text = "Private Memory";
+            this.columnHeaderPrivateMemory.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeaderPrivateMemory.Width = 85;
+            // 
+            // AttachDialog
+            // 
+            this.AcceptButton = this.buttonAttach;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.buttonCancel;
+            this.ClientSize = new System.Drawing.Size(782, 402);
+            this.ControlBox = false;
+            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.buttonCancel);
+            this.Controls.Add(this.buttonAttach);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "AttachDialog";
+            this.ShowInTaskbar = false;
+            this.Text = "Attach to Chrome";
+            this.Load += new System.EventHandler(this.AttachDialog_Load);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            this.ResumeLayout(false);
 
     }
 
@@ -209,5 +217,6 @@ namespace VsChromium.Features.AttachToChrome {
     private System.Windows.Forms.ColumnHeader columnHeaderType;
     private System.Windows.Forms.CheckBox checkBoxAttachToRunningChildren;
     private System.Windows.Forms.CheckBox checkBoxAttachToNewChildren;
-  }
+        private System.Windows.Forms.ColumnHeader columnHeaderPrivateMemory;
+    }
 }

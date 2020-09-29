@@ -11,6 +11,7 @@ namespace VsChromium.Features.AttachToChrome {
     public int SessionId;
     public string Title;
     public string DisplayCmdLine;
+    public long PrivateMemory;
     public ChromiumProcess Process;
   }
 }

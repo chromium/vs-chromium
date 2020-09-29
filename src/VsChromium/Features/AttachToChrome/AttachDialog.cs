@@ -87,22 +87,26 @@ namespace VsChromium.Features.AttachToChrome {
         item.Process = ChromiumProcess.Create(ntproc);
         if (item.Process == null)
           continue;
-
-        if (ntproc.CommandLine != null) {
-          item.DisplayCmdLine = GetFilteredCommandLineString(item.Process.CommandLineArgs);
-        }
         
         item.SessionId = p.SessionId;
         item.Title = p.MainWindowTitle;
         item.Exe = p.ProcessName;
+        item.PrivateMemory = p.PrivateMemorySize64/(1024*1024);
 
         item.Text = item.Exe;
         item.SubItems.Add(item.Process.Pid.ToString());
         item.SubItems.Add(item.Title);
         item.SubItems.Add(item.Process.Category.ToString());
         item.SubItems.Add(item.Process.InstallationData.Architecture.ToString());
+        item.SubItems.Add(item.PrivateMemory.ToString() + "MB");
+        // item.Process.Category needs to have been read first for the commandline to be populated.
+        if (ntproc.CommandLine != null)
+        {
+            string displayCmdLine = GetFilteredCommandLineString(item.Process.CommandLineArgs);
+            item.DisplayCmdLine = displayCmdLine;
+        }
         item.SubItems.Add(item.DisplayCmdLine);
-
+        
         listViewProcesses.Items.Add(item);
 
         // Add the item to the list view before setting its image,
@@ -120,7 +124,8 @@ namespace VsChromium.Features.AttachToChrome {
         return string.Empty;
 
       args = FilterCommandLine(args);
-      return string.Join(" ", args, 0, args.Count);
+      string concatResult = string.Join(" ", args);
+      return concatResult;
     }
 
     private void AutoResizeColumns() {

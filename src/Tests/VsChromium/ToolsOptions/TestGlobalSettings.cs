@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.Threading;
 using VsChromium.Package;
 using VsChromium.Settings;
 using VsChromium.Threads;
@@ -36,14 +37,44 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
       Assert.AreEqual("VsChromium.ToolsOptions.DebuggingOptions", typeof(DebuggingOptions).FullName);
     }
 
-    public class ToolsOptionsPageProviderMock : IToolsOptionsPageProvider {
-      private readonly ConcurrentDictionary<Type, object> _objects  = new ConcurrentDictionary<Type, object>(); 
-      public T GetToolsOptionsPage<T>() where T : DialogPage, new() {
-        return (T)_objects.GetOrAdd(typeof (T), key => new T());
+    private class CodingStyleOptionsMock : CodingStyleOptions {
+      [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "VSSDK005:Avoid instantiating JoinableTaskContext", Justification = "Necessary for tests.")]
+      public CodingStyleOptionsMock() : base(new JoinableTaskContext()) {
+      }
+
+      public override void SaveSettingsToStorage() {
       }
     }
 
-    public class MyProvider : ISynchronizationContextProvider {
+    private class GeneralOptionsMock : GeneralOptions {
+      [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "VSSDK005:Avoid instantiating JoinableTaskContext", Justification = "Necessary for tests.")]
+      public GeneralOptionsMock() : base(new JoinableTaskContext()) {
+      }
+
+      public override void SaveSettingsToStorage() {
+      }
+    }
+
+    private class ToolsOptionsPageProviderMock : IToolsOptionsPageProvider {
+      private readonly ConcurrentDictionary<Type, object> _objects  = new ConcurrentDictionary<Type, object>(); 
+      public T GetToolsOptionsPage<T>() where T : DialogPage, new() {
+        return (T)_objects.GetOrAdd(typeof(T), key => this.CreateInstance<T>());
+      }
+
+      object CreateInstance<T>() where T : new() {
+        switch (typeof(T))
+        {
+          case var t when t == typeof(CodingStyleOptions):
+            return new CodingStyleOptionsMock();
+          case var t when t == typeof(GeneralOptions):
+            return new GeneralOptionsMock();
+          default:
+            return new T();
+        }
+      }
+    }
+
+    private class MyProvider : ISynchronizationContextProvider {
       public ISynchronizationContext DispatchThreadContext {
         get {
           return new MyContext();

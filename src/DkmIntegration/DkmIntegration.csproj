@@ -10,6 +10,10 @@
     <RootNamespace>VsChromium.DkmIntegration</RootNamespace>
     <AssemblyName>VsChromium.DkmIntegration</AssemblyName>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Dia.Interop, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL" Condition="'$(VSTarget)' != '10.0'">
@@ -17,12 +21,8 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>Microsoft.Dia.Interop.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Debugger.Engine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" Condition="'$(VSTarget)' != '10.0'">
-      <HintPath>$(VSSDKDir)\VisualStudioIntegration\Common\Assemblies\v4.0\Microsoft.VisualStudio.Debugger.Engine.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.Debugger.Interop.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
@@ -80,9 +80,9 @@
     <None Include="ServerComponent\ServerComponent.vsdconfigxml">
       <SubType>Designer</SubType>
     </None>
-    <VsdConfigXml Include="IdeComponent\IdeComponent.vsdconfigxml;ServerComponent\ServerComponent.vsdconfigxml">
+    <VsdConfigXmlFiles Include="IdeComponent\IdeComponent.vsdconfigxml;ServerComponent\ServerComponent.vsdconfigxml">
       <Visible>false</Visible>
-    </VsdConfigXml>
+    </VsdConfigXmlFiles>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.csproj">
@@ -93,10 +93,19 @@
   <ItemGroup>
     <Content Include="Microsoft.Dia.Interop.dll" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Debugger.Engine">
+      <Version>16.4.1111102</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VSSDK.Debugger.VSDConfigTool">
+      <Version>16.4.1111102</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
   <!-- .vsdconfigxml -> .vsdconfig -->
   <PropertyGroup>
-    <VsdConfigOutput>$(OutputPath)\VsChromium.vsdconfig</VsdConfigOutput>
+    <VsdConfigFile>$(OutputPath)\VsChromium.vsdconfig</VsdConfigFile>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -106,10 +115,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <Target Name="GenerateVsdConfig" Inputs="@(VsdConfigXml)" Outputs="$(VsdConfigOutput)">
-    <Exec Command="&quot;$(VSSDKDir)VisualStudioIntegration\Tools\Bin\vsdconfigtool.exe&quot; @(VsdConfigXml, ' ') &quot;$(TargetPath)&quot; &quot;$(VsdConfigOutput)&quot;" />
-  </Target>
-  <Target Name="AfterBuild" DependsOnTargets="GenerateVsdConfig">
+  <Target Name="AfterBuild">
     <Copy SourceFiles="@(NatVis)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="True" />
   </Target>
 </Project>

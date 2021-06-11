@@ -117,3 +117,4 @@ UpgradeLog*.XML
 # Mercurial
 .hg
 
+/src/packages

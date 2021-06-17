@@ -33,9 +33,6 @@
     <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == ''">true</TreatWarningsAsErrors>
 
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
-
-    <DevEnvDir>$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\$(VisualStudioVersion)', 'InstallDir', null, RegistryView.Registry32))\</DevEnvDir>
-    <VSSDKDir>$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\VSIP\$(VisualStudioVersion)', 'InstallDir', null, RegistryView.Registry32))\</VSSDKDir>
   </PropertyGroup>
 
   <Import Project="$(BuildSettingsPath)Common.Build.CSharp.settings" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
@@ -43,7 +40,5 @@
   <Target Name="PrintVariables">
     <Message Importance="high" Text="BuildRoot = $(BuildRoot)"/>
     <Message Importance="high" Text="TargetsPath = $(BuildSettingsPath)"/>
-    <Message Importance="high" Text="DevEnvDir = $(DevEnvDir)"/>
-    <Message Importance="high" Text="VSSDKDir = $(VSSDKDir)"/>
   </Target>
 </Project>

@@ -13,20 +13,16 @@
     <FileAlignment>512</FileAlignment>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SignAssembly>false</SignAssembly>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Shell.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="protobuf-net">
-      <HintPath>$(BuildRoot)src\packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
@@ -80,10 +76,6 @@
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
       <Name>VsChromium.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="$(BuildRoot)src\VsChromium\VsChromium.csproj">
-      <Project>{8ed06aa3-93df-48fe-97c0-f516e99fdb32}</Project>
-      <Name>VsChromium</Name>
-    </ProjectReference>
     <ProjectReference Include="$(BuildRoot)src\ServerNativeInterop\ServerNativeInterop.csproj">
       <Project>{a38dc74b-820c-49a5-a732-23170d953632}</Project>
       <Name>VsChromium.Server.NativeInterop</Name>
@@ -92,9 +84,10 @@
       <Project>{F33514B3-E491-4599-AF71-EABCDD70234F}</Project>
       <Name>Server</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\VsChromium17\VsChromium17.csproj">
+      <Project>{1eab343d-2ba1-4fd0-b34a-2b3fa0b53542}</Project>
+      <Name>VsChromium17</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestData\chromium\src\base\file_present_three_times.txt" />
@@ -109,6 +102,11 @@
     <Content Include="TestData\chromium\src\readme2.txt" />
     <Content Include="TestData\chromium\src\test_directory\marker.txt" />
     <Content Include="TestData\files\bear.ac3" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="protobuf-net">
+      <Version>2.0.0.640</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -49,6 +49,19 @@
     <OutputPath>$(BuildRoot)Binaries\$(Configuration)\ServerBuild\</OutputPath>
     <PublishDir>$(BuildRoot)Binaries\$(Configuration)\ServerPublish\$(RuntimeIdentifier)\</PublishDir>
   </PropertyGroup>
+
+  <!--
+    Experimental: NativeAOT publishing (dotnet publish -c Release -r <rid> -p:VsChromiumPublishAot=true),
+    to check the AOT compatibility of the server (trimming/AOT analysis warnings). Not used for
+    packaging.
+  -->
+  <PropertyGroup Condition="'$(VsChromiumPublishAot)' == 'true' And '$(RuntimeIdentifier)' != ''">
+    <PublishAot>true</PublishAot>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <PublishDir>$(BuildRoot)Binaries\$(Configuration)\ServerPublishAot\$(RuntimeIdentifier)\</PublishDir>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
     <ProjectReference Include="..\Core.Ipc.Json\Core.Ipc.Json.csproj" />

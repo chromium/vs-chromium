@@ -1,0 +1,71 @@
+# Builds and tests the indexing server (src/Server) on Windows, Linux and macOS, and publishes the
+# self-contained server executables. The Visual Studio package (.NET Framework, legacy projects) is
+# not built here (it requires Visual Studio).
+#
+# Linux and macOS jobs are allowed to fail (continue-on-error) until the server has been validated
+# on these platforms (milestone 7 of docs/portable-server/PORTING_PRINCIPLES.md): some server unit
+# tests still use Windows paths.
+name: server
+
+on:
+  push:
+    branches: [ main, portable-server ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os != 'windows-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build server and tests
+        run: |
+          dotnet build src/Server/Server.csproj -c Debug
+          dotnet build src/Server.Tests/Server.Tests.csproj -c Debug
+          dotnet build src/Tests.EndToEnd/VsChromium.Tests.EndToEnd.csproj -c Debug
+
+      - name: Server unit tests
+        working-directory: src/Server.Tests
+        run: dotnet test --no-build -c Debug
+
+      - name: End-to-end tests (stdio protocol, behavior changes)
+        working-directory: src/Tests.EndToEnd
+        run: dotnet test --no-build -c Debug --filter "TestCategory!=Benchmark"
+
+      - name: Benchmarks (small corpus)
+        working-directory: src/Tests.EndToEnd
+        run: dotnet test --no-build -c Debug --filter "TestCategory=Benchmark"
+
+  publish:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [ win-x64, win-arm64, linux-x64, linux-arm64, osx-arm64 ]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish self-contained, single file, ReadyToRun server
+        run: dotnet publish src/Server/Server.csproj -c Release -r ${{ matrix.rid }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VsChromium.Server-${{ matrix.rid }}
+          path: |
+            Binaries/Release/ServerPublish/${{ matrix.rid }}/
+            !Binaries/Release/ServerPublish/${{ matrix.rid }}/*.pdb

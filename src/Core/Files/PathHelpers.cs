@@ -121,6 +121,12 @@ namespace VsChromium.Core.Files {
         return false;
       }
 
+#if NETCOREAPP
+      // Server on Linux/macOS: Unix paths ("/..."), see mtsuite PathHelpers.
+      if (!OperatingSystem.IsWindows()) {
+        return mtsuite.CoreFileSystem.PathHelpers.IsPathAbsolute(path);
+      }
+#endif
       // Quick & dirty check, but faster than "Path.IsPathRooted".
       var l = path.Length;
 

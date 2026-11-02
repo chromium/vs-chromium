@@ -5,7 +5,7 @@ server (`VsChromium.Server.exe`) from .NET Framework 4.7.2 + custom C/C++ (Win32
 portable modern .NET application (Windows, Linux, macOS). It is meant to be read before working on
 the `portable-server` branch, including in a future conversation with no other context.
 
-Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (server on `net10.0`) and 4 (managed search, no more C/C++) **done**; milestone 5 (portable file system) in progress: 5a (BCL file system, no more P/Invoke) done, next 5b (mtsuite paths). Branch `portable-server` (created from `main` at `30d7bb9`).
+Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (server on `net10.0`), 4 (managed search, no more C/C++), 5 (portable file system: 5a done, 5b partially) and 6 (VS package over stdio + JSON) **done**; milestone 7 (Linux/macOS) in progress, untested on these platforms. Branch `portable-server` (created from `main` at `30d7bb9`).
 
 ## Goals
 
@@ -373,9 +373,14 @@ of its resource usage, measured inside the process:
      time stamp of each file from the open handle (`IFileContentsReader`), which saves one path lookup
      per file: loading 7.2-8.5 s, cold indexing 8.2-9.6 s, back to (or better than) milestone 4
      (`docs/portable-server/benchmarks/m5c-file-read-single-lookup`).
-   - **5b (next)**: mtsuite `FullPath`/`PathHelpers` (OS-aware separators and case sensitivity) on
-     the server, mtsuite Linux/macOS enumerators (needs benchmarks on Linux/macOS), copied into
-     `third_party/mtsuite/` with `PORT_CHANGES.md`.6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
+   - **5b (partially done)**: `third_party/mtsuite/` (library `MtSuite.CoreFileSystem`, with
+     `LICENSE` and `PORT_CHANGES.md`: origin commit `c9123d8`, files copied, changes) contains
+     mtsuite `PathHelpers.cs`, used by the server for OS-aware path handling (`#if NETCOREAPP` in
+     the shared `Core/Files` code): case-sensitive path comparisons on Linux, case-insensitive on
+     Windows and macOS (`PathComparerRegistry.Default`, `SystemPathComparer`), Unix absolute paths
+     (`PathHelpers.IsAbsolutePath`). Not done: replacing `VsChromium.Core.Files.FullPath` with
+     mtsuite `FullPath` (broad refactor; to be decided with memory benchmarks), the mtsuite Linux and
+     macOS directory enumerators (to be decided with benchmarks on these platforms).6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
    (`ServerProcessLauncher`) and exchanges JSON lines over its standard input/output, exactly as the
    VS Code extension does. The JSON serialization (`IpcJsonSerializer`, `IpcStreamOverJsonLines`)
    moved to `Core.Ipc` (Newtonsoft.Json, the VS package uses the copy of Visual Studio). Removed:
@@ -389,5 +394,17 @@ of its resource usage, measured inside the process:
    the dependency. JSON vs protobuf: the baseline benchmarks already measured large JSON responses
    (316 KB in 9 ms on the client side, 2 ms in the server), acceptable. Packaging of the
    self-contained server: see [Target framework and distribution](#target-framework-and-distribution).
-   The Release VSIX must still be tested manually in Visual Studio.7. **Linux and macOS**: path/case-sensitivity, file watching limits, CI runs of tests and benchmarks;
-   VS Code VSIX for linux/macOS targets.
+   The Release VSIX must still be tested manually in Visual Studio.7. **Linux and macOS** (in progress, **untested**: no Linux/macOS machine was available):
+   - Done: the server publishes for `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64` and
+     `osx-arm64` from Windows (cross-compiled ReadyToRun; the runtime identifier is appended to the
+     intermediate path so that app hosts of different platforms don't mix). One file system watcher
+     per directory instead of 3 on Linux/macOS (inotify watches are limited by
+     `fs.inotify.max_user_watches`; change events then have the `FileOrDirectory` path kind). OS
+     path handling (5b). The VS Code extension declares `win32`, `linux` and `darwin`, finds
+     `VsChromium.Server` (no `.exe`) outside of Windows, makes it executable if needed, and has
+     packaging scripts per target (`npm run package:linux-x64`, ...). GitHub Actions workflow
+     `.github/workflows/server.yml`: build + server unit tests + end-to-end tests + small benchmark on
+     Windows, Linux and macOS (Linux/macOS allowed to fail for now), publish of the 5 platforms.
+   - To do: run the workflow (or test on Linux/macOS machines) and fix what fails (server unit tests
+     using Windows paths, configuration files, path separators in the protocol...), a polling /
+     rescan fallback when the inotify limit is reached, Linux/macOS benchmarks.

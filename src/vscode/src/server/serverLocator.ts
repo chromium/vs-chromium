@@ -5,7 +5,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export const ServerExeName = 'VsChromium.Server.exe';
+/** The name of the server executable (no extension outside of Windows). */
+export const ServerExeName = process.platform === 'win32' ? 'VsChromium.Server.exe' : 'VsChromium.Server';
 
 /**
  * Returns the candidate locations of VsChromium.Server.exe, in order of preference:

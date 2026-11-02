@@ -43,7 +43,10 @@
     <DebugType>embedded</DebugType>
     <!-- Intermediate RID specific build output: must not overwrite the regular (framework-dependent)
          build output in Binaries\<Configuration>\Server\. -->
-    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\ServerBuild\$(RuntimeIdentifier)\</OutputPath>
+    <!-- (The runtime identifier is appended to both the output and the intermediate paths, so that
+         publishing for several runtime identifiers doesn't mix files, e.g. app hosts.) -->
+    <AppendRuntimeIdentifierToOutputPath>true</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\ServerBuild\</OutputPath>
     <PublishDir>$(BuildRoot)Binaries\$(Configuration)\ServerPublish\$(RuntimeIdentifier)\</PublishDir>
   </PropertyGroup>
   <ItemGroup>

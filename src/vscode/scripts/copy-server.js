@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Publishes the indexing server as a self-contained, single file, ReadyToRun executable for win-x64
-// (`dotnet publish`, output in <repo>/Binaries/<Configuration>/ServerPublish/win-x64, see
-// src/Server/Server.csproj) and copies it into <extension>/bin, for packaging: users don't need to
-// install a .NET runtime. Also copies the repository LICENSE file.
-// Usage: node scripts/copy-server.js [Release|Debug] (default: Release)
+// Publishes the indexing server as a self-contained, single file, ReadyToRun executable for the
+// given VS Code target platform (`dotnet publish`, output in
+// <repo>/Binaries/<Configuration>/ServerPublish/<runtime identifier>, see src/Server/Server.csproj)
+// and copies it into <extension>/bin, for packaging: users don't need to install a .NET runtime.
+// Also copies the repository LICENSE file.
+// Usage: node scripts/copy-server.js [Release|Debug] [<VS Code target>]
+// (defaults: Release, win32-x64; targets: win32-x64, win32-arm64, linux-x64, linux-arm64,
+// darwin-x64, darwin-arm64)
 
 'use strict';
 
@@ -17,21 +20,36 @@ const path = require('path');
 const configuration = process.argv[2] || 'Release';
 const extensionRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(extensionRoot, '..', '..');
-const runtimeIdentifier = 'win-x64';
-const sourceDir = path.join(repoRoot, 'Binaries', configuration, 'ServerPublish', runtimeIdentifier);
+const target = process.argv[3] || 'win32-x64';
+// VS Code target platform -> .NET runtime identifier
+const runtimeIdentifiers = {
+  'win32-x64': 'win-x64',
+  'win32-arm64': 'win-arm64',
+  'linux-x64': 'linux-x64',
+  'linux-arm64': 'linux-arm64',
+  'darwin-x64': 'osx-x64',
+  'darwin-arm64': 'osx-arm64',
+};
+const runtimeIdentifier = runtimeIdentifiers[target];
+const serverExeName = target.startsWith('win32-') ? 'VsChromium.Server.exe' : 'VsChromium.Server';
+const sourceDir = path.join(repoRoot, 'Binaries', configuration, 'ServerPublish', runtimeIdentifier || target);
 const targetDir = path.join(extensionRoot, 'bin');
 
 // Files that must be present, so that packaging fails if the server was not built properly (rather
 // than producing an extension that cannot start the server). All the files of the server directory
 // are copied (except debug symbols).
 const requiredFiles = [
-  'VsChromium.Server.exe',
+  serverExeName,
   path.join('Configuration', 'SearchableFiles.include'),
 ];
 
 function fail(message) {
   console.error(`copy-server: ${message}`);
   process.exit(1);
+}
+
+if (!runtimeIdentifier) {
+  fail(`unknown target "${target}" (expected one of: ${Object.keys(runtimeIdentifiers).join(', ')})`);
 }
 
 const serverProject = path.join(repoRoot, 'src', 'Server', 'Server.csproj');

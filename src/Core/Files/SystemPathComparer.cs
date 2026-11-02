@@ -24,11 +24,18 @@ namespace VsChromium.Core.Files {
     }
 
     public static bool EqualsNames(string name1, string name2) {
-      return StringComparer.OrdinalIgnoreCase.Equals(name1, name2);
+      return NameComparer.Equals(name1, name2);
     }
 
     public static int CompareNames(string name1, string name2) {
-      return StringComparer.OrdinalIgnoreCase.Compare(name1, name2);
+      return NameComparer.Compare(name1, name2);
     }
+
+#if NETCOREAPP
+    // Server: case sensitivity of the operating system, see mtsuite PathHelpers.
+    private static StringComparer NameComparer => mtsuite.CoreFileSystem.PathHelpers.FileNameComparer;
+#else
+    private static StringComparer NameComparer => StringComparer.OrdinalIgnoreCase;
+#endif
   }
 }

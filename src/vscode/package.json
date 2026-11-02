@@ -16,7 +16,9 @@
     "Other"
   ],
   "os": [
-    "win32"
+    "win32",
+    "linux",
+    "darwin"
   ],
   "activationEvents": [
     "workspaceContains:vs-chromium-project.txt",
@@ -125,8 +127,12 @@
     "watch": "tsc -watch -p ./",
     "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
     "vscode:prepublish": "npm run compile",
-    "package": "node scripts/copy-server.js Release && vsce package --target win32-x64 --no-dependencies",
-    "package:debug": "node scripts/copy-server.js Debug && vsce package --target win32-x64 --no-dependencies"
+    "package": "node scripts/copy-server.js Release win32-x64 && vsce package --target win32-x64 --no-dependencies",
+    "package:linux-x64": "node scripts/copy-server.js Release linux-x64 && vsce package --target linux-x64 --no-dependencies",
+    "package:linux-arm64": "node scripts/copy-server.js Release linux-arm64 && vsce package --target linux-arm64 --no-dependencies",
+    "package:darwin-arm64": "node scripts/copy-server.js Release darwin-arm64 && vsce package --target darwin-arm64 --no-dependencies",
+    "package:win32-arm64": "node scripts/copy-server.js Release win32-arm64 && vsce package --target win32-arm64 --no-dependencies",
+    "package:debug": "node scripts/copy-server.js Debug win32-x64 && vsce package --target win32-x64 --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "22.15.3",

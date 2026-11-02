@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
+import * as fs from 'fs';
 import * as readline from 'readline';
 import {
   ErrorResponse,
@@ -62,6 +63,7 @@ export class ServerClient {
   private exitReason: string | undefined;
 
   constructor(serverPath: string, private readonly options: ServerClientOptions = {}) {
+    ensureExecutable(serverPath);
     this.process = spawn(serverPath, ['--stdio'], { windowsHide: true, stdio: 'pipe' });
 
     let helloResolve!: () => void;
@@ -228,4 +230,22 @@ function addListener<T>(listeners: Listener<T>[], listener: Listener<T>): () => 
       listeners.splice(index, 1);
     }
   };
+}
+
+/**
+ * Linux/macOS: makes sure the server file is executable (the executable bit may be lost when the
+ * extension is packaged on Windows).
+ */
+function ensureExecutable(serverPath: string): void {
+  if (process.platform === 'win32') {
+    return;
+  }
+  try {
+    const mode = fs.statSync(serverPath).mode;
+    if ((mode & 0o111) === 0) {
+      fs.chmodSync(serverPath, mode | 0o755);
+    }
+  } catch {
+    // Missing file, read-only file system...: spawn reports the error.
+  }
 }

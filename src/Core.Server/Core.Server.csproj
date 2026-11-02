@@ -48,6 +48,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
+    <!-- Code copied from mtsuite (OS-aware path helpers), see third_party/mtsuite/PORT_CHANGES.md. -->
+    <ProjectReference Include="..\..\third_party\mtsuite\MtSuite.CoreFileSystem.csproj" />
   </ItemGroup>
 
   <ItemGroup>

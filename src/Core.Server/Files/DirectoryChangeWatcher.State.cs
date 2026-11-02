@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using VsChromium.Core.Linq;
@@ -66,13 +67,17 @@ namespace VsChromium.Core.Files {
         if (StateHost.WatcherDictionary.TryGetValue(directory, out watcherEntry))
           return;
 
+        if (!OperatingSystem.IsWindows()) {
+          AddDirectorySingleWatcher(directory);
+          return;
+        }
+
         watcherEntry = new DirectoryWatcherhEntry {
           Path = directory,
           DirectoryNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
           FileNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
           FileWriteWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
-        };
-        StateHost.WatcherDictionary.Add(directory, watcherEntry);
+        };        StateHost.WatcherDictionary.Add(directory, watcherEntry);
 
         Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications.", directory);
 
@@ -145,6 +150,36 @@ namespace VsChromium.Core.Files {
         OnWatcherRemoved(directory, watcher);
       }
 
+      /// <summary>
+      /// Linux and macOS: a single watcher per directory, for all kinds of
+      /// changes. On Linux, each watcher (with sub-directories) uses one inotify
+      /// watch per directory of the tree, and the number of watches is limited
+      /// (fs.inotify.max_user_watches), so using 3 watchers (as on Windows,
+      /// where they are cheap) would divide the size of the trees we can watch
+      /// by 3. The drawback is that the kind of path (file or directory) is not
+      /// known for change events (PathKind.FileOrDirectory), which is handled
+      /// by the consumers (more conservative processing).
+      /// </summary>
+      private void AddDirectorySingleWatcher(FullPath directory) {
+        var watcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory);
+        var watcherEntry = new DirectoryWatcherhEntry {
+          Path = directory,
+          FileWriteWatcher = watcher,
+        };
+        StateHost.WatcherDictionary.Add(directory, watcherEntry);
+
+        Logger.LogInfo("Starting monitoring directory \"{0}\" for change notifications (single watcher).", directory);
+
+        watcher.NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite;
+        watcher.Changed += (s, e) => StateHost.ParentWatcher.WatcherOnChanged(s, e, PathKind.FileOrDirectory);
+        watcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.FileOrDirectory);
+        watcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.FileOrDirectory);
+        watcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.FileOrDirectory);
+        watcher.InternalBufferSize = 16 * 1024; // 16 KB
+        watcher.IncludeSubdirectories = true;
+        watcher.Error += StateHost.ParentWatcher.WatcherOnError;
+        OnWatcherAdded(directory, watcherEntry);
+      }
       protected void StartWatchers() {
         foreach (var watcher in StateHost.WatcherDictionary) {
           watcher.Value.Start();

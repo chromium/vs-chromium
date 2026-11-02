@@ -37,7 +37,8 @@ public static class TestSettings {
         return path;
       }
       var configuration = ThisAssembly.GetCustomAttribute<BuildConfigurationAttribute>()!.Configuration;
-      return System.IO.Path.Combine(RepositoryRoot, "Binaries", configuration, "Server", "VsChromium.Server.exe");
+      var exeName = OperatingSystem.IsWindows() ? "VsChromium.Server.exe" : "VsChromium.Server";
+      return System.IO.Path.Combine(RepositoryRoot, "Binaries", configuration, "Server", exeName);
     }
   }
 

@@ -94,6 +94,11 @@ export interface SearchCodeRequest extends TypedMessage {
   searchParams: SearchParams;
 }
 
+export interface SearchFilePathsRequest extends TypedMessage {
+  $type: 'SearchFilePathsRequest';
+  searchParams: SearchParams;
+}
+
 export interface FilePositionSpan {
   /** Offset (in UTF-16 characters) of the first character of the span. */
   position: number;
@@ -112,6 +117,7 @@ export type TypedRequest =
   | UnregisterFileRequest
   | GetDatabaseStatisticsRequest
   | SearchCodeRequest
+  | SearchFilePathsRequest
   | GetFileExtractsRequest;
 
 // ---------------------------------------------------------------------------
@@ -141,7 +147,17 @@ export interface ResponseTypes {
   UnregisterFileRequest: DoneResponse;
   GetDatabaseStatisticsRequest: GetDatabaseStatisticsResponse;
   SearchCodeRequest: SearchCodeResponse;
+  SearchFilePathsRequest: SearchFilePathsResponse;
   GetFileExtractsRequest: GetFileExtractsResponse;
+}
+
+export interface SearchFilePathsResponse extends TypedMessage {
+  $type: 'SearchFilePathsResponse';
+  /** Same structure as SearchCodeResponse.searchResults (without positions). */
+  searchResult: DirectoryEntry;
+  hitCount: number;
+  /** Total number of files in the index. */
+  totalCount: number;
 }
 
 export interface FilePositionsData {

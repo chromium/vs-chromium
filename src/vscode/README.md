@@ -6,7 +6,7 @@ extension.
 
 > **Status:** early development. The extension starts the indexing server, registers the
 > workspace folders, shows the indexing status in the status bar, and provides the **Code Search**
-> panel. File name search comes next.
+> panel and **Find File Names**.
 >
 > **Windows only** for now: the indexing server (`VsChromium.Server.exe`) is a .NET Framework
 > application using Win32 APIs.
@@ -52,11 +52,20 @@ Search Code*) to search for the selected text or the word under the cursor.
 - Click a line to preview it, double-click (or **Enter**) to open it. Keyboard: **Down** from
   the search box moves into the results, **Up/Down** navigate, **Left/Right** collapse/expand.
 
+## Find File Names
+
+Press **Ctrl+Alt+'** (*VsChromium: Find File Names*) and type part of a file name or path
+(`foo.cc`, `base/*.h`, ...). Results come from the index and update as you type.
+
+Paths copied from build output are understood: `base/foo.cc(19,18)`,
+`../../base/foo.cc:19:18: error: ...` open the file at line 19, column 18.
+
 ## Commands
 
 | Command | Description |
 |---|---|
 | VsChromium: Search Code (Ctrl+Alt+;) | Opens the Code Search panel with the selection or word under the cursor |
+| VsChromium: Find File Names (Ctrl+Alt+') | Searches file names/paths in the index (prefilled with the selection) |
 | VsChromium: Show Indexing Server Status | Project/file counts, memory usage, last index update (also available by clicking the status bar item) |
 | VsChromium: Restart Indexing Server | Stops and restarts the server |
 | VsChromium: Show Output | Shows the VsChromium log (enable `vschromium.trace.server` to log all messages) |

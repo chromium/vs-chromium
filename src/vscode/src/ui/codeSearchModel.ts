@@ -21,8 +21,17 @@ export interface SearchResultFile {
  * into a list of files with their match positions.
  */
 export function flattenSearchResults(response: SearchCodeResponse): SearchResultFile[] {
+  return flattenDirectoryEntry(response.searchResults);
+}
+
+/**
+ * Flattens a search result tree, as returned by SearchCode and SearchFilePaths requests: the
+ * root entry contains one directory entry per project (name = project root path), containing
+ * files and directories (names relative to their parent).
+ */
+export function flattenDirectoryEntry(root: DirectoryEntry): SearchResultFile[] {
   const files: SearchResultFile[] = [];
-  for (const project of response.searchResults.entries ?? []) {
+  for (const project of root.entries ?? []) {
     if (!isDirectory(project)) {
       continue;
     }

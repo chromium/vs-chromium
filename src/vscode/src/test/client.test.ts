@@ -12,7 +12,8 @@ import { after, before, describe, it } from 'node:test';
 import { ServerClient, ServerExitedError } from '../server/client';
 import { TypedEvent } from '../server/messages';
 import { findServerPath } from '../server/serverLocator';
-import { flattenSearchResults, toDisplayLine } from '../ui/codeSearchModel';
+import { flattenDirectoryEntry, flattenSearchResults, toDisplayLine } from '../ui/codeSearchModel';
+import { parseFilePathQuery } from '../ui/filePathQuery';
 
 const extensionRoot = path.resolve(__dirname, '..', '..');
 const repoRoot = path.resolve(extensionRoot, '..', '..');
@@ -99,6 +100,24 @@ describe('ServerClient', { skip: serverPath ? false : 'VsChromium.Server.exe not
     });
     assert.equal(response.hitCount, 0);
     assert.deepEqual(flattenSearchResults(response), []);
+  });
+
+  it('searches file paths, including paths pasted from build output', async () => {
+    const search = async (text: string) => {
+      const query = parseFilePathQuery(text);
+      const response = await client.request({
+        $type: 'SearchFilePathsRequest',
+        searchParams: { searchString: query.pattern, maxResults: 100 },
+      });
+      assert.equal(response.$type, 'SearchFilePathsResponse');
+      assert.ok(response.totalCount > 0, 'totalCount should be > 0');
+      return flattenDirectoryEntry(response.searchResult).map(f => f.relativePath).sort();
+    };
+
+    assert.deepEqual(await search('readme.txt'), ['readme.txt']);
+    assert.ok((await search('*.txt')).includes('readme2.txt'));
+    assert.deepEqual(await search('../../readme.txt:1:5: error: foo'), ['readme.txt']);
+    assert.deepEqual(await search('does_not_exist_anywhere.xyz'), []);
   });
 
   it('runs concurrent requests', async () => {

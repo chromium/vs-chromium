@@ -7,6 +7,7 @@ import { ServerClient } from './server/client';
 import { findServerPath, serverPathCandidates } from './server/serverLocator';
 import { describeIndexingState, IndexingState, nextIndexingState } from './ui/indexingState';
 import { CodeSearchViewProvider } from './ui/codeSearchView';
+import { FileNamesPick } from './ui/fileNamesPick';
 
 /**
  * Owns the VsChromium.Server.exe process: starts it, registers the workspace folders and opened
@@ -210,6 +211,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const output = vscode.window.createOutputChannel('VsChromium', { log: true });
   const manager = new ServerManager(context, output);
   const codeSearch = new CodeSearchViewProvider(context.extensionUri, () => manager.server, output);
+  const fileNames = new FileNamesPick(() => manager.server, output);
   context.subscriptions.push(
     output,
     manager,
@@ -217,11 +219,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.commands.registerCommand('vschromium.searchCode', () => codeSearch.show(getSearchTextFromEditor())),
+    vscode.commands.registerCommand('vschromium.findFileNames', () => fileNames.show(getSelectedText())),
     vscode.commands.registerCommand('vschromium.showServerStatus', () => manager.showStatus()),
     vscode.commands.registerCommand('vschromium.restartServer', () => manager.restart()),
     vscode.commands.registerCommand('vschromium.showOutput', () => output.show()),
   );
   await manager.start();
+}
+
+/** Returns the editor selection if it is non-empty and on a single line. */
+function getSelectedText(): string | undefined {
+  const editor = vscode.window.activeTextEditor;
+  const selection = editor?.selection;
+  if (!editor || !selection || selection.isEmpty || !selection.isSingleLine) {
+    return undefined;
+  }
+  return editor.document.getText(selection).trim();
 }
 
 /**

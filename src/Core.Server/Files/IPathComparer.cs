@@ -8,6 +8,12 @@ namespace VsChromium.Core.Files {
   public interface IPathComparer {
     StringComparer StringComparer { get; }
 
+    /// <summary>
+    /// The comparison of characters (<see cref="StringComparison.Ordinal"/> or <see
+    /// cref="StringComparison.OrdinalIgnoreCase"/>), e.g. for span based comparisons.
+    /// </summary>
+    StringComparison Comparison { get; }
+
     int Compare(String value1, int startIndex1, String value2, int startIndex2, int length);
     int IndexOf(string value, string searchText, int index, int count);
   }

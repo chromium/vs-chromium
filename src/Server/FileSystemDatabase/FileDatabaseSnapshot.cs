@@ -26,17 +26,22 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly Lazy<IList<FileContentsPiece>> _fileContentsPieces;
     private readonly Lazy<long> _searchableFileCount;
     private readonly Lazy<long> _totalFileContentsLength;
+    private readonly Lazy<HashSet<DirectoryName>> _directoriesInSymLinks;
 
     public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes, 
       IDictionary<DirectoryName, DirectoryData> directories,
-      IDictionary<FileName, FileWithContents> files) {
+      IDictionary<FileName, FileWithContents> files,
+      IList<FileName> fileNames = null) {
       _projectHashes = projectHashes;
       _directories = directories;
       _files = files;
-      _fileNames = new Lazy<IList<FileName>>(CreateFileNames);
+      // Note: "fileNames" can be passed when the keys of "files" are the same as in a previous
+      // snapshot (only file contents changed), to avoid recomputing the list.
+      _fileNames = fileNames != null ? new Lazy<IList<FileName>>(fileNames) : new Lazy<IList<FileName>>(CreateFileNames);
       _fileContentsPieces = new Lazy<IList<FileContentsPiece>>(CreateFilePieces, LazyThreadSafetyMode.ExecutionAndPublication);
       _searchableFileCount = new Lazy<long>(CountFilesWithContents);
       _totalFileContentsLength = new Lazy<long>(ComputeTotalFileContentsLength);
+      _directoriesInSymLinks = new Lazy<HashSet<DirectoryName>>(ComputeDirectoriesInSymLinks);
     }
 
     public IDictionary<FullPath, string> ProjectHashes => _projectHashes;
@@ -69,8 +74,37 @@ namespace VsChromium.Server.FileSystemDatabase {
       return contents.GetFileExtracts(maxLength, spans);
     }
 
+    public void PrecomputeSearchData() {
+      _ = _fileNames.Value;
+      _ = _fileContentsPieces.Value;
+      _ = _searchableFileCount.Value;
+      _ = _totalFileContentsLength.Value;
+      _ = _directoriesInSymLinks.Value;
+    }
+
     public bool IsContainedInSymLink(DirectoryName name) {
-      return IsContainedInSymLinkHelper(_directories, name);
+      // Note: Computed once per snapshot: a single hash lookup per call, and no lookup
+      // at all when there is no symbolic link (the common case), instead of a walk up the parent
+      // chain with a lookup per parent for each file of each query.
+      var directoriesInSymLinks = _directoriesInSymLinks.Value;
+      if (directoriesInSymLinks.Count == 0 || name == null)
+        return false;
+      return directoriesInSymLinks.Contains(name);
+    }
+
+    /// <summary>
+    /// The directories of the snapshot that are symbolic links, or are contained in one.
+    /// </summary>
+    private HashSet<DirectoryName> ComputeDirectoriesInSymLinks() {
+      var result = new HashSet<DirectoryName>();
+      if (!_directories.Values.Any(x => x.IsSymLink))
+        return result;
+
+      foreach (var directory in _directories.Keys) {
+        if (IsContainedInSymLinkHelper(_directories, directory))
+          result.Add(directory);
+      }
+      return result;
     }
 
     public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, FileName name) {

@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace VsChromium.Core.Files.PatternMatching {
   public class PathMatcher : IPathMatcher {
-    private readonly IList<BaseOperator> _operators;
+    private readonly BaseOperator[] _operators;
     private readonly IPrePassWontMatch[] _prePassOperators;
 
     public PathMatcher(IEnumerable<BaseOperator> operators) {
@@ -18,48 +18,40 @@ namespace VsChromium.Core.Files.PatternMatching {
 
     public IList<BaseOperator> Operators { get { return _operators; } }
 
-    public bool MatchDirectoryName(RelativePath relativePath, IPathComparer comparer) {
-      var path = relativePath.Value;
+    public bool MatchDirectoryName(ReadOnlySpan<char> path, IPathComparer comparer) {
       CheckPath(path);
 
       if (PrePassWontMatch(MatchKind.Directory, path, comparer))
         return false;
 
-      var result = BaseOperator.Match(MatchKind.Directory, comparer, Operators, 0, path, 0);
+      var result = BaseOperator.Match(MatchKind.Directory, comparer, _operators, 0, path, 0);
       return IsMatch(path, result);
     }
 
-    public bool MatchFileName(RelativePath relativePath, IPathComparer comparer) {
-      var path = relativePath.Value;
+    public bool MatchFileName(ReadOnlySpan<char> path, IPathComparer comparer) {
       CheckPath(path);
 
       if (PrePassWontMatch(MatchKind.File, path, comparer))
         return false;
 
-      var result = BaseOperator.Match(MatchKind.File, comparer, Operators, 0, path, 0);
+      var result = BaseOperator.Match(MatchKind.File, comparer, _operators, 0, path, 0);
       return IsMatch(path, result);
     }
 
-    private static void CheckPath(string path) {
-      if (String.IsNullOrEmpty(path))
+    private static void CheckPath(ReadOnlySpan<char> path) {
+      if (path.IsEmpty)
         throw new ArgumentNullException("path");
 
       // Note: The lines below show as using about 20% of total CPU when loading files.
-      //  This is too much for ensuring program correctness.
-#if false
-      if (path.IndexOf(Path.AltDirectorySeparatorChar) >= 0)
-        throw new ArgumentException(string.Format("Path \"{0}\" should not contain alternative directory seperator character.", path), "path");
-
-      if (Path.IsPathRooted(path))
-        throw new ArgumentException(string.Format("Path \"{0}\" should be relative (i.e. not rooted).", path), "path");
-#else
-      if (PathHelpers.IsAbsolutePath(path)) {
-        throw new ArgumentException(string.Format("Path \"{0}\" should be relative (i.e. not rooted).", path), "path");
+      //  This is too much for ensuring program correctness: only checked in debug builds.
+#if DEBUG
+      if (PathHelpers.IsAbsolutePath(path.ToString())) {
+        throw new ArgumentException(string.Format("Path \"{0}\" should be relative (i.e. not rooted).", path.ToString()), "path");
       }
 #endif
     }
 
-    private bool PrePassWontMatch(MatchKind kind, string path, IPathComparer comparer) {
+    private bool PrePassWontMatch(MatchKind kind, ReadOnlySpan<char> path, IPathComparer comparer) {
       // Note: Use a "for" loop to avoid allocation with "Any"
       for (var index = 0; index < _prePassOperators.Length; index++) {
         if (_prePassOperators[index].PrePassWontMatch(kind, path, comparer))
@@ -68,7 +60,7 @@ namespace VsChromium.Core.Files.PatternMatching {
       return false;
     }
 
-    private static bool IsMatch(string path, int result) {
+    private static bool IsMatch(ReadOnlySpan<char> path, int result) {
       if (result < -1 || result > path.Length)
         throw new InvalidOperationException("Invalid result! (Bug)");
 

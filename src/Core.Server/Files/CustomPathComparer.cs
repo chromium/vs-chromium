@@ -24,6 +24,8 @@ namespace VsChromium.Core.Files {
         : StringComparer.Ordinal);
     }
 
+    public StringComparison Comparison { get { return _comparison; } }
+
     public int IndexOf(string value, string searchText, int index, int count) {
       return value.IndexOf(searchText, index, count, _comparison);
     }

@@ -107,24 +107,44 @@ namespace VsChromium.Server.Search {
         return SearchFilePathsResult.Empty;
 
       using (preProcessResult) {
+        // Note: Partitions of the file list are processed in parallel, each with its own local
+        // counter and list of matches (no shared state per file), and the search stops as soon as
+        // "MaxResults" matches have been found.
+        var database = _currentFileDatabase;
+        var fileNames = database.FileNames;
+        var matcher = preProcessResult.Matcher;
+        var includeSymLinks = searchParams.IncludeSymLinks;
+        var maxResults = searchParams.MaxResults;
+        var matches = new List<FileName>();
         var searchedFileCount = 0;
-        var matches = _currentFileDatabase.FileNames
-          .AsParallel()
-          // We need the line below because of "Take" (.net 4.0 PLinq
-          // limitation)
-          .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-          .WithCancellation(_taskCancellation.GetNewToken())
-          .Where(
-            item => {
-              if (!searchParams.IncludeSymLinks) {
-                if (_currentFileDatabase.IsContainedInSymLink(item))
-                  return false;
-              }
-              Interlocked.Increment(ref searchedFileCount);
-              return preProcessResult.Matcher(item);
-            })
-          .Take(searchParams.MaxResults)
-          .ToList();
+        var gate = new object();
+        var batchSize = Math.Max(256, fileNames.Count / (Environment.ProcessorCount * 16));
+        ParallelBatches.For(fileNames.Count, batchSize, _taskCancellation.GetNewToken(), (start, end) => {
+          List<FileName> localMatches = null;
+          var localSearchedFileCount = 0;
+          for (var i = start; i < end; i++) {
+            var item = fileNames[i];
+            if (!includeSymLinks && database.IsContainedInSymLink(item))
+              continue;
+            localSearchedFileCount++;
+            if (matcher(item)) {
+              (localMatches ??= new List<FileName>()).Add(item);
+            }
+          }
+
+          lock (gate) {
+            searchedFileCount += localSearchedFileCount;
+            if (localMatches != null) {
+              matches.AddRange(localMatches);
+            }
+            // Stop when enough matches have been found
+            return matches.Count < maxResults;
+          }
+        });
+
+        if (matches.Count > maxResults) {
+          matches.RemoveRange(Math.Max(0, maxResults), matches.Count - Math.Max(0, maxResults));
+        }
 
         return new SearchFilePathsResult {
           FileNames = matches,
@@ -172,49 +192,70 @@ namespace VsChromium.Server.Search {
       int maxResults,
       bool includeSymLinks,
       CancellationToken cancellationToken) {
+      // Note: The pieces are processed in parallel by batches (dynamic load balancing), each worker
+      // with its own list of results and counter of searched files: no allocation for pieces
+      // without match, no shared state per piece. The snapshot is read once, so that all the
+      // values below are consistent even if a new snapshot is activated during the search.
+      var database = _currentFileDatabase;
+      var pieces = database.FileContentsPieces;
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
-      var searchedFileIds = new PartitionedBitArray(
-        _currentFileDatabase.SearchableFileCount,
-        Environment.ProcessorCount * 2);
-      var matches = _currentFileDatabase.FileContentsPieces
-        .AsParallel()
-        .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-        .WithCancellation(cancellationToken)
-        .Where(x => !progressTracker.ShouldEndProcessing)
-        .Select(item => {
+      var fileNameFilter = compiledTextSearchData.FileNameFilter;
+      var results = new List<SearchableContentsResult>();
+      long searchedFileCount = 0;
+      var gate = new object();
+      var batchSize = Math.Max(16, pieces.Count / (Environment.ProcessorCount * 16));
+      ParallelBatches.For(pieces.Count, batchSize, cancellationToken, (start, end) => {
+        List<SearchableContentsResult> localResults = null;
+        long localSearchedFileCount = 0;
+        for (var i = start; i < end; i++) {
+          if (progressTracker.ShouldEndProcessing)
+            break;
+
+          var item = pieces[i];
           // Filter out files inside symlinks if needed
-          if (!includeSymLinks) {
-            if (_currentFileDatabase.IsContainedInSymLink(item.FileName))
-              return default(SearchableContentsResult);
-          }
+          if (!includeSymLinks && database.IsContainedInSymLink(item.FileName))
+            continue;
           // Filter out files that don't match the file name match pattern
-          if (!compiledTextSearchData.FileNameFilter(item.FileName)) {
-            return default(SearchableContentsResult);
+          if (!fileNameFilter(item.FileName))
+            continue;
+          // Count each file once (its first piece)
+          if (item.IsFirstPiece)
+            localSearchedFileCount++;
+
+          var ranges = item.FindAll(compiledTextSearchData, progressTracker);
+          if (ranges.Count == 0)
+            continue;
+
+          var spans = new List<FilePositionSpan>(ranges.Count);
+          for (var j = 0; j < ranges.Count; j++) {
+            spans.Add(new FilePositionSpan { Position = ranges[j].Position, Length = ranges[j].Length });
           }
-          searchedFileIds.Set(item.FileId, true);
-          return new SearchableContentsResult {
+          (localResults ??= new List<SearchableContentsResult>()).Add(new SearchableContentsResult {
             FileContentsPiece = item,
-            Spans = item
-              .FindAll(compiledTextSearchData, progressTracker)
-              .Select(x => new FilePositionSpan {
-                Position = x.Position,
-                Length = x.Length,
-              })
-              .ToList(),
-          };
-        })
-        .Where(r => r.Spans != null && r.Spans.Count > 0)
+            Spans = spans,
+          });
+        }
+
+        lock (gate) {
+          searchedFileCount += localSearchedFileCount;
+          if (localResults != null)
+            results.AddRange(localResults);
+        }
+        return !progressTracker.ShouldEndProcessing;
+      });
+
+      var matches = results
         .GroupBy(r => r.FileContentsPiece.FileId)
         .Select(g => new FileSearchResult {
           FileName = g.First().FileContentsPiece.FileName,
-          Spans = g.OrderBy(x => x.Spans.First().Position).SelectMany(x => x.Spans).ToList()
+          Spans = g.OrderBy(x => x.Spans[0].Position).SelectMany(x => x.Spans).ToList()
         })
         .ToList();
 
       return new SearchCodeResult {
         Entries = matches,
-        SearchedFileCount = searchedFileIds.Count,
-        TotalFileCount = _currentFileDatabase.SearchableFileCount,
+        SearchedFileCount = searchedFileCount,
+        TotalFileCount = database.SearchableFileCount,
         HitCount = progressTracker.ResultCount,
       };
     }
@@ -421,11 +462,11 @@ namespace VsChromium.Server.Search {
     }
 
     public class NonePathMatcher : IPathMatcher {
-      public bool MatchDirectoryName(RelativePath path, IPathComparer comparer) {
+      public bool MatchDirectoryName(ReadOnlySpan<char> path, IPathComparer comparer) {
         return false;
       }
 
-      public bool MatchFileName(RelativePath path, IPathComparer comparer) {
+      public bool MatchFileName(ReadOnlySpan<char> path, IPathComparer comparer) {
         return false;
       }
     }
@@ -437,28 +478,38 @@ namespace VsChromium.Server.Search {
         _searchContainer = searchContainer;
       }
 
-      public bool MatchDirectoryName(RelativePath path, IPathComparer comparer) {
+      public bool MatchDirectoryName(ReadOnlySpan<char> path, IPathComparer comparer) {
         return MatchRelativePath(path);
       }
 
-      public bool MatchFileName(RelativePath path, IPathComparer comparer) {
+      public bool MatchFileName(ReadOnlySpan<char> path, IPathComparer comparer) {
         return MatchRelativePath(path);
       }
 
-      private bool MatchRelativePath(RelativePath path) {
-        var value = path.Value;
-        if (Match(value))
+      private bool MatchRelativePath(ReadOnlySpan<char> path) {
+        if (Match(path))
           return true;
 
         if (Path.DirectorySeparatorChar == Path.AltDirectorySeparatorChar ||
-            value.IndexOf(Path.DirectorySeparatorChar) < 0)
+            path.IndexOf(Path.DirectorySeparatorChar) < 0)
           return false;
 
         // Replace '\' with '/' and try again
-        return Match(value.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        char[] rented = null;
+        Span<char> copy = path.Length <= 512
+          ? stackalloc char[path.Length]
+          : (rented = System.Buffers.ArrayPool<char>.Shared.Rent(path.Length)).AsSpan(0, path.Length);
+        try {
+          path.Replace(copy, Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+          return Match(copy);
+        }
+        finally {
+          if (rented != null)
+            System.Buffers.ArrayPool<char>.Shared.Return(rented);
+        }
       }
 
-      private unsafe bool Match(string value) {
+      private unsafe bool Match(ReadOnlySpan<char> value) {
         fixed (char* ptr = value) {
           var fragment = new TextFragment(new IntPtr(ptr), 0, value.Length, sizeof(char));
           var hit = _searchContainer.GetUtf16Search()
@@ -611,17 +662,20 @@ namespace VsChromium.Server.Search {
     private void ActivateCurrentDatabase(FileSystemSnapshot fileSystemSnapshot, IFileDatabaseSnapshot databaseSnapshot, bool complete) {
       Invariants.Assert(_inTaskQueueTask);
 
+      // Note: Done here (indexing thread) rather than lazily by the first search.
+      databaseSnapshot.PrecomputeSearchData();
       _currentFileDatabase = databaseSnapshot;
       _currentFileSystemSnapshotVersion = fileSystemSnapshot.Version;
       _previousUpdateCompleted = complete; // Success => we allow incremtal updates next time
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
-      return matcher.MatchFileName(new RelativePath(fileName.Name), comparer);
+      return matcher.MatchFileName(fileName.Name.AsSpan(), comparer);
     }
 
     private bool MatchFileRelativePath(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {
-      return matcher.MatchFileName(fileName.RelativePath, comparer);
+      // Note: The relative path is built in a temporary buffer (no allocation per file).
+      return fileName.TestRelativePath(static (path, state) => state.matcher.MatchFileName(path, state.comparer), (matcher, comparer));
     }
 
     private class UpdateFileDatabaseOptions {

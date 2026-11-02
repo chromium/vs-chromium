@@ -3,11 +3,17 @@
 // found in the LICENSE file.
 
 using System;
+using System.Buffers;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.FileSystemNames {
+  /// <summary>
+  /// Predicate on a relative path, see <see cref="FileName.TestRelativePath{TState}"/>.
+  /// </summary>
+  public delegate bool RelativePathPredicate<in TState>(ReadOnlySpan<char> relativePath, TState state);
+
   /// <summary>
   /// A value type representing a file name as a pair of parent <see cref="DirectoryName"/>
   /// and file name <see cref="String"/>.
@@ -59,6 +65,37 @@ namespace VsChromium.Server.FileSystemNames {
         return new RelativePath(_name);
       return new RelativePath(string.Concat(parentPath.Value, DirectorySeparatorString, _name));
     }
+
+    /// <summary>
+    /// Evaluates <paramref name="predicate"/> on the relative path of this file name, built in a
+    /// temporary buffer (no allocation, unlike <see cref="RelativePath"/>). For operations done on
+    /// all the files, e.g. pattern matching.
+    /// </summary>
+    public bool TestRelativePath<TState>(RelativePathPredicate<TState> predicate, TState state) {
+      Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
+
+      var parentPath = _parent.RelativePath.Value;
+      if (parentPath.Length == 0)
+        return predicate(_name.AsSpan(), state);
+
+      var length = parentPath.Length + 1 + _name.Length;
+      char[] rented = null;
+      Span<char> buffer = length <= MaxStackPathLength
+        ? stackalloc char[length]
+        : (rented = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
+      try {
+        parentPath.AsSpan().CopyTo(buffer);
+        buffer[parentPath.Length] = PathHelpers.DirectorySeparatorChar;
+        _name.AsSpan().CopyTo(buffer.Slice(parentPath.Length + 1));
+        return predicate(buffer, state);
+      }
+      finally {
+        if (rented != null)
+          ArrayPool<char>.Shared.Return(rented);
+      }
+    }
+
+    private const int MaxStackPathLength = 512;
 
     public override string ToString() {
       return $"{FullPath}, RelativePath={RelativePath}";

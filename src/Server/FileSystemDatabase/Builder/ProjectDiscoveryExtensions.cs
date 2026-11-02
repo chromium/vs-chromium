@@ -8,7 +8,8 @@ using VsChromium.Server.Projects;
 namespace VsChromium.Server.FileSystemDatabase.Builder {
   public static class ProjectDiscoveryExtensions {
     public static bool IsFileSearchable(this IProject project, FileName filename) {
-      return project.SearchableFilesFilter.Include(filename.RelativePath);
+      // Note: The relative path is built in a temporary buffer (no allocation per file).
+      return filename.TestRelativePath(static (path, filter) => filter.Include(path), project.SearchableFilesFilter);
     }
   }
 }

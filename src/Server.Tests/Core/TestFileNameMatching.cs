@@ -271,5 +271,15 @@ namespace VsChromium.Tests.Core {
       Assert.IsTrue(SystemPathComparer.Instance.Compare("foo", 0, "fo", 0, 3) != 0);
       Assert.IsTrue(SystemPathComparer.Instance.Compare("fo", 0, "foo", 0, 2) == 0);
     }
+
+    [TestMethod]
+    public void AsteriskTextMatchesWhenTextOccursSeveralTimes() {
+      // Behavior change 10 (see PORTING_PRINCIPLES.md): the native server version only checked the
+      // first occurrence of the text, so "*_unittest.cc" didn't match "a_unittest.cc_unittest.cc".
+      var matcher = PatternParser.ParsePattern("*_unittest.cc");
+      Assert.IsTrue(matcher.MatchFileName(new RelativePath("a_unittest.cc_unittest.cc"), SystemPathComparer.Instance));
+      Assert.IsTrue(matcher.MatchFileName(new RelativePath(Path.Combine("foo", "a_unittest.cc_unittest.cc")), SystemPathComparer.Instance));
+      Assert.IsFalse(matcher.MatchFileName(new RelativePath("a_unittest.cc_unittest.h"), SystemPathComparer.Instance));
+    }
   }
 }

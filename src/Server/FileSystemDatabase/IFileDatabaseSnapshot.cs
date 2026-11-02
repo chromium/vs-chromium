@@ -61,5 +61,13 @@ namespace VsChromium.Server.FileSystemDatabase {
     /// containted in a symlink directory.
     /// </summary>
     bool IsContainedInSymLink(DirectoryName name);
+
+    /// <summary>
+    /// Computes the data used by searches (lists of files and pieces, counts, ...), so that
+    /// the first search on this snapshot doesn't pay for it. Called on the indexing thread before
+    /// the snapshot is made available to searches.
+    /// </summary>
+    void PrecomputeSearchData() {
+    }
   }
 }

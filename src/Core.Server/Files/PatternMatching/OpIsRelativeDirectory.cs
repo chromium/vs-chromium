@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
+using System;
 using System.IO;
 
 namespace VsChromium.Core.Files.PatternMatching {
   public class OpIsRelativeDirectory : BaseOperator {
-    public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
+    public override int MatchWorker(MatchKind kind, IPathComparer comparer, BaseOperator[] operators, int operatorIndex, ReadOnlySpan<char> path, int pathIndex) {
       while (pathIndex < path.Length) {
         var result = Match(kind, comparer, operators, operatorIndex + 1, path, pathIndex);
         if (result >= 0)
           return result;
 
         // Look for next path separator in path
-        var nextPathIndex = path.IndexOf(Path.DirectorySeparatorChar, pathIndex, path.Length - pathIndex);
+        var nextPathIndex = FileNameMatching.IndexOfPathSeparator(path, pathIndex);
         if (nextPathIndex < 0)
           break;
         pathIndex = nextPathIndex + 1;

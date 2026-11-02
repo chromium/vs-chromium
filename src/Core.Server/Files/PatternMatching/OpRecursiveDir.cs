@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
+using System;
 using System.IO;
 
 namespace VsChromium.Core.Files.PatternMatching {
   public class OpRecursiveDir : BaseOperator {
-    public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
+    public override int MatchWorker(MatchKind kind, IPathComparer comparer, BaseOperator[] operators, int operatorIndex, ReadOnlySpan<char> path, int pathIndex) {
       // If we are the last operation, don't match
-      if (operatorIndex == operators.Count - 1)
+      if (operatorIndex == operators.Length - 1)
         return -1;
 
       // If we reach the end of the "path", or we are not on a path separator, don't match
@@ -24,7 +24,7 @@ namespace VsChromium.Core.Files.PatternMatching {
           return result;
 
         // Look for next path separator in path
-        var nextPathIndex = path.IndexOf(Path.DirectorySeparatorChar, pathIndex, path.Length - pathIndex);
+        var nextPathIndex = FileNameMatching.IndexOfPathSeparator(path, pathIndex);
         if (nextPathIndex < 0)
           break;
 

@@ -14,6 +14,8 @@ namespace VsChromium.Core.Files {
 
     public StringComparer StringComparer { get { return _pathComparer; } }
 
+    public StringComparison Comparison { get { return _pathComparer.Comparison; } }
+
     public int Compare(string value1, int startIndex1, string value2, int startIndex2, int length) {
       return _pathComparer.Compare(value1, startIndex1, value2, startIndex2, length);
     }

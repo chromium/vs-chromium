@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
+using System;
 
 namespace VsChromium.Core.Files.PatternMatching {
   public class OpIsNoMatch : BaseOperator, IPrePassWontMatch {
-    public bool PrePassWontMatch(MatchKind kind, string path, IPathComparer comparer) {
+    public bool PrePassWontMatch(MatchKind kind, ReadOnlySpan<char> path, IPathComparer comparer) {
       return true;
     }
 
-    public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
+    public override int MatchWorker(MatchKind kind, IPathComparer comparer, BaseOperator[] operators, int operatorIndex, ReadOnlySpan<char> path, int pathIndex) {
       return -1;
     }
 

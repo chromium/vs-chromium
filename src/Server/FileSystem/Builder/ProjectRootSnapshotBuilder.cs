@@ -210,7 +210,7 @@ namespace VsChromium.Server.FileSystem.Builder {
       }
 
       var fileNames = childFileNames
-        .Where(childFilename => _project.FileFilter.Include(childFilename.RelativePath))
+        .Where(childFilename => childFilename.TestRelativePath(static (path, filter) => filter.Include(path), _project.FileFilter))
         .OrderBy(x => x.Name)
         .ToReadOnlyList();
 

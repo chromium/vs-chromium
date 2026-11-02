@@ -255,8 +255,10 @@ namespace VsChromium.Core.Collections {
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
-      for (var i = 0; i < _count; i++) {
-        var entry = _entries[i];
+      // Note: Valid entries may be located after index "_count" after a "Remove" (free list).
+      var entries = _entries;
+      for (var i = 0; i < entries.Length; i++) {
+        var entry = entries[i];
         if (entry.IsValid) {
           yield return new KeyValuePair<TKey, TValue>(_getKey(entry.Value), entry.Value);
         }
@@ -345,7 +347,8 @@ namespace VsChromium.Core.Collections {
     }
 
     private int GrowSize(int oldLength) {
-      return Math.Min(oldLength + 1, _growthPolicy.Grow(oldLength));
+      // Note: At least one more entry, and at least what the growth policy says.
+      return Math.Max(oldLength + 1, _growthPolicy.Grow(oldLength));
     }
 
     private static int GetBucketIndex(int hashcode, int length) {

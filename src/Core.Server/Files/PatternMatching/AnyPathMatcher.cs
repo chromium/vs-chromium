@@ -15,17 +15,18 @@ namespace VsChromium.Core.Files.PatternMatching {
   /// </summary>
   public class AnyPathMatcher : IPathMatcher {
     private HashSet<string> _fileExtensions;
+    private HashSet<string>.AlternateLookup<ReadOnlySpan<char>> _fileExtensionsLookup;
     private IPathMatcher[] _pathMatchers;
 
     public AnyPathMatcher(IEnumerable<PathMatcher> pathMatchers) {
       Optimize(pathMatchers.ToArray());
     }
 
-    public bool MatchDirectoryName(RelativePath relativePath, IPathComparer comparer) {
+    public bool MatchDirectoryName(ReadOnlySpan<char> relativePath, IPathComparer comparer) {
       if (relativePath.IsEmpty)
         throw new ArgumentNullException("relativePath");
 
-      if (_fileExtensions.Contains(relativePath.Extension))
+      if (_fileExtensions.Count > 0 && _fileExtensionsLookup.Contains(GetExtension(relativePath)))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"
@@ -36,11 +37,11 @@ namespace VsChromium.Core.Files.PatternMatching {
       return false;
     }
 
-    public bool MatchFileName(RelativePath relativePath, IPathComparer comparer) {
+    public bool MatchFileName(ReadOnlySpan<char> relativePath, IPathComparer comparer) {
       if (relativePath.IsEmpty)
         throw new ArgumentNullException("relativePath");
 
-      if (_fileExtensions.Contains(relativePath.Extension))
+      if (_fileExtensions.Count > 0 && _fileExtensionsLookup.Contains(GetExtension(relativePath)))
         return true;
 
       // Note: Use "for" loop to avoid allocation if using "Any()"
@@ -51,9 +52,20 @@ namespace VsChromium.Core.Files.PatternMatching {
       return false;
     }
 
+    /// <summary>
+    /// The extension of <paramref name="path"/> including the dot (same as <see
+    /// cref="RelativePath.Extension"/>), or an empty span.
+    /// </summary>
+    private static ReadOnlySpan<char> GetExtension(ReadOnlySpan<char> path) {
+      var index = path.LastIndexOf('.');
+      return index < 0 ? ReadOnlySpan<char>.Empty : path.Slice(index);
+    }
+
     private void Optimize(IEnumerable<PathMatcher> matchers) {
       var pathMatchers = new List<IPathMatcher>();
-      var fileExtensions = new HashSet<string>(SystemPathComparer.Instance.StringComparer);
+      // Note: Same equality as SystemPathComparer, with a comparer supporting span lookups.
+      var fileExtensions = new HashSet<string>(
+        PathComparerRegistry.Default.Comparison == StringComparison.Ordinal ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
 
       foreach (var x in matchers) {
         string fileExtension;
@@ -66,6 +78,7 @@ namespace VsChromium.Core.Files.PatternMatching {
 
       _pathMatchers = pathMatchers.ToArray();
       _fileExtensions = fileExtensions;
+      _fileExtensionsLookup = fileExtensions.GetAlternateLookup<ReadOnlySpan<char>>();
     }
 
     private bool IsFileExtension(PathMatcher pathMatcher, out string ext) {

@@ -17,5 +17,14 @@ namespace VsChromium.Core.Files.PatternMatching {
     public static bool IsPathSeparator(char ch) {
       return ch == Path.DirectorySeparatorChar;
     }
+
+    /// <summary>
+    /// Returns the index of the first directory separator of <paramref name="path"/> at or after
+    /// <paramref name="startIndex"/>, or <code>-1</code>.
+    /// </summary>
+    public static int IndexOfPathSeparator(ReadOnlySpan<char> path, int startIndex) {
+      var index = path.Slice(startIndex).IndexOf(Path.DirectorySeparatorChar);
+      return index < 0 ? -1 : startIndex + index;
+    }
   }
 }

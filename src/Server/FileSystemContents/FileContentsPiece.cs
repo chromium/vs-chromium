@@ -43,6 +43,11 @@ namespace VsChromium.Server.FileSystemContents {
     public int FileId => _fileId;
 
     /// <summary>
+    /// True if this is the first piece of the file (each file has at least one piece).
+    /// </summary>
+    public bool IsFirstPiece => _textRange.Position == 0;
+
+    /// <summary>
     /// The number of bytes in this piece. This is used for debugging only (i.e.
     /// displaying # of bytes allocated).
     /// </summary>

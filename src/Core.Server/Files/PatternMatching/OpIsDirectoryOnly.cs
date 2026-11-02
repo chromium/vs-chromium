@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
+using System;
 
 namespace VsChromium.Core.Files.PatternMatching {
   public class OpIsDirectoryOnly : BaseOperator {
-    public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
+    public override int MatchWorker(MatchKind kind, IPathComparer comparer, BaseOperator[] operators, int operatorIndex, ReadOnlySpan<char> path, int pathIndex) {
       var result = Match(kind, comparer, operators, operatorIndex + 1, path, pathIndex);
       if (kind == MatchKind.File && result == path.Length)
         return -1;

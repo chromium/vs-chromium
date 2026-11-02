@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
+using System;
 using System.IO;
 
 namespace VsChromium.Core.Files.PatternMatching {
@@ -10,11 +10,11 @@ namespace VsChromium.Core.Files.PatternMatching {
   /// Matches any character except "/"
   /// </summary>
   public class OpAsterisk : BaseOperator {
-    public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
+    public override int MatchWorker(MatchKind kind, IPathComparer comparer, BaseOperator[] operators, int operatorIndex, ReadOnlySpan<char> path, int pathIndex) {
       // Heuristic: If last operator, there is a full match (since "*" at the
       // end matches everything)
-      if (operatorIndex == operators.Count - 1) {
-        if (path.IndexOf(Path.DirectorySeparatorChar, pathIndex) < 0)
+      if (operatorIndex == operators.Length - 1) {
+        if (path.Slice(pathIndex).IndexOf(Path.DirectorySeparatorChar) < 0)
           return path.Length;
         return -1;
       }
@@ -25,11 +25,13 @@ namespace VsChromium.Core.Files.PatternMatching {
       // * if the only operator after us is "OpText"
       // * then we only need to check that path end with the text.
       if (kind == MatchKind.File) {
-        if (path.IndexOf(Path.DirectorySeparatorChar, pathIndex) < 0) {
-          if (operatorIndex + 1 == operators.Count - 1) {
+        if (path.Slice(pathIndex).IndexOf(Path.DirectorySeparatorChar) < 0) {
+          if (operatorIndex + 1 == operators.Length - 1) {
             var opText = operators[operatorIndex + 1] as OpText;
             if (opText != null) {
-              if (comparer.EndsWith(path, opText.Text)) {
+              // Note: The native server version checked that the *first* occurrence of the text
+              // was at the end of the path (see "Behavior changes" in PORTING_PRINCIPLES.md).
+              if (path.EndsWith(opText.Text.AsSpan(), comparer.Comparison)) {
                 var remaining = path.Length - pathIndex;
                 if (remaining >= opText.Text.Length)
                   return path.Length;

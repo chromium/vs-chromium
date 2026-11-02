@@ -259,6 +259,12 @@ milestone 4; **all are fixed since milestone 4** (managed search):
    so the server now indexes them (`PortableFileSystem`, `PathHelpers.IsPathTooLong` is always false
    on the server). Fixed after milestone 7 groundwork, regression test `LongPath_FileIsIndexed`. Note:
    the clients may still be unable to open such files (e.g. older Visual Studio versions).
+10. **Patterns "*text" didn't match names where "text" occurs more than once** (e.g. "*_unittest.cc"
+   didn't match "a_unittest.cc_unittest.cc"): an optimization of "*" followed by a text checked that
+   the *first* occurrence of the text was at the end of the name. Fixed with the span based pattern
+   matching (`OpAsterisk`), regression test
+   `TestFileNameMatching.AsteriskTextMatchesWhenTextOccursSeveralTimes`.
+
 ## Reusing mtsuite
 
 - **Decided: copy the code** of mtsuite `src/core-filesystem` (no dependencies) and the traversal
@@ -490,3 +496,44 @@ of its resource usage, measured inside the process:
    - To do: run the workflow (or test on Linux/macOS machines) and fix what fails (server unit tests
      using Windows paths, configuration files, path separators in the protocol...), Linux/macOS
      benchmarks.
+
+## Performance work (after the port)
+
+Based on a review of the server code (hot paths, data structures, algorithms), changes are made
+one at a time with benchmarks (large corpus, published server), recorded here.
+
+### Search hot paths (m9, `docs/portable-server/benchmarks/m9-search-hot-paths`)
+
+- **Span based pattern matching** (`src/Core.Server/Files/PatternMatching`): the operators and
+  `IPathMatcher` match a `ReadOnlySpan<char>`; `FileName.TestRelativePath` builds the relative path
+  of a file in a stack buffer (pooled array for long paths), so matching a path pattern, the project
+  filters during the scan and the searchable files filter allocate nothing per file (they allocated
+  one or two strings per file per query). The extension lookup of `AnyPathMatcher` uses a span
+  `HashSet` alternate lookup (no substring). Behavior change 10 fixed on the way.
+- **File path search**: per-batch counters and match lists instead of a contended
+  `Interlocked.Increment` per file, early stop at "max results".
+- **Code search**: no allocation for pieces without match (was `FindAll().Select().ToList()` per
+  piece, ~35 MB of garbage per query), searched files counted per batch on their first piece
+  instead of a locked bit array updated per piece, snapshot read once per query (it could change
+  during a query).
+- **`ParallelBatches`** (`src/Core.Server/Threads`): both searches process their items by batches
+  handed out with an atomic cursor (dynamic load balancing, all workers start immediately, batches
+  spread over the whole range so that searches stopping at max results see all of it).
+- **Symbolic links**: the directories contained in symbolic links are computed once per snapshot;
+  with no symbolic link (the common case) the per-file check is a single test (it was a walk up the
+  parent chain with a hash lookup per parent, for each file of each query).
+- **Search data precomputed** (`IFileDatabaseSnapshot.PrecomputeSearchData`): the file list,
+  pieces and counts of a new snapshot are computed on the indexing thread before clients are
+  notified, instead of by the first search (the managed heap after indexing is ~20 MB larger as a
+  result: these arrays used to be created by the first query). After a file is modified, the file
+  list of the previous snapshot is reused.
+- **`SlimHashTable`**: growth used the smallest of the growth policy and "+1" (so ~1.2x steps, and
+  quadratic above the largest tabulated prime): it now uses the largest; enumeration no longer
+  skips entries located after a removal.
+
+Results (large corpus, vs m8): full scan code searches 10-20% faster (e.g. "no match" 107 → 93
+ms, "common marker" 153 → 122 ms), file path searches scanning all the files 90-95% faster (e.g.
+`zzz/*.cc` 23 → 1.7 ms, `*.zzz` 32 → 1.6 ms), other path searches 30-50% faster; cold indexing unchanged. Searches stopping at max results
+(10,000 hits) take 2-4 ms more: they return a different subset of the hits (which hits are
+returned when the limit is reached is arbitrary), spread over more files, so the responses are ~40%
+larger (320 KB → 450 KB), and their time is dominated by the response.

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 
@@ -13,7 +14,7 @@ namespace VsChromium.Server.Projects {
       _ignoreMatcherProvider = new FilePatternsPathMatcherProvider(contents);
     }
 
-    public bool Include(RelativePath relativePath) {
+    public bool Include(ReadOnlySpan<char> relativePath) {
       var ignore = _ignoreMatcherProvider.AnyPathMatcher.MatchFileName(relativePath, SystemPathComparer.Instance);
       return !ignore;
     }

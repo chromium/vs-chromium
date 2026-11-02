@@ -2,10 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
   public interface IDirectoryFilter {
-    bool Include(RelativePath relativePath);
+    bool Include(ReadOnlySpan<char> relativePath);
+
+    bool Include(RelativePath relativePath) => Include(relativePath.Value.AsSpan());
   }
 }

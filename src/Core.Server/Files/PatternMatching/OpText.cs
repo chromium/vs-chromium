@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.Collections.Generic;
+using System;
 
 namespace VsChromium.Core.Files.PatternMatching {
   public class OpText : BaseOperator, IPrePassWontMatch {
@@ -14,18 +14,17 @@ namespace VsChromium.Core.Files.PatternMatching {
 
     public string Text { get { return _text; } }
 
-    public bool PrePassWontMatch(MatchKind kind, string path, IPathComparer comparer) {
-      return comparer.IndexOf(path, _text, 0, path.Length) < 0;
+    public bool PrePassWontMatch(MatchKind kind, ReadOnlySpan<char> path, IPathComparer comparer) {
+      return path.IndexOf(_text.AsSpan(), comparer.Comparison) < 0;
     }
 
     public override string ToString() {
       return _text;
     }
 
-    public override int MatchWorker(MatchKind kind, IPathComparer comparer, IList<BaseOperator> operators, int operatorIndex, string path, int pathIndex) {
+    public override int MatchWorker(MatchKind kind, IPathComparer comparer, BaseOperator[] operators, int operatorIndex, ReadOnlySpan<char> path, int pathIndex) {
       var len = _text.Length;
-
-      if (comparer.Compare(_text, 0, path, pathIndex, len) != 0)
+      if (path.Length - pathIndex < len || !path.Slice(pathIndex, len).Equals(_text.AsSpan(), comparer.Comparison))
         return -1;
 
       return Match(kind, comparer, operators, operatorIndex + 1, path, pathIndex + len);

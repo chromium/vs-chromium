@@ -90,6 +90,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           LoadFileContents(entities, loadingContext, cancellationToken);
 
           var result = CreateFileDatabase(entities, true, cancellationToken);
+          // Note: Before "onLoaded", as clients may search as soon as they are notified.
+          result.PrecomputeSearchData();
           onLoaded();
           return result;
         }
@@ -124,13 +126,18 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           var newContents = _fileContentsFactory.ReadFileContents(x.FileName.FullPath);
           DangerousUpdateFileTableEntry(previousFileDatabase, x.FileName, newContents);
         });
-        onLoaded();
 
         // Return new file database with updated file contents.
-        return new FileDatabaseSnapshot(
+        var result = new FileDatabaseSnapshot(
           previousFileDatabase.ProjectHashes,
           previousFileDatabase.Directories,
-          previousFileDatabase.Files);
+          previousFileDatabase.Files,
+          // Same files (keys), only contents changed
+          previousFileDatabase.FileNames);
+        // Note: Before "onLoaded", as clients may search as soon as they are notified.
+        result.PrecomputeSearchData();
+        onLoaded();
+        return result;
       }
     }
 

@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
+
 namespace VsChromium.Core.Files.PatternMatching {
   public interface IPrePassWontMatch {
     /// <summary>
     /// Returns "true" if this operator can globally say that "path" can't match the operator.
     /// </summary>
-    bool PrePassWontMatch(MatchKind kind, string path, IPathComparer comparer);
+    bool PrePassWontMatch(MatchKind kind, ReadOnlySpan<char> path, IPathComparer comparer);
   }
 }

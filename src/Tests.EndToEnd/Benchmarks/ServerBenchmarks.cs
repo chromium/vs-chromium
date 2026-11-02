@@ -85,14 +85,15 @@ public class ServerBenchmarks {
     long Hits(string marker) => corpus.Marker(marker).HitCount;
     var unique0 = CodeBaseGenerator.UniqueMarkerPrefix + "00";
 
-    // Code search: planted markers (exact expected counts).
-    yield return new("unique marker", "code", ServerProtocol.SearchCode(unique0, matchCase: true), Hits(unique0));
-    yield return new("rare marker", "code", ServerProtocol.SearchCode(CodeBaseGenerator.RareMarker, matchCase: true), Hits(CodeBaseGenerator.RareMarker));
-    yield return new("common marker", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, matchCase: true), Hits(CodeBaseGenerator.CommonMarker));
-    yield return new("common marker, ignore case", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker.ToLowerInvariant()), Hits(CodeBaseGenerator.CommonMarker));
-    yield return new("common marker, whole word", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, matchCase: true, matchWholeWord: true), Hits(CodeBaseGenerator.CommonMarker));
-    yield return new("large file marker", "code", ServerProtocol.SearchCode(CodeBaseGenerator.LargeFileMarker, matchCase: true), Hits(CodeBaseGenerator.LargeFileMarker));
-    yield return new("regex on unique markers", "code", ServerProtocol.SearchCode(CodeBaseGenerator.UniqueMarkerPrefix + "0[0-4]", matchCase: true, regex: true), 5);
+    // Code search: planted markers (exact expected counts, so no max results limit).
+    const int noLimit = 10_000_000;
+    yield return new("unique marker", "code", ServerProtocol.SearchCode(unique0, maxResults: noLimit, matchCase: true), Hits(unique0));
+    yield return new("rare marker", "code", ServerProtocol.SearchCode(CodeBaseGenerator.RareMarker, maxResults: noLimit, matchCase: true), Hits(CodeBaseGenerator.RareMarker));
+    yield return new("common marker", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, maxResults: noLimit, matchCase: true), Hits(CodeBaseGenerator.CommonMarker));
+    yield return new("common marker, ignore case", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker.ToLowerInvariant(), maxResults: noLimit), Hits(CodeBaseGenerator.CommonMarker));
+    yield return new("common marker, whole word", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, maxResults: noLimit, matchCase: true, matchWholeWord: true), Hits(CodeBaseGenerator.CommonMarker));
+    yield return new("large file marker", "code", ServerProtocol.SearchCode(CodeBaseGenerator.LargeFileMarker, maxResults: noLimit, matchCase: true), Hits(CodeBaseGenerator.LargeFileMarker));
+    yield return new("regex on unique markers", "code", ServerProtocol.SearchCode(CodeBaseGenerator.UniqueMarkerPrefix + "0[0-4]", maxResults: noLimit, matchCase: true, regex: true), 5);
     yield return new("common marker in *.py", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, matchCase: true, filePathPattern: "*.py"), null);
 
     // Code search: real-world-like queries (timing only).
@@ -134,7 +135,7 @@ public class ServerBenchmarks {
   }
 
   private async Task<QueryResult> RunExtractsAsync(StdioServerClient server, ProcessSampler sampler, int runs) {
-    var search = await server.RequestAsync(ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, matchCase: true));
+    var search = await server.RequestAsync(ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, maxResults: 10_000_000, matchCase: true));
     var files = ServerProtocol.FlattenResults(search.Data["searchResults"]?.AsObject()).Take(200).ToList();
     var before = await GetStatisticsAsync(server, forceGc: false);
     var cpuBefore = sampler.TakeSample();

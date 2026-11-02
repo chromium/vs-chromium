@@ -5,7 +5,7 @@ server (`VsChromium.Server.exe`) from .NET Framework 4.7.2 + custom C/C++ (Win32
 portable modern .NET application (Windows, Linux, macOS). It is meant to be read before working on
 the `portable-server` branch, including in a future conversation with no other context.
 
-Status: **planning** (branch `portable-server`, created from `main` at `30d7bb9`).
+Status: **milestone 1** (benchmarks + baseline) in progress on branch `portable-server` (created from `main` at `30d7bb9`).
 
 ## Goals
 
@@ -76,8 +76,8 @@ Status: **planning** (branch `portable-server`, created from `main` at `30d7bb9`
 | `VsChromium.Core` (existing, slimmed) | `net472` | VS package, Host, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
 | `VsChromium.Server` (ported) | modern .NET | server process | All server code + managed replacements for the native code + portable file system |
 | `MtSuite.CoreFileSystem` (copied from mtsuite) | modern .NET | server | Paths, entries, per-OS enumeration, object pools, parallel traversal |
-| `VsChromium.Server.Tests` (new) | modern .NET | – | Server unit tests + end-to-end tests over stdio |
-| `VsChromium.Benchmarks` (new) | modern .NET | – | Black-box benchmark runner (see below) |
+| `VsChromium.Server.Tests` (new) | modern .NET | – | Server unit tests (white box) |
+| `VsChromium.Tests.EndToEnd` (`src/Tests.EndToEnd`, exists) | `net10.0` | – | Black-box tests over stdio: regression tests of the behavior changes + benchmarks (see below and its `README.md`) |
 | `Tests` (existing) | `net472` | – | VS-side tests only |
 
 Code shared by the VS package and the server today (paths, pattern matching, configuration,
@@ -204,7 +204,7 @@ the current server (all four are to be fixed):
 
 ## Benchmarks
 
-Benchmarks are **tests** (a dedicated test project, `src/Benchmarks`, run on demand, not in the
+Benchmarks are **tests** (in `src/Tests.EndToEnd`, test category `Benchmark`, run on demand, not in the
 regular test pass) that **generate a real-world-like large code base on disk, then drive the server
 executable** over its stdio JSON protocol, exactly as the clients do. The same benchmarks run against
 any server executable (the current one on `main` for the baseline, the ported one afterwards), given

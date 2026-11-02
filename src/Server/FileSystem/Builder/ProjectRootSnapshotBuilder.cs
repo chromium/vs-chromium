@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -70,63 +69,17 @@ namespace VsChromium.Server.FileSystem.Builder {
     private DirectorySnapshot CreateDirectorySnapshot(DirectoryName directory, bool isSymLink) {
       _cancellationToken.ThrowIfCancellationRequested();
 
-      var directoriesWithFiles = TraverseFileSystem(directory, isSymLink).ToList();
-
-      // We sort entries by directory name *descending* to make sure we process
-      // directories bottom up, so that we know
-      // 1) it is safe to skip DirectoryEntry instances where "Entries.Count" == 0,
-      // 2) we create instances of child directories before their parent.
-      _progress.DisplayProgress((i, n) => $"Sorting files of directory {directory.FullPath}");
-      directoriesWithFiles.Sort((x, y) => -x.DirectoryData.DirectoryName.CompareTo(y.DirectoryData.DirectoryName));
-
-      // Build map from parent directory -> list of child directories
-      var directoriesToChildDirectories = new Dictionary<DirectoryName, List<DirectoryName>>();
-      directoriesWithFiles.ForAll(x => {
-        _cancellationToken.ThrowIfCancellationRequested();
-        var directoryName = x.DirectoryData.DirectoryName;
-
-        // Ignore root project directory name
-        if (directoryName.IsAbsoluteName)
-          return;
-
-        GetOrCreateList(directoriesToChildDirectories, directoryName.Parent)
-          .Add(directoryName);
-      });
-
-      // Build directory snapshots for each directory entry, using an
-      // intermediate map to enable connecting snapshots to their parent.
-      var directoriesToSnapshot = new Dictionary<DirectoryName, DirectorySnapshot>();
-      var directorySnapshots = directoriesWithFiles.Select(entry => {
-        _cancellationToken.ThrowIfCancellationRequested();
-        if (_progress.Step()) {
-          _progress.DisplayProgress((i, n) => $"Processing files and directories of directory {_project.RootPath.Value}");
-        }
-
-        var directoryData = entry.DirectoryData;
-        var childFileNames = entry.FileNames;
-
-        var childDirectories = GetOrEmptyList(directoriesToChildDirectories, directoryData.DirectoryName)
-          .Select(x => directoriesToSnapshot[x])
-          .OrderBy(x => x.DirectoryName.Name)
-          .ToReadOnlyList();
-
-        // TODO(rpaquay): Not clear the lines below are a perf win, even though
-        // they do not hurt correctness.
-        // Remove children since we processed them
-        //GetOrEmptyList(directoriesToChildDirectories, directoryName)
-        //  .ForAll(x => directoriesToSnapshot.Remove(x));
-
-        var result = new DirectorySnapshot(directoryData, childDirectories, childFileNames);
-        directoriesToSnapshot.Add(directoryData.DirectoryName, result);
+      using (new TimeElapsedLogger($"Traversing directory \"{directory.FullPath}\" to collect directory/file names", _cancellationToken, InfoLogger.Instance)) {
+        // The snapshot tree is built bottom up during the traversal: each
+        // directory task waits for its child directory tasks, then creates its
+        // own snapshot (same design as mtsuite "IDirectorCollector<T>").
+        var task = TraverseDirectoryAsync(new DirectoryData(directory, isSymLink), _cancellationToken);
+        task.Wait(_cancellationToken);
+        var result = task.Result;
+        Invariants.Assert(result != null);
+        Invariants.Assert(result.DirectoryName.Equals(directory));
         return result;
-      })
-        .ToList();
-
-      // Since we sort directories by name descending, the last entry is always the
-      // entry correcsponding to the project root.
-      Invariants.Assert(directorySnapshots.Count >= 1);
-      Invariants.Assert(directorySnapshots.Last().DirectoryName.Equals(directory));
-      return directorySnapshots.Last();
+      }
     }
 
     private DirectorySnapshot ApplyDirectorySnapshotDelta(DirectorySnapshot oldDirectory) {
@@ -217,76 +170,62 @@ namespace VsChromium.Server.FileSystem.Builder {
         newFileList.ToReadOnlyList());
     }
 
-    private static List<TValue> GetOrCreateList<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {
-      List<TValue> children;
-      if (dictionary.TryGetValue(key, out children))
-        return children;
-
-      children = new List<TValue>();
-      dictionary[key] = children;
-      return children;
-    }
-
-    private static IEnumerable<TValue> GetOrEmptyList<TKey, TValue>(IDictionary<TKey, List<TValue>> dictionary, TKey key) {
-      List<TValue> children;
-      if (dictionary.TryGetValue(key, out children))
-        return children;
-
-      return Enumerable.Empty<TValue>();
-    }
-
     /// <summary>
-    /// Enumerate directories and files under the project path of |projet|.
+    /// Returns a task that enumerates the files and directories of
+    /// <paramref name="directory"/> (recursively) and returns the corresponding
+    /// snapshot, or <code>null</code> if the directory is excluded by the
+    /// project directory filter.
     /// </summary>
-    private IEnumerable<DirectoryWithFiles> TraverseFileSystem(DirectoryName directoryName, bool isSymLink) {
-      using (new TimeElapsedLogger($"Traversing directory \"{directoryName.FullPath}\" to collect directory/file names", _cancellationToken, InfoLogger.Instance)) {
-        var directory = new DirectoryData(directoryName, isSymLink);
-        var bag = new ConcurrentBag<DirectoryWithFiles>();
-        var task = TraverseDirectoryAsync(directory, bag, _cancellationToken);
-        task.Wait(_cancellationToken);
-        return bag;
+    private Task<DirectorySnapshot> TraverseDirectoryAsync(DirectoryData directory, CancellationToken token) {
+      return Task.Run(() => ProcessDirectoryAsync(directory, token), token);
+    }
+
+    private async Task<DirectorySnapshot> ProcessDirectoryAsync(DirectoryData directory, CancellationToken token) {
+      if (!directory.DirectoryName.IsAbsoluteName &&
+          !_project.DirectoryFilter.Include(directory.DirectoryName.RelativePath)) {
+        return null;
       }
-    }
 
-    private Task TraverseDirectoryAsync(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, CancellationToken token) {
-      var directoryTask = Task.Run(() => ProcessDirectory(directory, bag, token), token);
-      return directoryTask.ContinueWithTask(t => Task.WhenAll(t.Result), token);
-    }
+      if (_progress.Step()) {
+        _progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}",
+          _project.RootPath.Value,
+          directory.DirectoryName.RelativePath.Value));
+      }
 
-    private List<Task> ProcessDirectory(DirectoryData directory, ConcurrentBag<DirectoryWithFiles> bag, CancellationToken token) {
-      var allTasks = new List<Task>();
-      if (directory.DirectoryName.IsAbsoluteName ||
-          _project.DirectoryFilter.Include(directory.DirectoryName.RelativePath)) {
-        if (_progress.Step()) {
-          _progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}",
-            _project.RootPath.Value,
-            directory.DirectoryName.RelativePath.Value));
+      List<Task<DirectorySnapshot>> childTasks = null;
+      var childEntries = GetDirectoryEntries(directory);
+      var childFileNames = new List<FileName>();
+      // Note: Use "for" loop to avoid memory allocations.
+      for (var i = 0; i < childEntries.Count; i++) {
+        var entry = childEntries[i];
+        if (entry.IsDirectory) {
+          var subDirName = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name);
+          var subDir = new DirectoryData(subDirName, entry.IsSymLink);
+          if (childTasks == null)
+            childTasks = new List<Task<DirectorySnapshot>>();
+          childTasks.Add(TraverseDirectoryAsync(subDir, token));
+        } else if (entry.IsFile) {
+          childFileNames.Add(_fileSystemNameFactory.CreateFileName(directory.DirectoryName, entry.Name));
         }
+      }
 
-        var childEntries = GetDirectoryEntries(directory);
-        var childFileNames = new List<FileName>();
-        // Note: Use "for" loop to avoid memory allocations.
-        for (var i = 0; i < childEntries.Count; i++) {
-          var entry = childEntries[i];
-          if (entry.IsDirectory) {
-            var subDirName = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name);
-            var subDir = new DirectoryData(subDirName, entry.IsSymLink);
-            var subDirTask = TraverseDirectoryAsync(subDir, bag, token);
-            allTasks.Add(subDirTask);
-          } else if (entry.IsFile) {
-            childFileNames.Add(_fileSystemNameFactory.CreateFileName(directory.DirectoryName, entry.Name));
-          }
-        }
+      var fileNames = childFileNames
+        .Where(childFilename => _project.FileFilter.Include(childFilename.RelativePath))
+        .OrderBy(x => x.Name)
+        .ToReadOnlyList();
 
-        var fileNames = childFileNames
-          .Where(childFilename => _project.FileFilter.Include(childFilename.RelativePath))
-          .OrderBy(x => x.Name)
+      IList<DirectorySnapshot> childDirectories;
+      if (childTasks == null) {
+        childDirectories = ArrayUtilities.EmptyList<DirectorySnapshot>.Instance;
+      } else {
+        var childSnapshots = await Task.WhenAll(childTasks).ConfigureAwait(false);
+        childDirectories = childSnapshots
+          .Where(x => x != null)
+          .OrderBy(x => x.DirectoryName.Name)
           .ToReadOnlyList();
-
-        bag.Add(new DirectoryWithFiles(directory, fileNames));
       }
 
-      return allTasks;
+      return new DirectorySnapshot(directory, childDirectories, fileNames);
     }
 
     private IList<DirectoryEntry> GetDirectoryEntries(DirectoryData directory) {
@@ -302,19 +241,6 @@ namespace VsChromium.Server.FileSystem.Builder {
         Logger.LogWarn(e, "Skipping directory \"{0}\"", path);
         return ArrayUtilities.EmptyList<DirectoryEntry>.Instance;
       }
-    }
-
-    private struct DirectoryWithFiles {
-      private readonly DirectoryData _directory;
-      private readonly IList<FileName> _fileNames;
-
-      public DirectoryWithFiles(DirectoryData directory, IList<FileName> fileNames) {
-        _directory = directory;
-        _fileNames = fileNames;
-      }
-
-      public DirectoryData DirectoryData => _directory;
-      public IList<FileName> FileNames => _fileNames;
     }
   }
 }

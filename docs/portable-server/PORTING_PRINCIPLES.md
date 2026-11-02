@@ -136,9 +136,10 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 - **Directory enumeration**: mtsuite `IFileSystem` / `FileSystemPortable` (BCL
   `FileSystemEnumerator` on Windows, `getdents64` + `statx` on Linux, `getattrlistbulk` on macOS),
   replacing `NtQueryDirectoryFile` (`Core/Win32/Files/NativeFile.cs`).
-- **Parallel scanning**: mtsuite `ParallelFileSystem.TraverseDirectoryAsync` + `IDirectorCollector`,
-  extended with `CancellationToken` and a **scoped** concurrency limit (no process-wide
-  `ThreadPool.SetMin/MaxThreads`, see mtsuite `docs/ParallelFileSystem_Recommendations.md`).
+- **Parallel scanning**: the server keeps its own parallel traversal (one task per directory, as
+  mtsuite `ParallelFileSystem.TraverseDirectoryAsync`), and builds the snapshot tree during the
+  traversal like mtsuite `IDirectorCollector<T>`. Copying the mtsuite code was measured as bringing
+  no gain (milestone 5b).
 - **File reading**: `File.OpenHandle` + `RandomAccess.Read` with `FileShare.ReadWrite | Delete`
   (files are being edited/built while indexed). Done in milestone 5a (`PortableFileSystem`, which
   also enumerates directories with the BCL `FileSystemEnumerable`, as mtsuite does on Windows).
@@ -244,7 +245,10 @@ milestone 4; **all are fixed since milestone 4** (managed search):
   needed** for the server (projects, namespaces, file layout, API shape); the mtsuite layout does not
   have to be preserved. The original file headers and the Apache 2.0 `LICENSE` are kept.
   Alternatives considered: git submodule (couples the two repositories' build layouts), NuGet package
-  (requires publishing mtsuite libraries first).
+  (requires publishing mtsuite libraries first). **Outcome** (milestone 5b, after measuring): only
+  `PathHelpers` was copied; `FullPath`, `IFileSystem`/`FileSystemPortable` and `ParallelFileSystem`
+  bring no measurable gain on Windows (the server already uses the BCL enumeration and the same
+  traversal design), see `PORT_CHANGES.md` "Not copied (yet)".
 - **`third_party/mtsuite/PORT_CHANGES.md`** records the mtsuite commit the code was copied from
   (`c9123d8`, v0.10.0) and **every change made for this port** (re-organization, API changes, bug
   fixes, new features such as cancellation or scoped concurrency), each with its motivation, written
@@ -392,7 +396,22 @@ of its resource usage, measured inside the process:
      85 MB (all names, snapshots and the search index included) vs 7.2 GB of file contents, and the
      file system tree already uses interned names with parent chains (`FileSystemNameFactory`), so the
      gain would be at most ~1% of the memory, for a broad refactor. Not done either, the mtsuite Linux and
-     macOS directory enumerators (to be decided with benchmarks on these platforms).6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
+     macOS directory enumerators (to be decided with benchmarks on these platforms).
+     **Parallel traversal: mtsuite design adopted, code not copied.** mtsuite
+     `ParallelFileSystem.TraverseDirectoryAsync` (one `Task.Run` per directory, BCL enumeration on
+     Windows) was measured against the server traversal pattern with a standalone harness on the
+     large corpus (40,001 directories, 400,002 files, warm cache, 24 cores, median of 5): **397 ms vs
+     419 ms**, same CPU time (~8.5 s, mostly kernel) and same allocations (~92-96 MB). Both are bound by
+     the directory enumeration itself, so copying `ParallelFileSystem` (and the `IFileSystem`,
+     `FileSystemEntry`, `FullPath`, object pools it depends on) brings nothing, and `FullPath` is not
+     needed for performance either. The one design difference that mattered is that mtsuite builds
+     the result tree during the traversal (`IDirectorCollector<T>.OnDirectoryTraversed`), whereas
+     the server collected all directories in a bag, then sorted them and rebuilt the tree with
+     dictionaries (~130-165 ms on the large corpus). `ProjectRootSnapshotBuilder` now builds each
+     `DirectorySnapshot` in its directory task once its child tasks complete: `FileSystemScan`
+     805 ms → 640-715 ms (large corpus); cold indexing is unchanged (~8.1 s, dominated by loading the
+     file contents; `docs/portable-server/benchmarks/m5d-snapshot-tree-in-traversal`). Same snapshots (same sort orders and filters), all suites unchanged.
+6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
    (`ServerProcessLauncher`) and exchanges JSON lines over its standard input/output, exactly as the
    VS Code extension does. The JSON serialization (`IpcJsonSerializer`, `IpcStreamOverJsonLines`)
    moved to a separate `Core.Ipc.Json` project (Newtonsoft.Json; the VS package uses the copy of

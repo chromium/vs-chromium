@@ -51,5 +51,9 @@ None yet. Each entry: date, files, description, motivation, backport status.
   (`PortableFileSystem`), as mtsuite does on Windows; the OS-specific enumerators are to be copied
   when the server is benchmarked on Linux/macOS (principle 6: OS-specific code only with benchmark
   evidence).
-- `ParallelFileSystem` (parallel traversal): the server has its own parallel scanning.
+- `ParallelFileSystem` (parallel traversal): measured against the server's own parallel scanning on
+  a 400k files corpus (Windows, BCL enumeration in both): same wall time (~400 ms), CPU and
+  allocations. Only its design of building the result tree during the traversal
+  (`IDirectorCollector<T>`) was adopted, in `ProjectRootSnapshotBuilder` (see PORTING_PRINCIPLES.md
+  milestone 5b).
 

@@ -4,9 +4,12 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.VisualStudio.Threading;
 using VsChromium.Package;
 using VsChromium.Settings;
 using VsChromium.Threads;
@@ -15,6 +18,8 @@ using VsChromium.ToolsOptions;
 namespace VsChromium.Tests.VsChromium.ToolsOptions {
   [TestClass]
   public class TestGlobalSettings {
+    private const BindingFlags DeclaredPublicProperties = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
+
     [TestMethod]
     public void GlobalSettingsCopyToToolsOptionsWorks() {
       var provider = new GlobalSettingsProvider(
@@ -26,6 +31,16 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
 
       // Force writing settings to tools|options page.
       provider.GlobalSettings.EnableSourceExplorerHierarchy = !x;
+      Assert.AreEqual(!x, provider.GlobalSettings.EnableSourceExplorerHierarchy);
+    }
+
+    [TestMethod]
+    public void ToolsOptionsPagesPropertiesMapToGlobalSettings() {
+      // GlobalSettingsProvider copies the declared public properties of the Tools|Options pages
+      // to/from GlobalSettings (with a "CodingStyle" prefix for CodingStyleOptions), and throws
+      // at runtime if a page property has no matching GlobalSettings property.
+      AssertPropertiesMapToGlobalSettings(typeof(GeneralOptions), "");
+      AssertPropertiesMapToGlobalSettings(typeof(CodingStyleOptions), "CodingStyle");
     }
 
     [TestMethod]
@@ -37,20 +52,44 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
       Assert.AreEqual("VsChromium.ToolsOptions.DebuggingOptions", typeof(DebuggingOptions).FullName);
     }
 
-    private class CodingStyleOptionsMock : CodingStyleOptions {
-      [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "VSSDK005:Avoid instantiating JoinableTaskContext", Justification = "Necessary for tests.")]
-      public CodingStyleOptionsMock() : base(new JoinableTaskContext()) {
+    private static void AssertPropertiesMapToGlobalSettings(Type pageType, string prefix) {
+      var pageProperties = pageType.GetProperties(DeclaredPublicProperties);
+      Assert.IsTrue(pageProperties.Length > 0, "{0} should declare public properties", pageType.Name);
+      foreach (var pageProperty in pageProperties) {
+        var name = prefix + pageProperty.Name;
+        var settingsProperty = typeof(GlobalSettings).GetProperty(name, DeclaredPublicProperties);
+        Assert.IsNotNull(settingsProperty, "GlobalSettings should have a property named \"{0}\"", name);
+        Assert.AreEqual(pageProperty.PropertyType, settingsProperty.PropertyType, "Type of property \"{0}\"", name);
       }
+    }
 
+    /// <summary>
+    /// Creates an instance of a Tools|Options page type without running any constructor. The
+    /// <see cref="DialogPage"/> constructors depend on Visual Studio internal assemblies that are
+    /// only available when running inside Visual Studio (e.g. Microsoft.Internal.VisualStudio.Interop).
+    /// Properties are initialized from their <see cref="DefaultValueAttribute"/>.
+    /// </summary>
+    private static T CreatePageWithoutConstructor<T>() where T : DialogPage {
+      var page = (T)FormatterServices.GetUninitializedObject(typeof(T));
+      foreach (var type in typeof(T).GetBaseTypes().TakeWhile(t => t != typeof(DialogPage))) {
+        foreach (var property in type.GetProperties(DeclaredPublicProperties).Where(p => p.CanWrite)) {
+          var defaultValue = property.GetCustomAttributes(typeof(DefaultValueAttribute), true)
+            .OfType<DefaultValueAttribute>()
+            .FirstOrDefault();
+          if (defaultValue != null) {
+            property.SetValue(page, defaultValue.Value);
+          }
+        }
+      }
+      return page;
+    }
+
+    private class CodingStyleOptionsMock : CodingStyleOptions {
       public override void SaveSettingsToStorage() {
       }
     }
 
     private class GeneralOptionsMock : GeneralOptions {
-      [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "VSSDK005:Avoid instantiating JoinableTaskContext", Justification = "Necessary for tests.")]
-      public GeneralOptionsMock() : base(new JoinableTaskContext()) {
-      }
-
       public override void SaveSettingsToStorage() {
       }
     }
@@ -61,15 +100,15 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
         return (T)_objects.GetOrAdd(typeof(T), key => this.CreateInstance<T>());
       }
 
-      object CreateInstance<T>() where T : new() {
+      object CreateInstance<T>() where T : DialogPage, new() {
         switch (typeof(T))
         {
           case var t when t == typeof(CodingStyleOptions):
-            return new CodingStyleOptionsMock();
+            return CreatePageWithoutConstructor<CodingStyleOptionsMock>();
           case var t when t == typeof(GeneralOptions):
-            return new GeneralOptionsMock();
+            return CreatePageWithoutConstructor<GeneralOptionsMock>();
           default:
-            return new T();
+            return CreatePageWithoutConstructor<T>();
         }
       }
     }
@@ -84,6 +123,17 @@ namespace VsChromium.Tests.VsChromium.ToolsOptions {
       public class MyContext : ISynchronizationContext {
         public void Post(Action action) {
         }
+      }
+    }
+  }
+
+  internal static class TypeExtensions {
+    /// <summary>
+    /// Returns <paramref name="type"/> followed by all its base types.
+    /// </summary>
+    public static System.Collections.Generic.IEnumerable<Type> GetBaseTypes(this Type type) {
+      for (var t = type; t != null; t = t.BaseType) {
+        yield return t;
       }
     }
   }

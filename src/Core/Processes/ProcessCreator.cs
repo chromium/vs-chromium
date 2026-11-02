@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -72,7 +72,20 @@ namespace VsChromium.Core.Processes {
         var lastError = 0;
         var success = NativeMethods.CreateProcess(null, stringBuilder, null, null, true, processCreationFlags,
                                                  environmentPtr, workingDirectory, startupInfo, processInformation);
-        Logger.LogInfo("CreateProcessWithStartInfo: CreateProcess result: Success={0}-LastError={1}.", success, Marshal.GetLastWin32Error());
+        Logger.LogInfo("CreateProcessWithStartInfo: CreateProcess result: Flags={0}-Success={1}-LastError={2}.", processCreationFlags, success, Marshal.GetLastWin32Error());
+        const int ERROR_ACCESS_DENIED = 5;
+        if (!success && (processCreationFlags & ProcessCreationFlags.CREATE_BREAKAWAY_FROM_JOB) != 0 &&
+            Marshal.GetLastWin32Error() == ERROR_ACCESS_DENIED) {
+          // CREATE_BREAKAWAY_FROM_JOB fails with ERROR_ACCESS_DENIED if the current process is
+          // part of a job that does not allow breakaway (e.g. when running under a test runner or
+          // a tool that manages its child processes with a job object). Retry without the flag,
+          // i.e. the new process stays in the same job as the current process.
+          Logger.LogInfo("CreateProcessWithStartInfo: Breakaway from job not allowed, retrying without CREATE_BREAKAWAY_FROM_JOB.");
+          processCreationFlags &= ~ProcessCreationFlags.CREATE_BREAKAWAY_FROM_JOB;
+          success = NativeMethods.CreateProcess(null, stringBuilder, null, null, true, processCreationFlags,
+                                                environmentPtr, workingDirectory, startupInfo, processInformation);
+          Logger.LogInfo("CreateProcessWithStartInfo: CreateProcess result: Flags={0}-Success={1}-LastError={2}.", processCreationFlags, success, Marshal.GetLastWin32Error());
+        }
         if (!success) {
           lastError = Marshal.GetLastWin32Error();
         }

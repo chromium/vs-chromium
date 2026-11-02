@@ -17,7 +17,7 @@ import { parseFilePathQuery } from '../ui/filePathQuery';
 
 const extensionRoot = path.resolve(__dirname, '..', '..');
 const repoRoot = path.resolve(extensionRoot, '..', '..');
-const serverPath = findServerPath(extensionRoot, undefined);
+const serverPath = findServerPath(extensionRoot, undefined, /*preferRepositoryBuild*/ true);
 const testEnlistmentFile = path.join(repoRoot, 'src', 'Tests', 'TestData', 'chromium', 'src', 'PRESUBMIT.py');
 
 function waitForEvent(client: ServerClient, type: TypedEvent['$type'], timeoutMs = 10000): Promise<TypedEvent> {

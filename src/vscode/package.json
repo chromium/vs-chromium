@@ -123,11 +123,15 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node --test \"out/test/**/*.test.js\""
+    "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
+    "vscode:prepublish": "npm run compile",
+    "package": "node scripts/copy-server.js Release && vsce package --target win32-x64 --no-dependencies",
+    "package:debug": "node scripts/copy-server.js Debug && vsce package --target win32-x64 --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "22.15.3",
     "@types/vscode": "1.100.0",
+    "@vscode/vsce": "3.6.0",
     "typescript": "5.9.3"
   }
 }

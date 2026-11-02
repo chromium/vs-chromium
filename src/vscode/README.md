@@ -41,6 +41,20 @@ or a Chromium checkout).
 When running from the repository, the extension uses the server from `Binaries\Debug` (or
 `Binaries\Release`). The `vschromium.serverPath` setting overrides the server location.
 
+## Packaging
+
+Build the vs-chromium solution in `Release` configuration, then:
+
+```
+cd src\vscode
+npm run package          # or "npm run package:debug" to bundle Binaries\Debug
+```
+
+This copies the server and its dependencies to `bin\` (see `scripts/copy-server.js`) and creates
+`vs-chromium-win32-x64-<version>.vsix`, which can be installed with
+`code --install-extension vs-chromium-win32-x64-<version>.vsix` (or *Extensions: Install from
+VSIX...* in VS Code).
+
 ## Code Search
 
 Open the **VsChromium** panel (next to Terminal/Output), or press **Ctrl+Alt+;** (*VsChromium:

@@ -42,9 +42,10 @@ class ServerManager implements vscode.Disposable {
   async start(): Promise<void> {
     const config = vscode.workspace.getConfiguration('vschromium');
     const configuredPath = config.get<string>('serverPath');
-    const serverPath = findServerPath(this.context.extensionPath, configuredPath);
+    const preferRepositoryBuild = this.context.extensionMode === vscode.ExtensionMode.Development;
+    const serverPath = findServerPath(this.context.extensionPath, configuredPath, preferRepositoryBuild);
     if (!serverPath) {
-      const candidates = serverPathCandidates(this.context.extensionPath, configuredPath);
+      const candidates = serverPathCandidates(this.context.extensionPath, configuredPath, preferRepositoryBuild);
       const message = 'VsChromium.Server.exe not found';
       this.output.error(`${message}. Looked in:\n  ${candidates.join('\n  ')}`);
       this.setState({ kind: 'stopped', message });

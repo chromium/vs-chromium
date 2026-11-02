@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;
+using VsChromium.Server.Diagnostics;
 using VsChromium.Server.Ipc.ProtocolHandlers;
 using VsChromium.Server.Threads;
 
@@ -50,6 +51,7 @@ namespace VsChromium.Server.Ipc {
       var response = ProcessOneRequest(request);
       sw.Stop();
       _ipcResponseQueue.Enqueue(response);
+      OperationTimings.Record(OperationTimings.RequestPrefix + request.Data.GetType().Name, sw.Elapsed);
 
       Logger.LogInfo("Request {0} of type \"{1}\" took {2:n0} msec to execute.",
                  request.RequestId, request.Data.GetType().Name, sw.ElapsedMilliseconds);

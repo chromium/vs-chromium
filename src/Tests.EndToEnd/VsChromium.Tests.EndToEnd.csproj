@@ -1,0 +1,41 @@
+<Project Sdk="MSTest.Sdk/4.5.2">
+
+  <!--
+    End-to-end tests and benchmarks of the indexing server (VsChromium.Server.exe), driven as a
+    black box over its stdio JSON protocol. See docs/portable-server/PORTING_PRINCIPLES.md.
+
+    The server executable defaults to <repo>/Binaries/<Configuration>/VsChromium.Server.exe and can
+    be overridden with the VSCHROMIUM_SERVER_PATH environment variable.
+
+    Benchmarks are in the "Benchmark" test category (see Benchmarks/ServerBenchmarks.cs for settings).
+    From src/Tests.EndToEnd, run "dotnet test" with the filter option set to "TestCategory!=Benchmark"
+    for the regression/end-to-end tests only, or "TestCategory=Benchmark" for the benchmarks only
+    (see README.md in this directory).
+
+    Generated code bases are kept between runs in %LOCALAPPDATA%/VsChromium/TestCorpora (or
+    VSCHROMIUM_TEST_CORPORA).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>VsChromium.Tests.EndToEnd</RootNamespace>
+    <AssemblyName>VsChromium.Tests.EndToEnd</AssemblyName>
+    <!-- Keep the outputs of this SDK-style project away from the shared Binaries/ directory of the
+         legacy projects. -->
+    <BaseOutputPath>$(MSBuildThisFileDirectory)bin\</BaseOutputPath>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="VsChromium.Tests.EndToEnd.RepositoryRootAttribute">
+      <_Parameter1>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..'))</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="VsChromium.Tests.EndToEnd.BuildConfigurationAttribute">
+      <_Parameter1>$(Configuration)</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

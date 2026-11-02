@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
+using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
@@ -33,6 +34,7 @@ namespace VsChromium.Server.FileSystem.Builder {
                                           int version,
                                           CancellationToken cancellationToken) {
       cancellationToken.ThrowIfCancellationRequested(); // cancellation
+      using (OperationTimings.Measure(OperationTimings.FileSystemScan))
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         // Clear file name factory intern tables if no projects. We could be
         // more aggressive at the expense of decreasing string interning.

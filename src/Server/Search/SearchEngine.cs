@@ -16,6 +16,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
+using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
@@ -531,6 +532,7 @@ namespace VsChromium.Server.Search {
 
       var options = new UpdateFileDatabaseOptions();
 
+      using (OperationTimings.Measure(OperationTimings.FileDatabaseUpdate))
       _operationProcessor.Execute(new OperationHandlers {
         OnBeforeExecute = info => {
           options.OperationInfo = info;

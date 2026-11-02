@@ -74,6 +74,8 @@
     <Compile Include="Projects\ProjectPathComparer.cs" />
     <Compile Include="FileSystem\SnapshotScanResult.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDatabaseStatisticsRequestHandler.cs" />
+    <Compile Include="Ipc\TypedMessageHandlers\GetServerStatisticsRequestHandler.cs" />
+    <Compile Include="Diagnostics\OperationTimings.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\GetDirectoryStatisticsRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\RefreshFileSystemTreeRequestHandler.cs" />
     <Compile Include="Operations\IOperationIdFactory.cs" />

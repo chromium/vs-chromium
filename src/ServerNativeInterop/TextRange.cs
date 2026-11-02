@@ -31,6 +31,10 @@ namespace VsChromium.Server.NativeInterop {
       get { return _position + _length; }
     }
 
+    public override string ToString() {
+      return string.Format("({0}, {1})", _position, _length);
+    }
+
     private static void ThrowArgumentException() {
       throw new ArgumentException();
     }

@@ -235,13 +235,14 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     /// <summary>
-    ///  Create chunks of 100KB for files larger than 100KB.
+    ///  Create chunks of (at most) 100KB for files larger than 100KB. Chunks
+    ///  are split after new line characters, so that search matches don't
+    ///  span multiple chunks.
     /// </summary>
     private static IEnumerable<FileContentsPiece> SplitFileContents(FileWithContents fileWithContents, int fileId) {
       var range = fileWithContents.Contents.TextRange;
       while (range.Length > 0) {
-        // TODO(rpaquay): Be smarter and split around new lines characters.
-        var chunkLength = Math.Min(range.Length, ChunkSize);
+        var chunkLength = fileWithContents.Contents.GetChunkLength(range.Position, ChunkSize);
         var chunk = new TextRange(range.Position, chunkLength);
         yield return fileWithContents.Contents.CreatePiece(fileWithContents.FileName, fileId, chunk);
 

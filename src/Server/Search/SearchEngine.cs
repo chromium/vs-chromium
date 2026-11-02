@@ -448,36 +448,25 @@ namespace VsChromium.Server.Search {
         return MatchRelativePath(path);
       }
 
-      private unsafe bool MatchRelativePath(RelativePath path) {
+      private bool MatchRelativePath(RelativePath path) {
         var value = path.Value;
-        var hasDirectorySeparators = value.IndexOf(Path.DirectorySeparatorChar) >= 0;
-        var ptr = Marshal.StringToHGlobalAnsi(value);
-        try {
-          var range = new TextFragment(ptr, 0, value.Length, sizeof(byte));
+        if (Match(value))
+          return true;
 
-          var hit = _searchContainer.GetAsciiSearch()
-            .FindFirst(range, OperationProgressTracker.None);
-          if (hit.HasValue)
-            return true;
+        if (Path.DirectorySeparatorChar == Path.AltDirectorySeparatorChar ||
+            value.IndexOf(Path.DirectorySeparatorChar) < 0)
+          return false;
 
-          if (!hasDirectorySeparators)
-            return false;
+        // Replace '\' with '/' and try again
+        return Match(value.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+      }
 
-          // Replace '\' with '/' and try again
-          var first = (byte*)ptr.ToPointer();
-          var last = first + value.Length;
-          for (; first != last; first++) {
-            if ((char)(*first) == Path.DirectorySeparatorChar) {
-              *first = (byte)Path.AltDirectorySeparatorChar;
-            }
-          }
-
-          // Search again
-          hit = _searchContainer.GetAsciiSearch()
-            .FindFirst(range, OperationProgressTracker.None);
+      private unsafe bool Match(string value) {
+        fixed (char* ptr = value) {
+          var fragment = new TextFragment(new IntPtr(ptr), 0, value.Length, sizeof(char));
+          var hit = _searchContainer.GetUtf16Search()
+            .FindFirst(fragment, OperationProgressTracker.None);
           return hit.HasValue;
-        } finally {
-          Marshal.FreeHGlobal(ptr);
         }
       }
     }

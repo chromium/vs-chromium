@@ -31,10 +31,12 @@ public static class ServerProtocol {
       },
     };
 
-  public static JsonObject SearchFilePaths(string pattern, int maxResults = 2000) =>
+  public static JsonObject SearchFilePaths(string pattern, int maxResults = 2000, bool regex = false) =>
     new() {
       ["$type"] = "SearchFilePathsRequest",
-      ["searchParams"] = new JsonObject { ["searchString"] = pattern, ["maxResults"] = maxResults, ["includeSymLinks"] = true },
+      ["searchParams"] = new JsonObject {
+        ["searchString"] = pattern, ["maxResults"] = maxResults, ["includeSymLinks"] = true, ["regex"] = regex,
+      },
     };
 
   public static JsonObject GetFileExtracts(string path, IEnumerable<(int Position, int Length)> positions, int maxExtractLength = 120) =>

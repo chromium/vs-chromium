@@ -5,6 +5,7 @@
 using System;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
+using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.FileSystemContents {
   public class Utf16FileContents : FileContents {
@@ -25,30 +26,15 @@ namespace VsChromium.Server.FileSystemContents {
       return container.GetUtf16Search();
     }
 
-    protected override TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
-      int lineStart;
-      int lineLength;
-      NativeMethods.Utf16_GetLineExtentFromPosition(
-          this.Contents.Pointer,
-          this.CharacterCount,
-          position,
-          MaxLineExtentOffset,
-          out lineStart,
-          out lineLength);
-      return new TextRange(lineStart, lineLength);
+    protected override unsafe TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
+      var text = new ReadOnlySpan<char>(Contents.Pointer.ToPointer(), CharacterCount);
+      return LineExtents.GetLineExtentFromPosition(text, position, MaxLineExtentOffset, '\n');
     }
 
-    public static CompiledTextSearchBase CreateSearchAlgo(
-        string pattern,
-        SearchProviderOptions searchOptions) {
-      var options = NativeMethods.SearchOptions.kNone;
-      if (searchOptions.MatchCase) {
-        options |= NativeMethods.SearchOptions.kMatchCase;
-      }
-      if (searchOptions.MatchWholeWord) {
-        options |= NativeMethods.SearchOptions.kMatchWholeWord;
-      }
-      return new Utf16CompiledTextSearchStdSearch(pattern, options);
+    protected override unsafe int LastIndexOfNewLine(TextRange range) {
+      var text = new ReadOnlySpan<char>(Contents.Pointer.ToPointer(), CharacterCount).Slice(range.Position, range.Length);
+      var index = text.LastIndexOf('\n');
+      return index < 0 ? index : range.Position + index;
     }
   }
 }

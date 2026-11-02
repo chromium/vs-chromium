@@ -133,25 +133,37 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 
 ### File contents and search
 
-- **Storage**: file contents stay **UTF-8 / ASCII bytes** in memory (half the size of UTF-16).
-  Whether they live in GC arrays (`GC.AllocateUninitializedArray`, possibly pinned) or
-  `NativeMemory` is decided by benchmarks (GC heap size and pauses vs native memory); either way
-  the total is reported.
-- **Text kind detection** (ASCII / UTF-8 / binary) and **line extents**: managed ports of
-  `Text_GetKind` and `*_GetLineExtentFromPosition`, using vectorized BCL APIs (`Ascii.IsValid`,
-  `Utf8.IsValid`... / `Span.IndexOf`).
-- **Literal search**: vectorized `ReadOnlySpan<byte>.IndexOf` (mtsuite `mtfindstr` approach) and
-  `SearchValues` for case-insensitive search; managed Boyer-Moore/BNDM only if benchmarks show a
-  benefit.
-- **Regex**: `System.Text.RegularExpressions.Regex` (source-generated/compiled where possible,
-  `RegexOptions.NonBacktracking` to keep RE2's linear-time guarantee for user-typed patterns).
-  .NET regexes run on `char`, so regex searches decode each file (or chunk) to UTF-16 in a pooled
-  per-thread buffer; the cost is measured by the benchmarks.
+- **Storage** (decided in milestone 4): **ASCII files stay bytes** in memory; **files with non-ASCII
+  characters (UTF-8) are decoded to UTF-16** when loaded (`FileContentsFactory`, invalid UTF-8
+  bytes become U+FFFD, one character per invalid byte). This makes match positions UTF-16 offsets
+  (behavior change 1) and gives Unicode-aware case-insensitive search, whole word and regex for
+  free, at the cost of twice the memory for non-ASCII files only (a small fraction of source files).
+  Whether the contents live in GC arrays or native memory is decided in milestone 5 by benchmarks
+  (still the Win32 process heap after milestone 4); either way the total is reported.
+- **Text kind detection** (ASCII / UTF-8 / binary, `Server/TextSearch/TextKindDetector.cs`): managed
+  port of `Text_GetKind` (same sampling heuristic for binary detection), plus a full vectorized
+  `Ascii.IsValid` check so that a file is "ASCII" only if all its bytes are ASCII.
+- **Line extents** (`LineExtents.cs`): managed port of `*_GetLineExtentFromPosition` (`Span.IndexOf`).
+- **Literal search** (`TextMatchers.cs`): ASCII text: vectorized `ReadOnlySpan<byte>.IndexOf`;
+  case-insensitive: vectorized search of the least frequent character of the pattern (both cases)
+  then `Ascii.EqualsIgnoreCase` at each candidate. UTF-16 text: `ReadOnlySpan<char>.IndexOf`, and
+  `SearchValues<string>` (`OrdinalIgnoreCase`) for case-insensitive search. A non-ASCII pattern
+  never matches ASCII text. No Boyer-Moore/BNDM: the vectorized searches are as fast (see the
+  milestone 4 benchmarks).
+- **Regex**: `System.Text.RegularExpressions.Regex` with `RegexOptions.NonBacktracking` (keeps
+  RE2's linear-time guarantee for user-typed patterns; like RE2, no backreferences nor
+  lookarounds), `Multiline` (`^`/`$` match at line boundaries), `CultureInvariant`. .NET regexes run
+  on `char`: regex searches in ASCII files widen each chunk (at most 100 KB) to UTF-16 in a pooled
+  buffer (`AsciiRegexTextSearch`). A single `Regex` instance is shared by all threads.
+- **Whole word**: post-filter on the characters before/after each match: letters, digits (Unicode,
+  `char.IsLetterOrDigit`) and `_` are word characters.
+- **Chunks**: files larger than 100 KB are split in chunks of at most 100 KB **after a new line
+  character** (`FileContents.GetChunkLength`), so that matches never span chunks (except regex
+  matches spanning lines).
 - **Parallelism**: keep the current partitioned PLINQ model (pieces distributed over
-  `ProcessorCount` partitions), with per-thread search state.
+  `ProcessorCount` partitions). The search algorithms are stateless and shared by all threads.
 - **Positions**: match positions/extract offsets sent to clients are **UTF-16 code unit offsets**
   (what the VS editor and VS Code use), see below.
-
 ### Dependencies
 
 - MEF v1 (`System.ComponentModel.Composition`) is available on modern .NET as a NuGet package and is
@@ -164,22 +176,42 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 
 ## Behavior changes
 
-Deliberate differences from the current server (see principle 3). Each entry is decided case by
+Deliberate differences from the native server (see principle 3). Each entry is decided case by
 case; add new entries here (with the reason) as they are found during the port. **Every behavior
 change comes with regression tests** (server unit tests and, where relevant, end-to-end tests over
-stdio) that fail on the current server and pass after the fix. Initial list, found while auditing
-the current server (all four are to be fixed):
+stdio in `src/Tests.EndToEnd/Regression/BehaviorChangeTests.cs`) that fail on the native server and
+pass after the fix. Entries 1–4 were found while auditing the native server, the others during
+milestone 4; **all are fixed since milestone 4** (managed search):
 
-1. **Positions are byte offsets** for UTF-8 files (`AsciiFileContents` searches raw bytes), while the
-   clients interpret them as character offsets: wrong match selection in files with non-ASCII text
-   (VS Code `document.positionAt`). The new server reports UTF-16 offsets.
-2. **Matches spanning 100 KB file chunk boundaries are missed** (`FileDatabaseBuilder` splits files
-   into 100 KB pieces without overlap/newline alignment).
-3. **Non-ASCII search patterns are mangled** (`Marshal.StringToHGlobalAnsi`); case-insensitive and
-   whole-word matching are ASCII-only.
-4. The non-RE2 regex path uses C++ `std::regex` (ECMAScript, backtracking); both clients always
-   send `UseRe2Engine=true`. The new server has a single regex engine; `UseRe2Engine` is removed.
-
+1. **Positions were byte offsets** for UTF-8 files (`AsciiFileContents` searched raw bytes), while
+   the clients interpret them as character offsets: wrong match selection in files with non-ASCII
+   text (VS Code `document.positionAt`). The new server reports UTF-16 offsets (non-ASCII files are
+   decoded to UTF-16), for search results and file extracts.
+2. **Matches spanning 100 KB file chunk boundaries were missed** (`FileDatabaseBuilder` split files
+   into 100 KB pieces without overlap/newline alignment). Chunks now end after a new line
+   character; only regex matches spanning multiple lines can still be missed at chunk boundaries.
+3. **Non-ASCII search patterns were mangled** (`Marshal.StringToHGlobalAnsi`); case-insensitive and
+   whole-word matching were ASCII-only. Non-ASCII patterns now work, case-insensitive search uses
+   Unicode simple case folding (`OrdinalIgnoreCase`).
+4. The non-RE2 regex path used C++ `std::regex` (ECMAScript, backtracking, on bytes); both clients
+   always send `UseRe2Engine=true`. The new server has a single regex engine (.NET,
+   non-backtracking, on UTF-16 text); `UseRe2Engine` is ignored (to be removed from the protocol in
+   milestone 6). Patterns using backreferences or lookarounds are rejected with an error message,
+   as RE2 did.
+5. **Regex `^` and `$` only matched at the beginning/end of the searched text** (RE2 default mode,
+   and each search restarted after the previous match, so `^foo` found at most a couple of
+   matches per file chunk). They now match at line boundaries (`RegexOptions.Multiline`). Note: as
+   with RE2, `$` matches before `\n`, not before `\r\n`.
+6. **Whole word ignored non-ASCII letters** (a match preceded by `é` was a "whole word"), and was
+   not implemented at all by the (unused) UTF-16 search. Letters and digits are now Unicode-aware
+   in both ASCII and UTF-16 text.
+7. **Text kind detection only sampled large files** (50 slices of 4 KB): a large file with non-ASCII
+   characters outside the samples was considered ASCII (searched as bytes, so wrong positions).
+   ASCII now means all bytes are ASCII (`Ascii.IsValid`, vectorized); the sampling heuristic is
+   still used to detect binary files. Files with a few invalid UTF-8 bytes (e.g. Latin-1) are
+   decoded as UTF-8 with one U+FFFD per invalid byte, so offsets stay correct.
+8. **Regex file path searches** (`SearchFilePaths` with a regex) mangled non-ASCII paths (ANSI
+   conversion); they now run on the UTF-16 path.
 ## Reusing mtsuite
 
 - **Decided: copy the code** of mtsuite `src/core-filesystem` (no dependencies) and the traversal

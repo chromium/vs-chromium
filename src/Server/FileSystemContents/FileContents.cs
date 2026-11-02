@@ -60,6 +60,22 @@ namespace VsChromium.Server.FileSystemContents {
       return result;
     }
 
+    /// <summary>
+    /// Returns the length of the chunk of text starting at <paramref
+    /// name="position"/>, of at most <paramref name="maxLength"/> characters.
+    /// When possible, chunks end with a new line character, so that search
+    /// matches never span multiple chunks (matches can't span multiple
+    /// lines, except for some regular expressions).
+    /// </summary>
+    public int GetChunkLength(int position, int maxLength) {
+      var remaining = CharacterCount - position;
+      if (remaining <= maxLength)
+        return remaining;
+      var newLinePosition = LastIndexOfNewLine(new TextRange(position, maxLength));
+      if (newLinePosition < 0)
+        return maxLength;
+      return newLinePosition - position + 1;
+    }
     public IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
       var offsets = GetFileOffsets();
 
@@ -82,6 +98,12 @@ namespace VsChromium.Server.FileSystemContents {
     protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container);
 
     protected abstract TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength);
+
+    /// <summary>
+    /// Returns the position of the last new line character in <paramref
+    /// name="range"/>, or -1 if there is none.
+    /// </summary>
+    protected abstract int LastIndexOfNewLine(TextRange range);
 
     protected FileContentsMemory Contents {
       get { return _contents; }

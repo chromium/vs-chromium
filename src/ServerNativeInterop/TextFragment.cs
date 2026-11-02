@@ -43,6 +43,13 @@ namespace VsChromium.Server.NativeInterop {
     }
 
     /// <summary>
+    /// The size of a character in bytes: 1 for ASCII text, 2 for UTF-16 text.
+    /// </summary>
+    public byte CharacterSize {
+      get { return _characterSize; }
+    }
+
+    /// <summary>
     /// The pointer corresponding to <see cref="Position"/>.
     /// </summary>
     public IntPtr StartPtr {

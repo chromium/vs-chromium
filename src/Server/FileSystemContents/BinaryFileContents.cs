@@ -49,5 +49,9 @@ namespace VsChromium.Server.FileSystemContents {
     protected override TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
       return new TextRange(0, 0);
     }
+
+    protected override int LastIndexOfNewLine(TextRange range) {
+      return -1;
+    }
   }
 }

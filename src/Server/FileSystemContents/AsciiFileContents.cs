@@ -5,6 +5,7 @@
 using System;
 using VsChromium.Server.NativeInterop;
 using VsChromium.Server.Search;
+using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.FileSystemContents {
   /// <summary>
@@ -20,27 +21,6 @@ namespace VsChromium.Server.FileSystemContents {
       return new AsciiTextLineOffsets(Contents);
     }
 
-    public static ICompiledTextSearch CreateSearchAlgo(string pattern, SearchProviderOptions searchOptions) {
-      var options = NativeMethods.SearchOptions.kNone;
-      if (searchOptions.MatchCase) {
-        options |= NativeMethods.SearchOptions.kMatchCase;
-      }
-      if (searchOptions.MatchWholeWord) {
-        options |= NativeMethods.SearchOptions.kMatchWholeWord;
-      }
-
-      if (searchOptions.UseRegex && searchOptions.UseRe2Engine)
-        return new AsciiCompiledTextSearchRe2(pattern, options);
-
-      if (searchOptions.UseRegex)
-        return new AsciiCompiledTextSearchRegex(pattern, options);
-
-      if (pattern.Length <= 64)
-        return new AsciiCompiledTextSearchBndm64(pattern, options);
-
-      return new AsciiCompiledTextSearchBoyerMoore(pattern, options);
-    }
-
     public override byte CharacterSize {
       get { return sizeof(byte); }
     }
@@ -49,17 +29,15 @@ namespace VsChromium.Server.FileSystemContents {
       return container.GetAsciiSearch();
     }
 
-    protected override TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
-      int lineStart;
-      int lineLength;
-      NativeMethods.Ascii_GetLineExtentFromPosition(
-        Contents.Pointer,
-        CharacterCount,
-        position,
-        MaxLineExtentOffset,
-        out lineStart,
-        out lineLength);
-      return new TextRange(lineStart, lineLength);
+    protected override unsafe TextRange GetLineTextRangeFromPosition(int position, int maxRangeLength) {
+      var text = new ReadOnlySpan<byte>(Contents.Pointer.ToPointer(), CharacterCount);
+      return LineExtents.GetLineExtentFromPosition(text, position, MaxLineExtentOffset, (byte)'\n');
+    }
+
+    protected override unsafe int LastIndexOfNewLine(TextRange range) {
+      var text = new ReadOnlySpan<byte>(Contents.Pointer.ToPointer(), CharacterCount).Slice(range.Position, range.Length);
+      var index = text.LastIndexOf((byte)'\n');
+      return index < 0 ? index : range.Position + index;
     }
   }
 }

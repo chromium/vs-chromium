@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.Search {
   /// <summary>
@@ -15,8 +15,13 @@ namespace VsChromium.Server.Search {
     private readonly ICompiledTextSearch _utf16CompiledTextSearchAlgo;
 
     public CompiledTextSearchContainer(string pattern, SearchProviderOptions searchOptions) {
-      _asciiCompiledTextSearchAlgo = AsciiFileContents.CreateSearchAlgo(pattern, searchOptions);
-      _utf16CompiledTextSearchAlgo = Utf16FileContents.CreateSearchAlgo(pattern, searchOptions);
+      TextSearchFactory.CreateSearches(
+        pattern,
+        searchOptions.MatchCase,
+        searchOptions.MatchWholeWord,
+        searchOptions.UseRegex,
+        out _asciiCompiledTextSearchAlgo,
+        out _utf16CompiledTextSearchAlgo);
     }
 
     public ICompiledTextSearch GetAsciiSearch() {

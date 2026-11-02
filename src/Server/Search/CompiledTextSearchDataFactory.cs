@@ -49,7 +49,6 @@ namespace VsChromium.Server.Search {
           MatchCase = searchParams.MatchCase,
           MatchWholeWord = searchParams.MatchWholeWord,
           UseRegex = searchParams.Regex,
-          UseRe2Engine = searchParams.UseRe2Engine
         });
 
       return new CompiledTextSearchData(

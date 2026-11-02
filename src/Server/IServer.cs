@@ -4,6 +4,15 @@
 
 namespace VsChromium.Server {
   public interface IServer {
+    /// <summary>
+    /// Connects to the TCP <paramref name="port"/> on the loopback interface (where the host
+    /// is listening) and process requests (protobuf-net messages) until the connection is closed.
+    /// </summary>
     void Run(int port);
+
+    /// <summary>
+    /// Process requests from <paramref name="stream"/> until the stream is closed.
+    /// </summary>
+    void Run(VsChromium.Core.Ipc.IIpcStream stream);
   }
 }

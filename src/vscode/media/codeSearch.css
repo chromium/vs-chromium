@@ -1,0 +1,194 @@
+/* Copyright 2026 The Chromium Authors. All rights reserved.
+   Use of this source code is governed by a BSD-style license that can be
+   found in the LICENSE file. */
+
+body {
+  padding: 0;
+  margin: 0;
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.toolbar {
+  padding: 6px 8px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: none;
+}
+
+.input-row {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+}
+
+input[type="text"]:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+input[type="text"]::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+button.toggle {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 4px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: var(--vscode-editor-font-family);
+}
+
+button.toggle:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+button.toggle[aria-pressed="true"] {
+  color: var(--vscode-inputOption-activeForeground);
+  background: var(--vscode-inputOption-activeBackground);
+  border-color: var(--vscode-inputOption-activeBorder);
+}
+
+button.toggle:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+.status {
+  min-height: 16px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status.busy::before {
+  content: "\21BB  ";
+}
+
+.status.error {
+  color: var(--vscode-errorForeground);
+}
+
+.results {
+  flex: 1;
+  overflow: auto;
+  outline: none;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 1px 8px;
+  white-space: pre;
+  cursor: pointer;
+  outline: none;
+  line-height: 20px;
+}
+
+.row:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.row.selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+}
+
+.row.selected:focus {
+  color: var(--vscode-list-activeSelectionForeground);
+  background: var(--vscode-list-activeSelectionBackground);
+  outline: 1px solid var(--vscode-list-focusOutline);
+  outline-offset: -1px;
+}
+
+.twistie::before {
+  display: inline-block;
+  width: 10px;
+  content: "\25BE";
+}
+
+.file[aria-expanded="false"] .twistie::before {
+  content: "\25B8";
+}
+
+.file[aria-expanded="false"] .lines {
+  display: none;
+}
+
+.file-name {
+  font-weight: 600;
+}
+
+.file-dir {
+  color: var(--vscode-descriptionForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 10px;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+  font-size: 0.85em;
+  line-height: 16px;
+}
+
+.line {
+  padding-left: 28px;
+  gap: 0;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size);
+}
+
+.line.pending {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.line-number {
+  min-width: 3em;
+  padding-right: 8px;
+  text-align: right;
+  color: var(--vscode-editorLineNumber-foreground);
+}
+
+.line .text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.match {
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-findMatchHighlightBackground);
+  border: 1px solid var(--vscode-editor-findMatchHighlightBorder, transparent);
+  border-radius: 2px;
+}
+
+.empty {
+  padding: 8px;
+  color: var(--vscode-descriptionForeground);
+}

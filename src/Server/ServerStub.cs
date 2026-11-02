@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
 using VsChromium.Core.Ipc;
@@ -14,10 +15,18 @@ namespace VsChromium.Server {
     public static IServer Instance;
 
     public void Run(int port) {
+      Run(server => server.Run(port));
+    }
+
+    public void Run(IIpcStream stream) {
+      Run(server => server.Run(stream));
+    }
+
+    private void Run(Action<IServer> runServer) {
       using (var mefContainer = SetupMefContainer()) {
         var server = mefContainer.GetExportedValue<IServer>();
         Instance = server; // For debugging only.
-        server.Run(port);
+        runServer(server);
       }
     }
 

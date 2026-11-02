@@ -239,10 +239,6 @@ namespace VsChromium.Core.Linq {
       return list;
     }
 
-    public static HashSet<TSource> ToHashSet<TSource>(this IEnumerable<TSource> source) {
-      return new HashSet<TSource>(source);
-    }
-
     private static class EmptyCollection<TSource> {
       public static readonly ReadOnlyCollection<TSource> Instance = new ReadOnlyCollection<TSource>(new TSource[0]);
     }

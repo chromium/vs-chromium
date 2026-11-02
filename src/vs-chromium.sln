@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31306.274
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{6F70C76F-5A3A-4657-A073-075A08555BAD}"
 EndProject
@@ -36,6 +36,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DkmIntegration", "DkmIntegration\DkmIntegration.csproj", "{58572470-7222-49BE-850B-C6CE224A813A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "re2", "re2\re2.vcxproj", "{B55D20C2-DF82-4487-8AAB-44EBC5D87B19}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "VsChromium-Shared", "VsChromium-Shared\VsChromium-Shared.shproj", "{2713D2F8-A16A-493F-99EC-84EEDAA79196}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -82,6 +84,13 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2449B770-DC55-4345-9323-22AE96A1F791}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		VsChromium-Shared\VsChromium-Shared.projitems*{2713d2f8-a16a-493f-99ec-84eedaa79196}*SharedItemsImports = 13
+		VsChromium-Shared\VsChromium-Shared.projitems*{8ed06aa3-93df-48fe-97c0-f516e99fdb32}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = vs-chromium.vsmdi

@@ -1,0 +1,363 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>2713d2f8-a16a-493f-99ec-84eedaa79196</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>VsChromium_Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\AttachDialog.resx">
+      <DependentUpon>AttachDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources.resx">
+      <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ChromiumEnlistment\ChromiumSourceFiles.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ChromiumEnlistment\IChromiumSourceFiles.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\AggregateCommandTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\Guids.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\ICommandTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\OleCommandTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\OleCommandTargetSpy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\PkgCmdID.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\SimpleCommandTarget.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\AttachDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\AttachDialog.designer.cs">
+      <DependentUpon>AttachDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\AttachToAllChromesHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\AttachToChromeDescendantsHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\AttachToChromeDialogHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\ColumnSorter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\DebugAttach.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\DkmComponentEventHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\DkmComponentMessageInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\Guids.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\NumericStringComparer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\PkgCmdID.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\ProcessCategory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AttachToChrome\ProcessViewItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\IPackageVersionProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\IUpdateInfoProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\IUpdateNotificationListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\PackageVersionProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\UpdateChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\UpdateInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\UpdateInfoProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\AutoUpdate\UpdateNotificationListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\BuildOutputClassificationType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\BuildOutputClassifier.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\BuildOutputClassifierConstants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\BuildOutputClassifierProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\BuildOutputParser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\BuildOutputSpan.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\NugetConsoleConstants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\ChromiumSourceFilesExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\ChromiumStyleClassificationDefinition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\ChromiumStyleClassificationType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\ChromiumStyleClassifier.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierConstants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\ITextLineChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckerError.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\AccessorIndentChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\ElseIfOnNewLineChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\EndOfLineChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\LongLineChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\OpenBraceAfterNewLineChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\SpaceAfterForKeywordChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\TabCharacterChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ChromiumCodingStyleChecker\TextLineCheckers\TrailingSpacesChecker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\FormatComment\CommentFormatter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\FormatComment\CommentType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\FormatComment\ExtendSpanResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\FormatComment\FormatCommentHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\FormatComment\FormatLinesResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\FormatComment\ICommentFormatter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\DirectoryDetailsControl.xaml.cs">
+      <DependentUpon>DirectoryDetailsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\DirectoryDetailsDialog.xaml.cs">
+      <DependentUpon>DirectoryDetailsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\DirectoryDetailsViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\IShowServerInfoService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml.cs">
+      <DependentUpon>ProjectConfigurationDetailsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectConfigurationSectionDetailsControl.xaml.cs">
+      <DependentUpon>ProjectConfigurationSectionDetailsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectDetailsControl.xaml.cs">
+      <DependentUpon>ProjectDetailsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectDetailsDialog.xaml.cs">
+      <DependentUpon>ProjectDetailsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectDetailsViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\SectioNameValueConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ServerDetailsDialog.xaml.cs">
+      <DependentUpon>ServerDetailsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ServerDetailsViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ServerStatusDialog.xaml.cs">
+      <DependentUpon>ServerStatusDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ServerStatusViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ShowServerInfoService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\QuickSearch\QuickSearchCodeHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\QuickSearch\QuickSearchFilePathsHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\QuickSearch\SelectionHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\DirectoryNodeViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\FileNodeViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\FilePathEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\IIncrementalHierarchyBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\IncrementalBuildResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\IncrementalHierarchyBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\IncrementalHierarchyBuilderAggregate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\INodeTemplateFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\INodeViewModelLoader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\ISourceExplorerHierarchyController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\ISourceExplorerHierarchyControllerFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\IVsGlyphService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\IVsHierarchyImpl.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\IVsSolutionEventsHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\LoadChildrenResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\NodeTemplateFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\NodeViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\NodeViewModelLoader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\NodeViewModelTemplate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\RootNodeViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\SolutionExplorerHierarchyInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsGlyphService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsHierarchy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsHierarchyAggregate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsHierarchyChanges.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsHierarchyCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsHierarchyLogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsHierarchyNodes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsHierarchyUtilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\VsSolutionEventsHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml.cs">
+      <DependentUpon>BuildExplorerControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\BuildExplorerToolWindow.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\BuildExplorerViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\DeveloperBuildViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\InstalledBuildViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\ShowBuildExplorerCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CancelSearchCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CancelSearchToolWindowCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchControl.xaml.cs">
+      <DependentUpon>CodeSearchControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchController.FilePathSearchInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchController.SearchWorkerParams.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchItemViewModelBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchToolWindow.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CommandDelegate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\DirectoryEntryViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\DocumentChangeTrackingEntry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\FileEntryViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\FilePositionViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\FileSystemEntryDataViewModelFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\FileSystemEntryViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\GlobalNextLocationCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\GlobalPreviousLocationCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\GotoNextLocationCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\GotoPreviousLocationCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\ICodeSearchController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\NextLocationCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\PreviousLocationCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\QuickSearchCodeCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\SearchCodeCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\SearchFilePathsCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\SearchResultsDocumentChangeTracker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\ShowSourceExplorerCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\VsWindowFrameNotifyHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\IToolWindowAccessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\LazyItemViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\RootTreeViewItemViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\TextErrorItemViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\TextItemViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\TextWarningItemViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\ToolWindowAccessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\TreeViewItemViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\TreeViewRootNodes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\IPackageCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\PackageCommandHandlerBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\PackageCommandHandlerExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\PackageCommandHandlerRegistration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\PackagePriorityCommandHandlerBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\PackagePriorityCommandHandlerRegistration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\CommandHandler\SimplePackageCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\DispatchThreadEventBus.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\DisposeContainer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IDispatchThreadEventBus.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IDisposeContainer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IPackagePostDispose.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IPackagePostInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IPackagePreInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IShellHost.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IVisualStudioPackage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\IVisualStudioPackageProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\PackageInitializerViewHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\ReportServerProgress.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\ShellHost.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\VisualStudioPackageInitialize.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\VisualStudioPackageProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Package\VsSolutionEventsHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Properties\GlobalSuppressions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Resources.Designer.cs">
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\CallbackDictionary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\FileSystemTreeSource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\IFileSystemTreeSource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\IServerProcessLauncher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\IServerProcessProxy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ITypedRequestProcessProxy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ServerProcessLauncher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ServerProcessProxy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\TypedRequestProcessProxy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\GlobalSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\GlobalSettingsProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\HardCodedSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\IGlobalSettingsProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\DelayedOperation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\DelayedOperationExecutor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\DispatchThread.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\DispatchThreadDelayedOperationExecutor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\DispatchThreadServerRequest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\DispatchThreadServerRequestExecutor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\IDelayedOperationExecutor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\IDispatchThread.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\IDispatchThreadDelayedOperationExecutor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\IDispatchThreadServerRequestExecutor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\IpcRequestException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\IReceiveResponsesThread.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\IRequestQueue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\ISendRequestsThread.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\ISynchronizationContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\ISynchronizationContextProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\ReceiveResponsesThread.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\RequestQueue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\SendRequestsThread.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\SynchronizationContextDelegate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Threads\SynchronizationContextProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ToolsOptions\CodingStyleOptions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ToolsOptions\DebuggingOptions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ToolsOptions\GeneralOptions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ToolsOptions\IToolsOptionsPageProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\Clipboard.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\FileRegistrationRequestService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IClipboard.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IFileRegistrationRequestService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IImageSourceFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\ImageSourceFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IOpenDocumentHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IStandarImageSourceFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IStatusBar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\ITextDocumentTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IViewHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\IWindowsExplorer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\OpenDocumentHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\StandarImageSourceFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\StatusBar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\TextDocumentRegistrationManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\TextDocumentTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\TextLineFragment.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\TextSnapshotLineExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\ViewCreationListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\VsResources.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\VsRunningDocTableEvents.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\WindowsExplorer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)VsPackage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\EditableComboBox.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\HierarchyObjectNavigator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\HumanReadableBytesValueConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\IHierarchyObject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\ILazyObservableCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\IProgressBarTracker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\LazyObservableCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\ListViewSorter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\NumberValueConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\ProgressBarTracker.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\StringListViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\ViewModelBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wpf\WpfUtilities.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\DirectoryDetailsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\DirectoryDetailsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectConfigurationSectionDetailsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectDetailsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ProjectDetailsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ServerDetailsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\IndexServerInfo\ServerStatusDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\CodeSearchControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+</Project>

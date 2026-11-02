@@ -1,0 +1,137 @@
+{
+  "name": "vs-chromium",
+  "displayName": "VsChromium",
+  "description": "Instant indexed code search for very large source trees (e.g. Chromium), powered by the VsChromium indexing server.",
+  "version": "0.1.0",
+  "publisher": "chromium",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chromium/vs-chromium.git"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "os": [
+    "win32"
+  ],
+  "activationEvents": [
+    "workspaceContains:vs-chromium-project.txt",
+    "workspaceContains:.gn"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "vschromium",
+          "title": "VsChromium",
+          "icon": "$(search)"
+        }
+      ]
+    },
+    "views": {
+      "vschromium": [
+        {
+          "type": "webview",
+          "id": "vschromium.codeSearch",
+          "name": "Code Search"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "vschromium.searchCode",
+        "key": "ctrl+alt+;"
+      },
+      {
+        "command": "vschromium.findFileNames",
+        "key": "ctrl+alt+'"
+      }
+    ],
+    "commands": [
+      {
+        "command": "vschromium.searchCode",
+        "title": "Search Code",
+        "category": "VsChromium"
+      },
+      {
+        "command": "vschromium.findFileNames",
+        "title": "Find File Names",
+        "category": "VsChromium"
+      },
+      {
+        "command": "vschromium.showServerStatus",
+        "title": "Show Indexing Server Status",
+        "category": "VsChromium"
+      },
+      {
+        "command": "vschromium.restartServer",
+        "title": "Restart Indexing Server",
+        "category": "VsChromium"
+      },
+      {
+        "command": "vschromium.showOutput",
+        "title": "Show Output",
+        "category": "VsChromium"
+      }
+    ],
+    "configuration": {
+      "title": "VsChromium",
+      "properties": {
+        "vschromium.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to VsChromium.Server.exe. Leave empty to use the server bundled with the extension (or, during development, the one in Binaries\\Debug of the vs-chromium repository).",
+          "scope": "machine"
+        },
+        "vschromium.trace.server": {
+          "type": "boolean",
+          "default": false,
+          "description": "Log all messages exchanged with the indexing server to the VsChromium output channel."
+        },
+        "vschromium.searchCode.maxResults": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1,
+          "description": "Maximum number of matches returned by Search Code. Higher values may slow down the user interface."
+        },
+        "vschromium.searchCode.maxExtractLength": {
+          "type": "number",
+          "default": 120,
+          "minimum": 20,
+          "description": "Maximum number of characters displayed per line in Search Code results."
+        },
+        "vschromium.searchCode.autoSearchDelayMs": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "description": "Time (in milliseconds) to wait after typing before searching (Search Code and Find File Names). For Search Code, takes effect when the Code Search view is reopened."
+        },
+        "vschromium.searchFilePaths.maxResults": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 1,
+          "description": "Maximum number of files returned by Find File Names."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
+    "vscode:prepublish": "npm run compile",
+    "package": "node scripts/copy-server.js Release && vsce package --target win32-x64 --no-dependencies",
+    "package:debug": "node scripts/copy-server.js Debug && vsce package --target win32-x64 --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/vscode": "1.100.0",
+    "@vscode/vsce": "3.6.0",
+    "typescript": "5.9.3"
+  }
+}

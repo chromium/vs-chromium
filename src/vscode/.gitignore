@@ -1,0 +1,9 @@
+node_modules/
+out/
+bin/
+*.vsix
+# Copied from the repository root by scripts/copy-server.js when packaging.
+LICENSE
+# Not committed: when generated behind a corporate npm mirror, it contains internal registry URLs.
+# Dependencies are pinned to exact versions in package.json instead.
+package-lock.json

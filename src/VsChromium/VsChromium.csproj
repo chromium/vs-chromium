@@ -1,8 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props" Condition="Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props')" />
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -26,101 +25,41 @@
     <AssemblyOriginatorKeyFile>$(BuildSettingsPath)VsChromiumKey.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <StartAction>Program</StartAction>
-    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootSuffix Exp</StartArguments>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
     <ZipPackageCompressionLevel>Normal</ZipPackageCompressionLevel>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <VsixType>v3</VsixType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>TRACE;DEBUG;PROFILE_SERVER2;</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="envdte, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="envdte80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="envdte90, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <EmbedInteropTypes>False</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Debugger.Engine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Debugger.Interop.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\CommonExtensions\Microsoft\Editor\Microsoft.VisualStudio.Language.Intellisense.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.OLE.Interop" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.14.0.DesignTime, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.12.0" />
-    <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
-    <Reference Include="Microsoft.VisualStudio.Shell.14.0">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.12.0">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Threading, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Utilities">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Imaging">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Editor, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <Private>False</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="PresentationFramework.Aero2" />
-    <Reference Include="protobuf-net">
-      <HintPath>$(BuildRoot)src\packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.WebSockets" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Security.Cryptography.Algorithms" />
+    <Reference Include="System.Security.Cryptography.Encoding" />
+    <Reference Include="System.Security.Cryptography.Primitives" />
+    <Reference Include="System.Security.Cryptography.X509Certificates" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationProvider" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -135,25 +74,6 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Views\Images\ProjectNodeIcon.png" />
-    <Resource Include="Views\Images\VsChromiumIcon.png" />
-    <Resource Include="Views\Images\SearchLens.png" />
-    <Resource Include="Views\Images\ClearSearch.png" />
-    <Resource Include="Resources\VsChromiumIcon.png" />
-    <Resource Include="Resources\VsChromium.png" />
-    <Resource Include="Resources\VsChromium.ico" />
-    <Resource Include="Resources\ChromeDebugIcons.png" />
-    <Resource Include="Views\Images\RefreshFileSystemTree.png" />
-    <Resource Include="Views\Images\CancelSearch.png" />
-    <Resource Include="Views\Images\ArrowLeft.png" />
-    <Resource Include="Views\Images\ArrowRight.png" />
-    <Resource Include="Views\Images\SyncActiveDocument.png" />
-    <Resource Include="Views\Images\Error.png" />
-    <Resource Include="Views\Images\Warning.png" />
-    <Resource Include="Views\Images\TextDocument.png" />
-    <Resource Include="Views\Images\ProcessWorking.png" />
-    <Resource Include="Views\Images\FileGo.png" />
-    <Resource Include="Views\Images\TextEntry.png" />
     <Content Include="$(OutputPath)VsChromium.Native.dll">
       <Link>VsChromium.Native.dll</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -164,361 +84,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands\AggregateCommandTarget.cs" />
-    <Compile Include="Commands\OleCommandTargetSpy.cs" />
-    <Compile Include="Features\AttachToChrome\ColumnSorter.cs" />
-    <Compile Include="Features\AttachToChrome\DebugAttach.cs" />
-    <Compile Include="Features\AttachToChrome\DkmComponentMessageInitializer.cs" />
-    <Compile Include="Features\AttachToChrome\DkmComponentEventHandler.cs" />
-    <Compile Include="Features\AttachToChrome\NumericStringComparer.cs" />
-    <Compile Include="Features\AttachToChrome\ProcessViewItem.cs" />
-    <Compile Include="Features\AutoUpdate\IUpdateNotificationListener.cs" />
-    <Compile Include="Features\AutoUpdate\UpdateInfo.cs" />
-    <Compile Include="Features\AutoUpdate\UpdateNotificationListener.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifierConstants.cs" />
-    <Compile Include="Features\AttachToChrome\AttachDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Features\AttachToChrome\AttachDialog.designer.cs">
-      <DependentUpon>AttachDialog.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Features\AttachToChrome\AttachToAllChromesHandler.cs" />
-    <Compile Include="Features\AttachToChrome\AttachToChromeDescendantsHandler.cs" />
-    <Compile Include="Features\AttachToChrome\Guids.cs" />
-    <Compile Include="Features\AttachToChrome\PkgCmdID.cs" />
-    <Compile Include="Features\AttachToChrome\ProcessCategory.cs" />
-    <Compile Include="Features\AttachToChrome\AttachToChromeDialogHandler.cs" />
-    <Compile Include="ChromiumEnlistment\ChromiumSourceFiles.cs" />
-    <Compile Include="ChromiumEnlistment\IChromiumSourceFiles.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierConstants.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassificationType.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationType.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassificationDefinition.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifier.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumStyleClassifierProvider.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\ChromiumSourceFilesExtensions.cs" />
-    <Compile Include="Features\AutoUpdate\IPackageVersionProvider.cs" />
-    <Compile Include="Features\AutoUpdate\IUpdateInfoProvider.cs" />
-    <Compile Include="Features\AutoUpdate\PackageVersionProvider.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputParser.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputSpan.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifierProvider.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassifier.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleConstants.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\IBuildOutputParser.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\NugetConsoleViewHandler.cs" />
-    <Compile Include="Features\BuildOutputAnalyzer\BuildOutputClassificationDefinition.cs" />
-    <Compile Include="Features\IndexServerInfo\IShowServerInfoService.cs" />
-    <Compile Include="Features\IndexServerInfo\ProjectDetailsDialog.xaml.cs">
-      <DependentUpon>ProjectDetailsDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\IndexServerInfo\ProjectDetailsViewModel.cs" />
-    <Compile Include="Features\IndexServerInfo\ProjectDetailsControl.xaml.cs">
-      <DependentUpon>ProjectDetailsControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\IndexServerInfo\ProjectConfigurationSectionDetailsControl.xaml.cs">
-      <DependentUpon>ProjectConfigurationSectionDetailsControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml.cs">
-      <DependentUpon>ProjectConfigurationDetailsDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\IndexServerInfo\ShowServerInfoService.cs" />
-    <Compile Include="Features\QuickSearch\QuickSearchFilePathsHandler.cs" />
-    <Compile Include="Features\QuickSearch\QuickSearchCodeHandler.cs" />
-    <Compile Include="Features\QuickSearch\SelectionHelpers.cs" />
-    <Compile Include="Features\IndexServerInfo\DirectoryDetailsViewModel.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\FilePathEventArgs.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IIncrementalHierarchyBuilder.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IncrementalBuildResult.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\DirectoryNodeViewModel.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\FileNodeViewModel.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilder.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IncrementalHierarchyBuilderAggregate.cs" />
-    <Compile Include="Features\IndexServerInfo\DirectoryDetailsDialog.xaml.cs">
-      <DependentUpon>DirectoryDetailsDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\SourceExplorerHierarchy\INodeTemplateFactory.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\INodeViewModelLoader.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyController.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\ISourceExplorerHierarchyControllerFactory.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IVsGlyphService.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IVsHierarchyImpl.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\IVsSolutionEventsHandler.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\LoadChildrenResult.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\NodeTemplateFactory.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\NodeViewModelLoader.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\NodeViewModelTemplate.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\RootNodeViewModel.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\SolutionExplorerHierarchyInitializer.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyController.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\SourceExplorerHierarchyControllerFactory.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsGlyphService.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyAggregate.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyChanges.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyCommandHandler.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyLogger.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyNodes.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchy.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\NodeViewModel.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsHierarchyUtilities.cs" />
-    <Compile Include="Features\SourceExplorerHierarchy\VsSolutionEventsHandler.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml.cs">
-      <DependentUpon>BuildExplorerControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerToolWindow.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\BuildExplorerViewModel.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\DeveloperBuildViewModel.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\InstalledBuildViewModel.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\ShowBuildExplorerCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\BuildExplorer\ChromeProcessViewModel.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.FilePathSearchInfo.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.SearchWorkerParams.cs" />
-    <Compile Include="Views\VsRunningDocTableEvents.cs" />
-    <Compile Include="Wpf\HumanReadableBytesValueConverter.cs" />
-    <Compile Include="Features\IndexServerInfo\ServerDetailsDialog.xaml.cs">
-      <DependentUpon>ServerDetailsDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\IndexServerInfo\ServerDetailsViewModel.cs" />
-    <Compile Include="Features\IndexServerInfo\ServerStatusDialog.xaml.cs">
-      <DependentUpon>ServerStatusDialog.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\IndexServerInfo\ServerStatusViewModel.cs" />
-    <Compile Include="Wpf\ListViewSorter.cs" />
-    <Compile Include="Wpf\NumberValueConverter.cs" />
-    <Compile Include="Features\IndexServerInfo\DirectoryDetailsControl.xaml.cs">
-      <DependentUpon>DirectoryDetailsControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\IndexServerInfo\SectioNameValueConverter.cs" />
-    <Compile Include="Wpf\ViewModelBase.cs" />
-    <Compile Include="Package\IShellHost.cs" />
-    <Compile Include="Package\ReportServerProgress.cs" />
-    <Compile Include="Package\ShellHost.cs" />
-    <Compile Include="Threads\IDispatchThreadDelayedOperationExecutor.cs" />
-    <Compile Include="Views\ITextDocumentTable.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchCodeCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SearchResultsDocumentChangeTracker.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\DocumentChangeTrackingEntry.cs" />
-    <Compile Include="Views\TextDocumentTable.cs" />
-    <Compile Include="Features\ToolWindows\IToolWindowAccessor.cs" />
-    <Compile Include="Features\ToolWindows\RootTreeViewItemViewModel.cs" />
-    <Compile Include="Features\ToolWindows\ShowToolWindowCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CancelSearchToolWindowCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CancelSearchCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\GotoNextLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\GlobalPreviousLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\NextLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\PreviousLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\VsWindowFrameNotifyHandler.cs" />
-    <Compile Include="Features\ToolWindows\TextErrorItemViewModel.cs" />
-    <Compile Include="Features\ToolWindows\ChromiumExplorerViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\GlobalNextLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\GotoPreviousLocationCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\TextWarningItemViewModel.cs" />
-    <Compile Include="Settings\GlobalSettings.cs" />
-    <Compile Include="Settings\GlobalSettingsProvider.cs" />
-    <Compile Include="Settings\HardCodedSettings.cs" />
-    <Compile Include="Settings\IGlobalSettingsProvider.cs" />
-    <Compile Include="Package\CommandHandler\IPackagePriorityCommandHandler.cs" />
-    <Compile Include="Package\CommandHandler\PackageCommandHandlerBase.cs" />
-    <Compile Include="Package\CommandHandler\PackageCommandHandlerExtensions.cs" />
-    <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerBase.cs" />
-    <Compile Include="Package\CommandHandler\PackagePriorityCommandHandlerRegistration.cs" />
-    <Compile Include="Package\CommandHandler\SimplePackageCommandHandler.cs" />
-    <Compile Include="Package\DisposeContainer.cs" />
-    <Compile Include="Package\DispatchThreadEventBus.cs" />
-    <Compile Include="Package\IDisposeContainer.cs" />
-    <Compile Include="Package\IDispatchThreadEventBus.cs" />
-    <Compile Include="Package\VsSolutionEventsHandler.cs" />
-    <Compile Include="ServerProxy\FileSystemTreeSource.cs" />
-    <Compile Include="ServerProxy\IFileSystemTreeSource.cs" />
-    <Compile Include="Threads\IDispatchThread.cs" />
-    <Compile Include="Threads\DispatchThreadDelayedOperationExecutor.cs" />
-    <Compile Include="Threads\DispatchThread.cs" />
-    <Compile Include="ToolsOptions\IToolsOptionsPageProvider.cs" />
-    <Compile Include="ToolsOptions\CodingStyleOptions.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ToolsOptions\DebuggingOptions.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ToolsOptions\GeneralOptions.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Views\IImageSourceFactory.cs" />
-    <Compile Include="Views\VsResources.cs" />
-    <Compile Include="Views\ImageSourceFactory.cs" />
-    <Compile Include="Wpf\HierarchyObjectNavigator.cs" />
-    <Compile Include="Views\IWindowsExplorer.cs" />
-    <Compile Include="Views\Clipboard.cs" />
-    <Compile Include="Views\IClipboard.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\ICodeSearchController.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CommandDelegate.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchItemViewModelBase.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchController.cs" />
-    <Compile Include="Features\ToolWindows\ToolWindowAccessor.cs" />
-    <Compile Include="Features\ToolWindows\TreeViewRootNodes.cs" />
-    <Compile Include="Package\IPackagePostDispose.cs" />
-    <Compile Include="Threads\IpcRequestException.cs" />
-    <Compile Include="Threads\ISynchronizationContext.cs" />
-    <Compile Include="Threads\SynchronizationContextDelegate.cs" />
-    <Compile Include="Views\IFileRegistrationRequestService.cs" />
-    <Compile Include="Views\TextDocumentRegistrationManager.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SearchCodeCommandHandler.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\SearchFilePathsCommandHandler.cs" />
-    <Compile Include="Views\FileRegistrationRequestService.cs" />
-    <Compile Include="Features\FormatComment\CommentType.cs" />
-    <Compile Include="Features\FormatComment\ExtendSpanResult.cs" />
-    <Compile Include="Features\FormatComment\FormatLinesResult.cs" />
-    <Compile Include="Features\FormatComment\ICommentFormatter.cs" />
-    <Compile Include="Package\PackageInitializerViewHandler.cs" />
-    <Compile Include="Package\IPackagePostInitializer.cs" />
-    <Compile Include="Package\IPackagePreInitializer.cs" />
-    <Compile Include="Package\IVisualStudioPackageProvider.cs" />
-    <Compile Include="Package\VisualStudioPackageInitialize.cs" />
-    <Compile Include="Package\VisualStudioPackageProvider.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\ShowSourceExplorerCommandHandler.cs" />
-    <Compile Include="Features\FormatComment\CommentFormatter.cs" />
-    <Compile Include="Package\CommandHandler\IPackageCommandHandler.cs" />
-    <Compile Include="Package\CommandHandler\PackageCommandHandlerRegistration.cs" />
-    <Compile Include="Package\IVisualStudioPackage.cs" />
-    <Compile Include="ServerProxy\IServerProcessLauncher.cs" />
-    <Compile Include="ServerProxy\IServerProcessProxy.cs" />
-    <Compile Include="Threads\IReceiveResponsesThread.cs" />
-    <Compile Include="Threads\IRequestQueue.cs" />
-    <Compile Include="Threads\ISendRequestsThread.cs" />
-    <Compile Include="Threads\IDelayedOperationExecutor.cs" />
-    <Compile Include="Threads\ISynchronizationContextProvider.cs" />
-    <Compile Include="Threads\IDispatchThreadServerRequestExecutor.cs" />
-    <Compile Include="Threads\ReceiveResponsesThread.cs" />
-    <Compile Include="Threads\RequestQueue.cs" />
-    <Compile Include="Threads\SendRequestsThread.cs" />
-    <Compile Include="Threads\DelayedOperation.cs" />
-    <Compile Include="Threads\DelayedOperationExecutor.cs" />
-    <Compile Include="Threads\SynchronizationContextProvider.cs" />
-    <Compile Include="Threads\DispatchThreadServerRequestExecutor.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\FilePositionViewModel.cs" />
-    <Compile Include="Threads\DispatchThreadServerRequest.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\FileSystemEntryDataViewModelFactory.cs" />
-    <Compile Include="Wpf\ILazyObservableCollection.cs" />
-    <Compile Include="Wpf\IProgressBarTracker.cs" />
-    <Compile Include="Features\ToolWindows\LazyItemViewModel.cs" />
-    <Compile Include="Wpf\LazyObservableCollection.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\DirectoryEntryViewModel.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\FileEntryViewModel.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\FileSystemEntryViewModel.cs" />
-    <Compile Include="Wpf\ProgressBarTracker.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchViewModel.cs" />
-    <Compile Include="Features\ToolWindows\TextItemViewModel.cs" />
-    <Compile Include="Features\ToolWindows\TreeViewItemViewModel.cs" />
-    <Compile Include="Properties\GlobalSuppressions.cs" />
-    <Compile Include="Commands\Guids.cs" />
-    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchControl.xaml.cs">
-      <DependentUpon>CodeSearchControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Commands\OleCommandTarget.cs" />
-    <Compile Include="Features\FormatComment\FormatCommentHandler.cs" />
-    <Compile Include="Commands\ICommandTarget.cs" />
-    <Compile Include="Commands\SimpleCommandTarget.cs" />
-    <Compile Include="Features\AutoUpdate\UpdateChecker.cs" />
-    <Compile Include="Features\AutoUpdate\UpdateInfoProvider.cs" />
-    <Compile Include="Views\IStatusBar.cs" />
-    <Compile Include="Views\IStandarImageSourceFactory.cs" />
-    <Compile Include="Views\StandarImageSourceFactory.cs" />
-    <Compile Include="Views\StatusBar.cs" />
-    <Compile Include="Wpf\EditableComboBox.cs" />
-    <Compile Include="Wpf\StringListViewModel.cs" />
-    <Compile Include="Wpf\IHierarchyObject.cs" />
-    <Compile Include="Views\WindowsExplorer.cs" />
-    <Compile Include="Wpf\WpfUtilities.cs" />
-    <Page Include="Features\IndexServerInfo\ProjectDetailsDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Features\IndexServerInfo\ProjectDetailsControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Features\IndexServerInfo\ProjectConfigurationSectionDetailsControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Features\IndexServerInfo\DirectoryDetailsDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Features\ToolWindows\BuildExplorer\BuildExplorerControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Features\ToolWindows\CodeSearch\CodeSearchControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Compile Include="Features\ToolWindows\CodeSearch\CodeSearchToolWindow.cs" />
-    <Compile Include="Views\IOpenDocumentHelper.cs" />
-    <Compile Include="Views\OpenDocumentHelper.cs" />
-    <Compile Include="Views\IViewHandler.cs" />
-    <Compile Include="Commands\PkgCmdID.cs" />
-    <Compile Include="Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="ServerProxy\CallbackDictionary.cs" />
-    <Compile Include="ServerProxy\ITypedRequestProcessProxy.cs" />
-    <Compile Include="ServerProxy\ServerProcessLauncher.cs" />
-    <Compile Include="ServerProxy\ServerProcessProxy.cs" />
-    <Compile Include="ServerProxy\TypedRequestProcessProxy.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\AccessorIndentChecker.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\SpaceAfterForKeywordChecker.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\ElseIfOnNewLineChecker.cs" />
-    <Compile Include="Views\ViewCreationListener.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\OpenBraceAfterNewLineChecker.cs" />
-    <Compile Include="Views\TextLineFragment.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckerError.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\ITextLineChecker.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\TrailingSpacesChecker.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\TabCharacterChecker.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\EndOfLineChecker.cs" />
-    <Compile Include="Features\ChromiumCodingStyleChecker\TextLineCheckers\LongLineChecker.cs" />
-    <Compile Include="Views\TextSnapshotLineExtensions.cs" />
-    <Compile Include="VsPackage.cs" />
-    <Page Include="Features\IndexServerInfo\ServerDetailsDialog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Features\IndexServerInfo\ServerStatusDialog.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Features\IndexServerInfo\DirectoryDetailsControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Features\AttachToChrome\AttachDialog.resx">
-      <DependentUpon>AttachDialog.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="VsPackage.resx">
-      <MergeWithCTO>true</MergeWithCTO>
-      <ManifestResourceName>VSPackage</ManifestResourceName>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -529,17 +94,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Resource Include="Views\Images\FileEntry.png" />
-    <None Include="Resources\Images_32bit.bmp" />
     <VSCTCompile Include="VsChromium.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
       <SubType>Designer</SubType>
+      <Link>VsChromium.vsct</Link>
     </VSCTCompile>
     <Content Include="$(OutputPath)\VsChromium.vsdconfig">
       <Link>VsChromium.vsdconfig</Link>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <VSIXSubPath>.</VSIXSubPath>
+      <IncludeInVSIX>false</IncludeInVSIX> <!-- Included through vsixmanifest already. -->
     </Content>
     <Content Include="$(BuildRoot)src\DkmIntegration\Visualizers\Visualizers.natvis">
       <Link>Visualizers.natvis</Link>
@@ -547,6 +110,36 @@
       <IncludeInVSIX>true</IncludeInVSIX>
       <VSIXSubPath>.</VSIXSubPath>
     </Content>
+    <EmbeddedResource Include="VsPackage.resx">
+      <MergeWithCTO>true</MergeWithCTO>
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\ChromeDebugIcons.png" />
+    <Resource Include="Resources\VsChromium.ico" />
+    <Resource Include="Resources\VsChromium.png" />
+    <Resource Include="Resources\VsChromiumIcon.png" />
+    <Resource Include="Views\Images\ArrowLeft.png" />
+    <Resource Include="Views\Images\ArrowRight.png" />
+    <Resource Include="Views\Images\CancelSearch.png" />
+    <Resource Include="Views\Images\ClearSearch.png" />
+    <Resource Include="Views\Images\Error.png" />
+    <Resource Include="Views\Images\FileEntry.png" />
+    <Resource Include="Views\Images\FileGo.png" />
+    <Resource Include="Views\Images\ProcessWorking.png" />
+    <Resource Include="Views\Images\ProjectNodeIcon.png" />
+    <Resource Include="Views\Images\RefreshFileSystemTree.png" />
+    <Resource Include="Views\Images\SearchLens.png" />
+    <Resource Include="Views\Images\SyncActiveDocument.png" />
+    <Resource Include="Views\Images\TextDocument.png" />
+    <Resource Include="Views\Images\TextEntry.png" />
+    <Resource Include="Views\Images\VsChromiumIcon.png" />
+    <Resource Include="Views\Images\Warning.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Images_32bit.bmp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">
@@ -583,19 +176,20 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="17.14.40264" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.9.820" />
+    <PackageReference Include="protobuf-net">
+      <Version>2.0.0.640</Version>
+    </PackageReference>
+  </ItemGroup>
+  <Import Project="..\VsChromium-Shared\VsChromium-Shared.projitems" Label="Shared" />
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>
   </PropertyGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets'))" />
-  </Target>
-  <Import Project="..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.0.215\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

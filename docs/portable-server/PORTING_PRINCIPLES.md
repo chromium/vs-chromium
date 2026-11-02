@@ -164,8 +164,10 @@ All new/ported projects use **SDK-style** csproj.
 ## Behavior changes
 
 Deliberate differences from the current server (see principle 3). Each entry is decided case by
-case; add new entries here (with the reason) as they are found during the port. Initial list, found
-while auditing the current server:
+case; add new entries here (with the reason) as they are found during the port. **Every behavior
+change comes with regression tests** (server unit tests and, where relevant, end-to-end tests over
+stdio) that fail on the current server and pass after the fix. Initial list, found while auditing
+the current server (all four are to be fixed):
 
 1. **Positions are byte offsets** for UTF-8 files (`AsciiFileContents` searches raw bytes), while the
    clients interpret them as character offsets: wrong match selection in files with non-ASCII text
@@ -266,13 +268,16 @@ of its resource usage, measured inside the process:
 
 1. **Benchmark suite + baseline** on the current server: `GetServerStatisticsRequest` added to the
    current (net472) server, code base generator, benchmark tests driving the server executable over
-   stdio, metrics and report; record the baseline results.
+   stdio, metrics and report; record the baseline results. Also write the regression tests for
+   behavior changes 1–4 (expected to fail on the current server, marked as known failures until
+   fixed).
 2. **Project restructuring**: SDK-style projects, `VsChromium.Core.Ipc` (`netstandard2.0`), server
    still net472 + native code; all clients/tests green.
 3. **Server on net10 (Windows)**, still with the native code (P/Invoke to VsChromium.Native.dll works
    on .NET 10): MEF/NLog/protobuf-net/Newtonsoft upgrades, new test project. Benchmark.
 4. **Managed search**: text kind, line extents, literal search, regex; native code still available
-   for side-by-side parity tests. Apply behavior changes 1–4. Benchmark.
+   for side-by-side parity tests. Fix behavior changes 1–4 (their regression tests now pass, the
+   known-failure markers are removed). Benchmark.
 5. **mtsuite file system**: paths, enumeration, parallel scanning, file reading, memory accounting.
    Delete `Native`, `re2`, `ServerNativeInterop` and Win32 P/Invokes from the server. Benchmark.
 6. **Process model**: VS package starts the server directly over stdio (no Host.exe); VSIX and VS

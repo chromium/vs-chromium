@@ -121,8 +121,11 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   `IsAotCompatible` (trimming and AOT analyzers, warnings are errors: no warning). The NativeAOT
   publish (`dotnet publish src/Server/Server.csproj -c Release -r win-x64
   -p:VsChromiumPublishAot=true`, output `Binaries\Release\ServerPublishAot\win-x64\`) builds without
-  warning a 9.8 MB executable which passes the end-to-end tests. It is not used for packaging yet
-  (to be decided with benchmarks: startup time, memory, steady state speed vs ReadyToRun + JIT).
+  warning a 9.8 MB executable which passes the end-to-end tests. **Measured (m11 code): it stays an
+  option, ReadyToRun + JIT is kept for packaging.** Large corpus: cold indexing and literal searches
+  unchanged (bound by the OS and by memory bandwidth), regex searches 50-110% slower (no dynamic PGO
+  or tiered JIT), file path searches similar; small corpus: same cold index time (~70-130 ms),
+  working set 120 → 92 MB; executable 9.8 MB instead of 98 MB.
   What remains of "reflection" is `Type.Name` (the "$type" names of the protocol, `ClassName` of the
   typed messages, and diagnostics), which is supported by NativeAOT.
 

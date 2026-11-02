@@ -25,9 +25,8 @@
     <!-- Tests of the code shared by the Visual Studio side and the server (compiled into both
          VsChromium.Core and VsChromium.Core.Server): same test source files as src/Tests, run here
          against the server build of the code. -->
-    <Compile Include="..\Tests\Core\TestConversion.cs;..\Tests\Core\TestCustomPathComparer.cs;
+    <Compile Include="..\Tests\Core\TestCustomPathComparer.cs;
                       ..\Tests\Core\TestEnumerableExtensions.cs;..\Tests\Core\TestFileNameMatching.cs;
-                      ..\Tests\Core\TestPathComponent.cs;..\Tests\Core\TestPathComponentEnumerator.cs;
                       ..\Tests\Core\TestPathHelpers.cs"
              Link="Core\Shared\%(Filename)%(Extension)" />
   </ItemGroup>

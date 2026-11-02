@@ -30,15 +30,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\TestEnumerableExtensions.cs" />
-    <Compile Include="Core\TestConversion.cs" />
     <Compile Include="Core\TestPathHelpers.cs" />
     <Compile Include="ServerProcess\TestUnregisterFile.cs" />
     <Compile Include="ServerProcess\TestFileSystemTree.cs" />
     <Compile Include="Features\TestBuildOutputAnalyzer.cs" />
     <Compile Include="Mocks\TextEditMock.cs" />
     <Compile Include="Core\TestCustomPathComparer.cs" />
-    <Compile Include="Core\TestPathComponentEnumerator.cs" />
-    <Compile Include="Core\TestPathComponent.cs" />
     <Compile Include="Features\TestFormatComments.cs" />
     <Compile Include="ServerProcess\TestSearchCode.cs" />
     <Compile Include="ServerProcess\TestServerPerf.cs" />

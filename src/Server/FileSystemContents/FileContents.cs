@@ -103,7 +103,7 @@ namespace VsChromium.Server.FileSystemContents {
       var filters = _trigramFilters;
       if (filters == null)
         return true;
-      if (!query.MatchCase && CharacterSize != 1)
+      if (!IsAsciiText && !query.AppliesToNonAsciiText)
         return true;
       return filters.MayContain(chunkIndex, query);
     }
@@ -111,7 +111,8 @@ namespace VsChromium.Server.FileSystemContents {
     /// <summary>
     /// Find all instances of the search pattern stored in <paramref
     /// name="compiledTextSearchData"/> within the passed in <paramref
-    /// name="textRange"/>
+    /// name="textRange"/>. The ranges returned are UTF-16 positions (see <see
+    /// cref="ToUtf16Ranges"/>).
     /// </summary>
     public IList<TextRange> FindAll(
       CompiledTextSearchData compiledTextSearchData,
@@ -124,7 +125,28 @@ namespace VsChromium.Server.FileSystemContents {
       var textSearch = GetCompiledTextSearch(providerForMainEntry);
       var postProcessSearchHit = CreateFilterForOtherEntries(compiledTextSearchData);
       var result = textSearch.FindAll(textFragment, postProcessSearchHit, progressTracker);
-      return result;
+      return ToUtf16Ranges(result);
+    }
+
+    /// <summary>
+    /// Converts ranges of the text (e.g. UTF-8 byte positions) to ranges of the UTF-16
+    /// representation of the text, i.e. the positions exchanged with clients.
+    /// </summary>
+    protected virtual IList<TextRange> ToUtf16Ranges(IList<TextRange> ranges) {
+      return ranges;
+    }
+
+    /// <summary>
+    /// True if the text contains only ASCII characters.
+    /// </summary>
+    protected virtual bool IsAsciiText => true;
+
+    /// <summary>
+    /// Returns the start of the character containing <paramref name="position"/> (positions in
+    /// the middle of a multi-byte character are moved to the start of the character).
+    /// </summary>
+    protected virtual int GetCharacterBoundary(int position) {
+      return position;
     }
 
     /// <summary>
@@ -139,11 +161,18 @@ namespace VsChromium.Server.FileSystemContents {
       if (remaining <= maxLength)
         return remaining;
       var newLinePosition = LastIndexOfNewLine(new TextRange(position, maxLength));
-      if (newLinePosition < 0)
-        return maxLength;
+      if (newLinePosition < 0) {
+        // Don't split a character
+        var end = GetCharacterBoundary(position + maxLength);
+        return end > position ? end - position : maxLength;
+      }
       return newLinePosition - position + 1;
     }
-    public IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
+
+    /// <summary>
+    /// Returns the extracts of the text at the (UTF-16) positions <paramref name="spans"/>.
+    /// </summary>
+    public virtual IEnumerable<FileExtract> GetFileExtracts(int maxLength, IEnumerable<FilePositionSpan> spans) {
       var offsets = GetFileOffsets();
 
       return spans
@@ -152,15 +181,16 @@ namespace VsChromium.Server.FileSystemContents {
         .ToList();
     }
 
-    protected int CharacterCount { get { return ByteLength / CharacterSize; } }
+    /// <summary>
+    /// The length of the text, in bytes (UTF-8).
+    /// </summary>
+    protected int CharacterCount { get { return ByteLength; } }
 
     protected TextFragment TextFragment {
-      get { return new TextFragment(Contents.Pointer, 0, CharacterCount, CharacterSize); }
+      get { return new TextFragment(Contents.Pointer, 0, CharacterCount, sizeof(byte)); }
     }
 
     protected abstract ITextLineOffsets GetFileOffsets();
-
-    public abstract byte CharacterSize { get; }
 
     protected abstract ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container);
 

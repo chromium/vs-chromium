@@ -53,7 +53,7 @@ namespace VsChromium.Server.FileSystemContents {
     /// The number of bytes in this piece. This is used for debugging only (i.e.
     /// displaying # of bytes allocated).
     /// </summary>
-    public int ByteLength => _textRange.Length * _fileContents.CharacterSize;
+    public int ByteLength => _textRange.Length;
 
     /// <summary>
     /// Find all occurrences of a search term passed in <paramref

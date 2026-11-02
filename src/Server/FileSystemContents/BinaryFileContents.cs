@@ -34,10 +34,6 @@ namespace VsChromium.Server.FileSystemContents {
       throw new NotImplementedException();
     }
 
-    public override byte CharacterSize {
-      get { return 1; }
-    }
-
     public long BinaryFileSize {
       get { return _byteLength; }
     }

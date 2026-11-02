@@ -69,8 +69,8 @@ namespace VsChromium.Tests.Server {
     }
 
     private IList<TextRange> PerformSearch(string text, string searchPattern) {
-      var result1 = PerformSearch(() => Utils.CreateAsciiFileContents(text), searchPattern);
-      var result2 = PerformSearch(() => Utils.CreateUtf16FileContents(text), searchPattern);
+      var result1 = PerformSearch(() => Utils.CreateUtf8FileContents(text), searchPattern);
+      var result2 = PerformSearch(() => Utils.CreateNonAsciiFileContents(text), searchPattern);
       Assert.IsTrue(result1.SequenceEqual(result2));
       return result1;
     }

@@ -11,6 +11,7 @@ namespace VsChromium.Server.Search {
   /// </summary>
   public class CompiledTextSearchContainer : ICompiledTextSearchContainer {
     private readonly ICompiledTextSearch _asciiCompiledTextSearchAlgo;
+    private readonly ICompiledTextSearch _utf8CompiledTextSearchAlgo;
     private readonly ICompiledTextSearch _utf16CompiledTextSearchAlgo;
 
     public CompiledTextSearchContainer(string pattern, SearchProviderOptions searchOptions) {
@@ -20,11 +21,16 @@ namespace VsChromium.Server.Search {
         searchOptions.MatchWholeWord,
         searchOptions.UseRegex,
         out _asciiCompiledTextSearchAlgo,
+        out _utf8CompiledTextSearchAlgo,
         out _utf16CompiledTextSearchAlgo);
     }
 
     public ICompiledTextSearch GetAsciiSearch() {
       return _asciiCompiledTextSearchAlgo;
+    }
+
+    public ICompiledTextSearch GetUtf8Search() {
+      return _utf8CompiledTextSearchAlgo;
     }
 
     public ICompiledTextSearch GetUtf16Search() {
@@ -33,6 +39,7 @@ namespace VsChromium.Server.Search {
 
     public void Dispose() {
       _asciiCompiledTextSearchAlgo.Dispose();
+      _utf8CompiledTextSearchAlgo.Dispose();
       _utf16CompiledTextSearchAlgo.Dispose();
     }
   }

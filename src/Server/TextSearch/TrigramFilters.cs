@@ -8,7 +8,8 @@ using System.Collections.Generic;
 namespace VsChromium.Server.TextSearch {
   /// <summary>
   /// Prefilter of the code search: for each chunk of text (each "piece" of a file), a Bloom filter
-  /// of the trigrams (3 consecutive characters, ASCII letters folded to lower case) of the chunk.
+  /// of the trigrams (3 consecutive bytes of the UTF-8 text, ASCII letters folded to lower case)
+  /// of the chunk.
   /// A search for a text skips the chunks whose filter doesn't contain all the trigrams of the text
   /// (or of the literals that every match must contain, for wildcards and regular expressions):
   /// such chunks can't contain a match. Bloom filters have no false negative, so results are
@@ -44,8 +45,7 @@ namespace VsChromium.Server.TextSearch {
     }
 
     /// <summary>
-    /// The key of a trigram: the 3 (folded) UTF-16 code units. ASCII text (bytes) uses the same
-    /// keys, so that a query works for both kinds of text.
+    /// The key of a trigram: the 3 (folded) bytes of UTF-8 text.
     /// </summary>
     internal static ulong Key(uint c0, uint c1, uint c2) {
       return ((ulong)Fold(c0) << 32) | ((ulong)Fold(c1) << 16) | Fold(c2);
@@ -73,23 +73,37 @@ namespace VsChromium.Server.TextSearch {
     }
 
     /// <summary>
-    /// The trigrams that every match of a search must contain (null if there are none, e.g. a
-    /// text shorter than 3 characters: no filtering is possible).
+    /// The trigrams (of the UTF-8 bytes) that every match of a search must contain (null if there
+    /// are none, e.g. a text shorter than 3 bytes: no filtering is possible).
     /// </summary>
-    public static TrigramQuery CreateQuery(IEnumerable<string> requiredLiterals, bool matchCase) {
+    /// <param name="requiredLiterals">The literals every match contains.</param>
+    /// <param name="matchCase">False if the search ignores case.</param>
+    /// <param name="useRegex">True for regular expressions: when ignoring case, the regular
+    /// expression engine matches non ASCII characters that are not equal to the literal with
+    /// ASCII case folding (e.g. the Kelvin sign and "k"), so the query can't be used for text with
+    /// non ASCII characters.</param>
+    public static TrigramQuery CreateQuery(IEnumerable<string> requiredLiterals, bool matchCase, bool useRegex) {
       if (!Enabled)
         return null;
       var keys = new HashSet<ulong>();
       foreach (var literal in requiredLiterals) {
         if (literal == null)
           continue;
-        for (var i = 2; i < literal.Length; i++) {
-          keys.Add(Key(literal[i - 2], literal[i - 1], literal[i]));
+        if (!matchCase && !System.Text.Ascii.IsValid(literal)) {
+          // Case insensitive search of non ASCII text: Unicode case folding, not the ASCII
+          // folding of the filters.
+          return null;
+        }
+        var bytes = Utf8Literals.GetBytes(literal);
+        if (bytes == null)
+          continue;
+        for (var i = 2; i < bytes.Length; i++) {
+          keys.Add(Key(bytes[i - 2], bytes[i - 1], bytes[i]));
         }
       }
       if (keys.Count == 0)
         return null;
-      return new TrigramQuery(keys, matchCase);
+      return new TrigramQuery(keys, appliesToNonAsciiText: matchCase || !useRegex);
     }
   }
 
@@ -100,8 +114,8 @@ namespace VsChromium.Server.TextSearch {
     private readonly uint[] _h1;
     private readonly uint[] _h2;
 
-    internal TrigramQuery(ICollection<ulong> keys, bool matchCase) {
-      MatchCase = matchCase;
+    internal TrigramQuery(ICollection<ulong> keys, bool appliesToNonAsciiText) {
+      AppliesToNonAsciiText = appliesToNonAsciiText;
       _h1 = new uint[keys.Count];
       _h2 = new uint[keys.Count];
       var index = 0;
@@ -112,10 +126,10 @@ namespace VsChromium.Server.TextSearch {
     }
 
     /// <summary>
-    /// For case-insensitive searches, filters of UTF-16 text are not used: the folding of the
-    /// filters (ASCII only) is not the case-insensitive comparison of UTF-16 text (Unicode).
+    /// False if the filters of text containing non ASCII characters can't be used (see <see
+    /// cref="TrigramFilters.CreateQuery"/>).
     /// </summary>
-    public bool MatchCase { get; }
+    public bool AppliesToNonAsciiText { get; }
 
     internal bool IsContainedIn(ulong[] bits, int start, int wordCount) {
       var bitCount = (uint)(wordCount * 64);
@@ -162,11 +176,9 @@ namespace VsChromium.Server.TextSearch {
     private static ulong[] _asciiTrigramMap; // 2^24 bits: all the trigrams of 3 bytes
     [ThreadStatic]
     private static List<uint> _asciiTrigrams;
-    [ThreadStatic]
-    private static HashSet<ulong> _utf16Trigrams;
 
     /// <summary>
-    /// Builds the filters of the chunks <paramref name="chunks"/> (ranges of <paramref name="text"/>).
+    /// Builds the filters of the chunks <paramref name="chunks"/> (ranges of the UTF-8 text <paramref name="text"/>).
     /// </summary>
     public static TrigramFilterSet Build(ReadOnlySpan<byte> text, IReadOnlyList<TextRange> chunks) {
       var map = _asciiTrigramMap ??= new ulong[1 << 18];
@@ -195,26 +207,6 @@ namespace VsChromium.Server.TextSearch {
         }
         filters.Add(filter);
       }
-      return Create(filters);
-    }
-
-    public static TrigramFilterSet Build(ReadOnlySpan<char> text, IReadOnlyList<TextRange> chunks) {
-      var trigrams = _utf16Trigrams ??= new HashSet<ulong>();
-      var filters = new List<ulong[]>(chunks.Count);
-      foreach (var chunk in chunks) {
-        var span = text.Slice(chunk.Position, chunk.Length);
-        trigrams.Clear();
-        for (var i = 2; i < span.Length; i++) {
-          trigrams.Add(TrigramFilters.Key(span[i - 2], span[i - 1], span[i]));
-        }
-        var filter = AllocateFilter(trigrams.Count);
-        foreach (var key in trigrams) {
-          AddToFilter(filter, key);
-        }
-        filters.Add(filter);
-      }
-      if (trigrams.Count > 64 * 1024)
-        _utf16Trigrams = null; // Don't keep a large set alive
       return Create(filters);
     }
 

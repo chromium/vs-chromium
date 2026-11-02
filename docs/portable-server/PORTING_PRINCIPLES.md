@@ -174,13 +174,11 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 
 ### File contents and search
 
-- **Storage** (decided in milestone 4): **ASCII files stay bytes** in memory; **files with non-ASCII
-  characters (UTF-8) are decoded to UTF-16** when loaded (`FileContentsFactory`, invalid UTF-8
-  bytes become U+FFFD, one character per invalid byte). This makes match positions UTF-16 offsets
-  (behavior change 1) and gives Unicode-aware case-insensitive search, whole word and regex for
-  free, at the cost of twice the memory for non-ASCII files only (a small fraction of source files).
-  Whether the contents live in GC arrays or native memory is decided in milestone 5 by benchmarks
-  (still the Win32 process heap after milestone 4); either way the total is reported.
+- **Storage**: **all text files are stored as UTF-8 bytes** (BOM removed, `Utf8FileContents`, with
+  an `IsAscii` flag). Until m14, files with non-ASCII characters were decoded to UTF-16 when loaded
+  (twice the memory for these files); see "UTF-8 storage (m14)" for the search of UTF-8 text.
+  Positions sent to clients are still UTF-16 offsets of the UTF-8 decoding of the file (invalid
+  UTF-8 bytes count as one U+FFFD each, behavior change 1).
 - **Text kind detection** (ASCII / UTF-8 / binary, `Server/TextSearch/TextKindDetector.cs`): managed
   port of `Text_GetKind` (same sampling heuristic for binary detection), plus a full vectorized
   `Ascii.IsValid` check so that a file is "ASCII" only if all its bytes are ASCII.
@@ -280,6 +278,10 @@ milestone 4; **all are fixed since milestone 4** (managed search):
    server (`SystemPathComparer.NameComparer`: ordinal, case-insensitive on Windows and macOS),
    which is also much faster than culture sensitive comparisons. Regression test
    `TestFileSystemSnapshotBuilder.ChildrenAreSortedWithTheNameComparer`.
+12. **Regex matches splitting a surrogate pair** (e.g. `.` matching the first half of a character
+    outside the BMP, such as an emoji) reported half a character. With UTF-8 storage (m14), such
+    matches include the whole character. Unit test
+    `TestUtf8FileContents.RandomTextsMatchUtf16Search` (the reference search rounds the same way).
 
 ## Reusing mtsuite
 
@@ -682,3 +684,40 @@ correct (a `git checkout` of thousands of files must end with the same index as 
 Results (large corpus, client time until a search sees the change): modify 1 file 2.6 s → 0.78 s,
 create 1 directory 2.8 s → 1.45 s; the "checkout" of 20,000 files with notification overflows is
 consistent ~4.5 s after the overflow (was > 70 s). Other scenarios unchanged.
+
+### UTF-8 storage (m14, `docs/portable-server/benchmarks/m14-utf8-storage`)
+
+Files with non-ASCII characters are now stored as UTF-8 bytes, like ASCII files (they were decoded
+to UTF-16: twice the memory). Search results are unchanged except for behavior change 12:
+
+- **Literal search** (`TextSearchFactory.CreateSearches`, `GetUtf8Search`): ASCII patterns use the
+  ASCII byte matchers (case-insensitive: ASCII case folding, which is what `OrdinalIgnoreCase` does
+  for ASCII patterns: it never matches non-ASCII characters such as the Kelvin sign or the dotless
+  i with ASCII letters). Case-sensitive non-ASCII patterns search their UTF-8 bytes
+  (`Span.IndexOf`). Case-insensitive non-ASCII patterns, and patterns containing U+FFFD (which
+  matches invalid bytes), decode the chunk to UTF-16 in a pooled buffer and use the UTF-16 matcher
+  (`Utf8TranscodingTextSearch`).
+- **Regex**: chunks of non-ASCII files are decoded to UTF-16 (same decoding as before), match
+  positions are converted back to bytes (`Utf16ToUtf8RangeMapper`). Case-sensitive regexes first
+  check for the bytes of their required literal; case-insensitive ones can't (the regex engine
+  matches e.g. the Kelvin sign with `k`).
+- **Whole word**: the characters before/after a match are decoded (`Rune`), same result as with
+  UTF-16 text (characters outside the BMP are not word characters).
+- **Positions**: byte ranges of the matches are converted to UTF-16 offsets
+  (`Utf8FileContents.ToUtf16Ranges`, `Encoding.UTF8.GetCharCount`), from checkpoints every 64 KB
+  for large files (computed on the first match). Extracts of non-ASCII files decode the file to
+  UTF-16 temporarily. Chunks never split a multi-byte character.
+- **Trigram filters**: built from the UTF-8 bytes for all files (the query uses the bytes of the
+  literals). Not used for case-insensitive non-ASCII literals, nor for non-ASCII files with
+  case-insensitive regexes (`TrigramQuery.AppliesToNonAsciiText`).
+- **Tests**: `TestUtf8FileContents` compares the results (positions, whole word, case, regex,
+  trigram filters, chunks, checkpoints, extracts) with the search of the decoded UTF-16 text on
+  random texts mixing ASCII, 2-4 byte characters, case folding traps and invalid bytes.
+
+Results (large corpus, ~3% of the files have non-ASCII characters): file contents 7,579 MB →
+7,316 MB (-264 MB), peak working set -3%, cold index -5%, background build of the trigram filters
+-16% (bytes instead of a hash set of UTF-16 trigrams). Queries unchanged or faster (common
+marker -13 to -18%). The 3-run benchmark showed two queries ~10 ms slower once; with 15 runs per
+query they are at the baseline (5.8 and 5.5 ms). Updates unchanged. On source trees with more
+non-ASCII text the saving is proportional to the size of the non-ASCII files (about half of their
+UTF-16 size).

@@ -10,7 +10,11 @@ namespace VsChromium.Server.Search {
   /// Gives access to the native text search engine for supported encodings.
   /// </summary>
   public interface ICompiledTextSearchContainer : IDisposable {
+    /// <summary>Search in text containing only ASCII characters (bytes).</summary>
     ICompiledTextSearch GetAsciiSearch();
+    /// <summary>Search in UTF-8 text containing non ASCII characters (bytes).</summary>
+    ICompiledTextSearch GetUtf8Search();
+    /// <summary>Search in UTF-16 text (e.g. file paths).</summary>
     ICompiledTextSearch GetUtf16Search();
   }
 }

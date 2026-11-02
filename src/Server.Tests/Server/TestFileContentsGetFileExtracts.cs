@@ -104,8 +104,8 @@ namespace VsChromium.Tests.Server {
     }
 
     private IList<FileExtract> PerformGetFileExtracts(string text, int maxLength, params FilePositionSpan[] spans) {
-      var result1 = PerformGetFileExtracts(() => Utils.CreateAsciiFileContents(text), maxLength, spans);
-      var result2 = PerformGetFileExtracts(() => Utils.CreateUtf16FileContents(text), maxLength, spans);
+      var result1 = PerformGetFileExtracts(() => Utils.CreateUtf8FileContents(text), maxLength, spans);
+      var result2 = PerformGetFileExtracts(() => Utils.CreateNonAsciiFileContents(text), maxLength, spans);
       Assert.IsTrue(result1.SequenceEqual(result2, new FileExtractComparer()));
       return result1;
     }

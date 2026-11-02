@@ -61,7 +61,7 @@ namespace VsChromium.Server.Search {
         parsedSearchString,
         searchContentsAlgorithms,
         fileNamePathMatcher,
-        TrigramFilters.CreateQuery(requiredLiterals, searchParams.MatchCase));
+        TrigramFilters.CreateQuery(requiredLiterals, searchParams.MatchCase, searchParams.Regex));
     }
 
     private List<ICompiledTextSearchContainer> CreateSearchAlgorithms(

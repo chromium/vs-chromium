@@ -51,20 +51,19 @@ namespace VsChromium.Server.FileSystemContents {
 
       switch (kind) {
         case TextKind.Ascii:
-          return new AsciiFileContents(new FileContentsMemory(block, 0, contentsByteCount), lastWriteTimeUtc);
+          return new Utf8FileContents(new FileContentsMemory(block, 0, contentsByteCount), lastWriteTimeUtc, isAscii: true);
 
         case TextKind.AsciiWithUtf8Bom:
-          return new AsciiFileContents(new FileContentsMemory(block, utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc);
+          return new Utf8FileContents(new FileContentsMemory(block, utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc, isAscii: true);
 
-        // Files with non ASCII characters are converted to UTF-16, so that
-        // positions of search results are character positions (not byte
-        // positions), and so that searches (including case insensitive
-        // searches and regular expressions) work on characters.
+        // Files with non ASCII characters are stored as UTF-8 too (half the
+        // memory of UTF-16 for mostly ASCII text). Positions of search results
+        // are converted to UTF-16 positions (see Utf8FileContents).
         case TextKind.Utf8:
-          return CreateUtf16FileContents(block, 0, contentsByteCount, lastWriteTimeUtc);
+          return new Utf8FileContents(new FileContentsMemory(block, 0, contentsByteCount), lastWriteTimeUtc, isAscii: false);
 
         case TextKind.Utf8WithBom:
-          return CreateUtf16FileContents(block, utf8BomSize, contentsByteCount - utf8BomSize, lastWriteTimeUtc);
+          return new Utf8FileContents(new FileContentsMemory(block, utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc, isAscii: false);
 
         case TextKind.ProbablyBinary:
           block.Dispose();
@@ -73,20 +72,6 @@ namespace VsChromium.Server.FileSystemContents {
         default:
           Invariants.Assert(false);
           throw new InvalidOperationException();
-      }
-    }
-
-    private static unsafe FileContents CreateUtf16FileContents(SafeHeapBlockHandle block, int offset, int length, DateTime lastWriteTimeUtc) {
-      try {
-        var bytes = new ReadOnlySpan<byte>(Pointers.AddPtr(block.Pointer, offset).ToPointer(), length);
-        var charCount = Encoding.UTF8.GetCharCount(bytes);
-        var utf16Block = HeapAllocStatic.Alloc(Math.Max(1, charCount) * sizeof(char));
-        var chars = new Span<char>(utf16Block.Pointer.ToPointer(), charCount);
-        Encoding.UTF8.GetChars(bytes, chars);
-        return new Utf16FileContents(new FileContentsMemory(utf16Block, 0, charCount * sizeof(char)), lastWriteTimeUtc);
-      }
-      finally {
-        block.Dispose();
       }
     }
 

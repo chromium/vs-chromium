@@ -14,6 +14,7 @@ namespace VsChromium.Tests.Server {
     private static readonly string[] Words = {
       "browser", "WebContents", "std::unique_ptr", "void", "return", "int", "const", "kMaxValue",
       "namespace", "#include", "<vector>", "TODO(", "class", "public:", "private:", "x", "y", "=", "+",
+      "café", "CAFÉ", "日本語", "𝄞",
     };
 
     private static string RandomText(Random random, int length) {
@@ -30,20 +31,24 @@ namespace VsChromium.Tests.Server {
       var random = new Random(42);
       for (var iteration = 0; iteration < 20; iteration++) {
         var text = RandomText(random, 5000);
-        var ascii = Encoding.ASCII.GetBytes(text);
-        var chunks = new[] { new TextRange(0, text.Length) };
-        var asciiFilters = TrigramFilterSet.Build(ascii, chunks);
-        var utf16Filters = TrigramFilterSet.Build(text.AsSpan(), chunks);
+        var utf8 = Encoding.UTF8.GetBytes(text);
+        var chunks = new[] { new TextRange(0, utf8.Length) };
+        var filters = TrigramFilterSet.Build(utf8, chunks);
         for (var i = 0; i < 200; i++) {
           var start = random.Next(text.Length - 20);
           var substring = text.Substring(start, 3 + random.Next(15));
+          if (char.IsLowSurrogate(substring[0]) || char.IsHighSurrogate(substring[substring.Length - 1]))
+            continue;
           foreach (var matchCase in new[] { true, false }) {
-            // Case variations of a substring are found by case-insensitive searches
-            var query = TrigramFilters.CreateQuery(new[] { matchCase ? substring : substring.ToUpperInvariant() }, matchCase);
-            Assert.IsTrue(asciiFilters.MayContain(0, query), substring);
-            if (matchCase) {
-              Assert.IsTrue(utf16Filters.MayContain(0, query), substring);
+            // ASCII case variations of a substring are found by case-insensitive searches
+            var query = TrigramFilters.CreateQuery(new[] { matchCase ? substring : AsciiToUpper(substring) }, matchCase, useRegex: false);
+            if (!matchCase && !Ascii.IsValid(substring)) {
+              // Unicode case folding: no filtering
+              Assert.IsNull(query);
+              continue;
             }
+            if (query != null)
+              Assert.IsTrue(filters.MayContain(0, query), substring);
           }
         }
       }
@@ -59,7 +64,7 @@ namespace VsChromium.Tests.Server {
       for (var i = 0; i < count; i++) {
         var absent = "zq" + i.ToString("D4") + "jx";
         Assert.IsFalse(text.Contains(absent));
-        if (!filters.MayContain(0, TrigramFilters.CreateQuery(new[] { absent }, true)))
+        if (!filters.MayContain(0, TrigramFilters.CreateQuery(new[] { absent }, true, useRegex: false)))
           rejected++;
       }
       Assert.IsTrue(rejected > count * 95 / 100, $"Only {rejected} of {count} absent texts rejected");
@@ -70,19 +75,34 @@ namespace VsChromium.Tests.Server {
       var text = "first chunk with alpha\nsecond chunk with beta\n";
       var chunks = new[] { new TextRange(0, 23), new TextRange(23, text.Length - 23) };
       var filters = TrigramFilterSet.Build(Encoding.ASCII.GetBytes(text), chunks);
-      var alpha = TrigramFilters.CreateQuery(new[] { "alpha" }, true);
-      var beta = TrigramFilters.CreateQuery(new[] { "beta" }, true);
+      var alpha = TrigramFilters.CreateQuery(new[] { "alpha" }, true, useRegex: false);
+      var beta = TrigramFilters.CreateQuery(new[] { "beta" }, true, useRegex: false);
       Assert.IsTrue(filters.MayContain(0, alpha));
       Assert.IsTrue(filters.MayContain(1, beta));
       Assert.IsFalse(filters.MayContain(0, beta));
       Assert.IsFalse(filters.MayContain(1, alpha));
     }
 
+    private static string AsciiToUpper(string value) {
+      return new string(value.Select(c => c < 128 ? char.ToUpperInvariant(c) : c).ToArray());
+    }
+
+    [TestMethod]
+    public void QueryAppliesToNonAsciiTextUnlessRegexIgnoringCase() {
+      Assert.IsTrue(TrigramFilters.CreateQuery(new[] { "foobar" }, true, useRegex: false).AppliesToNonAsciiText);
+      Assert.IsTrue(TrigramFilters.CreateQuery(new[] { "foobar" }, false, useRegex: false).AppliesToNonAsciiText);
+      Assert.IsTrue(TrigramFilters.CreateQuery(new[] { "foobar" }, true, useRegex: true).AppliesToNonAsciiText);
+      // The Kelvin sign matches "k" in case insensitive regular expressions
+      Assert.IsFalse(TrigramFilters.CreateQuery(new[] { "kelvin" }, false, useRegex: true).AppliesToNonAsciiText);
+      Assert.IsNotNull(TrigramFilters.CreateQuery(new[] { "café" }, true, useRegex: false));
+      Assert.IsNull(TrigramFilters.CreateQuery(new[] { "café" }, false, useRegex: false));
+    }
+
     [TestMethod]
     public void ShortTextsHaveNoQuery() {
-      Assert.IsNull(TrigramFilters.CreateQuery(new[] { "ab" }, true));
-      Assert.IsNull(TrigramFilters.CreateQuery(new string[] { null }, true));
-      Assert.IsNotNull(TrigramFilters.CreateQuery(new[] { "ab", "cde" }, true));
+      Assert.IsNull(TrigramFilters.CreateQuery(new[] { "ab" }, true, useRegex: false));
+      Assert.IsNull(TrigramFilters.CreateQuery(new string[] { null }, true, useRegex: false));
+      Assert.IsNotNull(TrigramFilters.CreateQuery(new[] { "ab", "cde" }, true, useRegex: false));
     }
   }
 }

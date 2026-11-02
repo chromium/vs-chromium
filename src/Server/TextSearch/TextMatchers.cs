@@ -10,13 +10,13 @@ using VsChromium.Core.Ipc;
 
 namespace VsChromium.Server.TextSearch {
   /// <summary>
-  /// Case sensitive search of a literal in ASCII text, using the vectorized
+  /// Case sensitive search of a literal in ASCII or UTF-8 text (bytes), using the vectorized
   /// Span.IndexOf.
   /// </summary>
-  public sealed class AsciiIndexOfMatcher : ITextMatcher<byte> {
+  public sealed class BytesIndexOfMatcher : ITextMatcher<byte> {
     private readonly byte[] _pattern;
 
-    public AsciiIndexOfMatcher(byte[] pattern) {
+    public BytesIndexOfMatcher(byte[] pattern) {
       _pattern = pattern;
     }
 

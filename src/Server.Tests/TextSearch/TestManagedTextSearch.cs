@@ -231,21 +231,41 @@ namespace VsChromium.Tests.TextSearch {
     }
 
     public static void CreateSearches(string pattern, Options options, out ICompiledTextSearch ascii, out ICompiledTextSearch utf16) {
+      CreateSearches(pattern, options, out ascii, out var utf8, out utf16);
+      utf8.Dispose();
+    }
+
+    public static void CreateSearches(string pattern, Options options, out ICompiledTextSearch ascii, out ICompiledTextSearch utf8, out ICompiledTextSearch utf16) {
       TextSearchFactory.CreateSearches(
         pattern,
         options.HasFlag(Options.MatchCase),
         options.HasFlag(Options.MatchWholeWord),
         options.HasFlag(Options.Regex),
         out ascii,
+        out utf8,
         out utf16);
     }
 
     /// <summary>
-    /// Checks the results for both ASCII and UTF-16 text.
+    /// Checks the results for ASCII, UTF-8 and UTF-16 text (<paramref name="text"/> is ASCII).
     /// </summary>
     private static void AssertMatches(string text, string pattern, Options options, params (int, int)[] expected) {
       AssertAsciiMatches(text, pattern, options, expected);
       AssertUtf16Matches(text, pattern, options, expected);
+      var actual = SearchUtf8(Encoding.UTF8.GetBytes(text), pattern, options);
+      CollectionAssert.AreEqual(ToRanges(expected), actual, string.Format("UTF-8 search of \"{0}\" in \"{1}\"", pattern, text));
+    }
+
+    public static unsafe TextRange[] SearchUtf8(byte[] text, string pattern, Options options) {
+      CreateSearches(pattern, options, out var ascii, out var utf8, out var utf16);
+      using (ascii)
+      using (utf8)
+      using (utf16) {
+        fixed (byte* p = text) {
+          var fragment = new TextFragment(new IntPtr(p), 0, text.Length, 1);
+          return utf8.FindAll(fragment, x => x, OperationProgressTracker.None).ToArray();
+        }
+      }
     }
 
     private static void AssertAsciiMatches(string text, string pattern, Options options, params (int, int)[] expected) {

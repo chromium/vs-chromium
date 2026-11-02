@@ -86,6 +86,23 @@ namespace VsChromium.Server.TextSearch {
       Func<TextRange, TextRange?> postProcess,
       IOperationProgressTracker progressTracker,
       int maxResultSize) where TChar : unmanaged {
+      var mapper = new IdentityRangeMapper();
+      return FindMatches(text, textPosition, matcher, ref mapper, postProcess, progressTracker, maxResultSize);
+    }
+
+    /// <summary>
+    /// Same as above, with the positions of the matches in <paramref name="text"/> converted to
+    /// positions in the text fragment by <paramref name="mapper"/> (e.g. when <paramref
+    /// name="text"/> is the UTF-16 decoding of a UTF-8 text fragment).
+    /// </summary>
+    protected List<TextRange> FindMatches<TChar, TMapper>(
+      ReadOnlySpan<TChar> text,
+      int textPosition,
+      ITextMatcher<TChar> matcher,
+      ref TMapper mapper,
+      Func<TextRange, TextRange?> postProcess,
+      IOperationProgressTracker progressTracker,
+      int maxResultSize) where TChar : unmanaged where TMapper : IMatchRangeMapper, allows ref struct {
       List<TextRange> result = null;
 
       var start = 0;
@@ -104,7 +121,7 @@ namespace VsChromium.Server.TextSearch {
           continue;
 
         // Post process match, maybe skipping it
-        var postMatchRange = postProcess(new TextRange(textPosition + matchIndex, matchLength));
+        var postMatchRange = postProcess(mapper.Map(textPosition, matchIndex, matchLength));
         if (postMatchRange == null)
           continue;
 
@@ -124,19 +141,114 @@ namespace VsChromium.Server.TextSearch {
     }
 
     private static bool IsWholeWordMatch<TChar>(ReadOnlySpan<TChar> text, int index, int length) where TChar : unmanaged {
-      if (index > 0 && IsWordCharacter(text[index - 1]))
+      if (typeof(TChar) == typeof(byte)) {
+        var bytes = System.Runtime.InteropServices.MemoryMarshal.Cast<TChar, byte>(text);
+        return IsWholeWordMatchUtf8(bytes, index, length);
+      }
+      var chars = System.Runtime.InteropServices.MemoryMarshal.Cast<TChar, char>(text);
+      if (index > 0 && WordCharacters.IsWordCharacter(chars[index - 1]))
         return false;
       var end = index + length;
-      if (end < text.Length && IsWordCharacter(text[end]))
+      if (end < chars.Length && WordCharacters.IsWordCharacter(chars[end]))
         return false;
       return true;
     }
 
+    /// <summary>
+    /// Whole word check in UTF-8 text: the characters before and after the match are decoded,
+    /// with the same result as in the UTF-16 decoding of the text (see <see
+    /// cref="WordCharacters.IsWordCharacter(Rune)"/>).
+    /// </summary>
+    private static bool IsWholeWordMatchUtf8(ReadOnlySpan<byte> text, int index, int length) {
+      if (index > 0) {
+        var previous = text[index - 1];
+        if (previous < 0x80) {
+          if (WordCharacters.IsWordCharacter((char)previous))
+            return false;
+        } else {
+          System.Text.Rune.DecodeLastFromUtf8(text.Slice(0, index), out var rune, out _);
+          if (WordCharacters.IsWordCharacter(rune))
+            return false;
+        }
+      }
+      var end = index + length;
+      if (end < text.Length) {
+        var next = text[end];
+        if (next < 0x80) {
+          if (WordCharacters.IsWordCharacter((char)next))
+            return false;
+        } else {
+          System.Text.Rune.DecodeFromUtf8(text.Slice(end), out var rune, out _);
+          if (WordCharacters.IsWordCharacter(rune))
+            return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  /// <summary>
+  /// Converts the position of a match in the searched text to a range of the text fragment.
+  /// Called for matches in increasing positions.
+  /// </summary>
+  public interface IMatchRangeMapper {
+    TextRange Map(int textPosition, int matchIndex, int matchLength);
+  }
+
+  public struct IdentityRangeMapper : IMatchRangeMapper {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsWordCharacter<TChar>(TChar ch) where TChar : unmanaged {
-      if (typeof(TChar) == typeof(byte))
-        return WordCharacters.IsWordCharacter((char)Unsafe.As<TChar, byte>(ref ch));
-      return WordCharacters.IsWordCharacter(Unsafe.As<TChar, char>(ref ch));
+    public TextRange Map(int textPosition, int matchIndex, int matchLength) {
+      return new TextRange(textPosition + matchIndex, matchLength);
+    }
+  }
+
+  /// <summary>
+  /// Converts positions in the UTF-16 decoding of a UTF-8 text (<see cref="Encoding.UTF8"/>,
+  /// invalid bytes replaced with U+FFFD) to positions in the UTF-8 text, walking the UTF-8 text
+  /// forward (positions must be increasing).
+  /// </summary>
+  public ref struct Utf16ToUtf8RangeMapper : IMatchRangeMapper {
+    private readonly ReadOnlySpan<byte> _bytes;
+    private int _bytePosition;
+    private int _charPosition;
+
+    public Utf16ToUtf8RangeMapper(ReadOnlySpan<byte> bytes) {
+      _bytes = bytes;
+      _bytePosition = 0;
+      _charPosition = 0;
+    }
+
+    public TextRange Map(int textPosition, int matchIndex, int matchLength) {
+      var start = Advance(matchIndex, roundUp: false);
+      var end = Advance(matchIndex + matchLength, roundUp: true);
+      return new TextRange(textPosition + start, end - start);
+    }
+
+    /// <summary>
+    /// Advances to the UTF-16 position <paramref name="charPosition"/> and returns the
+    /// corresponding UTF-8 position. A position in the middle of a surrogate pair is rounded
+    /// down (start of a match) or up (end of a match) to a character boundary.
+    /// </summary>
+    private int Advance(int charPosition, bool roundUp) {
+      while (_charPosition < charPosition && _bytePosition < _bytes.Length) {
+        // Fast path: run of ASCII characters (1 byte = 1 char)
+        var maxCount = Math.Min(charPosition - _charPosition, _bytes.Length - _bytePosition);
+        var asciiCount = _bytes.Slice(_bytePosition, maxCount).IndexOfAnyInRange((byte)0x80, (byte)0xFF);
+        if (asciiCount < 0)
+          asciiCount = maxCount;
+        _bytePosition += asciiCount;
+        _charPosition += asciiCount;
+        if (_charPosition >= charPosition || _bytePosition >= _bytes.Length)
+          break;
+
+        System.Text.Rune.DecodeFromUtf8(_bytes.Slice(_bytePosition), out var rune, out var bytesConsumed);
+        var charCount = rune.Utf16SequenceLength;
+        if (_charPosition + charCount > charPosition && !roundUp)
+          break;
+        _bytePosition += bytesConsumed;
+        _charPosition += charCount;
+      }
+      return _bytePosition;
     }
   }
 
@@ -153,6 +265,14 @@ namespace VsChromium.Server.TextSearch {
                (ch == '_');
       }
       return char.IsLetterOrDigit(ch);
+    }
+
+    /// <summary>
+    /// Same as <see cref="IsWordCharacter(char)"/> for a decoded character: characters outside
+    /// of the BMP (surrogate pairs in UTF-16 text) are not word characters.
+    /// </summary>
+    public static bool IsWordCharacter(System.Text.Rune rune) {
+      return rune.IsBmp && IsWordCharacter((char)rune.Value);
     }
   }
 }

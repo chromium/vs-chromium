@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.FileSystemContents;
@@ -51,28 +52,30 @@ namespace VsChromium.Tests.Server {
 #endif
     }
 
-    public static FileContentsMemory CreateAsciiMemory(string text) {
-      var size = text.Length + 1;
-      var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalAnsi(text));
-      return new FileContentsMemory(handle, size, 0, size - 1);
+    public static FileContentsMemory CreateUtf8Memory(byte[] bytes) {
+      var block = HeapAllocStatic.Alloc(bytes.Length + 1);
+      Marshal.Copy(bytes, 0, block.Pointer, bytes.Length);
+      Marshal.WriteByte(block.Pointer, bytes.Length, 0);
+      return new FileContentsMemory(block, 0, bytes.Length);
     }
 
-    public static FileContentsMemory CreateUtf16Memory(string text) {
-      var size = (text.Length + 1) * sizeof(char);
-      var handle = new SafeHGlobalHandle(Marshal.StringToHGlobalUni(text));
-      return new FileContentsMemory(handle, size, 0, size - 1);
+    /// <summary>
+    /// File contents of the UTF-8 encoding of <paramref name="text"/>.
+    /// </summary>
+    public static Utf8FileContents CreateUtf8FileContents(string text) {
+      return CreateUtf8FileContents(Encoding.UTF8.GetBytes(text));
     }
 
-    public static AsciiFileContents CreateAsciiFileContents(string text) {
-      var memory = CreateAsciiMemory(text);
-      var contents = new AsciiFileContents(memory, DateTime.Now);
-      return contents;
+    public static Utf8FileContents CreateUtf8FileContents(byte[] bytes) {
+      return new Utf8FileContents(CreateUtf8Memory(bytes), DateTime.Now, isAscii: System.Text.Ascii.IsValid(bytes));
     }
 
-    public static Utf16FileContents CreateUtf16FileContents(string text) {
-      var memory = CreateUtf16Memory(text);
-      var contents = new Utf16FileContents(memory, DateTime.Now);
-      return contents;
+    /// <summary>
+    /// File contents of the UTF-8 encoding of <paramref name="text"/>, using the code paths of
+    /// text with non ASCII characters even if <paramref name="text"/> is ASCII only.
+    /// </summary>
+    public static Utf8FileContents CreateNonAsciiFileContents(string text) {
+      return new Utf8FileContents(CreateUtf8Memory(Encoding.UTF8.GetBytes(text)), DateTime.Now, isAscii: false);
     }
   }
 }

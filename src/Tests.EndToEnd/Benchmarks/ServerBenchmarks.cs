@@ -30,6 +30,8 @@ public class ServerBenchmarks {
     var spec = CorpusSpec.FromName(TestSettings.BenchmarkSize);
     var corpus = CorpusCache.GetOrCreate(spec, Log);
     var runs = spec == CorpusSpec.Small ? 10 : spec == CorpusSpec.Medium ? 5 : 3;
+    if (int.TryParse(Environment.GetEnvironmentVariable("VSCHROMIUM_BENCHMARK_RUNS"), out var runsOverride) && runsOverride > 0)
+      runs = runsOverride;
     var startedUtc = DateTime.UtcNow;
     var scenarios = new List<ScenarioResult>();
     var queries = new List<QueryResult>();
@@ -109,6 +111,15 @@ public class ServerBenchmarks {
     yield return new("*_unittest.cc", "path", ServerProtocol.SearchFilePaths("*_unittest.cc"), null);
     yield return new("browser", "path", ServerProtocol.SearchFilePaths("browser"), null);
     yield return new("BUILD.gn", "path", ServerProtocol.SearchFilePaths("BUILD.gn"), null);
+    // File path search over all the files (no early stop at max results). Patterns without a
+    // directory separator match the file name only; patterns with a separator (or a regex with
+    // "/") match the relative path of each file, which the server builds for every file.
+    yield return new("*.zzz (name, no match)", "path", ServerProtocol.SearchFilePaths("*.zzz", maxResults: noLimit), 0);
+    yield return new("zzz/*.cc (path, no match)", "path", ServerProtocol.SearchFilePaths("zzz/*.cc", maxResults: noLimit), 0);
+    yield return new("content/*_unittest.cc (path)", "path", ServerProtocol.SearchFilePaths("content/*_unittest.cc", maxResults: noLimit), null);
+    yield return new("browser/**/*.h (path)", "path", ServerProtocol.SearchFilePaths("browser/**/*.h", maxResults: noLimit), null);
+    yield return new(@"regex browser/\w+_test (path)", "path", ServerProtocol.SearchFilePaths(@"browser/\w+_test", maxResults: noLimit, regex: true), null);
+    yield return new("common marker in zzz/*.cc", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, maxResults: noLimit, matchCase: true, filePathPattern: "zzz/*.cc"), 0);
   }
 
   private async Task<QueryResult> RunQueryAsync(StdioServerClient server, ProcessSampler sampler, QuerySpec query, int runs) {

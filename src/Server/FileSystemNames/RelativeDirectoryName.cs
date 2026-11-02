@@ -11,6 +11,11 @@ namespace VsChromium.Server.FileSystemNames {
     private readonly DirectoryName _parent;
     private readonly string _name;
     private readonly int _hashCode;
+    /// <summary>
+    /// Stored (one string per directory, a few MB for 40,000 directories) so
+    /// that the relative path of files is built with a single concatenation.
+    /// </summary>
+    private readonly RelativePath _relativePath;
 
     public RelativeDirectoryName(DirectoryName parent, string name) {
       Invariants.CheckArgumentNotNull(parent, nameof(parent));
@@ -19,10 +24,12 @@ namespace VsChromium.Server.FileSystemNames {
       _parent = parent;
       _name = name;
       _hashCode = HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
+      var parentPath = parent.RelativePath;
+      _relativePath = new RelativePath(parentPath.IsEmpty ? name : parentPath.Value + PathHelpers.DirectorySeparatorChar + name);
     }
 
     public override DirectoryName Parent => _parent;
-    public override RelativePath RelativePath => BuildRelativePath(this);
+    public override RelativePath RelativePath => _relativePath;
     public override FullPath FullPath => _parent.GetAbsolutePath().Combine(RelativePath);
     public override string Name => _name;
 

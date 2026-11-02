@@ -83,7 +83,10 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 
 Code shared by the VS package and the server today (paths, pattern matching, configuration,
 logging) is either moved to a `netstandard2.0` library or duplicated where the server version
-diverges (e.g. mtsuite `FullPath` on the server). `src/Native`, `src/re2`,
+diverges. **Decided (2026-11-02): the server and the VS package become fully independent code
+bases** (only the protocol, i.e. the JSON message format, is shared). Sharing code is not a
+constraint for server changes: shared files are forked into the server when the server needs to
+change them (e.g. span-based pattern matching). `src/Native`, `src/re2`,
 `src/ServerNativeInterop` and `third_party/re2-*` were deleted in milestone 4; the server's Win32
 P/Invokes (file system) are replaced in milestone 5.
 
@@ -411,6 +414,30 @@ of its resource usage, measured inside the process:
      `DirectorySnapshot` in its directory task once its child tasks complete: `FileSystemScan`
      805 ms → 640-715 ms (large corpus); cold indexing is unchanged (~8.1 s, dominated by loading the
      file contents; `docs/portable-server/benchmarks/m5d-snapshot-tree-in-traversal`). Same snapshots (same sort orders and filters), all suites unchanged.
+     **Relative paths of files: built on demand, per-directory cache.** The server does not store the
+     relative path of files: `FileName` is a (parent directory, interned name) pair, and its relative
+     path (`foo\bar\baz.cc`) is built each time it is needed: by the project filters during the scan,
+     and, at every query, for each of the 400k files when a file path pattern contains a directory
+     separator (file path search, the file filter of code search, regex path search with `/`).
+     Patterns without a separator match the file name only. Measured on the large corpus
+     (single-threaded micro benchmark of the pattern matcher over all files, median of 7):
+
+     | Pattern | Old (walk the parent chain) | Per-directory cache | Stored per file |
+     |---|---:|---:|---:|
+     | `zzz\*.cc` (no match) | 52 ms | 20 ms | 12.5 ms |
+     | `content\*_unittest.cc` | 44 ms | 23 ms | 13 ms |
+     | `browser\**\*.h` (7,021 hits) | 42 ms | 28 ms | 17 ms |
+     | Garbage per query | 77 MB | 77 MB | 12 MB |
+     | Managed heap after indexing | 85 MB | 90 MB | 156 MB |
+
+     Queries run on all cores, so the end-to-end difference is ~1-2 ms per query, below the noise
+     of the benchmark (`VSCHROMIUM_BENCHMARK_RUNS` was added to run more iterations). Storing the
+     relative path of each file costs +71 MB (+84% of the managed heap) and made name-only path
+     searches slower (larger `FileName` struct), so it was not adopted. Adopted: each
+     `RelativeDirectoryName` stores its relative path (one string per directory, +5 MB), so the
+     relative path of a file is one concatenation. The remaining cost is the allocation of one
+     string per file (and of the file extension in `AnyPathMatcher`): the next step is to match the
+     patterns on a `ReadOnlySpan<char>` built in a reusable buffer (no allocation, no memory cost).
 6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
    (`ServerProcessLauncher`) and exchanges JSON lines over its standard input/output, exactly as the
    VS Code extension does. The JSON serialization (`IpcJsonSerializer`, `IpcStreamOverJsonLines`)

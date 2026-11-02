@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 
@@ -74,39 +73,6 @@ namespace VsChromium.Server.FileSystemNames {
 
     public override string ToString() {
       return FullPath.Value;
-    }
-
-    /// <summary>
-    /// We use a <see cref="ThreadStaticAttribute"/> field to GC memory allocations
-    /// during heavy parallel task execution.
-    /// </summary>
-    [ThreadStatic]
-    private static StringBuilder _dangerousThreadStaticStringBuilder;
-
-    protected static RelativePath BuildRelativePath(DirectoryName name) {
-      // Aquire the StringBuilder from thread static variable.
-      if (_dangerousThreadStaticStringBuilder == null) {
-        _dangerousThreadStaticStringBuilder = new StringBuilder(128);
-      }
-      var sb = _dangerousThreadStaticStringBuilder;
-      sb.Clear();
-
-      // Build the relative path
-      BuildRelativePath(sb, name);
-      return new RelativePath(sb.ToString());
-    }
-
-    internal static void BuildRelativePath(StringBuilder sb, DirectoryName name) {
-      var a = name as AbsoluteDirectoryName;
-      if (a != null) {
-        return;
-      }
-
-      BuildRelativePath(sb, name.Parent);
-      if (sb.Length > 0) {
-        sb.Append(PathHelpers.DirectorySeparatorChar);
-      }
-      sb.Append(name.Name);
     }
 
     #region Comparison/Equality plumbing

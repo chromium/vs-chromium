@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -48,30 +47,17 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
 
-    /// <summary>
-    /// We use a <see cref="ThreadStaticAttribute"/> field to GC memory allocations
-    /// during heavy parallel task execution.
-    /// </summary>
-    [ThreadStatic]
-    private static StringBuilder _dangerousThreadStaticStringBuilder;
+    private static readonly string DirectorySeparatorString = new string(PathHelpers.DirectorySeparatorChar, 1);
 
     private RelativePath BuildRelativePath() {
       Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
 
-      // Aquire the StringBuilder from thread static variable.
-      if (_dangerousThreadStaticStringBuilder == null) {
-        _dangerousThreadStaticStringBuilder = new StringBuilder(128);
-      }
-      var sb = _dangerousThreadStaticStringBuilder;
-      sb.Clear();
-
-      // Build the relative path
-      DirectoryName.BuildRelativePath(sb, _parent);
-      if (sb.Length > 0) {
-        sb.Append(PathHelpers.DirectorySeparatorChar);
-      }
-      sb.Append(_name);
-      return new RelativePath(sb.ToString());
+      // The relative path of directories is stored (see RelativeDirectoryName),
+      // so this is a single string allocation.
+      var parentPath = _parent.RelativePath;
+      if (parentPath.IsEmpty)
+        return new RelativePath(_name);
+      return new RelativePath(string.Concat(parentPath.Value, DirectorySeparatorString, _name));
     }
 
     public override string ToString() {

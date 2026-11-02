@@ -42,8 +42,10 @@ None yet. Each entry: date, files, description, motivation, backport status.
 
 ## Not copied (yet)
 
-- `FullPath` (class with parent chain, low memory for large trees): would replace
-  `VsChromium.Core.Files.FullPath` on the server; a broad refactor, not started.
+- `FullPath` (class with parent chain, low memory for large trees): considered to replace
+  `VsChromium.Core.Files.FullPath` on the server, decided against after measuring (the whole managed
+  heap of the server is ~85 MB on a 400k files corpus, and its file system tree already uses interned
+  names with parent chains), see PORTING_PRINCIPLES.md milestone 5b.
 - `IFileSystem`/`FileSystemPortable` and the Linux (`getdents64`/`statx`) and macOS
   (`getattrlistbulk`) directory enumerators: the server uses the BCL `FileSystemEnumerable`
   (`PortableFileSystem`), as mtsuite does on Windows; the OS-specific enumerators are to be copied

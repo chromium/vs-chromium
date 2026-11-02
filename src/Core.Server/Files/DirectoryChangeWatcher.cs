@@ -22,6 +22,12 @@ namespace VsChromium.Core.Files {
     private readonly TimeSpan _autoRestartObservePeriod = TimeSpan.FromSeconds(10);
 
     /// <summary>
+    /// When change notifications are not available (see <see cref="PollingFallbackState"/>), the
+    /// period of the <see cref="RescanRequired"/> events.
+    /// </summary>
+    public TimeSpan PollingFallbackPeriod { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
     /// Buffer for file change notifications. The buffer has its own lock to make sure
     /// watcher event are processed as fast as possible without any lock contention,
     /// to prevent internal buffer overflow exceptions (from watchers) as much as possible.
@@ -72,6 +78,7 @@ namespace VsChromium.Core.Files {
     public event Action<Exception> Error;
     public event Action Paused;
     public event Action Resumed;
+    public event Action RescanRequired;
 
     protected virtual void OnError(Exception obj) {
       Error?.Invoke(obj);
@@ -87,6 +94,26 @@ namespace VsChromium.Core.Files {
 
     protected virtual void OnResumed() {
       Resumed?.Invoke();
+    }
+
+    protected virtual void OnRescanRequired() {
+      RescanRequired?.Invoke();
+    }
+
+    /// <summary>
+    /// Returns <code>true</code> if <paramref name="exception"/> means that file system watchers
+    /// cannot be created because of an operating system resource limit (e.g. the inotify watch or
+    /// instance limits on Linux), in which case retrying is pointless.
+    /// </summary>
+    public static bool IsWatchLimitError(Exception exception) {
+      for (var e = exception; e != null; e = e.InnerException) {
+        if (e is IOException &&
+            e.Message != null &&
+            e.Message.IndexOf("inotify", StringComparison.OrdinalIgnoreCase) >= 0) {
+          return true;
+        }
+      }
+      return false;
     }
 
     private void PollingThreadOnPolling(object sender, EventArgs eventArgs) {

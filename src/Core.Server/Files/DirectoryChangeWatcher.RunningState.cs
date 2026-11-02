@@ -66,6 +66,9 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnWatcherErrorEvent(object sender, ErrorEventArgs args) {
+        if (IsWatchLimitError(args.GetException())) {
+          return new PollingFallbackState(StateHost, args.GetException());
+        }
         Logger.LogWarn(args.GetException(), "File system watcher for path \"{0}\" error.",
           ((IFileSystemWatcher)sender).Path);
         StopWatchers();

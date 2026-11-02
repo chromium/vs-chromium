@@ -28,5 +28,12 @@ namespace VsChromium.Core.Files {
     event Action<Exception> Error;
     event Action Paused;
     event Action Resumed;
+
+    /// <summary>
+    /// Fired periodically when change notifications are not available (e.g. the inotify watch
+    /// limit was reached on Linux): the consumer should rescan the watched directories to find out
+    /// what changed (polling fallback).
+    /// </summary>
+    event Action RescanRequired;
   }
 }

@@ -50,6 +50,9 @@ namespace VsChromium.Core.Files {
       }
 
       public override State OnWatcherErrorEvent(object sender, ErrorEventArgs args) {
+        if (IsWatchLimitError(args.GetException())) {
+          return new PollingFallbackState(StateHost, args.GetException());
+        }
         // If there is another buffer overflow, go straight back to the error state,
         // don't ever be conservative.
         return BackToErrorState();

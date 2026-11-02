@@ -84,6 +84,7 @@ namespace VsChromium.Server.FileSystem {
       _directoryChangeWatcher.Error += DirectoryChangeWatcherOnError;
       _directoryChangeWatcher.Paused += DirectoryChangeWatcherOnPaused;
       _directoryChangeWatcher.Resumed += DirectoryChangeWatcherOnResumed;
+      _directoryChangeWatcher.RescanRequired += DirectoryChangeWatcherOnRescanRequired;
     }
 
     public FileSystemSnapshot CurrentSnapshot {
@@ -217,6 +218,17 @@ namespace VsChromium.Server.FileSystem {
         _longRunningFileSystemTaskQueue.CancelAll();
         _fileRegistrationTracker.RefreshAsync(FileRegistrationTrackerRefreshCompleted);
         OnFileSystemWatchResumed();
+      });
+    }
+
+    private void DirectoryChangeWatcherOnRescanRequired() {
+      _taskExecutor.ExecuteAsync(token => {
+        if (_isPaused) {
+          return;
+        }
+        // Change notifications are not available (polling fallback): rescan everything.
+        Logger.LogInfo("FileSystemSnapshotManager: Directory watcher requested a rescan (polling fallback)");
+        _fileRegistrationTracker.RefreshAsync(FileRegistrationTrackerRefreshCompleted);
       });
     }
 

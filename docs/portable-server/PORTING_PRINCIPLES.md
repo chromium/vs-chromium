@@ -387,8 +387,10 @@ of its resource usage, measured inside the process:
      mtsuite `PathHelpers.cs`, used by the server for OS-aware path handling (`#if NETCOREAPP` in
      the shared `Core/Files` code): case-sensitive path comparisons on Linux, case-insensitive on
      Windows and macOS (`PathComparerRegistry.Default`, `SystemPathComparer`), Unix absolute paths
-     (`PathHelpers.IsAbsolutePath`). Not done: replacing `VsChromium.Core.Files.FullPath` with
-     mtsuite `FullPath` (broad refactor; to be decided with memory benchmarks), the mtsuite Linux and
+     (`PathHelpers.IsAbsolutePath`). **Decided not to** replace `VsChromium.Core.Files.FullPath` with mtsuite `FullPath`: measured on the large corpus (393,536 files), the whole managed heap after indexing is
+     85 MB (all names, snapshots and the search index included) vs 7.2 GB of file contents, and the
+     file system tree already uses interned names with parent chains (`FileSystemNameFactory`), so the
+     gain would be at most ~1% of the memory, for a broad refactor. Not done either, the mtsuite Linux and
      macOS directory enumerators (to be decided with benchmarks on these platforms).6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
    (`ServerProcessLauncher`) and exchanges JSON lines over its standard input/output, exactly as the
    VS Code extension does. The JSON serialization (`IpcJsonSerializer`, `IpcStreamOverJsonLines`)
@@ -413,6 +415,11 @@ of its resource usage, measured inside the process:
      packaging scripts per target (`npm run package:linux-x64`, ...). GitHub Actions workflow
      `.github/workflows/server.yml`: build + server unit tests + end-to-end tests + small benchmark on
      Windows, Linux and macOS (Linux/macOS allowed to fail for now), publish of the 5 platforms.
+   - Done: polling fallback when the inotify limit is reached: `DirectoryChangeWatcher.PollingFallbackState`,
+     entered on watcher errors mentioning `inotify` (watch or instance limit): watchers are stopped,
+     no error is reported to the client (the index stays usable), and `RescanRequired` is fired every
+     5 minutes, on which `FileSystemSnapshotManager` rescans the projects (`TestDirectoryChangeWatcherFallback`).
+     Previously, the watcher kept restarting and failing every 60 s, with indexing paused.
    - To do: run the workflow (or test on Linux/macOS machines) and fix what fails (server unit tests
-     using Windows paths, configuration files, path separators in the protocol...), a polling /
-     rescan fallback when the inotify limit is reached, Linux/macOS benchmarks.
+     using Windows paths, configuration files, path separators in the protocol...), Linux/macOS
+     benchmarks.

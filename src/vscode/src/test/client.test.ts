@@ -12,6 +12,7 @@ import { after, before, describe, it } from 'node:test';
 import { ServerClient, ServerExitedError } from '../server/client';
 import { TypedEvent } from '../server/messages';
 import { findServerPath } from '../server/serverLocator';
+import { flattenSearchResults, toDisplayLine } from '../ui/codeSearchModel';
 
 const extensionRoot = path.resolve(__dirname, '..', '..');
 const repoRoot = path.resolve(extensionRoot, '..', '..');
@@ -60,6 +61,44 @@ describe('ServerClient', { skip: serverPath ? false : 'VsChromium.Server.exe not
     assert.equal(stats.projectCount, 1);
     assert.ok(stats.fileCount > 0, 'fileCount should be > 0');
     assert.ok(['Idle', 'Paused', 'Yield', 'Busy'].includes(stats.serverStatus));
+  });
+
+  it('searches code and returns text extracts for the matches', async () => {
+    const response = await client.request({
+      $type: 'SearchCodeRequest',
+      searchParams: { searchString: 'looking like', maxResults: 100, matchCase: true },
+    });
+    assert.equal(response.$type, 'SearchCodeResponse');
+    assert.equal(response.hitCount, 1);
+
+    const files = flattenSearchResults(response);
+    assert.equal(files.length, 1);
+    assert.equal(files[0].fullPath, path.join(path.dirname(testEnlistmentFile), 'readme.txt'));
+
+    const extracts = await client.request({
+      $type: 'GetFileExtractsRequest',
+      fileName: files[0].fullPath,
+      positions: files[0].positions,
+      maxExtractLength: 120,
+    });
+    assert.equal(extracts.fileExtracts.length, 1);
+    const line = toDisplayLine(extracts.fileExtracts[0]!, files[0].positions[0]);
+    assert.deepEqual(line, {
+      lineNumber: 1,
+      columnNumber: 16,
+      before: 'Test directory ',
+      match: 'looking like',
+      after: ' a local Chromium enlistment.',
+    });
+  });
+
+  it('returns an empty result for a search without matches', async () => {
+    const response = await client.request({
+      $type: 'SearchCodeRequest',
+      searchParams: { searchString: 'this text does not exist anywhere 1234', maxResults: 100 },
+    });
+    assert.equal(response.hitCount, 0);
+    assert.deepEqual(flattenSearchResults(response), []);
   });
 
   it('runs concurrent requests', async () => {

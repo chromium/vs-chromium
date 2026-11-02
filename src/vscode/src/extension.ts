@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { ServerClient } from './server/client';
 import { findServerPath, serverPathCandidates } from './server/serverLocator';
 import { describeIndexingState, IndexingState, nextIndexingState } from './ui/indexingState';
+import { CodeSearchViewProvider } from './ui/codeSearchView';
 
 /**
  * Owns the VsChromium.Server.exe process: starts it, registers the workspace folders and opened
@@ -208,14 +209,36 @@ function errorMessage(e: unknown): string {
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const output = vscode.window.createOutputChannel('VsChromium', { log: true });
   const manager = new ServerManager(context, output);
+  const codeSearch = new CodeSearchViewProvider(context.extensionUri, () => manager.server, output);
   context.subscriptions.push(
     output,
     manager,
+    vscode.window.registerWebviewViewProvider(CodeSearchViewProvider.viewType, codeSearch, {
+      webviewOptions: { retainContextWhenHidden: true },
+    }),
+    vscode.commands.registerCommand('vschromium.searchCode', () => codeSearch.show(getSearchTextFromEditor())),
     vscode.commands.registerCommand('vschromium.showServerStatus', () => manager.showStatus()),
     vscode.commands.registerCommand('vschromium.restartServer', () => manager.restart()),
     vscode.commands.registerCommand('vschromium.showOutput', () => output.show()),
   );
   await manager.start();
+}
+
+/**
+ * Returns the text to search for when invoking "Search Code" from an editor: the selection if it
+ * is on a single line, otherwise the word at the cursor. Returns undefined if there is no editor.
+ */
+function getSearchTextFromEditor(): string | undefined {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return undefined;
+  }
+  const selection = editor.selection;
+  if (!selection.isEmpty) {
+    return selection.isSingleLine ? editor.document.getText(selection) : undefined;
+  }
+  const wordRange = editor.document.getWordRangeAtPosition(selection.active);
+  return wordRange ? editor.document.getText(wordRange) : undefined;
 }
 
 export function deactivate(): void {

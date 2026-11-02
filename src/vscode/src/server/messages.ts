@@ -77,10 +77,42 @@ export interface GetDatabaseStatisticsRequest extends TypedMessage {
   forceGabageCollection?: boolean;
 }
 
+export interface SearchParams {
+  searchString: string;
+  /** Optional file path pattern(s), e.g. "*.cc;*.h" or "-*_test.cc" to exclude. */
+  filePathPattern?: string;
+  maxResults: number;
+  matchCase?: boolean;
+  matchWholeWord?: boolean;
+  includeSymLinks?: boolean;
+  regex?: boolean;
+  useRe2Engine?: boolean;
+}
+
+export interface SearchCodeRequest extends TypedMessage {
+  $type: 'SearchCodeRequest';
+  searchParams: SearchParams;
+}
+
+export interface FilePositionSpan {
+  /** Offset (in UTF-16 characters) of the first character of the span. */
+  position: number;
+  length: number;
+}
+
+export interface GetFileExtractsRequest extends TypedMessage {
+  $type: 'GetFileExtractsRequest';
+  fileName: string;
+  positions: FilePositionSpan[];
+  maxExtractLength: number;
+}
+
 export type TypedRequest =
   | RegisterFileRequest
   | UnregisterFileRequest
-  | GetDatabaseStatisticsRequest;
+  | GetDatabaseStatisticsRequest
+  | SearchCodeRequest
+  | GetFileExtractsRequest;
 
 // ---------------------------------------------------------------------------
 // Responses
@@ -108,6 +140,58 @@ export interface ResponseTypes {
   RegisterFileRequest: DoneResponse;
   UnregisterFileRequest: DoneResponse;
   GetDatabaseStatisticsRequest: GetDatabaseStatisticsResponse;
+  SearchCodeRequest: SearchCodeResponse;
+  GetFileExtractsRequest: GetFileExtractsResponse;
+}
+
+export interface FilePositionsData {
+  $type: 'FilePositionsData';
+  positions: FilePositionSpan[];
+}
+
+export interface FileEntry {
+  $type: 'FileEntry';
+  /** Path relative to the parent directory entry. */
+  name: string;
+  data?: FilePositionsData;
+}
+
+export interface DirectoryEntry {
+  /** Omitted when the declared type is DirectoryEntry (e.g. SearchCodeResponse.searchResults). */
+  $type?: 'DirectoryEntry';
+  name: string;
+  entries?: (FileEntry | DirectoryEntry)[];
+}
+
+export interface SearchCodeResponse extends TypedMessage {
+  $type: 'SearchCodeResponse';
+  /**
+   * Root entry (empty name) containing one directory entry per project (name = project root
+   * path), each containing the matching files (name = path relative to the project root).
+   */
+  searchResults: DirectoryEntry;
+  hitCount: number;
+  searchedFileCount: number;
+  totalFileCount: number;
+}
+
+export interface FileExtract {
+  /** Text of the line containing the match (possibly truncated to maxExtractLength). */
+  text: string;
+  /** Offset of `text` in the file. */
+  offset: number;
+  length: number;
+  /** 0-based line number. */
+  lineNumber: number;
+  /** 0-based column of the match in the line. */
+  columnNumber: number;
+}
+
+export interface GetFileExtractsResponse extends TypedMessage {
+  $type: 'GetFileExtractsResponse';
+  fileName: string;
+  /** One extract per requested position (may contain nulls for positions that are out of range). */
+  fileExtracts: (FileExtract | null)[];
 }
 
 // ---------------------------------------------------------------------------

@@ -4,9 +4,9 @@ Instant indexed code search for very large source trees (for example Chromium), 
 same indexing server as the [VsChromium](https://chromium.github.io/vs-chromium/) Visual Studio
 extension.
 
-> **Status:** early development (milestone 2 of the
-> design). The extension starts the indexing server, registers the workspace folders and shows the
-> indexing status in the status bar. Code search and file name search come next.
+> **Status:** early development. The extension starts the indexing server, registers the
+> workspace folders, shows the indexing status in the status bar, and provides the **Code Search**
+> panel. File name search comes next.
 >
 > **Windows only** for now: the indexing server (`VsChromium.Server.exe`) is a .NET Framework
 > application using Win32 APIs.
@@ -41,10 +41,22 @@ or a Chromium checkout).
 When running from the repository, the extension uses the server from `Binaries\Debug` (or
 `Binaries\Release`). The `vschromium.serverPath` setting overrides the server location.
 
+## Code Search
+
+Open the **VsChromium** panel (next to Terminal/Output), or press **Ctrl+Alt+;** (*VsChromium:
+Search Code*) to search for the selected text or the word under the cursor.
+
+- Results update as you type. Options: **Aa** match case, **ab** whole word, **.\*** regular
+  expression, and a file filter (e.g. `*.cc;*.h`, prefix with `-` to exclude: `-*_test.cc`).
+- Results are grouped by file; the matching lines are loaded as files scroll into view.
+- Click a line to preview it, double-click (or **Enter**) to open it. Keyboard: **Down** from
+  the search box moves into the results, **Up/Down** navigate, **Left/Right** collapse/expand.
+
 ## Commands
 
 | Command | Description |
 |---|---|
+| VsChromium: Search Code (Ctrl+Alt+;) | Opens the Code Search panel with the selection or word under the cursor |
 | VsChromium: Show Indexing Server Status | Project/file counts, memory usage, last index update (also available by clicking the status bar item) |
 | VsChromium: Restart Indexing Server | Stops and restarts the server |
 | VsChromium: Show Output | Shows the VsChromium log (enable `vschromium.trace.server` to log all messages) |

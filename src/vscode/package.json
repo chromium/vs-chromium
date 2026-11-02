@@ -24,7 +24,36 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "vschromium",
+          "title": "VsChromium",
+          "icon": "$(search)"
+        }
+      ]
+    },
+    "views": {
+      "vschromium": [
+        {
+          "type": "webview",
+          "id": "vschromium.codeSearch",
+          "name": "Code Search"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "vschromium.searchCode",
+        "key": "ctrl+alt+;"
+      }
+    ],
     "commands": [
+      {
+        "command": "vschromium.searchCode",
+        "title": "Search Code",
+        "category": "VsChromium"
+      },
       {
         "command": "vschromium.showServerStatus",
         "title": "Show Indexing Server Status",
@@ -54,6 +83,24 @@
           "type": "boolean",
           "default": false,
           "description": "Log all messages exchanged with the indexing server to the VsChromium output channel."
+        },
+        "vschromium.searchCode.maxResults": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1,
+          "description": "Maximum number of matches returned by Search Code. Higher values may slow down the user interface."
+        },
+        "vschromium.searchCode.maxExtractLength": {
+          "type": "number",
+          "default": 120,
+          "minimum": 20,
+          "description": "Maximum number of characters displayed per line in Search Code results."
+        },
+        "vschromium.searchCode.autoSearchDelayMs": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "description": "Time (in milliseconds) to wait after typing before searching. Takes effect when the Code Search view is reopened."
         }
       }
     }

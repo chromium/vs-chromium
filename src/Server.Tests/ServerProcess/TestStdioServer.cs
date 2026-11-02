@@ -1,4 +1,4 @@
-﻿// Copyright 2026 The Chromium Authors. All rights reserved.
+// Copyright 2026 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -129,7 +129,7 @@ namespace VsChromium.Tests.ServerProcess {
           var remaining = deadline - DateTime.UtcNow;
           IpcMessage message = null;
           if (remaining <= TimeSpan.Zero || !_messages.TryTake(out message, remaining)) {
-            Assert.Fail("Timeout waiting for message of type {0} from server.", typeof(T).Name);
+            Assert.Fail(string.Format("Timeout waiting for message of type {0} from server.", typeof(T).Name));
           }
           var typed = message as T;
           if (typed != null && predicate(typed)) {

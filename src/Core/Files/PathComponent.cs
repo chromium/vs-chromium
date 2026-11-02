@@ -39,7 +39,7 @@ namespace VsChromium.Core.Files {
         char ch = _path[_index + i];
         if (_pathComparisonOption == PathComparisonOption.CaseInsensitive)
           ch = char.ToLowerInvariant(ch);
-        hash = HashCode.Combine(hash, ch);
+        hash = Utility.HashCode.Combine(hash, ch);
       }
       return hash;
     }

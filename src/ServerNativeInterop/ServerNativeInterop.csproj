@@ -8,14 +8,25 @@
   <Import Project="..\..\Build\Common.Sdk.props" />
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>VsChromium.Server.NativeInterop</AssemblyName>
     <RootNamespace>VsChromium.Server.NativeInterop</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Server\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
   </ItemGroup>
+
+  <!-- VsChromium.Native.dll is built by Native.vcxproj into Binaries\<Configuration>\ (the solution
+       builds it first): copy it next to the server. -->
+  <Target Name="CopyNativeDll" AfterTargets="Build">
+    <PropertyGroup>
+      <NativeDllPath>$(BuildRoot)Binaries\$(Configuration)\VsChromium.Native.dll</NativeDllPath>
+    </PropertyGroup>
+    <Warning Condition="!Exists('$(NativeDllPath)')" Text="$(NativeDllPath) not found: build Native.vcxproj (or the solution) first." />
+    <Copy Condition="Exists('$(NativeDllPath)')" SourceFiles="$(NativeDllPath)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

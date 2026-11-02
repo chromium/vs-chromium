@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Server side of VsChromium.Core, on modern .NET (see docs/portable-server/PORTING_PRINCIPLES.md).
+
+    - Files in this directory are only used by the server (directory watcher, collections, ...).
+    - Code shared with the Visual Studio side (VsChromium.Core, net472) is NOT copied: the source files
+      of ..\Core are compiled into this assembly as linked files (same source, different target
+      framework and dependencies: NLog 6, MEF from NuGet, ...). Differences between the two sides
+      are handled with "#if NETCOREAPP" in the shared files.
+    - The Visual Studio only code of ..\Core (debugger, processes, job objects, shell, ...) is
+      excluded below.
+
+    Namespaces are the same as in VsChromium.Core.
+  -->
+
+  <Import Project="..\..\Build\Common.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>VsChromium.Core.Server</AssemblyName>
+    <RootNamespace>VsChromium.Core</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- The server and its dependencies go to their own directory (different versions of NLog, MEF,
+         ... than the Visual Studio side). -->
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Server\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Shared source files of VsChromium.Core (Visual Studio only code excluded). -->
+    <Compile Include="..\Core\**\*.cs"
+             Exclude="..\Core\obj\**;..\Core\bin\**;..\Core\Properties\**;
+                      ..\Core\Debugger\**;..\Core\DkmShared\**;..\Core\JobObjects\**;..\Core\Processes\**;
+                      ..\Core\Win32\Debugging\**;..\Core\Win32\Jobs\**;..\Core\Win32\NamedPipes\**;
+                      ..\Core\Win32\Processes\**;..\Core\Win32\Shell\**;..\Core\Win32\ComPtr.cs;
+                      ..\Core\Chromium\ChromiumProcess.cs;..\Core\Chromium\InstallationEnumerator.cs;
+                      ..\Core\Chromium\InstallationData.cs;..\Core\Chromium\ProcessCategory.cs;
+                      ..\Core\Utility\ChromeUtility.cs;..\Core\Utility\MarshalUtility.cs"
+             Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NLog" Version="6.2.2" />
+    <PackageReference Include="protobuf-net" Version="2.4.9" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.14" />
+  </ItemGroup>
+
+</Project>

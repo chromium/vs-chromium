@@ -1,4 +1,4 @@
-﻿// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -134,7 +134,7 @@ namespace VsChromium.Tests.Server {
     }
 
     public int GetHashCode(FileExtract obj) {
-      return HashCode.Combine(obj.Offset, obj.Length);
+      return global::VsChromium.Core.Utility.HashCode.Combine(obj.Offset, obj.Length);
     }
   }
 }

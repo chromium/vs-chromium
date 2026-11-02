@@ -1,4 +1,4 @@
-﻿// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -314,7 +314,7 @@ namespace VsChromium.Core.Collections {
       var oldEntries = _entries;
       var oldLength = _entries.Length;
 
-      var newLength = HashCode.GetPrime(GrowSize(oldLength));
+      var newLength = Utility.HashCode.GetPrime(GrowSize(oldLength));
       var newBuckets = new int[newLength];
       var newEntries = new Entry[newLength];
       Array.Copy(_entries, newEntries, _entries.Length);
@@ -341,7 +341,7 @@ namespace VsChromium.Core.Collections {
     }
 
     private static int GetPrimeLength(int capacity) {
-      return HashCode.GetPrime(capacity);
+      return Utility.HashCode.GetPrime(capacity);
     }
 
     private int GrowSize(int oldLength) {

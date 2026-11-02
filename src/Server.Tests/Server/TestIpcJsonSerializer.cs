@@ -1,4 +1,4 @@
-﻿// Copyright 2026 The Chromium Authors. All rights reserved.
+// Copyright 2026 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -121,9 +121,8 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
-    [ExpectedException(typeof(JsonSerializationException))]
     public void UnknownTypesAreRejected() {
-      IpcJsonSerializer.Deserialize("{\"$type\":\"System.IO.FileInfo, mscorlib\",\"requestId\":1}");
+      Assert.ThrowsExactly<JsonSerializationException>(() => IpcJsonSerializer.Deserialize("{\"$type\":\"System.IO.FileInfo, mscorlib\",\"requestId\":1}"));
     }
 
     [TestMethod]

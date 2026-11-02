@@ -1,0 +1,62 @@
+<Project Sdk="MSTest.Sdk/4.5.2">
+
+  <!--
+    Unit tests of the indexing server (white box): VsChromium.Server, VsChromium.Core.Server and
+    VsChromium.Server.NativeInterop, on modern .NET. The Visual Studio side tests are in
+    src/Tests (net472), the black-box end-to-end tests and benchmarks in src/Tests.EndToEnd.
+
+    Run: cd src/Server.Tests; dotnet test   (after building the solution, for VsChromium.Native.dll)
+  -->
+
+  <Import Project="..\..\Build\Common.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>VsChromium.Server.Tests</AssemblyName>
+    <RootNamespace>VsChromium.Tests</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Server.Tests\</OutputPath>
+    <!-- Ported tests: allow the MSTest analyzers suggestions without failing the build. -->
+    <NoWarn>$(NoWarn);MSTEST0001;MSTEST0006;MSTEST0017;MSTEST0025;MSTEST0032;MSTEST0037;MSTEST0045</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Tests of the code shared by the Visual Studio side and the server (compiled into both
+         VsChromium.Core and VsChromium.Core.Server): same test source files as src/Tests, run here
+         against the server build of the code. -->
+    <Compile Include="..\Tests\Core\TestConversion.cs;..\Tests\Core\TestCustomPathComparer.cs;
+                      ..\Tests\Core\TestEnumerableExtensions.cs;..\Tests\Core\TestFileNameMatching.cs;
+                      ..\Tests\Core\TestPathComponent.cs;..\Tests\Core\TestPathComponentEnumerator.cs;
+                      ..\Tests\Core\TestPathHelpers.cs"
+             Link="Core\Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
+    <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
+    <ProjectReference Include="..\ServerNativeInterop\ServerNativeInterop.csproj" />
+    <ProjectReference Include="..\Server\Server.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="2.4.9" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.14" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Default configuration files, looked up next to VsChromium.Core.Server.dll. -->
+    <None Include="..\Server\Configuration\*" Link="Configuration\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- VsChromium.Native.dll, used by the NativeInterop and search tests. -->
+  <Target Name="CopyNativeDll" AfterTargets="Build">
+    <PropertyGroup>
+      <NativeDllPath>$(BuildRoot)Binaries\$(Configuration)\VsChromium.Native.dll</NativeDllPath>
+    </PropertyGroup>
+    <Warning Condition="!Exists('$(NativeDllPath)')" Text="$(NativeDllPath) not found: build Native.vcxproj (or the solution) first." />
+    <Copy Condition="Exists('$(NativeDllPath)')" SourceFiles="$(NativeDllPath)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

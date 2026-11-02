@@ -89,7 +89,7 @@ namespace VsChromium.Server.FileSystemNames {
       if (_parent == null) {
         return 0;
       }
-      return HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
+      return Core.Utility.HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
     }
 
     public bool Equals(FileName other) {

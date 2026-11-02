@@ -5,7 +5,7 @@ protocol (`--stdio`), so they work with any version of the server: the current .
 and the portable server of the port (see
 [PORTING_PRINCIPLES.md](../../docs/portable-server/PORTING_PRINCIPLES.md)).
 
-Build the solution first (the tests use `Binaries/<Configuration>/VsChromium.Server.exe`), then:
+Build the solution first (the tests use `Binaries/<Configuration>/Server/VsChromium.Server.exe`), then:
 
 ```
 cd src/Tests.EndToEnd
@@ -26,7 +26,7 @@ dotnet test --filter "TestCategory=Benchmark"    # benchmarks
 
 | Variable | Default | Description |
 |---|---|---|
-| `VSCHROMIUM_SERVER_PATH` | `<repo>/Binaries/<Configuration>/VsChromium.Server.exe` | Server executable under test |
+| `VSCHROMIUM_SERVER_PATH` | `<repo>/Binaries/<Configuration>/Server/VsChromium.Server.exe` | Server executable under test |
 | `VSCHROMIUM_TEST_CORPORA` | `%LOCALAPPDATA%/VsChromium/TestCorpora` | Where generated code bases are kept |
 | `VSCHROMIUM_BENCHMARK_SIZE` | `small` | `small` (3k files), `medium` (40k files), `large` (400k files, ~8 GB) |
 | `VSCHROMIUM_BENCHMARK_RESULTS` | `src/Tests.EndToEnd/bin/BenchmarkResults` | Output directory of benchmark results (`.json` and `.md`) |

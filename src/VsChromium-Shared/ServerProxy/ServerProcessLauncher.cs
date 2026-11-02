@@ -19,7 +19,11 @@ namespace VsChromium.ServerProxy {
   [Export(typeof(IPackagePostDispose))]
   public class ServerProcessLauncher : IServerProcessLauncher, IPackagePostDispose {
     private const string ProxyServerName = "VsChromium.Host.exe";
-    private const string ServerName = "VsChromium.Server.exe";
+    /// <summary>
+    /// The server (modern .NET) and its dependencies are in a "Server" sub-directory of the
+    /// directory containing VsChromium.Host.exe (both in the build output and in the VSIX).
+    /// </summary>
+    private const string ServerName = "Server\\VsChromium.Server.exe";
 
     private readonly IProcessCreator _processCreator;
     private readonly IFileSystem _fileSystem;

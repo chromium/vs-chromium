@@ -26,7 +26,7 @@ namespace VsChromium.Server.FileSystem.Builder {
 
       _map = entries
         .Where(x => x.BasePath.Equals(_projectPath))
-        .Select(x => KeyValuePair.Create(x.RelativePath, x.ChangeKind))
+        .Select(x => Core.Utility.KeyValuePair.Create(x.RelativePath, x.ChangeKind))
         .ToDictionary(x => x.Key, x => x.Value);
 
       _createdChildren = new Lazy<Dictionary<RelativePath, List<RelativePath>>>(() => _map

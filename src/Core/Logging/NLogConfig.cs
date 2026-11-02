@@ -53,9 +53,15 @@ namespace VsChromium.Core.Logging {
     private static void SetupFileTarget(FileTarget fileTarget, string layout) {
       fileTarget.Layout = layout;
       fileTarget.KeepFileOpen = true; // For performance
+#if !NETCOREAPP
+      // NLog 4 (Visual Studio side): log files shared by all the processes of the Visual Studio
+      // side. The server (NLog 6, where these settings were removed) logs to its own files.
       fileTarget.ConcurrentWrites = true;
+#endif
       fileTarget.ArchiveAboveSize = 2 * 1024 * 1024; // 2 MB
-      fileTarget.ArchiveNumbering = ArchiveNumberingMode.Rolling;
+#if !NETCOREAPP
+      fileTarget.ArchiveNumbering = ArchiveNumberingMode.Rolling; // Default with NLog 6.
+#endif
       fileTarget.MaxArchiveFiles = 10;
     }
   }

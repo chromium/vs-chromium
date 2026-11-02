@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -156,7 +156,7 @@ namespace VsChromium.Core.Linq {
     public static IEnumerable<KeyValuePair<int, int>> GetPartitionRanges(int count, int partitionCount) {
       var index = 0;
       foreach (var size in GetPartitionSizes(count, partitionCount)) {
-        yield return KeyValuePair.Create(index, size);
+        yield return Utility.KeyValuePair.Create(index, size);
         index += size;
       }
     }

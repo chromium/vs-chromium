@@ -2,40 +2,42 @@
 
   <!--
     The indexing and search server (VsChromium.Server.exe), used by the Visual Studio package and the
-    VS Code extension. Still .NET Framework + native code (VsChromium.Native.dll); to be ported to
-    portable modern .NET, see docs/portable-server/PORTING_PRINCIPLES.md.
+    VS Code extension. On modern .NET, still with native code (VsChromium.Native.dll) and Win32 APIs
+    for now; to be made portable, see docs/portable-server/PORTING_PRINCIPLES.md.
+
+    Output: Binaries\<Configuration>\Server\ (the server has its own dependencies, different from the
+    Visual Studio side ones in Binaries\<Configuration>\).
   -->
 
   <Import Project="..\..\Build\Common.Sdk.props" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>VsChromium.Server</AssemblyName>
     <RootNamespace>VsChromium.Server</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Prefer32Bit>false</Prefer32Bit>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Server\</OutputPath>
+    <!-- Same GC settings as the .NET Framework server (workstation GC, concurrent). To be revisited
+         with benchmarks. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
-    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
     <ProjectReference Include="..\ServerNativeInterop\ServerNativeInterop.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="protobuf-net" Version="2.4.9" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Default configuration files, looked up next to VsChromium.Core.dll (ConfigurationFileLocator). -->
+    <!-- Default configuration files, looked up next to VsChromium.Core.Server.dll (ConfigurationFileLocator). -->
     <None Update="Configuration\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

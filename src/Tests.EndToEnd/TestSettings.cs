@@ -28,7 +28,7 @@ public static class TestSettings {
 
   /// <summary>
   /// Path of the server executable under test: VSCHROMIUM_SERVER_PATH, or the server built in
-  /// <c>Binaries/&lt;Configuration&gt;</c> of the repository.
+  /// <c>Binaries/&lt;Configuration&gt;/Server</c> of the repository.
   /// </summary>
   public static string ServerPath {
     get {
@@ -37,7 +37,7 @@ public static class TestSettings {
         return path;
       }
       var configuration = ThisAssembly.GetCustomAttribute<BuildConfigurationAttribute>()!.Configuration;
-      return System.IO.Path.Combine(RepositoryRoot, "Binaries", configuration, "VsChromium.Server.exe");
+      return System.IO.Path.Combine(RepositoryRoot, "Binaries", configuration, "Server", "VsChromium.Server.exe");
     }
   }
 

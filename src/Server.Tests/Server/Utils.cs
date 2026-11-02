@@ -1,4 +1,4 @@
-﻿// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,10 +14,22 @@ namespace VsChromium.Tests.Server {
   public static class Utils {
     public static DirectoryInfo GetTestDataDirectory() {
       var assemblyFileInfo = new FileInfo(Assembly.GetExecutingAssembly().Location);
-      var testDataPath = Path.Combine(assemblyFileInfo.Directory.Parent.Parent.FullName, "src", "Tests", "TestData");
+      var testDataPath = Path.Combine(GetRepositoryRoot(assemblyFileInfo.Directory).FullName, "src", "Tests", "TestData");
       var result = new DirectoryInfo(testDataPath);
       Assert.IsTrue(result.Exists, string.Format("Test data path \"{0}\" not found!", testDataPath));
       return result;
+    }
+
+    /// <summary>
+    /// The repository root is the first parent directory containing the "build.root" marker file.
+    /// </summary>
+    private static DirectoryInfo GetRepositoryRoot(DirectoryInfo start) {
+      for (var dir = start; dir != null; dir = dir.Parent) {
+        if (File.Exists(Path.Combine(dir.FullName, "build.root"))) {
+          return dir;
+        }
+      }
+      throw new InvalidOperationException($"Repository root (build.root) not found above \"{start.FullName}\"");
     }
 
     public static DirectoryInfo GetChromiumTestEnlistmentDirectory() {

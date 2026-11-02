@@ -12,7 +12,7 @@ export const ServerExeName = 'VsChromium.Server.exe';
  * 1. The explicit `configuredPath` (setting "vschromium.serverPath"), if not empty.
  * 2. The server bundled with the extension (`<extension>/bin`), copied there when packaging.
  * 3. When running from the repository (`<repo>/src/vscode`): the server built in
- *    `<repo>/Binaries/Debug` or `<repo>/Binaries/Release`.
+ *    `<repo>/Binaries/Debug/Server` or `<repo>/Binaries/Release/Server`.
  *
  * When `preferRepositoryBuild` is true (extension running in development mode), 3 comes before 2
  * so that a stale `bin` directory left over from packaging does not shadow the latest build.
@@ -24,8 +24,8 @@ export function serverPathCandidates(extensionPath: string, configuredPath: stri
   const repoRoot = path.resolve(extensionPath, '..', '..');
   const bundled = [path.join(extensionPath, 'bin', ServerExeName)];
   const repositoryBuild = [
-    path.join(repoRoot, 'Binaries', 'Debug', ServerExeName),
-    path.join(repoRoot, 'Binaries', 'Release', ServerExeName),
+    path.join(repoRoot, 'Binaries', 'Debug', 'Server', ServerExeName),
+    path.join(repoRoot, 'Binaries', 'Release', 'Server', ServerExeName),
   ];
   return preferRepositoryBuild ? [...repositoryBuild, ...bundled] : [...bundled, ...repositoryBuild];
 }

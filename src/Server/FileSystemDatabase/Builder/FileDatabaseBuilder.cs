@@ -305,7 +305,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       }
 
       public int GetHashCode(FileName obj) {
-        return HashCode.Combine(RuntimeHelpers.GetHashCode(obj.Parent), RuntimeHelpers.GetHashCode(obj.Name));
+        return Core.Utility.HashCode.Combine(RuntimeHelpers.GetHashCode(obj.Parent), RuntimeHelpers.GetHashCode(obj.Name));
       }
     }
 

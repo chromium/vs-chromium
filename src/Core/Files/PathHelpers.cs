@@ -10,7 +10,13 @@ using System.Text;
 
 namespace VsChromium.Core.Files {
   public static class PathHelpers {
+#if NETCOREAPP
+    // Server: no MAX_PATH limit on modern .NET (long paths are supported by the BCL on Windows,
+    // and there is no such limit on Linux/macOS), see "Behavior changes" in PORTING_PRINCIPLES.md.
+    private const int MaxPath = int.MaxValue;
+#else
     private const int MaxPath = 260;
+#endif
     private static readonly string DirectorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
     private static readonly char[] DirectorySeparatorArray = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
     private static readonly string NetworkSharePrefix = new string(Path.DirectorySeparatorChar, 2);

@@ -62,6 +62,11 @@ public class BehaviorChangeTests {
 
   private const string NonAsciiFileName = "日本_path_marker.txt";
 
+  // A file whose full path is longer than MAX_PATH (260 characters) on any machine.
+  private static readonly string LongPathRelativeDirectory = Path.Combine(
+    new string('a', 60), new string('b', 60), new string('c', 60), new string('d', 60));
+  private const string LongPathMarker = "LONG_PATH_MARKER";
+
   private static void GenerateFiles(string root) {
     File.WriteAllText(Path.Combine(root, "vs-chromium-project.txt"),
       "[SourceExplorer.ignore]\n\n[SearchableFiles.include]\n*\n\n[SearchableFiles.ignore]\n");
@@ -72,6 +77,9 @@ public class BehaviorChangeTests {
     File.WriteAllText(Path.Combine(root, WholeWordFile), WholeWordText, utf8);
     File.WriteAllBytes(Path.Combine(root, Latin1File), Latin1Bytes);
     File.WriteAllText(Path.Combine(root, NonAsciiFileName), "contents\n", utf8);
+    var longPathDirectory = Path.Combine(root, LongPathRelativeDirectory);
+    Directory.CreateDirectory(longPathDirectory);
+    File.WriteAllText(Path.Combine(longPathDirectory, "long_path_file.txt"), LongPathMarker + "\n", utf8);
 
     // ASCII file of 250 KB, with a marker spanning the first chunk boundary and a control marker.
     var sb = new StringBuilder();
@@ -91,7 +99,7 @@ public class BehaviorChangeTests {
 
   [ClassInitialize]
   public static async Task ClassInitialize(TestContext context) {
-    s_root = CorpusCache.GetOrCreateCustom("behavior-changes", version: 3, GenerateFiles);
+    s_root = CorpusCache.GetOrCreateCustom("behavior-changes", version: 4, GenerateFiles);
     s_server = await StdioServerClient.StartAsync(TestSettings.ServerPath);
     await Server.WaitForEventAsync("SearchEngineFilesLoaded", TimeSpan.FromMinutes(2),
       () => Server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(s_root, "vs-chromium-project.txt"))));
@@ -245,6 +253,15 @@ public class BehaviorChangeTests {
   public async Task Regex_FilePathSearch_NonAsciiFileName_IsFound() {
     var response = await Server.RequestAsync(ServerProtocol.SearchFilePaths("日本_path_marker", regex: true));
     Assert.AreEqual(1L, response.Data["hitCount"]!.GetValue<long>());
+  }
+
+  // --- #9: paths longer than MAX_PATH --------------------------------------------------------
+
+  [TestMethod]
+  public async Task LongPath_FileIsIndexed() {
+    var (hits, files) = await SearchAsync(LongPathMarker);
+    Assert.AreEqual(1L, hits);
+    Assert.IsTrue(files.Single().FullPath.Length > 260, files.Single().FullPath);
   }
 
   /// <summary>Same as <see cref="SearchAsync"/>, with server errors reported as assertion failures.</summary>

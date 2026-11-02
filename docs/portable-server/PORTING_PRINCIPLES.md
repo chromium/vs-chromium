@@ -230,6 +230,11 @@ milestone 4; **all are fixed since milestone 4** (managed search):
    decoded as UTF-8 with one U+FFFD per invalid byte, so offsets stay correct.
 8. **Regex file path searches** (`SearchFilePaths` with a regex) mangled non-ASCII paths (ANSI
    conversion); they now run on the UTF-16 path.
+9. **Paths longer than MAX_PATH (260 characters) were skipped** (directory entries and file change
+   events). The .NET BCL supports long paths on Windows (and there is no such limit on Linux/macOS),
+   so the server now indexes them (`PortableFileSystem`, `PathHelpers.IsPathTooLong` is always false
+   on the server). Fixed after milestone 7 groundwork, regression test `LongPath_FileIsIndexed`. Note:
+   the clients may still be unable to open such files (e.g. older Visual Studio versions).
 ## Reusing mtsuite
 
 - **Decided: copy the code** of mtsuite `src/core-filesystem` (no dependencies) and the traversal

@@ -24,9 +24,6 @@ namespace VsChromium.Core.Files {
   /// <c>GetFileAttributesEx</c> and <c>ReadFile</c>.
   /// </summary>
   public class PortableFileSystem : IFileSystem, IFileContentsReader {
-    private const long MaxPathTooLogLogCount = 10;
-    private long _pathTooLongErrorCount;
-
     private static readonly EnumerationOptions DirectoryEnumerationOptions = new EnumerationOptions {
       RecurseSubdirectories = false,
       // Report errors (e.g. access denied) to the caller, as the native
@@ -99,39 +96,14 @@ namespace VsChromium.Core.Files {
       return block;
     }
     public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {
-      var list = new FileSystemEnumerable<DirectoryEntry>(
+      // Note: Unlike the Win32 implementation of the Visual Studio side, entries with paths longer
+      // than MAX_PATH are not skipped (see "Behavior changes" in PORTING_PRINCIPLES.md).
+      return new FileSystemEnumerable<DirectoryEntry>(
           path.Value,
           (ref FileSystemEntry entry) => new DirectoryEntry(entry.FileName.ToString(), (FILE_ATTRIBUTE)entry.Attributes),
           DirectoryEnumerationOptions)
         .ToList();
-
-      // Skip any entry that is longer than MAX_PATH, for compatibility with
-      // the Visual Studio side (see "Behavior changes" in
-      // PORTING_PRINCIPLES.md).
-      if (list.Any(entry => PathHelpers.IsPathTooLong(path.Value, entry.Name))) {
-        return list.Where(entry => {
-          if (PathHelpers.IsPathTooLong(path.Value, entry.Name)) {
-            // Note: The condition is unsafe from a pure concurrency point of view,
-            //       but is ok in this case because the field is incrementally increasing.
-            //       This is just an optimization to avoid an Interlocked call.
-            if (_pathTooLongErrorCount <= MaxPathTooLogLogCount) {
-              var logCount = Interlocked.Increment(ref _pathTooLongErrorCount);
-              if (logCount <= MaxPathTooLogLogCount) {
-                Logger.LogInfo("Skipping directory entry because path is too long: \"{0}\"",
-                  path.Combine(new RelativePath(entry.Name)));
-              }
-              if (logCount == MaxPathTooLogLogCount) {
-                Logger.LogInfo("  (Note: No more message abount path too long will be logged, because the maximum number of occurrences has been reached)");
-              }
-            }
-            return false;
-          }
-          return true;
-        }).ToList();
-      }
-      return list;
     }
-
     public IFileSystemWatcher CreateDirectoryWatcher(FullPath path) {
       return new FileSystemWatcherImpl(path);
     }

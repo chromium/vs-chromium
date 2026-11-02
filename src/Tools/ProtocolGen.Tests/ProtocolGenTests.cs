@@ -163,7 +163,7 @@ interface Search { code(text: string): Result; refresh(): void; }
 interface SearchNotifications { done(...Result): void; }
 ");
     var code = CSharpServerEmitter.Emit(protocol);
-    StringAssert.Contains(code, "namespace Test.Protocol {");
+    StringAssert.Contains(code, "namespace Test.Protocol.Generated {");
     StringAssert.Contains(code, "[JsonStringEnumMemberName(\"idle\")]\n    Idle,");
     StringAssert.Contains(code, "[JsonPropertyName(\"spans\")]\n    public List<Span> Spans { get; set; } = new();");
     StringAssert.Contains(code, "[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]\n    public string? Label { get; set; }");
@@ -186,8 +186,8 @@ interface SearchNotifications { done(...Result): void; }
     var root = RepositoryRoot();
     var protocol = ProtocolBinder.LoadDirectory(Path.Combine(root, "protocol"));
     var expected = CSharpServerEmitter.Emit(protocol);
-    var actual = File.ReadAllText(Path.Combine(root, "src", "Core.Server", "Protocol", "Protocol.g.cs")).Replace("\r\n", "\n");
-    Assert.AreEqual(expected, actual, "src/Core.Server/Protocol/Protocol.g.cs is not up to date: build src/Core.Server");
+    var actual = File.ReadAllText(Path.Combine(root, "src", "Core.Server", "Protocol", "Generated", "Protocol.g.cs")).Replace("\r\n", "\n");
+    Assert.AreEqual(expected, actual, "src/Core.Server/Protocol/Generated/Protocol.g.cs is not up to date: build src/Core.Server");
   }
 
   private static string RepositoryRoot() {

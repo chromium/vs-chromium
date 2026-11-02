@@ -22,4 +22,9 @@
     <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Tools\ProtocolGen\</OutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- The protocol definition files, shown in the Solution Explorer (folder "Protocol Definition"). -->
+    <None Include="$(BuildRoot)protocol\**\*" LinkBase="Protocol Definition" />
+  </ItemGroup>
+
 </Project>

@@ -13,7 +13,7 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace VsChromium.Protocol {
+namespace VsChromium.Protocol.Generated {
   /// <summary>
   /// State of the indexing of the server.
   /// </summary>

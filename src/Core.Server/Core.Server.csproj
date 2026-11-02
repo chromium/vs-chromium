@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <!--
-    Protocol code (Protocol\Protocol.g.cs), generated from the protocol definition (protocol\*.tsp)
+    Protocol code (Protocol\Generated\Protocol.g.cs, namespace VsChromium.Protocol.Generated), generated from the protocol definition (protocol\*.tsp)
     by src\Tools\ProtocolGen before compiling, when a definition file or the generator changed. The
     generated file is checked in (diffs show the effect of protocol changes).
   -->
@@ -51,7 +51,7 @@
 
   <PropertyGroup>
     <ProtocolGenAssembly>$(BuildRoot)Binaries\$(Configuration)\Tools\ProtocolGen\VsChromium.ProtocolGen.dll</ProtocolGenAssembly>
-    <ProtocolGeneratedFile>$(MSBuildProjectDirectory)\Protocol\Protocol.g.cs</ProtocolGeneratedFile>
+    <ProtocolGeneratedFile>$(MSBuildProjectDirectory)\Protocol\Generated\Protocol.g.cs</ProtocolGeneratedFile>
   </PropertyGroup>
 
   <Target Name="GenerateProtocol"

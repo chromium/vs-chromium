@@ -9,11 +9,11 @@ clients is generated from it by [src/Tools/ProtocolGen](../src/Tools/ProtocolGen
 
 | Output | Generated file | Status |
 |---|---|---|
-| Server (C#, System.Text.Json source generation, NativeAOT compatible) | [src/Core.Server/Protocol/Protocol.g.cs](../src/Core.Server/Protocol/Protocol.g.cs) | Generated |
+| Server (C#, System.Text.Json source generation, NativeAOT compatible) | [src/Core.Server/Protocol/Generated/Protocol.g.cs](../src/Core.Server/Protocol/Generated/Protocol.g.cs) | Generated |
 | Visual Studio extension (C#, StreamJsonRpc) | to come (migration phase P4) | |
 | VS Code extension (TypeScript, vscode-jsonrpc) | to come (migration phase P3) | |
 
-The generated files are checked in (diffs show the effect of protocol changes). The test
+The generated code is in the `VsChromium.Protocol.Generated` namespace (`.Generated` is appended to the namespace of the definition files). The generated files are checked in (diffs show the effect of protocol changes). The test
 `ProtocolGenTests.RepositoryGeneratedFilesAreUpToDate` fails if a checked-in file is stale.
 
 ## Language: a subset of TypeSpec

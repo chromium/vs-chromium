@@ -8,11 +8,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Protocol;
+using VsChromium.Protocol.Generated;
 
 namespace VsChromium.Tests.Protocol {
   /// <summary>
-  /// The code generated from the protocol definition (src/Core.Server/Protocol/Protocol.g.cs):
+  /// The code generated from the protocol definition (src/Core.Server/Protocol/Generated/Protocol.g.cs):
   /// dispatch of requests, JSON shapes, notifications, errors.
   /// </summary>
   [TestClass]

@@ -746,7 +746,7 @@ messages: `protocol/README.md`.
 
 - P1 (done): definitions of all the methods (20 requests reorganized as `group/operation`, 7
   notifications; obsolete/unused requests dropped; flat search results). The server output
-  (`src/Core.Server/Protocol/Protocol.g.cs`) contains the models, the System.Text.Json source
+  (`src/Core.Server/Protocol/Generated/Protocol.g.cs`) contains the models, the System.Text.Json source
   generation context (NativeAOT compatible), the method names, `IProtocolRequestHandler`, a
   reflection-free `ProtocolDispatcher` and `ProtocolNotificationSender`. Tests: generator
   (`src/Tools/ProtocolGen.Tests`: syntax, unsupported constructs with locations, generated code,

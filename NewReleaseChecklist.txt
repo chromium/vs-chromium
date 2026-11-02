@@ -4,7 +4,7 @@ Master branch
 =============
 1. Update version # in all files:
   * "Find In Files": "0.9.xx", "Entire Solution"
-    * src\Core\VsChromiumVersion.cs
+    * src\Core.Ipc\VsChromiumVersion.cs
     * src\VsChromium\source.extension.vsixmanifest (PackageManifest\Metadata\Identity\@Version)
     * src\Native\version.rc
   * "Find In Files": "0,9,xx", "Entire Solution"

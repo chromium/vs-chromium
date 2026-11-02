@@ -5,7 +5,7 @@ server (`VsChromium.Server.exe`) from .NET Framework 4.7.2 + custom C/C++ (Win32
 portable modern .NET application (Windows, Linux, macOS). It is meant to be read before working on
 the `portable-server` branch, including in a future conversation with no other context.
 
-Status: **milestone 1** (benchmarks + baseline) in progress on branch `portable-server` (created from `main` at `30d7bb9`).
+Status: milestones 1 (benchmarks + baseline) and 2 (project restructuring) **done**; next: milestone 3 (server on `net10.0`). Branch `portable-server` (created from `main` at `30d7bb9`).
 
 ## Goals
 
@@ -85,7 +85,7 @@ logging) is either moved to a `netstandard2.0` library or duplicated where the s
 diverges (e.g. mtsuite `FullPath` on the server). `src/Native`, `src/re2`,
 `src/ServerNativeInterop`, `third_party/re2-*` and the unused P/Invokes are deleted at the end.
 
-All new/ported projects use **SDK-style** csproj.
+All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common.Sdk.props`: output to `Binaries\<Configuration>\`, strong name signing, warnings as errors). Done in milestone 2 for `Core.Ipc`, `Core`, `ServerNativeInterop` and `Server`; the VS-side projects (`VsChromium`, `Host`, `DkmIntegration`, `Tests`) are still legacy csproj.
 
 ### Target framework and distribution
 
@@ -288,8 +288,10 @@ of its resource usage, measured inside the process:
    stdio, metrics and report; record the baseline results. Also write the regression tests for
    behavior changes 1–4 (expected to fail on the current server, marked as known failures until
    fixed).
-2. **Project restructuring**: SDK-style projects, `VsChromium.Core.Ipc` (`netstandard2.0`), server
-   still net472 + native code; all clients/tests green.
+2. **Project restructuring** (done): SDK-style projects, `VsChromium.Core.Ipc` (`netstandard2.0`, protobuf-net
+   2.4.9, contains `Core/Ipc/**` message types and `VsChromiumVersion`), server still net472 + native code;
+   all clients/tests green. MEF-exported IPC helpers (`ProtoBufSerializer`, `IpcRequestIdFactory`) and
+   `IpcStreamOverNetworkStream` (uses `Logger`) stay in `Core`.
 3. **Server on net10 (Windows)**, still with the native code (P/Invoke to VsChromium.Native.dll works
    on .NET 10): MEF/NLog/protobuf-net/Newtonsoft upgrades, new test project. Benchmark.
 4. **Managed search**: text kind, line extents, literal search, regex; native code still available

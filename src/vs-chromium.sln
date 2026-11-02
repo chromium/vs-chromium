@@ -3,14 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31306.274
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{6F70C76F-5A3A-4657-A073-075A08555BAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "Core\Core.csproj", "{6F70C76F-5A3A-4657-A073-075A08555BAD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsChromium", "VsChromium\VsChromium.csproj", "{8ED06AA3-93DF-48FE-97C0-F516E99FDB32}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0710B1A-5DFB-4BE2-B6C6-F02382BC15F0} = {C0710B1A-5DFB-4BE2-B6C6-F02382BC15F0}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{F33514B3-E491-4599-AF71-EABCDD70234F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "Server\Server.csproj", "{F33514B3-E491-4599-AF71-EABCDD70234F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Host", "Host\Host.csproj", "{B6FF4670-B5B0-4724-9895-AF3C5E8C68C0}"
 EndProject
@@ -31,7 +31,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Native", "Native\Native.vcx
 		{B55D20C2-DF82-4487-8AAB-44EBC5D87B19} = {B55D20C2-DF82-4487-8AAB-44EBC5D87B19}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerNativeInterop", "ServerNativeInterop\ServerNativeInterop.csproj", "{A38DC74B-820C-49A5-A732-23170D953632}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerNativeInterop", "ServerNativeInterop\ServerNativeInterop.csproj", "{A38DC74B-820C-49A5-A732-23170D953632}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DkmIntegration", "DkmIntegration\DkmIntegration.csproj", "{58572470-7222-49BE-850B-C6CE224A813A}"
 EndProject
@@ -41,12 +41,18 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "VsChromium-Shared", "VsChro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VsChromium.Tests.EndToEnd", "Tests.EndToEnd\VsChromium.Tests.EndToEnd.csproj", "{F29899A6-61B2-450A-A5D2-2332B02C1586}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.Ipc", "Core.Ipc\Core.Ipc.csproj", "{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F29899A6-61B2-450A-A5D2-2332B02C1586}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F29899A6-61B2-450A-A5D2-2332B02C1586}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F29899A6-61B2-450A-A5D2-2332B02C1586}.Release|Any CPU.ActiveCfg = Release|Any CPU

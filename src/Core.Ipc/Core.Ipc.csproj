@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Message types of the protocol between the clients (Visual Studio package, VS Code extension) and
+    the indexing server. netstandard2.0, so it can be used both by the Visual Studio package
+    (.NET Framework, runs inside devenv.exe) and by the server (.NET Framework today, modern .NET
+    after the port, see docs/portable-server/PORTING_PRINCIPLES.md). Must not depend on anything else
+    than protobuf-net (no Win32, no MEF, no logging).
+  -->
+
+  <Import Project="..\..\Build\Common.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>VsChromium.Core.Ipc</AssemblyName>
+    <RootNamespace>VsChromium.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="2.4.9" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Common settings of the SDK-style C# projects (equivalent of Common.Build.settings for the legacy
+  projects): shared output directory Binaries\<Configuration>\, strong name signing, warnings as
+  errors. Import it at the top of SDK-style projects:
+    <Import Project="..\..\Build\Common.Sdk.props" />
+-->
+<Project>
+  <PropertyGroup>
+    <BuildRoot Condition="'$(BuildRoot)' == ''">$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), build.root))\</BuildRoot>
+    <BuildSettingsPath>$(BuildRoot)Build\</BuildSettingsPath>
+
+    <!-- All the binaries go to the same directory, as for the legacy projects. -->
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(BuildSettingsPath)VsChromiumKey.snk</AssemblyOriginatorKeyFile>
+
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <!-- Assembly attributes come from Properties\AssemblyInfo.cs (shared VsChromiumVersion). -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+</Project>

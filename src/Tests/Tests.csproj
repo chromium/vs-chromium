@@ -74,6 +74,10 @@
     <Compile Include="VsChromium\Wpf\TestHiararchyObjectNavigator.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(BuildRoot)src\Core.Ipc\Core.Ipc.csproj">
+      <Project>{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}</Project>
+      <Name>VsChromium.Core.Ipc</Name>
+    </ProjectReference>
     <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
       <Name>VsChromium.Core</Name>
@@ -111,7 +115,7 @@
          runtime assemblies copied to the output directory. -->
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
     <PackageReference Include="protobuf-net">
-      <Version>2.0.0.640</Version>
+      <Version>2.4.9</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

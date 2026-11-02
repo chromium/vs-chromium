@@ -24,6 +24,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="$(BuildRoot)src\Core.Ipc\Core.Ipc.csproj">
+      <Project>{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}</Project>
+      <Name>VsChromium.Core.Ipc</Name>
+    </ProjectReference>
     <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
       <Name>VsChromium.Core</Name>

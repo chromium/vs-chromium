@@ -5,6 +5,7 @@
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
 using VsChromium.Core.Ipc;
+using VsChromium.Core.Ipc.ProtoBuf;
 using VsChromium.Features.ChromiumCodingStyleChecker;
 using VsChromium.Server.Search;
 
@@ -14,14 +15,14 @@ namespace VsChromium.Tests {
       var catalog = new AggregateCatalog();
       catalog.Catalogs.Add(new AssemblyCatalog(Assembly.GetExecutingAssembly()));
       catalog.Catalogs.Add(new AssemblyCatalog(typeof(ITextLineChecker).Assembly));
-      catalog.Catalogs.Add(new AssemblyCatalog(typeof(IpcRequest).Assembly));
+      catalog.Catalogs.Add(new AssemblyCatalog(typeof(ProtoBufSerializer).Assembly)); // VsChromium.Core
       var container = new CompositionContainer(catalog);
       return container;
     }
     protected static CompositionContainer SetupServerMefContainer() {
       var catalog = new AggregateCatalog();
       catalog.Catalogs.Add(new AssemblyCatalog(Assembly.GetExecutingAssembly()));
-      catalog.Catalogs.Add(new AssemblyCatalog(typeof(IpcRequest).Assembly));
+      catalog.Catalogs.Add(new AssemblyCatalog(typeof(ProtoBufSerializer).Assembly)); // VsChromium.Core
       catalog.Catalogs.Add(new AssemblyCatalog(typeof(SearchEngine).Assembly));
       var container = new CompositionContainer(catalog);
       return container;

@@ -13,10 +13,6 @@ namespace VsChromium.Core.Win32.Memory {
     public static extern SafeProcessHeapHandle GetProcessHeap();
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport("kernel32", SetLastError = true)]
-    public static extern SafeHeapHandle HeapCreate(HeapFlags flOptions, IntPtr dwInitialSize, IntPtr dwMaximumSize);
-
-    [SuppressUnmanagedCodeSecurity]
     [DllImport("kernel32")]
     public static extern IntPtr HeapAlloc(IntPtr hHeap, HeapFlags flags, IntPtr size);
 

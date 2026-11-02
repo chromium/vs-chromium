@@ -31,8 +31,7 @@
     <!-- Shared source files of VsChromium.Core (Visual Studio only code excluded). -->
     <Compile Include="..\Core\**\*.cs"
              Exclude="..\Core\obj\**;..\Core\bin\**;..\Core\Properties\**;
-                      ..\Core\Debugger\**;..\Core\DkmShared\**;..\Core\JobObjects\**;..\Core\Processes\**;
-                      ..\Core\Win32\Debugging\**;..\Core\Win32\Jobs\**;..\Core\Win32\NamedPipes\**;
+                      ..\Core\DkmShared\**;..\Core\Processes\**;
                       ..\Core\Win32\Processes\**;..\Core\Win32\Shell\**;..\Core\Win32\ComPtr.cs;
                       ..\Core\Chromium\ChromiumProcess.cs;..\Core\Chromium\InstallationEnumerator.cs;
                       ..\Core\Chromium\InstallationData.cs;..\Core\Chromium\ProcessCategory.cs;
@@ -40,7 +39,7 @@
                       ..\Core\Files\FileSystem.cs;..\Core\Win32\Files\NativeFile.cs;
                       ..\Core\Win32\Files\NativeMethods.cs;..\Core\Win32\Memory\NativeMethods.cs;
                       ..\Core\Win32\Handles\**;..\Core\Win32\Memory\SafeLocalMemHandle.cs;
-                      ..\Core\Win32\Memory\SafeHeapHandle.cs;..\Core\Win32\Files\SafeFindHandle.cs;
+                      ..\Core\Win32\Memory\SafeHeapHandle.cs;
                       ..\Core\Win32\Files\SlimFileInfo.cs;..\Core\Files\FileInfoSnapshot.cs;
                       ..\Core\Win32\Memory\SafeProcessHeapHandle.cs;..\Core\Win32\Interop\SecurityAttributes.cs"
              Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />

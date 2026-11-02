@@ -17,28 +17,6 @@ namespace VsChromium.Core.Win32.Processes {
     [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
     public static extern IntPtr GetCurrentProcess();
 
-    [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true)]
-    public static extern bool CreateProcess(
-      [MarshalAs(UnmanagedType.LPTStr)] string lpApplicationName,
-      StringBuilder lpCommandLine,
-      SecurityAttributes lpProcessAttributes,
-      SecurityAttributes lpThreadAttributes,
-      bool bInheritHandles,
-      ProcessCreationFlags dwCreationFlags,
-      IntPtr lpEnvironment,
-      [MarshalAs(UnmanagedType.LPTStr)] string lpCurrentDirectory,
-      STARTUPINFO lpStartupInfo,
-      [In, Out]
-      PROCESS_INFORMATION lpProcessInformation);
-
-    [DllImport("ntdll.dll", SetLastError = true)]
-    public static extern int NtReadVirtualMemory(
-        SafeProcessHandle hProcess,
-        IntPtr baseAddress,
-        [Out] byte[] buffer,
-        uint size,
-        out uint lpNumberOfBytesRead);
-
     [DllImport("ntdll.dll", SetLastError = true)]
     public static extern int NtWow64ReadVirtualMemory64(
         SafeProcessHandle hProcess,

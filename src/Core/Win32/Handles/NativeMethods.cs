@@ -13,17 +13,5 @@ namespace VsChromium.Core.Win32.Handles {
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, ExactSpelling = true, SetLastError = true)]
     public static extern bool CloseHandle(IntPtr handle);
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
-    public static extern IntPtr GetStdHandle(int whichHandle);
-
-    [DllImport("kernel32.dll", BestFitMapping = false, CharSet = CharSet.Ansi, SetLastError = true)]
-    public static extern bool DuplicateHandle(
-      HandleRef hSourceProcessHandle,
-      SafeHandle hSourceHandle,
-      HandleRef hTargetProcess,
-      out SafeFileHandle targetHandle,
-      int dwDesiredAccess,
-      bool bInheritHandle,
-      int dwOptions);
   }
 }

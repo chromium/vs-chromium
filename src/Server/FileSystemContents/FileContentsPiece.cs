@@ -19,12 +19,14 @@ namespace VsChromium.Server.FileSystemContents {
     private readonly FileContents _fileContents;
     private readonly int _fileId;
     private readonly TextRange _textRange;
+    private readonly int _chunkIndex;
 
-    public FileContentsPiece(FileName fileName, FileContents fileContents, int fileId, TextRange textRange) {
+    public FileContentsPiece(FileName fileName, FileContents fileContents, int fileId, TextRange textRange, int chunkIndex) {
       _fileName = fileName;
       _fileContents = fileContents;
       _fileId = fileId;
       _textRange = textRange;
+      _chunkIndex = chunkIndex;
     }
 
     /// <summary>
@@ -57,6 +59,14 @@ namespace VsChromium.Server.FileSystemContents {
     /// Find all occurrences of a search term passed in <paramref
     /// name="compiledTextSearchData"/>.
     /// </summary>
+    /// <summary>
+    /// Returns false if this piece certainly doesn't contain a match of the search of
+    /// <paramref name="query"/> (trigram filters).
+    /// </summary>
+    public bool MayContain(TrigramQuery query) {
+      return _fileContents.MayContain(_chunkIndex, query);
+    }
+
     public IList<TextRange> FindAll(CompiledTextSearchData compiledTextSearchData, IOperationProgressTracker progressTracker) {
       return _fileContents.FindAll(compiledTextSearchData, _textRange, progressTracker);
     }

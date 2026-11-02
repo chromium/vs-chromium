@@ -200,6 +200,7 @@ namespace VsChromium.Server.Search {
       var pieces = database.FileContentsPieces;
       var progressTracker = new OperationProgressTracker(maxResults, cancellationToken);
       var fileNameFilter = compiledTextSearchData.FileNameFilter;
+      var trigramQuery = compiledTextSearchData.TrigramQuery;
       var results = new List<SearchableContentsResult>();
       long searchedFileCount = 0;
       var gate = new object();
@@ -221,6 +222,9 @@ namespace VsChromium.Server.Search {
           // Count each file once (its first piece)
           if (item.IsFirstPiece)
             localSearchedFileCount++;
+          // Skip pieces that can't contain a match (trigram filters)
+          if (trigramQuery != null && !item.MayContain(trigramQuery))
+            continue;
 
           var ranges = item.FindAll(compiledTextSearchData, progressTracker);
           if (ranges.Count == 0)
@@ -669,6 +673,47 @@ namespace VsChromium.Server.Search {
       _currentFileDatabase = databaseSnapshot;
       _currentFileSystemSnapshotVersion = fileSystemSnapshot.Version;
       _previousUpdateCompleted = complete; // Success => we allow incremtal updates next time
+      if (complete) {
+        StartBuildingTrigramFilters(databaseSnapshot);
+      }
+    }
+
+    private CancellationTokenSource _trigramFiltersCancellation;
+
+    /// <summary>
+    /// Builds the trigram filters of the file contents of <paramref name="database"/> that don't
+    /// have them yet (all of them after a full load, only the new ones after an incremental
+    /// update), in the background on half of the processors: the index is usable before (searches
+    /// scan the pieces without filters), so that the filters don't delay the end of the loading.
+    /// </summary>
+    private void StartBuildingTrigramFilters(IFileDatabaseSnapshot database) {
+      if (!TrigramFilters.Enabled)
+        return;
+      _trigramFiltersCancellation?.Cancel();
+      var cancellation = new CancellationTokenSource();
+      _trigramFiltersCancellation = cancellation;
+      var pieces = database.FileContentsPieces;
+      System.Threading.Tasks.Task.Run(() => {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        try {
+          System.Threading.Tasks.Parallel.For(0, pieces.Count, new System.Threading.Tasks.ParallelOptions {
+            CancellationToken = cancellation.Token,
+            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
+          }, i => {
+            var piece = pieces[i];
+            if (piece.IsFirstPiece) {
+              piece.FileContents.BuildTrigramFilters();
+            }
+          });
+          OperationTimings.Record(OperationTimings.TrigramFiltersBuild, stopwatch.Elapsed);
+        }
+        catch (OperationCanceledException) {
+          // A newer snapshot has been activated
+        }
+        catch (Exception e) {
+          Logger.LogError(e, "Error building trigram filters");
+        }
+      });
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {

@@ -46,6 +46,8 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     /// <summary>Native memory explicitly allocated by the server (e.g. file contents).</summary>
     public long NativeAllocatedBytes { get; set; }
     public long IndexedFileContentsBytes { get; set; }
+    /// <summary>Memory used by the trigram filters of the file contents (managed heap).</summary>
+    public long TrigramFiltersBytes { get; set; }
     public long FileCount { get; set; }
     public long SearchableFileCount { get; set; }
     public int ProjectCount { get; set; }

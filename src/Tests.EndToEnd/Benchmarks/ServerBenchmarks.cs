@@ -49,6 +49,14 @@ public class ServerBenchmarks {
     scenarios.Add(new ScenarioResult("Cold index", sampler.GetUsage(start, end), stats));
     Log($"Indexed {stats["fileCount"]} files in {end.Time - start.Time}.");
 
+    // 1b. Search index structures built in the background after the cold index (trigram filters):
+    // wait until they are built (or not built at all: disabled), so that queries measure the
+    // steady state.
+    start = sampler.TakeSample();
+    var backgroundStats = await WaitForBackgroundIndexAsync(server);
+    end = sampler.TakeSample();
+    scenarios.Add(new ScenarioResult("Background index", sampler.GetUsage(start, end), backgroundStats));
+
     // 2. Steady state: idle, then after a forced full GC.
     start = sampler.TakeSample();
     await Task.Delay(TimeSpan.FromSeconds(2));
@@ -277,6 +285,24 @@ public class ServerBenchmarks {
     static double Find(JsonObject stats, string name) =>
       stats["operationTimings"]?.AsArray().FirstOrDefault(t => (string?)t!["name"] == name)?["totalMs"]?.GetValue<double>() ?? 0;
     return Find(after, operation) - Find(before, operation);
+  }
+
+  /// <summary>
+  /// Waits until the server has built its background index structures (operation
+  /// "TrigramFiltersBuild" completed), or until it is clear that it doesn't build any (no filter
+  /// memory after a few seconds).
+  /// </summary>
+  private static async Task<JsonObject> WaitForBackgroundIndexAsync(StdioServerClient server) {
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    while (true) {
+      var stats = await GetStatisticsAsync(server, forceGc: false);
+      var built = stats["operationTimings"]?.AsArray().Any(t => (string?)t!["name"] == "TrigramFiltersBuild") ?? false;
+      var filterBytes = stats["trigramFiltersBytes"]?.GetValue<long>() ?? 0;
+      if (built || (filterBytes == 0 && stopwatch.Elapsed > TimeSpan.FromSeconds(3)) || stopwatch.Elapsed > TimeSpan.FromMinutes(5)) {
+        return stats;
+      }
+      await Task.Delay(50);
+    }
   }
 
   private static async Task<JsonObject> GetStatisticsAsync(StdioServerClient server, bool forceGc) =>

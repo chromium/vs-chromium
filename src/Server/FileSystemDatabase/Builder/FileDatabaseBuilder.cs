@@ -26,7 +26,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// <summary>
     /// Split large files in chunks of maximum <code>ChunkSize</code> bytes.
     /// </summary>
-    private const int ChunkSize = 100 * 1024;
+    private const int ChunkSize = FileContents.MaxChunkLength;
 
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
@@ -305,13 +305,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     ///  span multiple chunks.
     /// </summary>
     private static IEnumerable<FileContentsPiece> SplitFileContents(FileWithContents fileWithContents, int fileId) {
-      var range = fileWithContents.Contents.TextRange;
-      while (range.Length > 0) {
-        var chunkLength = fileWithContents.Contents.GetChunkLength(range.Position, ChunkSize);
-        var chunk = new TextRange(range.Position, chunkLength);
-        yield return fileWithContents.Contents.CreatePiece(fileWithContents.FileName, fileId, chunk);
-
-        range = new TextRange(chunk.EndPosition, range.EndPosition - chunk.EndPosition);
+      // Note: Same chunks as the trigram filters of the file contents (chunk index).
+      var chunks = fileWithContents.Contents.GetChunks();
+      for (var i = 0; i < chunks.Count; i++) {
+        yield return fileWithContents.Contents.CreatePiece(fileWithContents.FileName, fileId, chunks[i], i);
       }
     }
 

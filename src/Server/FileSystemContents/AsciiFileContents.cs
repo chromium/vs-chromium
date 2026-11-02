@@ -24,6 +24,10 @@ namespace VsChromium.Server.FileSystemContents {
       get { return sizeof(byte); }
     }
 
+    protected override unsafe TrigramFilterSet CreateTrigramFilters(System.Collections.Generic.IReadOnlyList<TextRange> chunks) {
+      return TrigramFilterSet.Build(new ReadOnlySpan<byte>(Contents.Pointer.ToPointer(), CharacterCount), chunks);
+    }
+
     protected override ICompiledTextSearch GetCompiledTextSearch(ICompiledTextSearchContainer container) {
       return container.GetAsciiSearch();
     }

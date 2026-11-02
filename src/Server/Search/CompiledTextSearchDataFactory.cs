@@ -9,6 +9,8 @@ using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
 
+using VsChromium.Server.TextSearch;
+
 namespace VsChromium.Server.Search {
   public class CompiledTextSearchDataFactory : ICompiledTextSearchDataFactory {
     private const int MinimumSearchPatternLength = 2;
@@ -48,10 +50,18 @@ namespace VsChromium.Server.Search {
           UseRegex = searchParams.Regex,
         });
 
+      // Literals every match contains: all the entries (text between wildcards) of a text search,
+      // the required literal of a regular expression (if any).
+      var requiredLiterals = searchParams.Regex
+        ? new[] { RegexLiterals.GetRequiredLiteral(searchParams.SearchString ?? "") }
+        : parsedSearchString.EntriesBeforeLongestEntry.Concat(new[] { parsedSearchString.LongestEntry })
+            .Concat(parsedSearchString.EntriesAfterLongestEntry).Select(x => x.Text).ToArray();
+
       return new CompiledTextSearchData(
         parsedSearchString,
         searchContentsAlgorithms,
-        fileNamePathMatcher);
+        fileNamePathMatcher,
+        TrigramFilters.CreateQuery(requiredLiterals, searchParams.MatchCase));
     }
 
     private List<ICompiledTextSearchContainer> CreateSearchAlgorithms(

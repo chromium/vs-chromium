@@ -587,3 +587,59 @@ Results (server time per change, large corpus): modify 1 file 109 → 42 ms, cre
 
 Results: neutral on the benchmarks (within noise): the server time of large responses was small
 already, and culture sensitive sorting was not a significant part of the scan.
+
+### Trigram filters (m12, `docs/portable-server/benchmarks/m12-trigram-filters`)
+
+Literal search already runs close to memory bandwidth (7 GB in ~95 ms), so the only way to make
+selective searches much faster is to scan fewer bytes. Two designs were evaluated with a
+standalone analysis of the large corpus (417k pieces, 7 GB): for each query, the bytes that still
+need to be scanned (pieces that may contain all the trigrams of the query, ASCII case-folded):
+
+| | Exact inverted index | Bloom 2 bits/trigram | Bloom 4 bits | Bloom 8 bits | Bloom 12 bits |
+|---|---:|---:|---:|---:|---:|
+| Memory (large corpus) | 2,646 MB (37%) | 166 MB (2.4%) | 332 MB (4.8%) | 662 MB (9.5%) | 993 MB (14%) |
+| "VSCB_UNIQUE_MARKER_00" | 0.00% | 0.01% | 0.00% | 0.00% | 0.00% |
+| "WebContents" | 37.9% | 48.2% | 40.3% | 38.3% | 38.0% |
+| "GetRenderFrameHost" | 20.9% | 38.3% | 26.3% | 22.1% | 21.0% |
+| "TODO(" | 0.00% | 20.1% | 0.30% | 0.00% | 0.00% |
+| " = " (regex literal) | 81.5% | 90.0% | 85.2% | 82.0% | 81.6% |
+
+(The exact index would also need ~1 GB compressed, more complex incremental updates, and gives
+almost nothing more than 4–8 bit Bloom filters.) On real code (this repository, 95 MB) the
+numbers are similar: 0.13 distinct trigrams per byte (0.095 for the generated corpus), Bloom 4
+bits = 6.6% of the contents, filtering within a few % of the exact index.
+
+**Adopted: per-piece Bloom filters of trigrams** (`src/Server/TextSearch/TrigramFilters.cs`), 4
+bits per distinct trigram of the piece, 3 hash functions (`VSCHROMIUM_TRIGRAM_FILTER_BITS`
+overrides it, 0 disables the filters):
+
+- Each file contents has the filters of its chunks (same chunks as the pieces,
+  `FileContents.GetChunks`), in the managed heap. ASCII letters are folded to lower case, so the
+  same filters serve case-sensitive and case-insensitive searches (UTF-16 files are not filtered
+  for case-insensitive searches: Unicode case folding).
+- A search computes the trigrams every match must contain: all the entries of a text search
+  (text between wildcards), the required literal of a regular expression (`RegexLiterals`), and
+  skips the pieces whose filter doesn't contain them. Bloom filters have no false negatives:
+  results are unchanged (all the benchmark queries verify their exact hit counts, unit tests check
+  the absence of false negatives).
+- The filters are **built in the background** after a database update, on half of the
+  processors, only for the file contents that don't have them yet: the end of the loading is not
+  delayed (building them during the loading made the cold index 2 s longer), searches scan the
+  pieces without filters until then (~3 s after a cold index of the large corpus, a few ms after a
+  file is modified). The server statistics report the filters memory (`trigramFiltersBytes`).
+
+Results (large corpus, vs filters disabled; 4 vs 8 bits per trigram):
+
+| | Off | 4 bits (adopted) | 8 bits |
+|---|---:|---:|---:|
+| Filters memory | 0 | 332 MB (4.6% of contents) | 663 MB |
+| Cold index | 7.8 s | 7.8 s (+3.1 s in background) | 7.8 s (+3.5 s) |
+| Unique / rare / large file marker | 93–97 ms | 5.4–5.5 ms | 5.6–6.8 ms |
+| No match | 97 ms | 6.5 ms | 10.5 ms |
+| Common marker (0.8% of the bytes) | 120 ms | 33 ms | 31 ms |
+| WebContents (38% of the bytes) | 107 ms | 51 ms | 52 ms |
+| Short or common patterns (max results, `void `, ` = `) | unchanged | unchanged | unchanged |
+
+Selective searches (the common case when looking for a symbol) become 10–18x faster; searches
+for text present in most files gain little or nothing. The benchmark waits for the background
+index before running the queries ("Background index" scenario).

@@ -1,0 +1,148 @@
+// Evaluates trigram based prefilters for the server code search: for each "piece" (file chunk of at
+// most 100 KB, split after a new line, as the server does), the set of (ASCII case-folded) byte
+// trigrams; for each query, the pieces that could contain it (all its trigrams present) with:
+// - an exact trigram index (lower bound of what any trigram prefilter can do), and
+// - per-piece Bloom filters of various sizes (bits per distinct trigram).
+// Reports memory overhead vs fraction of pieces/bytes still to be scanned.
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Numerics;
+
+var root = args[0];
+var maxFiles = args.Length > 1 ? int.Parse(args[1]) : int.MaxValue;
+const int ChunkSize = 100 * 1024;
+
+var queries = new[] {
+  "VSCB_UNIQUE_MARKER_00", "VSCB_RARE_MARKER", "VSCB_COMMON_MARKER", "VSCB_LARGE_FILE_MARKER",
+  "WebContents", "std::unique_ptr", "this text does not exist anywhere 9876", "browser",
+  "void ", " = ", "GetRenderFrameHost", "kMaxValue", "#include <vector>", "TODO(",
+};
+var queryTrigrams = queries.Select(q => Trigrams(q.ToLowerInvariant())).ToArray();
+
+// Bloom variants: bits per distinct trigram, number of hash functions (~ b * ln 2).
+var blooms = new[] { (Bits: 2, K: 1), (Bits: 4, K: 3), (Bits: 8, K: 5), (Bits: 12, K: 8), (Bits: 16, K: 11) };
+
+var files = Directory.EnumerateFiles(root, "*", new EnumerationOptions { RecurseSubdirectories = true }).Take(maxFiles).ToArray();
+Console.WriteLine($"{files.Length:n0} files under {root}");
+
+long totalPieces = 0, totalBytes = 0, totalPostings = 0;
+var exactPieces = new long[queries.Length]; var exactBytes = new long[queries.Length];
+var bloomPieces = new long[blooms.Length, queries.Length]; var bloomBytes = new long[blooms.Length, queries.Length];
+var bloomMemoryBytes = new long[blooms.Length];
+var distinctPerKb = new ConcurrentBag<double>();
+var sw = Stopwatch.StartNew();
+
+Parallel.ForEach(files, () => new State(), (path, _, state) => {
+  byte[] data;
+  try { data = File.ReadAllBytes(path); } catch { return state; }
+  if (data.AsSpan(0, Math.Min(data.Length, 8192)).IndexOf((byte)0) >= 0) return state; // binary
+  var offset = 0;
+  while (offset < data.Length) {
+    var length = Math.Min(ChunkSize, data.Length - offset);
+    if (offset + length < data.Length) {
+      var nl = data.AsSpan(offset, length).LastIndexOf((byte)'\n');
+      if (nl > 0) length = nl + 1;
+    }
+    ProcessPiece(data.AsSpan(offset, length), state);
+    offset += length;
+  }
+  return state;
+}, state => {
+  Interlocked.Add(ref totalPieces, state.Pieces); Interlocked.Add(ref totalBytes, state.Bytes); Interlocked.Add(ref totalPostings, state.Postings);
+  lock (exactPieces) {
+    for (var q = 0; q < queries.Length; q++) { exactPieces[q] += state.ExactPieces[q]; exactBytes[q] += state.ExactBytes[q]; }
+    for (var b = 0; b < blooms.Length; b++) {
+      bloomMemoryBytes[b] += state.BloomMemory[b];
+      for (var q = 0; q < queries.Length; q++) { bloomPieces[b, q] += state.BloomPieces[b, q]; bloomBytes[b, q] += state.BloomBytes[b, q]; }
+    }
+  }
+});
+
+void ProcessPiece(ReadOnlySpan<byte> text, State s) {
+  s.Pieces++; s.Bytes += text.Length;
+  // Exact set of trigrams (2^24 bit map), and list of the distinct ones.
+  s.Distinct.Clear();
+  uint t = 0;
+  for (var i = 0; i < text.Length; i++) {
+    t = ((t << 8) | Fold(text[i])) & 0xFFFFFF;
+    if (i >= 2) {
+      var word = t >> 6; var bit = 1UL << (int)(t & 63);
+      if ((s.Map[word] & bit) == 0) { s.Map[word] |= bit; s.Distinct.Add(t); }
+    }
+  }
+  var n = s.Distinct.Count;
+  s.Postings += n;
+  if (text.Length >= 1024) distinctPerKb.Add(n / (text.Length / 1024.0));
+
+  for (var q = 0; q < queries.Length; q++) {
+    var all = true;
+    foreach (var qt in queryTrigrams[q]) { if ((s.Map[qt >> 6] & (1UL << (int)(qt & 63))) == 0) { all = false; break; } }
+    if (all) { s.ExactPieces[q]++; s.ExactBytes[q] += text.Length; }
+  }
+
+  for (var b = 0; b < blooms.Length; b++) {
+    var (bits, k) = blooms[b];
+    var m = Math.Max(64, (n * bits + 63) / 64 * 64);
+    s.BloomMemory[b] += m / 8;
+    var filter = s.Bloom.AsSpan(0, m / 64); filter.Clear();
+    foreach (var d in s.Distinct) Add(filter, m, k, d);
+    for (var q = 0; q < queries.Length; q++) {
+      var all = true;
+      foreach (var qt in queryTrigrams[q]) { if (!Contains(filter, m, k, qt)) { all = false; break; } }
+      if (all) { s.BloomPieces[b, q]++; s.BloomBytes[b, q] += text.Length; }
+    }
+  }
+
+  // Reset the exact map
+  foreach (var d in s.Distinct) s.Map[d >> 6] = 0;
+}
+
+static void Add(Span<ulong> filter, int m, int k, uint trigram) {
+  var h1 = Hash1(trigram); var h2 = Hash2(trigram) | 1;
+  for (var i = 0; i < k; i++) { var bit = (uint)((h1 + (ulong)i * h2) % (ulong)m); filter[(int)(bit >> 6)] |= 1UL << (int)(bit & 63); }
+}
+static bool Contains(Span<ulong> filter, int m, int k, uint trigram) {
+  var h1 = Hash1(trigram); var h2 = Hash2(trigram) | 1;
+  for (var i = 0; i < k; i++) { var bit = (uint)((h1 + (ulong)i * h2) % (ulong)m); if ((filter[(int)(bit >> 6)] & (1UL << (int)(bit & 63))) == 0) return false; }
+  return true;
+}
+static ulong Hash1(uint x) => (x * 0x9E3779B97F4A7C15UL) >> 16;
+static ulong Hash2(uint x) => ((x ^ 0x5bd1e995u) * 0xC2B2AE3D27D4EB4FUL) >> 20;
+static byte Fold(byte c) => c >= (byte)'A' && c <= (byte)'Z' ? (byte)(c | 0x20) : c;
+static uint[] Trigrams(string s) {
+  var set = new HashSet<uint>();
+  for (var i = 2; i < s.Length; i++) set.Add(((uint)Fold((byte)s[i - 2]) << 16) | ((uint)Fold((byte)s[i - 1]) << 8) | Fold((byte)s[i]));
+  return set.ToArray();
+}
+
+Console.WriteLine($"Processed in {sw.Elapsed.TotalSeconds:n1} s: {totalPieces:n0} pieces, {totalBytes / 1024.0 / 1024:n0} MB");
+var perKb = distinctPerKb.OrderBy(x => x).ToArray();
+Console.WriteLine($"Distinct trigrams per KB (pieces >= 1 KB): median {perKb[perKb.Length / 2]:n0}, p10 {perKb[perKb.Length / 10]:n0}, p90 {perKb[perKb.Length * 9 / 10]:n0}");
+Console.WriteLine($"Total postings (sum of distinct trigrams per piece): {totalPostings:n0} ({totalPostings / (double)totalBytes:n3} per byte)");
+Console.WriteLine($"Exact inverted index memory: ~{totalPostings * 4 / 1024.0 / 1024:n0} MB with 4-byte piece ids, ~{totalPostings * 1.5 / 1024.0 / 1024:n0} MB delta/varint-compressed (estimate)");
+Console.WriteLine();
+Console.Write($"{"query",-40} {"exact",15}");
+foreach (var b in blooms) Console.Write($" {"bloom " + b.Bits + "b/k" + b.K,15}");
+Console.WriteLine();
+Console.Write($"{"memory (MB, % of contents)",-40} {totalPostings * 4 / 1024 / 1024 + " / " + (totalPostings * 4 * 100 / totalBytes) + "%",15}");
+for (var b = 0; b < blooms.Length; b++) Console.Write($" {bloomMemoryBytes[b] / 1024 / 1024 + " / " + (bloomMemoryBytes[b] * 100.0 / totalBytes).ToString("n1") + "%",15}");
+Console.WriteLine();
+for (var q = 0; q < queries.Length; q++) {
+  Console.Write($"{Shorten(queries[q]),-40} {Pct(exactBytes[q]),15}");
+  for (var b = 0; b < blooms.Length; b++) Console.Write($" {Pct(bloomBytes[b, q]),15}");
+  Console.WriteLine();
+}
+Console.WriteLine("(values: % of the bytes of the pieces that still need to be scanned)");
+
+string Pct(long bytes) => (bytes * 100.0 / totalBytes).ToString("n2") + "%";
+static string Shorten(string s) => s.Length > 38 ? s.Substring(0, 35) + "..." : "\"" + s + "\"";
+
+sealed class State {
+  public long Pieces, Bytes, Postings;
+  public readonly ulong[] Map = new ulong[1 << 18];
+  public readonly List<uint> Distinct = new(65536);
+  public readonly ulong[] Bloom = new ulong[(100 * 1024 * 16) / 64 + 64];
+  public readonly long[] ExactPieces = new long[64], ExactBytes = new long[64];
+  public readonly long[,] BloomPieces = new long[8, 64], BloomBytes = new long[8, 64];
+  public readonly long[] BloomMemory = new long[8];
+}

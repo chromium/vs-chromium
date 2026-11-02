@@ -37,8 +37,75 @@ namespace VsChromium.Server.FileSystemContents {
 
     public int ByteLength { get { return _contents.ByteLength; } }
 
-    public FileContentsPiece CreatePiece(FileName fileName, int fileId, TextRange range) {
-      return new FileContentsPiece(fileName, this, fileId, range);
+    /// <summary>
+    /// Maximum length of a chunk (piece) of a file: files larger than this (in bytes) are split in
+    /// chunks of at most this number of characters (see <see cref="GetChunks"/>).
+    /// </summary>
+    public const int MaxChunkLength = 100 * 1024;
+
+    /// <summary>
+    /// Note: Built in the background after the file contents is loaded (see
+    /// <see cref="BuildTrigramFilters"/>): null until then (no filtering).
+    /// </summary>
+    private volatile TrigramFilterSet _trigramFilters;
+
+    public FileContentsPiece CreatePiece(FileName fileName, int fileId, TextRange range, int chunkIndex = 0) {
+      return new FileContentsPiece(fileName, this, fileId, range, chunkIndex);
+    }
+
+    /// <summary>
+    /// The chunks of text of this file, i.e. the ranges of its pieces: the whole text if the file
+    /// is not larger than <see cref="MaxChunkLength"/> bytes, otherwise chunks of at most <see
+    /// cref="MaxChunkLength"/> characters ending with a new line when possible.
+    /// </summary>
+    public IReadOnlyList<TextRange> GetChunks() {
+      if (ByteLength <= MaxChunkLength) {
+        return new[] { TextRange };
+      }
+      var result = new List<TextRange>();
+      var range = TextRange;
+      while (range.Length > 0) {
+        var chunkLength = GetChunkLength(range.Position, MaxChunkLength);
+        var chunk = new TextRange(range.Position, chunkLength);
+        result.Add(chunk);
+        range = new TextRange(chunk.EndPosition, range.EndPosition - chunk.EndPosition);
+      }
+      return result;
+    }
+
+    /// <summary>
+    /// Computes the trigram filters of the chunks of this file (see <see cref="TrigramFilters"/>),
+    /// if not done yet. Thread safe: searches running concurrently use the filters once they are
+    /// published (atomic reference assignment).
+    /// </summary>
+    public void BuildTrigramFilters() {
+      if (TrigramFilters.Enabled && ByteLength > 0 && _trigramFilters == null) {
+        _trigramFilters = CreateTrigramFilters(GetChunks());
+      }
+    }
+
+    /// <summary>
+    /// Memory used by the trigram filters of this file (0 if none).
+    /// </summary>
+    public long TrigramFiltersByteSize => _trigramFilters?.ByteSize ?? 0;
+
+    public bool HasTrigramFilters => _trigramFilters != null;
+
+    protected virtual TrigramFilterSet CreateTrigramFilters(IReadOnlyList<TextRange> chunks) {
+      return null;
+    }
+
+    /// <summary>
+    /// Returns false if the chunk <paramref name="chunkIndex"/> (see <see cref="GetChunks"/>)
+    /// certainly doesn't contain a match of the search of <paramref name="query"/>.
+    /// </summary>
+    public bool MayContain(int chunkIndex, TrigramQuery query) {
+      var filters = _trigramFilters;
+      if (filters == null)
+        return true;
+      if (!query.MatchCase && CharacterSize != 1)
+        return true;
+      return filters.MayContain(chunkIndex, query);
     }
 
     /// <summary>

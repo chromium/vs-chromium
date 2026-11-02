@@ -55,6 +55,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
           NativeAllocatedBytes = HeapAllocStatic.TotalMemory,
           IndexedFileContentsBytes = database.TotalFileContentsLength,
+          TrigramFiltersBytes = GetTrigramFiltersBytes(database),
           FileCount = database.FileNameCount,
           SearchableFileCount = database.SearchableFileCount,
           ProjectCount = snapshot.ProjectRoots.Count,
@@ -62,6 +63,15 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
           OperationTimings = OperationTimings.GetSnapshot(),
         };
       }
+    }
+
+    private static long GetTrigramFiltersBytes(VsChromium.Server.FileSystemDatabase.IFileDatabaseSnapshot database) {
+      long total = 0;
+      foreach (var piece in database.FileContentsPieces) {
+        if (piece.IsFirstPiece)
+          total += piece.FileContents.TrigramFiltersByteSize;
+      }
+      return total;
     }
 
     private static long GetTotalAllocatedBytes() {

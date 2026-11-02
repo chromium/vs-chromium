@@ -16,6 +16,8 @@ namespace VsChromium.Server.Diagnostics {
   public static class OperationTimings {
     public const string FileSystemScan = "FileSystemScan";
     public const string FileDatabaseUpdate = "FileDatabaseUpdate";
+    /// <summary>Building the trigram filters in the background after a database update.</summary>
+    public const string TrigramFiltersBuild = "TrigramFiltersBuild";
     public const string RequestPrefix = "Request:";
 
     private static readonly object Lock = new object();

@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Server.FileSystemNames;
 
+using VsChromium.Server.TextSearch;
+
 namespace VsChromium.Server.Search {
   /// <summary>
   /// Container for various pieces of data needed by all text search components.
@@ -19,7 +21,9 @@ namespace VsChromium.Server.Search {
     public CompiledTextSearchData(
       ParsedSearchString parsedSearchString,
       IList<ICompiledTextSearchContainer> searchContainers,
-      Func<FileName, bool> fileNameFilter) {
+      Func<FileName, bool> fileNameFilter,
+      TrigramQuery trigramQuery = null) {
+      TrigramQuery = trigramQuery;
       _parsedSearchString = parsedSearchString;
       _searchContainers = searchContainers;
       _fileNameFilter = fileNameFilter;
@@ -39,6 +43,12 @@ namespace VsChromium.Server.Search {
     /// Function used to filter file names that should not be part of the text
     /// search.
     /// </summary>
+    /// <summary>
+    /// The trigrams every match must contain, to skip pieces with the trigram filters (null: no
+    /// filtering possible).
+    /// </summary>
+    public TrigramQuery TrigramQuery { get; }
+
     public Func<FileName, bool> FileNameFilter {
       get { return _fileNameFilter; }
     }

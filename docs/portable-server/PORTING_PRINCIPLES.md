@@ -83,7 +83,8 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 Code shared by the VS package and the server today (paths, pattern matching, configuration,
 logging) is either moved to a `netstandard2.0` library or duplicated where the server version
 diverges (e.g. mtsuite `FullPath` on the server). `src/Native`, `src/re2`,
-`src/ServerNativeInterop`, `third_party/re2-*` and the unused P/Invokes are deleted at the end.
+`src/ServerNativeInterop` and `third_party/re2-*` were deleted in milestone 4; the server's Win32
+P/Invokes (file system) are replaced in milestone 5.
 
 All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common.Sdk.props`: output to `Binaries\<Configuration>\`, strong name signing, warnings as errors). Done in milestone 2 for `Core.Ipc`, `Core`, `ServerNativeInterop` and `Server`; the VS-side projects (`VsChromium`, `Host`, `DkmIntegration`, `Tests`) are still legacy csproj.
 
@@ -312,6 +313,11 @@ of its resource usage, measured inside the process:
 - Each run writes a JSON result file (machine, OS, CPU, server version, corpus seed/size, all
   metrics) and a markdown report comparing two result files (baseline vs candidate). Baseline
   results are committed under `docs/portable-server/benchmarks/`.
+- **Run the benchmarks twice** (or discard the first run) after the large corpus has not been used
+  for a while: the cold index scenario reads ~7 GB of files, and the first run after the OS file cache
+  was evicted measures the disk instead of the server (observed: 31 s instead of 10 s of wall time,
+  with the same CPU time). The query timings have a run-to-run noise of about ±10% on the large corpus,
+  and the CPU times of short operations are only precise to ~16 ms on Windows.
 
 ## Plan (milestones)
 
@@ -330,11 +336,17 @@ of its resource usage, measured inside the process:
    for differences); NLog 6, MEF from NuGet; server output in `Binaries\<Configuration>\Server` (VSIX:
    `Server\`); new `Server.Tests` project. Benchmarks (`docs/portable-server/benchmarks/m3-net10`): queries
    equal or faster (large JSON responses 20-45% faster), cold indexing +7% wall time / +16% CPU, same memory.
-4. **Managed search**: text kind, line extents, literal search, regex; native code still available
-   for side-by-side parity tests. Fix behavior changes 1–4 (their regression tests now pass, the
-   known-failure markers are removed). Benchmark.
-5. **mtsuite file system**: paths, enumeration, parallel scanning, file reading, memory accounting.
-   Delete `Native`, `re2`, `ServerNativeInterop` and Win32 P/Invokes from the server. Benchmark.
+4. **Managed search** (done): managed text kind detection, line extents, literal search and regex
+   (`src/Server/TextSearch`), non-ASCII files decoded to UTF-16, chunks split after new lines; the
+   managed code was checked against the native code with randomized parity tests, then `Native`,
+   `re2`, `third_party/re2-*` and `ServerNativeInterop` were deleted (the server has no C/C++ code
+   anymore). Behavior changes 1–8 fixed, with regression tests. Benchmarks
+   (`docs/portable-server/benchmarks/m4-managed-search`, vs the .NET Framework baseline, large
+   corpus): full scan queries at parity (±10%, the run-to-run noise), case-insensitive search -28%,
+   real-world queries -25%; regex queries stopping at the max results limit +1–6 ms (construction
+   and warm-up of the non-backtracking regex); cold indexing +1% wall time / +7% CPU; memory +3%
+   (non-ASCII files stored as UTF-16).5. **mtsuite file system**: paths, enumeration, parallel scanning, file reading, memory accounting.
+   Remove the Win32 P/Invokes from the server. Benchmark.
 6. **Process model**: VS package starts the server directly over stdio (no Host.exe); VSIX and VS
    Code packaging of the self-contained server.
 7. **Linux and macOS**: path/case-sensitivity, file watching limits, CI runs of tests and benchmarks;

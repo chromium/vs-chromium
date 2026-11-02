@@ -1,0 +1,579 @@
+{
+  "StartedUtc": "2026-11-02T06:26:10.6247784Z",
+  "Environment": {
+    "MachineName": "RPAQUAY0",
+    "OS": "Microsoft Windows 10.0.26200",
+    "Architecture": "X64",
+    "ProcessorCount": 24,
+    "ServerPath": "C:\\src\\vs-chromium\\Binaries\\Release\\Server\\VsChromium.Server.exe",
+    "ServerRuntime": ".NET 10.0.12 X64 (Microsoft Windows 10.0.26200)",
+    "ServerGitCommit": "b5f62cb"
+  },
+  "Corpus": {
+    "Name": "large",
+    "RootPath": "C:\\Users\\rpaquay\\AppData\\Local\\VsChromium\\TestCorpora\\large-1-400000-v1",
+    "FileCount": 400001,
+    "TotalBytes": 7503074850,
+    "SearchableFileCount": 379310
+  },
+  "Scenarios": [
+    {
+      "Name": "Cold index",
+      "External": {
+        "WallMs": 9462.224,
+        "CpuMs": 176562.5,
+        "PeakWorkingSetBytes": 7956316160,
+        "PeakPrivateBytes": 7994388480,
+        "EndWorkingSetBytes": 7941238784,
+        "EndPrivateBytes": 7979282432,
+        "AverageCores": 18.65972524007041
+      },
+      "ServerStatisticsAfter": {
+        "$type": "GetServerStatisticsResponse",
+        "runtimeDescription": ".NET 10.0.12 X64 (Microsoft Windows 10.0.26200)",
+        "processId": 24916,
+        "processorCount": 24,
+        "uptimeMs": 9801.8231,
+        "cpuTotalMs": 176828.125,
+        "cpuUserMs": 13671.875,
+        "cpuKernelMs": 163156.25,
+        "workingSetBytes": 7943073792,
+        "peakWorkingSetBytes": 7956336640,
+        "privateBytes": 7980437504,
+        "threadCount": 45,
+        "handleCount": 450,
+        "gcHeapBytes": 88861632,
+        "gcTotalAllocatedBytes": 867519264,
+        "gcGen0Collections": 47,
+        "gcGen1Collections": 18,
+        "gcGen2Collections": 7,
+        "gcTotalPauseMs": 498.056,
+        "nativeAllocatedBytes": 7580196502,
+        "indexedFileContentsBytes": 7579455308,
+        "fileCount": 393536,
+        "searchableFileCount": 379311,
+        "projectCount": 1,
+        "operationTimings": [
+          {
+            "name": "FileDatabaseUpdate",
+            "count": 1,
+            "lastMs": 8352.085,
+            "totalMs": 8352.085,
+            "maxMs": 8352.085
+          },
+          {
+            "name": "FileSystemScan",
+            "count": 1,
+            "lastMs": 977.2187,
+            "totalMs": 977.2187,
+            "maxMs": 977.2187
+          },
+          {
+            "name": "Request:RegisterFileRequest",
+            "count": 1,
+            "lastMs": 2.4948,
+            "totalMs": 2.4948,
+            "maxMs": 2.4948
+          }
+        ],
+        "className": "GetServerStatisticsResponse"
+      }
+    },
+    {
+      "Name": "Idle (2 s)",
+      "External": {
+        "WallMs": 2011.4278,
+        "CpuMs": 234.375,
+        "PeakWorkingSetBytes": 7943688192,
+        "PeakPrivateBytes": 7979937792,
+        "EndWorkingSetBytes": 7943688192,
+        "EndPrivateBytes": 7979937792,
+        "AverageCores": 0.1165217066205409
+      },
+      "ServerStatisticsAfter": {
+        "$type": "GetServerStatisticsResponse",
+        "runtimeDescription": ".NET 10.0.12 X64 (Microsoft Windows 10.0.26200)",
+        "processId": 24916,
+        "processorCount": 24,
+        "uptimeMs": 11959.6243,
+        "cpuTotalMs": 177187.5,
+        "cpuUserMs": 13968.75,
+        "cpuKernelMs": 163218.75,
+        "workingSetBytes": 7943737344,
+        "peakWorkingSetBytes": 7956336640,
+        "privateBytes": 7979937792,
+        "threadCount": 45,
+        "handleCount": 450,
+        "gcHeapBytes": 89401920,
+        "gcTotalAllocatedBytes": 868058016,
+        "gcGen0Collections": 47,
+        "gcGen1Collections": 18,
+        "gcGen2Collections": 7,
+        "gcTotalPauseMs": 498.056,
+        "nativeAllocatedBytes": 7580196502,
+        "indexedFileContentsBytes": 7579455308,
+        "fileCount": 393536,
+        "searchableFileCount": 379311,
+        "projectCount": 1,
+        "operationTimings": [
+          {
+            "name": "FileDatabaseUpdate",
+            "count": 1,
+            "lastMs": 8352.085,
+            "totalMs": 8352.085,
+            "maxMs": 8352.085
+          },
+          {
+            "name": "FileSystemScan",
+            "count": 1,
+            "lastMs": 977.2187,
+            "totalMs": 977.2187,
+            "maxMs": 977.2187
+          },
+          {
+            "name": "Request:GetServerStatisticsRequest",
+            "count": 1,
+            "lastMs": 120.4694,
+            "totalMs": 120.4694,
+            "maxMs": 120.4694
+          },
+          {
+            "name": "Request:RegisterFileRequest",
+            "count": 1,
+            "lastMs": 2.4948,
+            "totalMs": 2.4948,
+            "maxMs": 2.4948
+          }
+        ],
+        "className": "GetServerStatisticsResponse"
+      }
+    },
+    {
+      "Name": "After full GC",
+      "External": {
+        "WallMs": 78.0027,
+        "CpuMs": 93.75,
+        "PeakWorkingSetBytes": 7943786496,
+        "PeakPrivateBytes": 7980003328,
+        "EndWorkingSetBytes": 7940767744,
+        "EndPrivateBytes": 7977050112,
+        "AverageCores": 1.2018814733336154
+      },
+      "ServerStatisticsAfter": {
+        "$type": "GetServerStatisticsResponse",
+        "runtimeDescription": ".NET 10.0.12 X64 (Microsoft Windows 10.0.26200)",
+        "processId": 24916,
+        "processorCount": 24,
+        "uptimeMs": 12036.0798,
+        "cpuTotalMs": 177281.25,
+        "cpuUserMs": 14062.5,
+        "cpuKernelMs": 163218.75,
+        "workingSetBytes": 7940734976,
+        "peakWorkingSetBytes": 7956336640,
+        "privateBytes": 7977050112,
+        "threadCount": 45,
+        "handleCount": 450,
+        "gcHeapBytes": 88953960,
+        "gcTotalAllocatedBytes": 868075888,
+        "gcGen0Collections": 49,
+        "gcGen1Collections": 20,
+        "gcGen2Collections": 9,
+        "gcTotalPauseMs": 566.88,
+        "nativeAllocatedBytes": 7580196502,
+        "indexedFileContentsBytes": 7579455308,
+        "fileCount": 393536,
+        "searchableFileCount": 379311,
+        "projectCount": 1,
+        "operationTimings": [
+          {
+            "name": "FileDatabaseUpdate",
+            "count": 1,
+            "lastMs": 8352.085,
+            "totalMs": 8352.085,
+            "maxMs": 8352.085
+          },
+          {
+            "name": "FileSystemScan",
+            "count": 1,
+            "lastMs": 977.2187,
+            "totalMs": 977.2187,
+            "maxMs": 977.2187
+          },
+          {
+            "name": "Request:GetServerStatisticsRequest",
+            "count": 2,
+            "lastMs": 3.4171,
+            "totalMs": 123.8865,
+            "maxMs": 120.4694
+          },
+          {
+            "name": "Request:RegisterFileRequest",
+            "count": 1,
+            "lastMs": 2.4948,
+            "totalMs": 2.4948,
+            "maxMs": 2.4948
+          }
+        ],
+        "className": "GetServerStatisticsResponse"
+      }
+    },
+    {
+      "Name": "End of benchmark",
+      "External": {
+        "WallMs": 2.7836,
+        "CpuMs": 0,
+        "PeakWorkingSetBytes": 7983816704,
+        "PeakPrivateBytes": 8013709312,
+        "EndWorkingSetBytes": 7983816704,
+        "EndPrivateBytes": 8013709312,
+        "AverageCores": 0
+      },
+      "ServerStatisticsAfter": {
+        "$type": "GetServerStatisticsResponse",
+        "runtimeDescription": ".NET 10.0.12 X64 (Microsoft Windows 10.0.26200)",
+        "processId": 24916,
+        "processorCount": 24,
+        "uptimeMs": 18414.6218,
+        "cpuTotalMs": 263078.125,
+        "cpuUserMs": 97593.75,
+        "cpuKernelMs": 165484.375,
+        "workingSetBytes": 7983824896,
+        "peakWorkingSetBytes": 8046018560,
+        "privateBytes": 8013709312,
+        "threadCount": 45,
+        "handleCount": 454,
+        "gcHeapBytes": 139499976,
+        "gcTotalAllocatedBytes": 3698578992,
+        "gcGen0Collections": 216,
+        "gcGen1Collections": 56,
+        "gcGen2Collections": 11,
+        "gcTotalPauseMs": 980.326,
+        "nativeAllocatedBytes": 7580196502,
+        "indexedFileContentsBytes": 7579455308,
+        "fileCount": 393536,
+        "searchableFileCount": 379311,
+        "projectCount": 1,
+        "operationTimings": [
+          {
+            "name": "FileDatabaseUpdate",
+            "count": 1,
+            "lastMs": 8352.085,
+            "totalMs": 8352.085,
+            "maxMs": 8352.085
+          },
+          {
+            "name": "FileSystemScan",
+            "count": 1,
+            "lastMs": 977.2187,
+            "totalMs": 977.2187,
+            "maxMs": 977.2187
+          },
+          {
+            "name": "Request:GetFileExtractsRequest",
+            "count": 600,
+            "lastMs": 0.0348,
+            "totalMs": 665.4104,
+            "maxMs": 17.1767
+          },
+          {
+            "name": "Request:GetServerStatisticsRequest",
+            "count": 41,
+            "lastMs": 2.1635,
+            "totalMs": 363.48230000000007,
+            "maxMs": 120.4694
+          },
+          {
+            "name": "Request:RegisterFileRequest",
+            "count": 1,
+            "lastMs": 2.4948,
+            "totalMs": 2.4948,
+            "maxMs": 2.4948
+          },
+          {
+            "name": "Request:SearchCodeRequest",
+            "count": 57,
+            "lastMs": 124.5237,
+            "totalMs": 4571.6350999999995,
+            "maxMs": 234.0758
+          },
+          {
+            "name": "Request:SearchFilePathsRequest",
+            "count": 16,
+            "lastMs": 8.4931,
+            "totalMs": 222.862,
+            "maxMs": 54.4306
+          }
+        ],
+        "className": "GetServerStatisticsResponse"
+      }
+    }
+  ],
+  "Queries": [
+    {
+      "Name": "unique marker",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 105.3131,
+      "ClientP95Ms": 109.2722,
+      "ClientMaxMs": 109.2722,
+      "ServerAvgMs": 105.55196666666666,
+      "ServerCpuMsPerRun": 2020.8333333333333,
+      "ResponseBytes": 548,
+      "HitCount": 1,
+      "ExpectedHitCount": 1,
+      "Correct": true
+    },
+    {
+      "Name": "rare marker",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 99.135,
+      "ClientP95Ms": 104.3823,
+      "ClientMaxMs": 104.3823,
+      "ServerAvgMs": 99.71583333333335,
+      "ServerCpuMsPerRun": 1880.2083333333333,
+      "ResponseBytes": 5320,
+      "HitCount": 25,
+      "ExpectedHitCount": 25,
+      "Correct": true
+    },
+    {
+      "Name": "common marker",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 152.8998,
+      "ClientP95Ms": 184.5458,
+      "ClientMaxMs": 184.5458,
+      "ServerAvgMs": 135.9922,
+      "ServerCpuMsPerRun": 2609.375,
+      "ResponseBytes": 1315259,
+      "HitCount": 11770,
+      "ExpectedHitCount": 11770,
+      "Correct": true
+    },
+    {
+      "Name": "common marker, ignore case",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 138.9141,
+      "ClientP95Ms": 140.5234,
+      "ClientMaxMs": 140.5234,
+      "ServerAvgMs": 121.86410000000001,
+      "ServerCpuMsPerRun": 2312.5,
+      "ResponseBytes": 1315259,
+      "HitCount": 11770,
+      "ExpectedHitCount": 11770,
+      "Correct": true
+    },
+    {
+      "Name": "common marker, whole word",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 140.74,
+      "ClientP95Ms": 144.0009,
+      "ClientMaxMs": 144.0009,
+      "ServerAvgMs": 121.3466333333334,
+      "ServerCpuMsPerRun": 2036.4583333333333,
+      "ResponseBytes": 1315259,
+      "HitCount": 11770,
+      "ExpectedHitCount": 11770,
+      "Correct": true
+    },
+    {
+      "Name": "large file marker",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 115.0049,
+      "ClientP95Ms": 122.1768,
+      "ClientMaxMs": 122.1768,
+      "ServerAvgMs": 111.4984333333335,
+      "ServerCpuMsPerRun": 1979.1666666666667,
+      "ResponseBytes": 60247,
+      "HitCount": 305,
+      "ExpectedHitCount": 305,
+      "Correct": true
+    },
+    {
+      "Name": "regex on unique markers",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 102.489,
+      "ClientP95Ms": 102.6899,
+      "ClientMaxMs": 102.6899,
+      "ServerAvgMs": 101.5008666666666,
+      "ServerCpuMsPerRun": 2020.8333333333333,
+      "ResponseBytes": 1375,
+      "HitCount": 5,
+      "ExpectedHitCount": 5,
+      "Correct": true
+    },
+    {
+      "Name": "common marker in *.py",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 13.5702,
+      "ClientP95Ms": 14.1167,
+      "ClientMaxMs": 14.1167,
+      "ServerAvgMs": 11.764066666666622,
+      "ServerCpuMsPerRun": 192.70833333333334,
+      "ResponseBytes": 107905,
+      "HitCount": 961,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "browser (max results)",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 6.4832,
+      "ClientP95Ms": 7.575,
+      "ClientMaxMs": 7.575,
+      "ServerAvgMs": 2.184600000000046,
+      "ServerCpuMsPerRun": 20.833333333333332,
+      "ResponseBytes": 322599,
+      "HitCount": 10014,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "WebContents",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 129.3816,
+      "ClientP95Ms": 130.852,
+      "ClientMaxMs": 130.852,
+      "ServerAvgMs": 116.61463333333329,
+      "ServerCpuMsPerRun": 2057.2916666666665,
+      "ResponseBytes": 672477,
+      "HitCount": 6643,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "std::unique_ptr",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 7.4331,
+      "ClientP95Ms": 11.1614,
+      "ClientMaxMs": 11.1614,
+      "ServerAvgMs": 1.4851000000000265,
+      "ServerCpuMsPerRun": 31.25,
+      "ResponseBytes": 332287,
+      "HitCount": 10009,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "no match",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 98.8989,
+      "ClientP95Ms": 101.6132,
+      "ClientMaxMs": 101.6132,
+      "ServerAvgMs": 99.38456666666646,
+      "ServerCpuMsPerRun": 2036.4583333333333,
+      "ResponseBytes": 241,
+      "HitCount": 0,
+      "ExpectedHitCount": 0,
+      "Correct": true
+    },
+    {
+      "Name": "regex void \\w\u002B::\\w\u002B\\(",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 15.5191,
+      "ClientP95Ms": 15.8887,
+      "ClientMaxMs": 15.8887,
+      "ServerAvgMs": 9.74343333333339,
+      "ServerCpuMsPerRun": 333.3333333333333,
+      "ResponseBytes": 331005,
+      "HitCount": 10023,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "regex k[A-Z]\\w\u002B = \\d\u002B",
+      "Kind": "code",
+      "Runs": 3,
+      "ClientP50Ms": 11.3839,
+      "ClientP95Ms": 12.2289,
+      "ClientMaxMs": 12.2289,
+      "ServerAvgMs": 6.208666666666431,
+      "ServerCpuMsPerRun": 119.79166666666667,
+      "ResponseBytes": 330667,
+      "HitCount": 10023,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "*.mojom",
+      "Kind": "path",
+      "Runs": 3,
+      "ClientP50Ms": 15.5743,
+      "ClientP95Ms": 20.0731,
+      "ClientMaxMs": 20.0731,
+      "ServerAvgMs": 13.782333333333332,
+      "ServerCpuMsPerRun": 223.95833333333334,
+      "ResponseBytes": 236362,
+      "HitCount": 2000,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "*_unittest.cc",
+      "Kind": "path",
+      "Runs": 3,
+      "ClientP50Ms": 9.672,
+      "ClientP95Ms": 10.7798,
+      "ClientMaxMs": 10.7798,
+      "ServerAvgMs": 7.103633333333335,
+      "ServerCpuMsPerRun": 10.416666666666666,
+      "ResponseBytes": 248594,
+      "HitCount": 2000,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "browser",
+      "Kind": "path",
+      "Runs": 3,
+      "ClientP50Ms": 15.7867,
+      "ClientP95Ms": 18.3813,
+      "ClientMaxMs": 18.3813,
+      "ServerAvgMs": 13.615866666666667,
+      "ServerCpuMsPerRun": 348.9583333333333,
+      "ResponseBytes": 236865,
+      "HitCount": 2000,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "BUILD.gn",
+      "Kind": "path",
+      "Runs": 3,
+      "ClientP50Ms": 10.7404,
+      "ClientP95Ms": 11.3913,
+      "ClientMaxMs": 11.3913,
+      "ServerAvgMs": 7.79783333333333,
+      "ServerCpuMsPerRun": 26.041666666666668,
+      "ResponseBytes": 201911,
+      "HitCount": 2000,
+      "ExpectedHitCount": null,
+      "Correct": true
+    },
+    {
+      "Name": "extracts of 200 files",
+      "Kind": "extracts",
+      "Runs": 600,
+      "ClientP50Ms": 0.1043,
+      "ClientP95Ms": 3.9923,
+      "ClientMaxMs": 17.3192,
+      "ServerAvgMs": 1.1090173333333333,
+      "ServerCpuMsPerRun": 1.796875,
+      "ResponseBytes": 623,
+      "HitCount": 1209,
+      "ExpectedHitCount": 1209,
+      "Correct": true
+    }
+  ]
+}

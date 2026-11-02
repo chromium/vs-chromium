@@ -180,8 +180,11 @@
   <Target Name="IncludeServerInVsix" BeforeTargets="GetVsixSourceItems">
     <Error Condition="!Exists('$(OutputPath)Server\VsChromium.Server.exe')" Text="The server must be built before the VSIX: $(OutputPath)Server\VsChromium.Server.exe not found." />
     <ItemGroup>
-      <VSIXSourceItem Include="$(OutputPath)Server\**\*">
-        <VSIXSubPath>Server\%(RecursiveDir)</VSIXSubPath>
+      <_VsChromiumServerFile Include="$(OutputPath)Server\**\*" />
+      <!-- Note: "%(_VsChromiumServerFile.RecursiveDir)" (batching) is needed to preserve the
+           sub-directories (e.g. Configuration\), "%(RecursiveDir)" is empty here. -->
+      <VSIXSourceItem Include="@(_VsChromiumServerFile)">
+        <VSIXSubPath>Server\%(_VsChromiumServerFile.RecursiveDir)</VSIXSubPath>
       </VSIXSourceItem>
     </ItemGroup>
   </Target>

@@ -16,7 +16,7 @@ using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 

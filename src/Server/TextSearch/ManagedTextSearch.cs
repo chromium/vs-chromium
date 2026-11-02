@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using VsChromium.Core.Utility;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.TextSearch {
   /// <summary>

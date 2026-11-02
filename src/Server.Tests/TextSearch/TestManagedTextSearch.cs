@@ -9,7 +9,6 @@ using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Utility;
-using VsChromium.Server.NativeInterop;
 using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Tests.TextSearch {
@@ -160,6 +159,61 @@ namespace VsChromium.Tests.TextSearch {
       var text = new string('x', 1000) + "y" + new string('x', 1000);
       AssertMatches(text, pattern, Options.MatchCase, (900, 101));
       AssertMatches(text, pattern.ToUpperInvariant(), Options.None, (900, 101));
+    }
+
+    [TestMethod]
+    public void AsciiLiteralMatcherMatchesNaiveSearch() {
+      // Randomized comparison with a naive implementation, with texts long
+      // enough to exercise the vectorized code paths.
+      const string alphabet = "abAB_1 :\n";
+      var random = new Random(42);
+      for (var i = 0; i < 3000; i++) {
+        var text = RandomString(random, alphabet, random.Next(0, 400));
+        var pattern = RandomString(random, alphabet, random.Next(1, i % 10 == 0 ? 70 : 6));
+        var bytes = Encoding.ASCII.GetBytes(text);
+        var patternBytes = Encoding.ASCII.GetBytes(pattern);
+        foreach (var matchCase in new[] { true, false }) {
+          var expected = NaiveSearch(text, pattern, matchCase);
+          var matcher = new AsciiLiteralMatcher(patternBytes, matchCase);
+          var actual = new List<int>();
+          var start = 0;
+          while (matcher.FindNext(bytes, start, out var index, out var length)) {
+            Assert.AreEqual(pattern.Length, length);
+            actual.Add(index);
+            start = index + length;
+          }
+          CollectionAssert.AreEqual(expected, actual,
+            string.Format("Search of \"{0}\" (match case: {1}) in \"{2}\"", pattern, matchCase, text));
+
+          // Same results through the search algorithms (ASCII and UTF-16)
+          var options = matchCase ? Options.MatchCase : Options.None;
+          CollectionAssert.AreEqual(expected, SearchAscii(bytes, pattern, options).Select(x => x.Position).ToList());
+          CollectionAssert.AreEqual(expected, SearchUtf16(text, pattern, options).Select(x => x.Position).ToList());
+        }
+      }
+    }
+
+    private static string RandomString(Random random, string alphabet, int length) {
+      var sb = new StringBuilder(length);
+      for (var i = 0; i < length; i++) {
+        sb.Append(alphabet[random.Next(alphabet.Length)]);
+      }
+      return sb.ToString();
+    }
+
+    private static List<int> NaiveSearch(string text, string pattern, bool matchCase) {
+      var result = new List<int>();
+      var comparison = matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+      var index = 0;
+      while (index + pattern.Length <= text.Length) {
+        if (string.Compare(text, index, pattern, 0, pattern.Length, comparison) == 0) {
+          result.Add(index);
+          index += pattern.Length;
+        } else {
+          index++;
+        }
+      }
+      return result;
     }
 
     [Flags]

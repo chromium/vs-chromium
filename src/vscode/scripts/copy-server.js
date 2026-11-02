@@ -28,8 +28,6 @@ const requiredFiles = [
   'VsChromium.Server.deps.json',
   'VsChromium.Core.Server.dll',
   'VsChromium.Core.Ipc.dll',
-  'VsChromium.Server.NativeInterop.dll',
-  'VsChromium.Native.dll',
   path.join('Configuration', 'SearchableFiles.include'),
 ];
 

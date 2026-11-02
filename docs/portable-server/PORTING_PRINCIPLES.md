@@ -5,14 +5,14 @@ server (`VsChromium.Server.exe`) from .NET Framework 4.7.2 + custom C/C++ (Win32
 portable modern .NET application (Windows, Linux, macOS). It is meant to be read before working on
 the `portable-server` branch, including in a future conversation with no other context.
 
-Status: milestones 1 (benchmarks + baseline), 2 (project restructuring) and 3 (server on `net10.0`) **done**; next: milestone 4 (managed search). Branch `portable-server` (created from `main` at `30d7bb9`).
+Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (server on `net10.0`) and 4 (managed search, no more C/C++) **done**; next: milestone 5 (mtsuite file system). Branch `portable-server` (created from `main` at `30d7bb9`).
 
 ## Goals
 
 1. **Portable server**: the server runs on Windows, Linux and macOS (x64 and arm64), built from
    a single code base with modern .NET (see [Target framework](#target-framework-and-distribution)).
 2. **No custom C/C++**: remove `src/Native` (VsChromium.Native.dll), `src/re2` (2011 RE2 snapshot,
-   `third_party/re2-*`) and `src/ServerNativeInterop`. P/Invoke to **OS APIs** is allowed where it
+   `third_party/re2-*`) and `src/ServerNativeInterop` (done in milestone 4). P/Invoke to **OS APIs** is allowed where it
    brings real value (e.g. Linux `getdents64`/`statx`, macOS `getattrlistbulk`), preferably through
    reused, tested code (mtsuite), never through code we compile ourselves.
 3. **Reuse mtsuite**: use as much as possible of `C:\src\mtsuite` (same author, Apache 2.0, .NET 8,

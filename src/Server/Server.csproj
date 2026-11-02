@@ -2,7 +2,7 @@
 
   <!--
     The indexing and search server (VsChromium.Server.exe), used by the Visual Studio package and the
-    VS Code extension. On modern .NET, still with native code (VsChromium.Native.dll) and Win32 APIs
+    VS Code extension. On modern .NET, without native code of its own, still using Win32 APIs (file system)
     for now; to be made portable, see docs/portable-server/PORTING_PRINCIPLES.md.
 
     Output: Binaries\<Configuration>\Server\ (the server has its own dependencies, different from the
@@ -27,7 +27,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
     <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
-    <ProjectReference Include="..\ServerNativeInterop\ServerNativeInterop.csproj" />
   </ItemGroup>
 
   <ItemGroup>

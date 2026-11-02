@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.Search {
   /// <summary>

@@ -12,7 +12,11 @@ a better position than anyone else to do so.
     In the Visual Studio Installer, select the following workloads:
       * "Visual Studio extension development" (enables development of IDE
         extensions like vs-chromium)
-      * "Desktop development with C++" (for the native re2 and Native projects)
+      * ".NET desktop development"
+    The server (src/Server) and its tests target .NET 10: install the .NET 10
+    SDK if it is not installed with Visual Studio. No C++ toolset is needed
+    anymore (the server has no native code since the port to modern .NET, see
+    docs/portable-server/PORTING_PRINCIPLES.md).
 
 === Get the code
     cd D:\src\ (or some such)

@@ -21,7 +21,7 @@ using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;

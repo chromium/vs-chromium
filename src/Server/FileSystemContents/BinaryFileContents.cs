@@ -5,7 +5,7 @@
 using System;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Win32.Memory;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {

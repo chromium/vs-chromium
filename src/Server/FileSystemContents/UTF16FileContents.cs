@@ -3,9 +3,8 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Server.NativeInterop;
-using VsChromium.Server.Search;
 using VsChromium.Server.TextSearch;
+using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {
   public class Utf16FileContents : FileContents {

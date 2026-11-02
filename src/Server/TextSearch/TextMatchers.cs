@@ -10,12 +10,13 @@ using VsChromium.Core.Ipc;
 
 namespace VsChromium.Server.TextSearch {
   /// <summary>
-  /// Case sensitive search of a literal in ASCII text.
+  /// Case sensitive search of a literal in ASCII text, using the vectorized
+  /// Span.IndexOf.
   /// </summary>
-  public sealed class AsciiLiteralMatcher : ITextMatcher<byte> {
+  public sealed class AsciiIndexOfMatcher : ITextMatcher<byte> {
     private readonly byte[] _pattern;
 
-    public AsciiLiteralMatcher(byte[] pattern) {
+    public AsciiIndexOfMatcher(byte[] pattern) {
       _pattern = pattern;
     }
 
@@ -24,75 +25,6 @@ namespace VsChromium.Server.TextSearch {
       var index = text.Slice(start).IndexOf(_pattern);
       matchIndex = start + index;
       return index >= 0;
-    }
-  }
-
-  /// <summary>
-  /// Case insensitive search of a literal in ASCII text: looks for the least
-  /// frequent character of the pattern (as estimated for source code) with a
-  /// vectorized search, then compares the whole pattern at each candidate
-  /// position.
-  /// </summary>
-  public sealed class AsciiLiteralIgnoreCaseMatcher : ITextMatcher<byte> {
-    // ASCII characters ordered by decreasing (approximate) frequency in source
-    // code, letters in lower case. Characters not in this list are considered
-    // the least frequent.
-    private const string CharactersByFrequency =
-      " etainorslcdu_hpm(f)gb.;,=v*/kwyx-\"0>1<{}:[]2&qz'3j#+!|%45689\\?@^~`$7\r\n\t";
-
-    private readonly byte[] _pattern;
-    private readonly int _anchorOffset;
-    private readonly byte _anchorLower;
-    private readonly byte _anchorUpper;
-
-    public AsciiLiteralIgnoreCaseMatcher(byte[] pattern) {
-      if (pattern.Length == 0)
-        throw new ArgumentException("Pattern must not be empty", nameof(pattern));
-      _pattern = pattern;
-      _anchorOffset = GetAnchorOffset(pattern);
-      var anchor = (char)pattern[_anchorOffset];
-      _anchorLower = (byte)char.ToLowerInvariant(anchor);
-      _anchorUpper = (byte)char.ToUpperInvariant(anchor);
-    }
-
-    private static int GetAnchorOffset(byte[] pattern) {
-      var result = 0;
-      var resultRank = int.MinValue;
-      for (var i = 0; i < pattern.Length; i++) {
-        var index = CharactersByFrequency.IndexOf(char.ToLowerInvariant((char)pattern[i]));
-        var rank = (index < 0) ? int.MaxValue : index;
-        if (rank > resultRank) {
-          result = i;
-          resultRank = rank;
-        }
-      }
-      return result;
-    }
-
-    public bool FindNext(ReadOnlySpan<byte> text, int start, out int matchIndex, out int matchLength) {
-      matchLength = _pattern.Length;
-      // The anchor character must be at a position "p" such that the whole
-      // pattern fits in the text, i.e. p - anchorOffset + patternLength <= textLength.
-      var anchorLimit = text.Length - _pattern.Length + _anchorOffset; // included
-      var anchorStart = start + _anchorOffset;
-      while (anchorStart <= anchorLimit) {
-        var searchSpan = text.Slice(anchorStart, anchorLimit - anchorStart + 1);
-        var index = (_anchorLower == _anchorUpper)
-          ? searchSpan.IndexOf(_anchorLower)
-          : searchSpan.IndexOfAny(_anchorLower, _anchorUpper);
-        if (index < 0)
-          break;
-
-        var candidate = anchorStart + index - _anchorOffset;
-        if (Ascii.EqualsIgnoreCase(text.Slice(candidate, _pattern.Length), _pattern)) {
-          matchIndex = candidate;
-          return true;
-        }
-        anchorStart += index + 1;
-      }
-
-      matchIndex = -1;
-      return false;
     }
   }
 

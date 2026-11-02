@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemContents;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Tests.Server {

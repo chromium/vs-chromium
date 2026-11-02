@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.Search {
   public class NullCompiledTextSearch : ICompiledTextSearch {

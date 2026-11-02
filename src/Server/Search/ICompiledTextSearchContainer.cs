@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.Search {
   /// <summary>

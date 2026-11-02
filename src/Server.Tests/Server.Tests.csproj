@@ -5,7 +5,7 @@
     VsChromium.Server.NativeInterop, on modern .NET. The Visual Studio side tests are in
     src/Tests (net472), the black-box end-to-end tests and benchmarks in src/Tests.EndToEnd.
 
-    Run: cd src/Server.Tests; dotnet test   (after building the solution, for VsChromium.Native.dll)
+    Run: cd src/Server.Tests; dotnet test
   -->
 
   <Import Project="..\..\Build\Common.Sdk.props" />
@@ -49,14 +49,5 @@
     <!-- Default configuration files, looked up next to VsChromium.Core.Server.dll. -->
     <None Include="..\Server\Configuration\*" Link="Configuration\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
-  <!-- VsChromium.Native.dll, used by the NativeInterop and search tests. -->
-  <Target Name="CopyNativeDll" AfterTargets="Build">
-    <PropertyGroup>
-      <NativeDllPath>$(BuildRoot)Binaries\$(Configuration)\VsChromium.Native.dll</NativeDllPath>
-    </PropertyGroup>
-    <Warning Condition="!Exists('$(NativeDllPath)')" Text="$(NativeDllPath) not found: build Native.vcxproj (or the solution) first." />
-    <Copy Condition="Exists('$(NativeDllPath)')" SourceFiles="$(NativeDllPath)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-  </Target>
 
 </Project>

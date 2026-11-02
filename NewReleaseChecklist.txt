@@ -6,9 +6,6 @@ Master branch
   * "Find In Files": "0.9.xx", "Entire Solution"
     * src\Core.Ipc\VsChromiumVersion.cs
     * src\VsChromium\source.extension.vsixmanifest (PackageManifest\Metadata\Identity\@Version)
-    * src\Native\version.rc
-  * "Find In Files": "0,9,xx", "Entire Solution"
-    * src\Native\version.rc
 
 2. Build
 

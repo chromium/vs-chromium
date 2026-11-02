@@ -8,7 +8,7 @@ using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.NativeInterop;
+using VsChromium.Server.TextSearch;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.FileSystemContents {

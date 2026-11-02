@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\ProjectBefore.settings" />
   <PropertyGroup>
@@ -84,9 +84,9 @@
       <Project>{F33514B3-E491-4599-AF71-EABCDD70234F}</Project>
       <Name>Server</Name>
     </ProjectReference>
-    <ProjectReference Include="..\VsChromium17\VsChromium17.csproj">
-      <Project>{1eab343d-2ba1-4fd0-b34a-2b3fa0b53542}</Project>
-      <Name>VsChromium17</Name>
+    <ProjectReference Include="..\VsChromium\VsChromium.csproj">
+      <Project>{8ED06AA3-93DF-48FE-97C0-F516E99FDB32}</Project>
+      <Name>VsChromium</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -104,6 +104,10 @@
     <Content Include="TestData\files\bear.ac3" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The VsChromium project references the VS SDK with ExcludeAssets="runtime" (the assemblies
+         are provided by Visual Studio). Tests run outside of Visual Studio, so they need the
+         runtime assemblies copied to the output directory. -->
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
     <PackageReference Include="protobuf-net">
       <Version>2.0.0.640</Version>
     </PackageReference>

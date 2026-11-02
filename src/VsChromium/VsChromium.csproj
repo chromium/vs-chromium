@@ -1,7 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -31,7 +31,7 @@
     <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
     <ZipPackageCompressionLevel>Normal</ZipPackageCompressionLevel>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <VsixType>v3</VsixType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -102,8 +102,7 @@
     <Content Include="$(OutputPath)\VsChromium.vsdconfig">
       <Link>VsChromium.vsdconfig</Link>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <IncludeInVSIX>false</IncludeInVSIX>
-      <!-- Included through vsixmanifest already. -->
+      <IncludeInVSIX>false</IncludeInVSIX> <!-- Included through vsixmanifest already. -->
     </Content>
     <Content Include="$(BuildRoot)src\DkmIntegration\Visualizers\Visualizers.natvis">
       <Link>Visualizers.natvis</Link>
@@ -178,17 +177,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.SDK">
-      <Version>15.0.1</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0">
-      <Version>15.0.26606</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools">
-      <Version>16.9.1050</Version>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="17.14.40264" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.9.820" />
     <PackageReference Include="protobuf-net">
       <Version>2.0.0.640</Version>
     </PackageReference>

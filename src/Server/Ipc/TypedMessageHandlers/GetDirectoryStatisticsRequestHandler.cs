@@ -6,7 +6,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetDirectoryStatisticsRequestHandler : TypedMessageRequestHandler {
+  public class GetDirectoryStatisticsRequestHandler : TypedMessageRequestHandler<GetDirectoryStatisticsRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
 
     public GetDirectoryStatisticsRequestHandler(IFileSystemSnapshotManager snapshotManager) {

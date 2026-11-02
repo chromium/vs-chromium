@@ -5,7 +5,7 @@
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class ResumeIndexingRequestHandler : TypedMessageRequestHandler {
+  public class ResumeIndexingRequestHandler : TypedMessageRequestHandler<ResumeIndexingRequest> {
     private readonly IIndexingServer _indexingServer;
 
     public ResumeIndexingRequestHandler(IIndexingServer indexingServer) {

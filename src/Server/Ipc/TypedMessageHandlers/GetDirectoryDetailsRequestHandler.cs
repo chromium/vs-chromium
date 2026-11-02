@@ -15,7 +15,7 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetDirectoryDetailsRequestHandler : TypedMessageRequestHandler {
+  public class GetDirectoryDetailsRequestHandler : TypedMessageRequestHandler<GetDirectoryDetailsRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 

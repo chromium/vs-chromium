@@ -117,9 +117,14 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   unchanged. Versus the .NET Framework baseline, the remaining differences are a few ms on the small
   corpus (e.g. regex queries stopping at max results 17 ms -> 26 ms: construction of the
   non-backtracking regex).
-- **NativeAOT is a later goal, not a requirement of the port**: it requires replacing reflection
-  based components (Newtonsoft.Json; MEF and protobuf-net are already gone). New code should avoid
-  needless reflection so that AOT stays possible.
+- **Done: NativeAOT compatible, no reflection** (2026-11-02). `Core.Server` and `Server` are marked
+  `IsAotCompatible` (trimming and AOT analyzers, warnings are errors: no warning). The NativeAOT
+  publish (`dotnet publish src/Server/Server.csproj -c Release -r win-x64
+  -p:VsChromiumPublishAot=true`, output `Binaries\Release\ServerPublishAot\win-x64\`) builds without
+  warning a 9.8 MB executable which passes the end-to-end tests. It is not used for packaging yet
+  (to be decided with benchmarks: startup time, memory, steady state speed vs ReadyToRun + JIT).
+  What remains of "reflection" is `Type.Name` (the "$type" names of the protocol, `ClassName` of the
+  typed messages, and diagnostics), which is supported by NativeAOT.
 
 ### Process model and protocol
 
@@ -190,19 +195,24 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   `ProcessorCount` partitions). The search algorithms are stateless and shared by all threads.
 - **Positions**: match positions/extract offsets sent to clients are **UTF-16 code unit offsets**
   (what the VS editor and VS Code use), see below.
+
 ### Dependencies
 
-- **Done (after milestone 7 groundwork): MEF replaced with Microsoft.Extensions.DependencyInjection**
-  on the server. `src/Server/ServerServices.cs` is the explicit composition root (54 singletons,
-  constructor injection, `IEnumerable<T>` for the 3 former `[ImportMany]`), built with
-  `ValidateOnBuild`; `TestServerServices` checks that all services can be created and that all
-  request handler classes are registered. The server has no MEF dependency anymore; the 3 files
-  shared with the Visual Studio package (which still uses MEF) keep their `[Export]` under
-  `#if !NETCOREAPP`. No reflection based discovery: compatible with NativeAOT.
-- NLog 4.4 → NLog 5 (or Microsoft.Extensions.Logging), logs still under the local app data folder
+- **Done: no dependency injection container.** MEF was first replaced with
+  Microsoft.Extensions.DependencyInjection (milestone 7 groundwork), then (2026-11-02) with a hand
+  written composition root, `src/Server/ServerComponents.cs`: one lazily created property per
+  component (54 singletons), plain constructor calls checked by the compiler, components disposed in
+  reverse creation order (as the container did), lists for the 3 former `[ImportMany]` (protocol
+  handlers, request handlers, project discovery providers). The request handlers derive from
+  `TypedMessageRequestHandler<TRequest>` (`request is TRequest`), instead of matching type names.
+  `TestServerComponents` checks that all components can be created, all handler classes are
+  registered and each request type has exactly one handler.
+- Logging: NLog 6 (configured by code, works with NativeAOT), logs still under the local app data folder
   (`%LOCALAPPDATA%\VsChromium` on Windows, `$XDG_STATE_HOME`/`~/.local/state/VsChromium` on Linux,
   `~/Library/Logs/VsChromium` on macOS).
-- Newtonsoft.Json for the JSON protocol initially; `System.Text.Json` (source generated) later.
+- **Done: JSON protocol with `System.Text.Json`, source generated** (`src/Core.Server/Ipc/Json`:
+  `IpcJsonContext`, `MessageTypes`, `IpcJsonSerializer`), same JSON format as the Newtonsoft.Json
+  implementation it replaced (still used by the VS package, its own copy).
 
 ## Behavior changes
 

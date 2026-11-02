@@ -8,7 +8,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetFileExtractsRequestHandler : TypedMessageRequestHandler {
+  public class GetFileExtractsRequestHandler : TypedMessageRequestHandler<GetFileExtractsRequest> {
     private readonly ISearchEngine _searchEngine;
 
     public GetFileExtractsRequestHandler(ISearchEngine searchEngine) {

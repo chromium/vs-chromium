@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using Microsoft.Extensions.DependencyInjection;
 using VsChromium.Core.Ipc;
 
 namespace VsChromium.Server {
@@ -18,8 +17,8 @@ namespace VsChromium.Server {
     }
 
     private void Run(Action<IServer> runServer) {
-      using (var serviceProvider = ServerServices.CreateServiceProvider()) {
-        var server = serviceProvider.GetRequiredService<IServer>();
+      using (var components = new ServerComponents()) {
+        var server = components.Server;
         Instance = server; // For debugging only.
         runServer(server);
       }

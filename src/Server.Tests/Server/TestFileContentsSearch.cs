@@ -4,9 +4,9 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using VsChromium.Server;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemContents;
@@ -16,13 +16,13 @@ using VsChromium.Server.Search;
 namespace VsChromium.Tests.Server {
   [TestClass]
   public class TestFileContentsSearch : ServerServicesTestBase {
-    private ServiceProvider _container;
+    private ServerComponents _container;
     private ICompiledTextSearchDataFactory _factory;
 
     [TestInitialize]
     public void Initialize() {
       _container = CreateServerServices();
-      _factory = _container.GetRequiredService<ICompiledTextSearchDataFactory>();
+      _factory = _container.CompiledTextSearchDataFactory;
     }
 
     [TestCleanup]

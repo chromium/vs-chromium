@@ -5,7 +5,7 @@
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class RefreshFileSystemTreeRequestHandler : TypedMessageRequestHandler {
+  public class RefreshFileSystemTreeRequestHandler : TypedMessageRequestHandler<RefreshFileSystemTreeRequest> {
     private readonly IIndexingServer _indexingServer;
 
     public RefreshFileSystemTreeRequestHandler(IIndexingServer indexingServer) {

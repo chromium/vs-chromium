@@ -7,7 +7,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class UnregisterFileRequestHandler : TypedMessageRequestHandler {
+  public class UnregisterFileRequestHandler : TypedMessageRequestHandler<UnregisterFileRequest> {
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
     public UnregisterFileRequestHandler(IFileRegistrationTracker fileRegistrationTracker) {

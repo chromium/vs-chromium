@@ -11,7 +11,7 @@ using VsChromium.Server.FileSystem;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetServerStatisticsRequestHandler : TypedMessageRequestHandler {
+  public class GetServerStatisticsRequestHandler : TypedMessageRequestHandler<GetServerStatisticsRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 

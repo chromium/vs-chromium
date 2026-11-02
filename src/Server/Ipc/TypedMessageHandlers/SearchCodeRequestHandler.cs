@@ -8,7 +8,7 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class SearchCodeRequestHandler : TypedMessageRequestHandler {
+  public class SearchCodeRequestHandler : TypedMessageRequestHandler<SearchCodeRequest> {
     private readonly IFileSystemNameFactory _fileSystemNameFactory;
     private readonly ISearchEngine _searchEngine;
 

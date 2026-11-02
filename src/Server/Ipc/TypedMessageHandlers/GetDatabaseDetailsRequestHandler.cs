@@ -11,7 +11,7 @@ using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetDatabaseDetailsRequestHandler : TypedMessageRequestHandler {
+  public class GetDatabaseDetailsRequestHandler : TypedMessageRequestHandler<GetDatabaseDetailsRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 

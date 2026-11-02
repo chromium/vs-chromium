@@ -7,7 +7,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class RegisterFileRequestHandler : TypedMessageRequestHandler {
+  public class RegisterFileRequestHandler : TypedMessageRequestHandler<RegisterFileRequest> {
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
     public RegisterFileRequestHandler(IFileRegistrationTracker fileRegistrationTracker) {

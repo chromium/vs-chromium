@@ -6,7 +6,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetFileSystemTreeRequestHandler : TypedMessageRequestHandler {
+  public class GetFileSystemTreeRequestHandler : TypedMessageRequestHandler<GetFileSystemTreeRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
 
     public GetFileSystemTreeRequestHandler(IFileSystemSnapshotManager snapshotManager) {

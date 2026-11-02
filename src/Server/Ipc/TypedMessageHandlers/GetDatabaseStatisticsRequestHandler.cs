@@ -9,7 +9,7 @@ using VsChromium.Server.FileSystem;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetDatabaseStatisticsRequestHandler : TypedMessageRequestHandler {
+  public class GetDatabaseStatisticsRequestHandler : TypedMessageRequestHandler<GetDatabaseStatisticsRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
     private readonly IIndexingServer _indexingServer;

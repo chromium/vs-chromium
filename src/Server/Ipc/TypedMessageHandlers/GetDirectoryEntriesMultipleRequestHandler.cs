@@ -8,7 +8,7 @@ using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetDirectoryEntriesMultipleRequestHandler : TypedMessageRequestHandler {
+  public class GetDirectoryEntriesMultipleRequestHandler : TypedMessageRequestHandler<GetDirectoryEntriesMultipleRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
 
     public GetDirectoryEntriesMultipleRequestHandler(IFileSystemSnapshotManager snapshotManager) {

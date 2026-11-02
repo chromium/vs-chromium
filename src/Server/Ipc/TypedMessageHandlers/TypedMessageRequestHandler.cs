@@ -5,10 +5,13 @@
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public abstract class TypedMessageRequestHandler : ITypedMessageRequestHandler {
+  /// <summary>
+  /// Base class of the handlers of the requests of type <typeparamref name="TRequest"/>.
+  /// </summary>
+  public abstract class TypedMessageRequestHandler<TRequest> : ITypedMessageRequestHandler
+    where TRequest : TypedRequest {
     public bool CanProcess(TypedRequest request) {
-      var name = GetType().Name;
-      return (request.GetType().Name + "Handler") == name;
+      return request is TRequest;
     }
 
     public abstract TypedResponse Process(TypedRequest typedRequest);

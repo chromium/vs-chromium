@@ -13,7 +13,7 @@ using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  public class GetProjectDetailsRequestHandler : TypedMessageRequestHandler {
+  public class GetProjectDetailsRequestHandler : TypedMessageRequestHandler<GetProjectDetailsRequest> {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 

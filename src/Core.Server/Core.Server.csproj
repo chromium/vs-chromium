@@ -9,7 +9,8 @@
       framework and dependencies: NLog 6, MEF from NuGet, ...). Differences between the two sides
       are handled with "#if NETCOREAPP" in the shared files.
     - The Visual Studio only code of ..\Core (debugger, processes, job objects, shell, ...) is
-      excluded below.
+      excluded below, as well as the Win32 implementation of IFileSystem (FileSystem.cs,
+      NativeFile.cs), replaced on the server by Files\PortableFileSystem.cs.
 
     Namespaces are the same as in VsChromium.Core.
   -->
@@ -35,7 +36,13 @@
                       ..\Core\Win32\Processes\**;..\Core\Win32\Shell\**;..\Core\Win32\ComPtr.cs;
                       ..\Core\Chromium\ChromiumProcess.cs;..\Core\Chromium\InstallationEnumerator.cs;
                       ..\Core\Chromium\InstallationData.cs;..\Core\Chromium\ProcessCategory.cs;
-                      ..\Core\Utility\ChromeUtility.cs;..\Core\Utility\MarshalUtility.cs"
+                      ..\Core\Utility\ChromeUtility.cs;..\Core\Utility\MarshalUtility.cs;
+                      ..\Core\Files\FileSystem.cs;..\Core\Win32\Files\NativeFile.cs;
+                      ..\Core\Win32\Files\NativeMethods.cs;..\Core\Win32\Memory\NativeMethods.cs;
+                      ..\Core\Win32\Handles\**;..\Core\Win32\Memory\SafeLocalMemHandle.cs;
+                      ..\Core\Win32\Memory\SafeHeapHandle.cs;..\Core\Win32\Files\SafeFindHandle.cs;
+                      ..\Core\Win32\Files\SlimFileInfo.cs;..\Core\Files\FileInfoSnapshot.cs;
+                      ..\Core\Win32\Memory\SafeProcessHeapHandle.cs;..\Core\Win32\Interop\SecurityAttributes.cs"
              Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 

@@ -17,7 +17,7 @@ namespace VsChromium.Tests.Server {
   public class TestChromiumFileDiscoveryProvider {
 
     private string LoadConfigFile(string name) {
-      var localFileSystem = new FileSystem();
+      var localFileSystem = new PortableFileSystem();
       var path = new FullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
         .Combine(new RelativePath(ConfigurationDirectoryNames.LocalInstallConfigurationDirectoryName));
       var filePath = path.Combine(new RelativePath(name));

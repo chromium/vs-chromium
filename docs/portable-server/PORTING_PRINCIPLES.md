@@ -5,7 +5,7 @@ server (`VsChromium.Server.exe`) from .NET Framework 4.7.2 + custom C/C++ (Win32
 portable modern .NET application (Windows, Linux, macOS). It is meant to be read before working on
 the `portable-server` branch, including in a future conversation with no other context.
 
-Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (server on `net10.0`) and 4 (managed search, no more C/C++) **done**; next: milestone 5 (mtsuite file system). Branch `portable-server` (created from `main` at `30d7bb9`).
+Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (server on `net10.0`) and 4 (managed search, no more C/C++) **done**; milestone 5 (portable file system) in progress: 5a (BCL file system, no more P/Invoke) done, next 5b (mtsuite paths). Branch `portable-server` (created from `main` at `30d7bb9`).
 
 ## Goals
 
@@ -127,7 +127,8 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   extended with `CancellationToken` and a **scoped** concurrency limit (no process-wide
   `ThreadPool.SetMin/MaxThreads`, see mtsuite `docs/ParallelFileSystem_Recommendations.md`).
 - **File reading**: `File.OpenHandle` + `RandomAccess.Read` with `FileShare.ReadWrite | Delete`
-  (files are being edited/built while indexed).
+  (files are being edited/built while indexed). Done in milestone 5a (`PortableFileSystem`, which
+  also enumerates directories with the BCL `FileSystemEnumerable`, as mtsuite does on Windows).
 - **Change notifications**: `FileSystemWatcher` (already portable). On Linux, use **one** watcher per
   root (not 3) to limit inotify watches (`fs.inotify.max_user_watches`), with a documented polling /
   rescan fallback when the limit is hit.
@@ -345,9 +346,23 @@ of its resource usage, measured inside the process:
    corpus): full scan queries at parity (±10%, the run-to-run noise), case-insensitive search -28%,
    real-world queries -25%; regex queries stopping at the max results limit +1–6 ms (construction
    and warm-up of the non-backtracking regex); cold indexing +1% wall time / +7% CPU; memory +3%
-   (non-ASCII files stored as UTF-16).5. **mtsuite file system**: paths, enumeration, parallel scanning, file reading, memory accounting.
-   Remove the Win32 P/Invokes from the server. Benchmark.
-6. **Process model**: VS package starts the server directly over stdio (no Host.exe); VSIX and VS
+   (non-ASCII files stored as UTF-16).5. **Portable file system + mtsuite**: paths, enumeration, parallel scanning, file reading, memory
+   accounting. Remove the Win32 P/Invokes from the server. Benchmark.
+   - **5a (done)**: `Core.Server/Files/PortableFileSystem.cs` replaces the Win32 `IFileSystem`
+     implementation on the server with BCL APIs (`FileSystemEnumerable` for directories,
+     `File.OpenHandle` + `RandomAccess.Read` with `FileShare.ReadWrite | Delete` for file contents,
+     `FileInfo` for attributes), and file contents blocks are allocated with `NativeMemory`
+     (`HeapAllocStatic`, `#if NETCOREAPP`) instead of the Win32 process heap. The Win32 files of
+     `Core` (`FileSystem.cs`, `NativeFile.cs`, the `NativeMethods` of `Win32/Files`, `Win32/Memory`,
+     `Win32/Handles`...) are excluded from `Core.Server`: **the server has no P/Invoke anymore**.
+     Benchmarks (`docs/portable-server/benchmarks/m5a-portable-file-system`, large corpus vs
+     milestone 4): file system scan unchanged; loading the file contents ~+9% (8.4 s → 9.1 s, more
+     kernel time, likely the extra work of `File.OpenHandle`/`RandomAccess` per file; follow-up: get
+     the length and time stamp from the open handle to save one path lookup per file); queries
+     unchanged; memory unchanged. Accepted for portability.
+   - **5b (next)**: mtsuite `FullPath`/`PathHelpers` (OS-aware separators and case sensitivity) on
+     the server, mtsuite Linux/macOS enumerators (needs benchmarks on Linux/macOS), copied into
+     `third_party/mtsuite/` with `PORT_CHANGES.md`.6. **Process model**: VS package starts the server directly over stdio (no Host.exe); VSIX and VS
    Code packaging of the self-contained server.
 7. **Linux and macOS**: path/case-sensitivity, file watching limits, CI runs of tests and benchmarks;
    VS Code VSIX for linux/macOS targets.

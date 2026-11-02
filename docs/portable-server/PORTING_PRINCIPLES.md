@@ -103,7 +103,7 @@ All new/ported projects use **SDK-style** csproj.
 - The server is started **directly** by the client (no `VsChromium.Host.exe`, no debugger
   attachment, no job object). **It exits when its input stream is closed** (client exit or crash),
   as the `--stdio` mode already does.
-- **Proposed: a single transport for both clients: stdio + JSON lines** (the existing `--stdio`
+- **Decided: a single transport for both clients: stdio + JSON lines** (the existing `--stdio`
   mode, `src/Server/Ipc/Json`). The VS package switches from TCP + protobuf-net to stdio + JSON,
   which removes Host.exe, the TCP listener, protobuf-net and the debugger/job-object machinery.
   This is validated by the benchmarks (large search results over JSON vs protobuf); if JSON is too

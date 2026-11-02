@@ -5,11 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
-using VsChromium.Core.Ipc;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace VsChromium.Core.Ipc.Json {
   /// <summary>
@@ -17,100 +15,119 @@ namespace VsChromium.Core.Ipc.Json {
   /// clients (Visual Studio package, VS Code extension) and the server, over the server standard
   /// input/output (see <see cref="IpcStreamOverJsonLines"/>).
   ///
+  /// Uses System.Text.Json with source generated metadata (<see cref="IpcJsonContext"/>): no
+  /// reflection at run time.
+  ///
   /// The JSON representation:
   /// <list type="bullet">
   /// <item>The public read/write properties of the message classes are serialized, as well as
   /// read-only collection properties (populated when deserializing). Other read-only properties
   /// (computed values, e.g. <c>DirectoryEntry.IsEmpty</c>) are not.</item>
-  /// <item>Property names are camelCase.</item>
+  /// <item>Property names are camelCase (matched case-insensitively when reading). Null values are
+  /// omitted.</item>
   /// <item>Polymorphic values (i.e. values of a sub-class of the declared type of a property) carry a
-  /// <c>"$type"</c> property containing the short class name, e.g. <c>"SearchCodeRequest"</c>. Only
-  /// the message classes (public classes of the <c>VsChromium.Core.Ipc</c> and
-  /// <c>VsChromium.Core.Ipc.TypedMessages</c> namespaces of this assembly) are accepted.</item>
-  /// <item>Enums are serialized as strings.</item>
+  /// <c>"$type"</c> property containing the short class name, e.g. <c>"SearchCodeRequest"</c>, which
+  /// may appear anywhere in the object when reading. Only the message classes (<see
+  /// cref="MessageTypes"/>) are accepted.</item>
+  /// <item>Enums are serialized as strings, <see cref="DateTime"/> values as ISO 8601 UTC.</item>
   /// </list>
   /// </summary>
   public static class IpcJsonSerializer {
-    private static readonly JsonSerializerSettings Settings = CreateSettings();
+    private const string TypeDiscriminatorPropertyName = "$type";
+
+    /// <summary>
+    /// For each message base class, the message classes deriving from it (directly or not).
+    /// Note: must be initialized before <see cref="Options"/> is used.
+    /// </summary>
+    private static readonly Dictionary<Type, Type[]> DerivedTypes = MessageTypes.All
+      .Select(baseType => new {
+        BaseType = baseType,
+        Derived = MessageTypes.All
+          .Where(t => t != baseType && !t.IsAbstract && baseType.IsAssignableFrom(t))
+          .OrderBy(t => t.Name, StringComparer.Ordinal)
+          .ToArray()
+      })
+      .Where(x => x.Derived.Length > 0)
+      .ToDictionary(x => x.BaseType, x => x.Derived);
+
+    private static readonly JsonSerializerOptions Options = CreateOptions();
+    private static readonly JsonTypeInfo<IpcMessage> MessageTypeInfo =
+      (JsonTypeInfo<IpcMessage>)Options.GetTypeInfo(typeof(IpcMessage));
 
     public static string Serialize(IpcMessage message) {
-      // Passing the root type ensures the "$type" of the root object is always emitted.
-      return JsonConvert.SerializeObject(message, typeof(IpcMessage), Settings);
+      return JsonSerializer.Serialize(message, MessageTypeInfo);
     }
 
     public static IpcMessage Deserialize(string json) {
-      return JsonConvert.DeserializeObject<IpcMessage>(json, Settings);
+      return JsonSerializer.Deserialize(json, MessageTypeInfo);
     }
 
-    private static JsonSerializerSettings CreateSettings() {
-      return new JsonSerializerSettings {
-        Formatting = Formatting.None,
-        TypeNameHandling = TypeNameHandling.Auto,
-        // Allow "$type" to appear anywhere in an object (not only as the first property).
-        MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead,
-        SerializationBinder = new MessageTypesBinder(typeof(IpcMessage).Assembly),
-        ContractResolver = new MessageContractResolver(),
-        NullValueHandling = NullValueHandling.Ignore,
-        DateFormatHandling = DateFormatHandling.IsoDateFormat,
-        DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-        Converters = { new StringEnumConverter() },
+    private static JsonSerializerOptions CreateOptions() {
+      var options = new JsonSerializerOptions(IpcJsonContext.Default.Options) {
+        AllowOutOfOrderMetadataProperties = true,
+        TypeInfoResolver = IpcJsonContext.Default.WithAddedModifier(ModifyTypeInfo),
       };
+      options.MakeReadOnly();
+      return options;
     }
 
-    /// <summary>
-    /// camelCase property names; read/write properties and read-only collection properties only.
-    /// </summary>
-    private class MessageContractResolver : DefaultContractResolver {
-      public MessageContractResolver() {
-        NamingStrategy = new CamelCaseNamingStrategy();
+    private static void ModifyTypeInfo(JsonTypeInfo typeInfo) {
+      if (typeInfo.Kind != JsonTypeInfoKind.Object) {
+        return;
       }
 
-      protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
-        var property = base.CreateProperty(member, memberSerialization);
-        if (!property.Writable && !IsCollection(property.PropertyType)) {
-          property.Ignored = true;
+      // Read-only properties: collections are populated when deserializing, computed values are
+      // not serialized.
+      for (var i = typeInfo.Properties.Count - 1; i >= 0; i--) {
+        var property = typeInfo.Properties[i];
+        if (property.Set == null) {
+          if (IsCollection(property.PropertyType)) {
+            property.ObjectCreationHandling = JsonObjectCreationHandling.Populate;
+          } else {
+            typeInfo.Properties.RemoveAt(i);
+          }
         }
-        return property;
       }
 
-      private static bool IsCollection(Type type) {
-        return type != typeof(string) && typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+      // Polymorphic values: "$type" discriminator with the short class name.
+      Type[] derivedTypes;
+      if (DerivedTypes.TryGetValue(typeInfo.Type, out derivedTypes)) {
+        var polymorphism = new JsonPolymorphismOptions {
+          TypeDiscriminatorPropertyName = TypeDiscriminatorPropertyName,
+          UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FailSerialization,
+        };
+        foreach (var derivedType in derivedTypes) {
+          polymorphism.DerivedTypes.Add(new JsonDerivedType(derivedType, derivedType.Name));
+        }
+        typeInfo.PolymorphismOptions = polymorphism;
       }
     }
 
-    /// <summary>
-    /// Maps "$type" values to the message classes of a given assembly, using the short type name.
-    /// Any other type name is rejected, so that arbitrary types cannot be instantiated from JSON.
-    /// </summary>
-    private class MessageTypesBinder : ISerializationBinder {
-      private static readonly string[] MessageNamespaces = {
-        typeof(IpcMessage).Namespace,
-        typeof(TypedMessages.TypedMessage).Namespace,
-      };
+    private static bool IsCollection(Type type) {
+      return type != typeof(string) && typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+    }
+  }
 
-      private readonly Dictionary<string, Type> _typesByName;
+  /// <summary>
+  /// <see cref="DateTime"/> values are exchanged as UTC (ISO 8601, "Z" suffix).
+  /// </summary>
+  internal sealed class UtcDateTimeConverter : JsonConverter<DateTime> {
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+      return ToUtc(reader.GetDateTime());
+    }
 
-      public MessageTypesBinder(Assembly assembly) {
-        _typesByName = assembly.GetTypes()
-          .Where(t => t.IsClass && t.IsPublic && !t.IsAbstract && !typeof(Exception).IsAssignableFrom(t))
-          .Where(t => MessageNamespaces.Contains(t.Namespace))
-          .ToDictionary(t => t.Name, t => t, StringComparer.Ordinal);
-      }
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) {
+      writer.WriteStringValue(ToUtc(value));
+    }
 
-      public Type BindToType(string assemblyName, string typeName) {
-        Type type;
-        if (assemblyName == null && _typesByName.TryGetValue(typeName, out type)) {
-          return type;
-        }
-        throw new JsonSerializationException(string.Format("Unknown or unsupported \"$type\" value: \"{0}\"", typeName));
-      }
-
-      public void BindToName(Type serializedType, out string assemblyName, out string typeName) {
-        if (!_typesByName.ContainsKey(serializedType.Name)) {
-          throw new JsonSerializationException(string.Format("Type \"{0}\" is not an IPC message type", serializedType.FullName));
-        }
-        assemblyName = null;
-        typeName = serializedType.Name;
+    private static DateTime ToUtc(DateTime value) {
+      switch (value.Kind) {
+        case DateTimeKind.Local:
+          return value.ToUniversalTime();
+        case DateTimeKind.Unspecified:
+          return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        default:
+          return value;
       }
     }
   }

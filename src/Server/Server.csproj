@@ -18,6 +18,8 @@
     <AssemblyName>VsChromium.Server</AssemblyName>
     <RootNamespace>VsChromium.Server</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- No reflection: enables the trimming and NativeAOT analyzers (warnings are errors). -->
+    <IsAotCompatible>true</IsAotCompatible>
     <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Server\</OutputPath>
     <!-- Same GC settings as the .NET Framework server (workstation GC, concurrent). To be revisited
          with benchmarks. -->
@@ -28,8 +30,7 @@
   <!--
     Publishing (dotnet publish -c Release -r <rid>, e.g. win-x64): a self-contained, single file,
     ReadyToRun executable, so that users don't need to install a .NET runtime and most of the code
-    doesn't need to be compiled by the JIT at startup. This is not NativeAOT: the JIT is still
-    available, reflection (Newtonsoft.Json) works as usual.
+    doesn't need to be compiled by the JIT at startup (see also the NativeAOT switch below).
     Output: Binaries\<Configuration>\ServerPublish\<rid>\ (VsChromium.Server.exe and the default
     configuration files in Configuration\).
   -->
@@ -69,7 +70,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>

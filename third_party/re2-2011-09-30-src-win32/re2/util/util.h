@@ -50,7 +50,7 @@ using std::tr1::unordered_set;
 #else
 
 #include <unordered_set>
-#ifdef WIN32
+#if 0  // vs-chromium: std::tr1 was removed from MSVC (VS 2026), use std::unordered_set everywhere.
 using std::tr1::unordered_set;
 #else
 using std::unordered_set;

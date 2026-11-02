@@ -7,7 +7,7 @@
     <License>LICENSE</License>
   </Metadata>
   <Installation InstalledByMsi="false">
-    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,]">
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,19.0)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
   </Installation>
@@ -16,16 +16,16 @@
     <Dependency Id="Microsoft.VisualStudio.MPF.14.0" DisplayName="Visual Studio MPF 12.0" d:Source="Installed" Version="[14.0,]" />
   </Dependencies>
   <Prerequisites>
-     <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,]" DisplayName="Visual Studio core editor" />
+     <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,19.0)" DisplayName="Visual Studio core editor" />
   </Prerequisites>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
     <Asset Type="Microsoft.VisualStudio.Assembly" Path="|%CurrentProject%|"/>
-    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromium.Core|" AssemblyName="|VsChromium.Core;AssemblyName|"/>
-    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsChromium.DkmIntegration|" AssemblyName="|VsChromium.DkmIntegration;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|Core|" AssemblyName="|Core;AssemblyName|"/>
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|DkmIntegration|" AssemblyName="|DkmIntegration;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|%CurrentProject%|" />
-    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromium.Core|" />
-    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsChromium.DkmIntegration|"/>
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|Core|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|DkmIntegration|"/>
     <Asset Type="DebuggerEngineExtension" Path="VsChromium.vsdconfig" />
     <Asset Type="NativeVisualizer" Path="Visualizers.natvis" />
   </Assets>

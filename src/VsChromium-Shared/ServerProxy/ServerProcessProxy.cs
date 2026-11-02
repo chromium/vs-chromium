@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -88,7 +88,11 @@ namespace VsChromium.ServerProxy {
     /// </summary>
     /// <returns></returns>
     private Task CreateServerProcessAsync() {
+      // The task is intentionally shared (created once via Lazy<T>) and runs on the thread pool
+      // (TaskScheduler.Default), so it cannot deadlock the UI thread.
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
       return _createProcessTask.Value;
+#pragma warning restore VSTHRD003
     }
 
     private Task CreateProcessLazyWorker() {

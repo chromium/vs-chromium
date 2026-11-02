@@ -37,6 +37,9 @@
                       ..\Core\Chromium\InstallationData.cs;..\Core\Chromium\ProcessCategory.cs;
                       ..\Core\Utility\ChromeUtility.cs;..\Core\Utility\MarshalUtility.cs;
                       ..\Core\Files\FileSystem.cs;..\Core\Win32\Files\NativeFile.cs;
+                      ..\Core\Chromium\DistributionType.cs;..\Core\Configuration\ConfigurationStyleFilenames.cs;
+                      ..\Core\Utility\ReflectionUtils.cs;..\Core\Win32\Files\NativeAccessFlags.cs;
+                      ..\Core\Win32\LastWin32ErrorException.cs;..\Core\Win32\NtStatus.cs;..\Core\Win32\UnicodeString.cs;
                       ..\Core\Win32\Files\NativeMethods.cs;..\Core\Win32\Memory\NativeMethods.cs;
                       ..\Core\Win32\Handles\**;..\Core\Win32\Memory\SafeLocalMemHandle.cs;
                       ..\Core\Win32\Memory\SafeHeapHandle.cs;

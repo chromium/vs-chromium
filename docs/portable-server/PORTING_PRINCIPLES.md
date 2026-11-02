@@ -212,7 +212,9 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   `~/Library/Logs/VsChromium` on macOS).
 - **Done: JSON protocol with `System.Text.Json`, source generated** (`src/Core.Server/Ipc/Json`:
   `IpcJsonContext`, `MessageTypes`, `IpcJsonSerializer`), same JSON format as the Newtonsoft.Json
-  implementation it replaced (still used by the VS package, its own copy).
+  implementation it replaced (still used by the VS package, its own copy). Benchmarks
+  (`docs/portable-server/benchmarks/m8-stj-no-reflection`, large corpus): no regression; queries
+  returning many results (max results, 10,000 hits) 8-30% faster (serialization).
 
 ## Behavior changes
 

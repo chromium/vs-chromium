@@ -165,6 +165,21 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
+    public void JsonLinesStreamWritesUtf8ToOutputStream() {
+      var output = new MemoryStream();
+      var stream = new IpcStreamOverJsonLines(new StringReader(""), output);
+      stream.WriteResponse(new IpcResponse { RequestId = 1, Protocol = "echo", Data = new IpcStringData { Text = "h\u00e9llo\nworld" } });
+      stream.WriteResponse(new IpcResponse { RequestId = 2, Protocol = "echo", Data = new IpcStringData { Text = "second" } });
+      var lines = System.Text.Encoding.UTF8.GetString(output.ToArray()).Split('\n');
+      Assert.AreEqual(3, lines.Length, "One message per line, terminated by a new line");
+      Assert.AreEqual("", lines[2]);
+      Assert.AreEqual("h\u00e9llo\nworld", (string)JsonNode.Parse(lines[0])["data"]["text"]);
+      Assert.AreEqual(2, (int)JsonNode.Parse(lines[1])["requestId"]);
+      // Same JSON as the string based serialization
+      Assert.AreEqual(IpcJsonSerializer.Serialize(new IpcResponse { RequestId = 2, Protocol = "echo", Data = new IpcStringData { Text = "second" } }), lines[1]);
+    }
+
+    [TestMethod]
     public void JsonLinesStreamSkipsMalformedLinesAndStopsAtEndOfStream() {
       var input = new StringReader(
         "not json\n" +

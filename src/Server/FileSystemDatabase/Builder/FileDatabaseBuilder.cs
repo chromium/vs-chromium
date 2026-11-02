@@ -134,11 +134,19 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         // Read file contents.
         onLoading();
         var newContentsMap = new Dictionary<FileName, FileContents>();
-        filesToRead.ForAll(x => {
+        void ReadFile(ProjectFileName x) {
           var newContents = _fileContentsFactory.ReadFileContents(x.FileName.FullPath);
-          DangerousUpdateFileTableEntry(previousFileDatabase, x.FileName, newContents);
-          newContentsMap[x.FileName] = newContents;
-        });
+          lock (newContentsMap) {
+            DangerousUpdateFileTableEntry(previousFileDatabase, x.FileName, newContents);
+            newContentsMap[x.FileName] = newContents;
+          }
+        }
+        // Note: Many files can change at once (e.g. switching branches): read them in parallel.
+        if (filesToRead.Count > 16) {
+          System.Threading.Tasks.Parallel.ForEach(filesToRead, new System.Threading.Tasks.ParallelOptions { CancellationToken = cancellationToken }, ReadFile);
+        } else {
+          filesToRead.ForAll(ReadFile);
+        }
 
         // Return new file database with updated file contents.
         var result = new FileDatabaseSnapshot(

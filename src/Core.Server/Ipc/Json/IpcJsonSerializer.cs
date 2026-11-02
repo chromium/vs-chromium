@@ -58,6 +58,13 @@ namespace VsChromium.Core.Ipc.Json {
       return JsonSerializer.Serialize(message, MessageTypeInfo);
     }
 
+    /// <summary>
+    /// Serializes <paramref name="message"/> as UTF-8 JSON to <paramref name="writer"/>.
+    /// </summary>
+    public static void Serialize(Utf8JsonWriter writer, IpcMessage message) {
+      JsonSerializer.Serialize(writer, message, MessageTypeInfo);
+    }
+
     public static IpcMessage Deserialize(string json) {
       return JsonSerializer.Deserialize(json, MessageTypeInfo);
     }

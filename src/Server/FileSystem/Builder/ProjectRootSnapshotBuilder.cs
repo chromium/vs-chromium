@@ -211,7 +211,9 @@ namespace VsChromium.Server.FileSystem.Builder {
 
       var fileNames = childFileNames
         .Where(childFilename => childFilename.TestRelativePath(static (path, filter) => filter.Include(path), _project.FileFilter))
-        .OrderBy(x => x.Name)
+        // Note: Ordinal (case-insensitive on Windows/macOS) sort, same as ApplyDirectorySnapshotDelta
+        // (see "Behavior changes" in PORTING_PRINCIPLES.md).
+        .OrderBy(x => x.Name, SystemPathComparer.NameComparer)
         .ToReadOnlyList();
 
       IList<DirectorySnapshot> childDirectories;
@@ -221,7 +223,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         var childSnapshots = await Task.WhenAll(childTasks).ConfigureAwait(false);
         childDirectories = childSnapshots
           .Where(x => x != null)
-          .OrderBy(x => x.DirectoryName.Name)
+          .OrderBy(x => x.DirectoryName.Name, SystemPathComparer.NameComparer)
           .ToReadOnlyList();
       }
 

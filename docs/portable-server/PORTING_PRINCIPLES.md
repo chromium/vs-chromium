@@ -264,6 +264,12 @@ milestone 4; **all are fixed since milestone 4** (managed search):
    the *first* occurrence of the text was at the end of the name. Fixed with the span based pattern
    matching (`OpAsterisk`), regression test
    `TestFileNameMatching.AsteriskTextMatchesWhenTextOccursSeveralTimes`.
+11. **Files and directories were sorted with the culture sensitive comparer** after a full scan
+   (e.g. "a_b.txt" before "ab.txt"), but with the ordinal path comparer after an incremental
+   update, so the order of the same tree could change. Both now use the name comparer of the
+   server (`SystemPathComparer.NameComparer`: ordinal, case-insensitive on Windows and macOS),
+   which is also much faster than culture sensitive comparisons. Regression test
+   `TestFileSystemSnapshotBuilder.ChildrenAreSortedWithTheNameComparer`.
 
 ## Reusing mtsuite
 
@@ -567,3 +573,14 @@ larger (320 KB → 450 KB), and their time is dominated by the response.
 
 Results (server time per change, large corpus): modify 1 file 109 → 42 ms, create 1 directory 358
 → 235 ms (`Load` 107 → 24 ms, `Precompute` 101 → 55 ms); other scenarios unchanged.
+
+### Smaller changes (m11, `docs/portable-server/benchmarks/m11-ipc-utf8-sort`)
+
+- **Responses are serialized directly as UTF-8** into a reusable buffer written to the standard
+  output (`IpcStreamOverJsonLines` with a `Stream`), instead of a UTF-16 string re-encoded by a
+  `StreamWriter` (large responses were strings of several hundred KB on the large object heap).
+- **Ordinal sort of names during the scan** (behavior change 11).
+- **Files modified at once (more than 16) are read in parallel** (e.g. switching branches).
+
+Results: neutral on the benchmarks (within noise): the server time of large responses was small
+already, and culture sensitive sorting was not a significant part of the scan.

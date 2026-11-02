@@ -38,7 +38,8 @@ namespace VsChromium.Server {
     private static void RunOverStdio() {
       var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
       var input = new StreamReader(Console.OpenStandardInput(), encoding);
-      var output = new StreamWriter(Console.OpenStandardOutput(), encoding) { AutoFlush = false };
+      // Note: Responses are written as UTF-8 bytes directly to the output stream.
+      var output = Console.OpenStandardOutput();
 
       // stdout is reserved for IPC messages: redirect any other console output to stderr.
       Console.SetOut(Console.Error);

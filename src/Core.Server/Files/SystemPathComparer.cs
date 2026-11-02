@@ -32,6 +32,9 @@ namespace VsChromium.Core.Files {
     }
 
     // Server: case sensitivity of the operating system, see mtsuite PathHelpers.
-    private static StringComparer NameComparer => mtsuite.CoreFileSystem.PathHelpers.FileNameComparer;
+    /// <summary>
+    /// Comparer of file and directory names: ordinal, case-insensitive on Windows and macOS.
+    /// </summary>
+    public static StringComparer NameComparer => mtsuite.CoreFileSystem.PathHelpers.FileNameComparer;
   }
 }

@@ -6,13 +6,13 @@ using System;
 using System.IO;
 using System.Text;
 using VsChromium.Core.Logging;
-using VsChromium.Server.Ipc.Json;
+using VsChromium.Core.Ipc.Json;
 
 namespace VsChromium.Server {
   class Program {
     /// <summary>
-    /// Command line argument to exchange JSON messages (one per line) over stdin/stdout instead of
-    /// connecting to a TCP port (see <see cref="IpcStreamOverJsonLines"/>).
+    /// Command line argument to exchange JSON messages (one per line) over stdin/stdout (see
+    /// <see cref="IpcStreamOverJsonLines"/>). This is the only supported mode.
     /// </summary>
     private const string StdioArgument = "--stdio";
 
@@ -24,9 +24,9 @@ namespace VsChromium.Server {
           Logger.LogInfo("Server starting in stdio mode (JSON lines).");
           RunOverStdio();
         } else {
-          var port = GetTcpPort(args);
-          Logger.LogInfo("Server starting with host on port {0}.", port);
-          new ServerStub().Run(port);
+          Console.Error.WriteLine("Usage: VsChromium.Server.exe {0}", StdioArgument);
+          Console.Error.WriteLine("  Messages are exchanged as JSON lines over the standard input/output.");
+          Environment.ExitCode = 1;
         }
       }
       catch (Exception e) {
@@ -43,11 +43,8 @@ namespace VsChromium.Server {
       // stdout is reserved for IPC messages: redirect any other console output to stderr.
       Console.SetOut(Console.Error);
 
-      new ServerStub().Run(new IpcStreamOverJsonLines(input, output));
-    }
-
-    private static int GetTcpPort(string[] args) {
-      return Int32.Parse(args[0]);
+      new ServerStub().Run(new IpcStreamOverJsonLines(input, output,
+        (e, message) => Logger.LogError(e, "{0}", message), message => Logger.LogInfo("{0}", message)));
     }
   }
 }

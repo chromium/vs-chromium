@@ -100,7 +100,6 @@ export class CodeSearchViewProvider implements vscode.WebviewViewProvider {
           matchWholeWord: options.matchWholeWord,
           regex: options.regex,
           includeSymLinks: true,
-          useRe2Engine: true,
         },
       });
     } catch (e) {

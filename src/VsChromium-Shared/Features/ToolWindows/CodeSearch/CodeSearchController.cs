@@ -751,7 +751,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             MatchCase = false, //ViewModel.MatchCase,
             MatchWholeWord = false, //ViewModel.MatchWholeWord,
             IncludeSymLinks = ViewModel.IncludeSymLinks,
-            UseRe2Engine = true,
             Regex = false, //ViewModel.UseRegex,
           }
         },
@@ -871,7 +870,6 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           MatchCase = ViewModel.MatchCase,
           MatchWholeWord = ViewModel.MatchWholeWord,
           IncludeSymLinks = ViewModel.IncludeSymLinks,
-          UseRe2Engine = true,
           Regex = ViewModel.UseRegex,
         }
       };

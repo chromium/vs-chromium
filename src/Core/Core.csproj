@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Code shared by the Visual Studio package (devenv.exe), VsChromium.Host.exe, the Concord
+    Code shared by the Visual Studio package (devenv.exe), the Concord
     debugger integration and the indexing server. Stays on .NET Framework (the VS package requires
     it); see docs/portable-server/PORTING_PRINCIPLES.md for the split planned by the port.
   -->

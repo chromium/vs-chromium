@@ -12,7 +12,7 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Server.Ipc.Json;
+using VsChromium.Core.Ipc.Json;
 using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {

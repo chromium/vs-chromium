@@ -148,12 +148,6 @@
       <Project>{58572470-7222-49be-850b-c6ce224a813a}</Project>
       <Name>VsChromium.DkmIntegration</Name>
     </ProjectReference>
-    <ProjectReference Include="$(BuildRoot)src\Host\Host.csproj">
-      <Project>{B6FF4670-B5B0-4724-9895-AF3C5E8C68C0}</Project>
-      <Name>VsChromium.Host</Name>
-      <IncludeOutputGroupsInVSIX>DebugSymbolsProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">

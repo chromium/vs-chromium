@@ -188,7 +188,6 @@ namespace VsChromium.Tests.Server {
         Regex = options.HasFlag(Options.Regex),
         IncludeSymLinks = false,
         MatchWholeWord = options.HasFlag(Options.MatchWholeWord),
-        UseRe2Engine = true,
       };
 
       var searchResult = _searchEngine.SearchCode(searchParams);

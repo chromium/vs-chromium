@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,17 +8,21 @@ using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Ipc.Json;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Tests.Core {
   [TestClass]
-  public class TestProtoBufSerialization : MefTestBase {
+  /// <summary>
+  /// Tests of the JSON serialization of the IPC messages (the protocol between
+  /// the Visual Studio package and the server), on the Visual Studio side
+  /// (.NET Framework, Newtonsoft.Json of Visual Studio).
+  /// </summary>
+  public class TestIpcJsonSerialization : MefTestBase {
     [TestMethod]
-    public void ProtoBufSerializationWorksForStringData() {
+    public void JsonSerializationWorksForStringData() {
       using (var container = SetupMefContainer()) {
-        var serializer = container.GetExport<IProtoBufSerializer>().Value;
 
         var req = new IpcRequest {
           RequestId = 6,
@@ -28,14 +32,13 @@ namespace VsChromium.Tests.Core {
           }
         };
 
-        AssertRoundTrip(serializer, req);
+        AssertRoundTrip(req);
       }
     }
 
     [TestMethod]
-    public void ProtoBufSerializationWorksForRegisterFileRequest() {
+    public void JsonSerializationWorksForRegisterFileRequest() {
       using (var container = SetupMefContainer()) {
-        var serializer = container.GetExport<IProtoBufSerializer>().Value;
 
         var req = new IpcRequest {
           RequestId = 7,
@@ -45,23 +48,21 @@ namespace VsChromium.Tests.Core {
           }
         };
 
-        AssertRoundTrip(serializer, req);
+        AssertRoundTrip(req);
       }
     }
 
     [TestMethod]
-    public void ProtoBufSerializationWorksForHelloProtocol() {
+    public void JsonSerializationWorksForHelloProtocol() {
       using (var container = SetupMefContainer()) {
-        var serializer = container.GetExport<IProtoBufSerializer>().Value;
         var req = HelloWorldProtocol.Request;
-        AssertRoundTrip(serializer, req);
+        AssertRoundTrip(req);
       }
     }
 
     [TestMethod]
-    public void ProtoBufSerializationWorksForAllIpcMessageTypes() {
+    public void JsonSerializationWorksForAllIpcMessageTypes() {
       using (var container = SetupMefContainer()) {
-        var serializer = container.GetExport<IProtoBufSerializer>().Value;
         Func<Type, Type, bool> isSubTypeOf = (x, y) => {
           for (; x != null; x = x.BaseType) {
             if (x == y)
@@ -86,17 +87,16 @@ namespace VsChromium.Tests.Core {
             var ipcValue = (IpcMessage)Activator.CreateInstance(ipcType);
             var ipcDataValue = (IpcMessageData)Activator.CreateInstance(ipcDataType);
             ipcValue.Data = ipcDataValue;
-            AssertRoundTrip(serializer, ipcValue);
+            AssertRoundTrip(ipcValue);
           }
         }
       }
     }
 
     [TestMethod]
-    public void ProtoBufSerializationWorksForBigRequest() {
+    public void JsonSerializationWorksForBigRequest() {
       Logger.LogMemoryStats();
       using (var container = SetupMefContainer()) {
-        var serializer = container.GetExport<IProtoBufSerializer>().Value;
         var req = new IpcRequest {
           RequestId = 6,
           Protocol = IpcProtocols.TypedMessage,
@@ -105,7 +105,7 @@ namespace VsChromium.Tests.Core {
           }
         };
         Logger.LogMemoryStats();
-        AssertRoundTrip(serializer, req);
+        AssertRoundTrip(req);
       }
       Logger.LogMemoryStats();
     }
@@ -149,8 +149,8 @@ namespace VsChromium.Tests.Core {
       }
     }
 
-    private static void AssertRoundTrip(IProtoBufSerializer serializer, IpcMessage message) {
-      var result = RoundTrip(serializer, message);
+    private static void AssertRoundTrip(IpcMessage message) {
+      var result = RoundTrip(message);
       Assert.AreEqual(message.GetType(), result.GetType());
       Assert.AreEqual(message.RequestId, result.RequestId);
       Assert.AreEqual(message.Protocol, result.Protocol);
@@ -160,21 +160,18 @@ namespace VsChromium.Tests.Core {
       }
     }
 
-    private static T RoundTrip<T>(IProtoBufSerializer serializer, T req) where T : IpcMessage {
+    private static T RoundTrip<T>(T req) where T : IpcMessage {
       var sw = Stopwatch.StartNew();
-      var stream = new MemoryStream();
-      serializer.Serialize(stream, req);
+      var json = IpcJsonSerializer.Serialize(req);
       sw.Stop();
-      Trace.WriteLine(string.Format("Serialized message of type {0} into {1:n0} bytes in {2} msec.",
-                                    req.Data.GetType().FullName, stream.Length, sw.ElapsedMilliseconds));
+      Trace.WriteLine(string.Format("Serialized message of type {0} into {1:n0} characters in {2} msec.",
+                                    req.Data.GetType().FullName, json.Length, sw.ElapsedMilliseconds));
 
-      stream.Position = 0;
       sw.Restart();
-      var result = serializer.Deserialize(stream);
+      var result = IpcJsonSerializer.Deserialize(json);
       sw.Stop();
-      Trace.WriteLine(string.Format("Deserialized message of type {0} from {1:n0} bytes in {2} msec.",
-                                    req.Data.GetType().FullName, stream.Length, sw.ElapsedMilliseconds));
+      Trace.WriteLine(string.Format("Deserialized message of type {0} from {1:n0} characters in {2} msec.",
+                                    req.Data.GetType().FullName, json.Length, sw.ElapsedMilliseconds));
       return (T)result;
-    }
-  }
+    }  }
 }

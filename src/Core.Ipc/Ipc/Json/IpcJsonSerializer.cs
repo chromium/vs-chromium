@@ -1,4 +1,4 @@
-﻿// Copyright 2026 The Chromium Authors. All rights reserved.
+// Copyright 2026 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,11 +12,12 @@ using Newtonsoft.Json.Serialization;
 using ProtoBuf;
 using VsChromium.Core.Ipc;
 
-namespace VsChromium.Server.Ipc.Json {
+namespace VsChromium.Core.Ipc.Json {
   /// <summary>
   /// Serializes <see cref="IpcMessage"/> instances to/from JSON, as an alternative to the
-  /// protobuf-net wire format, for clients that cannot easily speak protobuf-net (e.g. the VS Code
-  /// extension).
+  /// protobuf-net wire format. This is the protocol between the clients (Visual Studio package, VS Code
+  /// extension) and the server, over the server standard input/output (see
+  /// <see cref="IpcStreamOverJsonLines"/>).
   ///
   /// The JSON representation mirrors the protobuf-net contract:
   /// <list type="bullet">
@@ -24,7 +25,7 @@ namespace VsChromium.Server.Ipc.Json {
   /// <item>Property names are camelCase.</item>
   /// <item>Polymorphic values (i.e. types declared with <see cref="ProtoIncludeAttribute"/>) carry a
   /// <c>"$type"</c> property containing the short class name, e.g. <c>"SearchCodeRequest"</c>. Only
-  /// [ProtoContract] types of the VsChromium.Core assembly are accepted.</item>
+  /// [ProtoContract] types of the VsChromium.Core.Ipc assembly are accepted.</item>
   /// <item>Enums are serialized as strings.</item>
   /// </list>
   /// </summary>

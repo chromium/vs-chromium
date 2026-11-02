@@ -86,7 +86,6 @@ export interface SearchParams {
   matchWholeWord?: boolean;
   includeSymLinks?: boolean;
   regex?: boolean;
-  useRe2Engine?: boolean;
 }
 
 export interface SearchCodeRequest extends TypedMessage {

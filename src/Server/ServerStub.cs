@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
 using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Logging;
 
 namespace VsChromium.Server {
   public class ServerStub {
@@ -14,10 +14,6 @@ namespace VsChromium.Server {
     /// Having a static instance makes debugging easier. It is not needed for anything else.
     /// </summary>
     public static IServer Instance;
-
-    public void Run(int port) {
-      Run(server => server.Run(port));
-    }
 
     public void Run(IIpcStream stream) {
       Run(server => server.Run(stream));
@@ -34,7 +30,7 @@ namespace VsChromium.Server {
     private CompositionContainer SetupMefContainer() {
       var catalog = new AggregateCatalog();
       catalog.Catalogs.Add(new AssemblyCatalog(Assembly.GetExecutingAssembly()));
-      catalog.Catalogs.Add(new AssemblyCatalog(typeof(ProtoBufSerializer).Assembly)); // VsChromium.Core
+      catalog.Catalogs.Add(new AssemblyCatalog(typeof(Logger).Assembly)); // VsChromium.Core.Server
       var container = new CompositionContainer(catalog);
       return container;
     }

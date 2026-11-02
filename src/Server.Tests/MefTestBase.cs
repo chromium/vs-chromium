@@ -4,7 +4,7 @@
 
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
-using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Logging;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Tests {
@@ -15,7 +15,7 @@ namespace VsChromium.Tests {
     protected static CompositionContainer SetupServerMefContainer() {
       var catalog = new AggregateCatalog();
       catalog.Catalogs.Add(new AssemblyCatalog(Assembly.GetExecutingAssembly()));
-      catalog.Catalogs.Add(new AssemblyCatalog(typeof(ProtoBufSerializer).Assembly)); // VsChromium.Core.Server
+      catalog.Catalogs.Add(new AssemblyCatalog(typeof(Logger).Assembly)); // VsChromium.Core.Server
       catalog.Catalogs.Add(new AssemblyCatalog(typeof(SearchEngine).Assembly));
       var container = new CompositionContainer(catalog);
       return container;

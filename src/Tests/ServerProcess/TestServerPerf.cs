@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.ProtoBuf;
+using VsChromium.Core.Ipc.Json;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.ServerProxy;
 using VsChromium.Tests.Server;
@@ -41,7 +41,7 @@ namespace VsChromium.Tests.ServerProcess {
               KnownVersion = -1
             }, ServerResponseTimeout)();
             if (response != null && response.Tree.Version != response1.Tree.Version) {
-              //DisplayTreeStats(container.GetExport<IProtoBufSerializer>().Value, response, false);
+              //DisplayTreeStats(response, false);
               TestSearch(server);
               break;
             }
@@ -110,11 +110,10 @@ namespace VsChromium.Tests.ServerProcess {
       }, TimeSpan.FromSeconds(10.0))();
     }
 
-    private void DisplayTreeStats(IProtoBufSerializer serializer, GetFileSystemResponse response, bool verbose) {
+    private void DisplayTreeStats(GetFileSystemResponse response, bool verbose) {
       Trace.WriteLine("=====================================================================");
       Trace.WriteLine("FileSystem tree stats:");
       {
-        var mem = new MemoryStream();
         var sw = new Stopwatch();
         var ipcResponse = new IpcResponse {
           RequestId = 0,
@@ -122,9 +121,9 @@ namespace VsChromium.Tests.ServerProcess {
           Data = response
         };
         sw.Start();
-        serializer.Serialize(mem, ipcResponse);
+        var json = IpcJsonSerializer.Serialize(ipcResponse);
         sw.Stop();
-        Trace.WriteLine(string.Format("ProtoBuf request of {0:n0} bytes serialized in {1} msec.", mem.Length,
+        Trace.WriteLine(string.Format("JSON response of {0:n0} characters serialized in {1} msec.", json.Length,
                                       sw.ElapsedMilliseconds));
       }
 

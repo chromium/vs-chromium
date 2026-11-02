@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Server.Ipc.Json;
+using VsChromium.Core.Ipc.Json;
 
 namespace VsChromium.Tests.Server {
   [TestClass]

@@ -47,7 +47,7 @@
     <Compile Include="ServerProcess\TestSearchFilePaths.cs" />
     <Compile Include="Core\TestFileNameMatching.cs" />
     <Compile Include="Core\TestTcpSerialization.cs" />
-    <Compile Include="Core\TestProtoBufSerialization.cs" />
+    <Compile Include="Core\TestIpcJsonSerialization.cs" />
     <Compile Include="MefTestBase.cs" />
     <Compile Include="ServerProcess\TestEchoProtocol.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

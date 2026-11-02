@@ -60,7 +60,7 @@ export class FileNamesPick {
         }
         const response = await current.request({
           $type: 'SearchFilePathsRequest',
-          searchParams: { searchString: query.pattern, maxResults, includeSymLinks: true, useRe2Engine: true },
+          searchParams: { searchString: query.pattern, maxResults, includeSymLinks: true },
         });
         if (id !== searchId) {
           return; // A newer search is in progress.

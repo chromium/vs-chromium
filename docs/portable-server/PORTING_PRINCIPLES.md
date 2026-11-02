@@ -115,7 +115,7 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 ### Process model and protocol
 
 - The server is started **directly** by the client (no `VsChromium.Host.exe`, no debugger
-  attachment, no job object). **It exits when its input stream is closed** (client exit or crash),
+  attachment, no job object; done in milestone 6). **It exits when its input stream is closed** (client exit or crash),
   as the `--stdio` mode already does.
 - **Decided: a single transport for both clients: stdio + JSON lines** (the existing `--stdio`
   mode, `src/Server/Ipc/Json`). The VS package switches from TCP + protobuf-net to stdio + JSON,
@@ -375,7 +375,19 @@ of its resource usage, measured inside the process:
      (`docs/portable-server/benchmarks/m5c-file-read-single-lookup`).
    - **5b (next)**: mtsuite `FullPath`/`PathHelpers` (OS-aware separators and case sensitivity) on
      the server, mtsuite Linux/macOS enumerators (needs benchmarks on Linux/macOS), copied into
-     `third_party/mtsuite/` with `PORT_CHANGES.md`.6. **Process model**: VS package starts the server directly over stdio (no Host.exe); VSIX and VS
-   Code packaging of the self-contained server.
-7. **Linux and macOS**: path/case-sensitivity, file watching limits, CI runs of tests and benchmarks;
+     `third_party/mtsuite/` with `PORT_CHANGES.md`.6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
+   (`ServerProcessLauncher`) and exchanges JSON lines over its standard input/output, exactly as the
+   VS Code extension does. The JSON serialization (`IpcJsonSerializer`, `IpcStreamOverJsonLines`)
+   moved to `Core.Ipc` (Newtonsoft.Json, the VS package uses the copy of Visual Studio). Removed:
+   `VsChromium.Host.exe` (and the job object code it used), the TCP listener/connection on both
+   sides, the protobuf-net serializer (`ProtoBufSerializer`, `IpcStreamOverNetworkStream`), the
+   server TCP mode, the `UseRe2Engine` search parameter. The server exits when its standard input is
+   closed (Visual Studio exits or crashes); the package closes it on dispose and terminates the
+   server if it doesn't exit within 2 s. protobuf-net remains only for its attributes
+   (`[ProtoContract]`/`[ProtoMember]`), which define the message contracts (the JSON serializer
+   only serializes `[ProtoMember]` properties); replacing them with our own attributes would remove
+   the dependency. JSON vs protobuf: the baseline benchmarks already measured large JSON responses
+   (316 KB in 9 ms on the client side, 2 ms in the server), acceptable. Packaging of the
+   self-contained server: see [Target framework and distribution](#target-framework-and-distribution).
+   The Release VSIX must still be tested manually in Visual Studio.7. **Linux and macOS**: path/case-sensitivity, file watching limits, CI runs of tests and benchmarks;
    VS Code VSIX for linux/macOS targets.

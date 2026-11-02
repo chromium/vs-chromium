@@ -18,6 +18,10 @@
 
   <ItemGroup>
     <PackageReference Include="protobuf-net" Version="2.4.9" />
+    <!-- PrivateAssets: not flowed to the Visual Studio package, which uses the Newtonsoft.Json
+         assembly of Visual Studio (from the VS SDK, not shipped in the VSIX). The server references
+         it explicitly. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,71 @@
+{
+  "name": "vs-chromium",
+  "displayName": "VsChromium",
+  "description": "Instant indexed code search for very large source trees (e.g. Chromium), powered by the VsChromium indexing server.",
+  "version": "0.1.0",
+  "publisher": "chromium",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chromium/vs-chromium.git"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "os": [
+    "win32"
+  ],
+  "activationEvents": [
+    "workspaceContains:vs-chromium-project.txt",
+    "workspaceContains:.gn"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vschromium.showServerStatus",
+        "title": "Show Indexing Server Status",
+        "category": "VsChromium"
+      },
+      {
+        "command": "vschromium.restartServer",
+        "title": "Restart Indexing Server",
+        "category": "VsChromium"
+      },
+      {
+        "command": "vschromium.showOutput",
+        "title": "Show Output",
+        "category": "VsChromium"
+      }
+    ],
+    "configuration": {
+      "title": "VsChromium",
+      "properties": {
+        "vschromium.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to VsChromium.Server.exe. Leave empty to use the server bundled with the extension (or, during development, the one in Binaries\\Debug of the vs-chromium repository).",
+          "scope": "machine"
+        },
+        "vschromium.trace.server": {
+          "type": "boolean",
+          "default": false,
+          "description": "Log all messages exchanged with the indexing server to the VsChromium output channel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test \"out/test/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/vscode": "1.100.0",
+    "typescript": "5.9.3"
+  }
+}

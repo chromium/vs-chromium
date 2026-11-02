@@ -1,0 +1,7 @@
+node_modules/
+out/
+bin/
+*.vsix
+# Not committed: when generated behind a corporate npm mirror, it contains internal registry URLs.
+# Dependencies are pinned to exact versions in package.json instead.
+package-lock.json

@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Generator of the protocol code (server, Visual Studio extension, VS Code extension) from the
+    protocol definition in protocol/*.tsp (a subset of TypeSpec, see protocol/README.md). Runs on
+    every build of the projects using the generated code (incremental: only when a .tsp file or the
+    generator changed), see the "GenerateProtocol" target of src/Core.Server/Core.Server.csproj.
+
+    Manual run: see the usage printed by the tool without arguments.
+  -->
+
+  <Import Project="..\..\..\Build\Common.Sdk.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>VsChromium.ProtocolGen</AssemblyName>
+    <RootNamespace>VsChromium.ProtocolGen</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Tools\ProtocolGen\</OutputPath>
+  </PropertyGroup>
+
+</Project>

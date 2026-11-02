@@ -733,3 +733,24 @@ marker -13 to -18%). The 3-run benchmark showed two queries ~10 ms slower once; 
 query they are at the baseline (5.8 and 5.5 ms). Updates unchanged. On source trees with more
 non-ASCII text the saving is proportional to the size of the non-ASCII files (about half of their
 UTF-16 size).
+
+### Protocol definition in TypeSpec (P1 of the protocol migration)
+
+The protocol is being moved to **JSON-RPC 2.0** (LSP framing), defined once in `protocol/*.tsp` (a
+subset of TypeSpec, valid for the official TypeSpec tools) and generated for the server and both
+clients by our own generator, `src/Tools/ProtocolGen` (C#: lexer, parser, binder enforcing the
+protocol and protobuf-compatibility rules, emitters). No Node.js is needed to build: the
+`GenerateProtocol` target of `Core.Server.csproj` runs the generator before compiling, only when a
+definition file or the generator changed. Rules, methods and the mapping from the former typed
+messages: `protocol/README.md`.
+
+- P1 (done): definitions of all the methods (20 requests reorganized as `group/operation`, 7
+  notifications; obsolete/unused requests dropped; flat search results). The server output
+  (`src/Core.Server/Protocol/Protocol.g.cs`) contains the models, the System.Text.Json source
+  generation context (NativeAOT compatible), the method names, `IProtocolRequestHandler`, a
+  reflection-free `ProtocolDispatcher` and `ProtocolNotificationSender`. Tests: generator
+  (`src/Tools/ProtocolGen.Tests`: syntax, unsupported constructs with locations, generated code,
+  checked-in file up to date), generated code (`Server.Tests/Protocol/TestProtocolDispatcher`).
+- Next: P2 server transport (both protocols during the transition), P3 VS Code client
+  (`vscode-jsonrpc`), P4 Visual Studio client (StreamJsonRpc), P5 removal of the typed messages
+  protocol.

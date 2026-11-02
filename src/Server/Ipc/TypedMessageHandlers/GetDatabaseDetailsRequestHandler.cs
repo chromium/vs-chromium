@@ -34,7 +34,7 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
     private IEnumerable<ProjectDetails> CreateProjectsDetails(GetDatabaseDetailsRequest request,
       FileSystemSnapshot snapshot, IFileDatabaseSnapshot database) {
-      return snapshot.ProjectRoots.Select(project => GetProjectDetailsRequestHandler.CreateProjectDetails(database,
+      return snapshot.ProjectRoots.Select(project => GetProjectDetailsRequestHandler.CreateProjectDetails(_searchEngine, database,
         project, request.MaxFilesByExtensionDetailsCount, request.MaxLargeFilesDetailsCount));
     }
   }

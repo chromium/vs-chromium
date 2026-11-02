@@ -50,6 +50,12 @@ public static class ServerProtocol {
   public static JsonObject GetServerStatistics(bool forceGc = false) =>
     new() { ["$type"] = "GetServerStatisticsRequest", ["forceGarbageCollection"] = forceGc };
 
+  public static JsonObject SetProjectOptions(string projectPath, bool? trigramFiltersEnabled) =>
+    new() { ["$type"] = "SetProjectOptionsRequest", ["projectPath"] = projectPath, ["trigramFiltersEnabled"] = trigramFiltersEnabled };
+
+  public static JsonObject GetProjectDetails(string projectPath) =>
+    new() { ["$type"] = "GetProjectDetailsRequest", ["projectPath"] = projectPath, ["maxFilesByExtensionDetailsCount"] = 0, ["maxLargeFilesDetailsCount"] = 0 };
+
   public static JsonObject GetDatabaseStatistics() =>
     new() { ["$type"] = "GetDatabaseStatisticsRequest" };
 

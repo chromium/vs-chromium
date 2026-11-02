@@ -653,6 +653,18 @@ Selective searches (the common case when looking for a symbol) become 10–18x f
 for text present in most files gain little or nothing. The benchmark waits for the background
 index before running the queries ("Background index" scenario).
 
+**Per project option** (`SetProjectOptionsRequest { projectPath, trigramFiltersEnabled }`, response
+`DoneResponse`): the filters can be disabled and enabled for each project at any time, since they
+are most of the managed heap (large corpus, after a full GC: 112 MB without filters, ~500 MB with
+them, i.e. ~4.5x, about 5% of the total memory of the server). Enabled by default. Disabling
+releases the filters of the project in the background (followed by a non-blocking compacting GC);
+enabling builds them in the background; searches are always correct (they scan the pieces without
+filters). The setting is kept for the lifetime of the server process (clients send it again after
+starting a server), may be sent before the project is loaded, and accepts any path inside the
+project. `GetProjectDetails` reports `trigramFiltersEnabled` and `trigramFiltersBytes`. Updates of
+the filters (after database updates and setting changes) are serialized: a new run cancels the
+current one and starts after it. E2E tests: `src/Tests.EndToEnd/Regression/ProjectOptionsTests.cs`.
+
 ### Incremental updates: latency and correctness (m13, `docs/portable-server/benchmarks/m13-incremental-latency`)
 
 Principle 9: incremental updates must be fast (a few files change all the time) and always

@@ -27,7 +27,7 @@ namespace VsChromium.Tests.Server {
     public void AllImplementationsAreRegistered() {
       using (var components = new ServerComponents()) {
         var handlers = components.TypedMessageRequestHandlers;
-        Assert.AreEqual(19, handlers.Count);
+        Assert.AreEqual(20, handlers.Count);
         Assert.AreEqual(handlers.Count, handlers.Select(x => x.GetType()).Distinct().Count());
 
         Assert.AreEqual(3, components.ProtocolHandlers.Count);

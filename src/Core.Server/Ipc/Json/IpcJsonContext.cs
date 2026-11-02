@@ -72,6 +72,7 @@ namespace VsChromium.Core.Ipc.Json {
   [JsonSerializable(typeof(OptionalDirectoryEntry))]
   [JsonSerializable(typeof(PairedTypedEvent))]
   [JsonSerializable(typeof(PauseIndexingRequest))]
+  [JsonSerializable(typeof(SetProjectOptionsRequest))]
   [JsonSerializable(typeof(PauseResumeIndexingResponse))]
   [JsonSerializable(typeof(ProgressReportEvent))]
   [JsonSerializable(typeof(ProjectConfigurationDetails))]
@@ -156,6 +157,7 @@ namespace VsChromium.Core.Ipc.Json {
       typeof(OptionalDirectoryEntry),
       typeof(PairedTypedEvent),
       typeof(PauseIndexingRequest),
+      typeof(SetProjectOptionsRequest),
       typeof(PauseResumeIndexingResponse),
       typeof(ProgressReportEvent),
       typeof(ProjectConfigurationDetails),

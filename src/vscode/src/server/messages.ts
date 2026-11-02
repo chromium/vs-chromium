@@ -111,13 +111,29 @@ export interface GetFileExtractsRequest extends TypedMessage {
   maxExtractLength: number;
 }
 
+/**
+ * Changes the indexing options of a project (response: DoneResponse), at any time. Kept by the
+ * server for its lifetime: send again after (re)starting the server. Omitted options are unchanged.
+ */
+export interface SetProjectOptionsRequest extends TypedMessage {
+  $type: 'SetProjectOptionsRequest';
+  /** Root path of the project, or any path inside the project. */
+  projectPath: string;
+  /**
+   * Trigram filters (enabled by default): faster code searches, at the cost of memory (about 5% of
+   * the size of the indexed file contents).
+   */
+  trigramFiltersEnabled?: boolean;
+}
+
 export type TypedRequest =
   | RegisterFileRequest
   | UnregisterFileRequest
   | GetDatabaseStatisticsRequest
   | SearchCodeRequest
   | SearchFilePathsRequest
-  | GetFileExtractsRequest;
+  | GetFileExtractsRequest
+  | SetProjectOptionsRequest;
 
 // ---------------------------------------------------------------------------
 // Responses
@@ -148,6 +164,7 @@ export interface ResponseTypes {
   SearchCodeRequest: SearchCodeResponse;
   SearchFilePathsRequest: SearchFilePathsResponse;
   GetFileExtractsRequest: GetFileExtractsResponse;
+  SetProjectOptionsRequest: DoneResponse;
 }
 
 export interface SearchFilePathsResponse extends TypedMessage {

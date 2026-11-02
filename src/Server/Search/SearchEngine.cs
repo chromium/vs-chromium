@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -673,47 +674,132 @@ namespace VsChromium.Server.Search {
       _currentFileDatabase = databaseSnapshot;
       _currentFileSystemSnapshotVersion = fileSystemSnapshot.Version;
       _previousUpdateCompleted = complete; // Success => we allow incremtal updates next time
+      _currentFileDatabaseComplete = complete;
       if (complete) {
-        StartBuildingTrigramFilters(databaseSnapshot);
+        StartUpdatingTrigramFilters(databaseSnapshot);
       }
     }
 
+    /// <summary>
+    /// True if <see cref="_currentFileDatabase"/> is the result of a complete update (not an
+    /// intermediate result of a load in progress).
+    /// </summary>
+    private volatile bool _currentFileDatabaseComplete;
+
+    /// <summary>
+    /// The trigram filter setting of the projects (see <see cref="SetProjectOptions"/>), by project
+    /// root path. Projects not in this dictionary have their filters enabled.
+    /// </summary>
+    private readonly ConcurrentDictionary<FullPath, bool> _trigramFiltersEnabled = new ConcurrentDictionary<FullPath, bool>();
+
+    private readonly object _trigramFiltersLock = new object();
     private CancellationTokenSource _trigramFiltersCancellation;
+    private System.Threading.Tasks.Task _trigramFiltersTask = System.Threading.Tasks.Task.CompletedTask;
+
+    public void SetProjectOptions(FullPath path, bool? trigramFiltersEnabled) {
+      // Note: The path may be any path inside the project (or a project not known yet).
+      var projectRoot = _projectDiscovery.GetProjectFromAnyPath(path)?.RootPath ?? path;
+      if (trigramFiltersEnabled.HasValue) {
+        var previous = IsTrigramFiltersEnabled(projectRoot);
+        _trigramFiltersEnabled[projectRoot] = trigramFiltersEnabled.Value;
+        Logger.LogInfo("Trigram filters of project \"{0}\": {1}", projectRoot, trigramFiltersEnabled.Value ? "enabled" : "disabled");
+        // Apply to the current database, unless a load is in progress (the setting is applied
+        // when the load completes).
+        if (previous != trigramFiltersEnabled.Value && _currentFileDatabaseComplete) {
+          StartUpdatingTrigramFilters(_currentFileDatabase);
+        }
+      }
+    }
+
+    public bool IsTrigramFiltersEnabled(FullPath projectRootPath) {
+      return TrigramFilters.Enabled &&
+             (!_trigramFiltersEnabled.TryGetValue(projectRootPath, out var enabled) || enabled);
+    }
+
+    public long GetTrigramFiltersBytes(FullPath projectRootPath) {
+      long total = 0;
+      var roots = new Dictionary<DirectoryName, bool>(System.Collections.Generic.ReferenceEqualityComparer.Instance);
+      foreach (var piece in _currentFileDatabase.FileContentsPieces) {
+        if (!piece.IsFirstPiece)
+          continue;
+        var root = GetProjectRootDirectory(piece.FileName);
+        if (!roots.TryGetValue(root, out var inProject)) {
+          inProject = root.FullPath.Equals(projectRootPath);
+          roots.Add(root, inProject);
+        }
+        if (inProject)
+          total += piece.FileContents.TrigramFiltersByteSize;
+      }
+      return total;
+    }
+
+    private static DirectoryName GetProjectRootDirectory(FileName fileName) {
+      var directory = fileName.Parent;
+      while (directory.Parent != null)
+        directory = directory.Parent;
+      return directory;
+    }
 
     /// <summary>
     /// Builds the trigram filters of the file contents of <paramref name="database"/> that don't
     /// have them yet (all of them after a full load, only the new ones after an incremental
-    /// update), in the background on half of the processors: the index is usable before (searches
-    /// scan the pieces without filters), so that the filters don't delay the end of the loading.
+    /// update), and releases the filters of the projects where they are disabled. Runs in the
+    /// background on half of the processors: the index is usable before (searches scan the pieces
+    /// without filters), so that the filters don't delay the end of the loading. Runs are
+    /// serialized: a new run cancels the current one and starts after it.
     /// </summary>
-    private void StartBuildingTrigramFilters(IFileDatabaseSnapshot database) {
+    private void StartUpdatingTrigramFilters(IFileDatabaseSnapshot database) {
       if (!TrigramFilters.Enabled)
         return;
-      _trigramFiltersCancellation?.Cancel();
-      var cancellation = new CancellationTokenSource();
-      _trigramFiltersCancellation = cancellation;
+      lock (_trigramFiltersLock) {
+        _trigramFiltersCancellation?.Cancel();
+        var cancellation = new CancellationTokenSource();
+        _trigramFiltersCancellation = cancellation;
+        _trigramFiltersTask = _trigramFiltersTask.ContinueWith(
+          _ => UpdateTrigramFilters(database, cancellation.Token),
+          System.Threading.Tasks.TaskScheduler.Default);
+      }
+    }
+
+    private void UpdateTrigramFilters(IFileDatabaseSnapshot database, CancellationToken cancellationToken) {
       var pieces = database.FileContentsPieces;
-      System.Threading.Tasks.Task.Run(() => {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        try {
-          System.Threading.Tasks.Parallel.For(0, pieces.Count, new System.Threading.Tasks.ParallelOptions {
-            CancellationToken = cancellation.Token,
-            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
-          }, i => {
-            var piece = pieces[i];
-            if (piece.IsFirstPiece) {
-              piece.FileContents.BuildTrigramFilters();
-            }
-          });
-          OperationTimings.Record(OperationTimings.TrigramFiltersBuild, stopwatch.Elapsed);
-        }
-        catch (OperationCanceledException) {
-          // A newer snapshot has been activated
-        }
-        catch (Exception e) {
-          Logger.LogError(e, "Error building trigram filters");
-        }
-      });
+      var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+      // Project setting of each project root directory (few entries).
+      var enabledByRoot = new ConcurrentDictionary<DirectoryName, bool>(System.Collections.Generic.ReferenceEqualityComparer.Instance);
+      long droppedBytes = 0;
+      try {
+        System.Threading.Tasks.Parallel.For(0, pieces.Count, new System.Threading.Tasks.ParallelOptions {
+          CancellationToken = cancellationToken,
+          MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
+        }, i => {
+          var piece = pieces[i];
+          if (!piece.IsFirstPiece)
+            return;
+          var root = GetProjectRootDirectory(piece.FileName);
+          var enabled = enabledByRoot.GetOrAdd(root, r => IsTrigramFiltersEnabled(r.FullPath));
+          if (enabled) {
+            piece.FileContents.BuildTrigramFilters();
+          } else {
+            var bytes = piece.FileContents.DropTrigramFilters();
+            if (bytes > 0)
+              Interlocked.Add(ref droppedBytes, bytes);
+          }
+        });
+        OperationTimings.Record(OperationTimings.TrigramFiltersBuild, stopwatch.Elapsed);
+      }
+      catch (OperationCanceledException) {
+        // A newer snapshot has been activated, or a project setting changed
+      }
+      catch (Exception e) {
+        Logger.LogError(e, "Error building trigram filters");
+      }
+
+      if (droppedBytes > 0) {
+        Logger.LogInfo("Released {0:n0} bytes of trigram filters", droppedBytes);
+        // Return the memory of the released filters (managed arrays) without waiting for the next
+        // full collection (non blocking: searches are not paused).
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: false, compacting: true);
+      }
     }
 
     private bool MatchFileName(IPathMatcher matcher, FileName fileName, IPathComparer comparer) {

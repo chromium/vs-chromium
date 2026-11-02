@@ -36,12 +36,12 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
 
       var database = _searchEngine.CurrentFileDatabaseSnapshot;
       return new GetProjectDetailsResponse {
-        ProjectDetails = CreateProjectDetails(database, projectSnapshot, request.MaxFilesByExtensionDetailsCount,
+        ProjectDetails = CreateProjectDetails(_searchEngine, database, projectSnapshot, request.MaxFilesByExtensionDetailsCount,
           request.MaxLargeFilesDetailsCount)
       };
     }
 
-    public static ProjectDetails CreateProjectDetails(IFileDatabaseSnapshot database, ProjectRootSnapshot project,
+    public static ProjectDetails CreateProjectDetails(ISearchEngine searchEngine, IFileDatabaseSnapshot database, ProjectRootSnapshot project,
       int maxFilesByExtensionDetailsCount, int maxLargeFilesDetailsCount) {
       return new ProjectDetails {
         RootPath = project.Project.RootPath.Value,
@@ -50,7 +50,10 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
           project.Directory,
           maxFilesByExtensionDetailsCount, maxLargeFilesDetailsCount),
 
-        ConfigurationDetails = CreateProjectConfigurationDetails(project)
+        ConfigurationDetails = CreateProjectConfigurationDetails(project),
+
+        TrigramFiltersEnabled = searchEngine.IsTrigramFiltersEnabled(project.Project.RootPath),
+        TrigramFiltersBytes = searchEngine.GetTrigramFiltersBytes(project.Project.RootPath),
       };
     }
 

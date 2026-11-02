@@ -137,6 +137,7 @@ namespace VsChromium.Server {
       Create(new ResumeIndexingRequestHandler(IndexingServer)),
       Create(new SearchCodeRequestHandler(SearchEngine, FileSystemNameFactory)),
       Create(new SearchFilePathsRequestHandler(SearchEngine, FileSystemNameFactory)),
+      Create(new SetProjectOptionsRequestHandler(SearchEngine)),
       Create(new UnregisterFileRequestHandler(FileRegistrationTracker)),
     };
 

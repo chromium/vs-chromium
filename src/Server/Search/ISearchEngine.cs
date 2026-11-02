@@ -17,6 +17,18 @@ namespace VsChromium.Server.Search {
     SearchCodeResult SearchCode(SearchParams searchParams);
     IEnumerable<FileExtract> GetFileExtracts(FullPath filename, IEnumerable<FilePositionSpan> spans, int maxLength);
 
+    /// <summary>
+    /// Changes the options of the project containing <paramref name="path"/> (see
+    /// <see cref="SetProjectOptionsRequest"/>). Null values leave the option unchanged.
+    /// </summary>
+    void SetProjectOptions(FullPath path, bool? trigramFiltersEnabled);
+
+    /// <summary>True if the trigram filters of the project are enabled (the default).</summary>
+    bool IsTrigramFiltersEnabled(FullPath projectRootPath);
+
+    /// <summary>Memory used by the trigram filters of the project.</summary>
+    long GetTrigramFiltersBytes(FullPath projectRootPath);
+
     event EventHandler<OperationInfo> FilesLoading;
     event EventHandler<OperationInfo> FilesLoadingProgress;
     event EventHandler<FilesLoadedResult> FilesLoaded;

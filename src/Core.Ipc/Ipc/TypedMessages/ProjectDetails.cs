@@ -15,5 +15,11 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     public DirectoryDetails DirectoryDetails { get; set; }
 
     public ProjectConfigurationDetails ConfigurationDetails { get; set; }
+
+    /// <summary>True if the trigram filters of the project are enabled (see SetProjectOptionsRequest).</summary>
+    public bool TrigramFiltersEnabled { get; set; }
+
+    /// <summary>Memory used by the trigram filters of the project, in bytes.</summary>
+    public long TrigramFiltersBytes { get; set; }
   }
 }

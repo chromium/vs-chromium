@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
@@ -88,6 +89,15 @@ namespace VsChromium.Server.FileSystemContents {
     /// Memory used by the trigram filters of this file (0 if none).
     /// </summary>
     public long TrigramFiltersByteSize => _trigramFilters?.ByteSize ?? 0;
+
+    /// <summary>
+    /// Releases the trigram filters of this file (e.g. disabled for its project), and returns the
+    /// memory they used. Searches running concurrently scan the pieces without filters.
+    /// </summary>
+    public long DropTrigramFilters() {
+      var filters = Interlocked.Exchange(ref _trigramFilters, null);
+      return filters?.ByteSize ?? 0;
+    }
 
     public bool HasTrigramFilters => _trigramFilters != null;
 

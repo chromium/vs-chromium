@@ -31,7 +31,7 @@ Status: **planning** (branch `portable-server`, created from `main` at `30d7bb9`
 - Porting the client-only Windows code (Chrome process attach, debugger, job objects, shell icons,
   registry): it stays in the VS-side assemblies.
 - New features. The port must be behavior-compatible (same results), except for the deliberate
-  fixes listed in [Known issues fixed by the port](#known-issues-fixed-by-the-port).
+  fixes listed in [Behavior changes](#behavior-changes).
 
 ## Principles
 
@@ -43,10 +43,13 @@ Status: **planning** (branch `portable-server`, created from `main` at `30d7bb9`
    baseline is recorded on the current server **before** changing the server. Every
    performance-sensitive change is compared to the baseline. Regressions must be understood and
    accepted explicitly, not discovered later.
-3. **Correctness parity first.** Search results (hit counts, matched files, positions modulo the
-   documented offset change) must match the current server on the benchmark corpus. The existing
-   native tests (`Tests/NativeInterop/TestAsciiSearch`, `TestGetTextKind`, `TestGetLineExtent`)
-   are ported as oracles for the managed implementations.
+3. **Correctness parity first, except for bugs.** Search results (hit counts, matched files,
+   positions) must match the current server on the benchmark corpus, **except where the current
+   behavior is a bug or questionable**: such cases are decided **case by case**, and each accepted
+   difference is recorded in [Behavior changes](#behavior-changes) (with the reason) before it is
+   relied upon. The existing native tests (`Tests/NativeInterop/TestAsciiSearch`,
+   `TestGetTextKind`, `TestGetLineExtent`) are ported as oracles for the managed implementations
+   (minus the recorded behavior changes).
 4. **Incremental, always green.** Small steps, each building and passing all tests (C#, TypeScript),
    each committed separately. The server keeps working with both clients at every step.
 5. **Reuse, don't fork, mtsuite code.** Copy mtsuite code in a clearly delimited place with its
@@ -158,9 +161,11 @@ All new/ported projects use **SDK-style** csproj.
   `~/Library/Logs/VsChromium` on macOS).
 - Newtonsoft.Json for the JSON protocol initially; `System.Text.Json` (source generated) later.
 
-## Known issues fixed by the port
+## Behavior changes
 
-Found while auditing the current server (all are deliberate behavior changes):
+Deliberate differences from the current server (see principle 3). Each entry is decided case by
+case; add new entries here (with the reason) as they are found during the port. Initial list, found
+while auditing the current server:
 
 1. **Positions are byte offsets** for UTF-8 files (`AsciiFileContents` searches raw bytes), while the
    clients interpret them as character offsets: wrong match selection in files with non-ASCII text
@@ -251,7 +256,8 @@ of its resource usage, measured inside the process:
 ### Results
 
 - **Correctness**: every query's results are checked against the planted strings (and hit counts
-  compared between the two servers); the known issues fixed by the port are expected differences.
+  compared between the two servers); only the recorded [behavior changes](#behavior-changes) are
+  accepted as differences.
 - Each run writes a JSON result file (machine, OS, CPU, server version, corpus seed/size, all
   metrics) and a markdown report comparing two result files (baseline vs candidate). Baseline
   results are committed under `docs/portable-server/benchmarks/`.
@@ -266,7 +272,7 @@ of its resource usage, measured inside the process:
 3. **Server on net10 (Windows)**, still with the native code (P/Invoke to VsChromium.Native.dll works
    on .NET 10): MEF/NLog/protobuf-net/Newtonsoft upgrades, new test project. Benchmark.
 4. **Managed search**: text kind, line extents, literal search, regex; native code still available
-   for side-by-side parity tests. Fix known issues 1–4. Benchmark.
+   for side-by-side parity tests. Apply behavior changes 1–4. Benchmark.
 5. **mtsuite file system**: paths, enumeration, parallel scanning, file reading, memory accounting.
    Delete `Native`, `re2`, `ServerNativeInterop` and Win32 P/Invokes from the server. Benchmark.
 6. **Process model**: VS package starts the server directly over stdio (no Host.exe); VSIX and VS

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
@@ -27,18 +28,24 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly Lazy<long> _searchableFileCount;
     private readonly Lazy<long> _totalFileContentsLength;
     private readonly Lazy<HashSet<DirectoryName>> _directoriesInSymLinks;
+    private FileWithContents[] _fileArray;
 
     public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes, 
       IDictionary<DirectoryName, DirectoryData> directories,
       IDictionary<FileName, FileWithContents> files,
-      IList<FileName> fileNames = null) {
+      IList<FileName> fileNames = null,
+      IList<FileContentsPiece> fileContentsPieces = null) {
       _projectHashes = projectHashes;
       _directories = directories;
       _files = files;
       // Note: "fileNames" can be passed when the keys of "files" are the same as in a previous
       // snapshot (only file contents changed), to avoid recomputing the list.
       _fileNames = fileNames != null ? new Lazy<IList<FileName>>(fileNames) : new Lazy<IList<FileName>>(CreateFileNames);
-      _fileContentsPieces = new Lazy<IList<FileContentsPiece>>(CreateFilePieces, LazyThreadSafetyMode.ExecutionAndPublication);
+      // Note: "fileContentsPieces" can be passed when they are known (e.g. updated from a previous
+      // snapshot), to avoid recomputing them.
+      _fileContentsPieces = fileContentsPieces != null
+        ? new Lazy<IList<FileContentsPiece>>(fileContentsPieces)
+        : new Lazy<IList<FileContentsPiece>>(CreateFilePieces, LazyThreadSafetyMode.ExecutionAndPublication);
       _searchableFileCount = new Lazy<long>(CountFilesWithContents);
       _totalFileContentsLength = new Lazy<long>(ComputeTotalFileContentsLength);
       _directoriesInSymLinks = new Lazy<HashSet<DirectoryName>>(ComputeDirectoriesInSymLinks);
@@ -80,6 +87,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       _ = _searchableFileCount.Value;
       _ = _totalFileContentsLength.Value;
       _ = _directoriesInSymLinks.Value;
+      // Only needed to compute the values above.
+      _fileArray = null;
     }
 
     public bool IsContainedInSymLink(DirectoryName name) {
@@ -140,20 +149,51 @@ namespace VsChromium.Server.FileSystemDatabase {
       return result.Contents;
     }
 
+    /// <summary>
+    /// The values of <see cref="Files"/>, computed once and shared by the computations below (a
+    /// single enumeration of the table).
+    /// </summary>
+    private FileWithContents[] GetFileArray() {
+      // Note: Benign race (the array would be computed twice).
+      return _fileArray ??= CreateFileArray();
+    }
+
+    private FileWithContents[] CreateFileArray() {
+      var table = _files as SlimHashTable<FileName, FileWithContents>;
+      return table != null ? table.ValuesToArray() : _files.Values.ToArray();
+    }
+
     private IList<FileName> CreateFileNames() {
-      return _files.Keys.ToArray();
+      var files = GetFileArray();
+      var result = new FileName[files.Length];
+      for (var i = 0; i < files.Length; i++) {
+        result[i] = files[i].FileName;
+      }
+      return result;
     }
 
     private IList<FileContentsPiece> CreateFilePieces() {
-      return FileDatabaseBuilder.CreateFilePieces(_files.Values);
+      return FileDatabaseBuilder.CreateFilePieces(GetFileArray());
     }
 
     private long CountFilesWithContents() {
-      return _files.Values.Where(FileDatabaseBuilder.FileHasContents).Count();
+      var files = GetFileArray();
+      long count = 0;
+      for (var i = 0; i < files.Length; i++) {
+        if (FileDatabaseBuilder.FileHasContents(files[i]))
+          count++;
+      }
+      return count;
     }
 
     private long ComputeTotalFileContentsLength() {
-      return _files.Values.Where(x => x.Contents != null).Aggregate(0L, (acc, x) => acc + x.Contents.ByteLength);
+      var files = GetFileArray();
+      long total = 0;
+      for (var i = 0; i < files.Length; i++) {
+        if (files[i].Contents != null)
+          total += files[i].Contents.ByteLength;
+      }
+      return total;
     }
   }
 }

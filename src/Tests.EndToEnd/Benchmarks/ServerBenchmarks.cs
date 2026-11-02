@@ -68,6 +68,10 @@ public class ServerBenchmarks {
     // 4. Extracts: text of the matches of the common marker, as clients do when showing results.
     queries.Add(await RunExtractsAsync(server, sampler, runs));
 
+    // 5. Incremental updates: modify a file, create a directory with a file (the corpus is restored
+    // afterwards, see RunUpdatesAsync).
+    queries.AddRange(await RunUpdatesAsync(server, corpus, runs));
+
     scenarios.Add(new ScenarioResult("End of benchmark", sampler.GetUsage(sampler.TakeSample(), sampler.TakeSample()),
                                      await GetStatisticsAsync(server, forceGc: false)));
 
@@ -170,6 +174,109 @@ public class ServerBenchmarks {
       ServerCpuMsPerRun: timings.Count > 0 ? (cpuAfter.CpuMs - cpuBefore.CpuMs) / timings.Count : 0,
       ResponseBytes: timings.Count > 0 ? bytes / timings.Count : 0,
       HitCount: extracts, ExpectedHitCount: expected, Correct: extracts == expected);
+  }
+
+  /// <summary>
+  /// Incremental updates of the index, each repeated <paramref name="runs"/> times:
+  /// <list type="bullet">
+  /// <item>"modify 1 file": a marker is appended to an existing file, then the file is restored;</item>
+  /// <item>"create 1 directory": a directory containing a file with a marker is created at the root of
+  /// the corpus, then deleted.</item>
+  /// </list>
+  /// For each change, the client time is the delay until a search finds (or no longer finds) the
+  /// marker, which includes the debouncing of file change notifications; the server times are the
+  /// durations of the file system scan and of the file database update measured by the server. The
+  /// corpus is always restored (contents and time stamps), so that it stays pristine.
+  /// </summary>
+  private async Task<List<QueryResult>> RunUpdatesAsync(StdioServerClient server, GeneratedCorpus corpus, int runs) {
+    var unique0 = CodeBaseGenerator.UniqueMarkerPrefix + "00";
+    var search = await server.RequestAsync(ServerProtocol.SearchCode(unique0, maxResults: 10, matchCase: true));
+    var targetFile = ServerProtocol.FlattenResults(search.Data["searchResults"]?.AsObject()).First().FullPath;
+    var originalBytes = await File.ReadAllBytesAsync(targetFile);
+    var originalTime = File.GetLastWriteTimeUtc(targetFile);
+    var tempDirectory = Path.Combine(corpus.RootPath, "vs-chromium-benchmark-tmp");
+
+    var results = new List<QueryResult>();
+    var modify = new UpdateTimings();
+    var create = new UpdateTimings();
+    try {
+      for (var i = 0; i < runs; i++) {
+        var marker = $"VsChromiumBenchmarkUpdateMarker{i}x{Environment.TickCount64}";
+        var targetName = Path.GetFileName(targetFile);
+        await MeasureUpdateAsync(server, modify, marker, targetName, expectedHits: 1,
+          () => File.AppendAllText(targetFile, "\n// " + marker + "\n"));
+        await MeasureUpdateAsync(server, modify, marker, targetName, expectedHits: 0, () => {
+          File.WriteAllBytes(targetFile, originalBytes);
+          File.SetLastWriteTimeUtc(targetFile, originalTime);
+        });
+
+        marker = $"VsChromiumBenchmarkCreateMarker{i}x{Environment.TickCount64}";
+        await MeasureUpdateAsync(server, create, marker, "new_file.cc", expectedHits: 1, () => {
+          Directory.CreateDirectory(tempDirectory);
+          File.WriteAllText(Path.Combine(tempDirectory, "new_file.cc"), "// " + marker + "\n");
+        });
+        await MeasureUpdateAsync(server, create, marker, "new_file.cc", expectedHits: 0, () => Directory.Delete(tempDirectory, recursive: true));
+      }
+    }
+    finally {
+      File.WriteAllBytes(targetFile, originalBytes);
+      File.SetLastWriteTimeUtc(targetFile, originalTime);
+      if (Directory.Exists(tempDirectory)) {
+        Directory.Delete(tempDirectory, recursive: true);
+      }
+    }
+
+    results.Add(modify.ToResult("modify 1 file (and restore)"));
+    results.Add(create.ToResult("create 1 directory (and delete)"));
+    return results;
+  }
+
+  private sealed class UpdateTimings {
+    public readonly List<double> ClientMs = new();
+    public double ScanMs;
+    public double UpdateMs;
+    public int Count;
+    public bool Correct = true;
+
+    public QueryResult ToResult(string name) =>
+      new(name, "update", ClientMs.Count,
+        ClientP50Ms: Percentile(ClientMs, 50), ClientP95Ms: Percentile(ClientMs, 95), ClientMaxMs: ClientMs.DefaultIfEmpty(0).Max(),
+        // Server: file system scan + file database update, per change.
+        ServerAvgMs: Count > 0 ? (ScanMs + UpdateMs) / Count : -1,
+        ServerCpuMsPerRun: 0,
+        ResponseBytes: 0,
+        HitCount: Count, ExpectedHitCount: null, Correct: Correct);
+  }
+
+  private static async Task MeasureUpdateAsync(StdioServerClient server, UpdateTimings timings, string marker, string fileName, int expectedHits, Action change) {
+    var before = await GetStatisticsAsync(server, forceGc: false);
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    change();
+    var found = false;
+    while (stopwatch.Elapsed < TimeSpan.FromSeconds(60)) {
+      // Note: Only the file name is searched, so that polling doesn't compete with the update for CPU.
+      var response = await server.RequestAsync(ServerProtocol.SearchCode(marker, maxResults: 10, matchCase: true, filePathPattern: fileName));
+      if ((response.Data["hitCount"]?.GetValue<long>() ?? -1) == expectedHits) {
+        found = true;
+        break;
+      }
+      await Task.Delay(10);
+    }
+    stopwatch.Stop();
+    // Let the server finish the update (the search may see the new contents before the end of it).
+    await Task.Delay(200);
+    var after = await GetStatisticsAsync(server, forceGc: false);
+    timings.ClientMs.Add(stopwatch.Elapsed.TotalMilliseconds);
+    timings.ScanMs += TotalMsDelta(before, after, "FileSystemScan");
+    timings.UpdateMs += TotalMsDelta(before, after, "FileDatabaseUpdate");
+    timings.Count++;
+    timings.Correct &= found;
+  }
+
+  private static double TotalMsDelta(JsonObject before, JsonObject after, string operation) {
+    static double Find(JsonObject stats, string name) =>
+      stats["operationTimings"]?.AsArray().FirstOrDefault(t => (string?)t!["name"] == name)?["totalMs"]?.GetValue<double>() ?? 0;
+    return Find(after, operation) - Find(before, operation);
   }
 
   private static async Task<JsonObject> GetStatisticsAsync(StdioServerClient server, bool forceGc) =>

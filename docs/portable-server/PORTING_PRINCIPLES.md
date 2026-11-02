@@ -537,3 +537,33 @@ ms, "common marker" 153 → 122 ms), file path searches scanning all the files 9
 (10,000 hits) take 2-4 ms more: they return a different subset of the hits (which hits are
 returned when the limit is reached is arbitrary), spread over more files, so the responses are ~40%
 larger (320 KB → 450 KB), and their time is dominated by the response.
+
+### Loading and incremental updates (m10, `docs/portable-server/benchmarks/m10-incremental-updates`)
+
+- **Loading file contents is bound by the operating system.** A standalone program opening and
+  reading the 400k files of the large corpus in parallel (warm cache, same APIs as the server)
+  takes 6.4–7 s, of which **opening and closing the files alone takes 5.1 s** (105 s of kernel
+  CPU time: ~260 µs per file open, most likely file system filter drivers such as the antivirus).
+  Twice as many threads, or skipping the time stamp query, change nothing measurable. The server
+  loads the contents in ~7.1 s (`FileDatabaseUpdate`): there is nothing significant left to gain in
+  the server code for a cold index (only avoiding the reads altogether, e.g. a persistent cache).
+- **Benchmark scenarios for incremental updates** (`ServerBenchmarks.RunUpdatesAsync`): modify a
+  file (then restore it) and create a directory with a file (then delete it), on the large corpus,
+  restored afterwards. The client time (until a search sees the change) is ~2.7 s, dominated by
+  the debouncing of the file change notifications; the server time is the scan + database update.
+  The server records sub-timings of the database update (`FileDatabaseUpdate.Entities/Load/
+  Freeze/Precompute`).
+- **Incremental updates no longer build the full path of every file**: `FullPathChanges`
+  checks whether a file changed with its full path built in a stack buffer
+  (`FileName.TestFullPath`) and span lookups (it built two strings per file for each change, for
+  the 400k files).
+- **Modified files reuse the pieces of the previous snapshot**: only the pieces of the modified
+  files are replaced (when they are small before and after the change), instead of recomputing the
+  pieces of all the files; the file table is enumerated once (`SlimHashTable.ValuesToArray`) for
+  all the per-snapshot computations; the file table of a build is sized from the actual number of
+  files.
+- **The garbage collection after a scan is a background collection** (it was a full blocking
+  collection, pausing concurrent searches).
+
+Results (server time per change, large corpus): modify 1 file 109 → 42 ms, create 1 directory 358
+→ 235 ms (`Load` 107 → 24 ms, `Precompute` 101 → 55 ms); other scenarios unchanged.

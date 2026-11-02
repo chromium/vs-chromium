@@ -97,6 +97,44 @@ namespace VsChromium.Server.FileSystemNames {
 
     private const int MaxStackPathLength = 512;
 
+    /// <summary>
+    /// Evaluates <paramref name="predicate"/> on the full path of this file name (same value as
+    /// <see cref="FullPath"/>), built in a temporary buffer (no allocation).
+    /// </summary>
+    public bool TestFullPath<TState>(RelativePathPredicate<TState> predicate, TState state) {
+      Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
+
+      var rootPath = _parent.GetAbsolutePath().Value;
+      var parentPath = _parent.RelativePath.Value;
+      // Same rules as PathHelpers.CombinePaths(root, relativePath)
+      var last = rootPath.Length > 0 ? rootPath[rootPath.Length - 1] : PathHelpers.DirectorySeparatorChar;
+      var rootSeparator = (last == System.IO.Path.DirectorySeparatorChar || last == System.IO.Path.AltDirectorySeparatorChar ||
+                           last == System.IO.Path.VolumeSeparatorChar) ? 0 : 1;
+      var length = rootPath.Length + rootSeparator + (parentPath.Length == 0 ? 0 : parentPath.Length + 1) + _name.Length;
+      char[] rented = null;
+      Span<char> buffer = length <= MaxStackPathLength
+        ? stackalloc char[length]
+        : (rented = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
+      try {
+        var index = 0;
+        rootPath.AsSpan().CopyTo(buffer);
+        index += rootPath.Length;
+        if (rootSeparator == 1)
+          buffer[index++] = PathHelpers.DirectorySeparatorChar;
+        if (parentPath.Length > 0) {
+          parentPath.AsSpan().CopyTo(buffer.Slice(index));
+          index += parentPath.Length;
+          buffer[index++] = PathHelpers.DirectorySeparatorChar;
+        }
+        _name.AsSpan().CopyTo(buffer.Slice(index));
+        return predicate(buffer, state);
+      }
+      finally {
+        if (rented != null)
+          ArrayPool<char>.Shared.Return(rented);
+      }
+    }
+
     public override string ToString() {
       return $"{FullPath}, RelativePath={RelativePath}";
     }

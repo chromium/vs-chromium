@@ -318,8 +318,10 @@ namespace VsChromium.Server.Search {
       // variables alive for slightly too long.
       _taskQueue.Enqueue(GarbageCollectId, cancellationToken => {
         Logger.LogMemoryStats();
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
-        GC.WaitForPendingFinalizers();
+        // Note: A background (non blocking) collection, so that searches running concurrently are
+        // not paused for the duration of a full blocking collection. The finalizers of the
+        // released file contents (native memory) run after it, on the finalizer thread.
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: false);
         Logger.LogMemoryStats();
       });
     }

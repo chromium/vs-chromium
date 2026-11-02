@@ -12,6 +12,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemContents;
@@ -56,7 +57,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           var fileDatabase = (FileDatabaseSnapshot) previousDatabase;
 
           // Compute list of files from tree
-          var entities = ComputeFileSystemEntities(newSnapshot, cancellationToken);
+          FileSystemEntities entities;
+          using (OperationTimings.Measure(OperationTimings.FileDatabaseUpdate + ".Entities")) {
+            entities = ComputeFileSystemEntities(newSnapshot, cancellationToken);
+          }
 
           cancellationToken.ThrowIfCancellationRequested();
           var unchangedProjects = newSnapshot
@@ -87,11 +91,18 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           };
 
           // Merge old state in new state and load all missing files
-          LoadFileContents(entities, loadingContext, cancellationToken);
+          using (OperationTimings.Measure(OperationTimings.FileDatabaseUpdate + ".Load")) {
+            LoadFileContents(entities, loadingContext, cancellationToken);
+          }
 
-          var result = CreateFileDatabase(entities, true, cancellationToken);
+          FileDatabaseSnapshot result;
+          using (OperationTimings.Measure(OperationTimings.FileDatabaseUpdate + ".Freeze")) {
+            result = CreateFileDatabase(entities, true, cancellationToken);
+          }
           // Note: Before "onLoaded", as clients may search as soon as they are notified.
-          result.PrecomputeSearchData();
+          using (OperationTimings.Measure(OperationTimings.FileDatabaseUpdate + ".Precompute")) {
+            result.PrecomputeSearchData();
+          }
           onLoaded();
           return result;
         }
@@ -122,9 +133,11 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         // Read file contents.
         onLoading();
+        var newContentsMap = new Dictionary<FileName, FileContents>();
         filesToRead.ForAll(x => {
           var newContents = _fileContentsFactory.ReadFileContents(x.FileName.FullPath);
           DangerousUpdateFileTableEntry(previousFileDatabase, x.FileName, newContents);
+          newContentsMap[x.FileName] = newContents;
         });
 
         // Return new file database with updated file contents.
@@ -133,12 +146,49 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           previousFileDatabase.Directories,
           previousFileDatabase.Files,
           // Same files (keys), only contents changed
-          previousFileDatabase.FileNames);
+          previousFileDatabase.FileNames,
+          // Same pieces, except for the changed files, if possible
+          TryUpdateFilePieces(previousFileDatabase.FileContentsPieces, newContentsMap));
         // Note: Before "onLoaded", as clients may search as soon as they are notified.
         result.PrecomputeSearchData();
         onLoaded();
         return result;
       }
+    }
+
+    /// <summary>
+    /// Returns a copy of <paramref name="previousPieces"/> where the piece of each changed file is
+    /// replaced with a piece of its new contents, or <code>null</code> if that is not possible (the
+    /// list of pieces must then be recomputed): a changed file must be "small" (a single piece)
+    /// before and after the change, and have contents before and after the change. This avoids
+    /// recomputing the list of pieces of all the files when a few files are modified (e.g. saved
+    /// from an editor), which is the most common change.
+    /// </summary>
+    private static IList<FileContentsPiece> TryUpdateFilePieces(IList<FileContentsPiece> previousPieces,
+                                                               Dictionary<FileName, FileContents> newContentsMap) {
+      foreach (var newContents in newContentsMap.Values) {
+        if (newContents == null || newContents.ByteLength == 0 || newContents.ByteLength > ChunkSize)
+          return null;
+      }
+
+      var result = new FileContentsPiece[previousPieces.Count];
+      previousPieces.CopyTo(result, 0);
+      var replacedCount = 0;
+      for (var i = 0; i < result.Length; i++) {
+        FileContents newContents;
+        if (newContentsMap.TryGetValue(result[i].FileName, out newContents)) {
+          var piece = result[i];
+          if (piece.FileContents.ByteLength > ChunkSize)
+            return null;
+          result[i] = newContents.CreatePiece(piece.FileName, piece.FileId, newContents.TextRange);
+          replacedCount++;
+        }
+      }
+
+      // All the changed files must have had (exactly) one piece
+      if (replacedCount != newContentsMap.Count)
+        return null;
+      return result;
     }
 
     private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities,
@@ -284,9 +334,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             new DirectoryData(kvp.Value.DirectoryName, kvp.Value.IsSymLink));
         }
 
+        var fileCount = 0;
+        foreach (var directory in directories.ToForeachEnum()) {
+          fileCount += directory.Value.ChildFiles.Count;
+        }
         var files = new SlimHashTable<FileName, ProjectFileData>(
           v => v.FileName,
-          directories.Count * 2,
+          fileCount,
           // Note: We can use reference equality here because the file names are
           // constructed unique and the dictionary will be discarded once we are
           // done building this snapshot.
@@ -441,7 +495,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       // If project configuration has not changed, the file is still not
       // searchable, irrelevant to calling "IsSearchable".
       if (loadingContext.FullPathChanges != null) {
-        if (loadingContext.FullPathChanges.ShouldSkipLoadFileContents(projectFileData.FileName.FullPath)) {
+        if (loadingContext.FullPathChanges.ShouldSkipLoadFileContents(projectFileData.FileName)) {
           if (loadingContext.UnchangedProjects.Contains(projectFileData.Project))
             return null;
         }
@@ -469,8 +523,6 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
                                         FileWithContents existingFileWithContents) {
       Invariants.Assert(existingFileWithContents.Contents != null);
 
-      var fullPath = existingFileWithContents.FileName.FullPath;
-
       if (fullPathChanges != null) {
         // We don't get file change events for file in symlinks, so we can't
         // rely on fullPathChanges contents for our heuristic of avoiding file
@@ -479,12 +531,12 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         // optimization anyways, as we rely on the user to manually refresh the index
         // (that results in a "null" value for fullPathChanges)
         //if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(entities.Directories, existingFileWithContents.FileName)) {
-        return fullPathChanges.ShouldSkipLoadFileContents(fullPath);
+        return fullPathChanges.ShouldSkipLoadFileContents(existingFileWithContents.FileName);
         //}
       }
 
       // Do the "expensive" check by going to the file system.
-      var fi = _fileSystem.GetFileInfoSnapshot(fullPath);
+      var fi = _fileSystem.GetFileInfoSnapshot(existingFileWithContents.FileName.FullPath);
       return
         (fi.Exists) &&
         (fi.IsFile) &&

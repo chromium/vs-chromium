@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Files;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystem {
   /// <summary>
@@ -17,6 +18,7 @@ namespace VsChromium.Server.FileSystem {
     private readonly Lazy<Dictionary<FullPath, PathChangeKind>> _map;
     private readonly Lazy<HashSet<FullPath>> _createdDirectories;
     private readonly Lazy<HashSet<FullPath>> _basePaths;
+    private readonly Lazy<PathSets> _pathSets;
 
     public FullPathChanges(IList<PathChangeEntry> entries) {
       _entries = entries;
@@ -29,6 +31,8 @@ namespace VsChromium.Server.FileSystem {
 
       _basePaths = new Lazy<HashSet<FullPath>>(() =>
         new HashSet<FullPath>(_entries.Select(x => x.BasePath).Distinct()));
+
+      _pathSets = new Lazy<PathSets>(() => new PathSets(_entries, _createdDirectories.Value));
     }
 
     private static bool MaybeDirectoryCreation(PathChangeEntry entry) {
@@ -65,6 +69,51 @@ namespace VsChromium.Server.FileSystem {
       }
 
       return true;
+    }
+
+    /// <summary>
+    /// Same as <see cref="ShouldSkipLoadFileContents(FullPath)"/>, without building the full path
+    /// of <paramref name="fileName"/> (no allocation): called for every file of the index on
+    /// incremental updates.
+    /// </summary>
+    public bool ShouldSkipLoadFileContents(FileName fileName) {
+      return fileName.TestFullPath(static (path, sets) => sets.ShouldSkip(path), _pathSets.Value);
+    }
+
+    /// <summary>
+    /// The changed paths and created directories as strings, with lookups by span.
+    /// </summary>
+    private sealed class PathSets {
+      private readonly HashSet<string>.AlternateLookup<ReadOnlySpan<char>> _changedPaths;
+      private readonly HashSet<string>.AlternateLookup<ReadOnlySpan<char>> _createdDirectories;
+      private readonly bool _hasCreatedDirectories;
+
+      public PathSets(IList<PathChangeEntry> entries, IEnumerable<FullPath> createdDirectories) {
+        // Note: Same equality as FullPath (SystemPathComparer), with a comparer supporting span lookups.
+        var comparer = PathComparerRegistry.Default.Comparison == StringComparison.Ordinal
+          ? StringComparer.Ordinal
+          : StringComparer.OrdinalIgnoreCase;
+        var changed = new HashSet<string>(entries.Select(x => x.Path.Value), comparer);
+        var created = new HashSet<string>(createdDirectories.Select(x => x.Value), comparer);
+        _changedPaths = changed.GetAlternateLookup<ReadOnlySpan<char>>();
+        _createdDirectories = created.GetAlternateLookup<ReadOnlySpan<char>>();
+        _hasCreatedDirectories = created.Count > 0;
+      }
+
+      public bool ShouldSkip(ReadOnlySpan<char> path) {
+        // Don't skip if path has any change associated to it
+        if (_changedPaths.Contains(path))
+          return false;
+
+        // Don't skip if any parent directory was newly created
+        if (_hasCreatedDirectories) {
+          for (var i = path.Length - 1; i > 0; i--) {
+            if (path[i] == PathHelpers.DirectorySeparatorChar && _createdDirectories.Contains(path.Slice(0, i)))
+              return false;
+          }
+        }
+        return true;
+      }
     }
   }
 }

@@ -265,6 +265,22 @@ namespace VsChromium.Core.Collections {
       }
     }
 
+    /// <summary>
+    /// Returns the values of the table in a new array (in entry order). Faster than enumerating
+    /// <see cref="Values"/> (no enumerator, no key computation).
+    /// </summary>
+    public TValue[] ValuesToArray() {
+      var result = new TValue[_count];
+      var index = 0;
+      var entries = _entries;
+      for (var i = 0; i < entries.Length && index < result.Length; i++) {
+        if (entries[i].IsValid) {
+          result[index++] = entries[i].Value;
+        }
+      }
+      return result;
+    }
+
     IEnumerator IEnumerable.GetEnumerator() {
       return GetEnumerator();
     }

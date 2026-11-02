@@ -13,7 +13,6 @@ namespace VsChromium.Core.Ipc.TypedMessages {
 
     public List<FileSystemEntry> Entries { get; set; }
 
-    [Newtonsoft.Json.JsonIgnore]
     public bool IsEmpty => string.IsNullOrEmpty(Name);
 
     public override string ToString() {

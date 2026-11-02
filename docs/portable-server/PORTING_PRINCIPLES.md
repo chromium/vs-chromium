@@ -72,7 +72,8 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 
 | Project | Target | Used by | Content |
 |---|---|---|---|
-| `VsChromium.Core.Ipc` (new) | `netstandard2.0` | VS package (net472), server, tests | `Core/Ipc/**`: message types (`[ProtoContract]`), serializers |
+| `VsChromium.Core.Ipc` (new) | `netstandard2.0` | VS package (net472), server, tests | Message types (plain data classes, no dependency) |
+| `VsChromium.Core.Ipc.Json` (new) | `netstandard2.0` | VS package, server, tests | JSON serialization of the messages, JSON lines stream over stdio |
 | `VsChromium.Core` (existing, slimmed) | `net472` | VS package, Host, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
 | `VsChromium.Server` (ported) | modern .NET | server process | All server code + managed replacements for the native code + portable file system |
 | `MtSuite.CoreFileSystem` (copied from mtsuite) | modern .NET | server | Paths, entries, per-OS enumeration, object pools, parallel traversal |
@@ -394,7 +395,8 @@ of its resource usage, measured inside the process:
      macOS directory enumerators (to be decided with benchmarks on these platforms).6. **Process model** (done): the VS package starts `Server\VsChromium.Server.exe --stdio` directly
    (`ServerProcessLauncher`) and exchanges JSON lines over its standard input/output, exactly as the
    VS Code extension does. The JSON serialization (`IpcJsonSerializer`, `IpcStreamOverJsonLines`)
-   moved to `Core.Ipc` (Newtonsoft.Json, the VS package uses the copy of Visual Studio). Removed:
+   moved to a separate `Core.Ipc.Json` project (Newtonsoft.Json; the VS package uses the copy of
+   Visual Studio), so that `Core.Ipc` (the message classes) has no dependency at all. Removed:
    `VsChromium.Host.exe` (and the job object code it used), the TCP listener/connection on both
    sides, the protobuf-net serializer (`ProtoBufSerializer`, `IpcStreamOverNetworkStream`), the
    server TCP mode, the `UseRe2Engine` search parameter. The server exits when its standard input is

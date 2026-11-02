@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
+    <ProjectReference Include="..\Core.Ipc.Json\Core.Ipc.Json.csproj" />
     <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
     <ProjectReference Include="..\ServerNativeInterop\ServerNativeInterop.csproj" />
     <ProjectReference Include="..\Server\Server.csproj" />

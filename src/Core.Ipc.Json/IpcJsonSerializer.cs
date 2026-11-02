@@ -19,8 +19,9 @@ namespace VsChromium.Core.Ipc.Json {
   ///
   /// The JSON representation:
   /// <list type="bullet">
-  /// <item>All public properties of the message classes are serialized (use <see
-  /// cref="JsonIgnoreAttribute"/> to exclude a property).</item>
+  /// <item>The public read/write properties of the message classes are serialized, as well as
+  /// read-only collection properties (populated when deserializing). Other read-only properties
+  /// (computed values, e.g. <c>DirectoryEntry.IsEmpty</c>) are not.</item>
   /// <item>Property names are camelCase.</item>
   /// <item>Polymorphic values (i.e. values of a sub-class of the declared type of a property) carry a
   /// <c>"$type"</c> property containing the short class name, e.g. <c>"SearchCodeRequest"</c>. Only
@@ -48,12 +49,33 @@ namespace VsChromium.Core.Ipc.Json {
         // Allow "$type" to appear anywhere in an object (not only as the first property).
         MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead,
         SerializationBinder = new MessageTypesBinder(typeof(IpcMessage).Assembly),
-        ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy() },
+        ContractResolver = new MessageContractResolver(),
         NullValueHandling = NullValueHandling.Ignore,
         DateFormatHandling = DateFormatHandling.IsoDateFormat,
         DateTimeZoneHandling = DateTimeZoneHandling.Utc,
         Converters = { new StringEnumConverter() },
       };
+    }
+
+    /// <summary>
+    /// camelCase property names; read/write properties and read-only collection properties only.
+    /// </summary>
+    private class MessageContractResolver : DefaultContractResolver {
+      public MessageContractResolver() {
+        NamingStrategy = new CamelCaseNamingStrategy();
+      }
+
+      protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
+        var property = base.CreateProperty(member, memberSerialization);
+        if (!property.Writable && !IsCollection(property.PropertyType)) {
+          property.Ignored = true;
+        }
+        return property;
+      }
+
+      private static bool IsCollection(Type type) {
+        return type != typeof(string) && typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+      }
     }
 
     /// <summary>

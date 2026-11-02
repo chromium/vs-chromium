@@ -83,7 +83,7 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(10, (int)entries[0]["data"]["positions"][0]["position"]);
       Assert.AreEqual("DirectoryEntry", (string)entries[1]["$type"]);
 
-      // Non [ProtoMember] properties are not serialized.
+      // [JsonIgnore] properties are not serialized.
       Assert.IsNull(json["data"]["searchResults"]["isEmpty"]);
 
       var result = (IpcResponse)IpcJsonSerializer.Deserialize(json.ToString(Formatting.None));

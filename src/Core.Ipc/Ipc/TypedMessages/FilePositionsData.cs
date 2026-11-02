@@ -3,16 +3,13 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
-  [ProtoContract]
   public class FilePositionsData : FileSystemEntryData {
     public FilePositionsData() {
       Positions = new List<FilePositionSpan>();
     }
 
-    [ProtoMember(1)]
     public List<FilePositionSpan> Positions { get; set; }
   }
 }

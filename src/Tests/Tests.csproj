@@ -91,9 +91,6 @@
          are provided by Visual Studio). Tests run outside of Visual Studio, so they need the
          runtime assemblies copied to the output directory. -->
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
-    <PackageReference Include="protobuf-net">
-      <Version>2.4.9</Version>
-    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

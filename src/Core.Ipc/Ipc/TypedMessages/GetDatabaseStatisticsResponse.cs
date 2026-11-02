@@ -3,24 +3,15 @@
 // found in the LICENSE file.
 
 using System;
-using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
-  [ProtoContract]
   public class GetDatabaseStatisticsResponse : TypedResponse {
-    [ProtoMember(1)]
     public int ProjectCount { get; set; }
-    [ProtoMember(2)]
     public long FileCount { get; set; }
-    [ProtoMember(3)]
     public long SearchableFileCount { get; set; }
-    [ProtoMember(4)]
     public long ServerNativeMemoryUsage { get; set; }
-    [ProtoMember(5)]
     public long ServerGcMemoryUsage { get; set; }
-    [ProtoMember(6)]
     public DateTime IndexLastUpdatedUtc { get; set; }
-    [ProtoMember(7)]
     public IndexingServerStatus ServerStatus { get; set; }
   }
 

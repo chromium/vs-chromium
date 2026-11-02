@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
-  [ProtoContract]
   public class GetDirectoryEntriesMultipleResponse : TypedResponse {
     public GetDirectoryEntriesMultipleResponse() {
       DirectoryEntries = new List<OptionalDirectoryEntry>();
@@ -19,7 +17,6 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     /// <see cref="OptionalDirectoryEntry.HasValue"/> properties of the corresponding
     /// <see cref="OptionalDirectoryEntry"/> entry in the list is <code>false</code>.</para>
     /// </summary>
-    [ProtoMember(1)]
     public List<OptionalDirectoryEntry> DirectoryEntries { get; set; }
   }
 }

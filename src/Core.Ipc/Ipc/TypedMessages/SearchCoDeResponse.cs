@@ -2,13 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
-  [ProtoContract]
   public class SearchCodeResponse : TypedResponse {
     public SearchCodeResponse() {
-      // To avoid getting "null" property if empty collection deserialized using protobuf.
+      // To avoid getting a "null" property if an empty collection is deserialized.
       SearchResults = new DirectoryEntry();
     }
 
@@ -18,25 +16,21 @@ namespace VsChromium.Core.Ipc.TypedMessages {
     /// matching the search criteria. Each file entry contains a list of
     /// FilePositionSpan in the <see cref="FileEntry.Data"/> property.
     /// </summary>
-    [ProtoMember(1)]
     public DirectoryEntry SearchResults { get; set; }
 
     /// <summary>
     /// Total number of file spans returned in "SearchResults".
     /// </summary>
-    [ProtoMember(2)]
     public long HitCount { get; set; }
 
     /// <summary>
     /// Total number of files searched before reaching "MaxResults"
     /// </summary>
-    [ProtoMember(3)]
     public long SearchedFileCount { get; set; }
 
     /// <summary>
     /// Total number of files stored in the search index.
     /// </summary>
-    [ProtoMember(4)]
     public long TotalFileCount { get; set; }
   }
 }

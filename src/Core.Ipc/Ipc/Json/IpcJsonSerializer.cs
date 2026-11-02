@@ -9,23 +9,23 @@ using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using ProtoBuf;
 using VsChromium.Core.Ipc;
 
 namespace VsChromium.Core.Ipc.Json {
   /// <summary>
-  /// Serializes <see cref="IpcMessage"/> instances to/from JSON, as an alternative to the
-  /// protobuf-net wire format. This is the protocol between the clients (Visual Studio package, VS Code
-  /// extension) and the server, over the server standard input/output (see
-  /// <see cref="IpcStreamOverJsonLines"/>).
+  /// Serializes <see cref="IpcMessage"/> instances to/from JSON. This is the protocol between the
+  /// clients (Visual Studio package, VS Code extension) and the server, over the server standard
+  /// input/output (see <see cref="IpcStreamOverJsonLines"/>).
   ///
-  /// The JSON representation mirrors the protobuf-net contract:
+  /// The JSON representation:
   /// <list type="bullet">
-  /// <item>Only properties marked with <see cref="ProtoMemberAttribute"/> are serialized.</item>
+  /// <item>All public properties of the message classes are serialized (use <see
+  /// cref="JsonIgnoreAttribute"/> to exclude a property).</item>
   /// <item>Property names are camelCase.</item>
-  /// <item>Polymorphic values (i.e. types declared with <see cref="ProtoIncludeAttribute"/>) carry a
+  /// <item>Polymorphic values (i.e. values of a sub-class of the declared type of a property) carry a
   /// <c>"$type"</c> property containing the short class name, e.g. <c>"SearchCodeRequest"</c>. Only
-  /// [ProtoContract] types of the VsChromium.Core.Ipc assembly are accepted.</item>
+  /// the message classes (public classes of the <c>VsChromium.Core.Ipc</c> and
+  /// <c>VsChromium.Core.Ipc.TypedMessages</c> namespaces of this assembly) are accepted.</item>
   /// <item>Enums are serialized as strings.</item>
   /// </list>
   /// </summary>
@@ -47,8 +47,8 @@ namespace VsChromium.Core.Ipc.Json {
         TypeNameHandling = TypeNameHandling.Auto,
         // Allow "$type" to appear anywhere in an object (not only as the first property).
         MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead,
-        SerializationBinder = new ProtoContractTypesBinder(typeof(IpcMessage).Assembly),
-        ContractResolver = new ProtoMembersContractResolver(),
+        SerializationBinder = new MessageTypesBinder(typeof(IpcMessage).Assembly),
+        ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy() },
         NullValueHandling = NullValueHandling.Ignore,
         DateFormatHandling = DateFormatHandling.IsoDateFormat,
         DateTimeZoneHandling = DateTimeZoneHandling.Utc,
@@ -57,30 +57,21 @@ namespace VsChromium.Core.Ipc.Json {
     }
 
     /// <summary>
-    /// Only serialize properties that are part of the protobuf contract.
-    /// </summary>
-    private class ProtoMembersContractResolver : DefaultContractResolver {
-      public ProtoMembersContractResolver() {
-        NamingStrategy = new CamelCaseNamingStrategy();
-      }
-
-      protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization) {
-        return base.CreateProperties(type, memberSerialization)
-          .Where(p => p.AttributeProvider.GetAttributes(typeof(ProtoMemberAttribute), true).Count > 0)
-          .ToList();
-      }
-    }
-
-    /// <summary>
-    /// Maps "$type" values to [ProtoContract] types of a given assembly, using the short type name.
+    /// Maps "$type" values to the message classes of a given assembly, using the short type name.
     /// Any other type name is rejected, so that arbitrary types cannot be instantiated from JSON.
     /// </summary>
-    private class ProtoContractTypesBinder : ISerializationBinder {
+    private class MessageTypesBinder : ISerializationBinder {
+      private static readonly string[] MessageNamespaces = {
+        typeof(IpcMessage).Namespace,
+        typeof(TypedMessages.TypedMessage).Namespace,
+      };
+
       private readonly Dictionary<string, Type> _typesByName;
 
-      public ProtoContractTypesBinder(Assembly assembly) {
+      public MessageTypesBinder(Assembly assembly) {
         _typesByName = assembly.GetTypes()
-          .Where(t => t.GetCustomAttribute<ProtoContractAttribute>(false) != null)
+          .Where(t => t.IsClass && t.IsPublic && !t.IsAbstract && !typeof(Exception).IsAssignableFrom(t))
+          .Where(t => MessageNamespaces.Contains(t.Namespace))
           .ToDictionary(t => t.Name, t => t, StringComparer.Ordinal);
       }
 
@@ -94,7 +85,7 @@ namespace VsChromium.Core.Ipc.Json {
 
       public void BindToName(Type serializedType, out string assemblyName, out string typeName) {
         if (!_typesByName.ContainsKey(serializedType.Name)) {
-          throw new JsonSerializationException(string.Format("Type \"{0}\" is not a [ProtoContract] IPC type", serializedType.FullName));
+          throw new JsonSerializationException(string.Format("Type \"{0}\" is not an IPC message type", serializedType.FullName));
         }
         assemblyName = null;
         typeName = serializedType.Name;

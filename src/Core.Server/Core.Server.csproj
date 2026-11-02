@@ -54,7 +54,6 @@
 
   <ItemGroup>
     <PackageReference Include="NLog" Version="6.2.2" />
-    <PackageReference Include="protobuf-net" Version="2.4.9" />
   </ItemGroup>
 
 </Project>

@@ -3,22 +3,17 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
-  [ProtoContract]
   public class GetFileExtractsRequest : TypedRequest {
     public GetFileExtractsRequest() {
       Positions = new List<FilePositionSpan>();
     }
 
-    [ProtoMember(1)]
     public string FileName { get; set; }
 
-    [ProtoMember(2)]
     public List<FilePositionSpan> Positions { get; set; }
 
-    [ProtoMember(3)]
     public int MaxExtractLength { get; set; }
   }
 }

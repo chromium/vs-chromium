@@ -109,7 +109,7 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   unchanged. Versus the .NET Framework baseline, the remaining differences are a few ms on the small
   corpus (e.g. regex queries stopping at max results 17 ms -> 26 ms: construction of the
   non-backtracking regex).- **NativeAOT is a later goal, not a requirement of the port**: it requires replacing reflection
-  based components (Newtonsoft.Json, protobuf-net attributes; MEF is already replaced). New code should avoid
+  based components (Newtonsoft.Json; MEF and protobuf-net are already gone). New code should avoid
   needless reflection so that AOT stays possible.
 
 ### Process model and protocol
@@ -392,10 +392,9 @@ of its resource usage, measured inside the process:
    sides, the protobuf-net serializer (`ProtoBufSerializer`, `IpcStreamOverNetworkStream`), the
    server TCP mode, the `UseRe2Engine` search parameter. The server exits when its standard input is
    closed (Visual Studio exits or crashes); the package closes it on dispose and terminates the
-   server if it doesn't exit within 2 s. protobuf-net remains only for its attributes
-   (`[ProtoContract]`/`[ProtoMember]`), which define the message contracts (the JSON serializer
-   only serializes `[ProtoMember]` properties); replacing them with our own attributes would remove
-   the dependency. JSON vs protobuf: the baseline benchmarks already measured large JSON responses
+   server if it doesn't exit within 2 s. protobuf-net was then removed entirely: its attributes are gone from the message classes, the JSON
+   serializer serializes all public properties (`[JsonIgnore]` to exclude one) and accepts the public
+   classes of the message namespaces as `$type` values. JSON vs protobuf: the baseline benchmarks already measured large JSON responses
    (316 KB in 9 ms on the client side, 2 ms in the server), acceptable. Packaging of the
    self-contained server: see [Target framework and distribution](#target-framework-and-distribution).
    The Release VSIX must still be tested manually in Visual Studio.7. **Linux and macOS** (in progress, **untested**: no Linux/macOS machine was available):

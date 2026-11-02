@@ -2,13 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using ProtoBuf;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
-  [ProtoContract]
-  [ProtoInclude(10, typeof(PairedTypedEvent))]
-  [ProtoInclude(11, typeof(ProgressReportEvent))]
-  [ProtoInclude(21, typeof(IndexingServerStateChangedEvent))]
   public class TypedEvent : TypedMessage {
   }
 }

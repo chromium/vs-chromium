@@ -2,20 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using ProtoBuf;
 using System.Collections.Generic;
 
 namespace VsChromium.Core.Ipc.TypedMessages {
-  [ProtoContract]
   public class DirectoryEntry : FileSystemEntry {
     public DirectoryEntry() {
-      // To avoid getting "null" property if empty collection deserialized using protobuf.
+      // To avoid getting a "null" property if an empty collection is deserialized.
       Entries = new List<FileSystemEntry>();
     }
 
-    [ProtoMember(1)]
     public List<FileSystemEntry> Entries { get; set; }
 
+    [Newtonsoft.Json.JsonIgnore]
     public bool IsEmpty => string.IsNullOrEmpty(Name);
 
     public override string ToString() {

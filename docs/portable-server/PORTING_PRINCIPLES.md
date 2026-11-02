@@ -223,7 +223,16 @@ by path.
 - Plants **known strings** at known locations (including at 100 KB chunk boundaries, in large files,
   in non-ASCII lines) so query results can be verified exactly, not only timed.
 - Sizes are configurable: *small* (seconds, for development), *medium*, *large* (Chromium scale:
-  ~400k files / ~5 GB). The generated corpus is cached on disk between runs (keyed by seed and size).
+  ~400k files / ~5 GB).
+- **The generated code base is kept between test runs**: tests never delete it, so running the tests
+  over and over does not delete/re-create hundreds of thousands of files. It lives outside the
+  repository in a persistent directory (default: `<LocalApplicationData>/VsChromium/TestCorpora/
+  <size>-<seed>-v<generator version>`, overridable with an environment variable). A manifest file
+  written **last** (generator version, parameters, file count, total size) marks a complete corpus:
+  if it is present and matches, the corpus is reused as is; if it is missing (interrupted
+  generation) or does not match (generator or parameters changed), that corpus directory is
+  re-generated. Scenarios that modify files (incremental updates) work on a small separate
+  directory or restore the files they change, so the shared corpus stays pristine.
 - An optional real checkout (e.g. a pinned Chromium revision) can be used instead, by path.
 
 ### Server statistics entry point

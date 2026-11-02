@@ -5,7 +5,7 @@ server (`VsChromium.Server.exe`) from .NET Framework 4.7.2 + custom C/C++ (Win32
 portable modern .NET application (Windows, Linux, macOS). It is meant to be read before working on
 the `portable-server` branch, including in a future conversation with no other context.
 
-Status: milestones 1 (benchmarks + baseline) and 2 (project restructuring) **done**; next: milestone 3 (server on `net10.0`). Branch `portable-server` (created from `main` at `30d7bb9`).
+Status: milestones 1 (benchmarks + baseline), 2 (project restructuring) and 3 (server on `net10.0`) **done**; next: milestone 4 (managed search). Branch `portable-server` (created from `main` at `30d7bb9`).
 
 ## Goals
 
@@ -292,8 +292,12 @@ of its resource usage, measured inside the process:
    2.4.9, contains `Core/Ipc/**` message types and `VsChromiumVersion`), server still net472 + native code;
    all clients/tests green. MEF-exported IPC helpers (`ProtoBufSerializer`, `IpcRequestIdFactory`) and
    `IpcStreamOverNetworkStream` (uses `Logger`) stay in `Core`.
-3. **Server on net10 (Windows)**, still with the native code (P/Invoke to VsChromium.Native.dll works
-   on .NET 10): MEF/NLog/protobuf-net/Newtonsoft upgrades, new test project. Benchmark.
+3. **Server on net10 (Windows)** (done), still with the native code (P/Invoke to VsChromium.Native.dll works
+   on .NET 10): `VsChromium.Core` split into `Core` (net472, Visual Studio side only) and `Core.Server`
+   (net10.0, server-only code + the few shared files of `Core` compiled as linked files, `#if NETCOREAPP`
+   for differences); NLog 6, MEF from NuGet; server output in `Binaries\<Configuration>\Server` (VSIX:
+   `Server\`); new `Server.Tests` project. Benchmarks (`docs/portable-server/benchmarks/m3-net10`): queries
+   equal or faster (large JSON responses 20-45% faster), cold indexing +7% wall time / +16% CPU, same memory.
 4. **Managed search**: text kind, line extents, literal search, regex; native code still available
    for side-by-side parity tests. Fix behavior changes 1–4 (their regression tests now pass, the
    known-failure markers are removed). Benchmark.

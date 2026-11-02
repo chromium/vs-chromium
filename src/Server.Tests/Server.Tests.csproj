@@ -1,8 +1,8 @@
 <Project Sdk="MSTest.Sdk/4.5.2">
 
   <!--
-    Unit tests of the indexing server (white box): VsChromium.Server, VsChromium.Core.Server and
-    VsChromium.Server.NativeInterop, on modern .NET. The Visual Studio side tests are in
+    Unit tests of the indexing server (white box): VsChromium.Server and VsChromium.Core.Server, on
+    modern .NET. The Visual Studio side tests are in
     src/Tests (net472), the black-box end-to-end tests and benchmarks in src/Tests.EndToEnd.
 
     Run: cd src/Server.Tests; dotnet test
@@ -22,18 +22,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Tests of the code shared by the Visual Studio side and the server (compiled into both
-         VsChromium.Core and VsChromium.Core.Server): same test source files as src/Tests, run here
-         against the server build of the code. -->
-    <Compile Include="..\Tests\Core\TestCustomPathComparer.cs;
-                      ..\Tests\Core\TestEnumerableExtensions.cs;..\Tests\Core\TestFileNameMatching.cs;
-                      ..\Tests\Core\TestPathHelpers.cs"
-             Link="Core\Shared\%(Filename)%(Extension)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
-    <ProjectReference Include="..\Core.Ipc.Json\Core.Ipc.Json.csproj" />
     <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
     <ProjectReference Include="..\Server\Server.csproj" />
   </ItemGroup>

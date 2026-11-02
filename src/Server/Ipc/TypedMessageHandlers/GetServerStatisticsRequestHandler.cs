@@ -65,19 +65,11 @@ namespace VsChromium.Server.Ipc.TypedMessageHandlers {
     }
 
     private static long GetTotalAllocatedBytes() {
-#if NETCOREAPP
       return GC.GetTotalAllocatedBytes(precise: false);
-#else
-      return -1;
-#endif
     }
 
     private static double GetTotalPauseMs() {
-#if NET7_0_OR_GREATER
       return GC.GetTotalPauseDuration().TotalMilliseconds;
-#else
-      return -1;
-#endif
     }
   }
 }

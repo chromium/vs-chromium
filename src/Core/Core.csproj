@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Code shared by the Visual Studio package (devenv.exe), the Concord
-    debugger integration and the indexing server. Stays on .NET Framework (the VS package requires
-    it); see docs/portable-server/PORTING_PRINCIPLES.md for the split planned by the port.
+    Code shared by the Visual Studio package (devenv.exe) and the Concord debugger integration.
+    Stays on .NET Framework (the VS package requires it). The indexing server is an independent code
+    base (src/Core.Server, src/Server) and shares no source file with this project.
   -->
 
   <Import Project="..\..\Build\Common.Sdk.props" />

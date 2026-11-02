@@ -31,11 +31,6 @@ namespace VsChromium.Core.Files {
       return NameComparer.Compare(name1, name2);
     }
 
-#if NETCOREAPP
-    // Server: case sensitivity of the operating system, see mtsuite PathHelpers.
-    private static StringComparer NameComparer => mtsuite.CoreFileSystem.PathHelpers.FileNameComparer;
-#else
     private static StringComparer NameComparer => StringComparer.OrdinalIgnoreCase;
-#endif
   }
 }

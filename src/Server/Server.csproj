@@ -2,8 +2,9 @@
 
   <!--
     The indexing and search server (VsChromium.Server.exe), used by the Visual Studio package and the
-    VS Code extension. On modern .NET, without native code of its own, still using Win32 APIs (file system)
-    for now; to be made portable, see docs/portable-server/PORTING_PRINCIPLES.md.
+    VS Code extension through its protocol (JSON lines over standard input/output). Portable modern
+    .NET; an independent code base, sharing no source file with the Visual Studio side (see
+    docs/portable-server/PORTING_PRINCIPLES.md).
 
     Output: Binaries\<Configuration>\Server\ (the server has its own dependencies, different from the
     Visual Studio side ones in Binaries\<Configuration>\).
@@ -63,8 +64,6 @@
     <PublishDir>$(BuildRoot)Binaries\$(Configuration)\ServerPublishAot\$(RuntimeIdentifier)\</PublishDir>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
-    <ProjectReference Include="..\Core.Ipc.Json\Core.Ipc.Json.csproj" />
     <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
   </ItemGroup>
 

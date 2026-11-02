@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Server side of VsChromium.Core, on modern .NET (see docs/portable-server/PORTING_PRINCIPLES.md).
+    Core library of the indexing server, on modern .NET (see docs/portable-server/PORTING_PRINCIPLES.md).
 
-    - Files in this directory are only used by the server (directory watcher, collections, ...).
-    - Code shared with the Visual Studio side (VsChromium.Core, net472) is NOT copied: the source files
-      of ..\Core are compiled into this assembly as linked files (same source, different target
-      framework and dependencies: NLog 6, MEF from NuGet, ...). Differences between the two sides
-      are handled with "#if NETCOREAPP" in the shared files.
-    - The Visual Studio only code of ..\Core (debugger, processes, job objects, shell, ...) is
-      excluded below, as well as the Win32 implementation of IFileSystem (FileSystem.cs,
-      NativeFile.cs), replaced on the server by Files\PortableFileSystem.cs.
+    The server and the Visual Studio package are independent code bases: no source file is shared
+    with src/Core, src/Core.Ipc or src/Core.Ipc.Json (the Visual Studio side). The files of these
+    projects used by the server were copied here (same relative paths and namespaces) when the two
+    code bases were severed, and evolve independently. Only the protocol (JSON messages over the
+    standard input/output of the server) is common, and is tested by src/Tests.EndToEnd (server) and
+    the client tests.
 
-    Namespaces are the same as in VsChromium.Core.
+    - Ipc\: protocol message classes (Ipc\TypedMessages) and their JSON serialization (Ipc\Json).
+    - Files\, Collections\, Configuration\, Logging\, ...: paths, pattern matching, file system,
+      configuration files, logging, collections.
   -->
 
   <Import Project="..\..\Build\Common.Sdk.props" />
@@ -22,40 +22,17 @@
     <AssemblyName>VsChromium.Core.Server</AssemblyName>
     <RootNamespace>VsChromium.Core</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- The server and its dependencies go to their own directory (different versions of NLog, MEF,
-         ... than the Visual Studio side). -->
     <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Server\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Shared source files of VsChromium.Core (Visual Studio only code excluded). -->
-    <Compile Include="..\Core\**\*.cs"
-             Exclude="..\Core\obj\**;..\Core\bin\**;..\Core\Properties\**;
-                      ..\Core\DkmShared\**;..\Core\Processes\**;
-                      ..\Core\Win32\Processes\**;..\Core\Win32\Shell\**;..\Core\Win32\ComPtr.cs;
-                      ..\Core\Chromium\ChromiumProcess.cs;..\Core\Chromium\InstallationEnumerator.cs;
-                      ..\Core\Chromium\InstallationData.cs;..\Core\Chromium\ProcessCategory.cs;
-                      ..\Core\Utility\ChromeUtility.cs;..\Core\Utility\MarshalUtility.cs;
-                      ..\Core\Files\FileSystem.cs;..\Core\Win32\Files\NativeFile.cs;
-                      ..\Core\Chromium\DistributionType.cs;..\Core\Configuration\ConfigurationStyleFilenames.cs;
-                      ..\Core\Utility\ReflectionUtils.cs;..\Core\Win32\Files\NativeAccessFlags.cs;
-                      ..\Core\Win32\LastWin32ErrorException.cs;..\Core\Win32\NtStatus.cs;..\Core\Win32\UnicodeString.cs;
-                      ..\Core\Win32\Files\NativeMethods.cs;..\Core\Win32\Memory\NativeMethods.cs;
-                      ..\Core\Win32\Handles\**;..\Core\Win32\Memory\SafeLocalMemHandle.cs;
-                      ..\Core\Win32\Memory\SafeHeapHandle.cs;
-                      ..\Core\Win32\Files\SlimFileInfo.cs;..\Core\Files\FileInfoSnapshot.cs;
-                      ..\Core\Win32\Memory\SafeProcessHeapHandle.cs;..\Core\Win32\Interop\SecurityAttributes.cs"
-             Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
     <!-- Code copied from mtsuite (OS-aware path helpers), see third_party/mtsuite/PORT_CHANGES.md. -->
     <ProjectReference Include="..\..\third_party\mtsuite\MtSuite.CoreFileSystem.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NLog" Version="6.2.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>

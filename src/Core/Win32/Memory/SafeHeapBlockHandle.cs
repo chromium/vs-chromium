@@ -28,14 +28,7 @@ namespace VsChromium.Core.Win32.Memory {
 
     protected override bool ReleaseHandle() {
       HeapAllocStatic.OnFree(ByteLength);
-#if NETCOREAPP
-      unsafe {
-        System.Runtime.InteropServices.NativeMemory.Free(handle.ToPointer());
-      }
-      return true;
-#else
       return NativeMethods.HeapFree(HeapAllocStatic.ProcessHeapPtr, HeapFlags.Default, handle);
-#endif
     }
 
     /// <summary>

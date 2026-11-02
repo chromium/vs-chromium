@@ -21,13 +21,7 @@ namespace VsChromium.Core.Logging {
     }
 
     static Logger() {
-#if NETCOREAPP
-      // The indexing server (modern .NET, see Core.Server.csproj) logs to its own files, separate from
-      // the Visual Studio side logs (VsChromium.log).
-      FileName = "VsChromium.Server";
-#else
       FileName = "VsChromium";
-#endif
       Id = "VsChromium";
 #if DEBUG
       IsDebugEnabled = true;

@@ -13,25 +13,15 @@ namespace VsChromium.Core.Win32.Memory {
   /// API; on the Visual Studio side (.NET Framework), from the Win32 process heap.
   /// </summary>
   public static class HeapAllocStatic {
-#if !NETCOREAPP
     public static readonly IntPtr ProcessHeapPtr = NativeMethods.GetProcessHeap().DangerousGetHandle();
-#endif
     private static long _totalMemory;
 
     public static long TotalMemory { get { return _totalMemory; } }
 
     public static SafeHeapBlockHandle Alloc(int size) {
-#if NETCOREAPP
-      // Note: NativeMemory.Alloc throws OutOfMemoryException on failure.
-      IntPtr block;
-      unsafe {
-        block = new IntPtr(System.Runtime.InteropServices.NativeMemory.Alloc((nuint)Math.Max(size, 1)));
-      }
-#else
       IntPtr block = NativeMethods.HeapAlloc(ProcessHeapPtr, HeapFlags.Default, new IntPtr(size));
       if (block == IntPtr.Zero)
         throw new OutOfMemoryException();
-#endif
 
       OnAlloc(size);
       return new SafeHeapBlockHandle(block, size);

@@ -72,21 +72,25 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 
 | Project | Target | Used by | Content |
 |---|---|---|---|
-| `VsChromium.Core.Ipc` (new) | `netstandard2.0` | VS package (net472), server, tests | Message types (plain data classes, no dependency) |
-| `VsChromium.Core.Ipc.Json` (new) | `netstandard2.0` | VS package, server, tests | JSON serialization of the messages, JSON lines stream over stdio |
-| `VsChromium.Core` (existing, slimmed) | `net472` | VS package, Host, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
+| `VsChromium.Core.Ipc` | `netstandard2.0` | VS package (net472), VS tests | Message types, client side (plain data classes, no dependency) |
+| `VsChromium.Core.Ipc.Json` | `netstandard2.0` | VS package, VS tests | JSON serialization of the messages, JSON lines stream over stdio, client side |
+| `VsChromium.Core` (existing, slimmed) | `net472` | VS package, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
+| `VsChromium.Core.Server` (`src/Core.Server`) | modern .NET | server | Server copy of the protocol messages and their JSON serialization (`Ipc\`), paths, pattern matching, file system, configuration, logging, collections |
 | `VsChromium.Server` (ported) | modern .NET | server process | All server code + managed replacements for the native code + portable file system |
-| `MtSuite.CoreFileSystem` (copied from mtsuite) | modern .NET | server | Paths, entries, per-OS enumeration, object pools, parallel traversal |
+| `MtSuite.CoreFileSystem` (copied from mtsuite) | modern .NET | server | OS-aware path helpers |
 | `VsChromium.Server.Tests` (new) | modern .NET | – | Server unit tests (white box) |
 | `VsChromium.Tests.EndToEnd` (`src/Tests.EndToEnd`, exists) | `net10.0` | – | Black-box tests over stdio: regression tests of the behavior changes + benchmarks (see below and its `README.md`) |
 | `Tests` (existing) | `net472` | – | VS-side tests only |
 
-Code shared by the VS package and the server today (paths, pattern matching, configuration,
-logging) is either moved to a `netstandard2.0` library or duplicated where the server version
-diverges. **Decided (2026-11-02): the server and the VS package become fully independent code
-bases** (only the protocol, i.e. the JSON message format, is shared). Sharing code is not a
-constraint for server changes: shared files are forked into the server when the server needs to
-change them (e.g. span-based pattern matching). `src/Native`, `src/re2`,
+**Done (2026-11-02): the server and the VS package are fully independent code bases.** The server
+projects (`src/Core.Server`, `src/Server`, `src/Server.Tests`) don't reference or compile any file
+of the VS side (`src/Core`, `src/Core.Ipc`, `src/Core.Ipc.Json`, `src/Tests`): the files the server
+used were copied into `src/Core.Server` (same relative paths and namespaces, the `#if NETCOREAPP`
+branches resolved on each side), and the shared unit tests into `src/Server.Tests/Core`. The only
+contract between the two is the protocol (JSON lines over stdio), checked by the end-to-end tests
+(server) and the VS and VS Code client tests. Each side evolves on its own, e.g. span-based
+pattern matching on the server only. The VS package still bundles the server executable in its
+VSIX (packaging only). `src/Native`, `src/re2`,
 `src/ServerNativeInterop` and `third_party/re2-*` were deleted in milestone 4; the server's Win32
 P/Invokes (file system) are replaced in milestone 5.
 
@@ -112,7 +116,8 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   short queries 10-40% faster (regex queries stopping at max results -37 to -43%), large corpus
   unchanged. Versus the .NET Framework baseline, the remaining differences are a few ms on the small
   corpus (e.g. regex queries stopping at max results 17 ms -> 26 ms: construction of the
-  non-backtracking regex).- **NativeAOT is a later goal, not a requirement of the port**: it requires replacing reflection
+  non-backtracking regex).
+- **NativeAOT is a later goal, not a requirement of the port**: it requires replacing reflection
   based components (Newtonsoft.Json; MEF and protobuf-net are already gone). New code should avoid
   needless reflection so that AOT stays possible.
 
@@ -126,8 +131,10 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   which removes Host.exe, the TCP listener, protobuf-net and the debugger/job-object machinery.
   This is validated by the benchmarks (large search results over JSON vs protobuf); if JSON is too
   slow, keep protobuf-net (upgraded to 3.x, `netstandard2.0`) over stdio for VS.
-- The message classes in `VsChromium.Core.Ipc` remain the single definition of the protocol;
-  `src/vscode/src/server/messages.ts` mirrors them.
+- The protocol is the JSON format. Its message classes are defined three times, once per code base:
+  `src/Core.Server/Ipc` (server), `src/Core.Ipc` (VS package), `src/vscode/src/server/messages.ts`
+  (VS Code extension). A protocol change updates the three, and is covered by the end-to-end tests
+  and the client tests.
 
 ### File system
 

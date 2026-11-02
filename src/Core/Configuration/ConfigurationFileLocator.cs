@@ -4,9 +4,7 @@
 
 using System;
 using System.Collections.Generic;
-#if !NETCOREAPP
 using System.ComponentModel.Composition;
-#endif
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,15 +13,11 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Configuration {
-#if !NETCOREAPP
   [Export(typeof(IConfigurationFileLocator))]
-#endif
   public class ConfigurationFileLocator : IConfigurationFileLocator {
     private readonly IFileSystem _fileSystem;
 
-#if !NETCOREAPP
     [ImportingConstructor]
-#endif
     public ConfigurationFileLocator(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }
@@ -48,13 +42,7 @@ namespace VsChromium.Core.Configuration {
       yield return new FullPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile))
         .Combine(new RelativePath(ConfigurationDirectoryNames.LocalUserConfigurationDirectoryName));
 
-#if NETCOREAPP
-      // Note: Assembly.Location is empty when the server is published as a
-      // single file executable: use the application directory instead.
-      var installDirectory = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
-#else
       var installDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-#endif
       yield return new FullPath(installDirectory)
         .Combine(new RelativePath(ConfigurationDirectoryNames.LocalInstallConfigurationDirectoryName));
     }

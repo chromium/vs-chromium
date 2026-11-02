@@ -2,8 +2,8 @@
 
   <!--
     JSON serialization of the protocol messages (VsChromium.Core.Ipc), and the stream exchanging them
-    as JSON lines over the server standard input/output. Used by the server and the Visual Studio
-    package (the VS Code extension has its own TypeScript implementation, src/vscode/src/server).
+    as JSON lines over the server standard input/output: Visual Studio package side (the server has
+    its own implementation in src/Core.Server/Ipc/Json, the VS Code extension in src/vscode/src/server).
     netstandard2.0, for the same reasons as VsChromium.Core.Ipc.
   -->
 

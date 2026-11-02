@@ -9,15 +9,7 @@ namespace VsChromium.Core.Files {
 
     public static IPathComparer Default {
       get {
-#if NETCOREAPP
-        // Server: case sensitivity of the operating system (case-sensitive on
-        // Linux, case-insensitive on Windows and macOS), see mtsuite PathHelpers.
-        return mtsuite.CoreFileSystem.PathHelpers.FileNameComparison == System.StringComparison.Ordinal
-          ? _caseSensitive
-          : _caseInsensitive;
-#else
         return _caseInsensitive;
-#endif
       }
     }
 

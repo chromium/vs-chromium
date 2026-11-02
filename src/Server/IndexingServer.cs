@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Threads;
 using VsChromium.Server.FileSystem;
@@ -12,7 +11,6 @@ using VsChromium.Server.Search;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server {
-  [Export(typeof(IIndexingServer))]
   public class IndexingServer : IIndexingServer {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileSystemSnapshotManager _fileSystemSnapshotManager;
@@ -27,7 +25,6 @@ namespace VsChromium.Server {
     /// </summary>
     private IndexingServerState _currentState;
 
-    [ImportingConstructor]
     public IndexingServer(
       IDateTimeProvider dateTimeProvider,
       IFileSystemSnapshotManager fileSystemSnapshotManager,

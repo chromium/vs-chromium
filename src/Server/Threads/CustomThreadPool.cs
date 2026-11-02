@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +12,6 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 
 namespace VsChromium.Server.Threads {
-  [Export(typeof(ICustomThreadPool))]
   public class CustomThreadPool : ICustomThreadPool {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly object _lock = new object();
@@ -21,7 +19,6 @@ namespace VsChromium.Server.Threads {
     private readonly List<ThreadPoolEntry> _threadPool;
     private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
-    [ImportingConstructor]
     public CustomThreadPool(IDateTimeProvider dateTimeProvider)
       : this(dateTimeProvider, 5) {
     }

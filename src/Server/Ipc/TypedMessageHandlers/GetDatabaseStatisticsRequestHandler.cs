@@ -3,20 +3,17 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  [Export(typeof(ITypedMessageRequestHandler))]
   public class GetDatabaseStatisticsRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
     private readonly IIndexingServer _indexingServer;
 
-    [ImportingConstructor]
     public GetDatabaseStatisticsRequestHandler(IFileSystemSnapshotManager snapshotManager, ISearchEngine searchEngine, IIndexingServer indexingServer) {
       _snapshotManager = snapshotManager;
       _searchEngine = searchEngine;

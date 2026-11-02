@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
@@ -14,7 +13,6 @@ namespace VsChromium.Server.Projects.ProjectFile {
   /// project file "vs-chromium-project.txt" (or the obsoleted
   /// "project.vs-chromium-project") in the file system.
   /// </summary>
-  [Export(typeof(IProjectDiscoveryProvider))]
   public class ProjectFileDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly IFileSystem _fileSystem;
     private readonly FullPathDictionary<Project> _knownProjectRootDirectories = new FullPathDictionary<Project>();
@@ -23,7 +21,6 @@ namespace VsChromium.Server.Projects.ProjectFile {
 
     public int Priority { get { return 100; } }
 
-    [ImportingConstructor]
     public ProjectFileDiscoveryProvider(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }

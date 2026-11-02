@@ -3,18 +3,15 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  [Export(typeof(ITypedMessageRequestHandler))]
   public class GetDirectoryEntriesRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemSnapshotManager _snapshotManager;
 
-    [ImportingConstructor]
     public GetDirectoryEntriesRequestHandler(IFileSystemSnapshotManager snapshotManager) {
       _snapshotManager = snapshotManager;
     }

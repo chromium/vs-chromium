@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition.Hosting;
-using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using VsChromium.Core.Ipc;
-using VsChromium.Core.Logging;
 
 namespace VsChromium.Server {
   public class ServerStub {
@@ -20,19 +18,11 @@ namespace VsChromium.Server {
     }
 
     private void Run(Action<IServer> runServer) {
-      using (var mefContainer = SetupMefContainer()) {
-        var server = mefContainer.GetExportedValue<IServer>();
+      using (var serviceProvider = ServerServices.CreateServiceProvider()) {
+        var server = serviceProvider.GetRequiredService<IServer>();
         Instance = server; // For debugging only.
         runServer(server);
       }
-    }
-
-    private CompositionContainer SetupMefContainer() {
-      var catalog = new AggregateCatalog();
-      catalog.Catalogs.Add(new AssemblyCatalog(Assembly.GetExecutingAssembly()));
-      catalog.Catalogs.Add(new AssemblyCatalog(typeof(Logger).Assembly)); // VsChromium.Core.Server
-      var container = new CompositionContainer(catalog);
-      return container;
     }
   }
 }

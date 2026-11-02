@@ -3,12 +3,10 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Threading;
 using VsChromium.Core.Ipc;
 
 namespace VsChromium.Server.Ipc {
-  [Export(typeof(IIpcResponseQueue))]
   public class IpcResponseQueue : IIpcResponseQueue {
     private readonly object _lock = new object();
     private readonly Queue<IpcResponse> _responses = new Queue<IpcResponse>();

@@ -2,21 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;
 using VsChromium.Server.Ipc.TypedEvents;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server {
-  [Export(typeof(IServer))]
   public class IpcServer : IServer {
     private readonly IReceiveRequestsThread _receiveThread;
     private readonly ISendResponsesThread _sendThread;
     private readonly ITypedEventForwarder _typedEventForwarder;
     private IIpcStream _stream;
 
-    [ImportingConstructor]
     public IpcServer(
       IReceiveRequestsThread receiveThread,
       ISendResponsesThread sendThread,

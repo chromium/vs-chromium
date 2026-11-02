@@ -2,16 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  [Export(typeof(ITypedMessageRequestHandler))]
   public class GetFileSystemTreeRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemSnapshotManager _snapshotManager;
 
-    [ImportingConstructor]
     public GetFileSystemTreeRequestHandler(IFileSystemSnapshotManager snapshotManager) {
       _snapshotManager = snapshotManager;
     }

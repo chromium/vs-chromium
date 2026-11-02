@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystem;
@@ -18,7 +17,6 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// Exposes a in-memory snapshot of the list of file names, directory names
   /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
   /// </summary>
-  [Export(typeof(IFileDatabaseSnapshotFactory))]
   public class FileDatabaseSnapshotFactory : IFileDatabaseSnapshotFactory {
     private readonly IFileSystem _fileSystem;
 
@@ -29,7 +27,6 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
-    [ImportingConstructor]
     public FileDatabaseSnapshotFactory(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory,
       IProgressTrackerFactory progressTrackerFactory) {
 

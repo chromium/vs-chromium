@@ -4,12 +4,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text;
 
 namespace VsChromium.Server.Search {
-  [Export(typeof(ISearchStringParser))]
   public class SearchStringParser : ISearchStringParser {
 
     public ParsedSearchString Parse(string searchString, SearchStringParserOptions options) {

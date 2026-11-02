@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using VsChromium.Core.Ipc;
@@ -14,19 +13,17 @@ using VsChromium.Server.Ipc.ProtocolHandlers;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.Ipc {
-  [Export(typeof(IIpcRequestDispatcher))]
   public class IpcRequestDispatcher : IIpcRequestDispatcher {
     private readonly ICustomThreadPool _customThreadPool;
     private readonly IIpcResponseQueue _ipcResponseQueue;
     private readonly IEnumerable<IProtocolHandler> _protocolHandlers;
     private readonly ITaskQueue _sequentialTaskQueue;
 
-    [ImportingConstructor]
     public IpcRequestDispatcher(
       ICustomThreadPool customThreadPool,
       ITaskQueueFactory taskQueueFactory,
       IIpcResponseQueue ipcResponseQueue,
-      [ImportMany] IEnumerable<IProtocolHandler> protocolHandlers) {
+      IEnumerable<IProtocolHandler> protocolHandlers) {
       _customThreadPool = customThreadPool;
       _ipcResponseQueue = ipcResponseQueue;
       _protocolHandlers = protocolHandlers;

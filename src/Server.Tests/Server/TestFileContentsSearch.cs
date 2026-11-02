@@ -4,7 +4,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Ipc.TypedMessages;
@@ -15,14 +15,14 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Tests.Server {
   [TestClass]
-  public class TestFileContentsSearch : MefTestBase {
-    private CompositionContainer _container;
+  public class TestFileContentsSearch : ServerServicesTestBase {
+    private ServiceProvider _container;
     private ICompiledTextSearchDataFactory _factory;
 
     [TestInitialize]
     public void Initialize() {
-      _container = SetupServerMefContainer();
-      _factory = _container.GetExportedValue<ICompiledTextSearchDataFactory>();
+      _container = CreateServerServices();
+      _factory = _container.GetRequiredService<ICompiledTextSearchDataFactory>();
     }
 
     [TestCleanup]

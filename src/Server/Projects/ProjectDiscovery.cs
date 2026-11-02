@@ -3,17 +3,14 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.Projects {
-  [Export(typeof(IProjectDiscovery))]
   public class ProjectDiscovery : IProjectDiscovery {
     private readonly IProjectDiscoveryProvider[] _providers;
 
-    [ImportingConstructor]
-    public ProjectDiscovery([ImportMany] IEnumerable<IProjectDiscoveryProvider> providers) {
+    public ProjectDiscovery(IEnumerable<IProjectDiscoveryProvider> providers) {
       _providers = providers.OrderByDescending(x => x.Priority).ToArray();
     }
 

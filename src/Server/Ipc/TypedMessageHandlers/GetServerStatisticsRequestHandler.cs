@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition;
 using System.Runtime.InteropServices;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
@@ -12,12 +11,10 @@ using VsChromium.Server.FileSystem;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  [Export(typeof(ITypedMessageRequestHandler))]
   public class GetServerStatisticsRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 
-    [ImportingConstructor]
     public GetServerStatisticsRequestHandler(IFileSystemSnapshotManager snapshotManager, ISearchEngine searchEngine) {
       _snapshotManager = snapshotManager;
       _searchEngine = searchEngine;

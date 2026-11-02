@@ -2,17 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  [Export(typeof(ITypedMessageRequestHandler))]
   public class RegisterFileRequestHandler : TypedMessageRequestHandler {
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
 
-    [ImportingConstructor]
     public RegisterFileRequestHandler(IFileRegistrationTracker fileRegistrationTracker) {
       _fileRegistrationTracker = fileRegistrationTracker;
     }

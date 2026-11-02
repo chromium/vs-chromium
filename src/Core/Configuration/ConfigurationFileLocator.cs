@@ -4,7 +4,9 @@
 
 using System;
 using System.Collections.Generic;
+#if !NETCOREAPP
 using System.ComponentModel.Composition;
+#endif
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -13,11 +15,15 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Core.Configuration {
+#if !NETCOREAPP
   [Export(typeof(IConfigurationFileLocator))]
+#endif
   public class ConfigurationFileLocator : IConfigurationFileLocator {
     private readonly IFileSystem _fileSystem;
 
+#if !NETCOREAPP
     [ImportingConstructor]
+#endif
     public ConfigurationFileLocator(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }

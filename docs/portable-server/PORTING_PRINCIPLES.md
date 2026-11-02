@@ -109,7 +109,7 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   unchanged. Versus the .NET Framework baseline, the remaining differences are a few ms on the small
   corpus (e.g. regex queries stopping at max results 17 ms -> 26 ms: construction of the
   non-backtracking regex).- **NativeAOT is a later goal, not a requirement of the port**: it requires replacing reflection
-  based components (MEF v1, Newtonsoft.Json, protobuf-net runtime model). New code should avoid
+  based components (Newtonsoft.Json, protobuf-net attributes; MEF is already replaced). New code should avoid
   needless reflection so that AOT stays possible.
 
 ### Process model and protocol
@@ -180,9 +180,13 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   (what the VS editor and VS Code use), see below.
 ### Dependencies
 
-- MEF v1 (`System.ComponentModel.Composition`) is available on modern .NET as a NuGet package and is
-  **kept initially** to limit churn; replacing it (e.g. Microsoft.Extensions.DependencyInjection) is
-  a separate, later step (prerequisite for NativeAOT).
+- **Done (after milestone 7 groundwork): MEF replaced with Microsoft.Extensions.DependencyInjection**
+  on the server. `src/Server/ServerServices.cs` is the explicit composition root (54 singletons,
+  constructor injection, `IEnumerable<T>` for the 3 former `[ImportMany]`), built with
+  `ValidateOnBuild`; `TestServerServices` checks that all services can be created and that all
+  request handler classes are registered. The server has no MEF dependency anymore; the 3 files
+  shared with the Visual Studio package (which still uses MEF) keep their `[Export]` under
+  `#if !NETCOREAPP`. No reflection based discovery: compatible with NativeAOT.
 - NLog 4.4 → NLog 5 (or Microsoft.Extensions.Logging), logs still under the local app data folder
   (`%LOCALAPPDATA%\VsChromium` on Windows, `$XDG_STATE_HOME`/`~/.local/state/VsChromium` on Linux,
   `~/Library/Logs/VsChromium` on macOS).

@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Collections;
@@ -19,7 +18,6 @@ using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystem {
-  [Export(typeof(IFileSystemSnapshotManager))]
   public class FileSystemSnapshotManager : IFileSystemSnapshotManager {
     private static readonly TaskId FlushPathsChangedQueueTaskId = new TaskId("FlushPathsChangedQueueTaskId");
     private static readonly TaskId FilesChangedTaskId = new TaskId("FilesChangedTaskId");
@@ -59,7 +57,6 @@ namespace VsChromium.Server.FileSystem {
     private bool _isPaused;
 
 
-    [ImportingConstructor]
     public FileSystemSnapshotManager(
       IFileSystemNameFactory fileSystemNameFactory,
       IFileSystem fileSystem,

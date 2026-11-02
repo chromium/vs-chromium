@@ -3,20 +3,17 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition;
 using System.Threading;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;
 using VsChromium.Server.Ipc;
 
 namespace VsChromium.Server.Threads {
-  [Export(typeof(IReceiveRequestsThread))]
   public class ReceiveRequestsThread : IReceiveRequestsThread {
     private readonly IIpcRequestDispatcher _ipcRequestDispatcher;
     private readonly EventWaitHandle _waitHandle = new ManualResetEvent(false);
     private IIpcStream _ipcStream;
 
-    [ImportingConstructor]
     public ReceiveRequestsThread(IIpcRequestDispatcher ipcRequestDispatcher) {
       _ipcRequestDispatcher = ipcRequestDispatcher;
     }

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
@@ -14,12 +13,10 @@ using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
 
 namespace VsChromium.Server.FileSystem.Builder {
-  [Export(typeof(IFileSystemSnapshotBuilder))]
   public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
     private readonly IFileSystem _fileSystem;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
 
-    [ImportingConstructor]
     public FileSystemSnapshotBuilder(
       IFileSystem fileSystem,
       IProgressTrackerFactory progressTrackerFactory) {

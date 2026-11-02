@@ -3,12 +3,10 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 
 namespace VsChromium.Server.FileSystemNames {
-  [Export(typeof(IFileSystemNameFactory))]
   public class FileSystemNameFactory : IFileSystemNameFactory {
     private const int BucketCount = 31; // Prime number
     private readonly ConcurrentHashSet<Entry>[] _dictionaries;

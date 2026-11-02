@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
@@ -14,7 +13,6 @@ using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystem {
-  [Export(typeof(IFileRegistrationTracker))]
   public class FileRegistrationTracker : IFileRegistrationTracker {
     private static readonly TaskId FlushFileRegistrationQueueTaskId = new TaskId("FlushFileRegistrationQueueTaskId");
     private static readonly TaskId RefreshTaskId = new TaskId("RefreshTaskId");
@@ -29,7 +27,6 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     private readonly HashSet<FullPath> _registeredFiles = new HashSet<FullPath>();
 
-    [ImportingConstructor]
     public FileRegistrationTracker(IFileSystem fileSystem, IProjectDiscovery projectDiscovery,
       ITaskQueueFactory taskQueueFactory) {
       _fileSystem = fileSystem;

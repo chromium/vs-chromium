@@ -3,15 +3,12 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition;
 using System.Threading;
 
 namespace VsChromium.Server.Threads {
-  [Export(typeof(ILongRunningFileSystemTaskQueue))]
   public class LongRunningFileSystemTaskQueue : ILongRunningFileSystemTaskQueue {
     private readonly ITaskQueue _taskQueue;
 
-    [ImportingConstructor]
     public LongRunningFileSystemTaskQueue(ITaskQueueFactory taskQueueFactory) {
       _taskQueue = taskQueueFactory.CreateQueue("Long Running FileSystem Task Queue");
     }

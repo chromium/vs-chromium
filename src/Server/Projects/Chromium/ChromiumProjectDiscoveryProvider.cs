@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Chromium;
 using VsChromium.Core.Configuration;
@@ -14,12 +13,10 @@ namespace VsChromium.Server.Projects.Chromium {
   /// Implementation of <see cref="IProjectDiscoveryProvider"/> looking for
   /// Chromium enlistments in the file system.
   /// </summary>
-  [Export(typeof(IProjectDiscoveryProvider))]
   public class ChromiumProjectDiscoveryProvider : IProjectDiscoveryProvider {
     private readonly IConfigurationSectionProvider _configurationSectionProvider;
     private readonly IChromiumDiscoveryWithCache<Project> _chromiumDiscovery;
 
-    [ImportingConstructor]
     public ChromiumProjectDiscoveryProvider(IConfigurationFileLocator configurationFileLocator, IFileSystem fileSystem) {
       _configurationSectionProvider = new ConfigurationFileConfigurationSectionProvider(configurationFileLocator);
       _chromiumDiscovery = new ChromiumDiscoveryWithCache<Project>(_configurationSectionProvider, fileSystem);

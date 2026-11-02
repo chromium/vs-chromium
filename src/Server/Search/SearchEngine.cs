@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -27,7 +26,6 @@ using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.Search {
-  [Export(typeof(ISearchEngine))]
   public class SearchEngine : ISearchEngine {
     private static readonly TaskId UpdateFileContentsTaskId = new TaskId("UpdateFileContentsTaskId");
     private static readonly TaskId ComputeNewStatedId = new TaskId("ComputeNewStateId");
@@ -66,7 +64,6 @@ namespace VsChromium.Server.Search {
     /// </summary>
     private bool _previousUpdateCompleted;
 
-    [ImportingConstructor]
     public SearchEngine(
       IFileSystemSnapshotManager fileSystemSnapshotManager,
       IFileSystemNameFactory fileSystemNameFactory,

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
@@ -10,14 +9,12 @@ using VsChromium.Server.Operations;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedEvents {
-  [Export(typeof(ITypedEventForwarder))]
   public class TypedEventForwarder : ITypedEventForwarder {
     private readonly IFileSystemSnapshotManager _fileSystemSnapshotManager;
     private readonly ISearchEngine _searchEngine;
     private readonly ITypedEventSender _typedEventSender;
     private readonly IIndexingServer _indexingServer;
 
-    [ImportingConstructor]
     public TypedEventForwarder(
       ITypedEventSender typedEventSender,
       IIndexingServer indexingServer,

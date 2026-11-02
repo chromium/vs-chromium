@@ -2,17 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Ipc.TypedEvents {
-  [Export(typeof(ITypedEventSender))]
   public class TypedEventSender : ITypedEventSender {
     private readonly IIpcRequestIdFactory _requestIdFactory;
     private readonly IIpcResponseQueue _responseQueue;
 
-    [ImportingConstructor]
     public TypedEventSender(IIpcResponseQueue responseQueue, IIpcRequestIdFactory requestIdFactory) {
       _responseQueue = responseQueue;
       _requestIdFactory = requestIdFactory;

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,8 +17,8 @@ using VsChromium.Server.Search;
 
 namespace VsChromium.Tests.Server {
   [TestClass]
-  public class TestSearchCode : MefTestBase {
-    private static CompositionContainer _container;
+  public class TestSearchCode : ServerServicesTestBase {
+    private static ServiceProvider _container;
     private static FileInfo _testFile;
     private static IFileRegistrationTracker _registry;
     private static ISearchEngine _searchEngine;
@@ -26,9 +26,9 @@ namespace VsChromium.Tests.Server {
 
     [ClassInitialize]
     public static void Initialize(TestContext context) {
-      _container = SetupServerMefContainer();
-      _registry = _container.GetExportedValue<IFileRegistrationTracker>();
-      _searchEngine = _container.GetExportedValue<ISearchEngine>();
+      _container = CreateServerServices();
+      _registry = _container.GetRequiredService<IFileRegistrationTracker>();
+      _searchEngine = _container.GetRequiredService<ISearchEngine>();
       _searchEngine.FilesLoaded += (sender, result) => _serverReadyEvent.Set();
       _testFile = Utils.GetChromiumTestEnlistmentFile();
       _registry.RegisterFileAsync(new FullPath(_testFile.FullName));

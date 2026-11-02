@@ -4,20 +4,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Search {
-  [Export(typeof(ICompiledTextSearchDataFactory))]
   public class CompiledTextSearchDataFactory : ICompiledTextSearchDataFactory {
     private const int MinimumSearchPatternLength = 2;
     private readonly ISearchStringParser _searchStringParser;
     private readonly ICompiledTextSearchProviderFactory _compiledTextSearchProviderFactory;
 
-    [ImportingConstructor]
     public CompiledTextSearchDataFactory(
       ISearchStringParser searchStringParser,
       ICompiledTextSearchProviderFactory compiledTextSearchProviderFactory) {

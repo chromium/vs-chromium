@@ -4,19 +4,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Ipc;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Ipc.TypedMessageHandlers;
 
 namespace VsChromium.Server.Ipc.ProtocolHandlers {
-  [Export(typeof(IProtocolHandler))]
   public class TypedMessageProtocolHandler : ProtocolHandler {
     private readonly IEnumerable<ITypedMessageRequestHandler> _handlers;
 
-    [ImportingConstructor]
-    public TypedMessageProtocolHandler([ImportMany] IEnumerable<ITypedMessageRequestHandler> handlers)
+    public TypedMessageProtocolHandler(IEnumerable<ITypedMessageRequestHandler> handlers)
       : base(IpcProtocols.TypedMessage) {
       _handlers = handlers;
     }

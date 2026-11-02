@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using VsChromium.Core.Ipc;
 
 namespace VsChromium.Server.Ipc.ProtocolHandlers {
-  [Export(typeof(IProtocolHandler))]
   public class EchoProtocolHandler : ProtocolHandler {
     public EchoProtocolHandler()
       : base(IpcProtocols.Echo) {

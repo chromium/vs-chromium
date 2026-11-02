@@ -2,18 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  [Export(typeof(ITypedMessageRequestHandler))]
   public class GetFileExtractsRequestHandler : TypedMessageRequestHandler {
     private readonly ISearchEngine _searchEngine;
 
-    [ImportingConstructor]
     public GetFileExtractsRequestHandler(ISearchEngine searchEngine) {
       _searchEngine = searchEngine;
     }

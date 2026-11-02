@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystem;
@@ -12,12 +11,10 @@ using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.Search;
 
 namespace VsChromium.Server.Ipc.TypedMessageHandlers {
-  [Export(typeof(ITypedMessageRequestHandler))]
   public class GetDatabaseDetailsRequestHandler : TypedMessageRequestHandler {
     private readonly IFileSystemSnapshotManager _snapshotManager;
     private readonly ISearchEngine _searchEngine;
 
-    [ImportingConstructor]
     public GetDatabaseDetailsRequestHandler(IFileSystemSnapshotManager snapshotManager, ISearchEngine searchEngine) {
       _snapshotManager = snapshotManager;
       _searchEngine = searchEngine;

@@ -3,16 +3,13 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel.Composition;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.Operations {
-  [Export(typeof(IOperationProcessor))]
   public class OperationProcessor : IOperationProcessor {
     private readonly IOperationIdFactory _operationIdFactory;
 
-    [ImportingConstructor]
     public OperationProcessor(IOperationIdFactory operationIdFactory) {
       _operationIdFactory = operationIdFactory;
     }

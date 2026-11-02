@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System.ComponentModel.Composition;
 using VsChromium.Server.Ipc.TypedEvents;
 
 namespace VsChromium.Server.ProgressTracking {
-  [Export(typeof(IProgressTrackerFactory))]
   public class ProgressTrackerFactory : IProgressTrackerFactory {
     private readonly ITypedEventSender _typedEventSender;
 
-    [ImportingConstructor]
     public ProgressTrackerFactory(ITypedEventSender typedEventSender) {
       _typedEventSender = typedEventSender;
     }

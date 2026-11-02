@@ -4,7 +4,6 @@
 
 using System;
 using System.ComponentModel;
-using System.ComponentModel.Composition;
 using System.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
@@ -13,11 +12,9 @@ using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.FileSystemContents {
-  [Export(typeof(IFileContentsFactory))]
   public class FileContentsFactory : IFileContentsFactory {
     private readonly IFileSystem _fileSystem;
 
-    [ImportingConstructor]
     public FileContentsFactory(IFileSystem fileSystem) {
       _fileSystem = fileSystem;
     }

@@ -4,7 +4,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.IO;
 using System.IO.Enumeration;
 using System.Linq;
@@ -24,7 +23,6 @@ namespace VsChromium.Core.Files {
   /// the Visual Studio side), which uses <c>NtQueryDirectoryFile</c>,
   /// <c>GetFileAttributesEx</c> and <c>ReadFile</c>.
   /// </summary>
-  [Export(typeof(IFileSystem))]
   public class PortableFileSystem : IFileSystem, IFileContentsReader {
     private const long MaxPathTooLogLogCount = 10;
     private long _pathTooLongErrorCount;

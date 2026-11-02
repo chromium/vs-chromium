@@ -90,7 +90,7 @@ All new/ported projects use **SDK-style** csproj.
 
 - **Target framework: `net10.0`** (current LTS; the installed SDK is 10.0.x). mtsuite targets
   `net8.0`; its code is compiled as part of our projects with our target framework.
-- **Proposed: self-contained publish per runtime identifier** (`win-x64`, `win-arm64`,
+- **Decided: self-contained publish per runtime identifier** (`win-x64`, `win-arm64`,
   `linux-x64`, `linux-arm64`, `osx-arm64`), so users don't need to install a .NET runtime. The VS
   VSIX bundles `win-x64` (and `win-arm64` if we add ARM64 VS support); the VS Code VSIX is already
   platform-specific (`vsce package --target ...`).

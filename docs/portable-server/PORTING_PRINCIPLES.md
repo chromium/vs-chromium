@@ -52,10 +52,11 @@ Status: **planning** (branch `portable-server`, created from `main` at `30d7bb9`
    (minus the recorded behavior changes).
 4. **Incremental, always green.** Small steps, each building and passing all tests (C#, TypeScript),
    each committed separately. The server keeps working with both clients at every step.
-5. **Reuse, don't fork, mtsuite code.** Copy mtsuite code in a clearly delimited place with its
-   license and origin commit recorded (see [Reusing mtsuite](#reusing-mtsuite)); improvements needed
-   by the server (cancellation, scoped concurrency, file ids...) are made so they can be upstreamed
-   to mtsuite.
+5. **Copy mtsuite code, keep the changes backportable.** mtsuite code is copied into the repository
+   with its license and origin commit recorded, and **re-organized as needed** for the server
+   (see [Reusing mtsuite](#reusing-mtsuite)). Every change made to it is documented so it can be
+   backported to mtsuite, the goal being to turn the mtsuite file system code into a reusable
+   library.
 6. **Portable by default, OS-specific only when measured.** Use the BCL first
    (`FileSystemEnumerator`, `RandomAccess`, `FileSystemWatcher`, `SearchValues`, `Regex`); add
    OS-specific fast paths only with benchmark evidence (mtsuite's Linux/macOS enumerators qualify).
@@ -88,7 +89,7 @@ All new/ported projects use **SDK-style** csproj.
 
 ### Target framework and distribution
 
-- **Target framework: `net10.0`** (current LTS; the installed SDK is 10.0.x). mtsuite targets
+- **Decided: target framework `net10.0`** (current LTS; the installed SDK is 10.0.x). mtsuite targets
   `net8.0`; its code is compiled as part of our projects with our target framework.
 - **Decided: self-contained publish per runtime identifier** (`win-x64`, `win-arm64`,
   `linux-x64`, `linux-arm64`, `osx-arm64`), so users don't need to install a .NET runtime. The VS
@@ -181,12 +182,19 @@ the current server (all four are to be fixed):
 
 ## Reusing mtsuite
 
-- **Proposed**: copy mtsuite `src/core-filesystem` (no dependencies) and the traversal part of
-  `src/shared` (`ParallelFileSystem`, `IDirectorCollector`, `SearchPatternParser` if useful) into
-  `third_party/mtsuite/` as a project, keeping the original file headers and the Apache 2.0
-  `LICENSE`, plus a `README.md` recording the mtsuite commit it was copied from (`c9123d8`, v0.10.0)
-  and the local changes. Alternatives considered: git submodule (couples the two repositories'
-  build layouts), NuGet package (requires publishing mtsuite libraries first).
+- **Decided: copy the code** of mtsuite `src/core-filesystem` (no dependencies) and the traversal
+  part of `src/shared` (`ParallelFileSystem`, `IDirectorCollector`, `SearchPatternParser` if useful)
+  into `third_party/mtsuite/`, as a library project used by the server. The code is **re-organized as
+  needed** for the server (projects, namespaces, file layout, API shape); the mtsuite layout does not
+  have to be preserved. The original file headers and the Apache 2.0 `LICENSE` are kept.
+  Alternatives considered: git submodule (couples the two repositories' build layouts), NuGet package
+  (requires publishing mtsuite libraries first).
+- **`third_party/mtsuite/PORT_CHANGES.md`** records the mtsuite commit the code was copied from
+  (`c9123d8`, v0.10.0) and **every change made for this port** (re-organization, API changes, bug
+  fixes, new features such as cancellation or scoped concurrency), each with its motivation, written
+  so that the changes **can be backported to mtsuite** to make its file system code a reusable
+  library (e.g. a `MtSuite.FileSystem` package used by both mtsuite and VsChromium). It is updated in
+  the same commit as the change.
 - Not reused: the mtsuite CLI layer (command line, console progress printers), the copy / mirror /
   delete / compact operations, `System.Diagnostics.PerformanceCounter` (unused in mtsuite).
 - mtsuite `mtfindstr` is reused as **design** (pooled buffers, vectorized byte search, binary

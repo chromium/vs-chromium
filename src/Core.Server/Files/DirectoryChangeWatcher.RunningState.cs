@@ -35,8 +35,12 @@ namespace VsChromium.Core.Files {
       private readonly IDictionary<FullPath, PathChangeEntry> _bufferedChangedPaths = new Dictionary<FullPath, PathChangeEntry>();
 
       public RunningState(StateHost stateHost) : base(stateHost) {
-        _simplePathChangesPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(10.0));
-        _pathChangesPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(60.0));
+        // Note: Changes are posted once there has been no new change for a short "checkpoint" delay
+        // (debouncing), or after a maximum delay if changes keep coming (e.g. a build). Incremental
+        // updates of the index take tens of milliseconds (see "Incremental updates" in
+        // PORTING_PRINCIPLES.md), so the delays are short: they are the latency of the index.
+        _simplePathChangesPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(5.0));
+        _pathChangesPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(30.0));
         _checkRootsPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
       }
 

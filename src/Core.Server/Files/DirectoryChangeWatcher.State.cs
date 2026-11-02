@@ -14,6 +14,21 @@ namespace VsChromium.Core.Files {
     /// <summary>
     /// The common base class of all possible states
     /// </summary>
+    /// <summary>
+    /// Size of the buffer of each OS file system watcher: 64 KB, the maximum recommended, so that
+    /// mass changes (e.g. a "git checkout") rarely overflow it (an overflow leads to a full rescan).
+    /// Environment variable VSCHROMIUM_WATCHER_BUFFER_SIZE (tests: small values force overflows).
+    /// </summary>
+    private static readonly int WatcherBufferSize = GetWatcherBufferSize();
+
+    private static int GetWatcherBufferSize() {
+      int size;
+      var value = Environment.GetEnvironmentVariable("VSCHROMIUM_WATCHER_BUFFER_SIZE");
+      if (!string.IsNullOrEmpty(value) && int.TryParse(value, out size) && size >= 4096)
+        return size;
+      return 64 * 1024;
+    }
+
     private abstract class State {
       private readonly StateHost _stateHost;
 
@@ -94,7 +109,7 @@ namespace VsChromium.Core.Files {
         watcherEntry.DirectoryNameWatcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.Directory);
         watcherEntry.DirectoryNameWatcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.Directory);
         watcherEntry.DirectoryNameWatcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.Directory);
-        watcherEntry.DirectoryNameWatcher.InternalBufferSize = 8 * 1024; // 8 KB
+        watcherEntry.DirectoryNameWatcher.InternalBufferSize = WatcherBufferSize;
 
         // Note: "FileName" captures file creation, deletion and rename
         watcherEntry.FileNameWatcher.NotifyFilter = NotifyFilters.FileName;
@@ -102,7 +117,7 @@ namespace VsChromium.Core.Files {
         watcherEntry.FileNameWatcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.File);
         watcherEntry.FileNameWatcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.File);
         watcherEntry.FileNameWatcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.File);
-        watcherEntry.FileNameWatcher.InternalBufferSize = 8 * 1024; // 8 KB
+        watcherEntry.FileNameWatcher.InternalBufferSize = WatcherBufferSize;
 
         // Note: "LastWrite" will catch changes to *both* files and directories, i.e. it is
         // not possible to known which one it is.
@@ -114,7 +129,7 @@ namespace VsChromium.Core.Files {
         watcherEntry.FileWriteWatcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.FileOrDirectory);
         watcherEntry.FileWriteWatcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.FileOrDirectory);
         watcherEntry.FileWriteWatcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.FileOrDirectory);
-        watcherEntry.FileWriteWatcher.InternalBufferSize = 16 * 1024; // 16 KB
+        watcherEntry.FileWriteWatcher.InternalBufferSize = WatcherBufferSize;
 
         foreach (var watcher in new[]
           {watcherEntry.DirectoryNameWatcher, watcherEntry.FileNameWatcher, watcherEntry.FileWriteWatcher}) {
@@ -175,7 +190,7 @@ namespace VsChromium.Core.Files {
         watcher.Created += (s, e) => StateHost.ParentWatcher.WatcherOnCreated(s, e, PathKind.FileOrDirectory);
         watcher.Deleted += (s, e) => StateHost.ParentWatcher.WatcherOnDeleted(s, e, PathKind.FileOrDirectory);
         watcher.Renamed += (s, e) => StateHost.ParentWatcher.WatcherOnRenamed(s, e, PathKind.FileOrDirectory);
-        watcher.InternalBufferSize = 16 * 1024; // 16 KB
+        watcher.InternalBufferSize = WatcherBufferSize;
         watcher.IncludeSubdirectories = true;
         watcher.Error += StateHost.ParentWatcher.WatcherOnError;
         OnWatcherAdded(directory, watcherEntry);

@@ -19,7 +19,10 @@ namespace VsChromium.Core.Files {
     private readonly IFileSystem _fileSystem;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly TimeSpan? _autoRestartDelay;
-    private readonly TimeSpan _autoRestartObservePeriod = TimeSpan.FromSeconds(10);
+    // Note: After an error (e.g. buffer overflow of the OS notifications), the watcher restarts
+    // and the index is rescanned once this period passed (changes made in the meantime are found by
+    // the rescan).
+    private readonly TimeSpan _autoRestartObservePeriod = TimeSpan.FromSeconds(2);
 
     /// <summary>
     /// When change notifications are not available (see <see cref="PollingFallbackState"/>), the

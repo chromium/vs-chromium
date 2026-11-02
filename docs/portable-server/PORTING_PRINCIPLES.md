@@ -65,6 +65,13 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
    endings, file sharing semantics, `\\?\` long paths.
 8. **Keep native memory visible.** Any unmanaged allocation (if kept for file contents) must be
    accounted for and reported (logs, `GetDatabaseStatistics`, benchmarks).
+9. **Incremental updates are fast and always correct.** Changes to a few files happen constantly in
+   the large code bases VsChromium is used with: the latency of an incremental update (from the
+   change on disk to search results reflecting it) is a primary performance metric (benchmark
+   scenarios "modify 1 file" and "create 1 directory"). And mass changes (a `git checkout`
+   changing thousands of files, possibly overflowing the OS notifications) must always end with an
+   index identical to one built from scratch, even when processed incrementally
+   (`IncrementalUpdateTests`).
 
 ## Architecture
 
@@ -643,3 +650,35 @@ Results (large corpus, vs filters disabled; 4 vs 8 bits per trigram):
 Selective searches (the common case when looking for a symbol) become 10–18x faster; searches
 for text present in most files gain little or nothing. The benchmark waits for the background
 index before running the queries ("Background index" scenario).
+
+### Incremental updates: latency and correctness (m13, `docs/portable-server/benchmarks/m13-incremental-latency`)
+
+Principle 9: incremental updates must be fast (a few files change all the time) and always
+correct (a `git checkout` of thousands of files must end with the same index as a fresh one).
+
+- **Correctness tests** (`src/Tests.EndToEnd/Regression/IncrementalUpdateTests.cs`): a generated
+  tree, indexed, then a "checkout" applied on several threads as fast as possible: 40% of the
+  files modified, 10% deleted, 10% moved to new directories, 10% rewritten with the same contents,
+  a directory deleted, 10 new directories with 500 files. The test waits until the index reflects
+  the changes (exact hit counts of per-category markers), then compares the results of several
+  searches and of a file path search with a server indexing the resulting tree from scratch: they
+  must be identical. Three variants: 4,000 files (~2,500 changes), 30,000 files (~20,000
+  changes), and the same with 4 KB OS notification buffers (`VSCHROMIUM_WATCHER_BUFFER_SIZE`),
+  which makes the notifications overflow: the server must then rescan. All pass; the 20,000
+  changes are processed incrementally (scan delta + database update in ~0.5 s of server time).
+- **Shorter debouncing of file change notifications**: changes are posted after 0.5 s without new
+  change for file modifications (was 2 s) and 1 s for creations/deletions (was 2 s), at most 5 s /
+  30 s after the first change if changes keep coming (was 10 s / 60 s, e.g. during a build), with a
+  watcher polling period of 0.25 s (was 1 s). Incremental updates now take tens of milliseconds
+  (m10), so the debouncing delay was most of the latency.
+- **Faster recovery after a notification overflow**: the watcher restarts 2 s after the error
+  (was 60 s), and the index is rescanned 2 s later (was 10 s): ~4 s plus the rescan instead of
+  ~70 s, during which searches returned stale results. Changes made while the watcher is
+  restarting are found by the rescan, changes made during the rescan are notified and processed
+  incrementally after it.
+- **64 KB OS notification buffers** (was 8–16 KB, 64 KB is the maximum recommended), so that mass
+  changes rarely overflow them.
+
+Results (large corpus, client time until a search sees the change): modify 1 file 2.6 s → 0.78 s,
+create 1 directory 2.8 s → 1.45 s; the "checkout" of 20,000 files with notification overflows is
+consistent ~4.5 s after the overflow (was > 70 s). Other scenarios unchanged.

@@ -48,7 +48,7 @@ namespace VsChromium.Core.Files {
         /// <summary>
         /// The polling and event posting thread.
         /// </summary>
-        private readonly TimeSpan _pollingThreadPeriod = TimeSpan.FromSeconds(1.0);
+        private readonly TimeSpan _pollingThreadPeriod = TimeSpan.FromSeconds(0.25);
         private Thread _thread;
 
         public void Start() {

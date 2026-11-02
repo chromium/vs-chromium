@@ -2,20 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copies the indexing server (VsChromium.Server.exe and its dependencies, built by the vs-chromium
-// solution into <repo>/Binaries/<Configuration>/Server) into <extension>/bin, for packaging. Also
-// copies the repository LICENSE file. Usage: node scripts/copy-server.js [Release|Debug]
-// (default: Release)
+// Publishes the indexing server as a self-contained, single file, ReadyToRun executable for win-x64
+// (`dotnet publish`, output in <repo>/Binaries/<Configuration>/ServerPublish/win-x64, see
+// src/Server/Server.csproj) and copies it into <extension>/bin, for packaging: users don't need to
+// install a .NET runtime. Also copies the repository LICENSE file.
+// Usage: node scripts/copy-server.js [Release|Debug] (default: Release)
 
 'use strict';
 
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 const configuration = process.argv[2] || 'Release';
 const extensionRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(extensionRoot, '..', '..');
-const sourceDir = path.join(repoRoot, 'Binaries', configuration, 'Server');
+const runtimeIdentifier = 'win-x64';
+const sourceDir = path.join(repoRoot, 'Binaries', configuration, 'ServerPublish', runtimeIdentifier);
 const targetDir = path.join(extensionRoot, 'bin');
 
 // Files that must be present, so that packaging fails if the server was not built properly (rather
@@ -23,11 +26,6 @@ const targetDir = path.join(extensionRoot, 'bin');
 // are copied (except debug symbols).
 const requiredFiles = [
   'VsChromium.Server.exe',
-  'VsChromium.Server.dll',
-  'VsChromium.Server.runtimeconfig.json',
-  'VsChromium.Server.deps.json',
-  'VsChromium.Core.Server.dll',
-  'VsChromium.Core.Ipc.dll',
   path.join('Configuration', 'SearchableFiles.include'),
 ];
 
@@ -36,9 +34,15 @@ function fail(message) {
   process.exit(1);
 }
 
-if (!fs.existsSync(sourceDir)) {
-  fail(`"${sourceDir}" not found. Build the vs-chromium solution in ${configuration} configuration first.`);
+const serverProject = path.join(repoRoot, 'src', 'Server', 'Server.csproj');
+console.log(`copy-server: publishing ${serverProject} (${configuration}, ${runtimeIdentifier})...`);
+try {
+  execFileSync('dotnet', ['publish', serverProject, '-c', configuration, '-r', runtimeIdentifier, '--nologo', '-v:quiet'],
+    { stdio: 'inherit' });
+} catch (e) {
+  fail(`dotnet publish failed: ${e.message}`);
 }
+
 const missing = requiredFiles.filter(f => !fs.existsSync(path.join(sourceDir, f)));
 if (missing.length > 0) {
   fail(`missing in "${sourceDir}": ${missing.join(', ')}`);

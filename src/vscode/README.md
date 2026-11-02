@@ -8,8 +8,8 @@ extension.
 > workspace folders, shows the indexing status in the status bar, and provides the **Code Search**
 > panel and **Find File Names**.
 >
-> **Windows only** for now: the indexing server (`VsChromium.Server.exe`) is a .NET Framework
-> application using Win32 APIs.
+> **Windows only** for now: the indexing server (`VsChromium.Server.exe`, .NET 10) is being made
+> portable (see `docs/portable-server/PORTING_PRINCIPLES.md`), but is only packaged for win-x64.
 
 ## How it works
 
@@ -25,7 +25,7 @@ directory of a Chromium checkout.
 
 Prerequisites: Node.js, VS Code, and the vs-chromium solution built in `Debug` (see
 `HackingOnVsChromium.txt` at the root of the repository), which produces
-`Binaries\Debug\VsChromium.Server.exe`.
+`Binaries\Debug\Server\VsChromium.Server.exe` (framework-dependent: requires the .NET 10 runtime).
 
 ```
 cd src\vscode
@@ -38,19 +38,21 @@ Extension"). In the Extension Development Host window, open a folder containing 
 `vs-chromium-project.txt` file (for example `src\Tests\TestData\chromium\src` of this repository,
 or a Chromium checkout).
 
-When running from the repository, the extension uses the server from `Binaries\Debug` (or
-`Binaries\Release`). The `vschromium.serverPath` setting overrides the server location.
+When running from the repository, the extension uses the server from `Binaries\Debug\Server` (or
+`Binaries\Release\Server`). The `vschromium.serverPath` setting overrides the server location.
 
 ## Packaging
 
-Build the vs-chromium solution in `Release` configuration, then:
+Prerequisite: the .NET 10 SDK. Then:
 
 ```
 cd src\vscode
-npm run package          # or "npm run package:debug" to bundle Binaries\Debug
+npm run package          # or "npm run package:debug" for a Debug server
 ```
 
-This copies the server and its dependencies to `bin\` (see `scripts/copy-server.js`) and creates
+This publishes the server as a self-contained, single file, ReadyToRun executable for win-x64 (no
+.NET runtime needed on the user machine), copies it with its default configuration files to `bin\`
+(see `scripts/copy-server.js`) and creates
 `vs-chromium-win32-x64-<version>.vsix`, which can be installed with
 `code --install-extension vs-chromium-win32-x64-<version>.vsix` (or *Extensions: Install from
 VSIX...* in VS Code).

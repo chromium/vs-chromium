@@ -24,6 +24,28 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
 
+  <!--
+    Publishing (dotnet publish -c Release -r <rid>, e.g. win-x64): a self-contained, single file,
+    ReadyToRun executable, so that users don't need to install a .NET runtime and most of the code
+    doesn't need to be compiled by the JIT at startup. This is not NativeAOT: the JIT is still
+    available, reflection (MEF, Newtonsoft.Json, protobuf-net) works as usual.
+    Output: Binaries\<Configuration>\ServerPublish\<rid>\ (VsChromium.Server.exe and the default
+    configuration files in Configuration\).
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- No compression of the bundled assemblies: bigger executable, but faster startup (compressed
+         assemblies are extracted in memory at each startup). -->
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+    <!-- Debug symbols embedded in the assemblies (no separate .pdb files to ship). -->
+    <DebugType>embedded</DebugType>
+    <!-- Intermediate RID specific build output: must not overwrite the regular (framework-dependent)
+         build output in Binaries\<Configuration>\Server\. -->
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\ServerBuild\$(RuntimeIdentifier)\</OutputPath>
+    <PublishDir>$(BuildRoot)Binaries\$(Configuration)\ServerPublish\$(RuntimeIdentifier)\</PublishDir>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj" />
     <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
@@ -37,7 +59,7 @@
 
   <ItemGroup>
     <!-- Default configuration files, looked up next to VsChromium.Core.Server.dll (ConfigurationFileLocator). -->
-    <None Update="Configuration\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Configuration\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
 </Project>

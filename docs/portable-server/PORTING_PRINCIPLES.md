@@ -96,7 +96,19 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   `linux-x64`, `linux-arm64`, `osx-arm64`), so users don't need to install a .NET runtime. The VS
   VSIX bundles `win-x64` (and `win-arm64` if we add ARM64 VS support); the VS Code VSIX is already
   platform-specific (`vsce package --target ...`).
-- **NativeAOT is a later goal, not a requirement of the port**: it requires replacing reflection
+- **Done (after milestone 5a): self-contained, single file, ReadyToRun publishing** (`dotnet publish
+  src/Server/Server.csproj -c Release -r win-x64`, properties in `Server.csproj`, output in
+  `Binaries\<Configuration>\ServerPublish\<rid>\`: one ~98 MB `VsChromium.Server.exe` (uncompressed,
+  for startup time) + the default `Configuration\` files, kept outside the bundle
+  (`ExcludeFromSingleFile`) and found with `AppContext.BaseDirectory`). The Release VSIX and the VS
+  Code VSIX (`npm run package`, about 40 MB) ship this executable: no .NET runtime needed on user
+  machines. Debug builds keep the framework-dependent server (`Binaries\Debug\Server\`), faster to
+  build and debug. Benchmarks (`docs/portable-server/benchmarks/m5b-self-contained-r2r`, published vs
+  framework-dependent): cold indexing -55% wall time on the small/medium corpora (no JIT warm-up),
+  short queries 10-40% faster (regex queries stopping at max results -37 to -43%), large corpus
+  unchanged. Versus the .NET Framework baseline, the remaining differences are a few ms on the small
+  corpus (e.g. regex queries stopping at max results 17 ms -> 26 ms: construction of the
+  non-backtracking regex).- **NativeAOT is a later goal, not a requirement of the port**: it requires replacing reflection
   based components (MEF v1, Newtonsoft.Json, protobuf-net runtime model). New code should avoid
   needless reflection so that AOT stays possible.
 

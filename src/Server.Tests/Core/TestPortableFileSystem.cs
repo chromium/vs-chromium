@@ -99,6 +99,19 @@ namespace VsChromium.Tests.Core {
     }
 
     [TestMethod]
+    public void ReadFileNulTerminatedWithAttributesWorks() {
+      var path = Path.Combine(_root, "file.txt");
+      var bytes = Encoding.UTF8.GetBytes("hello world");
+      File.WriteAllBytes(path, bytes);
+      using (var block = _fileSystem.ReadFileNulTerminated(new FullPath(path), 2, out var lastWriteTimeUtc)) {
+        Assert.AreEqual(bytes.Length + 2, block.ByteLength);
+        Assert.AreEqual(File.GetLastWriteTimeUtc(path), lastWriteTimeUtc);
+        Assert.AreEqual((byte)'d', Marshal.ReadByte(block.Pointer, bytes.Length - 1));
+        Assert.AreEqual((byte)0, Marshal.ReadByte(block.Pointer, bytes.Length));
+      }
+    }
+
+    [TestMethod]
     public void ReadFileNulTerminatedOfMissingFileThrows() {
       Assert.Throws<IOException>(() =>
         _fileSystem.ReadFileNulTerminated(RootPath.Combine(new RelativePath("missing.txt")), 10, 2));

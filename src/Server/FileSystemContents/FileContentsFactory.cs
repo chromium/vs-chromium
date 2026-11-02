@@ -24,8 +24,18 @@ namespace VsChromium.Server.FileSystemContents {
 
     public FileContents ReadFileContents(FullPath path) {
       try {
-        var fileInfo = _fileSystem.GetFileInfoSnapshot(path);
-        return ReadFileContentsWorker(fileInfo);
+        const int trailingByteCount = 2;
+        SafeHeapBlockHandle block;
+        DateTime lastWriteTimeUtc;
+        if (_fileSystem is IFileContentsReader reader) {
+          // Faster: a single path lookup (attributes are read from the open file).
+          block = reader.ReadFileNulTerminated(path, trailingByteCount, out lastWriteTimeUtc);
+        } else {
+          var fileInfo = _fileSystem.GetFileInfoSnapshot(path);
+          block = _fileSystem.ReadFileNulTerminated(fileInfo.Path, fileInfo.Length, trailingByteCount);
+          lastWriteTimeUtc = fileInfo.LastWriteTimeUtc;
+        }
+        return ReadFileContentsWorker(block, trailingByteCount, lastWriteTimeUtc);
       }
       catch (Win32Exception e) {
         Logger.LogWarn("Skipping file \"{0}\": {1} ({2})", path, e.Message, e.NativeErrorCode);
@@ -37,33 +47,31 @@ namespace VsChromium.Server.FileSystemContents {
       }
     }
 
-    private FileContents ReadFileContentsWorker(IFileInfoSnapshot fileInfo) {
-      const int trailingByteCount = 2;
-      var block = _fileSystem.ReadFileNulTerminated(fileInfo.Path, fileInfo.Length, trailingByteCount);
+    private FileContents ReadFileContentsWorker(SafeHeapBlockHandle block, int trailingByteCount, DateTime lastWriteTimeUtc) {
       var contentsByteCount = block.ByteLength - trailingByteCount; // Padding added by ReadFileNulTerminated
       var kind = GetTextKind(block, contentsByteCount);
       const int utf8BomSize = 3;
 
       switch (kind) {
         case TextKind.Ascii:
-          return new AsciiFileContents(new FileContentsMemory(block, 0, contentsByteCount), fileInfo.LastWriteTimeUtc);
+          return new AsciiFileContents(new FileContentsMemory(block, 0, contentsByteCount), lastWriteTimeUtc);
 
         case TextKind.AsciiWithUtf8Bom:
-          return new AsciiFileContents(new FileContentsMemory(block, utf8BomSize, contentsByteCount - utf8BomSize), fileInfo.LastWriteTimeUtc);
+          return new AsciiFileContents(new FileContentsMemory(block, utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc);
 
         // Files with non ASCII characters are converted to UTF-16, so that
         // positions of search results are character positions (not byte
         // positions), and so that searches (including case insensitive
         // searches and regular expressions) work on characters.
         case TextKind.Utf8:
-          return CreateUtf16FileContents(block, 0, contentsByteCount, fileInfo);
+          return CreateUtf16FileContents(block, 0, contentsByteCount, lastWriteTimeUtc);
 
         case TextKind.Utf8WithBom:
-          return CreateUtf16FileContents(block, utf8BomSize, contentsByteCount - utf8BomSize, fileInfo);
+          return CreateUtf16FileContents(block, utf8BomSize, contentsByteCount - utf8BomSize, lastWriteTimeUtc);
 
         case TextKind.ProbablyBinary:
           block.Dispose();
-          return new BinaryFileContents(fileInfo.LastWriteTimeUtc, fileInfo.Length);
+          return new BinaryFileContents(lastWriteTimeUtc, contentsByteCount);
 
         default:
           Invariants.Assert(false);
@@ -71,14 +79,14 @@ namespace VsChromium.Server.FileSystemContents {
       }
     }
 
-    private static unsafe FileContents CreateUtf16FileContents(SafeHeapBlockHandle block, int offset, int length, IFileInfoSnapshot fileInfo) {
+    private static unsafe FileContents CreateUtf16FileContents(SafeHeapBlockHandle block, int offset, int length, DateTime lastWriteTimeUtc) {
       try {
         var bytes = new ReadOnlySpan<byte>(Pointers.AddPtr(block.Pointer, offset).ToPointer(), length);
         var charCount = Encoding.UTF8.GetCharCount(bytes);
         var utf16Block = HeapAllocStatic.Alloc(Math.Max(1, charCount) * sizeof(char));
         var chars = new Span<char>(utf16Block.Pointer.ToPointer(), charCount);
         Encoding.UTF8.GetChars(bytes, chars);
-        return new Utf16FileContents(new FileContentsMemory(utf16Block, 0, charCount * sizeof(char)), fileInfo.LastWriteTimeUtc);
+        return new Utf16FileContents(new FileContentsMemory(utf16Block, 0, charCount * sizeof(char)), lastWriteTimeUtc);
       }
       finally {
         block.Dispose();

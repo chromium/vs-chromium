@@ -369,9 +369,10 @@ of its resource usage, measured inside the process:
      `Win32/Handles`...) are excluded from `Core.Server`: **the server has no P/Invoke anymore**.
      Benchmarks (`docs/portable-server/benchmarks/m5a-portable-file-system`, large corpus vs
      milestone 4): file system scan unchanged; loading the file contents ~+9% (8.4 s → 9.1 s, more
-     kernel time, likely the extra work of `File.OpenHandle`/`RandomAccess` per file; follow-up: get
-     the length and time stamp from the open handle to save one path lookup per file); queries
-     unchanged; memory unchanged. Accepted for portability.
+     kernel time); queries unchanged; memory unchanged. **Fixed** afterwards by reading the length and
+     time stamp of each file from the open handle (`IFileContentsReader`), which saves one path lookup
+     per file: loading 7.2-8.5 s, cold indexing 8.2-9.6 s, back to (or better than) milestone 4
+     (`docs/portable-server/benchmarks/m5c-file-read-single-lookup`).
    - **5b (next)**: mtsuite `FullPath`/`PathHelpers` (OS-aware separators and case sensitivity) on
      the server, mtsuite Linux/macOS enumerators (needs benchmarks on Linux/macOS), copied into
      `third_party/mtsuite/` with `PORT_CHANGES.md`.6. **Process model**: VS package starts the server directly over stdio (no Host.exe); VSIX and VS

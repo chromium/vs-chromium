@@ -37,7 +37,11 @@ namespace VsChromium.Server {
       client.NoDelay = true;
       client.Connect(IPAddress.Loopback, port);
       Logger.LogInfo("Server connected to host port {0}.", port);
-      _stream = new IpcStreamOverNetworkStream(_serializer, client.GetStream());
+      Run(new IpcStreamOverNetworkStream(_serializer, client.GetStream()));
+    }
+
+    public void Run(IIpcStream stream) {
+      _stream = stream;
 
       _stream.WriteResponse(HelloWorldProtocol.Response);
 
@@ -45,8 +49,9 @@ namespace VsChromium.Server {
       _receiveThread.Start(_stream);
       _typedEventForwarder.RegisterEventHandlers();
 
-      // Receive thread will terminate soon after the TCP connection to the VS package is
-      // closed. There is nothing left for the server to do other than exiting at this point.
+      // Receive thread will terminate soon after the IPC stream to the client (TCP connection to
+      // the VS package, or stdin) is closed. There is nothing left for the server to do other
+      // than exiting at this point.
       _receiveThread.WaitOne();
       Logger.LogInfo("Server terminating properly.");
     }

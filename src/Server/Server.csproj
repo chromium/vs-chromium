@@ -89,6 +89,8 @@
     <Compile Include="Ipc\TypedMessageHandlers\SearchCodeRequestHandler.cs" />
     <Compile Include="Ipc\TypedMessageHandlers\SearchFilePathsRequestHandler.cs" />
     <Compile Include="Ipc\IIpcRequestDispatcher.cs" />
+    <Compile Include="Ipc\Json\IpcJsonSerializer.cs" />
+    <Compile Include="Ipc\Json\IpcStreamOverJsonLines.cs" />
     <Compile Include="Ipc\IIpcResponseQueue.cs" />
     <Compile Include="Ipc\FileSystemSnapshotExtensions.cs" />
     <Compile Include="IServer.cs" />
@@ -214,6 +216,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
+    </PackageReference>
     <PackageReference Include="protobuf-net">
       <Version>2.0.0.640</Version>
     </PackageReference>

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Enumeration;
@@ -46,18 +47,49 @@ namespace VsChromium.Core.Files {
 
     public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
       using (var fileHandle = OpenFileForReading(path)) {
-        return ReadFileNulTerminated(path, fileHandle, fileSize, trailingByteCount);
+        return ReadFileNulTerminated(path, fileHandle, fileSize, trailingByteCount, ReadOnlySpan<byte>.Empty);
       }
     }
 
     public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, out DateTime lastWriteTimeUtc) {
+      return ReadFileNulTerminated(path, trailingByteCount, 0, null, out lastWriteTimeUtc, out _);
+    }
+
+    public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, int prefixLength,
+      FileContentsPrefixPredicate skipContents, out DateTime lastWriteTimeUtc, out long fileLength) {
       using (var fileHandle = OpenFileForReading(path)) {
         // Note: Reading the attributes from the open handle avoids a second
         // lookup of the path in the file system.
         lastWriteTimeUtc = File.GetLastWriteTimeUtc(fileHandle);
-        var fileSize = RandomAccess.GetLength(fileHandle);
-        return ReadFileNulTerminated(path, fileHandle, fileSize, trailingByteCount);
+        fileLength = RandomAccess.GetLength(fileHandle);
+        if (skipContents == null || fileLength <= prefixLength) {
+          // Small file: a single read, the predicate is evaluated on the whole contents.
+          var block = ReadFileNulTerminated(path, fileHandle, fileLength, trailingByteCount, ReadOnlySpan<byte>.Empty);
+          if (skipContents != null && SkipContents(block, trailingByteCount, skipContents)) {
+            block.Dispose();
+            return null;
+          }
+          return block;
+        }
+
+        // Large file: read the prefix first, so that the rest of the file is neither read nor
+        // allocated if the contents are not needed (e.g. a multi-GB binary file).
+        var prefix = ArrayPool<byte>.Shared.Rent(prefixLength);
+        try {
+          var prefixSpan = prefix.AsSpan(0, ReadAt(fileHandle, prefix.AsSpan(0, prefixLength), 0));
+          if (skipContents(prefixSpan)) {
+            return null;
+          }
+          return ReadFileNulTerminated(path, fileHandle, fileLength, trailingByteCount, prefixSpan);
+        }
+        finally {
+          ArrayPool<byte>.Shared.Return(prefix);
+        }
       }
+    }
+
+    private static unsafe bool SkipContents(SafeNativeMemoryHandle block, int trailingByteCount, FileContentsPrefixPredicate skipContents) {
+      return skipContents(new ReadOnlySpan<byte>(block.Pointer.ToPointer(), block.ByteLength - trailingByteCount));
     }
 
     private static SafeFileHandle OpenFileForReading(FullPath path) {
@@ -65,7 +97,28 @@ namespace VsChromium.Core.Files {
       return File.OpenHandle(path.Value, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
     }
 
-    private static unsafe SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, SafeFileHandle fileHandle, long fileSize, int trailingByteCount) {
+    /// <summary>
+    /// Reads up to <c>buffer.Length</c> bytes at <paramref name="offset"/>, returns the number of
+    /// bytes read (less only at the end of the file).
+    /// </summary>
+    private static int ReadAt(SafeFileHandle fileHandle, Span<byte> buffer, long offset) {
+      var bytesRead = 0;
+      while (bytesRead < buffer.Length) {
+        var count = RandomAccess.Read(fileHandle, buffer.Slice(bytesRead), offset + bytesRead);
+        if (count == 0)
+          break;
+        bytesRead += count;
+      }
+      return bytesRead;
+    }
+
+    /// <summary>
+    /// Reads the contents of the file in a new native block, with <paramref
+    /// name="trailingByteCount"/> null bytes as suffix. <paramref name="prefix"/> contains the
+    /// bytes already read at the beginning of the file (copied, not read again).
+    /// </summary>
+    private static unsafe SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, SafeFileHandle fileHandle, long fileSize,
+      int trailingByteCount, ReadOnlySpan<byte> prefix) {
       // Note: We are limited to 2GB files by design.
       var maxLen = int.MaxValue - trailingByteCount;
       if (fileSize >= maxLen) {
@@ -75,13 +128,9 @@ namespace VsChromium.Core.Files {
       var block = NativeHeap.Alloc(len + trailingByteCount);
       try {
         var buffer = new Span<byte>(block.Pointer.ToPointer(), len + trailingByteCount);
-        var bytesRead = 0;
-        while (bytesRead < len) {
-          var count = RandomAccess.Read(fileHandle, buffer.Slice(bytesRead, len - bytesRead), bytesRead);
-          if (count == 0)
-            break;
-          bytesRead += count;
-        }
+        var prefixLength = Math.Min(prefix.Length, len);
+        prefix.Slice(0, prefixLength).CopyTo(buffer);
+        var bytesRead = prefixLength + ReadAt(fileHandle, buffer.Slice(prefixLength, len - prefixLength), prefixLength);
 
         if (bytesRead != len)
           throw new IOException(string.Format("File read operation didn't read the whole file \"{0}\"", path));
@@ -94,6 +143,7 @@ namespace VsChromium.Core.Files {
       }
       return block;
     }
+
     public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {
       // Note: Unlike the Win32 implementation of the Visual Studio side, entries with paths longer
       // than MAX_PATH are not skipped (see "Behavior changes" in PORTING_PRINCIPLES.md).

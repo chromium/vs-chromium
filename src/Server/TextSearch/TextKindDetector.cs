@@ -11,156 +11,82 @@ namespace VsChromium.Server.TextSearch {
     AsciiWithUtf8Bom,
     Utf8,
     Utf8WithBom,
-    ProbablyBinary,
+    /// <summary>UTF-16 little endian text, with a byte order mark (FF FE).</summary>
+    Utf16LittleEndianWithBom,
+    /// <summary>UTF-16 big endian text, with a byte order mark (FE FF).</summary>
+    Utf16BigEndianWithBom,
+    Binary,
   }
 
   /// <summary>
-  /// Detects the kind of contents of a file (ASCII text, UTF-8 text or binary).
-  /// Managed port of <c>Text_GetKind</c> from the former VsChromium.Native.dll,
-  /// with one fix: a file is reported as ASCII only if all its bytes are ASCII
-  /// (the native heuristic only examines 50 slices of 4KB of large files).
+  /// Detects the kind of contents of a file (text and its encoding, or binary), with the rules of
+  /// the well known tools (git, ripgrep, VS Code):
+  /// <list type="number">
+  /// <item>A byte order mark identifies the encoding of a text file: UTF-8 (EF BB BF), UTF-16
+  /// little endian (FF FE) or big endian (FE FF).</item>
+  /// <item>Otherwise, a NUL byte in the first <see cref="BinaryDetectionPrefixLength"/> bytes means
+  /// the file is binary (git's <c>buffer_is_binary</c>, same prefix length).</item>
+  /// <item>Otherwise the file is text: ASCII if all its bytes are ASCII, else UTF-8 (invalid
+  /// sequences are decoded as U+FFFD, so that positions are still correct).</item>
+  /// </list>
+  /// The decision only depends on the first <see cref="BinaryDetectionPrefixLength"/> bytes
+  /// (<see cref="IsBinaryPrefix"/>), so that binary files can be skipped without reading them.
+  /// See "Behavior changes" in docs/portable-server/PORTING_PRINCIPLES.md (this replaced the
+  /// heuristic of the native implementation: 10% of non text bytes in 50 samples of 4 KB).
   /// </summary>
   public static class TextKindDetector {
-    public const int SliceCount = 50;
-    public const int SliceSize = 4 * 1024;
+    /// <summary>
+    /// Number of bytes examined to detect binary files (same as git, "FIRST_FEW_BYTES").
+    /// </summary>
+    public const int BinaryDetectionPrefixLength = 8000;
 
     public static readonly int Utf8BomSize = 3;
+    public static readonly int Utf16BomSize = 2;
 
     public static TextKind GetKind(ReadOnlySpan<byte> text) {
-      var hasBom = HasUtf8Bom(text);
-      var contents = hasBom ? text.Slice(Utf8BomSize) : text;
-      var kind = GetContentKind(contents);
-      // The heuristic below is based on samples of the contents: make sure we
-      // never report "ASCII" for a file containing non ASCII bytes, as ASCII
-      // files are searched as bytes, so that character positions would be
-      // wrong otherwise (see "Behavior changes" in PORTING_PRINCIPLES.md).
-      if (kind == ContentKind.Ascii && !Ascii.IsValid(contents)) {
-        kind = ContentKind.Utf8;
+      if (HasUtf8Bom(text)) {
+        return Ascii.IsValid(text.Slice(Utf8BomSize)) ? TextKind.AsciiWithUtf8Bom : TextKind.Utf8WithBom;
       }
-      switch (kind) {
-        case ContentKind.Ascii:
-          return hasBom ? TextKind.AsciiWithUtf8Bom : TextKind.Ascii;
-        case ContentKind.Utf8:
-          return hasBom ? TextKind.Utf8WithBom : TextKind.Utf8;
-        default:
-          return TextKind.ProbablyBinary;
+      var utf16 = GetUtf16Bom(text);
+      if (utf16 != null) {
+        return utf16.Value;
       }
+      if (ContainsNulInPrefix(text)) {
+        return TextKind.Binary;
+      }
+      return Ascii.IsValid(text) ? TextKind.Ascii : TextKind.Utf8;
+    }
+
+    /// <summary>
+    /// Returns true if a file starting with <paramref name="prefix"/> (its first
+    /// <see cref="BinaryDetectionPrefixLength"/> bytes, or the whole file if shorter) is binary,
+    /// i.e. if <see cref="GetKind"/> returns <see cref="TextKind.Binary"/> for the whole file.
+    /// </summary>
+    public static bool IsBinaryPrefix(ReadOnlySpan<byte> prefix) {
+      return !HasUtf8Bom(prefix) && GetUtf16Bom(prefix) == null && ContainsNulInPrefix(prefix);
     }
 
     public static bool HasUtf8Bom(ReadOnlySpan<byte> text) {
       return text.Length >= 3 && text[0] == 0xEF && text[1] == 0xBB && text[2] == 0xBF;
     }
 
-    private enum ContentKind {
-      Ascii,
-      Utf8,
-      Binary,
-    }
-
-    private struct ContentCounts {
-      // Simple (i.e. readable) ascii characters
-      public int AsciiCount;
-      // Extended UTF8 characters
-      public int Utf8Count;
-      // Others (i.e. not in previous 2 categories)
-      public int OtherCount;
-    }
-
-    private static ContentKind GetContentKind(ReadOnlySpan<byte> text) {
-      var counts = new ContentCounts();
-      CountSlices(text, ref counts);
-
-      var total = counts.AsciiCount + counts.Utf8Count + counts.OtherCount;
-      if (total == 0) {
-        return ContentKind.Ascii;
-      }
-
-      // Content is considered "binary" if more than 10% of characters are non
-      // human readable.
-      var otherRatio = (double)counts.OtherCount / total;
-      if (otherRatio >= 0.1) {
-        return ContentKind.Binary;
-      }
-
-      // Content is considered "Text", choose between pure ascii or mix of
-      // ascii/utf8.
-      return counts.Utf8Count == 0 ? ContentKind.Ascii : ContentKind.Utf8;
-    }
-
-    private static void CountSlices(ReadOnlySpan<byte> text, ref ContentCounts counts) {
-      // Instead of going through the whole file contents (which can be big),
-      // we limit ourselves to 50 slices of 4K each. This means we examine a
-      // maximum of 200KB per file, whatever the size. For files smaller than
-      // 200KB, we still examine the whole content.
-      if (text.Length <= SliceSize * SliceCount) {
-        CountFull(text, ref counts);
-        return;
-      }
-
-      for (var i = 0; i < SliceCount; i++) {
-        CountFull(text.Slice(GetSliceStart(text.Length, i), SliceSize), ref counts);
-      }
-    }
-
-    /// <summary>
-    /// Start of the slice <paramref name="index"/> (of <see cref="SliceCount"/> slices of
-    /// <see cref="SliceSize"/> bytes, evenly spread) examined for a text of
-    /// <paramref name="textLength"/> bytes, larger than <c>SliceCount * SliceSize</c>. The last
-    /// slice ends at or before the end of the text.
-    /// </summary>
-    /// <remarks>
-    /// Computed with 64-bit arithmetic: the former loop (<c>offset += sliceLength + gap</c>)
-    /// overflowed for texts close to 2 GB, so that such files failed to load.
-    /// </remarks>
-    public static int GetSliceStart(int textLength, int index) {
-      var gap = ((long)textLength - SliceSize * SliceCount) / SliceCount;
-      return checked((int)(index * (SliceSize + gap)));
-    }
-
-    private static void CountFull(ReadOnlySpan<byte> text, ref ContentCounts counts) {
-      var index = 0;
-      while (index < text.Length) {
-        var ch = text[index];
-        // See http://www.asciitable.com/
-        if ((ch >= 32 && ch <= 126) || ch == '\t' || ch == '\r' || ch == '\n') {
-          counts.AsciiCount++;
-          index++;
-        } else {
-          var runeLength = GetUtf8RuneLength(text.Slice(index));
-          if (runeLength > 0) {
-            counts.Utf8Count++;
-            index += runeLength;
-          } else {
-            counts.OtherCount++;
-            index++;
-          }
+    private static TextKind? GetUtf16Bom(ReadOnlySpan<byte> text) {
+      if (text.Length >= 2) {
+        if (text[0] == 0xFF && text[1] == 0xFE) {
+          // Note: FF FE 00 00 is the UTF-32 little endian BOM: not supported (binary if NUL bytes).
+          if (text.Length >= 4 && text[2] == 0 && text[3] == 0)
+            return null;
+          return TextKind.Utf16LittleEndianWithBom;
+        }
+        if (text[0] == 0xFE && text[1] == 0xFF) {
+          return TextKind.Utf16BigEndianWithBom;
         }
       }
+      return null;
     }
 
-    /// <summary>
-    /// Returns the length of the UTF-8 sequence starting at the beginning of
-    /// <paramref name="text"/>, or 0 if there is no valid sequence. Same
-    /// (lenient) validation as the native implementation: only the lead and
-    /// continuation bytes bit patterns are checked.
-    /// </summary>
-    private static int GetUtf8RuneLength(ReadOnlySpan<byte> text) {
-      var ch = text[0];
-      if ((ch & 0xF8) == 0xF0 && text.Length >= 4) {
-        if (IsContinuation(text[1]) && IsContinuation(text[2]) && IsContinuation(text[3]))
-          return 4;
-      } else if ((ch & 0xF0) == 0xE0 && text.Length >= 3) {
-        if (IsContinuation(text[1]) && IsContinuation(text[2]))
-          return 3;
-      } else if ((ch & 0xE0) == 0xC0 && text.Length >= 2) {
-        if (IsContinuation(text[1]))
-          return 2;
-      }
-      return 0;
-    }
-
-    private static bool IsContinuation(byte ch) {
-      return (ch & 0xC0) == 0x80;
+    private static bool ContainsNulInPrefix(ReadOnlySpan<byte> text) {
+      return text.Slice(0, Math.Min(text.Length, BinaryDetectionPrefixLength)).IndexOf((byte)0) >= 0;
     }
   }
 }

@@ -62,6 +62,21 @@ public class BehaviorChangeTests {
 
   private const string NonAsciiFileName = "日本_path_marker.txt";
 
+  private const string Utf16LittleEndianFile = "utf16le.txt";
+  private const string Utf16BigEndianFile = "utf16be.txt";
+  private const string Utf16Marker = "UTF16_FILE_MARKER";
+  private const string Utf16Text = "first line\r\nemoji 🎉 then UTF16_FILE_MARKER here\r\n";
+
+  // NUL byte in the first 8,000 bytes: binary (git rule).
+  private const string NulPrefixFile = "nul_prefix.txt";
+  private const string NulPrefixMarker = "NUL_PREFIX_MARKER";
+  // NUL byte after the first 8,000 bytes: text.
+  private const string NulLateFile = "nul_late.txt";
+  private const string NulLateMarker = "NUL_LATE_MARKER";
+  // Many control characters (more than 10% of the bytes, the former heuristic) but no NUL: text.
+  private const string ControlCharsFile = "control_chars.txt";
+  private const string ControlCharsMarker = "CONTROL_CHARS_MARKER";
+
   // A file whose full path is longer than MAX_PATH (260 characters) on any machine.
   private static readonly string LongPathRelativeDirectory = Path.Combine(
     new string('a', 60), new string('b', 60), new string('c', 60), new string('d', 60));
@@ -77,6 +92,13 @@ public class BehaviorChangeTests {
     File.WriteAllText(Path.Combine(root, WholeWordFile), WholeWordText, utf8);
     File.WriteAllBytes(Path.Combine(root, Latin1File), Latin1Bytes);
     File.WriteAllText(Path.Combine(root, NonAsciiFileName), "contents\n", utf8);
+    File.WriteAllText(Path.Combine(root, Utf16LittleEndianFile), Utf16Text, new UnicodeEncoding(bigEndian: false, byteOrderMark: true));
+    File.WriteAllText(Path.Combine(root, Utf16BigEndianFile), Utf16Text, new UnicodeEncoding(bigEndian: true, byteOrderMark: true));
+    File.WriteAllBytes(Path.Combine(root, NulPrefixFile), [.. Encoding.ASCII.GetBytes("text"), 0, .. Encoding.ASCII.GetBytes(" " + NulPrefixMarker + "\n")]);
+    File.WriteAllBytes(Path.Combine(root, NulLateFile),
+      [.. Encoding.ASCII.GetBytes(new string('x', 8100) + "\n"), 0, .. Encoding.ASCII.GetBytes(" " + NulLateMarker + "\n")]);
+    File.WriteAllBytes(Path.Combine(root, ControlCharsFile),
+      [.. Enumerable.Repeat(Encoding.ASCII.GetBytes("\u001b[31m\u001b[0m\f\b"), 20).SelectMany(x => x), .. Encoding.ASCII.GetBytes(ControlCharsMarker + "\n")]);
     var longPathDirectory = Path.Combine(root, LongPathRelativeDirectory);
     Directory.CreateDirectory(longPathDirectory);
     File.WriteAllText(Path.Combine(longPathDirectory, "long_path_file.txt"), LongPathMarker + "\n", utf8);
@@ -99,7 +121,7 @@ public class BehaviorChangeTests {
 
   [ClassInitialize]
   public static async Task ClassInitialize(TestContext context) {
-    s_root = CorpusCache.GetOrCreateCustom("behavior-changes", version: 4, GenerateFiles);
+    s_root = CorpusCache.GetOrCreateCustom("behavior-changes", version: 5, GenerateFiles);
     s_server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
     await Server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
       () => Server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(s_root, "vs-chromium-project.txt"))));
@@ -254,6 +276,37 @@ public class BehaviorChangeTests {
     var (hits, files) = await SearchAsync(LongPathMarker);
     Assert.AreEqual(1L, hits);
     Assert.IsTrue(files.Single().FullPath.Length > 260, files.Single().FullPath);
+  }
+
+  // --- #14: binary file detection (git rule) and UTF-16 files -------------------------------
+
+  [TestMethod]
+  [DataRow(Utf16LittleEndianFile)]
+  [DataRow(Utf16BigEndianFile)]
+  public async Task Utf16FileWithBom_IsSearchable(string fileName) {
+    var (hits, files) = await SearchAsync(Utf16Marker);
+    var file = files.SingleOrDefault(f => f.FullPath.EndsWith(fileName, StringComparison.Ordinal));
+    Assert.IsNotNull(file, $"{fileName} should be searchable ({hits} hits)");
+    // UTF-16 positions in the decoded text.
+    Assert.AreEqual(Utf16Text.IndexOf(Utf16Marker, StringComparison.Ordinal), file.Positions.Single().Position);
+  }
+
+  [TestMethod]
+  public async Task NulByteInFirst8000Bytes_FileIsBinary() {
+    var (hits, _) = await SearchAsync(NulPrefixMarker);
+    Assert.AreEqual(0L, hits, "A file with a NUL byte in its first 8,000 bytes is binary (as git)");
+  }
+
+  [TestMethod]
+  public async Task NulByteAfterFirst8000Bytes_FileIsText() {
+    var (hits, _) = await SearchAsync(NulLateMarker);
+    Assert.AreEqual(1L, hits);
+  }
+
+  [TestMethod]
+  public async Task ControlCharactersWithoutNul_FileIsText() {
+    var (hits, _) = await SearchAsync(ControlCharsMarker);
+    Assert.AreEqual(1L, hits, "Files with many control characters but no NUL byte are text (formerly binary)");
   }
 
   /// <summary>Same as <see cref="SearchAsync"/>, with server errors reported as assertion failures.</summary>

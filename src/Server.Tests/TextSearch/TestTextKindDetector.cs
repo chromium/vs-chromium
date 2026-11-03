@@ -4,6 +4,8 @@
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Server.TextSearch;
 using VsChromium.Tests.Server;
@@ -17,6 +19,11 @@ namespace VsChromium.Tests.TextSearch {
         0x54, 0x68, 0x20, 0x60 // ascii
       };
       CheckKind(bytes, TextKind.Ascii);
+    }
+
+    [TestMethod]
+    public void GetTextKindForEmptyFileWorks() {
+      CheckKind(new byte[0], TextKind.Ascii);
     }
 
     [TestMethod]
@@ -56,118 +63,64 @@ namespace VsChromium.Tests.TextSearch {
     }
 
     [TestMethod]
-    public void GetTextKindForBinaryWorks() {
-      var bytes = new byte[] {
-        0xbb, 0xbb, 0xbe, 0xbe // random binary values
-      };
-      CheckKind(bytes, TextKind.ProbablyBinary);
+    public void GetTextKindForUtf16WithBomWorks() {
+      CheckKind(new byte[] { 0xff, 0xfe }.Concat(Encoding.Unicode.GetBytes("text")).ToArray(), TextKind.Utf16LittleEndianWithBom);
+      CheckKind(new byte[] { 0xfe, 0xff }.Concat(Encoding.BigEndianUnicode.GetBytes("text")).ToArray(), TextKind.Utf16BigEndianWithBom);
+      // UTF-16 without BOM: NUL bytes, binary (as git).
+      CheckKind(Encoding.Unicode.GetBytes("text"), TextKind.Binary);
+      // UTF-32 little endian BOM (FF FE 00 00): not supported, binary.
+      CheckKind(new byte[] { 0xff, 0xfe, 0, 0 }.Concat(Encoding.UTF32.GetBytes("text")).ToArray(), TextKind.Binary);
+    }
+
+    [TestMethod]
+    public void NulByteInTheFirst8000BytesMeansBinary() {
+      var bytes = new byte[100_000];
+      bytes.AsSpan().Fill((byte)'a');
+      bytes[TextKindDetector.BinaryDetectionPrefixLength - 1] = 0;
+      CheckKind(bytes, TextKind.Binary);
+      Assert.IsTrue(TextKindDetector.IsBinaryPrefix(bytes.AsSpan(0, TextKindDetector.BinaryDetectionPrefixLength)));
+    }
+
+    [TestMethod]
+    public void NulByteAfterTheFirst8000BytesIsText() {
+      var bytes = new byte[100_000];
+      bytes.AsSpan().Fill((byte)'a');
+      bytes[TextKindDetector.BinaryDetectionPrefixLength] = 0;
+      CheckKind(bytes, TextKind.Ascii);
+      Assert.IsFalse(TextKindDetector.IsBinaryPrefix(bytes.AsSpan(0, TextKindDetector.BinaryDetectionPrefixLength)));
+    }
+
+    [TestMethod]
+    public void NulBytesInUtf8OrUtf16FilesWithBomAreText() {
+      CheckKind(new byte[] { 0xef, 0xbb, 0xbf, (byte)'a', 0, (byte)'b' }, TextKind.AsciiWithUtf8Bom);
+      Assert.IsFalse(TextKindDetector.IsBinaryPrefix(new byte[] { 0xff, 0xfe, (byte)'a', 0 }));
+    }
+
+    [TestMethod]
+    public void NonTextBytesWithoutNulAreText() {
+      // Control characters (ESC, form feed, backspace) and invalid UTF-8 (e.g. Latin-1): text, as
+      // git and ripgrep (the former heuristic reported binary above 10% of such bytes).
+      CheckKind(new byte[] { 0x1b, (byte)'[', (byte)'m', 0x0c, 0x08, 0xbb, 0xbb, 0xbe, 0xbe }, TextKind.Utf8);
     }
 
     [TestMethod]
     public void GetTextKindForBinaryFilesWorks() {
-      CheckKind(ReadTestFile("files\\bear.ac3"), TextKind.ProbablyBinary);
-    }
-
-    [TestMethod]
-    public void GetTextKindForBinaryFileWithSomeAsciiWorks() {
-      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
-      // of about 60% ascii and 40% binary.
-      var bytes = CreateArray(100, 0.60);
-      CheckKind(bytes, TextKind.ProbablyBinary);
-    }
-
-    [TestMethod]
-    public void GetTextKindForLargeBinaryFileWithSomeAsciiWorks() {
-      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
-      // of about 60% ascii and 40% binary.
-      var bytes = CreateArray(1 * 1024 * 1024 /*1 MB*/, 0.60);
-      CheckKind(bytes, TextKind.ProbablyBinary);
-    }
-
-    [TestMethod]
-    public void GetTextKindForMediumBinaryFileWithSomeAsciiWorks() {
-      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
-      // of about 60% ascii and 40% binary.
-      var bytes = CreateArray(180 * 1024 /* 180 KB */, 0.60);
-      CheckKind(bytes, TextKind.ProbablyBinary);
-    }
-
-    [TestMethod]
-    public void GetTextKindForBinaryFileWithMostlyAsciiWorks() {
-      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
-      // of about 80% ascii and 20% binary.
-      var bytes = CreateArray(100, 0.80);
-      CheckKind(bytes, TextKind.ProbablyBinary);
-    }
-
-    [TestMethod]
-    public void GetTextKindForBinaryFileWithAlmostOnlyAsciiWorks() {
-      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
-      // of about 95% ascii and 5% binary.
-      // Note: The native implementation reported "ASCII", which was incorrect,
-      // as the text contains non ASCII bytes (see "Behavior changes" in
-      // PORTING_PRINCIPLES.md).
-      var bytes = CreateArray(100, 0.95);
-      CheckKind(bytes, TextKind.Utf8);
-    }
-
-    [TestMethod]
-    public void GetTextKindForBinaryFileWithMostlyBinaryWorks() {
-      // Ensure minimum ratio of 90% is computed correctly. Create an binary sequence
-      // of about 5% ascii and 9% binary.
-      var bytes = CreateArray(100, 0.05);
-      CheckKind(bytes, TextKind.ProbablyBinary);
-    }
-
-    /// <summary>
-    /// Regression test: the slices examined for files close to 2 GB (the maximum size of a
-    /// loaded file) used to overflow, so that such files failed to load
-    /// (ArgumentOutOfRangeException).
-    /// </summary>
-    [TestMethod]
-    public void SlicesOfVeryLargeTextsAreInBounds() {
-      foreach (var length in new[] { TextKindDetector.SliceSize * TextKindDetector.SliceCount + 1, 1_000_000, int.MaxValue - 2, int.MaxValue }) {
-        var previousEnd = 0;
-        for (var i = 0; i < TextKindDetector.SliceCount; i++) {
-          var start = TextKindDetector.GetSliceStart(length, i);
-          Assert.IsTrue(start >= previousEnd, $"Slice {i} of {length} overlaps the previous one");
-          Assert.IsTrue((long)start + TextKindDetector.SliceSize <= length, $"Slice {i} of {length} is out of bounds");
-          previousEnd = start + TextKindDetector.SliceSize;
-        }
-      }
-    }
-
-    private static byte[] CreateArray(int size, double asciiPercentage) {
-      var result = new byte[size];
-
-      int sliceSize = Math.Min(size / 5, 100);
-      int threshold = (int)Math.Round(asciiPercentage * sliceSize);
-      for (var i = 0; i < size; i++) {
-        result[i] = ((i % sliceSize) >= threshold) ? (byte)0xbb : (byte)0x20;
-      }
-      return result;
+      CheckKind(ReadTestFile("files\\bear.ac3"), TextKind.Binary);
     }
 
     private static void CheckKind(byte[] bytes, TextKind expectedKind) {
       var kind = TextKindDetector.GetKind(bytes);
       Assert.AreEqual(expectedKind, kind);
+      // The binary decision only depends on the prefix.
+      Assert.AreEqual(expectedKind == TextKind.Binary,
+        TextKindDetector.IsBinaryPrefix(bytes.AsSpan(0, Math.Min(bytes.Length, TextKindDetector.BinaryDetectionPrefixLength))));
     }
 
     private byte[] ReadTestFile(string name) {
       var dir = Utils.GetTestDataDirectory();
       var path = Path.Combine(dir.FullName, name);
       Assert.IsTrue(File.Exists(path));
-      using (var stream = new FileStream(path, FileMode.Open)) {
-        var memStream = new MemoryStream();
-        var buffer = new byte[4096];
-        while (true) {
-          int count = stream.Read(buffer, 0, buffer.Length);
-          if (count == 0)
-            break;
-          memStream.Write(buffer, 0, count);
-        }
-        return memStream.ToArray();
-      }
+      return File.ReadAllBytes(path);
     }
   }
 }

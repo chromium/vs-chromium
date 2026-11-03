@@ -253,8 +253,8 @@ milestone 4; **all are fixed since milestone 4** (managed search):
    in both ASCII and UTF-16 text.
 7. **Text kind detection only sampled large files** (50 slices of 4 KB): a large file with non-ASCII
    characters outside the samples was considered ASCII (searched as bytes, so wrong positions).
-   ASCII now means all bytes are ASCII (`Ascii.IsValid`, vectorized); the sampling heuristic is
-   still used to detect binary files. Files with a few invalid UTF-8 bytes (e.g. Latin-1) are
+   ASCII now means all bytes are ASCII (`Ascii.IsValid`, vectorized); binary files are detected
+   with the git rule since entry 14. Files with a few invalid UTF-8 bytes (e.g. Latin-1) are
    decoded as UTF-8 with one U+FFFD per invalid byte, so offsets stay correct.
 8. **Regex file path searches** (`SearchFilePaths` with a regex) mangled non-ASCII paths (ANSI
    conversion); they now run on the UTF-16 path.
@@ -284,6 +284,20 @@ milestone 4; **all are fixed since milestone 4** (managed search):
     index. It is now sent once, after the activation. Regression test
     `TestFilesLoadedEvent.SearchesInFilesLoadedHandlersSeeTheNewDatabase` (it also made
     `TestSearchCode.SingleOccurrenceWorks` flaky).
+14. **Binary files were detected by a home-grown heuristic** (inherited from the native
+    `Text_GetKind`): 50 samples of 4 KB, binary if 10% of the bytes were neither ASCII text nor
+    (loosely checked) UTF-8. NUL bytes were not special, UTF-16 files (even with a byte order mark)
+    were binary, text with many control characters or Latin-1 bytes could be binary, and the whole
+    file was read before deciding (e.g. multi-GB git pack files). The server now follows the well
+    known tools (`TextKindDetector`): a byte order mark identifies text (UTF-8, UTF-16 LE/BE;
+    UTF-16 files are converted to UTF-8, positions are UTF-16 positions of the decoded text);
+    otherwise **a NUL byte in the first 8,000 bytes means binary** (git's `buffer_is_binary`, same
+    prefix length); otherwise the file is text (ASCII or UTF-8, invalid bytes decoded as U+FFFD).
+    The decision only depends on the first 8,000 bytes, so binary files are not read (nor
+    allocated) beyond them. Differences: files with a NUL in the first 8,000 bytes are binary,
+    files with control characters or invalid UTF-8 but no NUL are text, UTF-16 files with a BOM
+    are text. Regression tests: `BehaviorChangeTests` (#14), `TestTextKindDetector`,
+    `TestFileContentsFactory`.
 
 ## Reusing mtsuite
 

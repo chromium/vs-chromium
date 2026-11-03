@@ -11,8 +11,10 @@ namespace VsChromium.ProtocolGen;
 /// <summary>
 /// Command line: generates the protocol code from the definition files of a directory.
 /// <code>
-/// VsChromium.ProtocolGen --input &lt;dir&gt; [--server-cs &lt;file&gt;] [--check]
+/// VsChromium.ProtocolGen --input &lt;dir&gt; [--server-cs &lt;file&gt;] [--ts &lt;file&gt;] [--vs-cs &lt;file&gt;] [--check]
 /// </code>
+/// Outputs: "--server-cs": server (C#), "--ts": VS Code extension (TypeScript), "--vs-cs": Visual
+/// Studio extension (C# 7.3).
 /// Files are only written when their contents change (so that incremental builds stay incremental).
 /// With "--check", nothing is written: the exit code is 1 if a file is not up to date.
 /// </summary>
@@ -20,6 +22,8 @@ public static class Program {
   public static int Main(string[] args) {
     string? input = null;
     string? serverCs = null;
+    string? ts = null;
+    string? vsCs = null;
     var check = false;
     for (var i = 0; i < args.Length; i++) {
       switch (args[i]) {
@@ -28,6 +32,12 @@ public static class Program {
           break;
         case "--server-cs" when i + 1 < args.Length:
           serverCs = args[++i];
+          break;
+        case "--ts" when i + 1 < args.Length:
+          ts = args[++i];
+          break;
+        case "--vs-cs" when i + 1 < args.Length:
+          vsCs = args[++i];
           break;
         case "--check":
           check = true;
@@ -52,6 +62,10 @@ public static class Program {
     var outputs = new List<(string Path, string Contents)>();
     if (serverCs != null)
       outputs.Add((serverCs, CSharpServerEmitter.Emit(protocol)));
+    if (ts != null)
+      outputs.Add((ts, TypeScriptEmitter.Emit(protocol)));
+    if (vsCs != null)
+      outputs.Add((vsCs, CSharpClientEmitter.Emit(protocol)));
 
     var result = 0;
     foreach (var (path, contents) in outputs) {
@@ -75,7 +89,11 @@ public static class Program {
 
   private static int Usage(string error) {
     Console.Error.WriteLine("error: " + error);
-    Console.Error.WriteLine("Usage: VsChromium.ProtocolGen --input <protocol directory> [--server-cs <file>] [--check]");
+    Console.Error.WriteLine("Usage: VsChromium.ProtocolGen --input <protocol directory> [--server-cs <file>] [--ts <file>] [--vs-cs <file>] [--check]");
+    Console.Error.WriteLine("  --server-cs <file>  Server code (C#, System.Text.Json)");
+    Console.Error.WriteLine("  --ts <file>         VS Code extension code (TypeScript, vscode-jsonrpc)");
+    Console.Error.WriteLine("  --vs-cs <file>      Visual Studio extension code (C# 7.3, Newtonsoft.Json, StreamJsonRpc)");
+    Console.Error.WriteLine("  --check             Write nothing, exit code 1 if a file is not up to date");
     return 2;
   }
 }

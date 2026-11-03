@@ -253,7 +253,8 @@ namespace VsChromium.Server.JsonRpc {
     // search/*
 
     public ValueTask<SearchCodeResult> SearchCodeAsync(SearchParams parameters, CancellationToken cancellationToken) {
-      var result = _searchEngine.SearchCode(ToSearchParams(parameters));
+      var result = _searchEngine.SearchCode(ToSearchParams(parameters), cancellationToken);
+      cancellationToken.ThrowIfCancellationRequested();
       return new ValueTask<SearchCodeResult>(new SearchCodeResult {
         Projects = result.Entries
           .GroupBy(x => GetProjectRoot(x.FileName))
@@ -276,7 +277,8 @@ namespace VsChromium.Server.JsonRpc {
     }
 
     public ValueTask<SearchPathsResult> SearchPathsAsync(SearchParams parameters, CancellationToken cancellationToken) {
-      var result = _searchEngine.SearchFilePaths(ToSearchParams(parameters));
+      var result = _searchEngine.SearchFilePaths(ToSearchParams(parameters), cancellationToken);
+      cancellationToken.ThrowIfCancellationRequested();
       return new ValueTask<SearchPathsResult>(new SearchPathsResult {
         Projects = result.FileNames
           .GroupBy(GetProjectRoot)

@@ -91,7 +91,9 @@ namespace VsChromium.Server.Search {
       get { return _currentFileDatabase; }
     }
 
-    public SearchFilePathsResult SearchFilePaths(SearchParams searchParams) {
+    public SearchFilePathsResult SearchFilePaths(SearchParams searchParams, CancellationToken cancellationToken = default) {
+      cancellationToken.ThrowIfCancellationRequested();
+
       // taskCancellation is used to make sure we cancel previous tasks as fast
       // as possible to avoid using too many CPU resources if the caller keeps
       // asking us to search for things. Note that this assumes the caller is
@@ -99,61 +101,75 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      var preProcessResult = PreProcessFileSystemNameSearch<FileName>(
-        searchParams,
-        MatchFileName,
-        MatchFileRelativePath);
-      if (preProcessResult == null)
-        return SearchFilePathsResult.Empty;
-
-      using (preProcessResult) {
-        // Note: Partitions of the file list are processed in parallel, each with its own local
-        // counter and list of matches (no shared state per file), and the search stops as soon as
-        // "MaxResults" matches have been found.
-        var database = _currentFileDatabase;
-        var fileNames = database.FileNames;
-        var matcher = preProcessResult.Matcher;
-        var includeSymLinks = searchParams.IncludeSymLinks;
-        var maxResults = searchParams.MaxResults;
-        var matches = new List<FileName>();
-        var searchedFileCount = 0;
-        var gate = new object();
-        var batchSize = Math.Max(256, fileNames.Count / (Environment.ProcessorCount * 16));
-        ParallelBatches.For(fileNames.Count, batchSize, _taskCancellation.GetNewToken(), (start, end) => {
-          List<FileName> localMatches = null;
-          var localSearchedFileCount = 0;
-          for (var i = start; i < end; i++) {
-            var item = fileNames[i];
-            if (!includeSymLinks && database.IsContainedInSymLink(item))
-              continue;
-            localSearchedFileCount++;
-            if (matcher(item)) {
-              (localMatches ??= new List<FileName>()).Add(item);
-            }
-          }
-
-          lock (gate) {
-            searchedFileCount += localSearchedFileCount;
-            if (localMatches != null) {
-              matches.AddRange(localMatches);
-            }
-            // Stop when enough matches have been found
-            return matches.Count < maxResults;
-          }
-        });
-
-        if (matches.Count > maxResults) {
-          matches.RemoveRange(Math.Max(0, maxResults), matches.Count - Math.Max(0, maxResults));
+      using (var cancellationScope = _taskCancellation.CreateScope(cancellationToken)) {
+        var linkedToken = cancellationScope.Token;
+        var preProcessResult = PreProcessFileSystemNameSearch<FileName>(
+          searchParams,
+          MatchFileName,
+          MatchFileRelativePath);
+        if (preProcessResult == null) {
+          linkedToken.ThrowIfCancellationRequested();
+          return SearchFilePathsResult.Empty;
         }
 
-        return new SearchFilePathsResult {
-          FileNames = matches,
-          TotalCount = searchedFileCount
-        };
+        using (preProcessResult) {
+          // Note: Partitions of the file list are processed in parallel, each with its own local
+          // counter and list of matches (no shared state per file), and the search stops as soon as
+          // "MaxResults" matches have been found.
+          var database = _currentFileDatabase;
+          var fileNames = database.FileNames;
+          var matcher = preProcessResult.Matcher;
+          var includeSymLinks = searchParams.IncludeSymLinks;
+          var maxResults = searchParams.MaxResults;
+          var matches = new List<FileName>();
+          var searchedFileCount = 0;
+          var gate = new object();
+          var batchSize = Math.Max(256, fileNames.Count / (Environment.ProcessorCount * 16));
+          ParallelBatches.For(fileNames.Count, batchSize, linkedToken, (start, end) => {
+            List<FileName> localMatches = null;
+            var localSearchedFileCount = 0;
+            for (var i = start; i < end; i++) {
+              if (linkedToken.IsCancellationRequested)
+                break;
+              var item = fileNames[i];
+              if (!includeSymLinks && database.IsContainedInSymLink(item))
+                continue;
+              localSearchedFileCount++;
+              if (matcher(item)) {
+                (localMatches ??= new List<FileName>()).Add(item);
+              }
+            }
+
+            if (linkedToken.IsCancellationRequested)
+              return false;
+
+            lock (gate) {
+              searchedFileCount += localSearchedFileCount;
+              if (localMatches != null) {
+                matches.AddRange(localMatches);
+              }
+              // Stop when enough matches have been found
+              return matches.Count < maxResults;
+            }
+          });
+
+          linkedToken.ThrowIfCancellationRequested();
+
+          if (matches.Count > maxResults) {
+            matches.RemoveRange(Math.Max(0, maxResults), matches.Count - Math.Max(0, maxResults));
+          }
+
+          return new SearchFilePathsResult {
+            FileNames = matches,
+            TotalCount = searchedFileCount
+          };
+        }
       }
     }
 
-    public SearchCodeResult SearchCode(SearchParams searchParams) {
+    public SearchCodeResult SearchCode(SearchParams searchParams, CancellationToken cancellationToken = default) {
+      cancellationToken.ThrowIfCancellationRequested();
+
       // taskCancellation is used to make sure we cancel previous tasks as fast
       // as possible to avoid using too many CPU resources if the caller keeps
       // asking us to search for things. Note that this assumes the caller is
@@ -161,29 +177,32 @@ namespace VsChromium.Server.Search {
       // queries will throw an OperationCanceled exception.
       _taskCancellation.CancelAll();
 
-      // Setup the file name/path filter.
-      Func<FileName, bool> fileNameMatcher = x => true;
-      if (!string.IsNullOrEmpty(searchParams.FilePathPattern)) {
-        // Don't include match case, etc.
-        var tempSearch = new SearchParams {
-          SearchString = searchParams.FilePathPattern,
-          IncludeSymLinks = true
-        };
-        var preProcessResult = PreProcessFileSystemNameSearch<FileName>(
-          tempSearch, MatchFileName, MatchFileRelativePath);
-        if (preProcessResult != null) {
-          fileNameMatcher = preProcessResult.Matcher;
-        }
-      }
+      using (var cancellationScope = _taskCancellation.CreateScope(cancellationToken)) {
+        var linkedToken = cancellationScope.Token;
 
-      // Perform the text search
-      using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams, fileNameMatcher)) {
-        var cancellationToken = _taskCancellation.GetNewToken();
-        return SearchCodeWorker(
-          searchContentsData,
-          searchParams.MaxResults,
-          searchParams.IncludeSymLinks,
-          cancellationToken);
+        // Setup the file name/path filter.
+        Func<FileName, bool> fileNameMatcher = x => true;
+        if (!string.IsNullOrEmpty(searchParams.FilePathPattern)) {
+          // Don't include match case, etc.
+          var tempSearch = new SearchParams {
+            SearchString = searchParams.FilePathPattern,
+            IncludeSymLinks = true
+          };
+          var preProcessResult = PreProcessFileSystemNameSearch<FileName>(
+            tempSearch, MatchFileName, MatchFileRelativePath);
+          if (preProcessResult != null) {
+            fileNameMatcher = preProcessResult.Matcher;
+          }
+        }
+
+        // Perform the text search
+        using (var searchContentsData = _compiledTextSearchDataFactory.Create(searchParams, fileNameMatcher)) {
+          return SearchCodeWorker(
+            searchContentsData,
+            searchParams.MaxResults,
+            searchParams.IncludeSymLinks,
+            linkedToken);
+        }
       }
     }
 
@@ -247,6 +266,8 @@ namespace VsChromium.Server.Search {
         }
         return !progressTracker.ShouldEndProcessing;
       });
+
+      cancellationToken.ThrowIfCancellationRequested();
 
       var matches = results
         .GroupBy(r => r.FileContentsPiece.FileId)

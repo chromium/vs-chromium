@@ -767,10 +767,10 @@ messages: `protocol/README.md`.
   - Requests run concurrently on the thread pool, except **`index/pause` and `index/resume`, which
     run one at a time in arrival order** (the former `RunOnSequentialQueue`).
   - **Cancellation**: `$/cancelRequest { id }` cancels the request's `CancellationToken`; a
-    cancelled request fails with `-32800` (LSP `RequestCancelled`). The services are synchronous and
-    don't observe the token yet: in practice, a request is cancelled before it starts or its result
-    is replaced by the error; a search cancelled by a newer search (implicit cancellation, as
-    before) also fails with `-32800`.
+    cancelled request fails with `-32800` (LSP `RequestCancelled`). `search/code` and `search/paths`
+    link the request's `CancellationToken` into `SearchEngine`'s `TaskCancellation` scope so
+    in-flight searches abort mid-batch without returning partial results; a search cancelled by a
+    newer search (implicit cancellation, as before) also fails with `-32800`.
   - **Error codes**: `-32700` parse error (and invalid framing, which ends the connection), `-32600`
     invalid request, `-32601` unknown method, `-32602` invalid parameters, `-32603` internal error
     (`data` = `ErrorInfo`: message, type name, stack trace, inner error), `-32001` expected errors

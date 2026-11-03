@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.Operations;
@@ -12,8 +13,8 @@ namespace VsChromium.Server.Search {
   public interface ISearchEngine {
     IFileDatabaseSnapshot CurrentFileDatabaseSnapshot { get; }
 
-    SearchFilePathsResult SearchFilePaths(SearchParams searchParams);
-    SearchCodeResult SearchCode(SearchParams searchParams);
+    SearchFilePathsResult SearchFilePaths(SearchParams searchParams, CancellationToken cancellationToken = default);
+    SearchCodeResult SearchCode(SearchParams searchParams, CancellationToken cancellationToken = default);
     IEnumerable<FileExtract> GetFileExtracts(FullPath filename, IEnumerable<FilePositionSpan> spans, int maxLength);
 
     /// <summary>

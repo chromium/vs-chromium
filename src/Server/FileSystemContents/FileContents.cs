@@ -75,6 +75,7 @@ namespace VsChromium.Server.FileSystemContents {
     public void BuildTrigramFilters() {
       if (TrigramFilters.Enabled && ByteLength > 0 && _trigramFilters == null) {
         _trigramFilters = CreateTrigramFilters(GetChunks());
+        GC.KeepAlive(this);
       }
     }
 
@@ -127,6 +128,9 @@ namespace VsChromium.Server.FileSystemContents {
       var textSearch = GetCompiledTextSearch(providerForMainEntry);
       var postProcessSearchHit = CreateFilterForOtherEntries(compiledTextSearchData);
       var result = textSearch.FindAll(textFragment, postProcessSearchHit, progressTracker);
+      // Note: The search reads the native memory of the text through a raw pointer: keep its
+      // owner (this instance) reachable until the end of the search.
+      GC.KeepAlive(this);
       return ToUtf16Ranges(result);
     }
 

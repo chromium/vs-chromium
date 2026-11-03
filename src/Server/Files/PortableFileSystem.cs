@@ -47,49 +47,28 @@ namespace VsChromium.Core.Files {
 
     public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
       using (var fileHandle = OpenFileForReading(path)) {
-        return ReadFileNulTerminated(path, fileHandle, fileSize, trailingByteCount, ReadOnlySpan<byte>.Empty);
+        var slice = ReadContents(path, fileHandle, fileSize, trailingByteCount, 0, DedicatedBlock);
+        return slice.Block;
       }
     }
 
     public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, out DateTime lastWriteTimeUtc) {
-      return ReadFileNulTerminated(path, trailingByteCount, 0, null, out lastWriteTimeUtc, out _);
+      return ReadFileContents(path, trailingByteCount, 0, DedicatedBlock, out lastWriteTimeUtc, out _).Block;
     }
 
-    public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, int prefixLength,
-      FileContentsPrefixPredicate skipContents, out DateTime lastWriteTimeUtc, out long fileLength) {
+    private static NativeMemorySlice DedicatedBlock(ReadOnlySpan<byte> prefix, int size) {
+      return new NativeMemorySlice(NativeHeap.Alloc(size), 0, size, isDedicated: true);
+    }
+
+    public NativeMemorySlice ReadFileContents(FullPath path, int trailingByteCount, int prefixLength,
+      FileContentsAllocator allocate, out DateTime lastWriteTimeUtc, out long fileLength) {
       using (var fileHandle = OpenFileForReading(path)) {
         // Note: Reading the attributes from the open handle avoids a second
         // lookup of the path in the file system.
         lastWriteTimeUtc = File.GetLastWriteTimeUtc(fileHandle);
         fileLength = RandomAccess.GetLength(fileHandle);
-        if (skipContents == null || fileLength <= prefixLength) {
-          // Small file: a single read, the predicate is evaluated on the whole contents.
-          var block = ReadFileNulTerminated(path, fileHandle, fileLength, trailingByteCount, ReadOnlySpan<byte>.Empty);
-          if (skipContents != null && SkipContents(block, trailingByteCount, skipContents)) {
-            block.Dispose();
-            return null;
-          }
-          return block;
-        }
-
-        // Large file: read the prefix first, so that the rest of the file is neither read nor
-        // allocated if the contents are not needed (e.g. a multi-GB binary file).
-        var prefix = ArrayPool<byte>.Shared.Rent(prefixLength);
-        try {
-          var prefixSpan = prefix.AsSpan(0, ReadAt(fileHandle, prefix.AsSpan(0, prefixLength), 0));
-          if (skipContents(prefixSpan)) {
-            return null;
-          }
-          return ReadFileNulTerminated(path, fileHandle, fileLength, trailingByteCount, prefixSpan);
-        }
-        finally {
-          ArrayPool<byte>.Shared.Return(prefix);
-        }
+        return ReadContents(path, fileHandle, fileLength, trailingByteCount, prefixLength, allocate);
       }
-    }
-
-    private static unsafe bool SkipContents(SafeNativeMemoryHandle block, int trailingByteCount, FileContentsPrefixPredicate skipContents) {
-      return skipContents(new ReadOnlySpan<byte>(block.Pointer.ToPointer(), block.ByteLength - trailingByteCount));
     }
 
     private static SafeFileHandle OpenFileForReading(FullPath path) {
@@ -113,35 +92,48 @@ namespace VsChromium.Core.Files {
     }
 
     /// <summary>
-    /// Reads the contents of the file in a new native block, with <paramref
-    /// name="trailingByteCount"/> null bytes as suffix. <paramref name="prefix"/> contains the
-    /// bytes already read at the beginning of the file (copied, not read again).
+    /// Reads the contents of the file in memory allocated by <paramref name="allocate"/>, with
+    /// <paramref name="trailingByteCount"/> null bytes as suffix. The first
+    /// <paramref name="prefixLength"/> bytes are read first (in a temporary buffer) and passed to
+    /// <paramref name="allocate"/>, so that nothing is allocated nor read for files whose contents
+    /// are not needed (e.g. a multi-GB binary file), and that the memory can depend on the
+    /// contents (e.g. the encoding).
     /// </summary>
-    private static unsafe SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, SafeFileHandle fileHandle, long fileSize,
-      int trailingByteCount, ReadOnlySpan<byte> prefix) {
+    private static NativeMemorySlice ReadContents(FullPath path, SafeFileHandle fileHandle, long fileSize,
+      int trailingByteCount, int prefixLength, FileContentsAllocator allocate) {
       // Note: We are limited to 2GB files by design.
       var maxLen = int.MaxValue - trailingByteCount;
       if (fileSize >= maxLen) {
         Logger.LogWarn("File too big, truncated to {0} bytes", maxLen);
       }
       var len = (int)Math.Min(maxLen, fileSize);
-      var block = NativeHeap.Alloc(len + trailingByteCount);
+      var prefixBuffer = ArrayPool<byte>.Shared.Rent(Math.Max(1, Math.Min(prefixLength, len)));
       try {
-        var buffer = new Span<byte>(block.Pointer.ToPointer(), len + trailingByteCount);
-        var prefixLength = Math.Min(prefix.Length, len);
-        prefix.Slice(0, prefixLength).CopyTo(buffer);
-        var bytesRead = prefixLength + ReadAt(fileHandle, buffer.Slice(prefixLength, len - prefixLength), prefixLength);
+        var prefix = prefixBuffer.AsSpan(0, ReadAt(fileHandle, prefixBuffer.AsSpan(0, Math.Min(prefixLength, len)), 0));
+        var slice = allocate(prefix, len + trailingByteCount);
+        if (slice.IsNull) {
+          return slice;
+        }
+        try {
+          var buffer = slice.Span;
+          prefix.CopyTo(buffer);
+          var bytesRead = prefix.Length + ReadAt(fileHandle, buffer.Slice(prefix.Length, len - prefix.Length), prefix.Length);
 
-        if (bytesRead != len)
-          throw new IOException(string.Format("File read operation didn't read the whole file \"{0}\"", path));
+          if (bytesRead != len)
+            throw new IOException(string.Format("File read operation didn't read the whole file \"{0}\"", path));
 
-        buffer.Slice(len).Clear();
+          buffer.Slice(len).Clear();
+          GC.KeepAlive(slice.Block);
+          return slice;
+        }
+        catch (Exception) {
+          slice.Release();
+          throw;
+        }
       }
-      catch (Exception) {
-        block.Dispose();
-        throw;
+      finally {
+        ArrayPool<byte>.Shared.Return(prefixBuffer);
       }
-      return block;
     }
 
     public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {

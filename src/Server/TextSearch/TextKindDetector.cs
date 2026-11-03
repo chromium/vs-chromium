@@ -70,6 +70,10 @@ namespace VsChromium.Server.TextSearch {
       return text.Length >= 3 && text[0] == 0xEF && text[1] == 0xBB && text[2] == 0xBF;
     }
 
+    public static bool HasUtf16Bom(ReadOnlySpan<byte> text) {
+      return GetUtf16Bom(text) != null;
+    }
+
     private static TextKind? GetUtf16Bom(ReadOnlySpan<byte> text) {
       if (text.Length >= 2) {
         if (text[0] == 0xFF && text[1] == 0xFE) {

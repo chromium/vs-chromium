@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
+using VsChromium.Core.Memory;
 using VsChromium.Core.Threads;
 using VsChromium.Protocol.Generated;
 using VsChromium.Server.FileSystem;
@@ -83,7 +84,10 @@ namespace VsChromium.Server {
 
     // Server/FileSystemContents
     private IFileContentsFactory _fileContentsFactory;
-    public IFileContentsFactory FileContentsFactory => _fileContentsFactory ??= Create(new FileContentsFactory(FileSystem));
+    public IFileContentsFactory FileContentsFactory => _fileContentsFactory ??= Create(new FileContentsFactory(FileSystem, ArenaAllocator));
+
+    private ArenaAllocator _arenaAllocator;
+    public ArenaAllocator ArenaAllocator => _arenaAllocator ??= Create(new ArenaAllocator());
 
     // Server/FileSystemDatabase
     private IFileDatabaseSnapshotFactory _fileDatabaseSnapshotFactory;

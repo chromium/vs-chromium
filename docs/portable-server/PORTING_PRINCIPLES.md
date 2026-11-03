@@ -887,3 +887,26 @@ Managed heap after a cold index (`large-1-400000-v1`, forced full GC): 109 MB �
 ~67 bytes per file); searches unchanged (within the ±10% run-to-run noise). On a 2.6M file tree
 the file table (99 MB), the pieces (85 MB → ~9 MB), the flat list of file names (41 MB) and the
 symbolic link set (10 MB) were measured in a heap dump before the change.
+
+### File contents arenas
+
+The text of files up to 512 KB is stored in 16 MB arenas (`ArenaAllocator`) shared by many files,
+instead of one native block and one finalizable `SafeNativeMemoryHandle` per file. Threads allocate
+with a shared atomic bump pointer. Larger files keep a dedicated block. `FileContentsMemory` is
+unchanged (block, offset, length): an arena is a shared `SafeNativeMemoryHandle`, released by its
+finalizer when no file contents reference it anymore, so the lifetime of the contents is the same
+as before. The first 8,000 bytes of a file are read into a pooled buffer before allocating, so
+binary files (not read) and UTF-16 files (read into a temporary block, only their UTF-8 conversion
+is stored in an arena) leave no dead bytes in arenas. Slots of edited or deleted files are dead
+bytes until their arena is released (no compaction).
+
+After a cold index (`large-1-400000-v1`, forced full GC, 2 runs each):
+
+| | GC heap | Working set | Native (counted) | Index |
+|---|---|---|---|---|
+| Before | 82.5 MB | 7,308 MB | 6,977 MB | 5,830–5,865 ms |
+| Arenas | 68.2 MB (-17%) | 7,146 MB (-161 MB) | 6,985 MB | 5,993–6,057 ms |
+
+The working set drop is the per-allocation overhead of the C heap. The counted native memory
+includes the 8 byte alignment of the slots and the unused end of the arenas. Searches are unchanged (within run-to-run noise). On a
+2.6M file tree, the 2.18M handles were 83 MB of managed heap, all finalized after each full rebuild.

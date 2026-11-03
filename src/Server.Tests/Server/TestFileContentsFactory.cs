@@ -54,9 +54,17 @@ namespace VsChromium.Tests.Server {
       bytes[100] = 0;
       var path = WriteTempFile(bytes);
       try {
-        var block = new PortableFileSystem().ReadFileNulTerminated(new FullPath(path), 2,
-          TextKindDetector.BinaryDetectionPrefixLength, prefix => TextKindDetector.IsBinaryPrefix(prefix), out _, out var fileLength);
-        Assert.IsNull(block, "The contents of a binary file must not be read");
+        var allocated = false;
+        var slice = new PortableFileSystem().ReadFileContents(new FullPath(path), 2, TextKindDetector.BinaryDetectionPrefixLength,
+          (prefix, size) => {
+            if (TextKindDetector.IsBinaryPrefix(prefix))
+              return default;
+            allocated = true;
+            return new NativeMemorySlice(NativeHeap.Alloc(size), 0, size, isDedicated: true);
+          },
+          out _, out var fileLength);
+        Assert.IsFalse(allocated, "No memory must be allocated for a binary file");
+        Assert.IsTrue(slice.IsNull, "The contents of a binary file must not be read");
         Assert.AreEqual(bytes.Length, fileLength);
 
         var contents = new FileContentsFactory(new PortableFileSystem()).ReadFileContents(new FullPath(path));
@@ -87,6 +95,64 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(bytes.Length, contents.ByteLength);
     }
 
+    [TestMethod]
+    public void SmallTextFilesShareAnArena() {
+      var arenas = new ArenaAllocator();
+      var first = ReadContents(Encoding.ASCII.GetBytes("first file"), arenas);
+      var second = ReadContents(Encoding.ASCII.GetBytes("second file!"), arenas);
+
+      Assert.IsInstanceOfType(first, typeof(Utf8FileContents));
+      Assert.IsInstanceOfType(second, typeof(Utf8FileContents));
+      // One arena, with both files and their 2 trailing NUL bytes (8 byte aligned slots).
+      Assert.AreEqual(1, arenas.GetArenas().Count);
+      Assert.AreEqual(16 + 16, arenas.GetArenas()[0].UsedBytes);
+      Assert.AreEqual("second file!", ExtractText(second));
+      GC.KeepAlive(first);
+    }
+
+    [TestMethod]
+    public void LargeTextFilesGetADedicatedBlock() {
+      var arenas = new ArenaAllocator();
+      var bytes = new byte[ArenaAllocator.DefaultLargeAllocationSize + 1];
+      bytes.AsSpan().Fill((byte)'a');
+      var contents = ReadContents(bytes, arenas);
+
+      Assert.IsInstanceOfType(contents, typeof(Utf8FileContents));
+      Assert.AreEqual(bytes.Length, contents.ByteLength);
+      Assert.AreEqual(0, arenas.GetArenas().Count, "Large files must not be allocated in an arena");
+    }
+
+    [TestMethod]
+    public void BinaryAndUtf16FilesLeaveNoDeadBytesInArenas() {
+      var arenas = new ArenaAllocator();
+      var binary = new byte[1000];
+      binary[10] = 0;
+      Assert.IsInstanceOfType(ReadContents(binary, arenas), typeof(BinaryFileContents));
+      Assert.AreEqual(0, arenas.GetArenas().Count, "Binary files must not be allocated in an arena");
+
+      // UTF-16 files are read in a temporary block: only their UTF-8 conversion is in the arena.
+      var encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: true);
+      var contents = ReadContents(encoding.GetPreamble().Concat(encoding.GetBytes("utf-16 text")).ToArray(), arenas);
+      Assert.IsInstanceOfType(contents, typeof(Utf8FileContents));
+      Assert.AreEqual(1, arenas.GetArenas().Count);
+      Assert.AreEqual(16, arenas.GetArenas()[0].UsedBytes);
+      Assert.AreEqual("utf-16 text", ExtractText(contents));
+    }
+
+    private static string ExtractText(FileContents contents) {
+      return contents.GetFileExtracts(100, new[] { new FilePositionSpan { Position = 0, Length = 1 } }).Single().Text;
+    }
+
+    private static FileContents ReadContents(byte[] bytes, ArenaAllocator arenas) {
+      var path = WriteTempFile(bytes);
+      try {
+        return new FileContentsFactory(new PortableFileSystem(), arenas).ReadFileContents(new FullPath(path));
+      }
+      finally {
+        File.Delete(path);
+      }
+    }
+
     private static FileContents ReadContents(byte[] bytes) {
       var path = WriteTempFile(bytes);
       try {
@@ -110,12 +176,12 @@ namespace VsChromium.Tests.Server {
     private class InvalidBlockFileSystem : PortableFileSystem, IFileContentsReader {
       public SafeNativeMemoryHandle LastBlock { get; private set; }
 
-      public new SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, int prefixLength,
-        FileContentsPrefixPredicate skipContents, out DateTime lastWriteTimeUtc, out long fileLength) {
+      public new NativeMemorySlice ReadFileContents(FullPath path, int trailingByteCount, int prefixLength,
+        FileContentsAllocator allocate, out DateTime lastWriteTimeUtc, out long fileLength) {
         fileLength = 0;
         lastWriteTimeUtc = DateTime.UtcNow;
         LastBlock = NativeHeap.Alloc(Math.Max(0, trailingByteCount - 1));
-        return LastBlock;
+        return new NativeMemorySlice(LastBlock, 0, LastBlock.ByteLength, isDedicated: true);
       }
     }
   }

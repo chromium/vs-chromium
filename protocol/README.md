@@ -89,4 +89,53 @@ anonymous models, default values, namespace blocks, other scalar types.
 | (dropped) | `GetFileSystemRequest` (obsolete), `GetFileSystemVersionRequest` (unused) |
 
 Cancellation (`$/cancelRequest`) and the framing (`Content-Length` headers, as LSP) are part of the
-JSON-RPC transport, not of the definition.
+JSON-RPC transport, not of the definition (see below).
+
+## Transport
+
+Implemented by the server (`src/Server/JsonRpc`) since phase P2. The clients still use the typed
+messages protocol (`--stdio`, JSON lines) until phases P3 (VS Code) and P4 (Visual Studio); it is
+removed in P5. A server process speaks exactly one protocol, chosen by its command line.
+
+- **Server argument**: `VsChromium.Server.exe --jsonrpc` (`--stdio`: the typed messages protocol).
+  The messages are exchanged over the standard input/output of the server (stdout is reserved for
+  the protocol, the console output goes to stderr). **The server exits when its standard input is
+  closed** (end of stream).
+- **Framing** (as the Language Server Protocol): each message is a list of headers, each terminated
+  by `\r\n`, an empty line (`\r\n`), then the content: `Content-Length` bytes of UTF-8 JSON.
+  `Content-Length` is required; other headers (e.g. `Content-Type`) are ignored; header names are
+  case-insensitive. Invalid headers (or a stream ending in the middle of a message) end the
+  connection: the server sends a `-32700` error with a null id and stops reading (exits).
+- **Messages**: JSON-RPC 2.0. `"jsonrpc": "2.0"` is required. Requests (`id` + `method` +
+  optional `params`, an object), notifications (no `id`). Ids are numbers or strings, echoed as is in
+  the responses. Results are always present in successful responses (`null` for methods returning
+  `void`). Batches (arrays) are not supported. Requests without parameters (`index/pause`,
+  `index/resume`, `tree/refresh`) accept missing or empty `params`; the others require an object.
+- **Concurrency**: requests are processed concurrently, and their responses can be sent in any
+  order; `index/pause` and `index/resume` are processed one at a time, in the order they were
+  received (the state changes asynchronously after the response: see `index/stateChanged`).
+- **Cancellation**: the client sends the notification `$/cancelRequest` with `{ "id": <request id> }`.
+  A cancelled request fails with `-32800` (even if it completed in the meantime, unless its response
+  was already sent). Unknown ids are ignored. As before, a new code or path search also cancels
+  the search running at the same time (`-32800` too).
+- **Notifications from the client** other than `$/cancelRequest` are ignored.
+- **Errors** (`error: { code, message, data? }`):
+
+  | Code | Meaning |
+  |---|---|
+  | `-32700` | Parse error: invalid JSON, or invalid framing (null id) |
+  | `-32600` | Invalid request: not a JSON object, `jsonrpc` not `"2.0"`, no `method`, `id` or `params` of the wrong type, id already used by a pending request |
+  | `-32601` | Unknown method |
+  | `-32602` | Invalid parameters (missing, not an object, or not matching the definition) |
+  | `-32603` | Internal error (unexpected exception); `data` is an `ErrorInfo` (message, type name, stack trace, inner error) |
+  | `-32001` | Expected error, to show to the user as is (`message`): e.g. invalid regular expression, project or directory not found, invalid project path |
+  | `-32800` | Request cancelled (LSP `RequestCancelled`) |
+
+Differences with the typed messages protocol (besides the envelope): flat search results (see
+`search/code`, `search/paths`); `tree/entries` and `tree/entriesMultiple` return the names of the
+sub directories and files (`DirectoryEntries`, `exists: false` for a missing directory) instead of a
+`DirectoryEntry` tree one level deep (or null), and echo the requested relative path; `tree/get`
+returns no projects when `knownVersion` is the current version; `server/initialize` replaces the
+"hello" message (the server doesn't send anything before the first request); the server records
+the duration of each request as `Request:<method>` in the `operationTimings` of
+`server/statistics` (was `Request:<request type name>`).

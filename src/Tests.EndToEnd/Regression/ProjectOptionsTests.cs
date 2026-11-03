@@ -9,7 +9,7 @@ using VsChromium.Tests.EndToEnd.Server;
 namespace VsChromium.Tests.EndToEnd.Regression;
 
 /// <summary>
-/// Per project options (SetProjectOptionsRequest): trigram filters can be disabled and enabled at
+/// Per project options ("project/setOptions"): trigram filters can be disabled and enabled at
 /// any time; search results never change, only the memory used by the filters.
 /// </summary>
 [TestClass]
@@ -47,8 +47,8 @@ public class ProjectOptionsTests {
   public async Task TrigramFilters_CanBeDisabledAndEnabledAtAnyTime() {
     var root = CreateTree();
     try {
-      await using var server = await StdioServerClient.StartAsync(TestSettings.ServerPath);
-      await server.WaitForEventAsync("SearchEngineFilesLoaded", TimeSpan.FromMinutes(2),
+      await using var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
+      await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
         () => server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(root, "vs-chromium-project.txt"))));
 
       // Enabled by default: built in the background after the load.
@@ -93,10 +93,10 @@ public class ProjectOptionsTests {
   public async Task TrigramFilters_DisabledBeforeTheProjectIsLoaded() {
     var root = CreateTree();
     try {
-      await using var server = await StdioServerClient.StartAsync(TestSettings.ServerPath);
+      await using var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
       // Sent before the project is known (e.g. when the client starts the server).
       await server.RequestAsync(ServerProtocol.SetProjectOptions(root, false));
-      await server.WaitForEventAsync("SearchEngineFilesLoaded", TimeSpan.FromMinutes(2),
+      await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
         () => server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(root, "vs-chromium-project.txt"))));
       Assert.AreEqual(FileCount, await HitCountAsync(server));
       await Task.Delay(TimeSpan.FromSeconds(2));
@@ -110,8 +110,9 @@ public class ProjectOptionsTests {
 
   [TestMethod]
   public async Task SetProjectOptions_RejectsRelativePaths() {
-    await using var server = await StdioServerClient.StartAsync(TestSettings.ServerPath);
-    await Assert.ThrowsExactlyAsync<ServerErrorException>(() => server.RequestAsync(ServerProtocol.SetProjectOptions("relative\\path", false)));
+    await using var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
+    var error = await Assert.ThrowsExactlyAsync<ServerErrorException>(() => server.RequestAsync(ServerProtocol.SetProjectOptions("relative\\path", false)));
+    Assert.AreEqual(-32001, error.Code, "Recoverable error");
   }
 
   private static async Task WaitForAsync(Func<Task<bool>> condition, string what) {
@@ -124,18 +125,18 @@ public class ProjectOptionsTests {
     Assert.Fail($"Timeout waiting for: {what}");
   }
 
-  private static async Task<long> TrigramFiltersBytesAsync(StdioServerClient server) {
+  private static async Task<long> TrigramFiltersBytesAsync(JsonRpcServerClient server) {
     var response = await server.RequestAsync(ServerProtocol.GetServerStatistics());
     return response.Data["trigramFiltersBytes"]!.GetValue<long>();
   }
 
-  private static async Task<long> HitCountAsync(StdioServerClient server) {
+  private static async Task<long> HitCountAsync(JsonRpcServerClient server) {
     var response = await server.RequestAsync(ServerProtocol.SearchCode(Marker, matchCase: true));
     return response.Data["hitCount"]!.GetValue<long>();
   }
 
-  private static async Task<System.Text.Json.Nodes.JsonObject> ProjectDetailsAsync(StdioServerClient server, string root) {
+  private static async Task<System.Text.Json.Nodes.JsonObject> ProjectDetailsAsync(JsonRpcServerClient server, string root) {
     var response = await server.RequestAsync(ServerProtocol.GetProjectDetails(root));
-    return response.Data["projectDetails"]!.AsObject();
+    return response.Data;
   }
 }

@@ -135,15 +135,15 @@ public class IncrementalUpdateTests {
       var projectFile = Path.Combine(root, "vs-chromium-project.txt");
 
       Environment.SetEnvironmentVariable("VSCHROMIUM_WATCHER_BUFFER_SIZE", watcherBufferSize > 0 ? watcherBufferSize.ToString() : null);
-      StdioServerClient serverInstance;
+      JsonRpcServerClient serverInstance;
       try {
-        serverInstance = await StdioServerClient.StartAsync(TestSettings.ServerPath);
+        serverInstance = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
       }
       finally {
         Environment.SetEnvironmentVariable("VSCHROMIUM_WATCHER_BUFFER_SIZE", null);
       }
       await using var server = serverInstance;
-      await server.WaitForEventAsync("SearchEngineFilesLoaded", TimeSpan.FromMinutes(2),
+      await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
         () => server.RequestAsync(ServerProtocol.RegisterFile(projectFile)));
       Assert.AreEqual(checkout.ModifiedCount, await HitCountAsync(server, "ORIG_M_"));
 
@@ -174,8 +174,8 @@ public class IncrementalUpdateTests {
 
       // Let pending notifications settle, then compare with an index built from scratch.
       await Task.Delay(TimeSpan.FromSeconds(3));
-      await using var freshServer = await StdioServerClient.StartAsync(TestSettings.ServerPath);
-      await freshServer.WaitForEventAsync("SearchEngineFilesLoaded", TimeSpan.FromMinutes(2),
+      await using var freshServer = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
+      await freshServer.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
         () => freshServer.RequestAsync(ServerProtocol.RegisterFile(projectFile)));
       foreach (var query in ComparisonQueries) {
         var incremental = await ResultsAsync(server, query);
@@ -197,23 +197,23 @@ public class IncrementalUpdateTests {
     }
   }
 
-  private static async Task<long> HitCountAsync(StdioServerClient server, string text) {
+  private static async Task<long> HitCountAsync(JsonRpcServerClient server, string text) {
     var response = await server.RequestAsync(ServerProtocol.SearchCode(text, maxResults: NoLimit, matchCase: true));
     return response.Data["hitCount"]!.GetValue<long>();
   }
 
   /// <summary>All the matches of <paramref name="text"/>, as sorted "path:position:length" strings.</summary>
-  private static async Task<List<string>> ResultsAsync(StdioServerClient server, string text) {
+  private static async Task<List<string>> ResultsAsync(JsonRpcServerClient server, string text) {
     var response = await server.RequestAsync(ServerProtocol.SearchCode(text, maxResults: NoLimit, matchCase: true));
-    return ServerProtocol.FlattenResults(response.Data["searchResults"]?.AsObject())
+    return ServerProtocol.FlattenCodeResults(response.Data)
       .SelectMany(file => file.Positions.Select(p => $"{file.FullPath}:{p.Position}:{p.Length}"))
       .OrderBy(x => x, StringComparer.Ordinal)
       .ToList();
   }
 
-  private static async Task<List<string>> PathResultsAsync(StdioServerClient server, string pattern) {
+  private static async Task<List<string>> PathResultsAsync(JsonRpcServerClient server, string pattern) {
     var response = await server.RequestAsync(ServerProtocol.SearchFilePaths(pattern, maxResults: NoLimit));
-    return ServerProtocol.FlattenResults(response.Data["searchResult"]?.AsObject())
+    return ServerProtocol.FlattenPathResults(response.Data)
       .Select(file => file.FullPath)
       .OrderBy(x => x, StringComparer.Ordinal)
       .ToList();

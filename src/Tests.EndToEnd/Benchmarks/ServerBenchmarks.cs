@@ -22,7 +22,7 @@ namespace VsChromium.Tests.EndToEnd.Benchmarks;
 public class ServerBenchmarks {
   public TestContext TestContext { get; set; } = null!;
 
-  private sealed record QuerySpec(string Name, string Kind, JsonObject Request, long? ExpectedHits);
+  private sealed record QuerySpec(string Name, string Kind, ServerRequest Request, long? ExpectedHits);
 
   [TestMethod]
   [Timeout(4 * 60 * 60 * 1000, CooperativeCancellation = true)]
@@ -37,12 +37,12 @@ public class ServerBenchmarks {
     var queries = new List<QueryResult>();
 
     Log($"Starting server \"{TestSettings.ServerPath}\"");
-    await using var server = await StdioServerClient.StartAsync(TestSettings.ServerPath);
+    await using var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
     using var sampler = new ProcessSampler(server.Process);
 
     // 1. Cold index: register the code base, wait until all files are loaded in the search engine.
     var start = sampler.TakeSample();
-    await server.WaitForEventAsync("SearchEngineFilesLoaded", TimeSpan.FromHours(1),
+    await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromHours(1),
       () => server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(corpus.RootPath, "vs-chromium-project.txt"))));
     var end = sampler.TakeSample();
     var stats = await GetStatisticsAsync(server, forceGc: false);
@@ -134,15 +134,15 @@ public class ServerBenchmarks {
     yield return new("common marker in zzz/*.cc", "code", ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, maxResults: noLimit, matchCase: true, filePathPattern: "zzz/*.cc"), 0);
   }
 
-  private async Task<QueryResult> RunQueryAsync(StdioServerClient server, ProcessSampler sampler, QuerySpec query, int runs) {
-    var warmup = await server.RequestAsync(query.Request.DeepClone().AsObject());
-    var requestName = "Request:" + (string)query.Request["$type"]!;
+  private async Task<QueryResult> RunQueryAsync(JsonRpcServerClient server, ProcessSampler sampler, QuerySpec query, int runs) {
+    var warmup = await server.RequestAsync(query.Request);
+    var requestName = "Request:" + query.Request.Method;
     var before = await GetStatisticsAsync(server, forceGc: false);
     var cpuBefore = sampler.TakeSample();
     var timings = new List<double>();
     TimedResponse last = warmup;
     for (var i = 0; i < runs; i++) {
-      last = await server.RequestAsync(query.Request.DeepClone().AsObject());
+      last = await server.RequestAsync(query.Request);
       timings.Add(last.Elapsed.TotalMilliseconds);
     }
     var cpuAfter = sampler.TakeSample();
@@ -157,9 +157,9 @@ public class ServerBenchmarks {
       Correct: query.ExpectedHits is not { } expected || expected == hits);
   }
 
-  private async Task<QueryResult> RunExtractsAsync(StdioServerClient server, ProcessSampler sampler, int runs) {
+  private async Task<QueryResult> RunExtractsAsync(JsonRpcServerClient server, ProcessSampler sampler, int runs) {
     var search = await server.RequestAsync(ServerProtocol.SearchCode(CodeBaseGenerator.CommonMarker, maxResults: 10_000_000, matchCase: true));
-    var files = ServerProtocol.FlattenResults(search.Data["searchResults"]?.AsObject()).Take(200).ToList();
+    var files = ServerProtocol.FlattenCodeResults(search.Data).Take(200).ToList();
     var before = await GetStatisticsAsync(server, forceGc: false);
     var cpuBefore = sampler.TakeSample();
     var timings = new List<double>();
@@ -169,7 +169,7 @@ public class ServerBenchmarks {
       foreach (var file in files) {
         var response = await server.RequestAsync(ServerProtocol.GetFileExtracts(file.FullPath, file.Positions));
         timings.Add(response.Elapsed.TotalMilliseconds);
-        extracts += response.Data["fileExtracts"]?.AsArray().Count ?? 0;
+        extracts += response.Data["extracts"]?.AsArray().Count ?? 0;
         bytes += response.ResponseSizeBytes;
       }
     }
@@ -178,7 +178,7 @@ public class ServerBenchmarks {
     var expected = files.Sum(f => f.Positions.Count) * (long)runs;
     return new QueryResult($"extracts of {files.Count} files", "extracts", timings.Count,
       ClientP50Ms: Percentile(timings, 50), ClientP95Ms: Percentile(timings, 95), ClientMaxMs: timings.DefaultIfEmpty(0).Max(),
-      ServerAvgMs: ServerAverageMs(before, after, "Request:GetFileExtractsRequest"),
+      ServerAvgMs: ServerAverageMs(before, after, "Request:files/extracts"),
       ServerCpuMsPerRun: timings.Count > 0 ? (cpuAfter.CpuMs - cpuBefore.CpuMs) / timings.Count : 0,
       ResponseBytes: timings.Count > 0 ? bytes / timings.Count : 0,
       HitCount: extracts, ExpectedHitCount: expected, Correct: extracts == expected);
@@ -196,10 +196,10 @@ public class ServerBenchmarks {
   /// durations of the file system scan and of the file database update measured by the server. The
   /// corpus is always restored (contents and time stamps), so that it stays pristine.
   /// </summary>
-  private async Task<List<QueryResult>> RunUpdatesAsync(StdioServerClient server, GeneratedCorpus corpus, int runs) {
+  private async Task<List<QueryResult>> RunUpdatesAsync(JsonRpcServerClient server, GeneratedCorpus corpus, int runs) {
     var unique0 = CodeBaseGenerator.UniqueMarkerPrefix + "00";
     var search = await server.RequestAsync(ServerProtocol.SearchCode(unique0, maxResults: 10, matchCase: true));
-    var targetFile = ServerProtocol.FlattenResults(search.Data["searchResults"]?.AsObject()).First().FullPath;
+    var targetFile = ServerProtocol.FlattenCodeResults(search.Data).First().FullPath;
     var originalBytes = await File.ReadAllBytesAsync(targetFile);
     var originalTime = File.GetLastWriteTimeUtc(targetFile);
     var tempDirectory = Path.Combine(corpus.RootPath, "vs-chromium-benchmark-tmp");
@@ -256,7 +256,7 @@ public class ServerBenchmarks {
         HitCount: Count, ExpectedHitCount: null, Correct: Correct);
   }
 
-  private static async Task MeasureUpdateAsync(StdioServerClient server, UpdateTimings timings, string marker, string fileName, int expectedHits, Action change) {
+  private static async Task MeasureUpdateAsync(JsonRpcServerClient server, UpdateTimings timings, string marker, string fileName, int expectedHits, Action change) {
     var before = await GetStatisticsAsync(server, forceGc: false);
     var stopwatch = System.Diagnostics.Stopwatch.StartNew();
     change();
@@ -292,7 +292,7 @@ public class ServerBenchmarks {
   /// "TrigramFiltersBuild" completed), or until it is clear that it doesn't build any (no filter
   /// memory after a few seconds).
   /// </summary>
-  private static async Task<JsonObject> WaitForBackgroundIndexAsync(StdioServerClient server) {
+  private static async Task<JsonObject> WaitForBackgroundIndexAsync(JsonRpcServerClient server) {
     var stopwatch = System.Diagnostics.Stopwatch.StartNew();
     while (true) {
       var stats = await GetStatisticsAsync(server, forceGc: false);
@@ -305,7 +305,7 @@ public class ServerBenchmarks {
     }
   }
 
-  private static async Task<JsonObject> GetStatisticsAsync(StdioServerClient server, bool forceGc) =>
+  private static async Task<JsonObject> GetStatisticsAsync(JsonRpcServerClient server, bool forceGc) =>
     (await server.RequestAsync(ServerProtocol.GetServerStatistics(forceGc))).Data;
 
   /// <summary>Average duration of a request type measured by the server, between two statistics snapshots.</summary>

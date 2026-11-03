@@ -2,14 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Server.Ipc.TypedEvents;
-
 namespace VsChromium.Server.ProgressTracking {
   public class ProgressTracker : ProgressTrackerBase {
     private readonly int _totalStepCount;
 
-    public ProgressTracker(ITypedEventSender typedEventSender, int totalStepCount)
-      : base(typedEventSender) {
+    public ProgressTracker(IProgressEventSender progressEventSender, int totalStepCount)
+      : base(progressEventSender) {
       _totalStepCount = totalStepCount;
     }
 

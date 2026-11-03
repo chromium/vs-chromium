@@ -2,7 +2,7 @@
 
   <!--
     End-to-end tests and benchmarks of the indexing server (VsChromium.Server.exe), driven as a
-    black box over its stdio JSON protocol. See docs/portable-server/PORTING_PRINCIPLES.md.
+    black box over its JSON-RPC protocol (stdin/stdout). See docs/portable-server/PORTING_PRINCIPLES.md.
 
     The server executable defaults to <repo>/Binaries/<Configuration>/Server/VsChromium.Server.exe and can
     be overridden with the VSCHROMIUM_SERVER_PATH environment variable.

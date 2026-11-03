@@ -150,6 +150,9 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   `src/Core.Server/Ipc` (server), `src/Core.Ipc` (VS package), `src/vscode/src/server/messages.ts`
   (VS Code extension). A protocol change updates the three, and is covered by the end-to-end tests
   and the client tests.
+- **In progress: JSON-RPC 2.0 protocol defined in TypeSpec** (see "Protocol definition in
+  TypeSpec" at the end): the server speaks it with `--jsonrpc` since P2; the clients move to it in
+  P3/P4, then the typed messages protocol above (`--stdio`) is removed (P5).
 
 ### File system
 
@@ -757,6 +760,40 @@ messages: `protocol/README.md`.
   reflection-free `ProtocolDispatcher` and `ProtocolNotificationSender`. Tests: generator
   (`src/Tools/ProtocolGen.Tests`: syntax, unsupported constructs with locations, generated code,
   checked-in file up to date), generated code (`Server.Tests/Protocol/TestProtocolDispatcher`).
-- Next: P2 server transport (both protocols during the transition), P3 VS Code client
-  (`vscode-jsonrpc`), P4 Visual Studio client (StreamJsonRpc), P5 removal of the typed messages
-  protocol.
+- P2 (done): the server speaks the new protocol when started with **`--jsonrpc`** (JSON-RPC 2.0
+  over stdin/stdout, LSP framing: `Content-Length: N\r\n\r\n` + N bytes of UTF-8 JSON); `--stdio`
+  keeps the typed messages protocol until both clients have moved (a server process speaks exactly
+  one protocol, `ServerProtocolMode`; `ServerComponents` only creates the components of that
+  protocol). Code in `src/Server/JsonRpc`: framing (`JsonRpcMessageReader`/`JsonRpcMessageWriter`,
+  pooled buffer, one write per message), `JsonRpcConnection` (read loop until the end of stdin,
+  System.Text.Json parsing, `ProtocolDispatcher`, errors), `JsonRpcOutput` (responses and
+  notifications, thread safe), `ProtocolRequestHandler` (the requests, ported from
+  `Ipc/TypedMessageHandlers`, which stay unchanged until P5), `JsonRpcEventForwarder` (service
+  events to `index/*` notifications). The progress of long operations goes through a small
+  `IProgressEventSender` abstraction (typed `ProgressReportEvent` or `index/progress`).
+  - Requests run concurrently on the thread pool, except **`index/pause` and `index/resume`, which
+    run one at a time in arrival order** (the former `RunOnSequentialQueue`).
+  - **Cancellation**: `$/cancelRequest { id }` cancels the request's `CancellationToken`; a
+    cancelled request fails with `-32800` (LSP `RequestCancelled`). The services are synchronous and
+    don't observe the token yet: in practice, a request is cancelled before it starts or its result
+    is replaced by the error; a search cancelled by a newer search (implicit cancellation, as
+    before) also fails with `-32800`.
+  - **Error codes**: `-32700` parse error (and invalid framing, which ends the connection), `-32600`
+    invalid request, `-32601` unknown method, `-32602` invalid parameters, `-32603` internal error
+    (`data` = `ErrorInfo`: message, type name, stack trace, inner error), `-32001` expected errors
+    shown to the user (`RecoverableErrorException`: invalid regex, project not found...), `-32800`
+    cancelled. Details: "Transport" in `protocol/README.md`.
+  - Behavior differences with the typed messages protocol: flat search results; `tree/entries*`
+    return names (`DirectoryEntries`, `exists: false` instead of null) and echo the requested
+    relative path; `tree/get` returns no projects when `knownVersion` is current; no "hello"
+    message (`server/initialize` instead); request durations are recorded as `Request:<method>`
+    in the server statistics; `tree/directoryStatistics` still returns zeros (not implemented, as
+    `GetDirectoryStatisticsRequest`).
+  - Tests: `Server.Tests/JsonRpc` (framing, connection over in-memory streams with a fake handler:
+    ids, void results, all error codes, cancellation, notifications, pause/resume ordering),
+    `Server.Tests/ServerProcess/TestJsonRpcServer` (the executable with `--jsonrpc`). The end-to-end
+    tests and the benchmarks (`src/Tests.EndToEnd`) use the new protocol (`JsonRpcServerClient`),
+    plus `Protocol/JsonRpcProtocolTests`; `Protocol/LegacyProtocolSmokeTests` keeps `--stdio`
+    covered until P5. The benchmark result files are unchanged (same scenarios and query names).
+- Next: P3 VS Code client (`vscode-jsonrpc`), P4 Visual Studio client (StreamJsonRpc), P5 removal of
+  the typed messages protocol.

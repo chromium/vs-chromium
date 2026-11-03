@@ -3,21 +3,19 @@
 // found in the LICENSE file.
 
 using System.Threading;
-using VsChromium.Core.Ipc.TypedMessages;
-using VsChromium.Server.Ipc.TypedEvents;
 
 namespace VsChromium.Server.ProgressTracking {
   public abstract class ProgressTrackerBase : IProgressTracker {
     private readonly object _lock = new object();
     private readonly long  _millisecondsBetweenRefresh = 100;
-    private readonly ITypedEventSender _typedEventSender;
+    private readonly IProgressEventSender _progressEventSender;
     private readonly ITickCountProvider _tickCountProvider = new EnvironmentTickCountProvider();
     private int _currentStep;
     private bool _eventsSent;
     private long _lastUpdatedTickCount;
 
-    protected ProgressTrackerBase(ITypedEventSender typedEventSender) {
-      _typedEventSender = typedEventSender;
+    protected ProgressTrackerBase(IProgressEventSender progressEventSender) {
+      _progressEventSender = progressEventSender;
       _lastUpdatedTickCount = GetTickCount();
     }
 
@@ -61,11 +59,7 @@ namespace VsChromium.Server.ProgressTracking {
     }
 
     private void SendProgressEvent(DisplayProgressCallback displayProgressCallback) {
-      _typedEventSender.SendEventAsync(new ProgressReportEvent {
-        DisplayText = displayProgressCallback(_currentStep, TotalStepCount),
-        Completed = _currentStep,
-        Total = TotalStepCount,
-      });
+      _progressEventSender.SendProgress(displayProgressCallback(_currentStep, TotalStepCount), _currentStep, TotalStepCount);
     }
   }
 }

@@ -17,10 +17,10 @@ namespace VsChromium.Tests.EndToEnd.Regression;
 /// </summary>
 [TestClass]
 public class BehaviorChangeTests {
-  private static StdioServerClient? s_server;
+  private static JsonRpcServerClient? s_server;
   private static string s_root = "";
 
-  private static StdioServerClient Server => s_server ?? throw new InvalidOperationException("Server not started");
+  private static JsonRpcServerClient Server => s_server ?? throw new InvalidOperationException("Server not started");
 
   // --- Test files ------------------------------------------------------------------------------
 
@@ -100,8 +100,8 @@ public class BehaviorChangeTests {
   [ClassInitialize]
   public static async Task ClassInitialize(TestContext context) {
     s_root = CorpusCache.GetOrCreateCustom("behavior-changes", version: 4, GenerateFiles);
-    s_server = await StdioServerClient.StartAsync(TestSettings.ServerPath);
-    await Server.WaitForEventAsync("SearchEngineFilesLoaded", TimeSpan.FromMinutes(2),
+    s_server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
+    await Server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
       () => Server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(s_root, "vs-chromium-project.txt"))));
   }
 
@@ -113,11 +113,10 @@ public class BehaviorChangeTests {
   }
 
   private static async Task<(long HitCount, List<SearchResultFile> Files)> SearchAsync(string text, bool matchCase = true,
-                                                                                     bool regex = false, bool useRe2Engine = true,
-                                                                                     bool matchWholeWord = false) {
+                                                                                     bool regex = false, bool matchWholeWord = false) {
     var response = await Server.RequestAsync(ServerProtocol.SearchCode(text, matchCase: matchCase, regex: regex,
-      useRe2Engine: useRe2Engine, matchWholeWord: matchWholeWord));
-    return (response.Data["hitCount"]!.GetValue<long>(), ServerProtocol.FlattenResults(response.Data["searchResults"]?.AsObject()));
+      matchWholeWord: matchWholeWord));
+    return (response.Data["hitCount"]!.GetValue<long>(), ServerProtocol.FlattenCodeResults(response.Data));
   }
 
   // --- #1: positions are UTF-16 offsets ------------------------------------------------------
@@ -142,7 +141,7 @@ public class BehaviorChangeTests {
     var (_, files) = await SearchAsync(marker);
     var file = files.Single();
     var response = await Server.RequestAsync(ServerProtocol.GetFileExtracts(file.FullPath, file.Positions));
-    var extract = response.Data["fileExtracts"]!.AsArray().Single()!;
+    var extract = response.Data["extracts"]!.AsArray().Single()!;
     var text = (string)extract["text"]!;
     var offset = extract["offset"]!.GetValue<int>();
     var expectedLine = OffsetsText.Split('\n').Single(x => x.Contains(marker));
@@ -198,26 +197,19 @@ public class BehaviorChangeTests {
   }
 
   // --- #4: a single regex engine with the same results ----------------------------------------
+  // (The "useRe2Engine" parameter of the typed messages protocol is gone: there is a single regex
+  // engine.)
 
   [TestMethod]
-  public async Task Regex_Re2_DotMatchesNonAsciiCharacter() {
+  public async Task Regex_DotMatchesNonAsciiCharacter() {
     // Regression test: already correct with RE2 (which runs on UTF-8 text).
-    var (hits, _) = await SearchAsync("h.llo_regex_marker", regex: true, useRe2Engine: true);
+    var (hits, _) = await SearchAsync("h.llo_regex_marker", regex: true);
     Assert.AreEqual(1L, hits);
   }
 
   [TestMethod]
-  public async Task Regex_NonRe2_DotMatchesNonAsciiCharacter() {
-    // "useRe2Engine" is now ignored: there is a single regex engine.
-    var (hits, _) = await SearchAsync("h.llo_regex_marker", regex: true, useRe2Engine: false);
-    Assert.AreEqual(1L, hits);
-  }
-
-  [TestMethod]
-  [DataRow(true)]
-  [DataRow(false)]
-  public async Task Regex_NonAsciiCharacterClass_IsFound(bool useRe2Engine) {
-    var (hits, _) = await SearchOrFailAsync("[äöü]+_regex_class", regex: true, useRe2Engine: useRe2Engine);
+  public async Task Regex_NonAsciiCharacterClass_IsFound() {
+    var (hits, _) = await SearchOrFailAsync("[äöü]+_regex_class", regex: true);
     Assert.AreEqual(1L, hits);
   }
 
@@ -266,9 +258,9 @@ public class BehaviorChangeTests {
 
   /// <summary>Same as <see cref="SearchAsync"/>, with server errors reported as assertion failures.</summary>
   private static async Task<(long HitCount, List<SearchResultFile> Files)> SearchOrFailAsync(string text, bool matchCase = true,
-                                                                                           bool regex = false, bool useRe2Engine = true) {
+                                                                                           bool regex = false) {
     try {
-      return await SearchAsync(text, matchCase, regex, useRe2Engine);
+      return await SearchAsync(text, matchCase, regex);
     } catch (ServerErrorException e) {
       Assert.Fail($"Server returned an error: {e.Message}");
       throw;

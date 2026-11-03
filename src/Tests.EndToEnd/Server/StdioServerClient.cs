@@ -10,18 +10,10 @@ using System.Text.Json.Nodes;
 
 namespace VsChromium.Tests.EndToEnd.Server;
 
-/// <summary>An error response returned by the server.</summary>
-public sealed class ServerErrorException(string message, JsonObject error) : Exception(message) {
-  public JsonObject Error { get; } = error;
-}
-
-/// <summary>A response from the server, with the time it took (measured by the client).</summary>
-public sealed record TimedResponse(JsonObject Data, TimeSpan Elapsed, int ResponseSizeBytes);
-
 /// <summary>
-/// Client for VsChromium.Server.exe running in "--stdio" mode (one JSON message per line on
-/// stdin/stdout), used as a black box: it only depends on the JSON protocol, so it works with any
-/// version of the server (the current one and the ported one).
+/// Client for VsChromium.Server.exe running in "--stdio" mode (typed messages protocol, one JSON
+/// message per line on stdin/stdout), used by the legacy smoke tests until that protocol is removed.
+/// The other tests and the benchmarks use the JSON-RPC protocol (<see cref="JsonRpcServerClient"/>).
 /// </summary>
 public sealed class StdioServerClient : IAsyncDisposable {
   private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(30);

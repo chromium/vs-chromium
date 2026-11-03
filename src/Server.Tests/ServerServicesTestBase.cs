@@ -10,7 +10,7 @@ namespace VsChromium.Tests {
     /// The services of the server (in process), as created by ServerStub.
     /// </summary>
     protected static ServerComponents CreateServerServices() {
-      return new ServerComponents();
+      return new ServerComponents(ServerProtocolMode.JsonRpc);
     }
   }
 }

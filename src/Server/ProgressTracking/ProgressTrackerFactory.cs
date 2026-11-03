@@ -2,22 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Server.Ipc.TypedEvents;
-
 namespace VsChromium.Server.ProgressTracking {
   public class ProgressTrackerFactory : IProgressTrackerFactory {
-    private readonly ITypedEventSender _typedEventSender;
+    private readonly IProgressEventSender _progressEventSender;
 
-    public ProgressTrackerFactory(ITypedEventSender typedEventSender) {
-      _typedEventSender = typedEventSender;
+    public ProgressTrackerFactory(IProgressEventSender progressEventSender) {
+      _progressEventSender = progressEventSender;
     }
 
     public IProgressTracker CreateTracker(int totalStepCount) {
-      return new ProgressTracker(_typedEventSender, totalStepCount);
+      return new ProgressTracker(_progressEventSender, totalStepCount);
     }
 
     public IProgressTracker CreateIndeterminateTracker() {
-      return new IndeterminateProgressTracker(_typedEventSender);
+      return new IndeterminateProgressTracker(_progressEventSender);
     }
   }
 }

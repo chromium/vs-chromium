@@ -56,9 +56,9 @@
     <Compile Include="VsChromium\Wpf\TestHiararchyObjectNavigator.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">
+    <ProjectReference Include="$(BuildRoot)src\VsCore\VsCore.csproj">
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
-      <Name>VsChromium.Core</Name>
+      <Name>VsCore</Name>
     </ProjectReference>
     <ProjectReference Include="..\VsChromium\VsChromium.csproj">
       <Project>{8ED06AA3-93DF-48FE-97C0-F516E99FDB32}</Project>

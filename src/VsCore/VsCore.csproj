@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>VsChromium.Core</AssemblyName>
+    <AssemblyName>VsChromium.VsCore</AssemblyName>
     <RootNamespace>VsChromium.Core</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>AnyCPU</PlatformTarget>

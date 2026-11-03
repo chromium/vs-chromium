@@ -85,9 +85,9 @@
     </VsdConfigXmlFiles>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj">
+    <ProjectReference Include="..\VsCore\VsCore.csproj">
       <Project>{6f70c76f-5a3a-4657-a073-075a08555bad}</Project>
-      <Name>Core</Name>
+      <Name>VsCore</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

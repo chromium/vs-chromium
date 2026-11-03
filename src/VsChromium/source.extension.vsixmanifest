@@ -21,10 +21,10 @@
   <Assets>
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
     <Asset Type="Microsoft.VisualStudio.Assembly" Path="|%CurrentProject%|"/>
-    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|Core|" AssemblyName="|Core;AssemblyName|"/>
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="|VsCore|" AssemblyName="|VsCore;AssemblyName|"/>
     <Asset Type="Microsoft.VisualStudio.Assembly" Path="|DkmIntegration|" AssemblyName="|DkmIntegration;AssemblyName|" />
     <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|%CurrentProject%|" />
-    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|Core|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|VsCore|" />
     <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|DkmIntegration|"/>
     <Asset Type="DebuggerEngineExtension" Path="VsChromium.vsdconfig" />
     <Asset Type="NativeVisualizer" Path="Visualizers.natvis" />

@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,11 +9,11 @@ using VsChromium.Core;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("VsChromium.Core")]
-[assembly: AssemblyDescription("Library containing code used by all VsChromium assemblies.")]
+[assembly: AssemblyTitle("VsChromium.VsCore")]
+[assembly: AssemblyDescription("Library containing code shared by the Visual Studio extension assemblies.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("The Chromium Authors")]
-[assembly: AssemblyProduct("VsChromiumCore")]
+[assembly: AssemblyProduct("VsChromium.VsCore")]
 [assembly: AssemblyCopyright(VsChromiumVersion.Copyright)]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

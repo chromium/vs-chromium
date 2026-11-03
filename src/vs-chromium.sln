@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31306.274
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "Core\Core.csproj", "{6F70C76F-5A3A-4657-A073-075A08555BAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VsCore", "VsCore\VsCore.csproj", "{6F70C76F-5A3A-4657-A073-075A08555BAD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VsChromium", "VsChromium\VsChromium.csproj", "{8ED06AA3-93DF-48FE-97C0-F516E99FDB32}"
 	ProjectSection(ProjectDependencies) = postProject

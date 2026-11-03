@@ -133,9 +133,9 @@
     <None Include="Resources\Images_32bit.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(BuildRoot)src\Core\Core.csproj">
+    <ProjectReference Include="$(BuildRoot)src\VsCore\VsCore.csproj">
       <Project>{6F70C76F-5A3A-4657-A073-075A08555BAD}</Project>
-      <Name>VsChromium.Core</Name>
+      <Name>VsCore</Name>
       <IncludeOutputGroupsInVSIX>DebugSymbolsProjectOutputGroup%3bBuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>

@@ -17,9 +17,9 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     public FileContents ReadFileContents(FullPath path) {
+      SafeNativeMemoryHandle block = null;
       try {
         const int trailingByteCount = 2;
-        SafeNativeMemoryHandle block;
         DateTime lastWriteTimeUtc;
         if (_fileSystem is IFileContentsReader reader) {
           // Faster: a single path lookup (attributes are read from the open file).
@@ -32,6 +32,9 @@ namespace VsChromium.Server.FileSystemContents {
         return ReadFileContentsWorker(block, trailingByteCount, lastWriteTimeUtc);
       }
       catch (Exception e) {
+        // Note: Release the native memory now (up to 2 GB per file) rather than when the handle
+        // is finalized.
+        block?.Dispose();
         Logger.LogWarn(e, "Skipping file \"{0}\" because of an error reading its contents", path);
         return BinaryFileContents.Empty;
       }

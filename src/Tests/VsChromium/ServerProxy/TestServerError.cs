@@ -64,7 +64,7 @@ namespace VsChromium.Tests.VsChromium.ServerProxy {
       var recoverable = ServerError.FromErrorInfo(new ErrorInfo {
         Message = "Scan failed",
         TypeName = "System.Exception",
-        Inner = new ErrorInfo { Message = "Invalid project path", TypeName = "VsChromium.Core.Ipc.RecoverableErrorException" },
+        Inner = new ErrorInfo { Message = "Invalid project path", TypeName = "VsChromium.Core.Utility.RecoverableErrorException" },
       });
       Assert.IsTrue(recoverable.IsRecoverable);
       Assert.AreEqual("Invalid project path", recoverable.GetBaseError().Message);

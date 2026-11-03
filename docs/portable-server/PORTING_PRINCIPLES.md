@@ -79,8 +79,7 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 
 | Project | Target | Used by | Content |
 |---|---|---|---|
-| `VsChromium.Core.Ipc` | `netstandard2.0` | VS package (net472), VS tests | Message types, client side (plain data classes, no dependency) |
-| `VsChromium.Core.Ipc.Json` | `netstandard2.0` | VS package, VS tests | JSON serialization of the messages, JSON lines stream over stdio, client side |
+| `VsChromium.Core.Ipc`, `VsChromium.Core.Ipc.Json` | – | – | Deleted in P4 of the protocol migration (VS-side copy of the typed messages and their JSON serialization; the VS package uses the generated JSON-RPC client, `src/VsChromium-Shared/Protocol/Generated`) |
 | `VsChromium.Core` (existing, slimmed) | `net472` | VS package, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
 | `VsChromium.Core.Server` (`src/Core.Server`) | modern .NET | server | Protocol code generated from `protocol/*.tsp` (`Protocol\Generated`), paths, pattern matching, file system, configuration, logging, collections |
 | `VsChromium.Server` (ported) | modern .NET | server process | All server code + managed replacements for the native code + portable file system |
@@ -792,8 +791,20 @@ messages: `protocol/README.md`.
     and query names).
 - P3 (done): the VS Code extension uses the new protocol (`vscode-jsonrpc`, generated
   `src/vscode/src/protocol/protocol.g.ts`).
-- P4 (being merged): the Visual Studio extension uses the new protocol (StreamJsonRpc, generated
-  `src/VsChromium-Shared/Protocol/Generated/Protocol.g.cs`).
+- P4 (done): the **Visual Studio extension** uses the new protocol (`--jsonrpc`) with StreamJsonRpc
+  and the generated client (`ProtocolClient`, `IProtocolNotifications`), in
+  `src/VsChromium-Shared/ServerProxy`: `ServerClient` (start, `server/initialize`, notifications as
+  events, connection loss reported as before by `ProcessFatalError`), `ServerError` (error codes
+  -32001/-32800/-32603 + `ErrorInfo`). `DispatchThreadServerRequest<T>` keeps the threading model
+  (delay and supersede by id, request on the thread pool, callbacks on the UI thread) and cancels the
+  superseded running request (`$/cancelRequest`); `RunSequentially` replaces `RunOnSequentialQueue`
+  for file registrations and pause/resume. The flat search results are turned into the former tree
+  (project nodes containing the files named after their relative path) by
+  `SearchResultTreeBuilder`. On .NET Framework, `Process.Start` may write a UTF-8 BOM (preamble of
+  `Console.InputEncoding`) to the server's stdin: the client writes an ignored header line first, and the server skips a leading BOM.
+  `src/Core.Ipc` and `src/Core.Ipc.Json` are deleted (`VsChromiumVersion` moved to `src/Core`).
+  Tests: `src/Tests/ServerProcess` (real server through `IServerClient`), `SearchResultTreeBuilder`,
+  `ServerError`.
 - P5 (done): the typed messages protocol is removed from the server. JSON-RPC is the only mode
   (`--jsonrpc`, `--stdio` accepted as an alias, the usual LSP convention); `ServerProtocolMode` and
   the legacy components are gone (`IpcServer`, `src/Server/Ipc`, the receive/send threads,

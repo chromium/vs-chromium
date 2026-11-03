@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Buffers;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
 
@@ -19,7 +20,7 @@ namespace VsChromium.Server.FileSystemNames {
   ///
   /// For example, to represent the file name "d:\foo\bar\baz\blah.txt" relative
   /// to the "d:\foo\bar" absolute path, we have this hierarchy of
-  /// instances:
+  /// instances (relative paths are computed from the names, not stored):
   /// FileName
   ///   RelativePath = "baz\blah.txt"
   ///   Parent => RelativeDirectoryName
@@ -40,6 +41,60 @@ namespace VsChromium.Server.FileSystemNames {
     /// cref="RelativePath"/> otherwise.
     /// </summary>
     public abstract RelativePath RelativePath { get; }
+
+    /// <summary>
+    /// The length of <see cref="RelativePath"/> (0 if <see cref="IsAbsoluteName"/> is true),
+    /// without building it.
+    /// </summary>
+    public abstract int RelativePathLength { get; }
+
+    /// <summary>
+    /// Copies the relative path (<see cref="RelativePathLength"/> characters) to
+    /// <paramref name="destination"/>, without allocating.
+    /// </summary>
+    public void CopyRelativePathTo(Span<char> destination) {
+      var end = RelativePathLength;
+      for (var current = this; !current.IsAbsoluteName; current = current.Parent) {
+        var name = current.Name;
+        var start = end - name.Length;
+        name.AsSpan().CopyTo(destination.Slice(start));
+        if (start > 0)
+          destination[start - 1] = PathHelpers.DirectorySeparatorChar;
+        end = start - 1;
+      }
+    }
+
+    /// <summary>
+    /// Builds the relative path string (a single allocation).
+    /// </summary>
+    protected string BuildRelativePath() {
+      return string.Create(RelativePathLength, this, static (span, directory) => directory.CopyRelativePathTo(span));
+    }
+
+    /// <summary>
+    /// Evaluates <paramref name="predicate"/> on the relative path of this directory, built in a
+    /// temporary buffer (no allocation, unlike <see cref="RelativePath"/>).
+    /// </summary>
+    public bool TestRelativePath<TState>(RelativePathPredicate<TState> predicate, TState state) {
+      var length = RelativePathLength;
+      char[] rented = null;
+      Span<char> buffer = length <= MaxStackPathLength
+        ? stackalloc char[length]
+        : (rented = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
+      try {
+        CopyRelativePathTo(buffer);
+        return predicate(buffer, state);
+      }
+      finally {
+        if (rented != null)
+          ArrayPool<char>.Shared.Return(rented);
+      }
+    }
+
+    /// <summary>
+    /// Paths longer than this are built in a rented buffer instead of on the stack.
+    /// </summary>
+    public const int MaxStackPathLength = 512;
 
     /// <summary>
     /// Return the <see cref="FullPath"/> of this instance.

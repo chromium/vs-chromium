@@ -12,10 +12,11 @@ namespace VsChromium.Server.FileSystemNames {
     private readonly string _name;
     private readonly int _hashCode;
     /// <summary>
-    /// Stored (one string per directory, a few MB for 40,000 directories) so
-    /// that the relative path of files is built with a single concatenation.
+    /// Length of the relative path (the path itself is not stored: one string per directory
+    /// was ~150 MB for 640,000 directories). Relative paths are built on demand, or copied into
+    /// temporary buffers (see <see cref="DirectoryName.CopyRelativePathTo"/>).
     /// </summary>
-    private readonly RelativePath _relativePath;
+    private readonly int _relativePathLength;
 
     public RelativeDirectoryName(DirectoryName parent, string name) {
       Invariants.CheckArgumentNotNull(parent, nameof(parent));
@@ -24,12 +25,13 @@ namespace VsChromium.Server.FileSystemNames {
       _parent = parent;
       _name = name;
       _hashCode = HashCode.Combine(_parent.GetHashCode(), SystemPathComparer.GetHashCode(_name));
-      var parentPath = parent.RelativePath;
-      _relativePath = new RelativePath(parentPath.IsEmpty ? name : parentPath.Value + PathHelpers.DirectorySeparatorChar + name);
+      var parentLength = parent.RelativePathLength;
+      _relativePathLength = parentLength == 0 ? name.Length : parentLength + 1 + name.Length;
     }
 
     public override DirectoryName Parent => _parent;
-    public override RelativePath RelativePath => _relativePath;
+    public override int RelativePathLength => _relativePathLength;
+    public override RelativePath RelativePath => new RelativePath(BuildRelativePath());
     public override FullPath FullPath => _parent.GetAbsolutePath().Combine(RelativePath);
     public override string Name => _name;
 

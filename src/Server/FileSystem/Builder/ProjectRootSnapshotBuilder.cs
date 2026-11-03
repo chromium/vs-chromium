@@ -87,6 +87,13 @@ namespace VsChromium.Server.FileSystem.Builder {
     private DirectorySnapshot ApplyDirectorySnapshotDelta(DirectorySnapshot oldDirectory) {
       var oldDirectoryPath = oldDirectory.DirectoryName.RelativePath;
 
+      // Directories with no created or deleted entry in their subtree are unchanged (snapshots
+      // are immutable): reuse them, instead of visiting (and building the relative path of) all
+      // the directories of the project for each change.
+      if (!_pathChanges.IsSubtreeAffected(oldDirectoryPath)) {
+        return oldDirectory;
+      }
+
       // Create lists of created dirs and files. We have to access the file system to know
       // if each path is a file or a directory.
       List<IFileInfoSnapshot> createDirs = null;
@@ -188,7 +195,7 @@ namespace VsChromium.Server.FileSystem.Builder {
 
     private async Task<DirectorySnapshot> ProcessDirectoryAsync(DirectoryData directory, CancellationToken token) {
       if (!directory.DirectoryName.IsAbsoluteName &&
-          !_project.DirectoryFilter.Include(directory.DirectoryName.RelativePath)) {
+          !directory.DirectoryName.TestRelativePath(static (path, filter) => filter.Include(path), _project.DirectoryFilter)) {
         return null;
       }
 

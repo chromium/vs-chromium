@@ -46,17 +46,40 @@ namespace VsChromium.Server.FileSystemNames {
 
 
     private static readonly char DirectorySeparatorChar = PathHelpers.DirectorySeparatorChar;
-    private static readonly string DirectorySeparatorString = new string(DirectorySeparatorChar, 1);
+
+    /// <summary>
+    /// The length of the relative path of this file name.
+    /// </summary>
+    private int RelativePathLength {
+      get {
+        var parentLength = _parent.RelativePathLength;
+        return parentLength == 0 ? _name.Length : parentLength + 1 + _name.Length;
+      }
+    }
+
+    /// <summary>
+    /// Copies the relative path (<see cref="RelativePathLength"/> characters) to <paramref
+    /// name="destination"/>.
+    /// </summary>
+    private void CopyRelativePathTo(Span<char> destination) {
+      var parentLength = _parent.RelativePathLength;
+      if (parentLength == 0) {
+        _name.AsSpan().CopyTo(destination);
+        return;
+      }
+      _parent.CopyRelativePathTo(destination);
+      destination[parentLength] = DirectorySeparatorChar;
+      _name.AsSpan().CopyTo(destination.Slice(parentLength + 1));
+    }
 
     private RelativePath BuildRelativePath() {
       Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
 
-      // The relative path of directories is stored (see RelativeDirectoryName),
-      // so this is a single string allocation.
-      var parentPath = _parent.RelativePath;
-      if (parentPath.IsEmpty)
+      // Note: The relative path of directories is not stored (see RelativeDirectoryName), it is
+      // copied from the names of the parents: a single string allocation.
+      if (_parent.RelativePathLength == 0)
         return new RelativePath(_name);
-      return new RelativePath(string.Concat(parentPath.Value, DirectorySeparatorString, _name));
+      return new RelativePath(string.Create(RelativePathLength, this, static (span, fileName) => fileName.CopyRelativePathTo(span)));
     }
 
     /// <summary>
@@ -67,19 +90,16 @@ namespace VsChromium.Server.FileSystemNames {
     public bool TestRelativePath<TState>(RelativePathPredicate<TState> predicate, TState state) {
       Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
 
-      var parentPath = _parent.RelativePath.Value;
-      if (parentPath.Length == 0)
+      if (_parent.RelativePathLength == 0)
         return predicate(_name.AsSpan(), state);
 
-      var length = parentPath.Length + 1 + _name.Length;
+      var length = RelativePathLength;
       char[] rented = null;
-      Span<char> buffer = length <= MaxStackPathLength
+      Span<char> buffer = length <= DirectoryName.MaxStackPathLength
         ? stackalloc char[length]
         : (rented = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
       try {
-        parentPath.AsSpan().CopyTo(buffer);
-        buffer[parentPath.Length] = DirectorySeparatorChar;
-        _name.AsSpan().CopyTo(buffer.Slice(parentPath.Length + 1));
+        CopyRelativePathTo(buffer);
         return predicate(buffer, state);
       }
       finally {
@@ -87,8 +107,6 @@ namespace VsChromium.Server.FileSystemNames {
           ArrayPool<char>.Shared.Return(rented);
       }
     }
-
-    private const int MaxStackPathLength = 512;
 
     /// <summary>
     /// Evaluates <paramref name="predicate"/> on the full path of this file name (same value as
@@ -98,28 +116,22 @@ namespace VsChromium.Server.FileSystemNames {
       Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
 
       var rootPath = _parent.GetAbsolutePath().Value;
-      var parentPath = _parent.RelativePath.Value;
+      var relativeLength = RelativePathLength;
       // Same rules as PathHelpers.CombinePaths(root, relativePath)
       var last = rootPath.Length > 0 ? rootPath[rootPath.Length - 1] : DirectorySeparatorChar;
       var rootSeparator = (last == System.IO.Path.DirectorySeparatorChar || last == System.IO.Path.AltDirectorySeparatorChar ||
                            last == System.IO.Path.VolumeSeparatorChar) ? 0 : 1;
-      var length = rootPath.Length + rootSeparator + (parentPath.Length == 0 ? 0 : parentPath.Length + 1) + _name.Length;
+      var length = rootPath.Length + rootSeparator + relativeLength;
       char[] rented = null;
-      Span<char> buffer = length <= MaxStackPathLength
+      Span<char> buffer = length <= DirectoryName.MaxStackPathLength
         ? stackalloc char[length]
         : (rented = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
       try {
-        var index = 0;
         rootPath.AsSpan().CopyTo(buffer);
-        index += rootPath.Length;
+        var index = rootPath.Length;
         if (rootSeparator == 1)
           buffer[index++] = DirectorySeparatorChar;
-        if (parentPath.Length > 0) {
-          parentPath.AsSpan().CopyTo(buffer.Slice(index));
-          index += parentPath.Length;
-          buffer[index++] = DirectorySeparatorChar;
-        }
-        _name.AsSpan().CopyTo(buffer.Slice(index));
+        CopyRelativePathTo(buffer.Slice(index, relativeLength));
         return predicate(buffer, state);
       }
       finally {

@@ -20,6 +20,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     private readonly Dictionary<RelativePath, PathChangeKind> _map;
     private readonly Lazy<Dictionary<RelativePath, List<RelativePath>>> _createdChildren;
     private readonly Lazy<Dictionary<RelativePath, List<RelativePath>>> _deletedChildren;
+    private readonly Lazy<HashSet<RelativePath>> _affectedDirectories;
 
     public ProjectPathChanges(FullPath projectPath, IList<PathChangeEntry> entries) {
       _projectPath = projectPath;
@@ -34,6 +35,8 @@ namespace VsChromium.Server.FileSystem.Builder {
         .Where(x => x.Key.Parent != null)
         .GroupBy(x => x.Key.Parent.Value)
         .ToDictionary(g => g.Key, g => g.Select(x => x.Key).ToList()));
+
+      _affectedDirectories = new Lazy<HashSet<RelativePath>>(ComputeAffectedDirectories);
 
       _deletedChildren = new Lazy<Dictionary<RelativePath, List<RelativePath>>>(() => _map
         .Where(x => x.Value == PathChangeKind.Deleted)
@@ -60,6 +63,31 @@ namespace VsChromium.Server.FileSystem.Builder {
 
     public IList<RelativePath> GetDeletedEntries(RelativePath parentPath) {
       return _deletedChildren.Value.GetValue(parentPath) ?? ArrayUtilities.EmptyList<RelativePath>.Instance;
+    }
+
+    /// <summary>
+    /// Returns true if an entry has been created or deleted in the directory <paramref
+    /// name="directoryPath"/> or one of its sub-directories (recursively).
+    /// </summary>
+    public bool IsSubtreeAffected(RelativePath directoryPath) {
+      return _affectedDirectories.Value.Contains(directoryPath);
+    }
+
+    /// <summary>
+    /// The ancestors (parent, grand-parent, ..., the project root) of the created and deleted
+    /// entries.
+    /// </summary>
+    private HashSet<RelativePath> ComputeAffectedDirectories() {
+      var result = new HashSet<RelativePath>();
+      foreach (var entry in _map) {
+        if (entry.Value != PathChangeKind.Created && entry.Value != PathChangeKind.Deleted)
+          continue;
+        for (var parent = entry.Key.Parent; parent != null; parent = parent.Value.Parent) {
+          if (!result.Add(parent.Value))
+            break; // Ancestors already added
+        }
+      }
+      return result;
     }
   }
 }

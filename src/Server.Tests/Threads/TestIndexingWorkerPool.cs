@@ -71,6 +71,34 @@ namespace VsChromium.Tests.Threads {
     }
 
     [TestMethod]
+    public void CompletedJobsDontKeepTheirDataAlive() {
+      // Regression test: the state of a completed job stayed referenced (stack slot of an idle
+      // worker), with its delegate and everything it captured (observed: 81 MB of temporary arrays
+      // of an index load).
+      using var pool = new IndexingWorkerPool(coreThreadCount: 4, elasticThreadCount: 0,
+        contentionMode: IndexingWorkerPool.ContentionMode.AlwaysContended);
+      var data = RunJobCapturingData(pool);
+      for (var i = 0; i < 5 && data.IsAlive; i++) {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        Thread.Sleep(50);
+      }
+      Assert.IsFalse(data.IsAlive, "The data captured by a completed job is still referenced");
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference RunJobCapturingData(IndexingWorkerPool pool) {
+      var data = new int[1000];
+      pool.RunBatches(data.Length, batchSize: 10, CancellationToken.None, (start, end) => {
+        for (var i = start; i < end; i++) {
+          data[i]++;
+        }
+        return true;
+      });
+      return new WeakReference(data);
+    }
+
+    [TestMethod]
     public void ContendedModeRestrictsExecutionToCoreWorkersWithoutStalling() {
       using var pool = new IndexingWorkerPool(
         coreThreadCount: 2,

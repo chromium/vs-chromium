@@ -33,6 +33,7 @@ namespace VsChromium.Server.Threads {
     private const double CanaryCycleBudgetMs = 60.0;
     private static readonly long CanaryStaleTicks = (long)(Stopwatch.Frequency * 0.080); // 80 ms
     private static readonly long WorkerRecheckTicks = Stopwatch.Frequency / 250; // 4 ms
+    private const int QueueTrimThreshold = 4096;
 
     public enum ContentionMode {
       Auto,
@@ -57,6 +58,7 @@ namespace VsChromium.Server.Threads {
     private long _lastCanaryHealthyTick;
     private int _activeSchedulerTasks;
     private int _activeBatchJobs;
+    private int _queueHighWater;
     private bool _started;
     private bool _disposed;
 
@@ -281,6 +283,7 @@ namespace VsChromium.Server.Threads {
             }
           }
           _queue.Enqueue(item);
+          _queueHighWater = Math.Max(_queueHighWater, _queue.Count);
           toWake = TryPopParkedWorkerLocked(allowElastic: !IsCpuContended());
         }
       }
@@ -490,6 +493,12 @@ namespace VsChromium.Server.Threads {
               if (_queue.Count > 0 && _parkedCore.Count > 0) {
                 extraToWake = _parkedCore.Pop();
               }
+              // Release the array of the queue after a burst of work items (e.g. one per directory
+              // during a traversal: 4 MB for 640,000 directories).
+              if (_queue.Count == 0 && _queueHighWater > QueueTrimThreshold) {
+                _queue.TrimExcess();
+                _queueHighWater = 0;
+              }
               self.Gate.Reset();
               if (self.IsCore) {
                 _parkedCore.Push(self);
@@ -537,7 +546,13 @@ namespace VsChromium.Server.Threads {
       private readonly int _batchesPerRegion;
       private readonly int _ticketCount;
       private readonly CancellationToken _cancellationToken;
-      private readonly Func<int, int, bool> _processBatch;
+      /// <summary>
+      /// Released when the job completes (see <see cref="MarkCompleted"/>): the state of a
+      /// completed job may stay referenced for a while (e.g. by a stack slot of an idle worker
+      /// thread), and the delegate typically references large temporary data (observed: the
+      /// arrays of all the files of an index load, 81 MB for 2.6M files).
+      /// </summary>
+      private Func<int, int, bool> _processBatch;
       private readonly object _latch = new object();
 
       private int _cursor;
@@ -611,8 +626,12 @@ namespace VsChromium.Server.Threads {
             _pool.ThrowIfDisposed();
 
             var start = batch * _batchSize;
+            var processBatch = Volatile.Read(ref _processBatch);
+            if (processBatch == null) {
+              return; // Completed
+            }
             batchExecuted = true;
-            if (!_processBatch(start, Math.Min(_count, start + _batchSize))) {
+            if (!processBatch(start, Math.Min(_count, start + _batchSize))) {
               Volatile.Write(ref _stopped, 1);
             }
           }
@@ -642,6 +661,7 @@ namespace VsChromium.Server.Threads {
       }
 
       private void MarkCompleted() {
+        Volatile.Write(ref _processBatch, null);
         if (Interlocked.Exchange(ref _completed, 1) == 0) {
           lock (_latch) {
             Monitor.PulseAll(_latch);

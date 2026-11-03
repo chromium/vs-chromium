@@ -26,8 +26,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DkmIntegration", "DkmIntegration\DkmIntegration.csproj", "{58572470-7222-49BE-850B-C6CE224A813A}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "VsChromium-Shared", "VsChromium-Shared\VsChromium-Shared.shproj", "{2713D2F8-A16A-493F-99EC-84EEDAA79196}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VsChromium.Tests.EndToEnd", "Tests.EndToEnd\VsChromium.Tests.EndToEnd.csproj", "{F29899A6-61B2-450A-A5D2-2332B02C1586}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server.Tests", "Server.Tests\Server.Tests.csproj", "{08DED813-357D-4C47-A848-E4D63E86F619}"
@@ -90,10 +88,6 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2449B770-DC55-4345-9323-22AE96A1F791}
-	EndGlobalSection
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		VsChromium-Shared\VsChromium-Shared.projitems*{2713d2f8-a16a-493f-99ec-84eedaa79196}*SharedItemsImports = 13
-		VsChromium-Shared\VsChromium-Shared.projitems*{8ed06aa3-93df-48fe-97c0-f516e99fdb32}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = vs-chromium.vsmdi

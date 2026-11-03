@@ -79,7 +79,7 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 
 | Project | Target | Used by | Content |
 |---|---|---|---|
-| `VsChromium.Core.Ipc`, `VsChromium.Core.Ipc.Json` | – | – | Deleted in P4 of the protocol migration (VS-side copy of the typed messages and their JSON serialization; the VS package uses the generated JSON-RPC client, `src/VsChromium-Shared/Protocol/Generated`) |
+| `VsChromium.Core.Ipc`, `VsChromium.Core.Ipc.Json` | – | – | Deleted in P4 of the protocol migration (VS-side copy of the typed messages and their JSON serialization; the VS package uses the generated JSON-RPC client, `src/VsChromium/Protocol/Generated`) |
 | `VsChromium.Core` (existing, slimmed) | `net472` | VS package, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
 | `VsChromium.Core.Server` (`src/Core.Server`) | – | – | Consolidated into `VsChromium.Server` (`src/Server`) after P5 |
 | `VsChromium.Server` (`src/Server`, ported) | `net10.0` | server process | All server code: JSON-RPC transport + protocol code generated from `protocol/*.tsp` (`Protocol\Generated`), managed search, portable file system, paths, pattern matching, configuration, logging, collections |
@@ -792,7 +792,7 @@ messages: `protocol/README.md`.
   `src/vscode/src/protocol/protocol.g.ts`).
 - P4 (done): the **Visual Studio extension** uses the new protocol (`--jsonrpc`) with StreamJsonRpc
   and the generated client (`ProtocolClient`, `IProtocolNotifications`), in
-  `src/VsChromium-Shared/ServerProxy`: `ServerClient` (start, `server/initialize`, notifications as
+  `src/VsChromium/ServerProxy`: `ServerClient` (start, `server/initialize`, notifications as
   events, connection loss reported as before by `ProcessFatalError`), `ServerError` (error codes
   -32001/-32800/-32603 + `ErrorInfo`). `DispatchThreadServerRequest<T>` keeps the threading model
   (delay and supersede by id, request on the thread pool, callbacks on the UI thread) and cancels the

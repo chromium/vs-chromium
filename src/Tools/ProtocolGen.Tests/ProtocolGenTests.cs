@@ -252,7 +252,7 @@ interface SearchNotifications { done(...Result): void; reset(): void; }
   [TestMethod]
   [DataRow("src/Server/Protocol/Generated/Protocol.g.cs", "server")]
   [DataRow("src/vscode/src/protocol/protocol.g.ts", "ts")]
-  [DataRow("src/VsChromium-Shared/Protocol/Generated/Protocol.g.cs", "vs")]
+  [DataRow("src/VsChromium/Protocol/Generated/Protocol.g.cs", "vs")]
   public void RepositoryGeneratedFilesAreUpToDate(string file, string output) {
     var root = RepositoryRoot();
     var protocol = ProtocolBinder.LoadDirectory(Path.Combine(root, "protocol"));

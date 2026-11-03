@@ -82,7 +82,7 @@ class ServerManager implements vscode.Disposable {
       if (this.client !== client) {
         return;
       }
-      if (event.type === 'loaded' && !this.trigramFiltersEnabled()) {
+      if (event.type === 'loaded' && this.trigramFiltersEnabled()) {
         // Projects discovered since the last load (e.g. from an opened file).
         void this.applyProjectOptions(/*includeIndexedProjects*/ true);
       }
@@ -147,12 +147,16 @@ class ServerManager implements vscode.Disposable {
         `Files: ${stats.fileCount.toLocaleString()} (${stats.searchableFileCount.toLocaleString()} searchable)`,
         `Memory: ${mb(stats.serverGcMemoryUsage)} managed, ${mb(stats.serverNativeMemoryUsage)} native`,
         `Index last updated: ${new Date(stats.indexLastUpdatedUtc).toLocaleString()}`,
+        `Trigram filters: ${this.trigramFiltersEnabled() ? 'enabled' : 'disabled'} (faster searches, about 5% of the size of the indexed files in memory)`,
       ];
       const paused = stats.status === 'paused' || stats.status === 'yield';
       const resume = 'Resume Indexing';
+      const toggleTrigrams = this.trigramFiltersEnabled() ? 'Disable Trigram Filters' : 'Enable Trigram Filters';
       const choice = await vscode.window.showInformationMessage(
-        'VsChromium indexing server', { modal: true, detail: lines.join('\n') }, ...(paused ? [resume] : []));
-      if (choice === resume) {
+        'VsChromium indexing server', { modal: true, detail: lines.join('\n') }, ...(paused ? [resume] : []), toggleTrigrams);
+      if (choice === toggleTrigrams) {
+        await this.toggleTrigramFilters();
+      } else if (choice === resume) {
         await server.request0(IndexResumeRequest.type);
       }
     } catch (e) {
@@ -179,8 +183,8 @@ class ServerManager implements vscode.Disposable {
     for (const doc of vscode.workspace.textDocuments) {
       await this.registerDocument(doc);
     }
-    if (!this.trigramFiltersEnabled()) {
-      // Enabled by default: sent only when disabled (applied by the server when the project loads).
+    if (this.trigramFiltersEnabled()) {
+      // Disabled by default: sent only when enabled (applied by the server when the project loads).
       await this.applyProjectOptions(/*includeIndexedProjects*/ false);
     }
     // The server sends indexing notifications only if it found a project for one of the paths.
@@ -191,7 +195,25 @@ class ServerManager implements vscode.Disposable {
   }
 
   private trigramFiltersEnabled(): boolean {
-    return vscode.workspace.getConfiguration('vschromium').get<boolean>('trigramFilters') ?? true;
+    return vscode.workspace.getConfiguration('vschromium').get<boolean>('trigramFilters') ?? false;
+  }
+
+  /**
+   * Enables or disables the trigram filters (setting "vschromium.trigramFilters"), in the
+   * workspace settings if the workspace overrides the setting, otherwise in the user settings.
+   */
+  async toggleTrigramFilters(): Promise<void> {
+    const config = vscode.workspace.getConfiguration('vschromium');
+    const enabled = !this.trigramFiltersEnabled();
+    const inspect = config.inspect<boolean>('trigramFilters');
+    const target = inspect?.workspaceFolderValue !== undefined || inspect?.workspaceValue !== undefined
+      ? vscode.ConfigurationTarget.Workspace
+      : vscode.ConfigurationTarget.Global;
+    // Note: The configuration change listener sends the new option to the server.
+    await config.update('trigramFilters', enabled, target);
+    void vscode.window.showInformationMessage(enabled
+      ? 'VsChromium: trigram filters enabled (built in the background; uses about 5% of the size of the indexed files in memory).'
+      : 'VsChromium: trigram filters disabled (memory released).');
   }
 
   /**
@@ -230,7 +252,7 @@ class ServerManager implements vscode.Disposable {
     for (const folder of e.removed) {
       await this.unregisterPath(folder.uri);
     }
-    if (e.added.length > 0 && !this.trigramFiltersEnabled()) {
+    if (e.added.length > 0 && this.trigramFiltersEnabled()) {
       await this.applyProjectOptions(/*includeIndexedProjects*/ false);
     }
   }
@@ -304,6 +326,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('vschromium.showServerStatus', () => manager.showStatus()),
     vscode.commands.registerCommand('vschromium.restartServer', () => manager.restart()),
     vscode.commands.registerCommand('vschromium.showOutput', () => output.show()),
+    vscode.commands.registerCommand('vschromium.toggleTrigramFilters', () => manager.toggleTrigramFilters()),
   );
   await manager.start();
 }

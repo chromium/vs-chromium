@@ -79,6 +79,11 @@
         "command": "vschromium.showOutput",
         "title": "Show Output",
         "category": "VsChromium"
+      },
+      {
+        "command": "vschromium.toggleTrigramFilters",
+        "title": "Toggle Trigram Filters",
+        "category": "VsChromium"
       }
     ],
     "configuration": {
@@ -121,8 +126,8 @@
         },
         "vschromium.trigramFilters": {
           "type": "boolean",
-          "default": true,
-          "description": "Use trigram filters for the projects of the workspace: faster code searches, at the cost of memory (about 5% of the size of the indexed file contents)."
+          "default": false,
+          "markdownDescription": "Use trigram filters for the projects of the workspace: much faster selective code searches (e.g. symbol names), at the cost of memory (about 5% of the size of the indexed file contents, e.g. ~900 MB for 15 GB of text). Disabled by default. Also available from the status bar item (**Show Indexing Server Status**) and the **VsChromium: Toggle Trigram Filters** command."
         }
       }
     }

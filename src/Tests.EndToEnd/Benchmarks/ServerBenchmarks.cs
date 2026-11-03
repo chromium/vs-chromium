@@ -40,6 +40,10 @@ public class ServerBenchmarks {
     await using var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
     using var sampler = new ProcessSampler(server.Process);
 
+    // Trigram filters are disabled by default (user option): the benchmarks measure them (the
+    // "Background index" scenario), unless the server disables them (VSCHROMIUM_TRIGRAM_FILTER_BITS=0).
+    await server.RequestAsync(ServerProtocol.SetProjectOptions(corpus.RootPath, true));
+
     // 1. Cold index: register the code base, wait until all files are loaded in the search engine.
     var start = sampler.TakeSample();
     await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromHours(1),

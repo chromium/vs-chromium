@@ -713,7 +713,9 @@ namespace VsChromium.Server.Search {
 
     /// <summary>
     /// The trigram filter setting of the projects (see <see cref="SetProjectOptions"/>), by project
-    /// root path. Projects not in this dictionary have their filters enabled.
+    /// root path. Projects not in this dictionary have their filters disabled: the filters are most
+    /// of the managed memory of the server (about 5% of the size of the file contents), so they are
+    /// only built for the projects where the user enables them.
     /// </summary>
     private readonly ConcurrentDictionary<FullPath, bool> _trigramFiltersEnabled = new ConcurrentDictionary<FullPath, bool>();
 
@@ -739,7 +741,7 @@ namespace VsChromium.Server.Search {
 
     public bool IsTrigramFiltersEnabled(FullPath projectRootPath) {
       return TrigramFilters.Enabled &&
-             (!_trigramFiltersEnabled.TryGetValue(projectRootPath, out var enabled) || enabled);
+             _trigramFiltersEnabled.TryGetValue(projectRootPath, out var enabled) && enabled;
     }
 
     public long GetTrigramFiltersBytes(FullPath projectRootPath) {

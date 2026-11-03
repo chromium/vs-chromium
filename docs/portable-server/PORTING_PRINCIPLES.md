@@ -658,7 +658,9 @@ index before running the queries ("Background index" scenario).
 **Per project option** (`SetProjectOptionsRequest { projectPath, trigramFiltersEnabled }`, response
 `DoneResponse`): the filters can be disabled and enabled for each project at any time, since they
 are most of the managed heap (large corpus, after a full GC: 112 MB without filters, ~500 MB with
-them, i.e. ~4.5x, about 5% of the total memory of the server). Enabled by default. Disabling
+them, i.e. ~4.5x, about 5% of the total memory of the server). **Disabled by default** (since
+the 2.6M file tree measurement: ~890 MB of managed memory for 2.2M text files; users enable them
+per project, e.g. the VS Code setting `vschromium.trigramFilters`). Disabling
 releases the filters of the project in the background (followed by a non-blocking compacting GC);
 enabling builds them in the background; searches are always correct (they scan the pieces without
 filters). The setting is kept for the lifetime of the server process (clients send it again after

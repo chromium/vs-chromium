@@ -115,7 +115,7 @@ export interface SetProjectOptionsParams {
   /** Root path of the project, or any path inside the project. */
   projectPath: string;
   /**
-   * Enables or disables the trigram filters of the project (enabled by default): faster code
+   * Enables or disables the trigram filters of the project (disabled by default): faster code
    * searches, at the cost of memory (about 5% of the size of the file contents). When disabled,
    * the filters of the project are released. Unchanged if omitted.
    */

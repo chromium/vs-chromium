@@ -9,8 +9,8 @@ using VsChromium.Tests.EndToEnd.Server;
 namespace VsChromium.Tests.EndToEnd.Regression;
 
 /// <summary>
-/// Per project options ("project/setOptions"): trigram filters can be disabled and enabled at
-/// any time; search results never change, only the memory used by the filters.
+/// Per project options ("project/setOptions"): trigram filters (disabled by default) can be enabled
+/// and disabled at any time; search results never change, only the memory used by the filters.
 /// </summary>
 [TestClass]
 public class ProjectOptionsTests {
@@ -51,14 +51,20 @@ public class ProjectOptionsTests {
       await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
         () => server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(root, "vs-chromium-project.txt"))));
 
-      // Enabled by default: built in the background after the load.
+      // Disabled by default: no filters are built after the load.
+      await Task.Delay(TimeSpan.FromSeconds(1));
+      Assert.AreEqual(0, await TrigramFiltersBytesAsync(server));
+      Assert.IsFalse((await ProjectDetailsAsync(server, root))["trigramFiltersEnabled"]!.GetValue<bool>());
+
+      // Enable (any path inside the project works): built in the background.
+      await server.RequestAsync(ServerProtocol.SetProjectOptions(Path.Combine(root, "src"), true));
       await WaitForAsync(async () => await TrigramFiltersBytesAsync(server) > 0, "filters built");
       Assert.AreEqual(FileCount, await HitCountAsync(server));
       var details = await ProjectDetailsAsync(server, root);
       Assert.IsTrue(details["trigramFiltersEnabled"]!.GetValue<bool>());
       Assert.IsTrue(details["trigramFiltersBytes"]!.GetValue<long>() > 0);
 
-      // Disable (any path inside the project works): the filters are released.
+      // Disable: the filters are released.
       await server.RequestAsync(ServerProtocol.SetProjectOptions(Path.Combine(root, "src"), false));
       await WaitForAsync(async () => await TrigramFiltersBytesAsync(server) == 0, "filters released");
       Assert.AreEqual(FileCount, await HitCountAsync(server));
@@ -90,18 +96,17 @@ public class ProjectOptionsTests {
 
   [TestMethod]
   [Timeout(5 * 60 * 1000, CooperativeCancellation = true)]
-  public async Task TrigramFilters_DisabledBeforeTheProjectIsLoaded() {
+  public async Task TrigramFilters_EnabledBeforeTheProjectIsLoaded() {
     var root = CreateTree();
     try {
       await using var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
       // Sent before the project is known (e.g. when the client starts the server).
-      await server.RequestAsync(ServerProtocol.SetProjectOptions(root, false));
+      await server.RequestAsync(ServerProtocol.SetProjectOptions(root, true));
       await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
         () => server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(root, "vs-chromium-project.txt"))));
       Assert.AreEqual(FileCount, await HitCountAsync(server));
-      await Task.Delay(TimeSpan.FromSeconds(2));
-      Assert.AreEqual(0, await TrigramFiltersBytesAsync(server));
-      Assert.IsFalse((await ProjectDetailsAsync(server, root))["trigramFiltersEnabled"]!.GetValue<bool>());
+      await WaitForAsync(async () => await TrigramFiltersBytesAsync(server) > 0, "filters built");
+      Assert.IsTrue((await ProjectDetailsAsync(server, root))["trigramFiltersEnabled"]!.GetValue<bool>());
     }
     finally {
       DeleteTree(root);

@@ -191,7 +191,7 @@ describe('ServerClient (fake server)', () => {
       await send.sendNotification(IndexScanFinishedNotification.type, { operationId: 1, oldVersion: 0, newVersion: 1 });
       await send.sendNotification(IndexProgressNotification.type, { displayText: 'Loading files', completed: 1, total: 4 });
       await waitFor(() => state.kind === 'loading' && state.progress !== undefined);
-      assert.deepEqual(state, { kind: 'loading', progress: { text: 'Loading files', completed: 1, total: 4 } });
+      assert.deepEqual(state, { kind: 'loading', progress: { phase: 'loading files', percent: 25 } });
       await send.sendNotification(IndexLoadedNotification.type, { operationId: 2, treeVersion: 1 });
       await waitFor(() => state.kind === 'ready');
       await send.sendNotification(IndexStateChangedNotification.type, { status: 'yield', lastIndexUpdatedUtc: '2026-01-01T00:00:00Z' });

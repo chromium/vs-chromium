@@ -4,7 +4,7 @@
 
 import * as assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { describeIndexingState, IndexEvent, IndexingState, nextIndexingState } from '../ui/indexingState';
+import { describeIndexingState, IndexEvent, IndexingState, loadingPhase, nextIndexingState } from '../ui/indexingState';
 
 const step = (state: IndexingState, event: IndexEvent): IndexingState => nextIndexingState(state, event) ?? state;
 
@@ -16,8 +16,8 @@ describe('nextIndexingState', () => {
     state = step(state, { type: 'scanFinished', params: { operationId: 1, oldVersion: 0, newVersion: 1 } });
     assert.equal(state.kind, 'loading');
 
-    state = step(state, { type: 'progress', params: { displayText: 'Loading files', completed: 5, total: 10 } });
-    assert.deepEqual(state, { kind: 'loading', progress: { text: 'Loading files', completed: 5, total: 10 } });
+    state = step(state, { type: 'progress', params: { displayText: 'Reading file 5 of 10: c:\\src\\foo.cc', completed: 5, total: 10 } });
+    assert.deepEqual(state, { kind: 'loading', progress: { phase: 'reading files', percent: 50 } });
     assert.match(describeIndexingState(state).text, /50%/);
 
     state = step(state, { type: 'loadingProgress', params: { operationId: 2 } });
@@ -34,6 +34,33 @@ describe('nextIndexingState', () => {
   it('ignores progress notifications when not indexing', () => {
     const ready: IndexingState = { kind: 'ready' };
     assert.equal(nextIndexingState(ready, { type: 'progress', params: { displayText: '', completed: 1, total: 2 } }), undefined);
+  });
+
+  it('only changes the loading state when the displayed progress changes', () => {
+    // The server sends a progress notification (with the path of the file being read) up to 10
+    // times per second: the display must only change with the phase or the whole percentage.
+    let state: IndexingState = { kind: 'loading' };
+    state = step(state, { type: 'progress', params: { displayText: 'Reading file 1000 of 100000: c:\\a\\b.cc', completed: 1000, total: 100000 } });
+    assert.deepEqual(state, { kind: 'loading', progress: { phase: 'reading files', percent: 1 } });
+    const tooltip = describeIndexingState(state).tooltip;
+    assert.equal(tooltip, 'VsChromium: reading files (1%)...');
+    assert.doesNotMatch(tooltip, /b\.cc/);
+
+    assert.equal(nextIndexingState(state, { type: 'progress', params: { displayText: 'Reading file 1500 of 100000: c:\\a\\very\\long\\path\\c.cc', completed: 1500, total: 100000 } }), undefined);
+    assert.deepEqual(nextIndexingState(state, { type: 'progress', params: { displayText: 'Reading file 2000 of 100000: c:\\d.cc', completed: 2000, total: 100000 } }),
+      { kind: 'loading', progress: { phase: 'reading files', percent: 2 } });
+  });
+
+  it('describes the loading phases without the server details', () => {
+    const traversing = step({ kind: 'scanning' }, { type: 'progress', params: { displayText: 'Traversing directory: c:\\src\\x', completed: 42, total: 0 } });
+    assert.deepEqual(traversing, { kind: 'loading', progress: { phase: 'scanning directories', percent: undefined } });
+    assert.equal(describeIndexingState(traversing).tooltip, 'VsChromium: scanning directories...');
+    // Directory counts change all the time (indeterminate progress): no new state.
+    assert.equal(nextIndexingState(traversing, { type: 'progress', params: { displayText: 'Traversing directory: c:\\src\\y', completed: 43, total: 0 } }), undefined);
+
+    assert.equal(loadingPhase('Finalizing index update'), 'finalizing');
+    assert.equal(loadingPhase('Preparing list of files to load from disk'), 'loading files');
+    assert.equal(loadingPhase(undefined), 'loading files');
   });
 
   it('reports errors', () => {

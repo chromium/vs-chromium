@@ -299,9 +299,18 @@ class ServerManager implements vscode.Disposable {
   private setState(state: IndexingState) {
     this.state = state;
     const { text, tooltip } = describeIndexingState(state);
-    this.statusBar.text = text;
-    this.statusBar.tooltip = tooltip;
-    this.statusBar.command = state.kind === 'stopped' ? 'vschromium.restartServer' : 'vschromium.showServerStatus';
+    // Note: Only update the status bar item when its display changes (each update redraws it,
+    // and an open tooltip flickers).
+    if (this.statusBar.text !== text) {
+      this.statusBar.text = text;
+    }
+    if (this.statusBar.tooltip !== tooltip) {
+      this.statusBar.tooltip = tooltip;
+    }
+    const command = state.kind === 'stopped' ? 'vschromium.restartServer' : 'vschromium.showServerStatus';
+    if (this.statusBar.command !== command) {
+      this.statusBar.command = command;
+    }
   }
 }
 

@@ -18,11 +18,40 @@ import {
   ScanFinishedParams,
 } from '../protocol/protocol.g';
 
+/**
+ * Progress of an index load, as displayed: a short phase and a whole percentage. The server sends
+ * a detailed text (e.g. the path of the file being read) up to 10 times per second; displaying it
+ * made the status bar tooltip flicker (its text, width and height changed constantly). The state
+ * only changes when the phase or the percentage changes.
+ */
+export interface LoadingProgress {
+  phase: LoadingPhase;
+  /** Whole percentage, if the total is known. */
+  percent?: number;
+}
+
+export type LoadingPhase = 'scanning directories' | 'reading files' | 'finalizing' | 'loading files';
+
+/** The phase of a server progress text (see the \"DisplayProgress\" calls of the server). */
+export function loadingPhase(displayText: string | undefined): LoadingPhase {
+  const text = displayText ?? '';
+  if (text.startsWith('Traversing')) {
+    return 'scanning directories';
+  }
+  if (text.startsWith('Reading file')) {
+    return 'reading files';
+  }
+  if (text.startsWith('Finalizing')) {
+    return 'finalizing';
+  }
+  return 'loading files';
+}
+
 /** Indexing state displayed to the user, derived from server notifications. */
 export type IndexingState =
   | { kind: 'starting' }
   | { kind: 'scanning' }
-  | { kind: 'loading'; progress?: { text?: string; completed: number; total: number } }
+  | { kind: 'loading'; progress?: LoadingProgress }
   | { kind: 'ready'; fileCount?: number; projectCount?: number }
   | { kind: 'paused'; yielded: boolean }
   | { kind: 'noProject' }
@@ -78,10 +107,16 @@ export function nextIndexingState(state: IndexingState, event: IndexEvent): Inde
       return state.kind === 'loading' ? undefined : { kind: 'loading' };
     case 'progress':
       if (state.kind === 'scanning' || state.kind === 'loading') {
-        return {
-          kind: 'loading',
-          progress: { text: event.params.displayText || undefined, completed: event.params.completed, total: event.params.total },
+        const { completed, total } = event.params;
+        const progress: LoadingProgress = {
+          phase: loadingPhase(event.params.displayText),
+          percent: total > 0 ? Math.min(100, Math.floor((completed * 100) / total)) : undefined,
         };
+        if (state.kind === 'loading' && state.progress &&
+            state.progress.phase === progress.phase && state.progress.percent === progress.percent) {
+          return undefined; // Same display
+        }
+        return { kind: 'loading', progress };
       }
       return undefined;
     case 'loaded':
@@ -112,10 +147,10 @@ export function describeIndexingState(state: IndexingState): { text: string; too
       return { text: '$(sync~spin) VsChromium: scanning', tooltip: 'VsChromium: scanning file system...' };
     case 'loading': {
       const p = state.progress;
-      const percent = p && p.total > 0 ? ` ${Math.floor((p.completed * 100) / p.total)}%` : '';
+      const percent = p?.percent !== undefined ? ` ${p.percent}%` : '';
       return {
         text: `$(sync~spin) VsChromium: indexing${percent}`,
-        tooltip: `VsChromium: ${p?.text ?? 'loading files into the search index...'}`,
+        tooltip: `VsChromium: ${p?.phase ?? 'loading files'}${percent ? ` (${percent.trim()})` : ''}...`,
       };
     }
     case 'ready': {

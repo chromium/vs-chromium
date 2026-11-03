@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.ServerProxy {
@@ -25,21 +24,27 @@ namespace VsChromium.ServerProxy {
   }
 
   /// <summary>
-  /// A running server process, and the stream to exchange messages with it
-  /// (JSON messages over its standard input/output).
+  /// A running server process: the JSON-RPC messages are exchanged over its
+  /// standard input/output.
   /// </summary>
   public sealed class ServerProcess {
-    private readonly TextWriter _input;
     private int _stopped;
 
-    public ServerProcess(Process process, IIpcStream stream, TextWriter input) {
+    public ServerProcess(Process process) {
       Process = process;
-      Stream = stream;
-      _input = input;
     }
 
     public Process Process { get; }
-    public IIpcStream Stream { get; }
+
+    /// <summary>
+    /// The stream to send messages to the server (its standard input).
+    /// </summary>
+    public Stream InputStream => Process.StandardInput.BaseStream;
+
+    /// <summary>
+    /// The stream to receive messages from the server (its standard output).
+    /// </summary>
+    public Stream OutputStream => Process.StandardOutput.BaseStream;
 
     /// <summary>
     /// Stops the server process (can be called multiple times): closes its
@@ -51,7 +56,13 @@ namespace VsChromium.ServerProxy {
         return;
 
       try {
-        _input.Close();
+        try {
+          Process.StandardInput.Close();
+        }
+        catch (Exception e) {
+          // The stream may already be closed (e.g. by the JSON-RPC connection).
+          Logger.LogInfo("Error closing the standard input of the server process: {0}", e.Message);
+        }
         if (!Process.WaitForExit((int)timeout.TotalMilliseconds)) {
           Logger.LogWarn("Server process did not exit within {0:n0} msec, terminating it.", timeout.TotalMilliseconds);
           Process.Kill();

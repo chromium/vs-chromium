@@ -3,18 +3,20 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
+using System.Threading;
+using System.Threading.Tasks;
+using VsChromium.Protocol.Generated;
+using VsChromium.ServerProxy;
 
 namespace VsChromium.Threads {
-  public class DispatchThreadServerRequest {
+  public class DispatchThreadServerRequest<TResult> {
     public DispatchThreadServerRequest() {
       Delay = TimeSpan.FromSeconds(0.1);
     }
 
     /// <summary>
-    /// (Required) The request ID, used to cancel previous request with the same
-    /// ID.
+    /// (Required) The request ID: a request supersedes the previous request
+    /// with the same ID (cancelled if it is not finished yet).
     /// </summary>
     public string Id { get; set; }
 
@@ -25,18 +27,18 @@ namespace VsChromium.Threads {
     public TimeSpan Delay { get; set; }
 
     /// <summary>
-    /// (Required) The request object to send to the server.
+    /// (Required) Sends the request to the server, e.g.
+    /// <c>(client, token) =&gt; client.SearchCodeAsync(parameters, token)</c>.
+    /// The token is cancelled when the request is superseded.
     /// </summary>
-    public TypedRequest Request { get; set; }
+    public Func<ProtocolClient, CancellationToken, Task<TResult>> Request { get; set; }
 
     /// <summary>
-    /// (Optional) Ensures the request is processed on the sequential
-    /// queue on the server (i.e. all requests with this flag will always be
-    /// executed sequentially on the server).
-    /// 
-    /// <para>See <see cref="VsChromium.ServerProxy.RunAsyncOptions.RunOnSequentialQueue"/></para>
+    /// (Optional) Sends the request only when the previous requests with this
+    /// flag are finished (i.e. these requests are sent and executed in the
+    /// order they were posted), e.g. for file registrations.
     /// </summary>
-    public bool RunOnSequentialQueue { get; set; }
+    public bool RunSequentially { get; set; }
 
     /// <summary>
     /// (Optional) Action executed on a background thread when the request delay
@@ -55,12 +57,12 @@ namespace VsChromium.Threads {
     /// (Optional) Action executed on the UI thread once the server request has
     /// been successfully executed.
     /// </summary>
-    public Action<TypedResponse> OnDispatchThreadSuccess { get; set; }
+    public Action<TResult> OnDispatchThreadSuccess { get; set; }
 
     /// <summary>
     /// (Optional) Action executed on the UI thread if request processing
-    /// resulted in an error.
+    /// resulted in an error (not called if the request was cancelled).
     /// </summary>
-    public Action<ErrorResponse> OnDispatchThreadError { get; set; }
+    public Action<ServerError> OnDispatchThreadError { get; set; }
   }
 }

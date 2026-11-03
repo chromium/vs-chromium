@@ -4,12 +4,14 @@
 
 using System;
 using System.Diagnostics;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
+using System.Threading;
+using System.Threading.Tasks;
+using VsChromium.Protocol.Generated;
+using VsChromium.ServerProxy;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public partial class CodeSearchController {
-    private class SearchWorkerParams {
+    private class SearchWorkerParams<TResult> {
       /// <summary>
       /// Simple short name of the operation (for debugging only).
       /// </summary>
@@ -20,9 +22,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       /// </summary>
       public string HintText { get; set; }
       /// <summary>
-      /// The request to sent to the server
+      /// Sends the request to the server.
       /// </summary>
-      public TypedRequest TypedRequest { get; set; }
+      public Func<ProtocolClient, CancellationToken, Task<TResult>> Request { get; set; }
       /// <summary>
       /// Amount of time to wait before sending the request to the server.
       /// </summary>
@@ -31,11 +33,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       /// Lambda invoked when the response to the request has been successfully
       /// received from the server.
       /// </summary>
-      public Action<TypedResponse, Stopwatch> ProcessResponse { get; set; }
+      public Action<TResult, Stopwatch> ProcessResponse { get; set; }
       /// <summary>
       /// Lambda invoked when the request resulted in an error from the server.
       /// </summary>
-      public Action<ErrorResponse, Stopwatch> ProcessError { get; set; }
+      public Action<ServerError, Stopwatch> ProcessError { get; set; }
     }
   }
 }

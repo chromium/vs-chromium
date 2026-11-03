@@ -7,8 +7,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Protocol.Generated;
 using VsChromium.ServerProxy;
 using VsChromium.Tests.Server;
 
@@ -16,13 +16,13 @@ namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestSearchFilePaths : TestServerBase {
     private static CompositionContainer _container;
-    private static ITypedRequestProcessProxy _server;
+    private static IServerClient _server;
     private static FileInfo _testFile;
 
     [ClassInitialize]
     public static void Initialize(TestContext context) {
       _container = SetupMefContainer();
-      _server = _container.GetExportedValue<ITypedRequestProcessProxy>();
+      _server = _container.GetExportedValue<IServerClient>();
       _testFile = Utils.GetChromiumTestEnlistmentFile();
       GetFileSystemFromServer(_server, _testFile);
     }
@@ -159,33 +159,32 @@ namespace VsChromium.Tests.ServerProcess {
     }
 
     private static void VerifySearchFilePathsResponse(
-      ITypedRequestProcessProxy server,
+      IServerClient server,
       string searchPattern,
       DirectoryInfo chromiumDirectory,
       string expectedFileName,
       int expectedOccurrenceCount) {
-      var response = SendRequest<SearchFilePathsResponse>(server, new SearchFilePathsRequest {
-        SearchParams = new SearchParams {
-          SearchString = searchPattern,
-          MaxResults = 2000,
-        }
-      }, ServerResponseTimeout)();
+      var response = SendRequest(server, client => client.SearchPathsAsync(new SearchParams {
+        Query = new SearchQuery {
+          Text = searchPattern,
+        },
+        MaxResults = 2000,
+      }));
       Assert.IsNotNull(response, "Server did not respond within timeout.");
-      Assert.IsNotNull(response.SearchResult);
-      Assert.IsNotNull(response.SearchResult.Entries);
+      Assert.IsNotNull(response.Projects);
 
       if (expectedOccurrenceCount == 0) {
-        Assert.AreEqual(0, response.SearchResult.Entries.Count);
+        Assert.AreEqual(0, response.Projects.Count);
       } else {
-        Assert.AreEqual(1, response.SearchResult.Entries.Count);
-        var chromiumEntry = response.SearchResult.Entries[0] as DirectoryEntry;
-        Assert.IsNotNull(chromiumEntry);
-        Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.Name);
+        Assert.AreEqual(1, response.Projects.Count);
+        var chromiumEntry = response.Projects[0];
+        Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.RootPath);
 
-        chromiumEntry.Entries.ForAll(x => Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name)));
-        Assert.AreEqual(expectedOccurrenceCount, chromiumEntry.Entries.Count);
+        chromiumEntry.RelativePaths.ForAll(x => Debug.WriteLine(string.Format("File name: \"{0}\"", x)));
+        Assert.AreEqual(expectedOccurrenceCount, chromiumEntry.RelativePaths.Count);
+        Assert.AreEqual(expectedOccurrenceCount, response.HitCount);
         if (expectedFileName != "") {
-          Assert.AreEqual(expectedOccurrenceCount, chromiumEntry.Entries.Count(x => Path.GetFileName(x.Name) == expectedFileName));
+          Assert.AreEqual(expectedOccurrenceCount, chromiumEntry.RelativePaths.Count(x => Path.GetFileName(x) == expectedFileName));
         }
       }
     }

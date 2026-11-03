@@ -8,19 +8,18 @@ using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class DirectoryEntryViewModel : FileSystemEntryViewModel {
-    private readonly DirectoryEntry _directoryEntry;
+    private readonly SearchResultDirectoryEntry _directoryEntry;
     private readonly Action<FileSystemEntryViewModel> _postCreate;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
 
     public DirectoryEntryViewModel(
       ICodeSearchController controller, 
       TreeViewItemViewModel parentViewModel, 
-      DirectoryEntry directoryEntry, 
+      SearchResultDirectoryEntry directoryEntry, 
       Action<FileSystemEntryViewModel> postCreate)
       : base(controller, parentViewModel, directoryEntry.Entries.Count > 0) {
       _directoryEntry = directoryEntry;
@@ -36,7 +35,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         .ToList();
     }
 
-    public override FileSystemEntry FileSystemEntry {
+    public override SearchResultEntry SearchResultEntry {
       get {
         return _directoryEntry;
       }

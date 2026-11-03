@@ -780,7 +780,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return;
       }
 
-      var children = directoryEntry.Entries
+      var children = directoryEntry.GetChildEntries()
         .Select(childEntry => {
           var node = IncrementalHierarchyBuilder.CreateNodeViewModel(_nodeTemplateFactory, childEntry, directoryNode);
 

@@ -3,19 +3,19 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Protocol.Generated;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public interface INodeViewModelLoader {
     /// <summary>
-    /// Retrieves from the server the <see cref="DirectoryEntry"/> that corresponds 
+    /// Retrieves from the server the <see cref="DirectoryEntries"/> that corresponds 
     /// to the <see cref="DirectoryNodeViewModel"/> <paramref name="node"/>.
     /// Returns <code>null</code> if the directory is not known to the server.
     /// 
     /// <para>This method involves a round trip to the index server, but can be called
     /// from any thread.</para>
     /// </summary>
-    DirectoryEntry LoadChildren(DirectoryNodeViewModel node);
+    DirectoryEntries LoadChildren(DirectoryNodeViewModel node);
 
     IList<LoadChildrenResult> LoadChildrenMultiple(RootNodeViewModel projectNode,
       ICollection<DirectoryNodeViewModel> nodes);

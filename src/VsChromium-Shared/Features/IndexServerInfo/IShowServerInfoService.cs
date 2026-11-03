@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Protocol.Generated;
 
 namespace VsChromium.Features.IndexServerInfo {
   public interface IShowServerInfoService {
@@ -11,10 +11,10 @@ namespace VsChromium.Features.IndexServerInfo {
     void ShowProjectIndexDetailsDialog(string path);
     void ShowDirectoryIndexDetailsDialog(string path);
 
-    void FetchDatabaseStatistics(Action<GetDatabaseStatisticsResponse> callback);
+    void FetchDatabaseStatistics(Action<IndexStatistics> callback);
 
-    string GetIndexStatusText(GetDatabaseStatisticsResponse response);
-    string GetIndexingServerStatusText(GetDatabaseStatisticsResponse response);
-    string GetIndexingServerStatusToolTipText(GetDatabaseStatisticsResponse response);
+    string GetIndexStatusText(IndexStatistics response);
+    string GetIndexingServerStatusText(IndexStatistics response);
+    string GetIndexingServerStatusToolTipText(IndexStatistics response);
   }
 }

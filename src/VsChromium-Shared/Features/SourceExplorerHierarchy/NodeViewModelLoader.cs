@@ -7,35 +7,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VsChromium.Core.Collections;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Protocol.Generated;
 using VsChromium.ServerProxy;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
   public class NodeViewModelLoader : INodeViewModelLoader {
-    private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
+    private readonly IServerClient _serverClient;
 
-    public NodeViewModelLoader(ITypedRequestProcessProxy typedRequestProcessProxy) {
-      _typedRequestProcessProxy = typedRequestProcessProxy;
+    public NodeViewModelLoader(IServerClient serverClient) {
+      _serverClient = serverClient;
     }
 
-    public DirectoryEntry LoadChildren(DirectoryNodeViewModel node) {
+    public DirectoryEntries LoadChildren(DirectoryNodeViewModel node) {
       // "fake" root node does not support loading children dynamically (they should have been set manually)
       if (string.IsNullOrEmpty(node.FullPathString)) {
         return null;
       }
 
-      var tcs = new TaskCompletionSource<DirectoryEntry>();
-
-      var request = new GetDirectoryEntriesRequest {
+      var parameters = new TreeEntriesParams {
         ProjectPath = node.GetProjectPath().Value,
-        DirectoryRelativePath = node.RelativePath
+        RelativePath = node.RelativePath ?? ""
       };
-      _typedRequestProcessProxy.RunUnbufferedAsync(request, RunAsyncOptions.Default,
-        response => { LoadChildrenCallback(tcs, response); },
-        response => { LoadChildrenErrorCallback(tcs, response); });
-
-      return tcs.Task.Result;
+      var entries = RunSynchronously(client => client.TreeEntriesAsync(parameters));
+      return entries.Exists ? entries : null;
     }
 
     public IList<LoadChildrenResult> LoadChildrenMultiple(
@@ -45,56 +39,32 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         return ArrayUtilities.EmptyList<LoadChildrenResult>.Instance;
       }
 
-
-      var tcs = new TaskCompletionSource<List<LoadChildrenResult>>();
-
-      var request = new GetDirectoryEntriesMultipleRequest {
+      var parameters = new TreeEntriesMultipleParams {
         ProjectPath = projectNode.GetProjectPath().Value,
-        RelativePathList = nodes.Select(x => x.RelativePath).ToList()
+        RelativePaths = nodes.Select(x => x.RelativePath ?? "").ToList()
       };
-      _typedRequestProcessProxy.RunUnbufferedAsync(request, RunAsyncOptions.Default,
-        response => { LoadChildrenMultipleCallback(tcs, nodes, response); },
-        response => { LoadChildrenMultipleErrorCallback(tcs, response); });
+      var response = RunSynchronously(client => client.TreeEntriesMultipleAsync(parameters));
 
-      return tcs.Task.Result;
-    }
-
-    private void LoadChildrenCallback(TaskCompletionSource<DirectoryEntry> tcs, TypedResponse typedResponse) {
-      try {
-        var response = (GetDirectoryEntriesResponse) typedResponse;
-        tcs.TrySetResult(response.DirectoryEntry);
-      }
-      catch (Exception e) {
-        tcs.TrySetException(e);
+      // Note: # of entries in response matches # of nodes in the request
+      using (var e = nodes.GetEnumerator()) {
+        return response.Directories.Select(entry => {
+          e.MoveNext();
+          return new LoadChildrenResult(e.Current, entry.Exists ? entry : null);
+        }).ToList();
       }
     }
 
-    private void LoadChildrenErrorCallback(TaskCompletionSource<DirectoryEntry> tcs, ErrorResponse response) {
-      tcs.TrySetException(response.CreateException());
-    }
-
-    private void LoadChildrenMultipleCallback(TaskCompletionSource<List<LoadChildrenResult>> tcs,
-      IEnumerable<DirectoryNodeViewModel> nodes, TypedResponse typedResponse) {
-      try {
-        var response = (GetDirectoryEntriesMultipleResponse) typedResponse;
-
-        // Note: # of entries in response matches # of nodes in the request
-        using (var e = nodes.GetEnumerator()) {
-          var result = response.DirectoryEntries.Select(entry => {
-            e.MoveNext();
-            return new LoadChildrenResult(e.Current, entry.HasValue ? entry.Value : null);
-          }).ToList();
-          tcs.TrySetResult(result);
-        }
-      }
-      catch (Exception e) {
-        tcs.TrySetException(e);
-      }
-    }
-
-    private void LoadChildrenMultipleErrorCallback(TaskCompletionSource<List<LoadChildrenResult>> tcs,
-      ErrorResponse response) {
-      tcs.TrySetException(response.CreateException());
+    /// <summary>
+    /// Sends a request and waits for its response. The request runs on the
+    /// thread pool (and its continuations too), so this can be called on any
+    /// thread, including the UI thread, without deadlocking.
+    /// </summary>
+    private T RunSynchronously<T>(Func<ProtocolClient, Task<T>> request) {
+      var task = Task.Run(async () => {
+        var client = await _serverClient.GetProtocolClientAsync().ConfigureAwait(false);
+        return await request(client).ConfigureAwait(false);
+      });
+      return task.Result;
     }
   }
 }

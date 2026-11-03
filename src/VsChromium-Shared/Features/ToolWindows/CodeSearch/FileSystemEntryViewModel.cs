@@ -4,7 +4,6 @@
 
 using System;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public abstract class FileSystemEntryViewModel : CodeSearchItemViewModelBase {
@@ -15,9 +14,9 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       : base(controller, parentViewModel, lazyLoadChildren) {
     }
 
-    public abstract FileSystemEntry FileSystemEntry { get; }
+    public abstract SearchResultEntry SearchResultEntry { get; }
 
-    public string Name { get { return FileSystemEntry.Name; } }
+    public string Name { get { return SearchResultEntry.Name; } }
 
     public override string DisplayText {
       get {
@@ -28,15 +27,15 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     public static FileSystemEntryViewModel Create(
       ICodeSearchController host,
       TreeViewItemViewModel parentViewModel,
-      FileSystemEntry fileSystemEntry, Action<FileSystemEntryViewModel> postCreate) {
-      var fileEntry = fileSystemEntry as FileEntry;
+      SearchResultEntry searchResultEntry, Action<FileSystemEntryViewModel> postCreate) {
+      var fileEntry = searchResultEntry as SearchResultFileEntry;
       if (fileEntry != null) {
         var result = new FileEntryViewModel(host, parentViewModel, fileEntry);
         postCreate(result);
         return result;
       }
       else {
-        var result = new DirectoryEntryViewModel(host, parentViewModel, (DirectoryEntry) fileSystemEntry, postCreate);
+        var result = new DirectoryEntryViewModel(host, parentViewModel, (SearchResultDirectoryEntry) searchResultEntry, postCreate);
         postCreate(result);
         return result;
       }

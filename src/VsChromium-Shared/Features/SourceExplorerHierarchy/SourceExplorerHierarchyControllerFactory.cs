@@ -24,7 +24,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     private readonly IClipboard _clipboard;
     private readonly IWindowsExplorer _windowsExplorer;
     private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
-    private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
+    private readonly IServerClient _serverClient;
     private readonly IDispatchThreadEventBus _eventBus;
     private readonly IGlobalSettingsProvider _globalSettingsProvider;
     private readonly IDelayedOperationExecutor _delayedOperationExecutor;
@@ -43,7 +43,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
-      ITypedRequestProcessProxy typedRequestProcessProxy,
+      IServerClient serverClient,
       IDispatchThreadEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationExecutor delayedOperationExecutor,
@@ -59,7 +59,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _clipboard = clipboard;
       _windowsExplorer = windowsExplorer;
       _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
-      _typedRequestProcessProxy = typedRequestProcessProxy;
+      _serverClient = serverClient;
       _eventBus = eventBus;
       _globalSettingsProvider = globalSettingsProvider;
       _delayedOperationExecutor = delayedOperationExecutor;
@@ -79,7 +79,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
         _clipboard,
         _windowsExplorer,
         _dispatchThreadServerRequestExecutor,
-        _typedRequestProcessProxy,
+        _serverClient,
         _eventBus,
         _globalSettingsProvider,
         _delayedOperationExecutor,

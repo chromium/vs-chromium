@@ -14,11 +14,28 @@ namespace VsChromium.Tests.ServerProcess {
       var testFile = Utils.GetChromiumTestEnlistmentFile();
 
       using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
-          // Send "AddFile" request, and wait for response.
+        using (var server = container.GetExport<IServerClient>().Value) {
+          // Send "files/register" request, and wait for response.
           // We don't care if the request is processed properly.
-          var response = SendRegisterFileRequest(server, testFile, ServerResponseTimeout)();
-          Assert.IsNotNull(response, "Server did not respond within timeout.");
+          SendRegisterFileRequest(server, testFile);
+        }
+      }
+    }
+
+    [TestMethod]
+    public void InitializeWorks() {
+      using (var container = SetupMefContainer()) {
+        using (var server = container.GetExport<IServerClient>().Value) {
+          Assert.IsFalse(server.IsServerRunning);
+          var started = false;
+          server.ProcessStarted += (sender, args) => started = true;
+
+          // The first request starts the server and sends "server/initialize".
+          var statistics = SendRequest(server, client => client.ServerStatisticsAsync(new Protocol.Generated.ServerStatisticsParams()));
+          Assert.IsNotNull(statistics);
+          Assert.IsTrue(statistics.ProcessId > 0);
+          Assert.IsTrue(started);
+          Assert.IsTrue(server.IsServerRunning);
         }
       }
     }

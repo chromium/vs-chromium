@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Protocol.Generated;
 
 namespace VsChromium.Features.IndexServerInfo {
   public partial class ProjectConfigurationSectionDetailsControl {
 
     public ProjectConfigurationSectionDetailsControl() {
       InitializeComponent();
-      DataContext = new ProjectConfigurationSectionDetails();
+      DataContext = new ProjectConfigurationSection();
     }
 
-    public ProjectConfigurationSectionDetails ViewModel => (ProjectConfigurationSectionDetails)DataContext;
+    public ProjectConfigurationSection ViewModel => (ProjectConfigurationSection)DataContext;
   }
 }

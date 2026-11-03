@@ -8,30 +8,30 @@ using System.Linq;
 using System.Windows.Input;
 using System.Windows.Media;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Utility;
+using VsChromium.Protocol.Generated;
 using VsChromium.Threads;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class FileEntryViewModel : FileSystemEntryViewModel {
-    private readonly FileEntry _fileEntry;
+    private readonly SearchResultFileEntry _fileEntry;
     private readonly Lazy<IList<TreeViewItemViewModel>> _children;
     private int _lineNumber = -1;
     private int _columnNumber = -1;
     private bool _hasExpanded;
 
-    public FileEntryViewModel(ICodeSearchController controller, TreeViewItemViewModel parentViewModel, FileEntry fileEntry)
-      : base(controller, parentViewModel, fileEntry.Data != null) {
+    public FileEntryViewModel(ICodeSearchController controller, TreeViewItemViewModel parentViewModel, SearchResultFileEntry fileEntry)
+      : base(controller, parentViewModel, fileEntry.Spans != null) {
       _fileEntry = fileEntry;
       _children = new Lazy<IList<TreeViewItemViewModel>>(CreateChildren);
     }
 
     private IList<TreeViewItemViewModel> CreateChildren() {
-      return FileSystemEntryDataViewModelFactory.CreateViewModels(Controller, this, _fileEntry.Data).ToList();
+      return FileSystemEntryDataViewModelFactory.CreateViewModels(Controller, this, _fileEntry.Spans).ToList();
     }
 
-    public override FileSystemEntry FileSystemEntry { get { return _fileEntry; } }
+    public override SearchResultEntry SearchResultEntry { get { return _fileEntry; } }
 
     public override int ChildrenCount { get { return GetChildren().Count(); } }
 
@@ -144,25 +144,24 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       if (!positions.Any())
         return;
 
-      var request = new GetFileExtractsRequest {
-        FileName = Path,
+      var parameters = new FileExtractsParams {
+        Path = Path,
         MaxExtractLength = Controller.GlobalSettings.MaxTextExtractLength,
-        Positions = positions
-          .Select(x => new FilePositionSpan {
+        Spans = positions
+          .Select(x => new TextSpan {
             Position = x.Position,
             Length = x.Length
           })
           .ToList()
       };
 
-      var uiRequest = new DispatchThreadServerRequest {
-        Request = request,
+      var uiRequest = new DispatchThreadServerRequest<FileExtractsResult> {
+        Request = (client, token) => client.FilesExtractsAsync(parameters, token),
         Id = "FileEntryViewModel-" + Path,
         Delay = TimeSpan.FromSeconds(0.0),
-        OnDispatchThreadSuccess = (typedResponse) => {
-          var response = (GetFileExtractsResponse)typedResponse;
+        OnDispatchThreadSuccess = response => {
           positions
-            .Zip(response.FileExtracts, (x, y) => new {
+            .Zip(response.Extracts, (x, y) => new {
               FilePositionViewModel = x,
               FileExtract = y
             })

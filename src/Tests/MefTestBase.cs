@@ -4,7 +4,6 @@
 
 using System.ComponentModel.Composition.Hosting;
 using System.Reflection;
-using VsChromium.Core.Ipc;
 using VsChromium.Core.Logging;
 using VsChromium.Features.ChromiumCodingStyleChecker;
 

@@ -11,13 +11,12 @@ using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using VsChromium.Commands;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Features.IndexServerInfo;
 using VsChromium.Package;
 using VsChromium.Package.CommandHandler;
+using VsChromium.Protocol.Generated;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
 using VsChromium.Threads;
@@ -60,7 +59,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       IClipboard clipboard,
       IWindowsExplorer windowsExplorer,
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
-      ITypedRequestProcessProxy typedRequestProcessProxy,
+      IServerClient serverClient,
       IDispatchThreadEventBus eventBus,
       IGlobalSettingsProvider globalSettingsProvider,
       IDelayedOperationExecutor delayedOperationExecutor,
@@ -80,7 +79,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       _delayedOperationExecutor = delayedOperationExecutor;
       _showServerInfoService = showServerInfoService;
       _nodeTemplateFactory = new NodeTemplateFactory(vsGlyphService, imageSourceFactory);
-      _nodeViewModelLoader = new NodeViewModelLoader(typedRequestProcessProxy);
+      _nodeViewModelLoader = new NodeViewModelLoader(serverClient);
       _hierarchy = new VsHierarchyAggregate(
         visualStudioPackageProvider.Package.ServiceProvider,
         vsGlyphService,
@@ -240,8 +239,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
     private void RefreshFileSystemTree() {
-      var uiRequest = new DispatchThreadServerRequest {
-        Request = new RefreshFileSystemTreeRequest(),
+      var uiRequest = new DispatchThreadServerRequest<object> {
+        Request = (client, token) => client.TreeRefreshAsync(token).WithNullResultAsync(),
         Id = "RefreshFileSystemTreeRequest",
         Delay = TimeSpan.FromSeconds(0.0),
       };
@@ -390,7 +389,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
     }
 
 
-    private void OnErrorReceived(ErrorResponse errorResponse) {
+    private void OnErrorReceived(ServerError errorResponse) {
       // TODO(rpaquay)
     }
   }

@@ -6,12 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Protocol.Generated;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class DocumentChangeTrackingEntry {
-    private readonly FilePositionsData _positionsData;
+    private readonly IList<TextSpan> _positionsData;
     private readonly Dictionary<Tuple<int, int>, Entry> _trackingSpans = new Dictionary<Tuple<int, int>, Entry>();
 
     private class Entry {
@@ -20,7 +20,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       public int Length { get; set; }
     }
 
-    public DocumentChangeTrackingEntry(FilePositionsData positionsData) {
+    public DocumentChangeTrackingEntry(IList<TextSpan> positionsData) {
       _positionsData = positionsData;
     }
 
@@ -36,7 +36,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         });
       } else {
         // Limit to 1,000 spans to avoid overloading the editor.
-        foreach (var span in _positionsData.Positions.Take(1000)) {
+        foreach (var span in _positionsData.Take(1000)) {
           var entry = new Entry {
             Position = span.Position,
             Length = span.Length,

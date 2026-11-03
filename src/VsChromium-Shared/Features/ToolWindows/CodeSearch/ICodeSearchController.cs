@@ -4,8 +4,6 @@
 
 using System;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Settings;
 using VsChromium.Threads;
 using VsChromium.Views;

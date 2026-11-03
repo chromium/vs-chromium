@@ -10,7 +10,7 @@ namespace VsChromium.Threads {
   /// Post and delay requests from Dispatch thread to the server.
   /// </summary>
   public interface IDispatchThreadServerRequestExecutor {
-    void Post(DispatchThreadServerRequest request);
+    void Post<TResult>(DispatchThreadServerRequest<TResult> request);
 
     event EventHandler ProcessStarted;
     event EventHandler<ErrorEventArgs> ProcessFatalError;

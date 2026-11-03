@@ -3,14 +3,18 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Protocol.Generated;
 
 namespace VsChromium.ServerProxy {
   public interface IFileSystemTreeSource {
+    /// <summary>
+    /// Fetches the file system tree (the projects) from the server: <see
+    /// cref="TreeReceived"/> or <see cref="ErrorReceived"/> is raised (on a
+    /// thread pool thread) when the response is received.
+    /// </summary>
     void Fetch();
 
     event Action<FileSystemTree> TreeReceived;
-    event Action<ErrorResponse> ErrorReceived;
+    event Action<ServerError> ErrorReceived;
   }
 }

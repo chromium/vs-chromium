@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System.ComponentModel.Composition;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Protocol.Generated;
 using VsChromium.ServerProxy;
 using VsChromium.Threads;
 using VsChromium.Views;
@@ -11,16 +11,16 @@ using VsChromium.Views;
 namespace VsChromium.Package {
   [Export(typeof(IPackagePostInitializer))]
   public class ReportServerProgress : IPackagePostInitializer {
-    private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
+    private readonly IServerClient _serverClient;
     private readonly ISynchronizationContextProvider _synchronizationContextProvider;
     private readonly IStatusBar _statusBar;
 
     [ImportingConstructor]
     public ReportServerProgress(
-      ITypedRequestProcessProxy typedRequestProcessProxy,
+      IServerClient serverClient,
       ISynchronizationContextProvider synchronizationContextProvider,
       IStatusBar statusBar) {
-      _typedRequestProcessProxy = typedRequestProcessProxy;
+      _serverClient = serverClient;
       _synchronizationContextProvider = synchronizationContextProvider;
       _statusBar = statusBar;
     }
@@ -28,20 +28,12 @@ namespace VsChromium.Package {
     public int Priority { get { return 0; } }
 
     public void Run(IVisualStudioPackage package) {
-      _typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_EventReceived;
+      _serverClient.IndexProgress += ServerClient_IndexProgress;
     }
 
-    private void TypedRequestProcessProxy_EventReceived(TypedEvent typedEvent) {
-      DispatchProgressReport(typedEvent);
-    }
-
-    private void DispatchProgressReport(TypedEvent typedEvent) {
-      var progressReportEvent = typedEvent as ProgressReportEvent;
-      if (progressReportEvent == null)
-        return;
-
+    private void ServerClient_IndexProgress(ProgressParams progress) {
       _synchronizationContextProvider.DispatchThreadContext.Post(() =>
-        _statusBar.ReportProgress(progressReportEvent.DisplayText, progressReportEvent.Completed, progressReportEvent.Total));
+        _statusBar.ReportProgress(progress.DisplayText, progress.Completed, progress.Total));
     }
   }
 }

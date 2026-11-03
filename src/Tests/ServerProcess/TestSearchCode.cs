@@ -8,8 +8,8 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
+using VsChromium.Protocol.Generated;
 using VsChromium.ServerProxy;
 using VsChromium.Tests.Server;
 
@@ -17,13 +17,13 @@ namespace VsChromium.Tests.ServerProcess {
   [TestClass]
   public class TestSearchCode : TestServerBase {
     private static CompositionContainer _container;
-    private static ITypedRequestProcessProxy _server;
+    private static IServerClient _server;
     private static FileInfo _testFile;
 
     [ClassInitialize]
     public static void Initialize(TestContext context) {
       _container = SetupMefContainer();
-      _server = _container.GetExportedValue<ITypedRequestProcessProxy>();
+      _server = _container.GetExportedValue<IServerClient>();
       _testFile = Utils.GetChromiumTestEnlistmentFile();
       GetFileSystemFromServer(_server, _testFile);
     }
@@ -44,6 +44,18 @@ namespace VsChromium.Tests.ServerProcess {
       VerifySearchCodeResponse(_server, searchPatternLower, Options.None, _testFile.Directory, 1);
     }
 
+    [TestMethod]
+    public void InvalidRegexReturnsRecoverableError() {
+      try {
+        SendSearchCodeRequest(_server, "foo(", Options.Regex);
+        Assert.Fail("The search should fail with an invalid regular expression.");
+      }
+      catch (ServerErrorException e) {
+        Assert.AreEqual(ServerErrorKind.Recoverable, e.Error.Kind);
+        Assert.IsFalse(string.IsNullOrEmpty(e.Error.Message));
+      }
+    }
+
     [Flags]
     private enum Options {
       None = 0,
@@ -51,35 +63,37 @@ namespace VsChromium.Tests.ServerProcess {
       Regex = 0x02,
     }
 
+    private static SearchCodeResult SendSearchCodeRequest(IServerClient server, string searchPattern, Options options) {
+      return SendRequest(server, client => client.SearchCodeAsync(new SearchParams {
+        Query = new SearchQuery {
+          Text = searchPattern,
+          MatchCase = options.HasFlag(Options.MatchCase),
+          Regex = options.HasFlag(Options.Regex),
+        },
+        MaxResults = 2000,
+      }));
+    }
+
     private static void VerifySearchCodeResponse(
-        ITypedRequestProcessProxy server,
+        IServerClient server,
         string searchPattern,
         Options options,
         DirectoryInfo chromiumDirectory,
         int occurrenceCount,
         params int[] positionsAndLengths) {
-      var response = SendRequest<SearchCodeResponse>(server, new SearchCodeRequest {
-        SearchParams = new SearchParams {
-          SearchString = searchPattern,
-          MaxResults = 2000,
-          MatchCase = options.HasFlag(Options.MatchCase),
-          Regex = options.HasFlag(Options.Regex),
-        }
-      }, ServerResponseTimeout)();
+      var response = SendSearchCodeRequest(server, searchPattern, options);
       Assert.IsNotNull(response, "Server did not respond within timeout.");
-      Assert.IsNotNull(response.SearchResults);
-      Assert.IsNotNull(response.SearchResults.Entries);
+      Assert.IsNotNull(response.Projects);
 
-      Assert.AreEqual(1, response.SearchResults.Entries.Count);
-      var chromiumEntry = response.SearchResults.Entries[0] as DirectoryEntry;
-      Assert.IsNotNull(chromiumEntry);
-      Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.Name);
+      Assert.AreEqual(1, response.Projects.Count);
+      var chromiumEntry = response.Projects[0];
+      Assert.AreEqual(chromiumDirectory.FullName, chromiumEntry.RootPath);
 
-      chromiumEntry.Entries.ForAll((index, x) => {
-        Debug.WriteLine(string.Format("File name: \"{0}\"", x.Name));
-        Assert.IsNotNull(x.Data);
-        Assert.IsTrue(x.Data is FilePositionsData);
-        ((FilePositionsData)x.Data).Positions.ForEach(y => {
+      chromiumEntry.Files.ForAll((index, x) => {
+        Debug.WriteLine(string.Format("File name: \"{0}\"", x.RelativePath));
+        Assert.IsNotNull(x.Matches);
+        Assert.IsTrue(x.Matches.Count > 0);
+        x.Matches.ForEach(y => {
           Debug.WriteLine(string.Format("   Text position: offset={0}, length={1}, text={2}", y.Position, y.Length, ExtractFileText(chromiumEntry, x, y)));
           if (positionsAndLengths != null && positionsAndLengths.Length > 0) {
             Assert.AreEqual(positionsAndLengths[index * 2], y.Position);
@@ -87,16 +101,16 @@ namespace VsChromium.Tests.ServerProcess {
           }
         });
       });
-      Assert.AreEqual(occurrenceCount, chromiumEntry.Entries.Count);
+      Assert.AreEqual(occurrenceCount, chromiumEntry.Files.Count);
     }
 
-    private static string ExtractFileText(DirectoryEntry chromiumEntry, FileSystemEntry fileSystemEntry, FilePositionSpan filePositionSpan) {
-      var path = PathHelpers.CombinePaths(chromiumEntry.Name, fileSystemEntry.Name);
+    private static string ExtractFileText(ProjectMatches chromiumEntry, FileMatches fileEntry, TextSpan span) {
+      var path = PathHelpers.CombinePaths(chromiumEntry.RootPath, fileEntry.RelativePath);
       if (!File.Exists(path))
         return string.Format("File not found: {0}", path);
       var text = File.ReadAllText(path);
-      var offset = filePositionSpan.Position;
-      var length = Math.Min(80, filePositionSpan.Length);
+      var offset = span.Position;
+      var length = Math.Min(80, span.Length);
       if (offset < 0)
         return "<Invalid offset>";
       if (length < 0)

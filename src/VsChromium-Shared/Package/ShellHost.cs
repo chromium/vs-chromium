@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.ComponentModel.Composition;
 using System.Text;
-using VsChromium.Core.Ipc;
+using VsChromium.ServerProxy;
 using VsChromium.Core.Logging;
 
 namespace VsChromium.Package
@@ -26,7 +26,7 @@ namespace VsChromium.Package
         OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
     }
 
-    public void ShowErrorMessageBox(string title, ErrorResponse error) {
+    public void ShowErrorMessageBox(string title, ServerError error) {
       var serviceProvider = _packageProvider.Package.ServiceProvider;
       var errorStringBuilder = new StringBuilder();
       for (var errorIt = error; errorIt != null; errorIt = errorIt.InnerError) {

@@ -9,8 +9,9 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Package;
+using VsChromium.Protocol.Generated;
+using VsChromium.ServerProxy;
 using VsChromium.Threads;
 
 namespace VsChromium.Views {
@@ -92,12 +93,14 @@ namespace VsChromium.Views {
       if (!IsPhysicalFile(path))
         return;
 
-      var request = new DispatchThreadServerRequest {
+      // Note: Registrations are sent sequentially, so that a registration and
+      // an unregistration of the same file are processed in order.
+      var request = new DispatchThreadServerRequest<object> {
         Id = "RegisterFileRequest-" + path,
-        RunOnSequentialQueue = true,
-        Request = new RegisterFileRequest {
-          FileName = path
-        }
+        RunSequentially = true,
+        Request = (client, token) => client.FilesRegisterAsync(new FilesRegisterParams {
+          Path = path
+        }, token).WithNullResultAsync()
       };
 
       _dispatchThreadServerRequestExecutor.Post(request);
@@ -107,12 +110,12 @@ namespace VsChromium.Views {
       if (!IsValidPath(path))
         return;
 
-      var request = new DispatchThreadServerRequest {
+      var request = new DispatchThreadServerRequest<object> {
         Id = "UnregisterFileRequest-" + path,
-        RunOnSequentialQueue = true,
-        Request = new UnregisterFileRequest {
-          FileName = path
-        }
+        RunSequentially = true,
+        Request = (client, token) => client.FilesUnregisterAsync(new FilesUnregisterParams {
+          Path = path
+        }, token).WithNullResultAsync()
       };
 
       _dispatchThreadServerRequestExecutor.Post(request);

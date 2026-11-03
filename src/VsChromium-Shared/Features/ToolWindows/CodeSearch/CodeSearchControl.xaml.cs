@@ -86,7 +86,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
         _dispatchThreadServerRequestExecutor,
         componentModel.DefaultExportProvider.GetExportedValue<IDispatchThreadDelayedOperationExecutor>(),
         componentModel.DefaultExportProvider.GetExportedValue<IFileSystemTreeSource>(),
-        componentModel.DefaultExportProvider.GetExportedValue<ITypedRequestProcessProxy>(),
+        componentModel.DefaultExportProvider.GetExportedValue<IServerClient>(),
         _progressBarTracker,
         standarImageSourceFactory,
         componentModel.DefaultExportProvider.GetExportedValue<IWindowsExplorer>(),

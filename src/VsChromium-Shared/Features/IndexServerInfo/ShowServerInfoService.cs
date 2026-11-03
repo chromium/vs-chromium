@@ -8,9 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using Microsoft.VisualStudio.Shell;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Threads;
 using VsChromium.Package;
+using VsChromium.Protocol.Generated;
 using VsChromium.Threads;
 
 namespace VsChromium.Features.IndexServerInfo {
@@ -90,19 +90,18 @@ namespace VsChromium.Features.IndexServerInfo {
 
       // Post async-request to fetch the server details
       _dispatchThreadServerRequestExecutor.Post(
-        new DispatchThreadServerRequest {
+        new DispatchThreadServerRequest<IndexDetails> {
           Id = Guid.NewGuid().ToString(),
           Delay = TimeSpan.Zero,
-          Request = new GetDatabaseDetailsRequest {
+          Request = (client, token) => client.IndexDetailsAsync(new DetailsParams {
             MaxFilesByExtensionDetailsCount = 500,
             MaxLargeFilesDetailsCount = 4000,
-          },
+          }, token),
           OnDispatchThreadError = error => {
             dialog.ViewModel.Waiting = false;
             _shellHost.ShowErrorMessageBox("Error retrieving server index details", error);
           },
-          OnDispatchThreadSuccess = typedResponse => {
-            var response = (GetDatabaseDetailsResponse) typedResponse;
+          OnDispatchThreadSuccess = response => {
             var projectDetails = response.Projects.Select(x => new ProjectDetailsViewModel {
               ProjectDetails = x
             }).ToList();
@@ -135,21 +134,20 @@ namespace VsChromium.Features.IndexServerInfo {
       };
 
       // Post async-request to fetch the project details
-      _dispatchThreadServerRequestExecutor.Post(new DispatchThreadServerRequest {
+      _dispatchThreadServerRequestExecutor.Post(new DispatchThreadServerRequest<ProjectDetails> {
         Id = Guid.NewGuid().ToString(),
         Delay = TimeSpan.FromSeconds(0.0),
-        Request = new GetProjectDetailsRequest {
+        Request = (client, token) => client.ProjectDetailsAsync(new ProjectDetailsParams {
           ProjectPath = path,
           MaxFilesByExtensionDetailsCount = 500,
           MaxLargeFilesDetailsCount = 4000
-        },
+        }, token),
         OnDispatchThreadError = error => {
           dialog.ViewModel.Waiting = false;
           _shellHost.ShowErrorMessageBox("Error retrieving project index details", error);
         },
-        OnDispatchThreadSuccess = typedResponse => {
-          var response = (GetProjectDetailsResponse) typedResponse;
-          dialog.ViewModel.ProjectDetails = response.ProjectDetails;
+        OnDispatchThreadSuccess = response => {
+          dialog.ViewModel.ProjectDetails = response;
           dialog.ViewModel.Waiting = false;
         },
       });
@@ -167,21 +165,20 @@ namespace VsChromium.Features.IndexServerInfo {
       dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
       // Post async-request to fetch the project details
-      _dispatchThreadServerRequestExecutor.Post(new DispatchThreadServerRequest {
+      _dispatchThreadServerRequestExecutor.Post(new DispatchThreadServerRequest<DirectoryDetails> {
         Id = Guid.NewGuid().ToString(),
         Delay = TimeSpan.FromSeconds(0.0),
-        Request = new GetDirectoryDetailsRequest {
+        Request = (client, token) => client.TreeDirectoryDetailsAsync(new DirectoryDetailsParams {
           Path = path,
           MaxFilesByExtensionDetailsCount = 500,
           MaxLargeFilesDetailsCount = 4000
-        },
+        }, token),
         OnDispatchThreadError = error => {
           dialog.ViewModel.Waiting = false;
           _shellHost.ShowErrorMessageBox("Error retrieving server index details for directory", error);
         },
-        OnDispatchThreadSuccess = typedResponse => {
-          var response1 = (GetDirectoryDetailsResponse) typedResponse;
-          dialog.ViewModel.DirectoryDetails = response1.DirectoryDetails;
+        OnDispatchThreadSuccess = response => {
+          dialog.ViewModel.DirectoryDetails = response;
           dialog.ViewModel.Waiting = false;
         },
       });
@@ -200,46 +197,46 @@ namespace VsChromium.Features.IndexServerInfo {
       dialog.ShowModal();
     }
 
-    public void FetchDatabaseStatistics(Action<GetDatabaseStatisticsResponse> callback) {
+    public void FetchDatabaseStatistics(Action<IndexStatistics> callback) {
       FetchDatabaseStatisticsImpl(nameof(FetchDatabaseStatistics), null, false, callback);
     }
 
-    public string GetIndexStatusText(GetDatabaseStatisticsResponse response) {
+    public string GetIndexStatusText(IndexStatistics response) {
       var memoryUsageMb = (double) response.ServerNativeMemoryUsage / 1024L / 1024L;
       var message = String.Format("Index: {0:n0} files - {1:n0} MB", response.SearchableFileCount, memoryUsageMb);
       return message;
     }
 
-    public string GetIndexingServerStatusText(GetDatabaseStatisticsResponse response) {
-      switch (response.ServerStatus) {
-        case IndexingServerStatus.Idle:
+    public string GetIndexingServerStatusText(IndexStatistics response) {
+      switch (response.Status) {
+        case IndexingStatus.Idle:
           return "Idle";
-        case IndexingServerStatus.Paused:
+        case IndexingStatus.Paused:
           return "Paused";
-        case IndexingServerStatus.Yield:
+        case IndexingStatus.Yield:
           return "Yield";
-        case IndexingServerStatus.Busy:
+        case IndexingStatus.Busy:
           return "Busy";
         default:
           throw new ArgumentOutOfRangeException();
       }
     }
 
-    public string GetIndexingServerStatusToolTipText(GetDatabaseStatisticsResponse response) {
-      switch (response.ServerStatus) {
-        case IndexingServerStatus.Idle:
+    public string GetIndexingServerStatusToolTipText(IndexStatistics response) {
+      switch (response.Status) {
+        case IndexingStatus.Idle:
           return "The server is idle and the index is up to date.\r\n" +
                  "The index is automatically updated as files change on disk.";
-        case IndexingServerStatus.Paused:
+        case IndexingStatus.Paused:
           return "The server is paused and the index may be out of date.\r\n" +
                  "The index is not automatically updated as files change on disk.\r\n" +
                  "Press the \"Run\" button to resume automatic indexing now.";
-        case IndexingServerStatus.Yield:
+        case IndexingStatus.Yield:
           return "The server is paused due to heavy disk activity and the index may be out of date.\r\n" +
                  "The index is not automatically updated as files change on disk.\r\n" +
                  "The server will attempt to update the index in a few minutes.\r\n" +
                  "Press the \"Run\" button to resume automatic indexing now.";
-        case IndexingServerStatus.Busy:
+        case IndexingStatus.Busy:
           return "The server is working on updating the index to match the contents of files on disk.\r\n" +
                  "Press the \"Pause\" button to pause indexing.";
         default:
@@ -277,16 +274,13 @@ namespace VsChromium.Features.IndexServerInfo {
     }
 
     public void FetchDatabaseStatisticsImpl(string requestId, TimeSpan? delay, bool forceGarbageCollect,
-      Action<GetDatabaseStatisticsResponse> callback) {
-      var request = new DispatchThreadServerRequest {
+      Action<IndexStatistics> callback) {
+      var request = new DispatchThreadServerRequest<IndexStatistics> {
         Id = requestId,
-        Request = new GetDatabaseStatisticsRequest {
-          ForceGabageCollection = forceGarbageCollect
-        },
-        OnDispatchThreadSuccess = typedResponse => {
-          var response = (GetDatabaseStatisticsResponse) typedResponse;
-          callback(response);
-        }
+        Request = (client, token) => client.IndexStatisticsAsync(new IndexStatisticsParams {
+          ForceGarbageCollection = forceGarbageCollect
+        }, token),
+        OnDispatchThreadSuccess = callback
       };
       if (delay != null) {
         request.Delay = delay.Value;

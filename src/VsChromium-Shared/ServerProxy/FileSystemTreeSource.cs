@@ -4,21 +4,22 @@
 
 using System;
 using System.ComponentModel.Composition;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
+using System.Threading.Tasks;
+using VsChromium.Core.Logging;
+using VsChromium.Protocol.Generated;
 using VsChromium.Threads;
 
 namespace VsChromium.ServerProxy {
   [Export(typeof(IFileSystemTreeSource))]
   public class FileSystemTreeSource : IFileSystemTreeSource {
-    private readonly ITypedRequestProcessProxy _proxy;
+    private readonly IServerClient _serverClient;
     private readonly IDelayedOperationExecutor _delayedOperationExecutor;
 
     [ImportingConstructor]
-    public FileSystemTreeSource(ITypedRequestProcessProxy proxy, IDelayedOperationExecutor delayedOperationExecutor) {
-      _proxy = proxy;
+    public FileSystemTreeSource(IServerClient serverClient, IDelayedOperationExecutor delayedOperationExecutor) {
+      _serverClient = serverClient;
       _delayedOperationExecutor = delayedOperationExecutor;
-      _proxy.EventReceived += ProxyOnEventReceived;
+      _serverClient.IndexScanFinished += ServerClientOnIndexScanFinished;
     }
 
     public void Fetch() {
@@ -26,38 +27,43 @@ namespace VsChromium.ServerProxy {
     }
 
     public event Action<FileSystemTree> TreeReceived;
-    public event Action<ErrorResponse> ErrorReceived;
+    public event Action<ServerError> ErrorReceived;
 
-    private void ProxyOnEventReceived(TypedEvent typedEvent) {
-      var evt = typedEvent as FileSystemScanFinished;
-      if (evt != null) {
-        if (evt.Error == null) {
-          _delayedOperationExecutor.Post(new DelayedOperation {
-            Id = "FetchFileSystemTree",
-            Delay = TimeSpan.FromSeconds(0.1),
-            Action = FetchFileSystemTree
-          });
-        }
+    private void ServerClientOnIndexScanFinished(ScanFinishedParams parameters) {
+      if (parameters.Error == null) {
+        _delayedOperationExecutor.Post(new DelayedOperation {
+          Id = "FetchFileSystemTree",
+          Delay = TimeSpan.FromSeconds(0.1),
+          Action = FetchFileSystemTree
+        });
       }
     }
 
     private void FetchFileSystemTree() {
-      _proxy.RunAsync(
-        new GetFileSystemTreeRequest(),
-        RunAsyncOptions.Default,
-        typedResponse => {
-          var response = (GetFileSystemTreeResponse)typedResponse;
-          OnTreeReceived(response.Tree);
-        },
-        OnErrorReceived);
+      // Runs on the thread pool, the events are raised on the thread pool.
+      _ = Task.Run(() => FetchFileSystemTreeAsync());
+    }
+
+    private async Task FetchFileSystemTreeAsync() {
+      FileSystemTree tree;
+      try {
+        var client = await _serverClient.GetProtocolClientAsync().ConfigureAwait(false);
+        tree = await client.TreeGetAsync(new TreeParams()).ConfigureAwait(false);
+      }
+      catch (Exception e) {
+        Logger.LogError(e, "Error fetching the file system tree from the server.");
+        OnErrorReceived(ServerError.FromException(e));
+        return;
+      }
+      OnTreeReceived(tree);
     }
 
     protected virtual void OnTreeReceived(FileSystemTree obj) {
-      TreeReceived?.Invoke(obj);
+      Logger.WrapActionInvocation(() => TreeReceived?.Invoke(obj));
     }
 
-    protected virtual void OnErrorReceived(ErrorResponse obj) {
-      ErrorReceived?.Invoke(obj);
+    protected virtual void OnErrorReceived(ServerError obj) {
+      Logger.WrapActionInvocation(() => ErrorReceived?.Invoke(obj));
     }
   }
 }

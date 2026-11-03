@@ -6,10 +6,10 @@ using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Text;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Protocol.Generated;
 using VsChromium.Threads;
 using VsChromium.Views;
 
@@ -19,7 +19,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly ITextDocumentTable _textDocumentTable;
     private readonly string _requestId = typeof(SearchResultsDocumentChangeTracker).Name + Guid.NewGuid();
     private readonly Dictionary<FullPath, DocumentChangeTrackingEntry> _trackingEntries = new Dictionary<FullPath, DocumentChangeTrackingEntry>();
-    private readonly Dictionary<FullPath, FilePositionsData> _searchResults = new Dictionary<FullPath, FilePositionsData>();
+    private readonly Dictionary<FullPath, IList<TextSpan>> _searchResults = new Dictionary<FullPath, IList<TextSpan>>();
     private bool _enabled;
 
     public SearchResultsDocumentChangeTracker(
@@ -29,7 +29,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _textDocumentTable = textDocumentTable;
     }
 
-    public void Enable(DirectoryEntry searchResults) {
+    public void Enable(SearchCodeResult searchResults) {
       _trackingEntries.Clear();
 
       _enabled = true;
@@ -43,17 +43,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       });
     }
 
-    private void CreateEntries(DirectoryEntry searchResults) {
+    private void CreateEntries(SearchCodeResult searchResults) {
       if (!_enabled)
         return;
 
       using (new TimeElapsedLogger("Creating document tracking entries for search results", InfoLogger.Instance)) {
         _searchResults.Clear();
-        foreach (DirectoryEntry projectRoot in searchResults.Entries) {
-          var rootPath = new FullPath(projectRoot.Name);
-          foreach (FileEntry fileEntry in projectRoot.Entries) {
-            var path = rootPath.Combine(new RelativePath(fileEntry.Name));
-            var spans = fileEntry.Data as FilePositionsData;
+        foreach (var projectRoot in searchResults.Projects) {
+          var rootPath = new FullPath(projectRoot.RootPath);
+          foreach (var fileEntry in projectRoot.Files) {
+            var path = rootPath.Combine(new RelativePath(fileEntry.RelativePath));
+            var spans = fileEntry.Matches;
             if (spans != null) {
               _searchResults[path] = spans;
 

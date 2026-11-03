@@ -6,9 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Protocol.Generated;
 using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {

@@ -7,10 +7,10 @@ using System.Collections.Generic;
 using System.IO;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Protocol.Generated;
 using VsChromium.Views;
 
 namespace VsChromium.Features.SourceExplorerHierarchy {
@@ -123,7 +123,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private void AddNodeForChildren(IDictionary<RelativePath, DirectoryEntry> previouslyLoadedChildren,
+    private void AddNodeForChildren(IDictionary<RelativePath, DirectoryEntries> previouslyLoadedChildren,
       NodeViewModel oldParent, NodeViewModel newParent) {
       Invariants.Assert(oldParent != null);
       Invariants.Assert(newParent != null);
@@ -148,8 +148,9 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
 
       // Create children nodes
       var directoryEntry = LoadNewNodeChildren(previouslyLoadedChildren, newParentDirectory);
-      if (directoryEntry != null) {
-        foreach (var childEntry in directoryEntry.Entries.ToForeachEnum()) {
+      var childEntries = directoryEntry?.GetChildEntries();
+      if (childEntries != null) {
+        foreach (var childEntry in childEntries.ToForeachEnum()) {
           var child = CreateNodeViewModel(childEntry, newParent);
           newParent.AddChild(child);
         }
@@ -187,8 +188,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
 
       // Call recursively on all children
-      if (directoryEntry != null) {
-        Invariants.Assert(directoryEntry.Entries.Count == newParent.Children.Count);
+      if (childEntries != null) {
+        Invariants.Assert(childEntries.Count == newParent.Children.Count);
         for (var i = 0; i < newParent.Children.Count; i++) {
           var newChildNode = newParent.Children[i];
           var oldChildNode = GetCommonOldNode(newParent, i, diffs, newChildNode);
@@ -200,8 +201,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private IDictionary<RelativePath, DirectoryEntry> RetrievePreviouslyLoadedChildren(RootNodeViewModel rootNode) {
-      var result = new Dictionary<RelativePath, DirectoryEntry>();
+    private IDictionary<RelativePath, DirectoryEntries> RetrievePreviouslyLoadedChildren(RootNodeViewModel rootNode) {
+      var result = new Dictionary<RelativePath, DirectoryEntries>();
 
       // Special case for "fake" empty hierarchy
       if (rootNode.Children.Count > 0) {
@@ -227,7 +228,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       }
     }
 
-    private DirectoryEntry LoadNewNodeChildren(IDictionary<RelativePath, DirectoryEntry> previouslyLoadedChildren,
+    private DirectoryEntries LoadNewNodeChildren(IDictionary<RelativePath, DirectoryEntries> previouslyLoadedChildren,
       DirectoryNodeViewModel newParentDirectory) {
       var directoryEntry = previouslyLoadedChildren.GetValue(new RelativePath(newParentDirectory.RelativePath));
       if (directoryEntry == null) {
@@ -251,8 +252,8 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return null;
     }
 
-    private NodeViewModel CreateNodeViewModel(FileSystemEntry entry, NodeViewModel parent) {
-      Invariants.Assert(entry != null);
+    private NodeViewModel CreateNodeViewModel(DirectoryChildEntry entry, NodeViewModel parent) {
+      Invariants.Assert(entry.Name != null);
       Invariants.Assert(parent != null);
 
       var node = CreateNodeViewModel(_templateFactory, entry, parent);
@@ -269,13 +270,12 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       return node;
     }
 
-    public static NodeViewModel CreateNodeViewModel(INodeTemplateFactory templateFactory, FileSystemEntry entry,
+    public static NodeViewModel CreateNodeViewModel(INodeTemplateFactory templateFactory, DirectoryChildEntry entry,
       NodeViewModel parent) {
-      Invariants.Assert(entry != null);
+      Invariants.Assert(entry.Name != null);
       Invariants.Assert(parent != null);
 
-      var directoryEntry = entry as DirectoryEntry;
-      var node = directoryEntry != null
+      var node = entry.IsDirectory
         ? (NodeViewModel) new DirectoryNodeViewModel(parent)
         : (NodeViewModel) new FileNodeViewModel(parent);
 
@@ -283,7 +283,7 @@ namespace VsChromium.Features.SourceExplorerHierarchy {
       node.Name = entry.Name;
       if (PathHelpers.IsAbsolutePath(node.Name)) {
         node.Template = templateFactory.ProjectTemplate;
-      } else if (directoryEntry != null) {
+      } else if (entry.IsDirectory) {
         node.Template = templateFactory.DirectoryTemplate;
       } else {
         var extension = Path.GetExtension(entry.Name);

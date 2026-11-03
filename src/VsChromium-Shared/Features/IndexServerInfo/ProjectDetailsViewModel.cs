@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Protocol.Generated;
 using VsChromium.Features.ToolWindows.CodeSearch;
 using VsChromium.Wpf;
 

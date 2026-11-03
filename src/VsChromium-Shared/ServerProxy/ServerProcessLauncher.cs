@@ -7,10 +7,8 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using VsChromium.Core.Ipc.Json;
 using VsChromium.Core.Logging;
 using VsChromium.Package;
 
@@ -18,10 +16,11 @@ namespace VsChromium.ServerProxy {
   /// <summary>
   /// Starts the indexing server (<c>Server\VsChromium.Server.exe</c>, next to
   /// the package assemblies, both in the build output and in the VSIX)
-  /// directly, with the <c>--stdio</c> argument: messages are exchanged as JSON
-  /// lines over the standard input/output of the server, which exits when its
-  /// standard input is closed (i.e. when Visual Studio exits or crashes). This
-  /// is the same protocol as the VS Code extension.
+  /// directly, with the <c>--jsonrpc</c> argument: JSON-RPC messages are
+  /// exchanged over the standard input/output of the server (see
+  /// protocol/README.md), which exits when its standard input is closed (i.e.
+  /// when Visual Studio exits or crashes). This is the same protocol as the VS
+  /// Code extension.
   /// </summary>
   [Export(typeof(IServerProcessLauncher))]
   [Export(typeof(IPackagePostDispose))]
@@ -31,7 +30,7 @@ namespace VsChromium.ServerProxy {
     /// directory containing the package assemblies.
     /// </summary>
     private const string ServerName = "Server\\VsChromium.Server.exe";
-    private const string StdioArgument = "--stdio";
+    private const string JsonRpcArgument = "--jsonrpc";
 
     private readonly object _serverProcessLock = new object();
     private readonly CancellationTokenSource _processStartTokenSource = new CancellationTokenSource();
@@ -62,9 +61,9 @@ namespace VsChromium.ServerProxy {
 
       var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       var serverPath = Path.Combine(folder ?? "", ServerName);
-      Logger.LogInfo("Starting server process: \"{0}\" {1}", serverPath, StdioArgument);
+      Logger.LogInfo("Starting server process: \"{0}\" {1}", serverPath, JsonRpcArgument);
 
-      var startInfo = new ProcessStartInfo(serverPath, StdioArgument) {
+      var startInfo = new ProcessStartInfo(serverPath, JsonRpcArgument) {
         UseShellExecute = false,
         CreateNoWindow = true,
         RedirectStandardInput = true,
@@ -87,15 +86,8 @@ namespace VsChromium.ServerProxy {
       };
       process.BeginErrorReadLine();
 
-      var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-      var reader = new StreamReader(process.StandardOutput.BaseStream, encoding);
-      var writer = new StreamWriter(process.StandardInput.BaseStream, encoding) { AutoFlush = false };
-      var stream = new IpcStreamOverJsonLines(reader, writer,
-        (e, message) => Logger.LogError(e, "{0}", message),
-        message => Logger.LogInfo("{0}", message));
-
       token.ThrowIfCancellationRequested();
-      return new ServerProcess(process, stream, writer);
+      return new ServerProcess(process);
     }
 
     int IPackagePostDispose.Priority => 0;

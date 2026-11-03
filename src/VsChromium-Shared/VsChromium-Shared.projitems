@@ -120,6 +120,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Features\QuickSearch\QuickSearchCodeHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\QuickSearch\QuickSearchFilePathsHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\QuickSearch\SelectionHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\DirectoryChildEntry.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\DirectoryNodeViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\FileNodeViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\SourceExplorerHierarchy\FilePathEventArgs.cs" />
@@ -191,6 +192,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\QuickSearchFilePathsCommandHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\SearchCodeCommandHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\SearchFilePathsCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\SearchResultEntries.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\SearchResultsDocumentChangeTracker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\ShowSourceExplorerCommandHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Features\ToolWindows\CodeSearch\VsWindowFrameNotifyHandler.cs" />
@@ -236,15 +238,14 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\CallbackDictionary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Protocol\Generated\Protocol.g.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\FileSystemTreeSource.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\IFileSystemTreeSource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\IServerClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\IServerProcessLauncher.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\IServerProcessProxy.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ITypedRequestProcessProxy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ServerClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ServerError.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ServerProcessLauncher.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\ServerProcessProxy.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ServerProxy\TypedRequestProcessProxy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\GlobalSettings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\GlobalSettingsProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\HardCodedSettings.cs" />
@@ -259,15 +260,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Threads\IDispatchThread.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threads\IDispatchThreadDelayedOperationExecutor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threads\IDispatchThreadServerRequestExecutor.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Threads\IpcRequestException.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Threads\IReceiveResponsesThread.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Threads\IRequestQueue.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Threads\ISendRequestsThread.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threads\ISynchronizationContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threads\ISynchronizationContextProvider.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Threads\ReceiveResponsesThread.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Threads\RequestQueue.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Threads\SendRequestsThread.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threads\SynchronizationContextDelegate.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Threads\SynchronizationContextProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ToolsOptions\CodingStyleOptions.cs">

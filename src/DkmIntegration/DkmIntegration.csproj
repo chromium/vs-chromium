@@ -85,10 +85,6 @@
     </VsdConfigXmlFiles>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core.Ipc\Core.Ipc.csproj">
-      <Project>{B34F3C45-C5F0-4846-B4FB-D3859BD275DD}</Project>
-      <Name>VsChromium.Core.Ipc</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Core\Core.csproj">
       <Project>{6f70c76f-5a3a-4657-a073-075a08555bad}</Project>
       <Name>Core</Name>

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.ServerProxy;
 using VsChromium.Tests.Server;
 
@@ -15,21 +14,13 @@ namespace VsChromium.Tests.ServerProcess {
       var testFile = Utils.GetChromiumTestEnlistmentFile();
 
       using (var container = SetupMefContainer()) {
-        using (var server = container.GetExport<ITypedRequestProcessProxy>().Value) {
+        using (var server = container.GetExport<IServerClient>().Value) {
           GetFileSystemFromServer(server, testFile);
           SendFileSystemRequest(server, testFile, SendUnregisterFileRequest);
-          var tree = SendGetFileSystemRequest(server);
-          AssertTreeIsEmpty(tree);
+          var tree = SendGetFileSystemTreeRequest(server);
+          Assert.AreEqual(0, tree.Projects.Count);
         }
       }
-    }
-
-    private void AssertTreeIsEmpty(FileSystemTree_Obsolete tree) {
-      Assert.IsNotNull(tree.Root);
-      Assert.IsNotNull(tree.Root.Name);
-      Assert.AreEqual("", tree.Root.Name);
-      Assert.IsNotNull(tree.Root.Entries);
-      Assert.AreEqual(0, tree.Root.Entries.Count);
     }
   }
 }

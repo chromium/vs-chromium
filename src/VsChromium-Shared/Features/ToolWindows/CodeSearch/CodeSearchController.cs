@@ -14,8 +14,6 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
 using VsChromium.Core.Configuration;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
@@ -23,6 +21,7 @@ using VsChromium.Features.BuildOutputAnalyzer;
 using VsChromium.Features.IndexServerInfo;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
+using VsChromium.Protocol.Generated;
 using VsChromium.ServerProxy;
 using VsChromium.Settings;
 using VsChromium.Threads;
@@ -42,8 +41,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private readonly CodeSearchControl _control;
     private readonly IDispatchThreadServerRequestExecutor _dispatchThreadServerRequestExecutor;
     private readonly IFileSystemTreeSource _fileSystemTreeSource;
-    // ReSharper disable once NotAccessedField.Local
-    private readonly ITypedRequestProcessProxy _typedRequestProcessProxy;
+    private readonly IServerClient _serverClient;
     private readonly IProgressBarTracker _progressBarTracker;
     private readonly IStandarImageSourceFactory _standarImageSourceFactory;
     private readonly IWindowsExplorer _windowsExplorer;
@@ -74,7 +72,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       IDispatchThreadServerRequestExecutor dispatchThreadServerRequestExecutor,
       IDispatchThreadDelayedOperationExecutor dispatchThreadDelayedOperationExecutor,
       IFileSystemTreeSource fileSystemTreeSource,
-      ITypedRequestProcessProxy typedRequestProcessProxy,
+      IServerClient serverClient,
       IProgressBarTracker progressBarTracker,
       IStandarImageSourceFactory standarImageSourceFactory,
       IWindowsExplorer windowsExplorer,
@@ -90,7 +88,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _control = control;
       _dispatchThreadServerRequestExecutor = dispatchThreadServerRequestExecutor;
       _fileSystemTreeSource = fileSystemTreeSource;
-      _typedRequestProcessProxy = typedRequestProcessProxy;
+      _serverClient = serverClient;
       _progressBarTracker = progressBarTracker;
       _standarImageSourceFactory = standarImageSourceFactory;
       _windowsExplorer = windowsExplorer;
@@ -120,7 +118,12 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBusCookie2 = _eventBus.RegisterHandler(EventNames.TextDocument.DocumentClosed, TextDocumentClosedHandler);
       _eventBusCookie3 = _eventBus.RegisterHandler(EventNames.TextDocument.DocumentFileActionOccurred, TextDocumentFileActionOccurred);
 
-      typedRequestProcessProxy.EventReceived += TypedRequestProcessProxy_OnEventReceived;
+      serverClient.IndexStateChanged += ServerClient_OnIndexStateChanged;
+      serverClient.IndexScanStarted += ServerClient_OnIndexScanStarted;
+      serverClient.IndexScanFinished += ServerClient_OnIndexScanFinished;
+      serverClient.IndexLoading += ServerClient_OnIndexLoading;
+      serverClient.IndexLoadingProgress += ServerClient_OnIndexLoadingProgress;
+      serverClient.IndexLoaded += ServerClient_OnIndexLoaded;
 
       dispatchThreadServerRequestExecutor.ProcessFatalError += DispatchThreadServerRequestExecutor_OnProcessFatalError;
 
@@ -144,6 +147,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _eventBus.UnregisterHandler(_eventBusCookie1);
       _eventBus.UnregisterHandler(_eventBusCookie2);
       _eventBus.UnregisterHandler(_eventBusCookie3);
+
+      _serverClient.IndexStateChanged -= ServerClient_OnIndexStateChanged;
+      _serverClient.IndexScanStarted -= ServerClient_OnIndexScanStarted;
+      _serverClient.IndexScanFinished -= ServerClient_OnIndexScanFinished;
+      _serverClient.IndexLoading -= ServerClient_OnIndexLoading;
+      _serverClient.IndexLoadingProgress -= ServerClient_OnIndexLoadingProgress;
+      _serverClient.IndexLoaded -= ServerClient_OnIndexLoaded;
     }
 
     public void Start() {
@@ -226,8 +236,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void RefreshFileSystemTree() {
-      var uiRequest = new DispatchThreadServerRequest {
-        Request = new RefreshFileSystemTreeRequest(),
+      var uiRequest = new DispatchThreadServerRequest<object> {
+        Request = (client, token) => client.TreeRefreshAsync(token).WithNullResultAsync(),
         Id = "RefreshFileSystemTreeRequest",
         Delay = TimeSpan.FromSeconds(0.0),
         OnThreadPoolSend = () => {
@@ -239,18 +249,20 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void PauseResumeIndexing() {
+      // Note: The server processes "index/pause" and "index/resume" one at a
+      // time, in the order they are received.
       var uiRequest = ViewModel.IndexingPaused
-        ? new DispatchThreadServerRequest {
-          Request = new ResumeIndexingRequest(),
-          Id = nameof(ResumeIndexingRequest),
-          RunOnSequentialQueue = true,
+        ? new DispatchThreadServerRequest<object> {
+          Request = (client, token) => client.IndexResumeAsync(token).WithNullResultAsync(),
+          Id = ProtocolMethods.IndexResume,
+          RunSequentially = true,
           Delay = TimeSpan.FromSeconds(0.0),
           OnThreadPoolReceive = FetchDatabaseStatistics,
         }
-        : new DispatchThreadServerRequest {
-          Request = new PauseIndexingRequest(),
-          Id = nameof(PauseIndexingRequest),
-          RunOnSequentialQueue = true,
+        : new DispatchThreadServerRequest<object> {
+          Request = (client, token) => client.IndexPauseAsync(token).WithNullResultAsync(),
+          Id = ProtocolMethods.IndexPause,
+          RunSequentially = true,
           Delay = TimeSpan.FromSeconds(0.0),
           OnThreadPoolReceive = FetchDatabaseStatistics,
         };
@@ -374,7 +386,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private void DispatchThreadServerRequestExecutor_OnProcessFatalError(object sender, ErrorEventArgs args) {
       ViewModel.ServerIsRunning = false;
-      ReportServerError(ErrorResponseHelper.CreateErrorResponse(args.GetException()));
+      ReportServerError(ServerError.FromException(args.GetException()));
     }
 
     private void FileSystemTreeSource_OnTreeReceived(FileSystemTree fileSystemTree) {
@@ -385,7 +397,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       });
     }
 
-    private void FileSystemTreeSource_OnErrorReceived(ErrorResponse errorResponse) {
+    private void FileSystemTreeSource_OnErrorReceived(ServerError errorResponse) {
       WpfUtilities.Post(_control, () => {
         ReportServerError(errorResponse);
       });
@@ -482,8 +494,8 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       }
     }
 
-    private void ReportServerError(ErrorResponse error) {
-      if (!ErrorResponseHelper.IsReportableError(error))
+    private void ReportServerError(ServerError error) {
+      if (!ServerError.IsReportableError(error))
         return;
 
       var viewModel = CreateErrorResponseViewModel(error);
@@ -593,7 +605,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
 
     private List<TreeViewItemViewModel> CreateSearchFilePathsResult(
       FilePathSearchInfo searchInfo,
-      DirectoryEntry fileResults,
+      SearchResultDirectoryEntry fileResults,
       string description,
       string additionalWarning,
       bool expandAll) {
@@ -617,7 +629,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     private List<TreeViewItemViewModel> CreateSearchCodeResultViewModel(
-        DirectoryEntry searchResults,
+        SearchResultDirectoryEntry searchResults,
         string description,
         string additionalWarning,
         bool expandAll) {
@@ -633,10 +645,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return result;
     }
 
-    private List<TreeViewItemViewModel> CreateErrorResponseViewModel(ErrorResponse errorResponse) {
+    private List<TreeViewItemViewModel> CreateErrorResponseViewModel(ServerError errorResponse) {
       var messages = new List<TreeViewItemViewModel>();
-      if (errorResponse.IsRecoverable()) {
-        // For a recoverable error, the deepest exception contains the 
+      if (errorResponse.IsRecoverable) {
+        // For a recoverable error, the deepest error contains the
         // "user friendly" error message.
         var rootError = new TextWarningItemViewModel(
           StandarImageSourceFactory,
@@ -665,7 +677,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       return messages;
     }
 
-    private void SearchWorker(SearchWorkerParams workerParams) {
+    private void SearchWorker<TResult>(SearchWorkerParams<TResult> workerParams) {
       // Cancel all previously running tasks
       _taskCancellation.CancelAll();
       var cancellationToken = _taskCancellation.GetNewToken();
@@ -673,11 +685,11 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       var id = Interlocked.Increment(ref _operationSequenceId);
       var progressId = string.Format("{0}-{1}", workerParams.OperationName, id);
       var sw = new Stopwatch();
-      var request = new DispatchThreadServerRequest {
+      var request = new DispatchThreadServerRequest<TResult> {
         // Note: Having a single ID for all searches ensures previous search
-        // requests are superseeded.
+        // requests are superseeded (and cancelled if they are running).
         Id = "MetaSearch",
-        Request = workerParams.TypedRequest,
+        Request = workerParams.Request,
         Delay = workerParams.Delay,
         OnThreadPoolSend = () => {
           sw.Start();
@@ -687,10 +699,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           sw.Stop();
           _progressBarTracker.Stop(progressId);
         },
-        OnDispatchThreadSuccess = typedResponse => {
+        OnDispatchThreadSuccess = response => {
           if (cancellationToken.IsCancellationRequested)
             return;
-          workerParams.ProcessResponse(typedResponse, sw);
+          workerParams.ProcessResponse(response, sw);
         },
         OnDispatchThreadError = errorResponse => {
           if (cancellationToken.IsCancellationRequested)
@@ -706,10 +718,10 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       _showServerInfoService.FetchDatabaseStatistics(UpdateIndexingServerToolbarStatus);
     }
 
-    private void UpdateIndexingServerToolbarStatus(GetDatabaseStatisticsResponse response) {
-      ViewModel.IndexingPaused = response.ServerStatus == IndexingServerStatus.Paused || response.ServerStatus == IndexingServerStatus.Yield;
-      ViewModel.IndexingPausedDueToError = response.ServerStatus == IndexingServerStatus.Yield;
-      ViewModel.IndexingBusy = response.ServerStatus == IndexingServerStatus.Busy;
+    private void UpdateIndexingServerToolbarStatus(IndexStatistics response) {
+      ViewModel.IndexingPaused = response.Status == IndexingStatus.Paused || response.Status == IndexingStatus.Yield;
+      ViewModel.IndexingPausedDueToError = response.Status == IndexingStatus.Yield;
+      ViewModel.IndexingBusy = response.Status == IndexingStatus.Busy;
       ViewModel.IndexStatusText = _showServerInfoService.GetIndexStatusText(response);
       ViewModel.IndexingServerStateText = _showServerInfoService.GetIndexingServerStatusText(response);
       ViewModel.ServerStatusToolTipText = _showServerInfoService.GetIndexingServerStatusToolTipText(response);
@@ -740,27 +752,27 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void SearchFilesPaths(string searchPattern, bool immediate) {
       var searchInfo = PreprocessFilePathSearchPattern(searchPattern);
       var maxResults = GlobalSettings.SearchFilePathsMaxResults;
-      SearchWorker(new SearchWorkerParams {
+      var parameters = new SearchParams {
+        Query = new SearchQuery {
+          Text = searchInfo.SearchPattern,
+          MatchCase = false, //ViewModel.MatchCase,
+          MatchWholeWord = false, //ViewModel.MatchWholeWord,
+          IncludeSymLinks = ViewModel.IncludeSymLinks,
+          Regex = false, //ViewModel.UseRegex,
+        },
+        MaxResults = maxResults,
+      };
+      SearchWorker(new SearchWorkerParams<SearchPathsResult> {
         OperationName = OperationsIds.SearchFilePaths,
         HintText = "Searching for matching file paths...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : GlobalSettings.AutoSearchDelayMsec),
-        TypedRequest = new SearchFilePathsRequest {
-          SearchParams = new SearchParams {
-            SearchString = searchInfo.SearchPattern,
-            MaxResults = maxResults,
-            MatchCase = false, //ViewModel.MatchCase,
-            MatchWholeWord = false, //ViewModel.MatchWholeWord,
-            IncludeSymLinks = ViewModel.IncludeSymLinks,
-            Regex = false, //ViewModel.UseRegex,
-          }
-        },
+        Request = (client, token) => client.SearchPathsAsync(parameters, token),
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           _searchResultDocumentChangeTracker.Disable();
           ViewModel.SetSearchFilePathsResult(viewModel);
         },
-        ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchFilePathsResponse)typedResponse);
+        ProcessResponse = (response, stopwatch) => {
           var msg = string.Format("Found {0:n0} path(s) among {1:n0} ({2:0.00} seconds) matching pattern \"{3}\"",
             response.HitCount,
             response.TotalCount,
@@ -773,7 +785,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
             msg += ", Column " + (searchInfo.ColumnNumber + 1);
           }
           var limitMsg = CreateMaxResultsHitMessage(response.HitCount, maxResults);
-          var viewModel = CreateSearchFilePathsResult(searchInfo, response.SearchResult, msg, limitMsg, true);
+          var viewModel = CreateSearchFilePathsResult(searchInfo, SearchResultTreeBuilder.FromSearchPaths(response), msg, limitMsg, true);
           _searchResultDocumentChangeTracker.Disable();
           ViewModel.SetSearchFilePathsResult(viewModel);
         }
@@ -783,18 +795,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void SearchCode(string searchPattern, string filePathPattern, bool immediate) {
       var maxResults = GlobalSettings.SearchCodeMaxResults;
       var request = CreateSearchCodeRequest(searchPattern, filePathPattern, maxResults);
-      SearchWorker(new SearchWorkerParams {
+      SearchWorker(new SearchWorkerParams<SearchCodeResult> {
         OperationName = OperationsIds.SearchCode,
         HintText = "Searching for matching text in files...",
         Delay = TimeSpan.FromMilliseconds(immediate ? 0 : GlobalSettings.AutoSearchDelayMsec),
-        TypedRequest = request,
+        Request = (client, token) => client.SearchCodeAsync(request, token),
         ProcessError = (errorResponse, stopwatch) => {
           var viewModel = CreateErrorResponseViewModel(errorResponse);
           ViewModel.SetSearchCodeResult(viewModel);
           _searchResultDocumentChangeTracker.Disable();
         },
-        ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchCodeResponse)typedResponse);
+        ProcessResponse = (response, stopwatch) => {
           var msg = string.Format("Found {0:n0} results among {1:n0} files ({2:0.00} seconds) matching text \"{3}\"",
             response.HitCount,
             response.SearchedFileCount,
@@ -814,13 +825,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
           }
           var limitMsg = CreateMaxResultsHitMessage(response.HitCount, maxResults);
           bool expandAll = response.HitCount < HardCodedSettings.SearchCodeExpandMaxResults;
-          var result = CreateSearchCodeResultViewModel(response.SearchResults, msg, limitMsg, expandAll);
+          var result = CreateSearchCodeResultViewModel(SearchResultTreeBuilder.FromSearchCode(response), msg, limitMsg, expandAll);
           ViewModel.SetSearchCodeResult(result);
-          _searchResultDocumentChangeTracker.Enable(response.SearchResults);
+          _searchResultDocumentChangeTracker.Enable(response);
 
           // Perform additional search if few results and search was restrictive
           if (response.HitCount <= HardCodedSettings.LowHitCountWarrantingAdditionalSearch) {
-            if (request.SearchParams.MatchCase || request.SearchParams.MatchWholeWord) {
+            if (request.Query.MatchCase == true || request.Query.MatchWholeWord == true) {
               SearchCodeLessRestrictive(searchPattern, filePathPattern, response.HitCount);
             }
           }
@@ -831,20 +842,19 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void SearchCodeLessRestrictive(string searchPattern, string filePathPattern, long previousHitCount) {
       var maxResults = GlobalSettings.SearchCodeMaxResults;
       var request = CreateSearchCodeRequest(searchPattern, filePathPattern, maxResults);
-      request.SearchParams.MatchCase = false;
-      request.SearchParams.MatchWholeWord = false;
+      request.Query.MatchCase = false;
+      request.Query.MatchWholeWord = false;
 
-      SearchWorker(new SearchWorkerParams {
+      SearchWorker(new SearchWorkerParams<SearchCodeResult> {
         OperationName = OperationsIds.SearchCode,
         HintText = "Searching for matching text in files...",
         Delay = TimeSpan.FromMilliseconds(0),
-        TypedRequest = request,
+        Request = (client, token) => client.SearchCodeAsync(request, token),
         ProcessError = (errorResponse, stopwatch) => {
           // Nothing to do, ignore
           Logger.LogError(errorResponse.CreateException(), "Error running less restrictive search request");
         },
-        ProcessResponse = (typedResponse, stopwatch) => {
-          var response = ((SearchCodeResponse)typedResponse);
+        ProcessResponse = (response, stopwatch) => {
           // If same # of hits, no addional message
           if (response.HitCount <= previousHitCount) {
             return;
@@ -861,17 +871,17 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       });
     }
 
-    private SearchCodeRequest CreateSearchCodeRequest(string searchPattern, string filePathPattern, int maxResults) {
-      return new SearchCodeRequest {
-        SearchParams = new SearchParams {
-          SearchString = searchPattern,
+    private SearchParams CreateSearchCodeRequest(string searchPattern, string filePathPattern, int maxResults) {
+      return new SearchParams {
+        Query = new SearchQuery {
+          Text = searchPattern,
           FilePathPattern = filePathPattern,
-          MaxResults = maxResults,
           MatchCase = ViewModel.MatchCase,
           MatchWholeWord = ViewModel.MatchWholeWord,
           IncludeSymLinks = ViewModel.IncludeSymLinks,
           Regex = ViewModel.UseRegex,
-        }
+        },
+        MaxResults = maxResults,
       };
     }
 
@@ -931,84 +941,59 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
       ExecuteOpenCommandForItem(item);
     }
 
-    private void TypedRequestProcessProxy_OnEventReceived(TypedEvent typedEvent) {
-      DispatchFileSystemTreeScanStarted(typedEvent);
-      DispatchFileSystemTreeScanFinished(typedEvent);
-      DispatchSearchEngineFilesLoading(typedEvent);
-      DispatchSearchEngineFilesLoadingProgress(typedEvent);
-      DispatchSearchEngineFilesLoaded(typedEvent);
-      DispatchIndexingStateChanged(typedEvent);
+    private void ServerClient_OnIndexStateChanged(IndexStateChangedParams @event) {
+      WpfUtilities.Post(_control, () => {
+        Logger.LogInfo("Indexing state has changed to \"{0}\".", @event.Status);
+        OnIndexingStateChanged();
+      });
     }
 
-    private void DispatchIndexingStateChanged(TypedEvent typedEvent) {
-      var @event = typedEvent as IndexingServerStateChangedEvent;
-      if (@event != null) {
-        WpfUtilities.Post(_control, () => {
-          Logger.LogInfo("Indexing state has changed to \"{0}\".", @event.ServerStatus);
-          OnIndexingStateChanged();
-        });
-      }
+    private void ServerClient_OnIndexScanStarted(OperationStartedParams @event) {
+      WpfUtilities.Post(_control, () => {
+        Logger.LogInfo("FileSystemTree is being computed on server.");
+        _progressBarTracker.Start(OperationsIds.FileSystemScanning,
+          "Loading files and directory names from file system.");
+        OnFileSystemTreeScanStarted();
+      });
     }
 
-    private void DispatchFileSystemTreeScanStarted(TypedEvent typedEvent) {
-      var @event = typedEvent as FileSystemScanStarted;
-      if (@event != null) {
-        WpfUtilities.Post(_control, () => {
-          Logger.LogInfo("FileSystemTree is being computed on server.");
-          _progressBarTracker.Start(OperationsIds.FileSystemScanning,
-            "Loading files and directory names from file system.");
-          OnFileSystemTreeScanStarted();
-        });
-      }
+    private void ServerClient_OnIndexScanFinished(ScanFinishedParams evt) {
+      WpfUtilities.Post(_control, () => {
+        _progressBarTracker.Stop(OperationsIds.FileSystemScanning);
+        var error = ServerError.FromErrorInfo(evt.Error);
+        if (ServerError.IsReportableError(error)) {
+          ReportServerError(error);
+          return;
+        }
+        Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", evt.NewVersion);
+      });
     }
 
-    private void DispatchFileSystemTreeScanFinished(TypedEvent typedEvent) {
-      var evt = typedEvent as FileSystemScanFinished;
-      if (evt != null) {
-        WpfUtilities.Post(_control, () => {
-          _progressBarTracker.Stop(OperationsIds.FileSystemScanning);
-          if (evt.IsReportableError()) {
-            ReportServerError(evt.Error);
-            return;
-          }
-          Logger.LogInfo("New FileSystemTree bas been computed on server: version={0}.", evt.NewVersion);
-        });
-      }
+    private void ServerClient_OnIndexLoading(OperationStartedParams evt) {
+      WpfUtilities.Post(_control, () => {
+        Logger.LogInfo("Search engine is loading file database on server.");
+        _progressBarTracker.Start(OperationsIds.FilesLoading, "Loading files contents from file system.");
+      });
     }
 
-    private void DispatchSearchEngineFilesLoading(TypedEvent typedEvent) {
-      var evt = typedEvent as SearchEngineFilesLoading;
-      if (evt != null) {
-        WpfUtilities.Post(_control, () => {
-          Logger.LogInfo("Search engine is loading file database on server.");
-          _progressBarTracker.Start(OperationsIds.FilesLoading, "Loading files contents from file system.");
-        });
-      }
+    private void ServerClient_OnIndexLoadingProgress(OperationStartedParams evt) {
+      WpfUtilities.Post(_control, () => {
+        OnFilesLoadingProgress();
+        Logger.LogInfo("Search engine has produced intermediate file database index on server.");
+      });
     }
 
-    private void DispatchSearchEngineFilesLoadingProgress(TypedEvent typedEvent) {
-      var evt = typedEvent as SearchEngineFilesLoadingProgress;
-      if (evt != null) {
-        WpfUtilities.Post(_control, () => {
-          OnFilesLoadingProgress();
-          Logger.LogInfo("Search engine has produced intermediate file database index on server.");
-        });
-      }
-    }
-
-    private void DispatchSearchEngineFilesLoaded(TypedEvent typedEvent) {
-      var evt = typedEvent as SearchEngineFilesLoaded;
-      if (evt != null) {
-        WpfUtilities.Post(_control, () => {
-          _progressBarTracker.Stop(OperationsIds.FilesLoading);
-          OnFilesLoaded(evt.TreeVersion);
-          if (evt.IsReportableError()) {
-            ReportServerError(evt.Error);
-            return;
-          }
-          Logger.LogInfo("Search engine is done loading file database on server.");
-        });
-      }
+    private void ServerClient_OnIndexLoaded(FilesLoadedParams evt) {
+      WpfUtilities.Post(_control, () => {
+        _progressBarTracker.Stop(OperationsIds.FilesLoading);
+        OnFilesLoaded(evt.TreeVersion);
+        var error = ServerError.FromErrorInfo(evt.Error);
+        if (ServerError.IsReportableError(error)) {
+          ReportServerError(error);
+          return;
+        }
+        Logger.LogInfo("Search engine is done loading file database on server.");
+      });
     }
   }
 }

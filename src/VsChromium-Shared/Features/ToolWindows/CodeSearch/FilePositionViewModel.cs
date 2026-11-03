@@ -5,16 +5,16 @@
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.VisualStudio.Text;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
+using VsChromium.Protocol.Generated;
 
 namespace VsChromium.Features.ToolWindows.CodeSearch {
   public class FilePositionViewModel : CodeSearchItemViewModelBase {
     private readonly FileEntryViewModel _parentFile;
-    private readonly FilePositionSpan _matchPosition;
+    private readonly TextSpan _matchPosition;
     private FileExtract _extractPosition;
 
-    public FilePositionViewModel(ICodeSearchController controller, FileEntryViewModel parentFile, FilePositionSpan matchPosition)
+    public FilePositionViewModel(ICodeSearchController controller, FileEntryViewModel parentFile, TextSpan matchPosition)
       : base(controller, parentFile, false) {
       _parentFile = parentFile;
       _matchPosition = matchPosition;

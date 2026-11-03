@@ -610,10 +610,9 @@ namespace VsChromium.Server.Search {
           OnFilesLoadingProgress(options.OperationInfo);
         },
         onLoading: () => OnFilesLoading(options.OperationInfo),
-        onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
-          OperationInfo = options.OperationInfo,
-          TreeVersion = _currentFileSystemSnapshotVersion,
-        }),
+        // Note: "FilesLoaded" is raised by UpdateFileDatabase, after the new database is
+        // activated: clients search as soon as they are notified.
+        onLoaded: () => { },
         cancellationToken: cancellationToken);
     }
 
@@ -630,10 +629,9 @@ namespace VsChromium.Server.Search {
           OnFilesLoadingProgress(options.OperationInfo);
         },
         onLoading: () => OnFilesLoading(options.OperationInfo),
-        onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
-          OperationInfo = options.OperationInfo,
-          TreeVersion = _currentFileSystemSnapshotVersion,
-        }),
+        // Note: "FilesLoaded" is raised by UpdateFileDatabase, after the new database is
+        // activated: clients search as soon as they are notified.
+        onLoaded: () => { },
         cancellationToken: cancellationToken);
     }
 
@@ -649,10 +647,9 @@ namespace VsChromium.Server.Search {
           OnFilesLoadingProgress(options.OperationInfo);
         },
         onLoading: () => OnFilesLoading(options.OperationInfo),
-        onLoaded: () => OnFilesLoaded(new FilesLoadedResult {
-          OperationInfo = options.OperationInfo,
-          TreeVersion = _currentFileSystemSnapshotVersion,
-        }),
+        // Note: "FilesLoaded" is raised by UpdateFileDatabase, after the new database is
+        // activated: clients search as soon as they are notified.
+        onLoaded: () => { },
         cancellationToken: cancellationToken);
     }
 

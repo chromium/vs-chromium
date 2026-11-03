@@ -282,6 +282,12 @@ milestone 4; **all are fixed since milestone 4** (managed search):
     outside the BMP, such as an emoji) reported half a character. With UTF-8 storage (m14), such
     matches include the whole character. Unit test
     `TestUtf8FileContents.RandomTextsMatchUtf16Search` (the reference search rounds the same way).
+13. **`SearchEngineFilesLoaded` was sent twice per index update, the first time before the new index
+    was active** (the file database builder raised it from its "loaded" callback, with the previous
+    tree version): a client searching as soon as it was notified could get the results of the previous
+    index. It is now sent once, after the activation. Regression test
+    `TestFilesLoadedEvent.SearchesInFilesLoadedHandlersSeeTheNewDatabase` (it also made
+    `TestSearchCode.SingleOccurrenceWorks` flaky).
 
 ## Reusing mtsuite
 

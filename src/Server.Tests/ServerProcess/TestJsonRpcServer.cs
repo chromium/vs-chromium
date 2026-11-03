@@ -16,8 +16,8 @@ using VsChromium.Tests.Server;
 
 namespace VsChromium.Tests.ServerProcess {
   /// <summary>
-  /// End-to-end tests of the "--jsonrpc" mode of VsChromium.Server.exe (JSON-RPC 2.0 with LSP
-  /// framing over stdin/stdout), on the test enlistment.
+  /// End-to-end tests of VsChromium.Server.exe (JSON-RPC 2.0 with LSP framing over stdin/stdout),
+  /// on the test enlistment.
   /// </summary>
   [TestClass]
   public class TestJsonRpcServer {
@@ -92,8 +92,10 @@ namespace VsChromium.Tests.ServerProcess {
     }
 
     [TestMethod]
-    public void ServerExitsWhenStdinIsClosed() {
-      using (var server = new JsonRpcServerProcess()) {
+    [DataRow("--jsonrpc")]
+    [DataRow("--stdio")] // Alias of "--jsonrpc".
+    public void ServerExitsWhenStdinIsClosed(string argument) {
+      using (var server = new JsonRpcServerProcess(argument)) {
         server.Request("server/initialize", "{\"protocolVersion\":1}");
         server.CloseInput();
         Assert.IsTrue(server.Process.WaitForExit((int)Timeout.TotalMilliseconds),
@@ -107,7 +109,7 @@ namespace VsChromium.Tests.ServerProcess {
       private readonly Thread _readerThread;
       private int _nextId;
 
-      public JsonRpcServerProcess() {
+      public JsonRpcServerProcess(string argument = "--jsonrpc") {
         var serverPath = Path.Combine(
           Path.GetDirectoryName(typeof(TestJsonRpcServer).Assembly.Location),
           "VsChromium.Server.exe");
@@ -115,7 +117,7 @@ namespace VsChromium.Tests.ServerProcess {
 
         Process = Process.Start(new ProcessStartInfo {
           FileName = serverPath,
-          Arguments = "--jsonrpc",
+          Arguments = argument,
           UseShellExecute = false,
           CreateNoWindow = true,
           RedirectStandardInput = true,

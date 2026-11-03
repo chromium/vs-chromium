@@ -2,19 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
-
-namespace VsChromium.Core.Ipc.TypedMessages {
-  public class GetDatabaseStatisticsResponse : TypedResponse {
-    public int ProjectCount { get; set; }
-    public long FileCount { get; set; }
-    public long SearchableFileCount { get; set; }
-    public long ServerNativeMemoryUsage { get; set; }
-    public long ServerGcMemoryUsage { get; set; }
-    public DateTime IndexLastUpdatedUtc { get; set; }
-    public IndexingServerStatus ServerStatus { get; set; }
-  }
-
+namespace VsChromium.Server {
   public enum IndexingServerStatus {
     /// <summary>
     /// The server is actually running

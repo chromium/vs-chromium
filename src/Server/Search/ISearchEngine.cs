@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.Operations;
 
@@ -19,7 +18,7 @@ namespace VsChromium.Server.Search {
 
     /// <summary>
     /// Changes the options of the project containing <paramref name="path"/> (see
-    /// <see cref="SetProjectOptionsRequest"/>). Null values leave the option unchanged.
+    /// "project/setOptions"). Null values leave the option unchanged.
     /// </summary>
     void SetProjectOptions(FullPath path, bool? trigramFiltersEnabled);
 

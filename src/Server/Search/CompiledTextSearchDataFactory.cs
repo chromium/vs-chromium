@@ -5,8 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VsChromium.Core.Ipc;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
 
 using VsChromium.Server.TextSearch;

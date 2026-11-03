@@ -2,9 +2,9 @@
 
   <!--
     The indexing and search server (VsChromium.Server.exe), used by the Visual Studio package and the
-    VS Code extension through its protocol (JSON lines over standard input/output). Portable modern
-    .NET; an independent code base, sharing no source file with the Visual Studio side (see
-    docs/portable-server/PORTING_PRINCIPLES.md).
+    VS Code extension through its protocol (JSON-RPC over standard input/output, see
+    protocol/README.md). Portable modern .NET; an independent code base, sharing no source file with
+    the Visual Studio side (see docs/portable-server/PORTING_PRINCIPLES.md).
 
     Output: Binaries\<Configuration>\Server\ (the server has its own dependencies, different from the
     Visual Studio side ones in Binaries\<Configuration>\).

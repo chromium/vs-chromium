@@ -12,7 +12,6 @@ using System.Threading;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;

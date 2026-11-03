@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Search;
 
 namespace VsChromium.Tests.Server {
   /// <summary>

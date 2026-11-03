@@ -8,7 +8,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Utility;
 using VsChromium.Server;
 using VsChromium.Server.FileSystemContents;

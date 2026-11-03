@@ -82,7 +82,7 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 | `VsChromium.Core.Ipc` | `netstandard2.0` | VS package (net472), VS tests | Message types, client side (plain data classes, no dependency) |
 | `VsChromium.Core.Ipc.Json` | `netstandard2.0` | VS package, VS tests | JSON serialization of the messages, JSON lines stream over stdio, client side |
 | `VsChromium.Core` (existing, slimmed) | `net472` | VS package, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
-| `VsChromium.Core.Server` (`src/Core.Server`) | modern .NET | server | Server copy of the protocol messages and their JSON serialization (`Ipc\`), paths, pattern matching, file system, configuration, logging, collections |
+| `VsChromium.Core.Server` (`src/Core.Server`) | modern .NET | server | Protocol code generated from `protocol/*.tsp` (`Protocol\Generated`), paths, pattern matching, file system, configuration, logging, collections |
 | `VsChromium.Server` (ported) | modern .NET | server process | All server code + managed replacements for the native code + portable file system |
 | `MtSuite.CoreFileSystem` (copied from mtsuite) | modern .NET | server | OS-aware path helpers |
 | `VsChromium.Server.Tests` (new) | modern .NET | – | Server unit tests (white box) |
@@ -94,7 +94,7 @@ projects (`src/Core.Server`, `src/Server`, `src/Server.Tests`) don't reference o
 of the VS side (`src/Core`, `src/Core.Ipc`, `src/Core.Ipc.Json`, `src/Tests`): the files the server
 used were copied into `src/Core.Server` (same relative paths and namespaces, the `#if NETCOREAPP`
 branches resolved on each side), and the shared unit tests into `src/Server.Tests/Core`. The only
-contract between the two is the protocol (JSON lines over stdio), checked by the end-to-end tests
+contract between the two is the protocol (JSON-RPC over stdio, defined in `protocol/*.tsp`), checked by the end-to-end tests
 (server) and the VS and VS Code client tests. Each side evolves on its own, e.g. span-based
 pattern matching on the server only. The VS package still bundles the server executable in its
 VSIX (packaging only). `src/Native`, `src/re2`,
@@ -133,27 +133,22 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   unchanged (bound by the OS and by memory bandwidth), regex searches 50-110% slower (no dynamic PGO
   or tiered JIT), file path searches similar; small corpus: same cold index time (~70-130 ms),
   working set 120 → 92 MB; executable 9.8 MB instead of 98 MB.
-  What remains of "reflection" is `Type.Name` (the "$type" names of the protocol, `ClassName` of the
-  typed messages, and diagnostics), which is supported by NativeAOT.
+  What remains of "reflection" is `Type.Name` (diagnostics), which is supported by NativeAOT.
 
 ### Process model and protocol
 
 - The server is started **directly** by the client (no `VsChromium.Host.exe`, no debugger
-  attachment, no job object; done in milestone 6). **It exits when its input stream is closed** (client exit or crash),
-  as the `--stdio` mode already does.
-- **Decided: a single transport for both clients: stdio + JSON lines** (the existing `--stdio`
-  mode, `src/Server/Ipc/Json`). The VS package switches from TCP + protobuf-net to stdio + JSON,
-  which removes Host.exe, the TCP listener, protobuf-net and the debugger/job-object machinery.
-  This is validated by the benchmarks (large search results over JSON vs protobuf); if JSON is too
-  slow, keep protobuf-net (upgraded to 3.x, `netstandard2.0`) over stdio for VS.
-- The protocol is the JSON format. Its message classes are defined three times, once per code base:
-  `src/Core.Server/Ipc` (server), `src/Core.Ipc` (VS package), `src/vscode/src/server/messages.ts`
-  (VS Code extension, until P3). A protocol change updates the three, and is covered by the end-to-end tests
-  and the client tests.
-- **In progress: JSON-RPC 2.0 protocol defined in TypeSpec** (see "Protocol definition in
-  TypeSpec" at the end): the server speaks it with `--jsonrpc` since P2; the VS Code extension uses it
-  since P3 (`vscode-jsonrpc`, `src/vscode/src/server/client.ts`), the VS package moves to it in P4,
-  then the typed messages protocol above (`--stdio`) is removed (P5).
+  attachment, no job object; done in milestone 6). **It exits when its input stream is closed** (client exit or crash).
+- **Decided: a single transport for both clients: stdio** (the VS package switched from TCP +
+  protobuf-net to stdio + JSON in milestone 6, which removed Host.exe, the TCP listener, protobuf-net
+  and the debugger/job-object machinery; validated by the benchmarks).
+- **Done: JSON-RPC 2.0 protocol defined in TypeSpec** (see "Protocol definition in TypeSpec" at the
+  end, and `protocol/README.md`): `protocol/*.tsp` is the single definition, the code of the server
+  and of both clients is generated from it. The server only speaks this protocol (`--jsonrpc`, or
+  `--stdio` as an alias) since P5; the VS Code extension uses it since P3 (`vscode-jsonrpc`,
+  `src/vscode/src/server/client.ts`), the VS package since P4 (StreamJsonRpc). History: until P5, the
+  protocol was a "typed messages" protocol (JSON lines, one class per message with a `$type`),
+  defined three times (`src/Core.Server/Ipc`, `src/Core.Ipc`, `src/vscode/src/server/messages.ts`).
 
 ### File system
 
@@ -213,20 +208,19 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 - **Done: no dependency injection container.** MEF was first replaced with
   Microsoft.Extensions.DependencyInjection (milestone 7 groundwork), then (2026-11-02) with a hand
   written composition root, `src/Server/ServerComponents.cs`: one lazily created property per
-  component (54 singletons), plain constructor calls checked by the compiler, components disposed in
-  reverse creation order (as the container did), lists for the 3 former `[ImportMany]` (protocol
-  handlers, request handlers, project discovery providers). The request handlers derive from
-  `TypedMessageRequestHandler<TRequest>` (`request is TRequest`), instead of matching type names.
-  `TestServerComponents` checks that all components can be created, all handler classes are
-  registered and each request type has exactly one handler.
+  component (30 singletons since P5), plain constructor calls checked by the compiler, components
+  disposed in reverse creation order (as the container did), a list for the former `[ImportMany]`
+  (project discovery providers; the protocol and request handler lists went away with the typed
+  messages protocol in P5). `TestServerComponents` checks that all components can be created.
 - Logging: NLog 6 (configured by code, works with NativeAOT), logs still under the local app data folder
   (`%LOCALAPPDATA%\VsChromium` on Windows, `$XDG_STATE_HOME`/`~/.local/state/VsChromium` on Linux,
   `~/Library/Logs/VsChromium` on macOS).
-- **Done: JSON protocol with `System.Text.Json`, source generated** (`src/Core.Server/Ipc/Json`:
-  `IpcJsonContext`, `MessageTypes`, `IpcJsonSerializer`), same JSON format as the Newtonsoft.Json
-  implementation it replaced (still used by the VS package, its own copy). Benchmarks
-  (`docs/portable-server/benchmarks/m8-stj-no-reflection`, large corpus): no regression; queries
-  returning many results (max results, 10,000 hits) 8-30% faster (serialization).
+- **Done: JSON protocol with `System.Text.Json`, source generated**: the generated
+  `ProtocolJsonContext` (`src/Core.Server/Protocol/Generated`) since P2. The JSON serialization of
+  the former typed messages protocol (`IpcJsonContext`, `IpcJsonSerializer`, removed in P5) was
+  already source generated (same JSON format as the Newtonsoft.Json implementation it replaced).
+  Benchmarks (`docs/portable-server/benchmarks/m8-stj-no-reflection`, large corpus): no regression;
+  queries returning many results (max results, 10,000 hits) 8-30% faster (serialization).
 
 ## Behavior changes
 
@@ -746,7 +740,7 @@ UTF-16 size).
 
 ### Protocol definition in TypeSpec (P1 of the protocol migration)
 
-The protocol is being moved to **JSON-RPC 2.0** (LSP framing), defined once in `protocol/*.tsp` (a
+The protocol was moved to **JSON-RPC 2.0** (LSP framing), defined once in `protocol/*.tsp` (a
 subset of TypeSpec, valid for the official TypeSpec tools) and generated for the server and both
 clients by our own generator, `src/Tools/ProtocolGen` (C#: lexer, parser, binder enforcing the
 protocol and protobuf-compatibility rules, emitters). No Node.js is needed to build: the
@@ -788,13 +782,24 @@ messages: `protocol/README.md`.
     return names (`DirectoryEntries`, `exists: false` instead of null) and echo the requested
     relative path; `tree/get` returns no projects when `knownVersion` is current; no "hello"
     message (`server/initialize` instead); request durations are recorded as `Request:<method>`
-    in the server statistics; `tree/directoryStatistics` still returns zeros (not implemented, as
-    `GetDirectoryStatisticsRequest`).
+    in the server statistics; `tree/directoryStatistics` still returned zeros (not implemented, as
+    `GetDirectoryStatisticsRequest`; removed in P5).
   - Tests: `Server.Tests/JsonRpc` (framing, connection over in-memory streams with a fake handler:
     ids, void results, all error codes, cancellation, notifications, pause/resume ordering),
     `Server.Tests/ServerProcess/TestJsonRpcServer` (the executable with `--jsonrpc`). The end-to-end
     tests and the benchmarks (`src/Tests.EndToEnd`) use the new protocol (`JsonRpcServerClient`),
-    plus `Protocol/JsonRpcProtocolTests`; `Protocol/LegacyProtocolSmokeTests` keeps `--stdio`
-    covered until P5. The benchmark result files are unchanged (same scenarios and query names).
-- Next: P3 VS Code client (`vscode-jsonrpc`), P4 Visual Studio client (StreamJsonRpc), P5 removal of
-  the typed messages protocol.
+    plus `Protocol/JsonRpcProtocolTests`. The benchmark result files are unchanged (same scenarios
+    and query names).
+- P3 (done): the VS Code extension uses the new protocol (`vscode-jsonrpc`, generated
+  `src/vscode/src/protocol/protocol.g.ts`).
+- P4 (being merged): the Visual Studio extension uses the new protocol (StreamJsonRpc, generated
+  `src/VsChromium-Shared/Protocol/Generated/Protocol.g.cs`).
+- P5 (done): the typed messages protocol is removed from the server. JSON-RPC is the only mode
+  (`--jsonrpc`, `--stdio` accepted as an alias, the usual LSP convention); `ServerProtocolMode` and
+  the legacy components are gone (`IpcServer`, `src/Server/Ipc`, the receive/send threads,
+  `src/Core.Server/Ipc` with the message classes and their serialization, and their tests). The few
+  legacy types still used internally moved: `RecoverableErrorException` to `Core.Server/Utility`
+  (namespace `VsChromium.Core.Utility`), `SearchParams`, `FilePositionSpan` and `FileExtract` to
+  `Server/Search`, `IndexingServerStatus` to `Server`, `OperationTiming` to `Server/Diagnostics`.
+  `tree/directoryStatistics` (unused by the clients, always returned zeros) was removed from the
+  protocol.

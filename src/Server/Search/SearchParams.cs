@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 
-namespace VsChromium.Core.Ipc.TypedMessages {
+namespace VsChromium.Server.Search {
   public class SearchParams {
     public SearchParams() {
       MaxResults = int.MaxValue;

@@ -763,28 +763,6 @@ namespace VsChromium.Protocol.Generated {
     public int MaxLargeFilesDetailsCount { get; set; }
   }
 
-  public sealed partial class DirectoryStatisticsParams {
-    /// <summary>
-    /// Absolute path of the directory.
-    /// </summary>
-    [JsonProperty("path")]
-    public string Path { get; set; }
-  }
-
-  public sealed partial class DirectoryStatistics {
-    [JsonProperty("directoryCount")]
-    public int DirectoryCount { get; set; }
-
-    [JsonProperty("fileCount")]
-    public int FileCount { get; set; }
-
-    [JsonProperty("indexedFileCount")]
-    public int IndexedFileCount { get; set; }
-
-    [JsonProperty("totalIndexedFileSize")]
-    public long TotalIndexedFileSize { get; set; }
-  }
-
   /// <summary>
   /// Parameters of an operation (generated from its inline parameters).
   /// </summary>
@@ -830,7 +808,6 @@ namespace VsChromium.Protocol.Generated {
     public const string TreeEntriesMultiple = "tree/entriesMultiple";
     public const string TreeRefresh = "tree/refresh";
     public const string TreeDirectoryDetails = "tree/directoryDetails";
-    public const string TreeDirectoryStatistics = "tree/directoryStatistics";
   }
 
   /// <summary>
@@ -958,12 +935,6 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     public Task<DirectoryDetails> TreeDirectoryDetailsAsync(DirectoryDetailsParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
       _rpc.InvokeWithParameterObjectAsync<DirectoryDetails>(ProtocolMethods.TreeDirectoryDetails, parameters, cancellationToken);
-
-    /// <summary>
-    /// "tree/directoryStatistics": Counts of the files of a directory.
-    /// </summary>
-    public Task<DirectoryStatistics> TreeDirectoryStatisticsAsync(DirectoryStatisticsParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
-      _rpc.InvokeWithParameterObjectAsync<DirectoryStatistics>(ProtocolMethods.TreeDirectoryStatistics, parameters, cancellationToken);
   }
 
   /// <summary>

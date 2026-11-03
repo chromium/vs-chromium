@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Ipc;
+using VsChromium.Core.Utility;
 using VsChromium.Protocol.Generated;
 using VsChromium.Server.JsonRpc;
 
@@ -336,7 +336,6 @@ namespace VsChromium.Tests.JsonRpc {
       public ValueTask<DirectoryEntries> TreeEntriesAsync(TreeEntriesParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<DirectoryEntriesList> TreeEntriesMultipleAsync(TreeEntriesMultipleParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<DirectoryDetails> TreeDirectoryDetailsAsync(DirectoryDetailsParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
-      public ValueTask<DirectoryStatistics> TreeDirectoryStatisticsAsync(DirectoryStatisticsParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
   }
 }

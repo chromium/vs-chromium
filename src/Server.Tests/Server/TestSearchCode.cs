@@ -10,7 +10,6 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Server;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Linq;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Search;

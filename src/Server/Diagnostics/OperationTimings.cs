@@ -6,12 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server.Diagnostics {
   /// <summary>
   /// Records the duration of the main server operations (file system scans, file database updates,
-  /// requests), reported by <see cref="GetServerStatisticsRequest"/>. Thread safe.
+  /// requests), reported by "server/statistics". Thread safe.
   /// </summary>
   public static class OperationTimings {
     public const string FileSystemScan = "FileSystemScan";

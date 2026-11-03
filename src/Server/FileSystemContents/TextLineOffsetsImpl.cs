@@ -5,7 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Search;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Win32;
 using VsChromium.Core.Win32.Strings;

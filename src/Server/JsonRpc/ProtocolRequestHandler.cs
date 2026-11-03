@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using VsChromium.Core;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
@@ -23,14 +22,14 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
 using ISearchEngine = VsChromium.Server.Search.ISearchEngine;
-using LegacyFilePositionSpan = VsChromium.Core.Ipc.TypedMessages.FilePositionSpan;
-using LegacySearchParams = VsChromium.Core.Ipc.TypedMessages.SearchParams;
+using EngineFilePositionSpan = VsChromium.Server.Search.FilePositionSpan;
+using EngineSearchParams = VsChromium.Server.Search.SearchParams;
+using OperationTiming = VsChromium.Protocol.Generated.OperationTiming;
 
 namespace VsChromium.Server.JsonRpc {
   /// <summary>
-  /// The requests of the protocol (JSON-RPC), implemented with the services of the server. Ported
-  /// from the request handlers of the typed messages protocol (<c>Ipc/TypedMessageHandlers</c>,
-  /// removed with that protocol), see the mapping in protocol/README.md.
+  /// The requests of the protocol (JSON-RPC), implemented with the services of the server (ported
+  /// from the request handlers of the typed messages protocol, removed in P5).
   ///
   /// The services are synchronous: the methods complete synchronously, on the thread pool thread
   /// of the request (see <see cref="JsonRpcConnection"/>).
@@ -145,7 +144,7 @@ namespace VsChromium.Server.JsonRpc {
     }
 
     public ValueTask<FileExtractsResult> FilesExtractsAsync(FileExtractsParams parameters, CancellationToken cancellationToken) {
-      var spans = parameters.Spans.Select(x => new LegacyFilePositionSpan { Position = x.Position, Length = x.Length });
+      var spans = parameters.Spans.Select(x => new EngineFilePositionSpan { Position = x.Position, Length = x.Length });
       var extracts = _searchEngine.GetFileExtracts(new FullPath(parameters.Path), spans, parameters.MaxExtractLength);
       return new ValueTask<FileExtractsResult>(new FileExtractsResult {
         Path = parameters.Path,
@@ -295,9 +294,9 @@ namespace VsChromium.Server.JsonRpc {
       });
     }
 
-    private static LegacySearchParams ToSearchParams(SearchParams parameters) {
+    private static EngineSearchParams ToSearchParams(SearchParams parameters) {
       var query = parameters.Query ?? throw new ProtocolInvalidParamsException("Missing \"query\"");
-      return new LegacySearchParams {
+      return new EngineSearchParams {
         SearchString = query.Text,
         FilePathPattern = query.FilePathPattern,
         MaxResults = parameters.MaxResults,
@@ -399,17 +398,6 @@ namespace VsChromium.Server.JsonRpc {
       var database = _searchEngine.CurrentFileDatabaseSnapshot;
       return new ValueTask<DirectoryDetails>(CreateDirectoryDetails(database, directorySnapshot,
         parameters.MaxFilesByExtensionDetailsCount, parameters.MaxLargeFilesDetailsCount));
-    }
-
-    public ValueTask<DirectoryStatistics> TreeDirectoryStatisticsAsync(DirectoryStatisticsParams parameters, CancellationToken cancellationToken) {
-      // Not implemented (same as GetDirectoryStatisticsRequest of the typed messages protocol).
-      //TODO(rpaquay)
-      return new ValueTask<DirectoryStatistics>(new DirectoryStatistics {
-        DirectoryCount = 0,
-        FileCount = 0,
-        IndexedFileCount = 0,
-        TotalIndexedFileSize = 0,
-      });
     }
 
     private static DirectoryDetails CreateDirectoryDetails(IFileDatabaseSnapshot database, DirectorySnapshot baseDirectory,

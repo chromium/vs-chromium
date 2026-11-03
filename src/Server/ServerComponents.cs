@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc;
 using VsChromium.Core.Threads;
 using VsChromium.Protocol.Generated;
 using VsChromium.Server.FileSystem;
@@ -14,10 +13,6 @@ using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
-using VsChromium.Server.Ipc;
-using VsChromium.Server.Ipc.ProtocolHandlers;
-using VsChromium.Server.Ipc.TypedEvents;
-using VsChromium.Server.Ipc.TypedMessageHandlers;
 using VsChromium.Server.JsonRpc;
 using VsChromium.Server.Operations;
 using VsChromium.Server.ProgressTracking;
@@ -36,20 +31,9 @@ namespace VsChromium.Server {
   /// Components are created on first access (in the same order as a dependency injection container
   /// would), and disposed in the reverse order of their creation by <see cref="Dispose"/>. Not thread
   /// safe: the components are created on a single thread, when the server starts (or by tests).
-  ///
-  /// A server process speaks a single protocol (<see cref="ServerProtocolMode"/>): the components of
-  /// the other protocol are not available (their properties throw <see
-  /// cref="InvalidOperationException"/>).
   /// </summary>
   public sealed class ServerComponents : IDisposable {
     private readonly List<IDisposable> _disposables = new List<IDisposable>();
-    private readonly ServerProtocolMode _mode;
-
-    public ServerComponents(ServerProtocolMode mode) {
-      _mode = mode;
-    }
-
-    public ServerProtocolMode Mode => _mode;
 
     private T Create<T>(T component) {
       var disposable = component as IDisposable;
@@ -57,18 +41,6 @@ namespace VsChromium.Server {
         _disposables.Add(disposable);
       }
       return component;
-    }
-
-    /// <summary>Throws if the component <paramref name="name"/> of <paramref name="mode"/> is not available.</summary>
-    private void RequireMode(ServerProtocolMode mode, string name) {
-      if (_mode != mode) {
-        throw new InvalidOperationException($"Component \"{name}\" is only available in the {mode} protocol mode (current mode: {_mode})");
-      }
-    }
-
-    private T CreateFor<T>(ServerProtocolMode mode, string name, Func<T> factory) {
-      RequireMode(mode, name);
-      return Create(factory());
     }
 
     public void Dispose() {
@@ -79,21 +51,12 @@ namespace VsChromium.Server {
     }
 
     // Server
-    private IServer _server;
-    public IServer Server => _server ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(Server),
-      () => new IpcServer(ReceiveRequestsThread, SendResponsesThread, TypedEventForwarder));
-
     private IIndexingServer _indexingServer;
     public IIndexingServer IndexingServer => _indexingServer ??= Create(new IndexingServer(DateTimeProvider, FileSystemSnapshotManager, TaskQueueFactory, SearchEngine));
 
     // Core/Configuration
     private IConfigurationFileLocator _configurationFileLocator;
     public IConfigurationFileLocator ConfigurationFileLocator => _configurationFileLocator ??= Create(new ConfigurationFileLocator(FileSystem));
-
-    // Core/Ipc
-    private IIpcRequestIdFactory _ipcRequestIdFactory;
-    public IIpcRequestIdFactory IpcRequestIdFactory => _ipcRequestIdFactory ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(IpcRequestIdFactory),
-      () => new IpcRequestIdFactory());
 
     // Core/Threads
     private IDateTimeProvider _dateTimeProvider;
@@ -130,80 +93,26 @@ namespace VsChromium.Server {
     private IFileSystemNameFactory _fileSystemNameFactory;
     public IFileSystemNameFactory FileSystemNameFactory => _fileSystemNameFactory ??= Create(new FileSystemNameFactory());
 
-    // Server/Ipc (typed messages protocol)
-    private IReadOnlyList<IProtocolHandler> _protocolHandlers;
-    public IReadOnlyList<IProtocolHandler> ProtocolHandlers => _protocolHandlers ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(ProtocolHandlers),
-      () => new IProtocolHandler[] {
-        Create(new EchoProtocolHandler()),
-        Create(new HelloProtocolHandler()),
-        Create(new TypedMessageProtocolHandler(TypedMessageRequestHandlers)),
-      });
-
-    private ITypedEventForwarder _typedEventForwarder;
-    public ITypedEventForwarder TypedEventForwarder => _typedEventForwarder ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(TypedEventForwarder),
-      () => new TypedEventForwarder(TypedEventSender, IndexingServer, FileSystemSnapshotManager, SearchEngine));
-
-    private ITypedEventSender _typedEventSender;
-    public ITypedEventSender TypedEventSender => _typedEventSender ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(TypedEventSender),
-      () => new TypedEventSender(IpcResponseQueue, IpcRequestIdFactory));
-
-    private IReadOnlyList<ITypedMessageRequestHandler> _typedMessageRequestHandlers;
-    public IReadOnlyList<ITypedMessageRequestHandler> TypedMessageRequestHandlers => _typedMessageRequestHandlers ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(TypedMessageRequestHandlers),
-      () => new ITypedMessageRequestHandler[] {
-        Create(new GetDatabaseDetailsRequestHandler(FileSystemSnapshotManager, SearchEngine)),
-        Create(new GetDatabaseStatisticsRequestHandler(FileSystemSnapshotManager, SearchEngine, IndexingServer)),
-        Create(new GetDirectoryDetailsRequestHandler(FileSystemSnapshotManager, SearchEngine)),
-        Create(new GetDirectoryEntriesMultipleRequestHandler(FileSystemSnapshotManager)),
-        Create(new GetDirectoryEntriesRequestHandler(FileSystemSnapshotManager)),
-        Create(new GetDirectoryStatisticsRequestHandler(FileSystemSnapshotManager)),
-        Create(new GetFileExtractsRequestHandler(SearchEngine)),
-        Create(new GetFileSystemRequestHandler(FileSystemSnapshotManager)),
-        Create(new GetFileSystemTreeRequestHandler(FileSystemSnapshotManager)),
-        Create(new GetFileSystemVersionRequestHandler(FileSystemSnapshotManager)),
-        Create(new GetProjectDetailsRequestHandler(FileSystemSnapshotManager, SearchEngine)),
-        Create(new GetServerStatisticsRequestHandler(FileSystemSnapshotManager, SearchEngine)),
-        Create(new PauseIndexingRequestHandler(IndexingServer)),
-        Create(new RefreshFileSystemTreeRequestHandler(IndexingServer)),
-        Create(new RegisterFileRequestHandler(FileRegistrationTracker)),
-        Create(new ResumeIndexingRequestHandler(IndexingServer)),
-        Create(new SearchCodeRequestHandler(SearchEngine, FileSystemNameFactory)),
-        Create(new SearchFilePathsRequestHandler(SearchEngine, FileSystemNameFactory)),
-        Create(new SetProjectOptionsRequestHandler(SearchEngine)),
-        Create(new UnregisterFileRequestHandler(FileRegistrationTracker)),
-      });
-
-    private IIpcRequestDispatcher _ipcRequestDispatcher;
-    public IIpcRequestDispatcher IpcRequestDispatcher => _ipcRequestDispatcher ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(IpcRequestDispatcher),
-      () => new IpcRequestDispatcher(CustomThreadPool, TaskQueueFactory, IpcResponseQueue, ProtocolHandlers));
-
-    private IIpcResponseQueue _ipcResponseQueue;
-    public IIpcResponseQueue IpcResponseQueue => _ipcResponseQueue ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(IpcResponseQueue),
-      () => new IpcResponseQueue());
-
-    // Server/JsonRpc (JSON-RPC protocol)
+    // Server/JsonRpc
     private JsonRpcServer _jsonRpcServer;
-    public JsonRpcServer JsonRpcServer => _jsonRpcServer ??= CreateFor(ServerProtocolMode.JsonRpc, nameof(JsonRpcServer),
-      () => new JsonRpcServer(JsonRpcOutput, JsonRpcConnection, JsonRpcEventForwarder));
+    public JsonRpcServer JsonRpcServer => _jsonRpcServer ??= Create(new JsonRpcServer(JsonRpcOutput, JsonRpcConnection, JsonRpcEventForwarder));
 
     private JsonRpcConnection _jsonRpcConnection;
-    public JsonRpcConnection JsonRpcConnection => _jsonRpcConnection ??= CreateFor(ServerProtocolMode.JsonRpc, nameof(JsonRpcConnection),
-      () => new JsonRpcConnection(ProtocolRequestHandler, JsonRpcOutput));
+    public JsonRpcConnection JsonRpcConnection => _jsonRpcConnection ??= Create(new JsonRpcConnection(ProtocolRequestHandler, JsonRpcOutput));
 
     private JsonRpcOutput _jsonRpcOutput;
-    public JsonRpcOutput JsonRpcOutput => _jsonRpcOutput ??= CreateFor(ServerProtocolMode.JsonRpc, nameof(JsonRpcOutput),
-      () => new JsonRpcOutput());
+    public JsonRpcOutput JsonRpcOutput => _jsonRpcOutput ??= Create(new JsonRpcOutput());
 
     private IProtocolRequestHandler _protocolRequestHandler;
-    public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= CreateFor(ServerProtocolMode.JsonRpc, nameof(ProtocolRequestHandler),
-      () => new ProtocolRequestHandler(FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer));
+    public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= Create(new ProtocolRequestHandler(
+      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer));
 
     private JsonRpcNotificationSender _jsonRpcNotificationSender;
-    public JsonRpcNotificationSender JsonRpcNotificationSender => _jsonRpcNotificationSender ??= CreateFor(ServerProtocolMode.JsonRpc, nameof(JsonRpcNotificationSender),
-      () => new JsonRpcNotificationSender(JsonRpcOutput));
+    public JsonRpcNotificationSender JsonRpcNotificationSender => _jsonRpcNotificationSender ??= Create(new JsonRpcNotificationSender(JsonRpcOutput));
 
     private JsonRpcEventForwarder _jsonRpcEventForwarder;
-    public JsonRpcEventForwarder JsonRpcEventForwarder => _jsonRpcEventForwarder ??= CreateFor(ServerProtocolMode.JsonRpc, nameof(JsonRpcEventForwarder),
-      () => new JsonRpcEventForwarder(JsonRpcNotificationSender, IndexingServer, FileSystemSnapshotManager, SearchEngine));
+    public JsonRpcEventForwarder JsonRpcEventForwarder => _jsonRpcEventForwarder ??= Create(new JsonRpcEventForwarder(
+      JsonRpcNotificationSender, IndexingServer, FileSystemSnapshotManager, SearchEngine));
 
     // Server/Operations
     private IOperationIdFactory _operationIdFactory;
@@ -213,13 +122,8 @@ namespace VsChromium.Server {
     public IOperationProcessor OperationProcessor => _operationProcessor ??= Create(new OperationProcessor(OperationIdFactory));
 
     // Server/ProgressTracking
-    private IProgressEventSender _progressEventSender;
-    public IProgressEventSender ProgressEventSender => _progressEventSender ??= _mode == ServerProtocolMode.JsonRpc
-      ? JsonRpcNotificationSender
-      : Create(new TypedEventProgressSender(TypedEventSender));
-
     private IProgressTrackerFactory _progressTrackerFactory;
-    public IProgressTrackerFactory ProgressTrackerFactory => _progressTrackerFactory ??= Create(new ProgressTrackerFactory(ProgressEventSender));
+    public IProgressTrackerFactory ProgressTrackerFactory => _progressTrackerFactory ??= Create(new ProgressTrackerFactory(JsonRpcNotificationSender));
 
     // Server/Projects
     private IReadOnlyList<IProjectDiscoveryProvider> _projectDiscoveryProviders;
@@ -252,14 +156,6 @@ namespace VsChromium.Server {
 
     private ILongRunningFileSystemTaskQueue _longRunningFileSystemTaskQueue;
     public ILongRunningFileSystemTaskQueue LongRunningFileSystemTaskQueue => _longRunningFileSystemTaskQueue ??= Create(new LongRunningFileSystemTaskQueue(TaskQueueFactory));
-
-    private IReceiveRequestsThread _receiveRequestsThread;
-    public IReceiveRequestsThread ReceiveRequestsThread => _receiveRequestsThread ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(ReceiveRequestsThread),
-      () => new ReceiveRequestsThread(IpcRequestDispatcher));
-
-    private ISendResponsesThread _sendResponsesThread;
-    public ISendResponsesThread SendResponsesThread => _sendResponsesThread ??= CreateFor(ServerProtocolMode.TypedMessages, nameof(SendResponsesThread),
-      () => new SendResponsesThread(IpcResponseQueue));
 
     private ITaskQueueFactory _taskQueueFactory;
     public ITaskQueueFactory TaskQueueFactory => _taskQueueFactory ??= Create(new TaskQueueFactory(CustomThreadPool, DateTimeProvider));

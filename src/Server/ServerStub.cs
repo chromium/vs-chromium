@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-using System;
 using System.IO;
-using VsChromium.Core.Ipc;
 
 namespace VsChromium.Server {
   public class ServerStub {
@@ -14,23 +12,12 @@ namespace VsChromium.Server {
     public static ServerComponents Instance;
 
     /// <summary>
-    /// Runs the server with the typed messages protocol ("--stdio") until <paramref name="stream"/> is closed.
+    /// Runs the server (JSON-RPC protocol) until <paramref name="input"/> is closed.
     /// </summary>
-    public void Run(IIpcStream stream) {
-      Run(ServerProtocolMode.TypedMessages, components => components.Server.Run(stream));
-    }
-
-    /// <summary>
-    /// Runs the server with the JSON-RPC protocol ("--jsonrpc") until <paramref name="input"/> is closed.
-    /// </summary>
-    public void RunJsonRpc(Stream input, Stream output) {
-      Run(ServerProtocolMode.JsonRpc, components => components.JsonRpcServer.Run(input, output));
-    }
-
-    private void Run(ServerProtocolMode mode, Action<ServerComponents> runServer) {
-      using (var components = new ServerComponents(mode)) {
+    public void Run(Stream input, Stream output) {
+      using (var components = new ServerComponents()) {
         Instance = components; // For debugging only.
-        runServer(components);
+        components.JsonRpcServer.Run(input, output);
       }
     }
   }

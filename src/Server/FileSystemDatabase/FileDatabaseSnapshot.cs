@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Search;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase.Builder;

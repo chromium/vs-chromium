@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Ipc.TypedMessages;
 
 namespace VsChromium.Server {
   public class IndexingServerState {

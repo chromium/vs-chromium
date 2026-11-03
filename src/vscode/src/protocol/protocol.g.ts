@@ -360,18 +360,6 @@ export interface DirectoryDetailsParams {
   maxLargeFilesDetailsCount: number;
 }
 
-export interface DirectoryStatisticsParams {
-  /** Absolute path of the directory. */
-  path: string;
-}
-
-export interface DirectoryStatistics {
-  directoryCount: number;
-  fileCount: number;
-  indexedFileCount: number;
-  totalIndexedFileSize: number;
-}
-
 /** Parameters of an operation (generated from its inline parameters). */
 export interface FilesRegisterParams {
   path: string;
@@ -536,10 +524,4 @@ export namespace TreeRefreshRequest {
 export namespace TreeDirectoryDetailsRequest {
   export const method = 'tree/directoryDetails';
   export const type = new RequestType<DirectoryDetailsParams, DirectoryDetails, void>(method);
-}
-
-/** Request (client to server) "tree/directoryStatistics": Counts of the files of a directory. */
-export namespace TreeDirectoryStatisticsRequest {
-  export const method = 'tree/directoryStatistics';
-  export const type = new RequestType<DirectoryStatisticsParams, DirectoryStatistics, void>(method);
 }

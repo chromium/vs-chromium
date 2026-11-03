@@ -7,12 +7,11 @@ using VsChromium.Protocol.Generated;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Search;
-using IndexingServerStatus = VsChromium.Core.Ipc.TypedMessages.IndexingServerStatus;
 
 namespace VsChromium.Server.JsonRpc {
   /// <summary>
   /// Forwards the events of the services of the server to the client, as notifications of the
-  /// protocol (same events as the <c>TypedEventForwarder</c> of the typed messages protocol).
+  /// protocol ("index/*" notifications).
   /// </summary>
   public sealed class JsonRpcEventForwarder : IDisposable {
     private readonly ProtocolNotificationSender _notificationSender;

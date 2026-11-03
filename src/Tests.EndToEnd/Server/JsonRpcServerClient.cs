@@ -13,12 +13,12 @@ namespace VsChromium.Tests.EndToEnd.Server;
 
 /// <summary>
 /// An error response returned by the server. <see cref="Error"/> is the JSON-RPC error object
-/// (code, message, data) or, with the typed messages protocol, the ErrorResponse data.
+/// (code, message, data).
 /// </summary>
 public sealed class ServerErrorException(string message, JsonObject error) : Exception(message) {
   public JsonObject Error { get; } = error;
 
-  /// <summary>The JSON-RPC error code (0 with the typed messages protocol).</summary>
+  /// <summary>The JSON-RPC error code.</summary>
   public int Code => (int?)Error["code"] ?? 0;
 }
 

@@ -163,7 +163,6 @@ namespace VsChromium.Tests.Protocol {
       public ValueTask<DirectoryEntries> TreeEntriesAsync(TreeEntriesParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<DirectoryEntriesList> TreeEntriesMultipleAsync(TreeEntriesMultipleParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<DirectoryDetails> TreeDirectoryDetailsAsync(DirectoryDetailsParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
-      public ValueTask<DirectoryStatistics> TreeDirectoryStatisticsAsync(DirectoryStatisticsParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
     }
   }
 }

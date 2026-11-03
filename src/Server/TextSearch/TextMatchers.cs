@@ -6,7 +6,7 @@ using System;
 using System.Buffers;
 using System.Text;
 using System.Text.RegularExpressions;
-using VsChromium.Core.Ipc;
+using VsChromium.Core.Utility;
 
 namespace VsChromium.Server.TextSearch {
   /// <summary>

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 
-namespace VsChromium.Core.Ipc.TypedMessages {
+namespace VsChromium.Server.Search {
   public class FilePositionSpan {
     /// <summary>
     /// The position, in character offset, of the first character of the span.

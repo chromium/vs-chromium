@@ -6,11 +6,11 @@
     The server and the Visual Studio package are independent code bases: no source file is shared
     with src/Core, src/Core.Ipc or src/Core.Ipc.Json (the Visual Studio side). The files of these
     projects used by the server were copied here (same relative paths and namespaces) when the two
-    code bases were severed, and evolve independently. Only the protocol (JSON messages over the
-    standard input/output of the server) is common, and is tested by src/Tests.EndToEnd (server) and
-    the client tests.
+    code bases were severed, and evolve independently. Only the protocol (JSON-RPC over the standard
+    input/output of the server, defined in protocol\*.tsp) is common, and is tested by
+    src/Tests.EndToEnd (server) and the client tests.
 
-    - Ipc\: protocol message classes (Ipc\TypedMessages) and their JSON serialization (Ipc\Json).
+    - Protocol\Generated\: protocol code generated from protocol\*.tsp (see below).
     - Files\, Collections\, Configuration\, Logging\, ...: paths, pattern matching, file system,
       configuration files, logging, collections.
   -->

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Win32.Memory;
 using VsChromium.Server.TextSearch;
 using VsChromium.Server.Search;

@@ -115,7 +115,7 @@ namespace VsChromium.Server.TextSearch {
     /// <summary>
     /// Create the search algorithms for <paramref name="pattern"/> for ASCII text, UTF-8 text
     /// with non ASCII characters and UTF-16 text. Throws <see
-    /// cref="VsChromium.Core.Ipc.RecoverableErrorException"/> if the pattern is not a valid
+    /// cref="VsChromium.Core.Utility.RecoverableErrorException"/> if the pattern is not a valid
     /// regular expression.
     /// </summary>
     public static void CreateSearches(string pattern, bool matchCase, bool matchWholeWord, bool useRegex,

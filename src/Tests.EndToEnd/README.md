@@ -3,8 +3,7 @@
 Tests of the indexing server (`VsChromium.Server.exe`) driven as a **black box** over its
 standard input/output, with the JSON-RPC protocol (`--jsonrpc`, see
 [protocol/README.md](../../protocol/README.md)), as the clients do (see
-[PORTING_PRINCIPLES.md](../../docs/portable-server/PORTING_PRINCIPLES.md)). A few smoke tests
-still cover the typed messages protocol (`--stdio`, JSON lines) until it is removed.
+[PORTING_PRINCIPLES.md](../../docs/portable-server/PORTING_PRINCIPLES.md)).
 
 Build the solution first (the tests use `Binaries/<Configuration>/Server/VsChromium.Server.exe`), then:
 
@@ -18,8 +17,8 @@ dotnet test --filter "TestCategory=Benchmark"    # benchmarks
 
 | Directory | Content |
 |---|---|
-| `Server/` | JSON-RPC client (`JsonRpcServerClient`, LSP framing), legacy stdio JSON lines client (`StdioServerClient`) and protocol helpers |
-| `Protocol/` | Tests of the JSON-RPC protocol (`JsonRpcProtocolTests`) and smoke tests of the legacy typed messages protocol (`LegacyProtocolSmokeTests`) |
+| `Server/` | JSON-RPC client (`JsonRpcServerClient`, LSP framing) and protocol helpers |
+| `Protocol/` | Tests of the JSON-RPC protocol (`JsonRpcProtocolTests`) |
 | `Corpus/` | Generator of real-world-like code bases (`CodeBaseGenerator`) and their on-disk cache (`CorpusCache`) |
 | `Regression/` | Regression tests of the behavior changes of the port. Tests of known bugs of the current server are reported as **skipped** (inconclusive) with the reason, and **fail** once the bug is fixed, as a reminder to remove the `KnownBug` marker |
 | `Benchmarks/` | Benchmarks: cold indexing, idle/steady state memory, code/file path searches, extracts. Measure response time, CPU time and memory (working set and private bytes, which include native memory, sampled from outside the server process every 50 ms, plus the server's own `server/statistics`) |

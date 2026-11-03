@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Ipc.TypedMessages;
+using VsChromium.Server.Search;
 using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemContents;
 

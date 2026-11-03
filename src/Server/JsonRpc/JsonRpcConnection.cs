@@ -9,7 +9,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using VsChromium.Core.Ipc;
+using VsChromium.Core.Utility;
 using VsChromium.Core.Logging;
 using VsChromium.Protocol.Generated;
 using VsChromium.Server.Diagnostics;
@@ -22,8 +22,7 @@ namespace VsChromium.Server.JsonRpc {
   /// cref="JsonRpcOutput"/> (which also sends the notifications of the server).
   ///
   /// Requests are processed concurrently on the thread pool, except "index/pause" and
-  /// "index/resume", which are processed one at a time, in the order they were received (as the
-  /// requests with <c>RunOnSequentialQueue</c> of the typed messages protocol). The
+  /// "index/resume", which are processed one at a time, in the order they were received. The
   /// "$/cancelRequest" notification cancels the <see cref="CancellationToken"/> of a request: a
   /// cancelled request fails with <see cref="JsonRpcErrorCodes.RequestCancelled"/>.
   /// </summary>

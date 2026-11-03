@@ -4,9 +4,8 @@
 
 namespace VsChromium.Server.ProgressTracking {
   /// <summary>
-  /// Sends the progress of long operations to the client (from any thread): a
-  /// <c>ProgressReportEvent</c> with the typed messages protocol, an "index/progress" notification
-  /// with the JSON-RPC protocol.
+  /// Sends the progress of long operations to the client (from any thread): an "index/progress"
+  /// notification.
   /// </summary>
   public interface IProgressEventSender {
     void SendProgress(string displayText, int completed, int total);

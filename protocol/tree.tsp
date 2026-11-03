@@ -50,18 +50,6 @@ model DirectoryDetailsParams {
   ...DetailsParams;
 }
 
-model DirectoryStatisticsParams {
-  /** Absolute path of the directory. */
-  path: string;
-}
-
-model DirectoryStatistics {
-  directoryCount: int32;
-  fileCount: int32;
-  indexedFileCount: int32;
-  totalIndexedFileSize: int64;
-}
-
 interface Tree {
   /** The projects known to the server. */
   get(...TreeParams): FileSystemTree;
@@ -77,7 +65,4 @@ interface Tree {
 
   /** Statistics of the files of a directory (with "files by extension" and "large files" lists). */
   directoryDetails(...DirectoryDetailsParams): DirectoryDetails;
-
-  /** Counts of the files of a directory. */
-  directoryStatistics(...DirectoryStatisticsParams): DirectoryStatistics;
 }

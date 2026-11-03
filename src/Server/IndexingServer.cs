@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Ipc.TypedMessages;
 using VsChromium.Core.Threads;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Operations;

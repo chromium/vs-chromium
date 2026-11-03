@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Ipc;
 using VsChromium.Core.Utility;
 using VsChromium.Server.TextSearch;
 

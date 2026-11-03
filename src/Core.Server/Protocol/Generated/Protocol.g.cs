@@ -780,28 +780,6 @@ namespace VsChromium.Protocol.Generated {
     public int MaxLargeFilesDetailsCount { get; set; }
   }
 
-  public sealed partial class DirectoryStatisticsParams {
-    /// <summary>
-    /// Absolute path of the directory.
-    /// </summary>
-    [JsonPropertyName("path")]
-    public string Path { get; set; } = "";
-  }
-
-  public sealed partial class DirectoryStatistics {
-    [JsonPropertyName("directoryCount")]
-    public int DirectoryCount { get; set; }
-
-    [JsonPropertyName("fileCount")]
-    public int FileCount { get; set; }
-
-    [JsonPropertyName("indexedFileCount")]
-    public int IndexedFileCount { get; set; }
-
-    [JsonPropertyName("totalIndexedFileSize")]
-    public long TotalIndexedFileSize { get; set; }
-  }
-
   /// <summary>
   /// Parameters of an operation (generated from its inline parameters).
   /// </summary>
@@ -847,7 +825,6 @@ namespace VsChromium.Protocol.Generated {
     public const string TreeEntriesMultiple = "tree/entriesMultiple";
     public const string TreeRefresh = "tree/refresh";
     public const string TreeDirectoryDetails = "tree/directoryDetails";
-    public const string TreeDirectoryStatistics = "tree/directoryStatistics";
   }
 
   /// <summary>
@@ -945,11 +922,6 @@ namespace VsChromium.Protocol.Generated {
     /// "tree/directoryDetails": Statistics of the files of a directory (with "files by extension" and "large files" lists).
     /// </summary>
     ValueTask<DirectoryDetails> TreeDirectoryDetailsAsync(DirectoryDetailsParams parameters, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// "tree/directoryStatistics": Counts of the files of a directory.
-    /// </summary>
-    ValueTask<DirectoryStatistics> TreeDirectoryStatisticsAsync(DirectoryStatisticsParams parameters, CancellationToken cancellationToken);
   }
 
   /// <summary>
@@ -978,7 +950,6 @@ namespace VsChromium.Protocol.Generated {
       ProtocolMethods.TreeEntriesMultiple => true,
       ProtocolMethods.TreeRefresh => true,
       ProtocolMethods.TreeDirectoryDetails => true,
-      ProtocolMethods.TreeDirectoryStatistics => true,
       _ => false,
     };
 
@@ -1061,10 +1032,6 @@ namespace VsChromium.Protocol.Generated {
         case ProtocolMethods.TreeDirectoryDetails: {
           var result = await handler.TreeDirectoryDetailsAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.DirectoryDetailsParams), cancellationToken).ConfigureAwait(false);
           return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.DirectoryDetails);
-        }
-        case ProtocolMethods.TreeDirectoryStatistics: {
-          var result = await handler.TreeDirectoryStatisticsAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.DirectoryStatisticsParams), cancellationToken).ConfigureAwait(false);
-          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.DirectoryStatistics);
         }
         default:
           throw new ProtocolMethodNotFoundException(method);
@@ -1212,8 +1179,6 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(DirectoryEntries))]
   [JsonSerializable(typeof(DirectoryEntriesList))]
   [JsonSerializable(typeof(DirectoryDetailsParams))]
-  [JsonSerializable(typeof(DirectoryStatisticsParams))]
-  [JsonSerializable(typeof(DirectoryStatistics))]
   [JsonSerializable(typeof(FilesRegisterParams))]
   [JsonSerializable(typeof(FilesUnregisterParams))]
   public partial class ProtocolJsonContext : JsonSerializerContext {

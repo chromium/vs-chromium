@@ -139,6 +139,26 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual("utf-16 text", ExtractText(contents));
     }
 
+    [TestMethod]
+    public void ArenaSlotsOfFileContentsAreExact() {
+      var arenas = new ArenaAllocator();
+      var files = new[] {
+        ReadContents(Encoding.ASCII.GetBytes("abcdef"), arenas),
+        // UTF-8 BOM: not part of the text, but of the slot (3 + 5 + 2 trailing bytes).
+        ReadContents(new byte[] { 0xEF, 0xBB, 0xBF }.Concat(Encoding.ASCII.GetBytes("abcde")).ToArray(), arenas),
+      };
+
+      Assert.AreEqual(8, FileContentsFactory.GetArenaSlot(files[0]).SlotSize);
+      Assert.AreEqual(16, FileContentsFactory.GetArenaSlot(files[1]).SlotSize);
+      var statistics = arenas.GetStatistics(files.Select(FileContentsFactory.GetArenaSlot));
+      Assert.AreEqual(8 + 16, statistics.UsedBytes);
+      Assert.AreEqual(0, statistics.DeadBytes);
+
+      // Released files are dead bytes.
+      statistics = arenas.GetStatistics(files.Take(1).Select(FileContentsFactory.GetArenaSlot));
+      Assert.AreEqual(16, statistics.DeadBytes);
+    }
+
     private static string ExtractText(FileContents contents) {
       return contents.GetFileExtracts(100, new[] { new FilePositionSpan { Position = 0, Length = 1 } }).Single().Text;
     }

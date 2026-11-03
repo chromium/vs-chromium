@@ -29,6 +29,22 @@ model OperationTiming {
   maxMs: float64;
 }
 
+/**
+ * Native memory of the arenas storing the text of the indexed files (16 MB blocks shared by the
+ * files up to 512 KB). Dead bytes are slots of files edited or deleted since they were allocated:
+ * an arena is released when none of its slots is in use anymore.
+ */
+model FileContentsArenaStatistics {
+  arenaCount: int32;
+  arenaBytes: int64;
+  /** Bytes allocated in the arenas (the rest of the current arena is free). */
+  usedBytes: int64;
+  /** Bytes of the files of the current index. */
+  liveBytes: int64;
+  /** Number of full arenas with less than half of their allocated bytes in use. */
+  sparseArenaCount: int32;
+}
+
 /** Process, memory and index statistics of the server (diagnostics and benchmarks). */
 model ServerStatistics {
   runtimeDescription: string;
@@ -53,6 +69,7 @@ model ServerStatistics {
   nativeAllocatedBytes: int64;
   indexedFileContentsBytes: int64;
   trigramFiltersBytes: int64;
+  fileContentsArenas: FileContentsArenaStatistics;
   fileCount: int32;
   searchableFileCount: int32;
   projectCount: int32;

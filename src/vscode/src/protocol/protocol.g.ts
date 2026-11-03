@@ -70,6 +70,7 @@ export interface IndexStatistics {
   searchableFileCount: number;
   serverNativeMemoryUsage: number;
   serverGcMemoryUsage: number;
+  fileContentsArenas: FileContentsArenaStatistics;
   indexLastUpdatedUtc: string;
   status: IndexingStatus;
 }
@@ -277,6 +278,22 @@ export interface OperationTiming {
   maxMs: number;
 }
 
+/**
+ * Native memory of the arenas storing the text of the indexed files (16 MB blocks shared by the
+ * files up to 512 KB). Dead bytes are slots of files edited or deleted since they were allocated:
+ * an arena is released when none of its slots is in use anymore.
+ */
+export interface FileContentsArenaStatistics {
+  arenaCount: number;
+  arenaBytes: number;
+  /** Bytes allocated in the arenas (the rest of the current arena is free). */
+  usedBytes: number;
+  /** Bytes of the files of the current index. */
+  liveBytes: number;
+  /** Number of full arenas with less than half of their allocated bytes in use. */
+  sparseArenaCount: number;
+}
+
 /** Process, memory and index statistics of the server (diagnostics and benchmarks). */
 export interface ServerStatistics {
   runtimeDescription: string;
@@ -301,6 +318,7 @@ export interface ServerStatistics {
   nativeAllocatedBytes: number;
   indexedFileContentsBytes: number;
   trigramFiltersBytes: number;
+  fileContentsArenas: FileContentsArenaStatistics;
   fileCount: number;
   searchableFileCount: number;
   projectCount: number;

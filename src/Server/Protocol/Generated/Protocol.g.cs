@@ -166,6 +166,9 @@ namespace VsChromium.Protocol.Generated {
     [JsonPropertyName("serverGcMemoryUsage")]
     public long ServerGcMemoryUsage { get; set; }
 
+    [JsonPropertyName("fileContentsArenas")]
+    public FileContentsArenaStatistics FileContentsArenas { get; set; } = null!;
+
     [JsonPropertyName("indexLastUpdatedUtc")]
     public DateTime IndexLastUpdatedUtc { get; set; }
 
@@ -594,6 +597,37 @@ namespace VsChromium.Protocol.Generated {
   }
 
   /// <summary>
+  /// Native memory of the arenas storing the text of the indexed files (16 MB blocks shared by the
+  /// files up to 512 KB). Dead bytes are slots of files edited or deleted since they were allocated:
+  /// an arena is released when none of its slots is in use anymore.
+  /// </summary>
+  public sealed partial class FileContentsArenaStatistics {
+    [JsonPropertyName("arenaCount")]
+    public int ArenaCount { get; set; }
+
+    [JsonPropertyName("arenaBytes")]
+    public long ArenaBytes { get; set; }
+
+    /// <summary>
+    /// Bytes allocated in the arenas (the rest of the current arena is free).
+    /// </summary>
+    [JsonPropertyName("usedBytes")]
+    public long UsedBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the files of the current index.
+    /// </summary>
+    [JsonPropertyName("liveBytes")]
+    public long LiveBytes { get; set; }
+
+    /// <summary>
+    /// Number of full arenas with less than half of their allocated bytes in use.
+    /// </summary>
+    [JsonPropertyName("sparseArenaCount")]
+    public int SparseArenaCount { get; set; }
+  }
+
+  /// <summary>
   /// Process, memory and index statistics of the server (diagnostics and benchmarks).
   /// </summary>
   public sealed partial class ServerStatistics {
@@ -662,6 +696,9 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("trigramFiltersBytes")]
     public long TrigramFiltersBytes { get; set; }
+
+    [JsonPropertyName("fileContentsArenas")]
+    public FileContentsArenaStatistics FileContentsArenas { get; set; } = null!;
 
     [JsonPropertyName("fileCount")]
     public int FileCount { get; set; }
@@ -1170,6 +1207,7 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(InitializeResult))]
   [JsonSerializable(typeof(ServerStatisticsParams))]
   [JsonSerializable(typeof(OperationTiming))]
+  [JsonSerializable(typeof(FileContentsArenaStatistics))]
   [JsonSerializable(typeof(ServerStatistics))]
   [JsonSerializable(typeof(TreeParams))]
   [JsonSerializable(typeof(ProjectEntry))]

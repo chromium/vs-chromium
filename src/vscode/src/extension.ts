@@ -17,6 +17,7 @@ import { findServerPath, serverPathCandidates } from './server/serverLocator';
 import { describeIndexingState, IndexingState, nextIndexingState, subscribeIndexEvents } from './ui/indexingState';
 import { CodeSearchViewProvider } from './ui/codeSearchView';
 import { FileNamesPick } from './ui/fileNamesPick';
+import { describeArenas } from './ui/memoryStatistics';
 
 /** Minimum interval between two displays of the progress of a load in the status bar. */
 const ProgressDisplayIntervalMs = 1000;
@@ -149,6 +150,7 @@ class ServerManager implements vscode.Disposable {
         `Projects: ${stats.projectCount}`,
         `Files: ${stats.fileCount.toLocaleString()} (${stats.searchableFileCount.toLocaleString()} searchable)`,
         `Memory: ${mb(stats.serverGcMemoryUsage)} managed, ${mb(stats.serverNativeMemoryUsage)} native`,
+        describeArenas(stats.fileContentsArenas),
         `Index last updated: ${new Date(stats.indexLastUpdatedUtc).toLocaleString()}`,
         `Trigram filters: ${this.trigramFiltersEnabled() ? 'enabled' : 'disabled'} (faster searches, about 5% of the size of the indexed files in memory)`,
       ];

@@ -148,7 +148,8 @@ namespace VsChromium.Tests.Server {
           container.FileSystemSnapshotManager,
           searchEngine,
           container.FileRegistrationTracker,
-          container.IndexingServer);
+          container.IndexingServer,
+          container.ArenaAllocator);
         var output = new JsonRpcOutput();
         var connection = new JsonRpcConnection(handler, output);
 

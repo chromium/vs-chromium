@@ -898,7 +898,10 @@ finalizer when no file contents reference it anymore, so the lifetime of the con
 as before. The first 8,000 bytes of a file are read into a pooled buffer before allocating, so
 binary files (not read) and UTF-16 files (read into a temporary block, only their UTF-8 conversion
 is stored in an arena) leave no dead bytes in arenas. Slots of edited or deleted files are dead
-bytes until their arena is released (no compaction).
+bytes until their arena is released (no compaction). The dead bytes are reported by
+`server/statistics` and `index/statistics` (`fileContentsArenas`: arenas, used, live bytes, and
+arenas more than half dead) and in the VS Code status dialog, to decide from real workflows whether
+compacting the arenas is worth it.
 
 After a cold index (`large-1-400000-v1`, forced full GC, 2 runs each):
 

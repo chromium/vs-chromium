@@ -78,6 +78,30 @@ namespace VsChromium.Tests.Core {
     }
 
     [TestMethod]
+    public void StatisticsCountTheLiveAndDeadBytesOfArenas() {
+      var allocator = new ArenaAllocator(arenaSize: 1024, largeAllocationSize: 256);
+      // Arena 1 (full): 5 slots of 200 bytes, 1 still live (sparse).
+      var first = Enumerable.Range(0, 5).Select(_ => allocator.Allocate(200)).ToList();
+      // Arena 2 (current): 2 slots of 104 bytes, both live.
+      var second = Enumerable.Range(0, 2).Select(_ => allocator.Allocate(100)).ToList();
+      var large = allocator.Allocate(300);
+      Assert.AreNotSame(first[0].Block, second[0].Block);
+
+      var live = new[] { first[0], second[0], second[1], large }
+        .Select(x => ((System.Runtime.InteropServices.SafeHandle)x.Block, ArenaAllocator.GetSlotSize(x.Length)));
+      var statistics = allocator.GetStatistics(live);
+
+      Assert.AreEqual(2, statistics.ArenaCount);
+      Assert.AreEqual(2 * 1024, statistics.ArenaBytes);
+      // The unused end of the full arena is counted as used (and dead).
+      Assert.AreEqual(1024 + 208, statistics.UsedBytes);
+      Assert.AreEqual(200 + 208, statistics.LiveBytes, "Dedicated blocks are not arenas");
+      Assert.AreEqual(824, statistics.DeadBytes);
+      Assert.AreEqual(1, statistics.SparseArenaCount, "The current arena is not sparse");
+      GC.KeepAlive(first);
+    }
+
+    [TestMethod]
     public void ArenasAreReleasedWhenTheirSlicesAreNotReferenced() {
       var allocator = new ArenaAllocator(arenaSize: 1024, largeAllocationSize: 256);
       AllocateAndDrop(allocator);

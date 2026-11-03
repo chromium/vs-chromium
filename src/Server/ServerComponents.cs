@@ -109,7 +109,7 @@ namespace VsChromium.Server {
 
     private IProtocolRequestHandler _protocolRequestHandler;
     public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= Create(new ProtocolRequestHandler(
-      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer));
+      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocator));
 
     private JsonRpcNotificationSender _jsonRpcNotificationSender;
     public JsonRpcNotificationSender JsonRpcNotificationSender => _jsonRpcNotificationSender ??= Create(new JsonRpcNotificationSender(JsonRpcOutput));

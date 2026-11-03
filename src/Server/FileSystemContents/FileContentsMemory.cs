@@ -41,5 +41,13 @@ namespace VsChromium.Server.FileSystemContents {
     /// Return the number of bytes of the usable memory of this block.
     /// </summary>
     public int ByteLength { get { return _contentsLength; } }
+    /// <summary>
+    /// The block containing the contents (a dedicated block, or an arena shared by many files).
+    /// </summary>
+    public SafeHandle Block => _block;
+    /// <summary>
+    /// The offset of the contents in <see cref="Block"/>.
+    /// </summary>
+    public int Offset => _contentsOffset;
   }
 }

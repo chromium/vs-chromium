@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
@@ -40,6 +41,17 @@ namespace VsChromium.Server.FileSystemContents {
         return new NativeMemorySlice(NativeHeap.Alloc(size), 0, size, isDedicated: true);
       }
       return _arenaAllocator.Allocate(size);
+    }
+
+    /// <summary>
+    /// The block and the size of the arena slot of <paramref name="contents"/>, if allocated in an
+    /// arena: the text, preceded by the UTF-8 BOM if any (slots start on aligned offsets, so the
+    /// BOM is the remainder of the offset) and followed by the trailing bytes.
+    /// </summary>
+    public static (SafeHandle Block, int SlotSize) GetArenaSlot(FileContents contents) {
+      var memory = contents.Contents;
+      var bomSize = memory.Offset % ArenaAllocator.Alignment;
+      return (memory.Block, ArenaAllocator.GetSlotSize(bomSize + memory.ByteLength + TrailingByteCount));
     }
 
     public FileContents ReadFileContents(FullPath path) {

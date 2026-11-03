@@ -208,7 +208,10 @@ namespace VsChromium.Server.FileSystemContents {
     /// </summary>
     protected abstract int LastIndexOfNewLine(TextRange range);
 
-    protected FileContentsMemory Contents {
+    /// <summary>
+    /// The memory of the text (memory statistics, see <see cref="FileContentsFactory.GetArenaSlot"/>).
+    /// </summary>
+    public FileContentsMemory Contents {
       get { return _contents; }
     }
 

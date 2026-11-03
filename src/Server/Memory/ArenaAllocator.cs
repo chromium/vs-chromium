@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace VsChromium.Core.Memory {
@@ -28,7 +29,7 @@ namespace VsChromium.Core.Memory {
     /// <summary>
     /// Alignment of the slots (so that vectorized searches start on aligned addresses).
     /// </summary>
-    private const int Alignment = 8;
+    public const int Alignment = 8;
 
     private readonly object _lock = new object();
     private readonly List<Arena> _arenas = new List<Arena>();
@@ -57,7 +58,7 @@ namespace VsChromium.Core.Memory {
         return new NativeMemorySlice(NativeHeap.Alloc(size), 0, size, isDedicated: true);
       }
 
-      var alignedSize = (size + Alignment - 1) & ~(Alignment - 1);
+      var alignedSize = GetSlotSize(size);
       while (true) {
         var arena = Volatile.Read(ref _current) ?? NewArena(null);
         // Note: Read the block before reserving the slot: it is cleared when the arena is
@@ -106,6 +107,44 @@ namespace VsChromium.Core.Memory {
           if (arena.WeakBlock.TryGetTarget(out var block) && !block.IsClosed) {
             result.Add((block, Math.Min(ArenaSize, Volatile.Read(ref arena.Used))));
           }
+        }
+      }
+      return result;
+    }
+
+    /// <summary>
+    /// The size of the slot of an allocation of <paramref name="size"/> bytes in an arena.
+    /// </summary>
+    public static int GetSlotSize(int size) {
+      return (size + Alignment - 1) & ~(Alignment - 1);
+    }
+
+    /// <summary>
+    /// The arenas still allocated, and the bytes of their slots still used by
+    /// <paramref name="liveSlots"/> (the block and slot size of live allocations: blocks that are
+    /// not arenas are ignored). The other allocated bytes are dead: slots of released allocations
+    /// (until their arena is released) and the unused end of full arenas.
+    /// </summary>
+    public ArenaStatistics GetStatistics(IEnumerable<(SafeHandle Block, int SlotSize)> liveSlots) {
+      var arenas = GetArenas();
+      var liveBytes = new Dictionary<SafeHandle, long>(ReferenceEqualityComparer.Instance);
+      foreach (var arena in arenas) {
+        liveBytes.Add(arena.Block, 0);
+      }
+      foreach (var slot in liveSlots) {
+        if (slot.Block != null && liveBytes.TryGetValue(slot.Block, out var bytes)) {
+          liveBytes[slot.Block] = bytes + slot.SlotSize;
+        }
+      }
+
+      var result = new ArenaStatistics { ArenaCount = arenas.Count, ArenaBytes = (long)arenas.Count * ArenaSize };
+      var current = Volatile.Read(ref _current)?.Block;
+      foreach (var arena in arenas) {
+        var live = liveBytes[arena.Block];
+        result.UsedBytes += arena.UsedBytes;
+        result.LiveBytes += live;
+        if (arena.Block != current && live * 2 < arena.UsedBytes) {
+          result.SparseArenaCount++;
         }
       }
       return result;

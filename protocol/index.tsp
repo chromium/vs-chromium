@@ -23,6 +23,7 @@ model IndexStatistics {
   searchableFileCount: int32;
   serverNativeMemoryUsage: int64;
   serverGcMemoryUsage: int64;
+  fileContentsArenas: FileContentsArenaStatistics;
   indexLastUpdatedUtc: utcDateTime;
   status: IndexingStatus;
 }

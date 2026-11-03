@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -21,7 +21,7 @@ namespace VsChromium.Core.Logging {
     }
 
     static Logger() {
-      // The indexing server (modern .NET, see Core.Server.csproj) logs to its own files, separate from
+      // The indexing server (modern .NET, see Server.csproj) logs to its own files, separate from
       // the Visual Studio side logs (VsChromium.log).
       FileName = "VsChromium.Server";
       Id = "VsChromium";

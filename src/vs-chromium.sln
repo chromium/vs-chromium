@@ -30,8 +30,6 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "VsChromium-Shared", "VsChro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VsChromium.Tests.EndToEnd", "Tests.EndToEnd\VsChromium.Tests.EndToEnd.csproj", "{F29899A6-61B2-450A-A5D2-2332B02C1586}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.Server", "Core.Server\Core.Server.csproj", "{2887BA51-CF62-4C30-AE16-4AF4CE172998}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server.Tests", "Server.Tests\Server.Tests.csproj", "{08DED813-357D-4C47-A848-E4D63E86F619}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MtSuite.CoreFileSystem", "..\third_party\mtsuite\MtSuite.CoreFileSystem.csproj", "{8A077ED4-C629-4F27-A88C-05D0327AF784}"
@@ -50,10 +48,6 @@ Global
 		{8A077ED4-C629-4F27-A88C-05D0327AF784}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A077ED4-C629-4F27-A88C-05D0327AF784}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A077ED4-C629-4F27-A88C-05D0327AF784}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2887BA51-CF62-4C30-AE16-4AF4CE172998}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2887BA51-CF62-4C30-AE16-4AF4CE172998}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2887BA51-CF62-4C30-AE16-4AF4CE172998}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2887BA51-CF62-4C30-AE16-4AF4CE172998}.Release|Any CPU.Build.0 = Release|Any CPU
 		{08DED813-357D-4C47-A848-E4D63E86F619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{08DED813-357D-4C47-A848-E4D63E86F619}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08DED813-357D-4C47-A848-E4D63E86F619}.Release|Any CPU.ActiveCfg = Release|Any CPU

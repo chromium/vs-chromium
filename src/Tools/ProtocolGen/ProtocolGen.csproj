@@ -4,7 +4,7 @@
     Generator of the protocol code (server, Visual Studio extension, VS Code extension) from the
     protocol definition in protocol/*.tsp (a subset of TypeSpec, see protocol/README.md). Runs on
     every build of the projects using the generated code (incremental: only when a .tsp file or the
-    generator changed), see the "GenerateProtocol" target of src/Core.Server/Core.Server.csproj.
+    generator changed), see the "GenerateProtocol" target of src/Server/Server.csproj.
 
     Manual run: see the usage printed by the tool without arguments.
   -->

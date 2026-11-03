@@ -81,18 +81,17 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 |---|---|---|---|
 | `VsChromium.Core.Ipc`, `VsChromium.Core.Ipc.Json` | – | – | Deleted in P4 of the protocol migration (VS-side copy of the typed messages and their JSON serialization; the VS package uses the generated JSON-RPC client, `src/VsChromium-Shared/Protocol/Generated`) |
 | `VsChromium.Core` (existing, slimmed) | `net472` | VS package, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
-| `VsChromium.Core.Server` (`src/Core.Server`) | modern .NET | server | Protocol code generated from `protocol/*.tsp` (`Protocol\Generated`), paths, pattern matching, file system, configuration, logging, collections |
-| `VsChromium.Server` (ported) | modern .NET | server process | All server code + managed replacements for the native code + portable file system |
+| `VsChromium.Core.Server` (`src/Core.Server`) | – | – | Consolidated into `VsChromium.Server` (`src/Server`) after P5 |
+| `VsChromium.Server` (`src/Server`, ported) | `net10.0` | server process | All server code: JSON-RPC transport + protocol code generated from `protocol/*.tsp` (`Protocol\Generated`), managed search, portable file system, paths, pattern matching, configuration, logging, collections |
 | `MtSuite.CoreFileSystem` (copied from mtsuite) | modern .NET | server | OS-aware path helpers |
 | `VsChromium.Server.Tests` (new) | modern .NET | – | Server unit tests (white box) |
 | `VsChromium.Tests.EndToEnd` (`src/Tests.EndToEnd`, exists) | `net10.0` | – | Black-box tests over stdio: regression tests of the behavior changes + benchmarks (see below and its `README.md`) |
 | `Tests` (existing) | `net472` | – | VS-side tests only |
 
 **Done (2026-11-02): the server and the VS package are fully independent code bases.** The server
-projects (`src/Core.Server`, `src/Server`, `src/Server.Tests`) don't reference or compile any file
-of the VS side (`src/Core`, `src/Core.Ipc`, `src/Core.Ipc.Json`, `src/Tests`): the files the server
-used were copied into `src/Core.Server` (same relative paths and namespaces, the `#if NETCOREAPP`
-branches resolved on each side), and the shared unit tests into `src/Server.Tests/Core`. The only
+projects (`src/Server`, `src/Server.Tests`) don't reference or compile any file
+of the VS side (`src/Core`, `src/Tests`): the files the server
+used were initially copied into `src/Core.Server` and later consolidated directly into `src/Server`, and the shared unit tests into `src/Server.Tests/Core`. The only
 contract between the two is the protocol (JSON-RPC over stdio, defined in `protocol/*.tsp`), checked by the end-to-end tests
 (server) and the VS and VS Code client tests. Each side evolves on its own, e.g. span-based
 pattern matching on the server only. The VS package still bundles the server executable in its

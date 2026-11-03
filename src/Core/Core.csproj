@@ -3,7 +3,7 @@
   <!--
     Code shared by the Visual Studio package (devenv.exe) and the Concord debugger integration.
     Stays on .NET Framework (the VS package requires it). The indexing server is an independent code
-    base (src/Core.Server, src/Server) and shares no source file with this project.
+    base (src/Server) and shares no source file with this project.
   -->
 
   <Import Project="..\..\Build\Common.Sdk.props" />

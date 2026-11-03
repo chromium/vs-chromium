@@ -1,7 +1,7 @@
 <Project Sdk="MSTest.Sdk/4.5.2">
 
   <!--
-    Unit tests of the indexing server (white box): VsChromium.Server and VsChromium.Core.Server, on
+    Unit tests of the indexing server (white box): VsChromium.Server, on
     modern .NET. The Visual Studio side tests are in
     src/Tests (net472), the black-box end-to-end tests and benchmarks in src/Tests.EndToEnd.
 
@@ -22,16 +22,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core.Server\Core.Server.csproj" />
     <ProjectReference Include="..\Server\Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Default configuration files, looked up next to VsChromium.Core.Server.dll. -->
-    <None Include="..\Server\Configuration\*" Link="Configuration\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Default configuration files, looked up in AppContext.BaseDirectory\Configuration. -->
+    <None Include="..\Server\Configuration\*" Exclude="..\Server\Configuration\*.cs" Link="Configuration\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

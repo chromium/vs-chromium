@@ -21,8 +21,8 @@ namespace VsChromium.Server.TextSearch {
   /// (the native heuristic only examines 50 slices of 4KB of large files).
   /// </summary>
   public static class TextKindDetector {
-    private const int SliceCount = 50;
-    private const int SliceSize = 4 * 1024;
+    public const int SliceCount = 50;
+    public const int SliceSize = 4 * 1024;
 
     public static readonly int Utf8BomSize = 3;
 
@@ -92,18 +92,29 @@ namespace VsChromium.Server.TextSearch {
       // we limit ourselves to 50 slices of 4K each. This means we examine a
       // maximum of 200KB per file, whatever the size. For files smaller than
       // 200KB, we still examine the whole content.
-      var betweenSlicesCount = (text.Length - SliceSize * SliceCount) / SliceCount;
-      if (betweenSlicesCount <= 0) {
+      if (text.Length <= SliceSize * SliceCount) {
         CountFull(text, ref counts);
         return;
       }
 
-      var offset = 0;
-      while (offset < text.Length) {
-        var sliceLength = Math.Min(SliceSize, text.Length - offset);
-        CountFull(text.Slice(offset, sliceLength), ref counts);
-        offset += sliceLength + betweenSlicesCount;
+      for (var i = 0; i < SliceCount; i++) {
+        CountFull(text.Slice(GetSliceStart(text.Length, i), SliceSize), ref counts);
       }
+    }
+
+    /// <summary>
+    /// Start of the slice <paramref name="index"/> (of <see cref="SliceCount"/> slices of
+    /// <see cref="SliceSize"/> bytes, evenly spread) examined for a text of
+    /// <paramref name="textLength"/> bytes, larger than <c>SliceCount * SliceSize</c>. The last
+    /// slice ends at or before the end of the text.
+    /// </summary>
+    /// <remarks>
+    /// Computed with 64-bit arithmetic: the former loop (<c>offset += sliceLength + gap</c>)
+    /// overflowed for texts close to 2 GB, so that such files failed to load.
+    /// </remarks>
+    public static int GetSliceStart(int textLength, int index) {
+      var gap = ((long)textLength - SliceSize * SliceCount) / SliceCount;
+      return checked((int)(index * (SliceSize + gap)));
     }
 
     private static void CountFull(ReadOnlySpan<byte> text, ref ContentCounts counts) {

@@ -119,6 +119,24 @@ namespace VsChromium.Tests.TextSearch {
       CheckKind(bytes, TextKind.ProbablyBinary);
     }
 
+    /// <summary>
+    /// Regression test: the slices examined for files close to 2 GB (the maximum size of a
+    /// loaded file) used to overflow, so that such files failed to load
+    /// (ArgumentOutOfRangeException).
+    /// </summary>
+    [TestMethod]
+    public void SlicesOfVeryLargeTextsAreInBounds() {
+      foreach (var length in new[] { TextKindDetector.SliceSize * TextKindDetector.SliceCount + 1, 1_000_000, int.MaxValue - 2, int.MaxValue }) {
+        var previousEnd = 0;
+        for (var i = 0; i < TextKindDetector.SliceCount; i++) {
+          var start = TextKindDetector.GetSliceStart(length, i);
+          Assert.IsTrue(start >= previousEnd, $"Slice {i} of {length} overlaps the previous one");
+          Assert.IsTrue((long)start + TextKindDetector.SliceSize <= length, $"Slice {i} of {length} is out of bounds");
+          previousEnd = start + TextKindDetector.SliceSize;
+        }
+      }
+    }
+
     private static byte[] CreateArray(int size, double asciiPercentage) {
       var result = new byte[size];
 

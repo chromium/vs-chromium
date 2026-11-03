@@ -1,6 +1,6 @@
 # mtsuite code used by the VsChromium server: port changes
 
-This directory contains code copied from mtsuite (same author,
+This directory tracks code originating from mtsuite (same author,
 Apache License 2.0, see [LICENSE](LICENSE)), used by the VsChromium indexing server (see
 [docs/portable-server/PORTING_PRINCIPLES.md](../../docs/portable-server/PORTING_PRINCIPLES.md),
 "Reusing mtsuite").
@@ -8,7 +8,7 @@ Apache License 2.0, see [LICENSE](LICENSE)), used by the VsChromium indexing ser
 This file records the origin of the code and **every change made for VsChromium**, so that the
 changes can be backported to mtsuite, the goal being to turn the mtsuite file system code into a
 reusable library (e.g. a `MtSuite.FileSystem` package used by both mtsuite and VsChromium). Update it
-in the same commit as any change to the code in this directory.
+in the same commit as any change to the ported code.
 
 ## Origin
 
@@ -18,27 +18,34 @@ in the same commit as any change to the code in this directory.
 
 ## Layout
 
-The mtsuite source layout is kept (`src/core-filesystem/...`), so that files can be compared with
-(and changes backported to) mtsuite easily. Only the files used by VsChromium are copied; they are
-compiled into a single library, `MtSuite.CoreFileSystem.csproj` (namespace `mtsuite.CoreFileSystem`
-unchanged), built with the VsChromium settings (`net10.0`, strong name signed with the VsChromium
-key, warnings as errors).
+`MtSuite.CoreFileSystem.csproj` (which contained only `PathHelpers.cs`) was folded directly into
+`src/Server/Files/` and unified with `VsChromium.Core.Files.PathHelpers`.
 
-| File | Copied | Changes |
+| Source in mtsuite | Location in VsChromium | Status |
 |---|---|---|
-| `LICENSE` | 2026-11-02 | none |
-| `src/core-filesystem/PathHelpers.cs` | 2026-11-02 | none |
+| `LICENSE` | `third_party/mtsuite/LICENSE` | unchanged |
+| `src/core-filesystem/PathHelpers.cs` | `src/Server/Files/IPlatformPathHelper.cs`, `src/Server/Files/PathHelpers.cs` | unified & simplified (see below) |
 
 ## Changes
 
-None yet. Each entry: date, files, description, motivation, backport status.
+- **2026-11-02** (`src/Server/Files/IPlatformPathHelper.cs`, `src/Server/Files/PathHelpers.cs`, `src/Server.Tests/Core/TestPlatformPathHelpers.cs`):
+  - Moved OS-aware path logic from `mtsuite.CoreFileSystem.PathHelpers` into `VsChromium.Server`
+    (`VsChromium.Core.Files`) and retired `MtSuite.CoreFileSystem.csproj`.
+  - Extracted a minimal `IPlatformPathHelper` containing only the operations used by the server,
+    with three concrete implementations (`WindowsPathHelper`, `LinuxPathHelper`, `MacPathHelper`,
+    where Linux and macOS share `PosixPathHelper` differing only in case sensitivity), lazily
+    initialized via lock-free `_platform ?? InitializePlatform()` on `PathHelpers`.
+  - Dropped unused mtsuite CLI path-normalization helpers (`NormalizeUserInputPath`, `NormalizePath`,
+    `AppendTrailingSeparator`, `RemoveTrailingSeparator`, `GetPathRootPrefixInfo`) from the server
+    copy. (Note when backporting `IPlatformPathHelper` to mtsuite: mtsuite's `RemoveTrailingSeparator`
+    has a copy-paste bug that appends a separator instead of removing it, and `IsDirectorySeparator`
+    / `GetPathRootPrefixInfo` treat `\` and `X:\` as separators/roots on Linux.)
+  - Backport status: pending backport to `mtsuite`.
 
 ## Used by VsChromium
 
-- `PathHelpers.FileNameComparer` / `FileNameComparison`: OS-dependent case sensitivity of file names
-  (case-sensitive on Linux, case-insensitive on Windows and macOS), used by the server path comparers
-  (`Core/Files/PathComparerRegistry.cs`, `SystemPathComparer.cs`, `#if NETCOREAPP`).
-- `PathHelpers.IsPathAbsolute`: absolute paths on Linux/macOS (`Core/Files/PathHelpers.cs`).
+- `PathHelpers` / `IPlatformPathHelper`: OS-aware path operations and case sensitivity
+  (`FileNameComparer`, `FileNameComparison`, `PathComparer`, `IsAbsolutePath`, `IsFileName`, etc.).
 
 ## Not copied (yet)
 
@@ -56,4 +63,3 @@ None yet. Each entry: date, files, description, motivation, backport status.
   allocations. Only its design of building the result tree during the traversal
   (`IDirectorCollector<T>`) was adopted, in `ProjectRootSnapshotBuilder` (see PORTING_PRINCIPLES.md
   milestone 5b).
-

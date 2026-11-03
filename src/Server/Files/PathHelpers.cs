@@ -4,210 +4,51 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace VsChromium.Core.Files {
+  /// <summary>
+  /// Static facade for OS-aware path manipulation and comparisons.
+  /// Delegates all calls to a lazily initialized <see cref="IPlatformPathHelper"/>
+  /// (<see cref="WindowsPathHelper"/>, <see cref="LinuxPathHelper"/>, or <see cref="MacPathHelper"/>).
+  /// </summary>
   public static class PathHelpers {
-    // Server: no MAX_PATH limit on modern .NET (long paths are supported by the BCL on Windows,
-    // and there is no such limit on Linux/macOS), see "Behavior changes" in PORTING_PRINCIPLES.md.
-    private const int MaxPath = int.MaxValue;
-    private static readonly string DirectorySeparatorString = new string(Path.DirectorySeparatorChar, 1);
-    private static readonly char[] DirectorySeparatorArray = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
-    private static readonly string NetworkSharePrefix = new string(Path.DirectorySeparatorChar, 2);
-    public static char DirectorySeparatorChar = Path.DirectorySeparatorChar;
+    private static IPlatformPathHelper _platform;
 
     /// <summary>
-    /// Combines two paths into a single path. More efficient than <see
-    /// cref="System.IO.Path.Combine(string, string)"/>, because we don't box
-    /// "Path.DirectorySeparatorChar"
+    /// Returns the lazily initialized <see cref="IPlatformPathHelper"/> for the current operating system.
     /// </summary>
-    public static string CombinePaths(string path1, string path2) {
-      if (string.IsNullOrEmpty(path1))
-        return path2;
+    public static IPlatformPathHelper Platform => _platform ?? InitializePlatform();
 
-      if (string.IsNullOrEmpty(path2))
-        return path1;
-
-      var c = path1[path1.Length - 1];
-      if (c != Path.DirectorySeparatorChar && c != Path.AltDirectorySeparatorChar && c != Path.VolumeSeparatorChar) {
-        return path1 + DirectorySeparatorString + path2;
-      }
-      return path1 + path2;
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static IPlatformPathHelper InitializePlatform() {
+      IPlatformPathHelper helper = OperatingSystem.IsWindows()
+        ? new WindowsPathHelper()
+        : OperatingSystem.IsLinux()
+          ? new LinuxPathHelper()
+          : OperatingSystem.IsMacOS()
+            ? new MacPathHelper()
+            : throw new PlatformNotSupportedException("Unsupported operating system platform.");
+      Interlocked.CompareExchange(ref _platform, helper, null);
+      return _platform;
     }
 
-    /// <summary>
-    /// Return <code>true</code> if <paramref name="prefix"/> is a path prefix
-    /// of <paramref name="path"/>
-    /// </summary>
-    public static bool IsPrefix(string prefix, string path) {
-      var result = SystemPathComparer.Instance.IndexOf(path, prefix, 0, path.Length);
-      if (result < 0)
-        return false;
+    public static char DirectorySeparatorChar => Platform.DirectorySeparatorChar;
+    public static StringComparer FileNameComparer => Platform.FileNameComparer;
+    public static StringComparison FileNameComparison => Platform.FileNameComparison;
+    public static IPathComparer PathComparer => Platform.PathComparer;
 
-      // Check that "path" contains a directory separator
-      if (prefix.Last() == Path.DirectorySeparatorChar)
-        return true;
-      if (path.Length <= prefix.Length)
-        return true;
-      return path[prefix.Length] == Path.DirectorySeparatorChar;
-    }
-
-    /// <summary>
-    /// Splits a path into its components, e.g c:\foo\bar into "c:", "foo" and "bar".
-    /// </summary>
-    public static IEnumerable<string> SplitPath(string path) {
-      if (string.IsNullOrEmpty(path)) {
-        yield break;
-      }
-
-      int start = 0;
-      StringBuilder sb = new StringBuilder();
-      if (path.StartsWith(NetworkSharePrefix)) {
-        start = NetworkSharePrefix.Length;
-        sb.Append(NetworkSharePrefix);
-      }
-      for (var index = start; index < path.Length; index++) {
-        char ch = path[index];
-        if (ch == Path.DirectorySeparatorChar) {
-          yield return sb.ToString();
-          sb.Clear();
-        }
-        else {
-          sb.Append(ch);
-        }
-      }
-      if (sb.Length > 0) {
-        yield return sb.ToString();
-      }
-    }
-
-    /// <summary>
-    /// Splits a path into an absolute path plus a relative path, using
-    /// <paramref name="prefix"/> as the path prefix.
-    /// </summary>
-    public static SplitPath SplitPrefix(string path, string prefix) {
-      if (string.IsNullOrEmpty(path))
-        throw new ArgumentException();
-      if (string.IsNullOrEmpty(prefix))
-        throw new ArgumentException();
-
-      var prefixEnd = prefix.Length - 1;
-      while (prefixEnd >= 0) {
-        if (path[prefixEnd] != Path.DirectorySeparatorChar)
-          break;
-        prefixEnd--;
-      }
-
-      var suffixStart = prefix.Length;
-      while (suffixStart < path.Length) {
-        if (path[suffixStart] != Path.DirectorySeparatorChar)
-          break;
-        suffixStart++;
-      }
-
-      var root = path.Substring(0, prefixEnd + 1);
-      var relativePath = path.Substring(suffixStart);
-      return new SplitPath(root, relativePath);
-    }
-
-    /// <summary>
-    /// Returns true if the <paramref name="path"/> argument represents an
-    /// absolute path. More efficient than <see
-    /// cref="System.IO.Path.IsPathRooted"/>, but is not 100% correct, so this
-    /// method should only be used in assertion code.
-    /// </summary>
-    public static bool IsAbsolutePath(string path) {
-      if (string.IsNullOrEmpty(path)) {
-        return false;
-      }
-
-      // Server on Linux/macOS: Unix paths ("/..."), see mtsuite PathHelpers.
-      if (!OperatingSystem.IsWindows()) {
-        return mtsuite.CoreFileSystem.PathHelpers.IsPathAbsolute(path);
-      }
-      // Quick & dirty check, but faster than "Path.IsPathRooted".
-      var l = path.Length;
-
-      if (l > 1 && path[1] == Path.VolumeSeparatorChar) {
-        return true;
-      } else if (l > 0) {
-        var c = path[0];
-        if (c == Path.DirectorySeparatorChar || c == Path.AltDirectorySeparatorChar)
-          return true;
-      }
-
-      return false;
-    }
-
-    /// <summary>
-    /// Returns true if <paramref name="path"/> is a simple file name and
-    /// extension, i.e. if <paramref name="path"/> does not contain any
-    /// directory separator.
-    /// </summary>
-    public static bool IsFileName(string path) {
-      return path.IndexOfAny(DirectorySeparatorArray) < 0;
-    }
-
-    /// <summary>
-    /// Returns the parent directory of <paramref name="path"/>, or null if
-    /// <paramref name="path"/> is a top level directory.
-    /// </summary>
-    public static string GetParent(string path) {
-      if (string.IsNullOrEmpty(path)) {
-        return null;
-      }
-      var result = Path.GetDirectoryName(path);
-      if (string.IsNullOrEmpty(result)) {
-        return null;
-      }
-      return result;
-    }
-
-    /// <summary>
-    /// Returns <code>true</code> if <paramref name="path"/> is too long.
-    /// </summary>
-    public static bool IsPathTooLong(string path) {
-      path = path ?? "";
-      return path.Length >= MaxPath;
-    }
-
-    /// <summary>
-    /// Returns <code>true</code> if <paramref name="path"/> is too long.
-    /// </summary>
-    public static bool IsValidBclPath(string path) {
-      if (IsPathTooLong(path))
-        return false;
-
-      try {
-        // This call checks path contains valid characters only, etc.
-        // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
-        Path.GetDirectoryName(path);
-        return true;
-      }
-      catch (Exception) {
-        return false;
-      }
-    }
-
-    public static string GetFileName(string path) {
-      if (string.IsNullOrEmpty(path)) {
-        return path;
-      }
-      int length = path.Length;
-      int index = length;
-      while (--index >= 0) {
-        char ch = path[index];
-        if (ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar || ch == Path.VolumeSeparatorChar)
-          return path.Substring(index + 1, length - index - 1);
-      }
-      return path;
-    }
-
-    public static string GetExtension(string path) {
-      return Path.GetExtension(path) ?? "";
-    }
+    public static string CombinePaths(string path1, string path2) => Platform.CombinePaths(path1, path2);
+    public static bool IsPrefix(string prefix, string path) => Platform.IsPrefix(prefix, path);
+    public static IEnumerable<string> SplitPath(string path) => Platform.SplitPath(path);
+    public static SplitPath SplitPrefix(string path, string prefix) => Platform.SplitPrefix(path, prefix);
+    public static bool IsAbsolutePath(string path) => Platform.IsAbsolutePath(path);
+    public static bool IsFileName(string path) => Platform.IsFileName(path);
+    public static string GetParent(string path) => Platform.GetParent(path);
+    public static string GetFileName(string path) => Platform.GetFileName(path);
+    public static string GetExtension(string path) => Platform.GetExtension(path);
+    public static bool IsValidBclPath(string path) => Platform.IsValidBclPath(path);
   }
 
   /// <summary>
@@ -229,7 +70,7 @@ namespace VsChromium.Core.Files {
 
     /// <summary>
     /// Root of the path, never empty or null. Does *not* end with path
-    /// separator.
+    /// separator (except when root itself is "/").
     /// </summary>
     public string Root {
       get { return _root; }

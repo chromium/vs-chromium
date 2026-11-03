@@ -45,7 +45,8 @@ namespace VsChromium.Server.FileSystemNames {
     }
 
 
-    private static readonly string DirectorySeparatorString = new string(PathHelpers.DirectorySeparatorChar, 1);
+    private static readonly char DirectorySeparatorChar = PathHelpers.DirectorySeparatorChar;
+    private static readonly string DirectorySeparatorString = new string(DirectorySeparatorChar, 1);
 
     private RelativePath BuildRelativePath() {
       Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
@@ -77,7 +78,7 @@ namespace VsChromium.Server.FileSystemNames {
         : (rented = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
       try {
         parentPath.AsSpan().CopyTo(buffer);
-        buffer[parentPath.Length] = PathHelpers.DirectorySeparatorChar;
+        buffer[parentPath.Length] = DirectorySeparatorChar;
         _name.AsSpan().CopyTo(buffer.Slice(parentPath.Length + 1));
         return predicate(buffer, state);
       }
@@ -99,7 +100,7 @@ namespace VsChromium.Server.FileSystemNames {
       var rootPath = _parent.GetAbsolutePath().Value;
       var parentPath = _parent.RelativePath.Value;
       // Same rules as PathHelpers.CombinePaths(root, relativePath)
-      var last = rootPath.Length > 0 ? rootPath[rootPath.Length - 1] : PathHelpers.DirectorySeparatorChar;
+      var last = rootPath.Length > 0 ? rootPath[rootPath.Length - 1] : DirectorySeparatorChar;
       var rootSeparator = (last == System.IO.Path.DirectorySeparatorChar || last == System.IO.Path.AltDirectorySeparatorChar ||
                            last == System.IO.Path.VolumeSeparatorChar) ? 0 : 1;
       var length = rootPath.Length + rootSeparator + (parentPath.Length == 0 ? 0 : parentPath.Length + 1) + _name.Length;
@@ -112,11 +113,11 @@ namespace VsChromium.Server.FileSystemNames {
         rootPath.AsSpan().CopyTo(buffer);
         index += rootPath.Length;
         if (rootSeparator == 1)
-          buffer[index++] = PathHelpers.DirectorySeparatorChar;
+          buffer[index++] = DirectorySeparatorChar;
         if (parentPath.Length > 0) {
           parentPath.AsSpan().CopyTo(buffer.Slice(index));
           index += parentPath.Length;
-          buffer[index++] = PathHelpers.DirectorySeparatorChar;
+          buffer[index++] = DirectorySeparatorChar;
         }
         _name.AsSpan().CopyTo(buffer.Slice(index));
         return predicate(buffer, state);

@@ -355,22 +355,9 @@ namespace VsChromium.Core.Files {
 
 
       /// <summary>
-      ///  Skip paths BCL can't process (e.g. path too long)
+      ///  Skip paths BCL can't process (e.g. invalid characters)
       /// </summary>
       private bool SkipPath(string path) {
-        if (PathHelpers.IsPathTooLong(path)) {
-          switch (StateHost.LogLimiter.Proceed()) {
-            case BoundedOperationLimiter.Result.YesAndLast:
-              Logger.LogInfo("(The following log message will be the last of its kind)", path);
-              goto case BoundedOperationLimiter.Result.Yes;
-            case BoundedOperationLimiter.Result.Yes:
-              Logger.LogInfo("Skipping file change event because path is too long: \"{0}\"", path);
-              break;
-            case BoundedOperationLimiter.Result.NoMore:
-              break;
-          }
-          return true;
-        }
         if (!PathHelpers.IsValidBclPath(path)) {
           switch (StateHost.LogLimiter.Proceed()) {
             case BoundedOperationLimiter.Result.YesAndLast:

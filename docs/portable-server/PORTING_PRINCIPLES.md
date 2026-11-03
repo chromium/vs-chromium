@@ -82,8 +82,8 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 | `VsChromium.Core.Ipc`, `VsChromium.Core.Ipc.Json` | – | – | Deleted in P4 of the protocol migration (VS-side copy of the typed messages and their JSON serialization; the VS package uses the generated JSON-RPC client, `src/VsChromium/Protocol/Generated`) |
 | `VsChromium.VsCore` (`src/VsCore`, formerly `Core`) | `net472` | VS package, DkmIntegration | Client-only Windows code (processes, debugger, jobs, shell, registry, VS-side file system helpers) |
 | `VsChromium.Core.Server` (`src/Core.Server`) | – | – | Consolidated into `VsChromium.Server` (`src/Server`) after P5 |
-| `VsChromium.Server` (`src/Server`, ported) | `net10.0` | server process | All server code: JSON-RPC transport + protocol code generated from `protocol/*.tsp` (`Protocol\Generated`), managed search, portable file system, paths, pattern matching, configuration, logging, collections |
-| `MtSuite.CoreFileSystem` (copied from mtsuite) | modern .NET | server | OS-aware path helpers |
+| `VsChromium.Server` (`src/Server`, ported) | `net10.0` | server process | All server code: JSON-RPC transport + protocol code generated from `protocol/*.tsp` (`Protocol\Generated`), managed search, portable file system, OS-aware path helpers (`IPlatformPathHelper` / `PathHelpers`), pattern matching, configuration, logging, collections |
+| `MtSuite.CoreFileSystem` | – | – | Retired: `PathHelpers.cs` folded into `src/Server/Files/` via `IPlatformPathHelper` (`WindowsPathHelper`, `LinuxPathHelper`, `MacPathHelper`), tracked in `third_party/mtsuite/PORT_CHANGES.md` |
 | `VsChromium.Server.Tests` (new) | modern .NET | – | Server unit tests (white box) |
 | `VsChromium.Tests.EndToEnd` (`src/Tests.EndToEnd`, exists) | `net10.0` | – | Black-box tests over stdio: regression tests of the behavior changes + benchmarks (see below and its `README.md`) |
 | `Tests` (existing) | `net472` | – | VS-side tests only |

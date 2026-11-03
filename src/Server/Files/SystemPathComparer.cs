@@ -6,9 +6,11 @@ using System;
 
 namespace VsChromium.Core.Files {
   /// <summary>
-  /// The comparer instance to use for file s system paths comparisons.
+  /// The comparer instance to use for file system paths comparisons.
   /// </summary>
   public static class SystemPathComparer {
+    private static StringComparer _nameComparer;
+
     public static IPathComparer Instance => PathComparerRegistry.Default;
 
     public static int GetHashCode(string name) {
@@ -27,10 +29,10 @@ namespace VsChromium.Core.Files {
       return NameComparer.Compare(name1, name2);
     }
 
-    // Server: case sensitivity of the operating system, see mtsuite PathHelpers.
     /// <summary>
-    /// Comparer of file and directory names: ordinal, case-insensitive on Windows and macOS.
+    /// Comparer of file and directory names: ordinal, case-insensitive on Windows and macOS,
+    /// case-sensitive on Linux.
     /// </summary>
-    public static StringComparer NameComparer => mtsuite.CoreFileSystem.PathHelpers.FileNameComparer;
+    public static StringComparer NameComparer => _nameComparer ??= PathHelpers.FileNameComparer;
   }
 }

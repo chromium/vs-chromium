@@ -6,16 +6,9 @@ namespace VsChromium.Core.Files {
   public static class PathComparerRegistry {
     private static readonly IPathComparer _caseInsensitive = new PathComparer(PathComparisonOption.CaseInsensitive);
     private static readonly IPathComparer _caseSensitive = new PathComparer(PathComparisonOption.CaseSensitive);
+    private static IPathComparer _default;
 
-    public static IPathComparer Default {
-      get {
-        // Server: case sensitivity of the operating system (case-sensitive on
-        // Linux, case-insensitive on Windows and macOS), see mtsuite PathHelpers.
-        return mtsuite.CoreFileSystem.PathHelpers.FileNameComparison == System.StringComparison.Ordinal
-          ? _caseSensitive
-          : _caseInsensitive;
-      }
-    }
+    public static IPathComparer Default => _default ??= PathHelpers.PathComparer;
 
     public static IPathComparer CaseInsensitive {
       get { return _caseInsensitive; }

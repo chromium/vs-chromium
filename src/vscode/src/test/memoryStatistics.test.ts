@@ -21,6 +21,12 @@ describe('describeArenas', () => {
       'File contents: 3 arenas (48.0 MB), 30.0 MB dead (75%), 2 more than half dead');
   });
 
+  it('does not show the dead bytes while indexing (files being read are not in the index yet)', () => {
+    assert.equal(
+      describeArenas({ arenaCount: 2, arenaBytes: 32 * MB, usedBytes: 20 * MB, liveBytes: 5 * MB, sparseArenaCount: 1 }, true),
+      'File contents: 2 arenas (32.0 MB), dead bytes shown when indexing is done');
+  });
+
   it('handles empty arenas', () => {
     assert.equal(
       describeArenas({ arenaCount: 0, arenaBytes: 0, usedBytes: 0, liveBytes: 0, sparseArenaCount: 0 }),

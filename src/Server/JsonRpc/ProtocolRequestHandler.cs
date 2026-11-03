@@ -136,9 +136,7 @@ namespace VsChromium.Server.JsonRpc {
     }
 
     private FileContentsArenaStatistics GetArenaStatistics(IFileDatabaseSnapshot database) {
-      var statistics = _arenaAllocator.GetStatistics(database.FileContentsPieces
-        .Where(piece => piece.IsFirstPiece)
-        .Select(piece => FileContentsFactory.GetArenaSlot(piece.FileContents)));
+      var statistics = GetArenaStatistics(_arenaAllocator, database);
       return new FileContentsArenaStatistics {
         ArenaCount = statistics.ArenaCount,
         ArenaBytes = statistics.ArenaBytes,
@@ -146,6 +144,22 @@ namespace VsChromium.Server.JsonRpc {
         LiveBytes = statistics.LiveBytes,
         SparseArenaCount = statistics.SparseArenaCount,
       };
+    }
+
+    /// <summary>
+    /// The arenas of <paramref name="arenaAllocator"/> and the bytes used by the file contents of
+    /// <paramref name="database"/>.
+    /// <para>
+    /// Note: Counted from the contents array, not from the pieces: the intermediate snapshots of a
+    /// load share the contents array of the load in progress (so they see the contents loaded
+    /// since they were created, which are not dead), and empty files have a slot but no piece.
+    /// </para>
+    /// </summary>
+    public static ArenaStatistics GetArenaStatistics(ArenaAllocator arenaAllocator, IFileDatabaseSnapshot database) {
+      var contents = database is FileDatabaseSnapshot snapshot
+        ? snapshot.ContentsArray.Where(x => x != null)
+        : database.FileContentsPieces.Where(x => x.IsFirstPiece).Select(x => x.FileContents);
+      return arenaAllocator.GetStatistics(contents.Select(FileContentsFactory.GetArenaSlot));
     }
 
     // files/*

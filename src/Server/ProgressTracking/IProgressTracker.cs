@@ -23,6 +23,11 @@ namespace VsChromium.Server.ProgressTracking {
     /// </summary>
     bool Step();
     /// <summary>
+    /// Same as <see cref="Step()"/>, for <paramref name="count"/> steps at once (e.g. the files
+    /// of a directory: the progress counts files, not directories).
+    /// </summary>
+    bool Step(int count) => Step();
+    /// <summary>
     /// Called when <see cref="Step"/> returned true. Invokes <paramref
     /// name="displayProgressCallback"/> with the current step count
     /// and total count.

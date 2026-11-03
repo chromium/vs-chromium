@@ -30,6 +30,11 @@ namespace VsChromium.Server.ProgressTracking {
       return IsTimeToSendEvent();
     }
 
+    public bool Step(int count) {
+      Interlocked.Add(ref _currentStep, count);
+      return IsTimeToSendEvent();
+    }
+
     public void DisplayProgress(DisplayProgressCallback displayProgressCallback) {
       _eventsSent = true;
       SendProgressEvent(displayProgressCallback);

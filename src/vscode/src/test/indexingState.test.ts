@@ -53,10 +53,13 @@ describe('nextIndexingState', () => {
 
   it('describes the loading phases without the server details', () => {
     const traversing = step({ kind: 'scanning' }, { type: 'progress', params: { displayText: 'Traversing directory: c:\\src\\x', completed: 42, total: 0 } });
-    assert.deepEqual(traversing, { kind: 'loading', progress: { phase: 'scanning directories', percent: undefined } });
-    assert.equal(describeIndexingState(traversing).tooltip, 'VsChromium: scanning directories...');
-    // Directory counts change all the time (indeterminate progress): no new state.
-    assert.equal(nextIndexingState(traversing, { type: 'progress', params: { displayText: 'Traversing directory: c:\\src\\y', completed: 43, total: 0 } }), undefined);
+    // The progress of the directory scan counts the files found.
+    assert.deepEqual(traversing, { kind: 'loading', progress: { phase: 'scanning directories', fileCount: 42 } });
+    assert.equal(describeIndexingState(traversing).tooltip, 'VsChromium: scanning directories (42 files found)...');
+    assert.deepEqual(nextIndexingState(traversing, { type: 'progress', params: { displayText: 'Traversing directory: c:\\src\\y', completed: 1234567, total: 0 } }),
+      { kind: 'loading', progress: { phase: 'scanning directories', fileCount: 1234567 } });
+    assert.equal(describeIndexingState({ kind: 'loading', progress: { phase: 'scanning directories', fileCount: 1234567 } }).tooltip,
+      'VsChromium: scanning directories (1,234,567 files found)...');
 
     assert.equal(loadingPhase('Finalizing index update'), 'finalizing');
     assert.equal(loadingPhase('Preparing list of files to load from disk'), 'loading files');

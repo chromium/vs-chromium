@@ -28,6 +28,8 @@ export interface LoadingProgress {
   phase: LoadingPhase;
   /** Whole percentage, if the total is known. */
   percent?: number;
+  /** Number of files found so far ("scanning directories" phase). */
+  fileCount?: number;
 }
 
 export type LoadingPhase = 'scanning directories' | 'reading files' | 'finalizing' | 'loading files';
@@ -108,12 +110,18 @@ export function nextIndexingState(state: IndexingState, event: IndexEvent): Inde
     case 'progress':
       if (state.kind === 'scanning' || state.kind === 'loading') {
         const { completed, total } = event.params;
-        const progress: LoadingProgress = {
-          phase: loadingPhase(event.params.displayText),
-          percent: total > 0 ? Math.min(100, Math.floor((completed * 100) / total)) : undefined,
-        };
+        const phase = loadingPhase(event.params.displayText);
+        const progress: LoadingProgress = { phase };
+        if (total > 0) {
+          progress.percent = Math.min(100, Math.floor((completed * 100) / total));
+        }
+        if (phase === 'scanning directories') {
+          // The progress of the directory scan counts the files found.
+          progress.fileCount = completed;
+        }
         if (state.kind === 'loading' && state.progress &&
-            state.progress.phase === progress.phase && state.progress.percent === progress.percent) {
+            state.progress.phase === progress.phase && state.progress.percent === progress.percent &&
+            state.progress.fileCount === progress.fileCount) {
           return undefined; // Same display
         }
         return { kind: 'loading', progress };
@@ -150,7 +158,7 @@ export function describeIndexingState(state: IndexingState): { text: string; too
       const percent = p?.percent !== undefined ? ` ${p.percent}%` : '';
       return {
         text: `$(sync~spin) VsChromium: indexing${percent}`,
-        tooltip: `VsChromium: ${p?.phase ?? 'loading files'}${percent ? ` (${percent.trim()})` : ''}...`,
+        tooltip: `VsChromium: ${p?.phase ?? 'loading files'}${percent ? ` (${percent.trim()})` : ''}${p?.fileCount !== undefined ? ` (${p.fileCount.toLocaleString('en-US')} files found)` : ''}...`,
       };
     }
     case 'ready': {

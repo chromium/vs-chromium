@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -199,12 +199,6 @@ namespace VsChromium.Server.FileSystem.Builder {
         return null;
       }
 
-      if (_progress.Step()) {
-        _progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}",
-          _project.RootPath.Value,
-          directory.DirectoryName.RelativePath.Value));
-      }
-
       List<Task<DirectorySnapshot>> childTasks = null;
       var childEntries = GetDirectoryEntries(directory);
       var childFileNames = new List<FileName>();
@@ -228,6 +222,13 @@ namespace VsChromium.Server.FileSystem.Builder {
         // (see "Behavior changes" in PORTING_PRINCIPLES.md).
         .OrderBy(x => x.Name, SystemPathComparer.NameComparer)
         .ToReadOnlyList();
+
+      // Note: The progress of the traversal counts the files found (displayed by the clients).
+      if (_progress.Step(fileNames.Count)) {
+        _progress.DisplayProgress((i, n) => string.Format("Traversing directory: {0}\\{1}",
+          _project.RootPath.Value,
+          directory.DirectoryName.RelativePath.Value));
+      }
 
       IList<DirectorySnapshot> childDirectories;
       if (childTasks == null) {

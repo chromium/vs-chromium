@@ -18,6 +18,9 @@ import { describeIndexingState, IndexingState, nextIndexingState, subscribeIndex
 import { CodeSearchViewProvider } from './ui/codeSearchView';
 import { FileNamesPick } from './ui/fileNamesPick';
 
+/** Minimum interval between two displays of the progress of a load in the status bar. */
+const ProgressDisplayIntervalMs = 1000;
+
 /**
  * Owns the VsChromium.Server.exe process: starts it, registers the workspace folders and opened
  * files, tracks the indexing state (status bar) and restarts the server on demand.
@@ -168,6 +171,10 @@ class ServerManager implements vscode.Disposable {
   }
 
   dispose(): void {
+    if (this.pendingProgressDisplay) {
+      clearTimeout(this.pendingProgressDisplay);
+      this.pendingProgressDisplay = undefined;
+    }
     void this.client?.dispose();
     this.client = undefined;
     for (const d of this.disposables) {
@@ -296,8 +303,30 @@ class ServerManager implements vscode.Disposable {
     }
   }
 
+  /** Last time the status bar item displayed a loading progress (see setState). */
+  private lastProgressDisplay = 0;
+  private pendingProgressDisplay: NodeJS.Timeout | undefined;
+
   private setState(state: IndexingState) {
     this.state = state;
+    // Note: The progress of a load is displayed at most once per second: each update redraws the
+    // status bar item, and an open tooltip flickers. Other states are displayed immediately.
+    const isProgress = state.kind === 'loading' && state.progress !== undefined;
+    if (isProgress) {
+      const delay = this.lastProgressDisplay + ProgressDisplayIntervalMs - Date.now();
+      if (delay > 0) {
+        this.pendingProgressDisplay ??= setTimeout(() => {
+          this.pendingProgressDisplay = undefined;
+          this.setState(this.state);
+        }, delay);
+        return;
+      }
+      this.lastProgressDisplay = Date.now();
+    }
+    if (this.pendingProgressDisplay && !isProgress) {
+      clearTimeout(this.pendingProgressDisplay);
+      this.pendingProgressDisplay = undefined;
+    }
     const { text, tooltip } = describeIndexingState(state);
     // Note: Only update the status bar item when its display changes (each update redraws it,
     // and an open tooltip flickers).

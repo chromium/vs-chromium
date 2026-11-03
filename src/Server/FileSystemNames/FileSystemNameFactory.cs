@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Linq;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 
@@ -33,6 +34,11 @@ namespace VsChromium.Server.FileSystemNames {
     private string InterName(string name) {
       return _dictionaries[name.Length % BucketCount].GetOrAdd(new Entry(name)).Value;
     }
+
+    /// <summary>
+    /// Number of strings in the intern tables (diagnostics and tests).
+    /// </summary>
+    public int InternedStringCount => _dictionaries.Sum(x => x.Count);
 
     public void ClearInternedStrings() {
       for (var i = 0; i < _dictionaries.Length; i++) {

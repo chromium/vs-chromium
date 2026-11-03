@@ -23,6 +23,14 @@ namespace VsChromium.Core.Collections {
       }
     }
 
+    public int Count {
+      get {
+        lock (_lock) {
+          return _table.Count;
+        }
+      }
+    }
+
     public void Clear() {
       lock (_lock) {
         _table.Clear();

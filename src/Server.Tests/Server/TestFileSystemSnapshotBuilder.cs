@@ -44,6 +44,25 @@ namespace VsChromium.Tests.Server {
       CollectionAssert.AreEqual(directoryNames.OrderBy(x => x, SystemPathComparer.NameComparer).ToList(), directoryNames);
     }
 
+    [TestMethod]
+    public void InternedStringsAreReleasedAfterABuild() {
+      var fileSystem = new FileSystemMock();
+      var root = fileSystem.AddDirectory(@"d:\foo");
+      root.AddFile(ConfigurationFileNames.ProjectFileName, "");
+
+      var project = new ProjectFileDiscoveryProvider(fileSystem).GetProjectFromAnyPath(new FullPath(@"d:\foo"));
+      var nameFactory = new FileSystemNameFactory();
+      // Names created before the build (e.g. lookups) are interned too.
+      nameFactory.CreateFileName(nameFactory.CreateAbsoluteDirectoryName(new FullPath(@"d:\foo")), "x.txt");
+      Assert.AreEqual(1, nameFactory.InternedStringCount);
+      using var workerPool = new IndexingWorkerPool();
+      var snapshot = new FileSystemSnapshotBuilder(fileSystem, new NullProgressTrackerFactory(), workerPool)
+        .Compute(nameFactory, null, null, new[] { project }, 1, CancellationToken.None);
+
+      Assert.AreEqual(1, snapshot.ProjectRoots.Count);
+      Assert.AreEqual(0, nameFactory.InternedStringCount, "The intern tables are only needed during a build");
+    }
+
     private class NullProgressTrackerFactory : IProgressTrackerFactory {
       public IProgressTracker CreateTracker(int totalStepCount) => new NullProgressTracker();
       public IProgressTracker CreateIndeterminateTracker() => new NullProgressTracker();

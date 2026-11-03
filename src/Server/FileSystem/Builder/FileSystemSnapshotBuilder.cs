@@ -37,32 +37,36 @@ namespace VsChromium.Server.FileSystem.Builder {
       cancellationToken.ThrowIfCancellationRequested(); // cancellation
       using (OperationTimings.Measure(OperationTimings.FileSystemScan))
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
-        // Clear file name factory intern tables if no projects. We could be
-        // more aggressive at the expense of decreasing string interning.
-        if (projects.Count == 0) {
+        try {
+          var projectRoots =
+            projects
+              .Distinct(new ProjectPathComparer())
+              .Select(project => {
+                cancellationToken.ThrowIfCancellationRequested(); // cancellation
+
+                var projectSnapshotBuilder = new ProjectRootSnapshotBuilder(
+                  _fileSystem, fileNameFactory, oldSnapshot, project, progress,
+                  (pathChanges == null ? null : new ProjectPathChanges(project.RootPath, pathChanges.Entries)),
+                  _indexingWorkerPool,
+                  cancellationToken);
+
+                var rootSnapshot = projectSnapshotBuilder.Build();
+
+                return new ProjectRootSnapshot(project, rootSnapshot);
+              })
+              .OrderBy(projectRoot => projectRoot.Directory.DirectoryName)
+              .ToReadOnlyCollection();
+
+          return new FileSystemSnapshot(version, projectRoots);
+        }
+        finally {
+          // The intern tables share the strings of the names created during a build (3.3M names
+          // but 579k distinct strings on a 2.6M file tree): they are only useful during the build,
+          // and cost ~25 bytes per distinct name afterwards (15 MB on the same tree). Names
+          // created later (e.g. new files) don't share their strings with the existing names,
+          // which only costs a few bytes per new file (names are compared by value).
           fileNameFactory.ClearInternedStrings();
         }
-
-        var projectRoots =
-          projects
-            .Distinct(new ProjectPathComparer())
-            .Select(project => {
-              cancellationToken.ThrowIfCancellationRequested(); // cancellation
-
-              var projectSnapshotBuilder = new ProjectRootSnapshotBuilder(
-                _fileSystem, fileNameFactory, oldSnapshot, project, progress,
-                (pathChanges == null ? null : new ProjectPathChanges(project.RootPath, pathChanges.Entries)),
-                _indexingWorkerPool,
-                cancellationToken);
-
-              var rootSnapshot = projectSnapshotBuilder.Build();
-
-              return new ProjectRootSnapshot(project, rootSnapshot);
-            })
-            .OrderBy(projectRoot => projectRoot.Directory.DirectoryName)
-            .ToReadOnlyCollection();
-
-        return new FileSystemSnapshot(version, projectRoots);
       }
     }
   }

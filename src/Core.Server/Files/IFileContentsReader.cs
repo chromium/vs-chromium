@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 
 namespace VsChromium.Core.Files {
   /// <summary>
@@ -17,6 +17,6 @@ namespace VsChromium.Core.Files {
     /// name="trailingByteCount"/> null bytes as suffix, and returns the last
     /// write time of the file read from the open file.
     /// </summary>
-    SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, out DateTime lastWriteTimeUtc);
+    SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, out DateTime lastWriteTimeUtc);
   }
 }

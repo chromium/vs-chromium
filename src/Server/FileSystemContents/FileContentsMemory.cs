@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
-using VsChromium.Core.Win32;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 
 namespace VsChromium.Server.FileSystemContents {
   /// <summary>
@@ -18,7 +16,7 @@ namespace VsChromium.Server.FileSystemContents {
     private readonly int _contentsOffset;
     private readonly int _contentsLength;
 
-    public FileContentsMemory(SafeHeapBlockHandle block, int contentsOffset, int contentsLength) :
+    public FileContentsMemory(SafeNativeMemoryHandle block, int contentsOffset, int contentsLength) :
       this(block, block.ByteLength, contentsOffset, contentsLength) {
     }
 
@@ -38,7 +36,7 @@ namespace VsChromium.Server.FileSystemContents {
     /// Returns the pointer to the usable memory of this block, i.e. the block
     /// offset added to the start pointer.
     /// </summary>
-    public IntPtr Pointer { get { return Pointers.AddPtr(_block.DangerousGetHandle(), _contentsOffset); } }
+    public IntPtr Pointer { get { return _block.DangerousGetHandle() + _contentsOffset; } }
     /// <summary>
     /// Return the number of bytes of the usable memory of this block.
     /// </summary>

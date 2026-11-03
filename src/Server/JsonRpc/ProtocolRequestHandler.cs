@@ -13,8 +13,8 @@ using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Memory;
 using VsChromium.Core.Utility;
-using VsChromium.Core.Win32.Memory;
 using VsChromium.Protocol.Generated;
 using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystem;
@@ -102,7 +102,7 @@ namespace VsChromium.Server.JsonRpc {
           GcGen2Collections = GC.CollectionCount(2),
           GcTotalPauseMs = GC.GetTotalPauseDuration().TotalMilliseconds,
 
-          NativeAllocatedBytes = HeapAllocStatic.TotalMemory,
+          NativeAllocatedBytes = NativeHeap.TotalMemory,
           IndexedFileContentsBytes = database.TotalFileContentsLength,
           TrigramFiltersBytes = GetTrigramFiltersBytes(database),
           FileCount = ToInt32(database.FileNameCount),

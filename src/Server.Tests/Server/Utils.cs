@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 using VsChromium.Server.FileSystemContents;
 
 namespace VsChromium.Tests.Server {
@@ -53,7 +53,7 @@ namespace VsChromium.Tests.Server {
     }
 
     public static FileContentsMemory CreateUtf8Memory(byte[] bytes) {
-      var block = HeapAllocStatic.Alloc(bytes.Length + 1);
+      var block = NativeHeap.Alloc(bytes.Length + 1);
       Marshal.Copy(bytes, 0, block.Pointer, bytes.Length);
       Marshal.WriteByte(block.Pointer, bytes.Length, 0);
       return new FileContentsMemory(block, 0, bytes.Length);

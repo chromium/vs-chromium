@@ -8,9 +8,8 @@ using System.IO;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VsChromium.Core.Files;
+using VsChromium.Core.Memory;
 using VsChromium.Core.Threads;
-using VsChromium.Core.Win32.Files;
-using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Tests.Core {
   [TestClass]
@@ -70,7 +69,7 @@ namespace VsChromium.Tests.Core {
 
       public IFileInfoSnapshot GetFileInfoSnapshot(FullPath path) => throw new NotImplementedException();
       public string ReadText(FullPath path) => throw new NotImplementedException();
-      public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) => throw new NotImplementedException();
+      public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) => throw new NotImplementedException();
       public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) => throw new NotImplementedException();
     }
 

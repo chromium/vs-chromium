@@ -2,17 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromium.Core.Win32.Files {
+using System.IO;
+
+namespace VsChromium.Core.Files {
   /// <summary>
   /// File or directory entry information returned by <see
-  /// cref="NativeFile.GetDirectoryEntries"/>, including the short <see
+  /// cref="IFileSystem.GetDirectoryEntries"/>, including the short <see
   /// cref="Name"/> and file attributes.
   /// </summary>
   public struct DirectoryEntry {
     private readonly string _name;
-    private readonly FILE_ATTRIBUTE _attributes;
+    private readonly FileAttributes _attributes;
 
-    public DirectoryEntry(string name, FILE_ATTRIBUTE attributes) {
+    public DirectoryEntry(string name, FileAttributes attributes) {
       _name = name;
       _attributes = attributes;
     }
@@ -23,19 +25,19 @@ namespace VsChromium.Core.Win32.Files {
 
     public bool IsFile {
       get {
-        return (_attributes & FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) == 0;
+        return (_attributes & FileAttributes.Directory) == 0;
       }
     }
 
     public bool IsDirectory {
       get {
-        return (_attributes & FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) != 0;
+        return (_attributes & FileAttributes.Directory) != 0;
       }
     }
 
     public bool IsSymLink {
       get {
-        return (_attributes & FILE_ATTRIBUTE.FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+        return (_attributes & FileAttributes.ReparsePoint) != 0;
       }
     }
   }

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 using System;
-using VsChromium.Core.Win32;
 
 namespace VsChromium.Server.TextSearch {
   /// <summary>
@@ -54,7 +53,7 @@ namespace VsChromium.Server.TextSearch {
     /// </summary>
     public IntPtr StartPtr {
       get {
-        return Pointers.AddPtr(_textPtr, _position * _characterSize);
+        return _textPtr + _position * _characterSize;
       }
     }
 

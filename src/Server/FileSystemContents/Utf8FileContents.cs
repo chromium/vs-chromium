@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 using VsChromium.Server.TextSearch;
 using VsChromium.Server.Search;
 
@@ -52,7 +52,7 @@ namespace VsChromium.Server.FileSystemContents {
       // Positions are UTF-16 positions: compute the extracts from the UTF-16 decoding of the text.
       var bytes = Bytes;
       var charCount = Encoding.UTF8.GetCharCount(bytes);
-      using (var block = HeapAllocStatic.Alloc(Math.Max(1, charCount) * sizeof(char))) {
+      using (var block = NativeHeap.Alloc(Math.Max(1, charCount) * sizeof(char))) {
         unsafe {
           Encoding.UTF8.GetChars(bytes, new Span<char>(block.Pointer.ToPointer(), charCount));
         }

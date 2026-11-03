@@ -3,12 +3,9 @@
 // found in the LICENSE file.
 
 using System;
-using System.ComponentModel;
-using System.Text;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Win32;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 using VsChromium.Server.TextSearch;
 
 namespace VsChromium.Server.FileSystemContents {
@@ -22,7 +19,7 @@ namespace VsChromium.Server.FileSystemContents {
     public FileContents ReadFileContents(FullPath path) {
       try {
         const int trailingByteCount = 2;
-        SafeHeapBlockHandle block;
+        SafeNativeMemoryHandle block;
         DateTime lastWriteTimeUtc;
         if (_fileSystem is IFileContentsReader reader) {
           // Faster: a single path lookup (attributes are read from the open file).
@@ -34,17 +31,13 @@ namespace VsChromium.Server.FileSystemContents {
         }
         return ReadFileContentsWorker(block, trailingByteCount, lastWriteTimeUtc);
       }
-      catch (Win32Exception e) {
-        Logger.LogWarn("Skipping file \"{0}\": {1} ({2})", path, e.Message, e.NativeErrorCode);
-        return BinaryFileContents.Empty;
-      }
       catch (Exception e) {
         Logger.LogWarn(e, "Skipping file \"{0}\" because of an error reading its contents", path);
         return BinaryFileContents.Empty;
       }
     }
 
-    private FileContents ReadFileContentsWorker(SafeHeapBlockHandle block, int trailingByteCount, DateTime lastWriteTimeUtc) {
+    private FileContents ReadFileContentsWorker(SafeNativeMemoryHandle block, int trailingByteCount, DateTime lastWriteTimeUtc) {
       var contentsByteCount = block.ByteLength - trailingByteCount; // Padding added by ReadFileNulTerminated
       var kind = GetTextKind(block, contentsByteCount);
       const int utf8BomSize = 3;
@@ -75,7 +68,7 @@ namespace VsChromium.Server.FileSystemContents {
       }
     }
 
-    private static unsafe TextKind GetTextKind(SafeHeapBlockHandle block, int contentsByteCount) {
+    private static unsafe TextKind GetTextKind(SafeNativeMemoryHandle block, int contentsByteCount) {
       return TextKindDetector.GetKind(new ReadOnlySpan<byte>(block.Pointer.ToPointer(), contentsByteCount));
     }
   }

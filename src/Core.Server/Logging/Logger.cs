@@ -8,7 +8,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using VsChromium.Core.Files;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 
 namespace VsChromium.Core.Logging {
   public static class Logger {
@@ -95,7 +95,7 @@ namespace VsChromium.Core.Logging {
       for (var i = 0; i <= GC.MaxGeneration; i++) {
         msg += string.Format(" Gen{0}: {1:n0}.", i, GC.CollectionCount(i));
       }
-      msg += string.Format(" HeapAlloc Memory: {0:n0} bytes.", HeapAllocStatic.TotalMemory);
+      msg += string.Format(" Native Memory: {0:n0} bytes.", NativeHeap.TotalMemory);
       NLogLogger.Value.Info(msg);
     }
 

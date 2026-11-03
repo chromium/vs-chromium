@@ -4,7 +4,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 using VsChromium.Server.TextSearch;
 using VsChromium.Server.Search;
 
@@ -13,7 +13,7 @@ namespace VsChromium.Server.FileSystemContents {
     private readonly long _byteLength;
 
     private static readonly Lazy<FileContentsMemory> LazyEmptyContentsMemory = new Lazy<FileContentsMemory>(() => {
-      var block = HeapAllocStatic.Alloc(1);
+      var block = NativeHeap.Alloc(1);
       Marshal.WriteByte(block.Pointer, 0);
       return new FileContentsMemory(block, 0, 0);
     });

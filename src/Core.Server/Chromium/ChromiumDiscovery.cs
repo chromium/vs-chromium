@@ -9,7 +9,6 @@ using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Win32.Files;
 
 namespace VsChromium.Core.Chromium {
   public class ChromiumDiscovery : IChromiumDiscovery {

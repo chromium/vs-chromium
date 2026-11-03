@@ -5,10 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using VsChromium.Server.Search;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Win32;
-using VsChromium.Core.Win32.Strings;
 
 namespace VsChromium.Server.FileSystemContents {
   public unsafe class TextLineOffsetsImpl {
@@ -42,7 +41,7 @@ namespace VsChromium.Server.FileSystemContents {
         else
           ch = *(char*) p;
         if (ch == LineBreak) {
-          var byteOffset = Pointers.Offset32(_blockStart, p) + _characterSize;
+          var byteOffset = checked((int)(p - _blockStart)) + _characterSize;
           AddOffset(byteOffset / _characterSize);
         }
       }
@@ -110,7 +109,7 @@ namespace VsChromium.Server.FileSystemContents {
       var lineNumber = GetLineStartIndex(offset);
       var lineStartOffset = _listStartOffsets[lineNumber];
       var lineEndOffset = (lineNumber == _listStartOffsets.Count - 1) ?
-        Pointers.Offset32(_blockStart, _blockEnd) / _characterSize :
+        checked((int)(_blockEnd - _blockStart)) / _characterSize :
         _listStartOffsets[lineNumber + 1];
       return new FilePositionSpan {
         Position = lineStartOffset, 
@@ -130,12 +129,11 @@ namespace VsChromium.Server.FileSystemContents {
     }
 
     private string GetText(int offset, int length) {
-      byte* start = Pointers.Add(_blockStart, offset * _characterSize);
-      byte* end = Pointers.Add(_blockStart, (offset + length) * _characterSize);
+      byte* start = checked(_blockStart + offset * _characterSize);
       if (_characterSize == 1)
-        return Conversion.Utf8ToString(start, end);
+        return Encoding.UTF8.GetString(start, length);
       else
-        return Conversion.Utf16ToString(start, end);
+        return new string((char*)start, 0, length);
     }
   }
 }

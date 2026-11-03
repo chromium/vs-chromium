@@ -8,8 +8,7 @@ using System.IO;
 using System.Linq;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Win32.Files;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 
 namespace VsChromium.Tests.Mocks {
   class FileSystemMock : IFileSystem {
@@ -181,7 +180,7 @@ namespace VsChromium.Tests.Mocks {
       return entry.Text;
     }
 
-    public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
+    public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
       throw new NotImplementedException();
     }
 
@@ -189,8 +188,8 @@ namespace VsChromium.Tests.Mocks {
       var entry = FindEntry(path) as DirectoryMock;
       Invariants.CheckArgument(entry != null, nameof(path), "Invalid directory name");
       return entry.Directories
-        .Select(x => new DirectoryEntry(x.Name, FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY))
-        .Concat(entry.Files.Select(x => new DirectoryEntry(x.Name, FILE_ATTRIBUTE.FILE_ATTRIBUTE_NORMAL)))
+        .Select(x => new DirectoryEntry(x.Name, FileAttributes.Directory))
+        .Concat(entry.Files.Select(x => new DirectoryEntry(x.Name, FileAttributes.Normal)))
         .ToList();
     }
 

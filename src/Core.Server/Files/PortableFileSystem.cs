@@ -10,8 +10,7 @@ using System.Linq;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
 using VsChromium.Core.Logging;
-using VsChromium.Core.Win32.Files;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 
 namespace VsChromium.Core.Files {
   /// <summary>
@@ -45,13 +44,13 @@ namespace VsChromium.Core.Files {
       return File.ReadAllText(path.Value);
     }
 
-    public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
+    public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount) {
       using (var fileHandle = OpenFileForReading(path)) {
         return ReadFileNulTerminated(path, fileHandle, fileSize, trailingByteCount);
       }
     }
 
-    public SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, out DateTime lastWriteTimeUtc) {
+    public SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, int trailingByteCount, out DateTime lastWriteTimeUtc) {
       using (var fileHandle = OpenFileForReading(path)) {
         // Note: Reading the attributes from the open handle avoids a second
         // lookup of the path in the file system.
@@ -66,14 +65,14 @@ namespace VsChromium.Core.Files {
       return File.OpenHandle(path.Value, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
     }
 
-    private static unsafe SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, SafeFileHandle fileHandle, long fileSize, int trailingByteCount) {
+    private static unsafe SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, SafeFileHandle fileHandle, long fileSize, int trailingByteCount) {
       // Note: We are limited to 2GB files by design.
       var maxLen = int.MaxValue - trailingByteCount;
       if (fileSize >= maxLen) {
         Logger.LogWarn("File too big, truncated to {0} bytes", maxLen);
       }
       var len = (int)Math.Min(maxLen, fileSize);
-      var block = HeapAllocStatic.Alloc(len + trailingByteCount);
+      var block = NativeHeap.Alloc(len + trailingByteCount);
       try {
         var buffer = new Span<byte>(block.Pointer.ToPointer(), len + trailingByteCount);
         var bytesRead = 0;
@@ -100,7 +99,7 @@ namespace VsChromium.Core.Files {
       // than MAX_PATH are not skipped (see "Behavior changes" in PORTING_PRINCIPLES.md).
       return new FileSystemEnumerable<DirectoryEntry>(
           path.Value,
-          (ref FileSystemEntry entry) => new DirectoryEntry(entry.FileName.ToString(), (FILE_ATTRIBUTE)entry.Attributes),
+          (ref FileSystemEntry entry) => new DirectoryEntry(entry.FileName.ToString(), entry.Attributes),
           DirectoryEnumerationOptions)
         .ToList();
     }

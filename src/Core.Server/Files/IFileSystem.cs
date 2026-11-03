@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
-using VsChromium.Core.Win32.Files;
-using VsChromium.Core.Win32.Memory;
+using VsChromium.Core.Memory;
 
 namespace VsChromium.Core.Files {
   public interface IFileSystem {
@@ -24,7 +23,7 @@ namespace VsChromium.Core.Files {
     /// Reads the full contents of a file in memory, with <paramref
     /// name="trailingByteCount"/> null bytes as suffix.
     /// </summary>
-    SafeHeapBlockHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount);
+    SafeNativeMemoryHandle ReadFileNulTerminated(FullPath path, long fileSize, int trailingByteCount);
 
     /// <summary>
     /// Return the list of directory entries contained in the directory

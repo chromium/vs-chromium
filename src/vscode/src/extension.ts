@@ -105,7 +105,14 @@ class ServerManager implements vscode.Disposable {
       this.output.info(`Indexing server ${info.serverVersion} started (pid ${info.serverProcessId}).`);
       await this.registerWorkspace();
     } catch (e) {
-      this.output.error(`Error starting indexing server: ${userErrorMessage(e)}`);
+      const detail = userErrorMessage(e) ?? String(e);
+      this.output.error(`Error starting indexing server: ${detail}`);
+      void vscode.window.showErrorMessage(
+        `VsChromium: failed to start indexing server (${detail}).`, 'Show Output').then(choice => {
+        if (choice === 'Show Output') {
+          this.output.show();
+        }
+      });
     }
   }
 

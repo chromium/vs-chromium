@@ -4,9 +4,21 @@
     {
       "type": "npm",
       "script": "compile",
-      "group": { "kind": "build", "isDefault": true },
       "problemMatcher": "$tsc",
       "label": "npm: compile"
+    },
+    {
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/../Server/Server.csproj", "--nologo", "-v:minimal"],
+      "problemMatcher": "$msCompile",
+      "label": "dotnet: build server"
+    },
+    {
+      "label": "build",
+      "dependsOn": ["npm: compile", "dotnet: build server"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
     },
     {
       "type": "npm",

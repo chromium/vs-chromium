@@ -87,7 +87,7 @@
         "vschromium.serverPath": {
           "type": "string",
           "default": "",
-          "description": "Path to VsChromium.Server.exe. Leave empty to use the server bundled with the extension (or, during development, the one in Binaries\\Debug of the vs-chromium repository).",
+          "description": "Path to VsChromium.Server.exe. Leave empty to use the server bundled with the extension (or, during development, the latest build in Binaries\\Debug or Binaries\\Release of the vs-chromium repository).",
           "scope": "machine"
         },
         "vschromium.trace.server": {

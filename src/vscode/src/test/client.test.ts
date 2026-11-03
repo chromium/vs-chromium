@@ -25,9 +25,8 @@ import { IndexEvent, subscribeIndexEvents } from '../ui/indexingState';
 
 const extensionRoot = path.resolve(__dirname, '..', '..');
 const repoRoot = path.resolve(extensionRoot, '..', '..');
-const releaseServerPath = path.join(repoRoot, 'Binaries', 'Release', 'Server', ServerExeName);
 const serverPath = process.env.VSCHROMIUM_SERVER_PATH ||
-  (fs.existsSync(releaseServerPath) ? releaseServerPath : findServerPath(extensionRoot, undefined, /*preferRepositoryBuild*/ true));
+  findServerPath(extensionRoot, undefined, /*preferRepositoryBuild*/ true);
 const testEnlistmentFile = path.join(repoRoot, 'src', 'Tests', 'TestData', 'chromium', 'src', 'PRESUBMIT.py');
 const skip = serverPath ? false : 'VsChromium.Server.exe not built';
 

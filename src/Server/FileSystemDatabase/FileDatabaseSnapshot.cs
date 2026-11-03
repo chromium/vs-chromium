@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Server.Search;
 using VsChromium.Server.FileSystem;
@@ -18,60 +17,116 @@ namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
   /// Exposes am in-memory snapshot of the list of file names, directory names
   /// and file contents for a given <see cref="FileSystemSnapshot"/> snapshot.
+  /// <para>
+  /// Layout (compact, for trees of millions of files): the file names and their contents are two
+  /// parallel arrays, the files of each directory being a contiguous range sorted by name (see
+  /// <see cref="Directories"/>), so that a file is found with a lookup of its directory and a
+  /// binary search (no table of all the files). The pieces searched by code searches refer to the
+  /// files by index (see <see cref="FilePieceList"/>).
+  /// </para>
   /// </summary>
   public class FileDatabaseSnapshot : IFileDatabaseSnapshot {
     private readonly IDictionary<FullPath, string> _projectHashes;
-    private readonly IDictionary<DirectoryName, DirectoryData> _directories;
-    private readonly IDictionary<FileName, FileWithContents> _files;
-    private readonly Lazy<IList<FileName>> _fileNames;
-    private readonly Lazy<IList<FileContentsPiece>> _fileContentsPieces;
+    private readonly Dictionary<DirectoryName, FileRange> _directories;
+    private readonly FileName[] _fileNames;
+    /// <summary>
+    /// Parallel to <see cref="_fileNames"/>. Note: Shared with the snapshots created for
+    /// modified files (see <see cref="DangerousSetContents"/>).
+    /// </summary>
+    private readonly FileContents[] _contents;
+    private readonly Lazy<FilePieceList> _fileContentsPieces;
     private readonly Lazy<long> _searchableFileCount;
     private readonly Lazy<long> _totalFileContentsLength;
-    private FileWithContents[] _fileArray;
 
-    public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes, 
-      IDictionary<DirectoryName, DirectoryData> directories,
-      IDictionary<FileName, FileWithContents> files,
-      IList<FileName> fileNames = null,
-      IList<FileContentsPiece> fileContentsPieces = null) {
+    public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes,
+      Dictionary<DirectoryName, FileRange> directories,
+      FileName[] fileNames,
+      FileContents[] contents,
+      FilePieceList fileContentsPieces = null) {
       _projectHashes = projectHashes;
       _directories = directories;
-      _files = files;
-      // Note: "fileNames" can be passed when the keys of "files" are the same as in a previous
-      // snapshot (only file contents changed), to avoid recomputing the list.
-      _fileNames = fileNames != null ? new Lazy<IList<FileName>>(fileNames) : new Lazy<IList<FileName>>(CreateFileNames);
-      // Note: "fileContentsPieces" can be passed when they are known (e.g. updated from a previous
-      // snapshot), to avoid recomputing them.
+      _fileNames = fileNames;
+      _contents = contents;
+      // Note: "fileContentsPieces" can be passed when they are known (e.g. the pieces of the
+      // previous snapshot, when only the contents of small files changed).
       _fileContentsPieces = fileContentsPieces != null
-        ? new Lazy<IList<FileContentsPiece>>(fileContentsPieces)
-        : new Lazy<IList<FileContentsPiece>>(CreateFilePieces, LazyThreadSafetyMode.ExecutionAndPublication);
+        ? new Lazy<FilePieceList>(fileContentsPieces)
+        : new Lazy<FilePieceList>(() => FileDatabaseBuilder.CreateFilePieces(_fileNames, _contents), LazyThreadSafetyMode.ExecutionAndPublication);
       _searchableFileCount = new Lazy<long>(CountFilesWithContents);
       _totalFileContentsLength = new Lazy<long>(ComputeTotalFileContentsLength);
     }
 
+    public static FileDatabaseSnapshot Empty() {
+      return new FileDatabaseSnapshot(new Dictionary<FullPath, string>(), new Dictionary<DirectoryName, FileRange>(),
+        Array.Empty<FileName>(), Array.Empty<FileContents>(), FilePieceList.Empty);
+    }
+
     public IDictionary<FullPath, string> ProjectHashes => _projectHashes;
-    public IDictionary<DirectoryName, DirectoryData> Directories => _directories;
 
     /// <summary>
-    /// List of files, some of them with actual searchable contents, some of them
-    /// with no contents (i.e. if they are not searchable, or binary files or could not
-    /// be read from disk due to some error).
+    /// The range of the files of each directory (with at least one file) in <see cref="FileNames"/>.
     /// </summary>
-    public IDictionary<FileName, FileWithContents> Files => _files;
+    public Dictionary<DirectoryName, FileRange> Directories => _directories;
 
     /// <summary>
-    /// The list of <see cref="FileName"/>, a projection of <see cref="Files"/>.Keys, exposed
-    /// as an <see cref="IList{T}"/> for performance reaons, i.e. to allow efficient parallel search.
+    /// The names of all the files, some of them with actual searchable contents, some of them
+    /// with no contents (i.e. if they are not searchable, or binary files or could not be read
+    /// from disk due to some error). See <see cref="GetContents"/>.
     /// </summary>
-    public IList<FileName> FileNames => _fileNames.Value;
+    public IList<FileName> FileNames => _fileNames;
+    public FileName[] FileNameArray => _fileNames;
+    public FileContents[] ContentsArray => _contents;
     public IList<FileContentsPiece> FileContentsPieces => _fileContentsPieces.Value;
+    public FilePieceList FilePieces => _fileContentsPieces.Value;
     public long SearchableFileCount => _searchableFileCount.Value;
-    public long FileNameCount => _files.Count;
+    public long FileNameCount => _fileNames.Length;
     public long TotalFileContentsLength => _totalFileContentsLength.Value;
+
+    /// <summary>
+    /// The contents of the file at <paramref name="index"/> in <see cref="FileNames"/> (null if
+    /// the file is not searchable).
+    /// </summary>
+    public FileContents GetContents(int index) => _contents[index];
+
+    /// <summary>
+    /// Returns the index of <paramref name="fileName"/> in <see cref="FileNames"/>, or false if
+    /// the file is not in this snapshot.
+    /// </summary>
+    public bool TryGetFileIndex(FileName fileName, out int index) {
+      index = -1;
+      if (fileName.Parent == null || !_directories.TryGetValue(fileName.Parent, out var range))
+        return false;
+      // The files of a directory are sorted by name (see FileDatabaseBuilder).
+      var low = range.Start;
+      var high = range.Start + range.Count - 1;
+      while (low <= high) {
+        var middle = low + ((high - low) >> 1);
+        var comparison = SystemPathComparer.CompareNames(_fileNames[middle].Name, fileName.Name);
+        if (comparison == 0) {
+          index = middle;
+          return true;
+        }
+        if (comparison < 0)
+          low = middle + 1;
+        else
+          high = middle - 1;
+      }
+      return false;
+    }
+
+    /// <summary>
+    /// Replaces the contents of the file at <paramref name="index"/>. Note: Concurrency: there
+    /// are potentially many readers (searches), and one writer (the indexing thread): the update
+    /// is an atomic reference assignment. Searches using this snapshot (or a snapshot sharing its
+    /// arrays) see the old or the new contents of the file, both valid.
+    /// </summary>
+    public void DangerousSetContents(int index, FileContents contents) {
+      Volatile.Write(ref _contents[index], contents);
+    }
 
     public IEnumerable<FileExtract> GetFileExtracts(FileName filename, IEnumerable<FilePositionSpan> spans,
       int maxLength) {
-      var contents = GetFileContents(filename);
+      var contents = TryGetFileIndex(filename, out var index) ? _contents[index] : null;
       if (contents == null) {
         return Enumerable.Empty<FileExtract>();
       }
@@ -80,12 +135,9 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public void PrecomputeSearchData() {
-      _ = _fileNames.Value;
       _ = _fileContentsPieces.Value;
       _ = _searchableFileCount.Value;
       _ = _totalFileContentsLength.Value;
-      // Only needed to compute the values above.
-      _fileArray = null;
     }
 
     public bool IsContainedInSymLink(DirectoryName name) {
@@ -93,62 +145,35 @@ namespace VsChromium.Server.FileSystemDatabase {
       return name != null && name.IsInSymLink;
     }
 
-    /// <summary>
-    /// Return the <see cref="FileContents"/> instance associated to <paramref name="filename"/> or null if not present.
-    /// </summary>
-    private FileContents GetFileContents(FileName filename) {
-      FileWithContents result;
-      if (!Files.TryGetValue(filename, out result)) {
-        return null;
-      }
-      return result.Contents;
-    }
-
-    /// <summary>
-    /// The values of <see cref="Files"/>, computed once and shared by the computations below (a
-    /// single enumeration of the table).
-    /// </summary>
-    private FileWithContents[] GetFileArray() {
-      // Note: Benign race (the array would be computed twice).
-      return _fileArray ??= CreateFileArray();
-    }
-
-    private FileWithContents[] CreateFileArray() {
-      var table = _files as SlimHashTable<FileName, FileWithContents>;
-      return table != null ? table.ValuesToArray() : _files.Values.ToArray();
-    }
-
-    private IList<FileName> CreateFileNames() {
-      var files = GetFileArray();
-      var result = new FileName[files.Length];
-      for (var i = 0; i < files.Length; i++) {
-        result[i] = files[i].FileName;
-      }
-      return result;
-    }
-
-    private IList<FileContentsPiece> CreateFilePieces() {
-      return FileDatabaseBuilder.CreateFilePieces(GetFileArray());
-    }
-
     private long CountFilesWithContents() {
-      var files = GetFileArray();
       long count = 0;
-      for (var i = 0; i < files.Length; i++) {
-        if (FileDatabaseBuilder.FileHasContents(files[i]))
+      for (var i = 0; i < _contents.Length; i++) {
+        if (FileDatabaseBuilder.HasContents(_contents[i]))
           count++;
       }
       return count;
     }
 
     private long ComputeTotalFileContentsLength() {
-      var files = GetFileArray();
       long total = 0;
-      for (var i = 0; i < files.Length; i++) {
-        if (files[i].Contents != null)
-          total += files[i].Contents.ByteLength;
+      for (var i = 0; i < _contents.Length; i++) {
+        if (_contents[i] != null)
+          total += _contents[i].ByteLength;
       }
       return total;
     }
+  }
+
+  /// <summary>
+  /// A range of files in <see cref="FileDatabaseSnapshot.FileNames"/>.
+  /// </summary>
+  public readonly struct FileRange {
+    public FileRange(int start, int count) {
+      Start = start;
+      Count = count;
+    }
+
+    public int Start { get; }
+    public int Count { get; }
   }
 }

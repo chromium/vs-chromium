@@ -14,11 +14,9 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
   public static class FileDatabaseDebugLogger {
     private static readonly bool LogPiecesStats = false;
 
-    public static void LogFilePieces(ICollection<FileWithContents> filesWithContents, IList<FileContentsPiece> filePieces, int partitionCount) {
+    public static void LogFilePieces(IList<FileContentsPiece> filePieces, int partitionCount) {
       if (LogPiecesStats && Logger.IsInfoEnabled) {
         Invariants.Assert(filePieces.All(x => x.FileContents != null));
-        Invariants.Assert(filePieces.Aggregate(0L, (c, x) => c + x.ByteLength) ==
-          filesWithContents.Aggregate(0L, (c, x) => c + x.Contents.ByteLength));
         filePieces.GetPartitionRanges(partitionCount).ForAll(
           (index, range) => {
             Logger.LogInfo("Partition {0} has a size of {1}",

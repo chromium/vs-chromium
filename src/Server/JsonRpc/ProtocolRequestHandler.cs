@@ -407,13 +407,13 @@ namespace VsChromium.Server.JsonRpc {
       var directoryPath = baseDirectory.DirectoryName.FullPath;
       var fileDatabase = (FileDatabaseSnapshot)database;
 
-      var directoryFileNames = fileDatabase.FileNames
-        .Where(x => directoryPath.ContainsPath(x.FullPath))
-        .ToHashSet();
-
-      var directoryFiles = fileDatabase.Files.Values
-        .Where(x => directoryFileNames.Contains(x.FileName))
-        .ToList();
+      var directoryFiles = new List<FileWithContents>();
+      var fileNames = fileDatabase.FileNameArray;
+      for (var i = 0; i < fileNames.Length; i++) {
+        if (directoryPath.ContainsPath(fileNames[i].FullPath)) {
+          directoryFiles.Add(new FileWithContents(fileNames[i], fileDatabase.GetContents(i)));
+        }
+      }
 
       var searchableFiles = directoryFiles
         .Where(x => x.HasContents())

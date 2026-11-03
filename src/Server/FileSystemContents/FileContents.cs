@@ -47,10 +47,6 @@ namespace VsChromium.Server.FileSystemContents {
     /// </summary>
     private volatile TrigramFilterSet _trigramFilters;
 
-    public FileContentsPiece CreatePiece(FileName fileName, int fileId, TextRange range, int chunkIndex = 0) {
-      return new FileContentsPiece(fileName, this, fileId, range, chunkIndex);
-    }
-
     /// <summary>
     /// The chunks of text of this file, i.e. the ranges of its pieces: the whole text if the file
     /// is not larger than <see cref="MaxChunkLength"/> bytes, otherwise chunks of at most <see
@@ -106,7 +102,8 @@ namespace VsChromium.Server.FileSystemContents {
     /// </summary>
     public bool MayContain(int chunkIndex, TrigramQuery query) {
       var filters = _trigramFilters;
-      if (filters == null)
+      // Note: Chunk -1: the whole text of a file with several chunks (see FilePieceList).
+      if (filters == null || chunkIndex < 0)
         return true;
       if (!IsAsciiText && !query.AppliesToNonAsciiText)
         return true;

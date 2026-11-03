@@ -41,10 +41,7 @@ namespace VsChromium.Server.FileSystemDatabase {
     }
 
     public IFileDatabaseSnapshot CreateEmpty() {
-      return new FileDatabaseSnapshot(
-        new Dictionary<FullPath, string>(),
-        new Dictionary<DirectoryName, DirectoryData>(),
-        new Dictionary<FileName, FileWithContents>());
+      return FileDatabaseSnapshot.Empty();
     }
 
     public IFileDatabaseSnapshot CreateIncremental(IFileDatabaseSnapshot previousDatabase,

@@ -125,9 +125,12 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         var previousFileDatabase = (FileDatabaseSnapshot) previousFileDatabaseSnapshot;
 
         // Update file contents of file data entries of changed files.
-        var filesToRead = changedFiles
-          .Where(x => x.Project.IsFileSearchable(x.FileName) && previousFileDatabase.Files.ContainsKey(x.FileName))
-          .ToList();
+        var filesToRead = new List<(ProjectFileName File, int Index)>();
+        foreach (var file in changedFiles) {
+          if (file.Project.IsFileSearchable(file.FileName) && previousFileDatabase.TryGetFileIndex(file.FileName, out var index)) {
+            filesToRead.Add((file, index));
+          }
+        }
 
         if (filesToRead.Count == 0) {
           Logger.LogInfo("None of the changed file is searchable, return previous database snapshot");
@@ -136,36 +139,37 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         // Read file contents.
         onLoading();
-        var newContentsMap = new Dictionary<FileName, FileContents>();
-        void ReadFile(ProjectFileName x) {
-          var newContents = _fileContentsFactory.ReadFileContents(x.FileName.FullPath);
-          lock (newContentsMap) {
-            DangerousUpdateFileTableEntry(previousFileDatabase, x.FileName, newContents);
-            newContentsMap[x.FileName] = newContents;
-          }
+        var changes = new (FileContents OldContents, FileContents NewContents)[filesToRead.Count];
+        void ReadFile(int i) {
+          var (file, index) = filesToRead[i];
+          var newContents = _fileContentsFactory.ReadFileContents(file.FileName.FullPath);
+          changes[i] = (previousFileDatabase.GetContents(index), newContents);
+          previousFileDatabase.DangerousSetContents(index, newContents);
         }
         // Note: Many files can change at once (e.g. switching branches): read them in parallel
         // on the indexing worker pool; keep small edits inline for low latency.
         if (filesToRead.Count > 16) {
           _indexingWorkerPool.RunBatches(filesToRead.Count, batchSize: 16, cancellationToken, (start, end) => {
             for (var i = start; i < end; i++) {
-              ReadFile(filesToRead[i]);
+              ReadFile(i);
             }
             return true;
           });
         } else {
-          filesToRead.ForAll(ReadFile);
+          for (var i = 0; i < filesToRead.Count; i++) {
+            ReadFile(i);
+          }
         }
 
         // Return new file database with updated file contents.
         var result = new FileDatabaseSnapshot(
           previousFileDatabase.ProjectHashes,
           previousFileDatabase.Directories,
-          previousFileDatabase.Files,
-          // Same files (keys), only contents changed
-          previousFileDatabase.FileNames,
-          // Same pieces, except for the changed files, if possible
-          TryUpdateFilePieces(previousFileDatabase.FileContentsPieces, newContentsMap));
+          // Same files, only contents changed (the arrays are shared)
+          previousFileDatabase.FileNameArray,
+          previousFileDatabase.ContentsArray,
+          // Same pieces, if possible
+          CanReuseFilePieces(changes) ? previousFileDatabase.FilePieces : null);
         // Note: Before "onLoaded", as clients may search as soon as they are notified.
         result.PrecomputeSearchData();
         onLoaded();
@@ -174,38 +178,23 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     /// <summary>
-    /// Returns a copy of <paramref name="previousPieces"/> where the piece of each changed file is
-    /// replaced with a piece of its new contents, or <code>null</code> if that is not possible (the
-    /// list of pieces must then be recomputed): a changed file must be "small" (a single piece)
-    /// before and after the change, and have contents before and after the change. This avoids
-    /// recomputing the list of pieces of all the files when a few files are modified (e.g. saved
-    /// from an editor), which is the most common change.
+    /// Returns true if the pieces of the previous snapshot can be used with the new contents of
+    /// the changed files: the pieces of small files (a single piece) refer to them by index (the
+    /// new contents are found in the contents array), so this is possible if each changed file
+    /// is "small" (a single piece) before and after the change, and has contents before and after
+    /// the change. This avoids recomputing the list of pieces of all the files when a few files
+    /// are modified (e.g. saved from an editor), which is the most common change.
     /// </summary>
-    private static IList<FileContentsPiece> TryUpdateFilePieces(IList<FileContentsPiece> previousPieces,
-                                                               Dictionary<FileName, FileContents> newContentsMap) {
-      foreach (var newContents in newContentsMap.Values) {
-        if (newContents == null || newContents.ByteLength == 0 || newContents.ByteLength > ChunkSize)
-          return null;
+    private static bool CanReuseFilePieces((FileContents OldContents, FileContents NewContents)[] changes) {
+      foreach (var (oldContents, newContents) in changes) {
+        if (!IsSinglePieceFile(oldContents) || !IsSinglePieceFile(newContents))
+          return false;
       }
+      return true;
+    }
 
-      var result = new FileContentsPiece[previousPieces.Count];
-      previousPieces.CopyTo(result, 0);
-      var replacedCount = 0;
-      for (var i = 0; i < result.Length; i++) {
-        FileContents newContents;
-        if (newContentsMap.TryGetValue(result[i].FileName, out newContents)) {
-          var piece = result[i];
-          if (piece.FileContents.ByteLength > ChunkSize)
-            return null;
-          result[i] = newContents.CreatePiece(piece.FileName, piece.FileId, newContents.TextRange);
-          replacedCount++;
-        }
-      }
-
-      // All the changed files must have had (exactly) one piece
-      if (replacedCount != newContentsMap.Count)
-        return null;
-      return result;
+    private static bool IsSinglePieceFile(FileContents contents) {
+      return HasContents(contents) && contents.ByteLength <= ChunkSize;
     }
 
     private FileDatabaseSnapshot CreateFileDatabase(FileSystemEntities entities,
@@ -216,18 +205,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         var progress = notifyProgress ? _progressTrackerFactory.CreateIndeterminateTracker() : null;
         try {
           progress?.DisplayProgress((i, n) => "Finalizing index update");
-
-          var directories = entities.Directories;
-          // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
-          // the dictionary will be used in incremental updates where FileName instances
-          // may be new instances from a complete file system enumeration.
-          var files = new SlimHashTable<FileName, FileWithContents>(v => v.FileName, entities.Files.Length);
-          for (var i = 0; i < entities.Files.Length; i++) {
-            cancellationToken.ThrowIfCancellationRequested();
-            files.Add(entities.Files[i].FileName, new FileWithContents(entities.Files[i].FileName, entities.Contents[i]));
-          }
-
-          return new FileDatabaseSnapshot(entities.ProjectHashes, directories, files);
+          // Note: The arrays of the entities are the arrays of the snapshot (no copy). The
+          // intermediate snapshots (partial progress reporting) share them with the final one:
+          // they see the contents loaded so far.
+          return new FileDatabaseSnapshot(entities.ProjectHashes, entities.Directories, entities.FileNames, entities.Contents);
         }
         finally {
           progress?.Dispose();
@@ -236,100 +217,82 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     /// <summary>
-    /// Partitioning evenly ensures that each processor used by PLinq will deal
-    /// with a partition of equal "weight". In this case, we make sure each
-    /// partition contains not only the same amount of files, but also (as close
-    /// to as possible) the same amount of "bytes". For example, if we have 100
-    /// files totaling 32MB and 4 processors, we will end up with 4 partitions
-    /// of (exactly) 25 files totalling (approximately) 8MB each.
-    /// 
-    /// Note: This code inside this method is not the cleanest, but it is
-    /// written in a way that tries to minimiz the # of large array allocations.
+    /// Creates the pieces of the files with contents. Partitioning evenly ensures that each
+    /// processor will deal with a partition of equal "weight". In this case, we make sure each
+    /// partition contains not only the same amount of files, but also (as close to as possible)
+    /// the same amount of "bytes". For example, if we have 100 files totaling 32MB and 4
+    /// processors, we will end up with 4 partitions of (exactly) 25 files totalling
+    /// (approximately) 8MB each.
     /// </summary>
-    public static IList<FileContentsPiece> CreateFilePieces(ICollection<FileWithContents> files) {
-      var filesWithContents = FilterFilesWithContents(files);
-
-      // Factory for file identifiers
-      var currentFileId = 0;
-      Func<int> fileIdFactory = () => currentFileId++;
-
-      // Predicate to figure out if a file is "small"
-      Func<FileWithContents, bool> isSmallFile = x => x.Contents.ByteLength <= ChunkSize;
-
-      // Count the total # of small and large files, while splitting large files
-      // into their fragments.
+    public static FilePieceList CreateFilePieces(FileName[] fileNames, FileContents[] contents) {
+      // Count the total # of small files and the chunks of large files.
       var smallFilesCount = 0;
-      var largeFiles = new List<FileContentsPiece>(filesWithContents.Count / 100);
-      foreach (var fileData in filesWithContents) {
-        if (isSmallFile(fileData)) {
+      var chunks = new List<FilePieceList.Chunk>();
+      for (var i = 0; i < contents.Length; i++) {
+        var fileContents = contents[i];
+        if (!HasContents(fileContents))
+          continue;
+        if (fileContents.ByteLength <= ChunkSize) {
           smallFilesCount++;
         } else {
-          var splitFileContents = SplitFileContents(fileData, fileIdFactory());
-          largeFiles.AddRange(splitFileContents);
+          // Note: Same chunks as the trigram filters of the file contents (chunk index).
+          var ranges = fileContents.GetChunks();
+          for (var chunkIndex = 0; chunkIndex < ranges.Count; chunkIndex++) {
+            chunks.Add(new FilePieceList.Chunk(i, chunkIndex, ranges[chunkIndex], fileContents));
+          }
         }
       }
 
-      var totalFileCount = smallFilesCount + largeFiles.Count;
+      var totalCount = smallFilesCount + chunks.Count;
 
       // Store elements in their partitions
       // # of partitions = # of logical processors
-      var filePieces = new FileContentsPiece[totalFileCount];
+      var items = new int[totalCount];
       var partitionCount = Environment.ProcessorCount;
-      var generator = new PartitionIndicesGenerator(totalFileCount, partitionCount);
+      var generator = new PartitionIndicesGenerator(totalCount, partitionCount);
 
       // Store large files
-      foreach (var item in largeFiles) {
-        filePieces[generator.Next()] = item;
+      for (var i = 0; i < chunks.Count; i++) {
+        items[generator.Next()] = ~i;
       }
 
       // Store small files
-      foreach (var fileData in filesWithContents) {
-        if (isSmallFile(fileData)) {
-          var item = fileData.Contents.CreatePiece(
-            fileData.FileName,
-            fileIdFactory(),
-            fileData.Contents.TextRange);
-          filePieces[generator.Next()] = item;
+      for (var i = 0; i < contents.Length; i++) {
+        var fileContents = contents[i];
+        if (HasContents(fileContents) && fileContents.ByteLength <= ChunkSize) {
+          items[generator.Next()] = i;
         }
       }
 
-      FileDatabaseDebugLogger.LogFilePieces(filesWithContents, filePieces, partitionCount);
-      return filePieces;
+      var result = new FilePieceList(fileNames, contents, items, chunks.ToArray());
+      FileDatabaseDebugLogger.LogFilePieces(result, partitionCount);
+      return result;
     }
 
-    private static List<FileWithContents> FilterFilesWithContents(ICollection<FileWithContents> files) {
-      // Create filesWithContents with minimum memory allocations and copying.
-      var filesWithContents = new List<FileWithContents>(files.Count / 4);
-      filesWithContents.AddRange(files.Where(FileHasContents));
-      return filesWithContents;
-    }
-
-    public static bool FileHasContents(FileWithContents x) {
-      return x.HasContents();
+    public static bool HasContents(FileContents contents) {
+      return contents != null && contents.ByteLength > 0;
     }
 
     /// <summary>
-    ///  Create chunks of (at most) 100KB for files larger than 100KB. Chunks
-    ///  are split after new line characters, so that search matches don't
-    ///  span multiple chunks.
+    /// The files of a snapshot, and their contents being loaded.
     /// </summary>
-    private static IEnumerable<FileContentsPiece> SplitFileContents(FileWithContents fileWithContents, int fileId) {
-      // Note: Same chunks as the trigram filters of the file contents (chunk index).
-      var chunks = fileWithContents.Contents.GetChunks();
-      for (var i = 0; i < chunks.Count; i++) {
-        yield return fileWithContents.Contents.CreatePiece(fileWithContents.FileName, fileId, chunks[i], i);
-      }
-    }
-
     private class FileSystemEntities {
-      public ProjectFileData[] Files { get; set; }
       /// <summary>
-      /// Parallel array to <see cref="Files"/>: each worker writes <c>Contents[i]</c> (an atomic
-      /// reference assignment) without lock contention, and <see cref="CreateFileDatabase"/> can
-      /// safely snapshot partial progress concurrently.
+      /// All the files, grouped by directory, sorted by name in each directory (see
+      /// <see cref="Directories"/>).
+      /// </summary>
+      public FileName[] FileNames { get; set; }
+      /// <summary>
+      /// The project of each file (parallel to <see cref="FileNames"/>), during the load only.
+      /// </summary>
+      public IProject[] Projects { get; set; }
+      /// <summary>
+      /// Parallel array to <see cref="FileNames"/>: each worker writes <c>Contents[i]</c> (an
+      /// atomic reference assignment) without lock contention, and <see cref="CreateFileDatabase"/>
+      /// can safely snapshot partial progress concurrently.
       /// </summary>
       public FileContents[] Contents { get; set; }
-      public IDictionary<DirectoryName, DirectoryData> Directories { get; set; }
+      public Dictionary<DirectoryName, FileRange> Directories { get; set; }
       public IDictionary<FullPath, string> ProjectHashes { get; set; }
     }
 
@@ -340,38 +303,50 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
         var directories = FileSystemSnapshotVisitor.GetDirectories(snapshot);
 
-        //var directoryNames = new Dictionary<DirectoryName, DirectoryData>(
-        var directoryNames = new SlimHashTable<DirectoryName, DirectoryData>(
-          v => v.DirectoryName,
-          directories.Count,
-          // Note: We can use reference equality here because the directory
-          // names are contructed unique.
-          new ReferenceEqualityComparer<DirectoryName>());
-
-        foreach (var kvp in directories.ToForeachEnum()) {
-          directoryNames.Add(
-            kvp.Value.DirectoryName,
-            new DirectoryData(kvp.Value.DirectoryName, kvp.Value.IsSymLink));
-        }
-
         var fileCount = 0;
+        var directoryCount = 0;
         foreach (var directory in directories.ToForeachEnum()) {
-          fileCount += directory.Value.ChildFiles.Count;
+          if (directory.Value.ChildFiles.Count > 0) {
+            fileCount += directory.Value.ChildFiles.Count;
+            directoryCount++;
+          }
         }
-        var files = new ProjectFileData[fileCount];
-        var contents = new FileContents[fileCount];
+
+        var fileNames = new FileName[fileCount];
+        var projects = new IProject[fileCount];
+        var ranges = new Dictionary<DirectoryName, FileRange>(directoryCount);
         var index = 0;
         foreach (var directory in directories.ToForeachEnum()) {
-          foreach (var fileName in directory.Value.ChildFiles.ToForeachEnum()) {
-            files[index++] = new ProjectFileData(directory.Key, fileName);
+          var childFiles = directory.Value.ChildFiles;
+          if (childFiles.Count == 0)
+            continue;
+          var start = index;
+          var sorted = true;
+          for (var i = 0; i < childFiles.Count; i++) {
+            var fileName = childFiles[i];
+            if (i > 0 && SystemPathComparer.CompareNames(fileNames[index - 1].Name, fileName.Name) > 0)
+              sorted = false;
+            fileNames[index] = fileName;
+            projects[index] = directory.Key;
+            index++;
           }
+          // The files of a directory must be sorted by name (binary search in
+          // FileDatabaseSnapshot.TryGetFileIndex). They usually are already (see
+          // ProjectRootSnapshotBuilder).
+          if (!sorted) {
+            Array.Sort(fileNames, start, childFiles.Count, Comparer<FileName>.Create((x, y) => SystemPathComparer.CompareNames(x.Name, y.Name)));
+          }
+          // Note: The same directory may appear in two projects (nested project roots, with
+          // different absolute names): the last one wins (as the former table of files).
+          ranges[directory.Value.DirectoryName] = new FileRange(start, childFiles.Count);
         }
         Invariants.Assert(index == fileCount);
 
         return new FileSystemEntities {
-          Files = files,
-          Contents = contents,
-          Directories = directoryNames,
+          FileNames = fileNames,
+          Projects = projects,
+          Contents = new FileContents[fileCount],
+          Directories = ranges,
           ProjectHashes = snapshot.ProjectRoots.ToDictionary(x => x.Project.RootPath, x => x.Project.VersionHash)
         };
       }
@@ -390,17 +365,17 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
                                   FileContentsLoadingContext loadingContext,
                                   CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Loading file contents from disk", cancellationToken)) {
-        using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Length)) {
+        using (var progress = _progressTrackerFactory.CreateTracker(entities.FileNames.Length)) {
           try {
-            _indexingWorkerPool.RunBatches(entities.Files.Length, batchSize: 32, cancellationToken, (start, end) => {
+            _indexingWorkerPool.RunBatches(entities.FileNames.Length, batchSize: 32, cancellationToken, (start, end) => {
               for (var i = start; i < end; i++) {
-                var fileData = entities.Files[i];
+                var fileName = entities.FileNames[i];
 
                 // ReSharper disable once AccessToDisposedClosure
                 if (progress.Step()) {
                   // ReSharper disable once AccessToDisposedClosure
                   progress.DisplayProgress((step, n) =>
-                    string.Format("Reading file {0:n0} of {1:n0}: {2}", step, n, fileData.FileName.FullPath));
+                    string.Format("Reading file {0:n0} of {1:n0}: {2}", step, n, fileName.FullPath));
 
                   // Check for cancellation
                   if (cancellationToken.IsCancellationRequested) {
@@ -408,7 +383,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
                   }
                 }
 
-                var contents = LoadSingleFileContents(entities, loadingContext, fileData);
+                var contents = LoadSingleFileContents(loadingContext, entities.Projects[i], fileName);
                 if (contents != null) {
                   entities.Contents[i] = contents;
                 }
@@ -423,39 +398,24 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         }
       }
 
+      // The projects are only needed during the load.
+      entities.Projects = null;
+
       Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files.",
         loadingContext.LoadedTextFileCount,
         loadingContext.LoadedBinaryFileCount);
     }
 
-    /// <summary>
-    /// Note: Concurrency: There are potentially many readers (search threads), but
-    /// only one writer (us). Updating the hash table with the line below assumes
-    /// that 1) the entry exists and 2) the hash table implementation does not
-    /// mutate any of its internal state when updating an existing entry.
-    /// <para>
-    /// 1) is verified because we the "filesToRead" collections only contains
-    ///    file names contained in this table.</para>
-    /// <para>
-    /// 2) is verified because the two possible implementations, <see cref="Dictionary{TKey,TValue}"/>
-    ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
-    /// </summary>
-    private static void DangerousUpdateFileTableEntry(FileDatabaseSnapshot fileDatabase,
-                                                      FileName fileName,
-                                                      FileContents newContents) {
-      fileDatabase.Files[fileName] = new FileWithContents(fileName, newContents);
-    }
-
-    private FileContents LoadSingleFileContents(FileSystemEntities entities,
-                                                FileContentsLoadingContext loadingContext,
-                                                ProjectFileData projectFileData) {
-      var fileName = projectFileData.FileName;
-      var file = loadingContext.OldFileDatabaseSnapshot.Files.GetValueType(fileName);
+    private FileContents LoadSingleFileContents(FileContentsLoadingContext loadingContext,
+                                                IProject project,
+                                                FileName fileName) {
+      var oldDatabase = loadingContext.OldFileDatabaseSnapshot;
+      var oldContents = oldDatabase.TryGetFileIndex(fileName, out var oldIndex) ? oldDatabase.GetContents(oldIndex) : null;
 
       // If the file was never loaded before, just load it (after performing a
       // "isSearchable" check).
-      if (file?.Contents == null) {
-        return LoadSingleFileContentsWorker(loadingContext, projectFileData);
+      if (oldContents == null) {
+        return LoadSingleFileContentsWorker(loadingContext, project, fileName);
       }
 
       bool isSearchable;
@@ -463,14 +423,14 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       // database (and the file was present in it), then it is certainly
       // searchable, so no need to make an expensive call to "IsSearchable"
       // again.
-      if (loadingContext.UnchangedProjects.Contains(projectFileData.Project)) {
+      if (loadingContext.UnchangedProjects.Contains(project)) {
         isSearchable = true;
       } else {
         // If the file is not searchable in the current project, it should be
         // ignored too. Note that "IsSearachable" is a somewhat expensive
         // operation, as the filename is checked against potentially many glob
         // patterns.
-        isSearchable = projectFileData.IsSearchable;
+        isSearchable = project.IsFileSearchable(fileName);
       }
 
       if (!isSearchable) {
@@ -479,32 +439,33 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
 
       // If the file has not changed since the previous snapshot, we can re-use
       // the former file contents snapshot.
-      if (IsFileContentsUpToDate(entities, loadingContext.FullPathChanges, file.Value)) {
-        return file.Value.Contents;
+      if (IsFileContentsUpToDate(loadingContext.FullPathChanges, fileName, oldContents)) {
+        return oldContents;
       }
 
-      return LoadSingleFileContentsWorker(loadingContext, projectFileData);
+      return LoadSingleFileContentsWorker(loadingContext, project, fileName);
     }
 
     private FileContents LoadSingleFileContentsWorker(FileContentsLoadingContext loadingContext,
-                                                      ProjectFileData projectFileData) {
+                                                      IProject project,
+                                                      FileName fileName) {
       // If project configuration has not changed, the file is still not
       // searchable, irrelevant to calling "IsSearchable".
       if (loadingContext.FullPathChanges != null) {
-        if (loadingContext.FullPathChanges.ShouldSkipLoadFileContents(projectFileData.FileName)) {
-          if (loadingContext.UnchangedProjects.Contains(projectFileData.Project))
+        if (loadingContext.FullPathChanges.ShouldSkipLoadFileContents(fileName)) {
+          if (loadingContext.UnchangedProjects.Contains(project))
             return null;
         }
       }
 
       // This is an expensive call, hopefully avoided by the code above.
-      if (!projectFileData.IsSearchable) {
+      if (!project.IsFileSearchable(fileName)) {
         return null;
       }
 
       loadingContext.PartialProgressReporter.ReportProgress();
 
-      var fileContents = _fileContentsFactory.ReadFileContents(projectFileData.FileName.FullPath);
+      var fileContents = _fileContentsFactory.ReadFileContents(fileName.FullPath);
       if (fileContents is BinaryFileContents) {
         Interlocked.Increment(ref loadingContext.LoadedBinaryFileCount);
       } else {
@@ -514,10 +475,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       return fileContents;
     }
 
-    private bool IsFileContentsUpToDate(FileSystemEntities entities,
-                                        FullPathChanges fullPathChanges,
-                                        FileWithContents existingFileWithContents) {
-      Invariants.Assert(existingFileWithContents.Contents != null);
+    private bool IsFileContentsUpToDate(FullPathChanges fullPathChanges,
+                                        FileName fileName,
+                                        FileContents existingContents) {
+      Invariants.Assert(existingContents != null);
 
       if (fullPathChanges != null) {
         // We don't get file change events for file in symlinks, so we can't
@@ -526,44 +487,15 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         // Actually, since we cannot reliable detect changes in symlinks, we enable this
         // optimization anyways, as we rely on the user to manually refresh the index
         // (that results in a "null" value for fullPathChanges)
-        //if (!FileDatabaseSnapshot.IsContainedInSymLinkHelper(entities.Directories, existingFileWithContents.FileName)) {
-        return fullPathChanges.ShouldSkipLoadFileContents(existingFileWithContents.FileName);
-        //}
+        return fullPathChanges.ShouldSkipLoadFileContents(fileName);
       }
 
       // Do the "expensive" check by going to the file system.
-      var fi = _fileSystem.GetFileInfoSnapshot(existingFileWithContents.FileName.FullPath);
+      var fi = _fileSystem.GetFileInfoSnapshot(fileName.FullPath);
       return
         (fi.Exists) &&
         (fi.IsFile) &&
-        (fi.LastWriteTimeUtc == existingFileWithContents.Contents.UtcLastModified);
-    }
-
-    /// <summary>
-    /// Utility class to store a FileWithContents instance along with the IProject
-    /// instance the file is coming from. This is needed because an IProject
-    /// instance is needed during snapshot computation to determine if a file is
-    /// searchable.
-    /// </summary>
-    private readonly struct ProjectFileData {
-      private readonly IProject _project;
-      private readonly FileName _fileName;
-
-      public ProjectFileData(IProject project, FileName fileName) {
-        _project = project;
-        _fileName = fileName;
-      }
-
-      public IProject Project => _project;
-
-      /// <summary>
-      /// The file name. Note the file may not exist on disk anymore, or the file
-      /// maybe not be indexed. Use FileContent to look for the snapshot of the
-      /// file contents at index creation.
-      /// </summary>
-      public FileName FileName => _fileName;
-
-      public bool IsSearchable => _project.IsFileSearchable(_fileName);
+        (fi.LastWriteTimeUtc == existingContents.UtcLastModified);
     }
 
     /// <summary>

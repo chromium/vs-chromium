@@ -870,3 +870,20 @@ build is running.
   | Process `BelowNormal` | 7,331 ms | — | > 60,000 ms | > 60,000 ms | ~7% | > 60,000 ms |
   | Hybrid `2 Normal + 22 BelowNormal` workers | 6,031 ms | 2,612 ms | > 60,000 ms | > 60,000 ms | < 1% | — |
   | `IndexingWorkerPool` (`4 Core + 19 Elastic + Canary`) | 6,345 ms | 3,190 ms | 33,310 ms | 10,773 ms | **13.1%** | **91 ms** |
+
+### Compact file database layout
+
+`FileDatabaseSnapshot` stores the file names and their contents in two parallel arrays: the files of
+each directory are a contiguous range sorted by name (`Directories`: directory → range), so a file
+is found with a lookup of its directory and a binary search (no hash table of all the files). The
+pieces searched by code searches (`FilePieceList`) are one `int` per small file (its index in the
+arrays) plus one entry per chunk of large files. Edits of small files replace their contents slot
+(shared with the previous snapshot, as before: searches running on it see the old or the new
+contents) and reuse the pieces. Directories contained in symbolic links are flagged on their
+`DirectoryName` (`IsInSymLink`, computed when the name is created), instead of a set of
+directories looked up per file.
+
+Managed heap after a cold index (`large-1-400000-v1`, forced full GC): 109 MB → 82.6 MB (-24%,
+~67 bytes per file); searches unchanged (within the ±10% run-to-run noise). On a 2.6M file tree
+the file table (99 MB), the pieces (85 MB → ~9 MB), the flat list of file names (41 MB) and the
+symbolic link set (10 MB) were measured in a heap dump before the change.

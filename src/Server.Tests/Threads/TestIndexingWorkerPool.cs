@@ -23,6 +23,11 @@ namespace VsChromium.Tests.Threads {
       Assert.AreEqual(4, pool.ElasticThreadCount);
       Assert.AreEqual(6, pool.TotalThreadCount);
 
+      // Start the workers and let them all park: a worker that is not parked yet (e.g. just
+      // started) takes queued work whatever its kind, which made the test flaky.
+      pool.RunBatches(60, batchSize: 10, CancellationToken.None, (start, end) => true);
+      Thread.Sleep(500);
+
       // Small job (2 batches): wakes the 2 parked Core threads first.
       using var barrierSmall = new Barrier(2);
       var smallNames = new ConcurrentBag<string>();
@@ -32,7 +37,9 @@ namespace VsChromium.Tests.Threads {
         return true;
       });
       Assert.AreEqual(2, smallNames.Count);
-      Assert.IsTrue(smallNames.All(n => n.StartsWith("VsChromium Indexing Core #", StringComparison.Ordinal)));
+      // Core workers are woken first. Note: a worker that dequeues work while more work is queued
+      // wakes another parked worker (possibly elastic, which may take the second batch first).
+      Assert.IsTrue(smallNames.Any(n => n.StartsWith("VsChromium Indexing Core #", StringComparison.Ordinal)));
 
       // Full-width job when uncontended (6 batches, barrier across all 6 workers): uses 2 Core + 4 Elastic.
       using var barrierFull = new Barrier(6);

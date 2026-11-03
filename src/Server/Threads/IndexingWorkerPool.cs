@@ -625,11 +625,16 @@ namespace VsChromium.Server.Threads {
             Interlocked.CompareExchange(ref _firstException, ex, null);
           }
           finally {
-            var finished = batchExecuted
-              ? Interlocked.Increment(ref _finishedBatches)
-              : Volatile.Read(ref _finishedBatches);
+            if (batchExecuted) {
+              Interlocked.Increment(ref _finishedBatches);
+            }
+            // Note: Read the number of finished batches *after* decrementing the active count:
+            // the worker that brings the active count to 0 then sees the batches finished by all
+            // the other workers (their increments happen before their decrements). A value read
+            // before the decrement lost the completion when two workers finished the last batches
+            // at the same time (RunBatches waited forever).
             var active = Interlocked.Decrement(ref _activeBatches);
-            if (active == 0 && (finished >= _batchCount || Volatile.Read(ref _stopped) != 0)) {
+            if (active == 0 && (Volatile.Read(ref _finishedBatches) >= _batchCount || Volatile.Read(ref _stopped) != 0)) {
               MarkCompleted();
             }
           }

@@ -47,6 +47,23 @@ namespace VsChromium.Tests.Threads {
     }
 
     [TestMethod]
+    public void ConcurrentCompletionOfTheLastBatchesIsNeverLost() {
+      // Regression test: when two workers finished the last batches at the same time, neither saw
+      // the job completed (the finished count was read before decrementing the active count), so
+      // RunBatches waited forever (observed as a rare hang of the test suite).
+      using var pool = new IndexingWorkerPool(
+        coreThreadCount: 4,
+        elasticThreadCount: 0,
+        contentionMode: IndexingWorkerPool.ContentionMode.AlwaysContended);
+      var run = Task.Run(() => {
+        for (var i = 0; i < 20_000; i++) {
+          pool.RunBatches(4, batchSize: 1, CancellationToken.None, (start, end) => true);
+        }
+      });
+      Assert.IsTrue(run.Wait(TimeSpan.FromSeconds(60)), "RunBatches never completed");
+    }
+
+    [TestMethod]
     public void ContendedModeRestrictsExecutionToCoreWorkersWithoutStalling() {
       using var pool = new IndexingWorkerPool(
         coreThreadCount: 2,

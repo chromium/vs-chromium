@@ -49,6 +49,13 @@ namespace VsChromium.Server.FileSystemNames {
     public abstract int RelativePathLength { get; }
 
     /// <summary>
+    /// True if this directory is a symbolic link (or junction), or is contained in one. Computed
+    /// when the name is created (from the file system entry and the parent), so that searches
+    /// excluding symbolic links don't need a lookup per file.
+    /// </summary>
+    public abstract bool IsInSymLink { get; }
+
+    /// <summary>
     /// Copies the relative path (<see cref="RelativePathLength"/> characters) to
     /// <paramref name="destination"/>, without allocating.
     /// </summary>

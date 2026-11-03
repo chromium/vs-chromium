@@ -27,7 +27,6 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly Lazy<IList<FileContentsPiece>> _fileContentsPieces;
     private readonly Lazy<long> _searchableFileCount;
     private readonly Lazy<long> _totalFileContentsLength;
-    private readonly Lazy<HashSet<DirectoryName>> _directoriesInSymLinks;
     private FileWithContents[] _fileArray;
 
     public FileDatabaseSnapshot(IDictionary<FullPath, string> projectHashes, 
@@ -48,7 +47,6 @@ namespace VsChromium.Server.FileSystemDatabase {
         : new Lazy<IList<FileContentsPiece>>(CreateFilePieces, LazyThreadSafetyMode.ExecutionAndPublication);
       _searchableFileCount = new Lazy<long>(CountFilesWithContents);
       _totalFileContentsLength = new Lazy<long>(ComputeTotalFileContentsLength);
-      _directoriesInSymLinks = new Lazy<HashSet<DirectoryName>>(ComputeDirectoriesInSymLinks);
     }
 
     public IDictionary<FullPath, string> ProjectHashes => _projectHashes;
@@ -86,52 +84,13 @@ namespace VsChromium.Server.FileSystemDatabase {
       _ = _fileContentsPieces.Value;
       _ = _searchableFileCount.Value;
       _ = _totalFileContentsLength.Value;
-      _ = _directoriesInSymLinks.Value;
       // Only needed to compute the values above.
       _fileArray = null;
     }
 
     public bool IsContainedInSymLink(DirectoryName name) {
-      // Note: Computed once per snapshot: a single hash lookup per call, and no lookup
-      // at all when there is no symbolic link (the common case), instead of a walk up the parent
-      // chain with a lookup per parent for each file of each query.
-      var directoriesInSymLinks = _directoriesInSymLinks.Value;
-      if (directoriesInSymLinks.Count == 0 || name == null)
-        return false;
-      return directoriesInSymLinks.Contains(name);
-    }
-
-    /// <summary>
-    /// The directories of the snapshot that are symbolic links, or are contained in one.
-    /// </summary>
-    private HashSet<DirectoryName> ComputeDirectoriesInSymLinks() {
-      var result = new HashSet<DirectoryName>();
-      if (!_directories.Values.Any(x => x.IsSymLink))
-        return result;
-
-      foreach (var directory in _directories.Keys) {
-        if (IsContainedInSymLinkHelper(_directories, directory))
-          result.Add(directory);
-      }
-      return result;
-    }
-
-    public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, DirectoryName name) {
-      if (name == null)
-        return false;
-
-      DirectoryData directoryData;
-      if (!directories.TryGetValue(name, out directoryData))
-        return false;
-
-      if (directoryData.IsSymLink)
-        return true;
-
-      var parent = name.Parent;
-      if (parent == null)
-        return false;
-
-      return IsContainedInSymLinkHelper(directories, parent);
+      // Note: A flag of the directory name, computed when the name is created (no lookup).
+      return name != null && name.IsInSymLink;
     }
 
     /// <summary>

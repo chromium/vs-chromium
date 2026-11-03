@@ -125,7 +125,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         foreach (var info in createDirs.ToForeachEnum()) {
           _cancellationToken.ThrowIfCancellationRequested(); // cancellation
 
-          var createdDirectoryName = _fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName);
+          var createdDirectoryName = _fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName, info.IsSymLink);
           var childSnapshot = CreateDirectorySnapshot(createdDirectoryName, info.IsSymLink);
 
           // Note: File system change notifications are not always 100%
@@ -212,7 +212,7 @@ namespace VsChromium.Server.FileSystem.Builder {
       for (var i = 0; i < childEntries.Count; i++) {
         var entry = childEntries[i];
         if (entry.IsDirectory) {
-          var subDirName = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name);
+          var subDirName = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name, entry.IsSymLink);
           var subDir = new DirectoryData(subDirName, entry.IsSymLink);
           if (childTasks == null)
             childTasks = new List<Task<DirectorySnapshot>>();

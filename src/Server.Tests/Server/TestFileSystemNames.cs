@@ -49,6 +49,26 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
+    public void DirectoriesInSymLinksAreFlagged() {
+      var factory = new FileSystemNameFactory();
+      var root = factory.CreateAbsoluteDirectoryName(Root);
+      var normal = factory.CreateDirectoryName(root, "normal");
+      var link = factory.CreateDirectoryName(root, "link", isSymLink: true);
+      var inLink = factory.CreateDirectoryName(factory.CreateDirectoryName(link, "a"), "b");
+
+      Assert.IsFalse(root.IsInSymLink);
+      Assert.IsFalse(normal.IsInSymLink);
+      Assert.IsFalse(factory.CreateDirectoryName(normal, "child").IsInSymLink);
+      Assert.IsTrue(link.IsInSymLink);
+      Assert.IsTrue(inLink.IsInSymLink);
+      // The flag doesn't change the path (stored in the same field as the length).
+      Assert.AreEqual(Path.Combine("link", "a", "b"), inLink.RelativePath.Value);
+      Assert.AreEqual(inLink.RelativePath.Value.Length, inLink.RelativePathLength);
+      // Nor the identity of the name.
+      Assert.AreEqual(factory.CreateDirectoryName(root, "link"), link);
+    }
+
+    [TestMethod]
     public void LongRelativePathsUseRentedBuffers() {
       var factory = new FileSystemNameFactory();
       DirectoryName directory = factory.CreateAbsoluteDirectoryName(Root);

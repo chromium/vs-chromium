@@ -13,9 +13,10 @@ namespace VsChromium.Server.FileSystemNames {
 
     /// <summary>
     /// Returns a <see cref="RelativeDirectoryName"/> instance from a parent
-    /// directory and from a simple directory name.
+    /// directory and from a simple directory name. <paramref name="isSymLink"/>
+    /// is true if the directory is a symbolic link (see <see cref="DirectoryName.IsInSymLink"/>).
     /// </summary>
-    DirectoryName CreateDirectoryName(DirectoryName parent, string name);
+    DirectoryName CreateDirectoryName(DirectoryName parent, string name, bool isSymLink = false);
 
     /// <summary>
     /// Returns a <see cref="FileName"/> instance from the concatenation of a

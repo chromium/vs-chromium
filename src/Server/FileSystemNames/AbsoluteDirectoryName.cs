@@ -17,6 +17,7 @@ namespace VsChromium.Server.FileSystemNames {
     public override DirectoryName Parent => null;
     public override RelativePath RelativePath => default(RelativePath);
     public override int RelativePathLength => 0;
+    public override bool IsInSymLink => false;
     public override FullPath FullPath => _path;
     public override string Name => _path.FileName;
 

@@ -27,8 +27,8 @@ namespace VsChromium.Server.FileSystemNames {
       return new FileName(parent, InterName(name));
     }
 
-    public DirectoryName CreateDirectoryName(DirectoryName parent, string name) {
-      return new RelativeDirectoryName(parent, InterName(name));
+    public DirectoryName CreateDirectoryName(DirectoryName parent, string name, bool isSymLink = false) {
+      return new RelativeDirectoryName(parent, InterName(name), isSymLink);
     }
 
     private string InterName(string name) {

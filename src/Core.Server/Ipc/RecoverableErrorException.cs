@@ -15,9 +15,5 @@ namespace VsChromium.Core.Ipc {
     public RecoverableErrorException(string message)
       : base(message) {
     }
-
-    public RecoverableErrorException(string message, Exception innerException)
-      : base(message, innerException) {
-    }
   }
 }

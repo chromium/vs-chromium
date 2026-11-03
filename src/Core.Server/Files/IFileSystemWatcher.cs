@@ -8,9 +8,9 @@ using System.IO;
 namespace VsChromium.Core.Files {
   public interface IFileSystemWatcher : IDisposable {
     FullPath Path { get; }
-    NotifyFilters NotifyFilter { get; set; }
-    int InternalBufferSize { get; set; }
-    bool IncludeSubdirectories { get; set;  }
+    NotifyFilters NotifyFilter { set; }
+    int InternalBufferSize { set; }
+    bool IncludeSubdirectories { set; }
 
     event FileSystemEventHandler Changed;
     event FileSystemEventHandler Created;

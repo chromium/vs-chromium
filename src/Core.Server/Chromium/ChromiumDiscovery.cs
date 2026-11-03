@@ -22,10 +22,6 @@ namespace VsChromium.Core.Chromium {
       _chromiumEnlistmentFilePatterns = new FilePatternsPathMatcherProvider(contents);
     }
 
-    public void ValidateCache() {
-      // Nothing to do
-    }
-
     public FullPath? GetEnlistmentRootPath(FullPath path) {
       return path.EnumeratePaths()
         .Where(x => IsChromiumSourceDirectory(x, _chromiumEnlistmentFilePatterns))

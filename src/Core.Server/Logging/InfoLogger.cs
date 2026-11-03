@@ -8,10 +8,6 @@ namespace VsChromium.Core.Logging {
 
     public bool Enabled => Logger.IsInfoEnabled;
 
-    public void Log(string message) {
-      Logger.LogInfo(message);
-    }
-
     public void Log(string format, params object[] args) {
       Logger.LogInfo(format, args);
     }

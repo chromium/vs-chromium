@@ -25,11 +25,6 @@ namespace VsChromium.Server.Threads {
     void Enqueue(TaskId id, Action<CancellationToken> task, TimeSpan delay);
 
     /// <summary>
-    /// Cancel running task if there is one
-    /// </summary>
-    void CancelCurrentTask();
-
-    /// <summary>
     /// Cancel all running and pending tasks
     /// </summary>
     void CancelAll();

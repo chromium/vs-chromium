@@ -43,14 +43,5 @@ namespace VsChromium.Server.FileSystemContents {
     /// Return the number of bytes of the usable memory of this block.
     /// </summary>
     public int ByteLength { get { return _contentsLength; } }
-
-    /// <summary>
-    /// Create a stream over the underlying memory content.
-    /// </summary>
-    public unsafe Stream CreateSteam() {
-      return new UnmanagedMemoryStream(
-        Pointers.Add(_block.DangerousGetHandle(), _contentsOffset),
-        _contentsLength);
-    }
   }
 }

@@ -54,14 +54,6 @@ namespace VsChromium.Server.FileSystem.Builder {
       return GetPathChangeKind(path) == PathChangeKind.Deleted;
     }
 
-    public bool IsCreated(RelativePath path) {
-      return GetPathChangeKind(path) == PathChangeKind.Created;
-    }
-
-    public bool IsChanged(RelativePath path) {
-      return GetPathChangeKind(path) == PathChangeKind.Changed;
-    }
-
     public IList<RelativePath> GetCreatedEntries(RelativePath parentPath) {
       return _createdChildren.Value.GetValue(parentPath) ?? ArrayUtilities.EmptyList<RelativePath>.Instance;
     }

@@ -11,10 +11,6 @@ namespace VsChromium.Core.Configuration {
   /// </summary>
   public interface IFilePatternsPathMatcherProvider {
     /// <summary>
-    /// Return an implementation of <see cref="IPathMatcher"/> matching any pattern of the set.
-    /// </summary>
-    IPathMatcher AnyPathMatcher { get; }
-    /// <summary>
     /// Return all entries contained in the collection.
     /// </summary>
     IEnumerable<IPathMatcher> PathMatcherEntries { get; }

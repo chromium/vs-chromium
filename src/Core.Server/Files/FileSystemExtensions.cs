@@ -18,17 +18,6 @@ namespace VsChromium.Core.Files {
       return fileInfo.Exists && fileInfo.IsDirectory;
     }
 
-    public static DateTime GetFileLastWriteTimeUtc(this IFileSystem fileSystem, FullPath path) {
-      var fileInfo = fileSystem.GetFileInfoSnapshot(path);
-      if (!fileInfo.Exists) {
-        throw new IOException(string.Format("File \"{0}\" does not exist", path.Value));
-      }
-      if (!fileInfo.IsFile) {
-        throw new IOException(string.Format("File system entry \"{0}\" is not a file", path.Value));
-      }
-      return fileInfo.LastWriteTimeUtc;
-    }
-
     /// <summary>
     /// Reads the full contents of a text file into a list of strings.
     /// </summary>

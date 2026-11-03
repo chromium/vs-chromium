@@ -9,7 +9,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Ipc.Json;
 
 namespace VsChromium.Server {
-  class Program {
+  static class Program {
     /// <summary>
     /// Command line argument to exchange JSON messages (one per line) over stdin/stdout (see
     /// <see cref="IpcStreamOverJsonLines"/>). This is the only supported mode.

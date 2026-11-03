@@ -61,17 +61,14 @@ namespace VsChromium.Core.Files {
     }
 
     public NotifyFilters NotifyFilter {
-      get { return _fileSystemWatcherImplementation.NotifyFilter; }
       set { _fileSystemWatcherImplementation.NotifyFilter = value; }
     }
 
     public int InternalBufferSize {
-      get { return _fileSystemWatcherImplementation.InternalBufferSize; }
       set { _fileSystemWatcherImplementation.InternalBufferSize = value; }
     }
 
     public bool IncludeSubdirectories {
-      get { return _fileSystemWatcherImplementation.IncludeSubdirectories; }
       set { _fileSystemWatcherImplementation.IncludeSubdirectories = value; }
     }
 

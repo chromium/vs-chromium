@@ -266,10 +266,11 @@ namespace VsChromium.Tests.Core {
 
     [TestMethod]
     public void StringCompareWorks() {
-      Assert.IsTrue(SystemPathComparer.Instance.Compare("foo", 0, "foo", 0, 3) == 0);
-      Assert.IsTrue(SystemPathComparer.Instance.Compare("foo", 0, "barfoo", 3, 3) == 0);
-      Assert.IsTrue(SystemPathComparer.Instance.Compare("foo", 0, "fo", 0, 3) != 0);
-      Assert.IsTrue(SystemPathComparer.Instance.Compare("fo", 0, "foo", 0, 2) == 0);
+      var comparer = (CustomPathComparer)SystemPathComparer.Instance.StringComparer;
+      Assert.IsTrue(comparer.Compare("foo", 0, "foo", 0, 3) == 0);
+      Assert.IsTrue(comparer.Compare("foo", 0, "barfoo", 3, 3) == 0);
+      Assert.IsTrue(comparer.Compare("foo", 0, "fo", 0, 3) != 0);
+      Assert.IsTrue(comparer.Compare("fo", 0, "foo", 0, 2) == 0);
     }
 
     [TestMethod]

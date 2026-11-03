@@ -4,18 +4,6 @@
 
 namespace VsChromium.Core.Ipc {
   public static class HelloWorldProtocol {
-    public static IpcRequest Request {
-      get {
-        return new IpcRequest {
-          RequestId = 1,
-          Protocol = IpcProtocols.Hello,
-          Data = new IpcStringData {
-            Text = "Hi There!"
-          }
-        };
-      }
-    }
-
     public static IpcResponse Response {
       get {
         return new IpcResponse {

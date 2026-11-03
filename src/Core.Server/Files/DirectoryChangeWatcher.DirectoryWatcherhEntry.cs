@@ -5,7 +5,6 @@
 namespace VsChromium.Core.Files {
   public partial class DirectoryChangeWatcher {
     private class DirectoryWatcherhEntry {
-      public FullPath Path { get; set; }
       public IFileSystemWatcher DirectoryNameWatcher { get; set; }
       public IFileSystemWatcher FileNameWatcher { get; set; }
       public IFileSystemWatcher FileWriteWatcher { get; set; }

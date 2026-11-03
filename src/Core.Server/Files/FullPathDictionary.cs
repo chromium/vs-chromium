@@ -27,14 +27,6 @@ namespace VsChromium.Core.Files {
       return _entries.ContainsKey(name);
     }
 
-    public int RemoveWhere(Predicate<KeyValuePair<FullPath, T>> match) {
-      var keys = _entries.Where(x => match(x)).ToList();
-      foreach (var key in keys) {
-        _entries.Remove(key.Key);
-      }
-      return keys.Count;
-    }
-
     public void Clear() {
       _entries.Clear();
     }

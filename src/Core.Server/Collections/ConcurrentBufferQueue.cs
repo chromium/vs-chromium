@@ -36,27 +36,5 @@ namespace VsChromium.Core.Collections {
       }
       return temp;
     }
-
-    /// <summary>
-    /// Get a copy of contents of the queue. This should only be used for debugging purposes,
-    /// as this operation can be slow for large queues, i.e. runtime and memory complexity is O(n).
-    /// </summary>
-    /// <returns></returns>
-    public IList<T> GetCopy() {
-      lock (_lock) {
-        if (_items.Count == 0) {
-          return EmptyList;
-        }
-        var result = new List<T>(_items.Count);
-        result.AddRange(_items);
-        return result;
-      }
-    }
-
-    public void Clear() {
-      lock (_lock) {
-        _items.Clear();
-      }
-    }
   }
 }

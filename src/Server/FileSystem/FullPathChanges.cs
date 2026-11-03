@@ -15,22 +15,14 @@ namespace VsChromium.Server.FileSystem {
   /// </summary>
   public class FullPathChanges {
     private readonly IList<PathChangeEntry> _entries;
-    private readonly Lazy<Dictionary<FullPath, PathChangeKind>> _map;
     private readonly Lazy<HashSet<FullPath>> _createdDirectories;
-    private readonly Lazy<HashSet<FullPath>> _basePaths;
     private readonly Lazy<PathSets> _pathSets;
 
     public FullPathChanges(IList<PathChangeEntry> entries) {
       _entries = entries;
 
-      _map = new Lazy<Dictionary<FullPath, PathChangeKind>>(() =>
-        _entries.ToDictionary(x => x.Path, x => x.ChangeKind));
-
       _createdDirectories = new Lazy<HashSet<FullPath>>(() =>
         new HashSet<FullPath>(_entries.Where(MaybeDirectoryCreation).Select(entry => entry.Path)));
-
-      _basePaths = new Lazy<HashSet<FullPath>>(() =>
-        new HashSet<FullPath>(_entries.Select(x => x.BasePath).Distinct()));
 
       _pathSets = new Lazy<PathSets>(() => new PathSets(_entries, _createdDirectories.Value));
     }
@@ -48,33 +40,11 @@ namespace VsChromium.Server.FileSystem {
       get { return _entries; }
     }
 
-    public bool ShouldSkipLoadFileContents(FullPath path) {
-      // Don't skip if path has any change associated to it
-      if (_map.Value.ContainsKey(path)) {
-        return false;
-      }
-
-      // Don't skip if any parent directory was newly created
-      // (because new directories can contain files we don't know about yet).
-      if (_createdDirectories.Value.Count > 0) {
-        foreach (var parentPath in path.EnumeratePaths()) {
-          if (_createdDirectories.Value.Contains(parentPath)) {
-            return false;
-          }
-          // Optimization: Don't move up past base (i.e. project) paths
-          if (_basePaths.Value.Contains(parentPath)) {
-            break;
-          }
-        }
-      }
-
-      return true;
-    }
-
     /// <summary>
-    /// Same as <see cref="ShouldSkipLoadFileContents(FullPath)"/>, without building the full path
-    /// of <paramref name="fileName"/> (no allocation): called for every file of the index on
-    /// incremental updates.
+    /// Returns <code>true</code> if the contents of <paramref name="fileName"/> don't need to be
+    /// reloaded, i.e. if neither the file nor any newly created parent directory has changed.
+    /// Does not build the full path of <paramref name="fileName"/> (no allocation): called for
+    /// every file of the index on incremental updates.
     /// </summary>
     public bool ShouldSkipLoadFileContents(FileName fileName) {
       return fileName.TestFullPath(static (path, sets) => sets.ShouldSkip(path), _pathSets.Value);

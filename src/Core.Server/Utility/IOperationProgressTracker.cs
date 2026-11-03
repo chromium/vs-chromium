@@ -5,7 +5,6 @@
 namespace VsChromium.Core.Utility {
   public interface IOperationProgressTracker {
     bool ShouldEndProcessing { get; }
-    int ResultCount { get; }
 
     void AddResults(int count);
   }

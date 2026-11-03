@@ -35,33 +35,6 @@ namespace VsChromium.Server.FileSystem.Builder {
       _queue.Enqueue(new FileRegistrationEntry(path, registrationKind));
     }
 
-    public IList<FullPath> MergedItems {
-      get {
-        if (_allItemsQueue == null) {
-          throw new InvalidOperationException("Set the Debug_KeepAllItems flag to enable this method");
-        }
-        HashSet<FullPath> entries = new HashSet<FullPath>();
-        foreach (var entry in _allItemsQueue.GetCopy()) {
-          switch (entry.Kind) {
-            case FileRegistrationKind.Register:
-              entries.Add(entry.Path);
-              break;
-            case FileRegistrationKind.Unregister:
-              entries.Remove(entry.Path);
-              break;
-          }
-        }
-        return entries.OrderBy(x => x).ToList();
-      }
-    }
-
-    public IList<FileRegistrationEntry> GetEntries(string pattern) {
-      if (_allItemsQueue == null) {
-        throw new InvalidOperationException("Set the Debug_KeepAllItems flag to enable this method");
-      }
-      return _allItemsQueue.GetCopy().Where(x => x.Path.Value.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-    }
-
     public IList<FileRegistrationEntry> DequeueAll() {
       var allEntries = _queue.DequeueAll();
       if (allEntries.Count == 0) {

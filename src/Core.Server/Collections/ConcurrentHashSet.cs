@@ -9,23 +9,8 @@ namespace VsChromium.Core.Collections {
     private readonly SlimHashTable<T, T> _table;
     private readonly object _lock = new object();
 
-    public ConcurrentHashSet() : this(0, EqualityComparer<T>.Default) {
-    }
-
-    public ConcurrentHashSet(ICollectionGrowthPolicy growthPolicy)
-      : this(0, EqualityComparer<T>.Default, growthPolicy) {
-    }
-
-    public ConcurrentHashSet(int capacity)
-      : this(capacity, EqualityComparer<T>.Default, SlimHashTable<T,T>.DefaultGrowthPolicy) {
-    }
-
     public ConcurrentHashSet(int capacity, ICollectionGrowthPolicy growthPolicy)
       : this(capacity, EqualityComparer<T>.Default, growthPolicy) {
-    }
-
-    public ConcurrentHashSet(int capacity, IEqualityComparer<T> comparer)
-      : this(capacity, comparer, SlimHashTable<T, T>.DefaultGrowthPolicy) {
     }
 
     public ConcurrentHashSet(int capacity, IEqualityComparer<T> comparer, ICollectionGrowthPolicy growthPolicy) {

@@ -50,16 +50,8 @@ namespace VsChromium.Core.Ipc.Json {
       _outputBuffer = new ArrayBufferWriter<byte>(64 * 1024);
     }
 
-    public void WriteRequest(IpcRequest request) {
-      WriteMessage(request);
-    }
-
     public void WriteResponse(IpcResponse response) {
       WriteMessage(response);
-    }
-
-    public IpcResponse ReadResponse() {
-      return ReadMessage<IpcResponse>();
     }
 
     public IpcRequest ReadRequest() {

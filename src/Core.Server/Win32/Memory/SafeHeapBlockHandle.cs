@@ -33,14 +33,5 @@ namespace VsChromium.Core.Win32.Memory {
       }
       return true;
     }
-
-    /// <summary>
-    /// Note: This is merely for debugging purposes.
-    /// </summary>
-    public byte[] ToArray() {
-      var buf = new byte[ByteLength];
-      Marshal.Copy(Pointer, buf, 0, buf.Length);
-      return buf;
-    }
   }
 }

@@ -105,7 +105,6 @@ namespace VsChromium.Core.Files {
         // We need to defend ourselves against that so that we don't miss updates.
         if (!string.IsNullOrEmpty(args.OldName)) {
           var oldPath = PathHelpers.CombinePaths(watcher.Path.Value, args.OldName);
-          LogPathForDebugging(oldPath, PathChangeKind.Deleted, pathKind);
           if (!SkipPath(oldPath)) {
             EnqueueChangeEvent(watcher.Path, new RelativePath(args.OldName), PathChangeKind.Deleted, pathKind);
           }
@@ -113,7 +112,6 @@ namespace VsChromium.Core.Files {
 
         if (!string.IsNullOrEmpty(args.Name)) {
           var path = PathHelpers.CombinePaths(watcher.Path.Value, args.Name);
-          LogPathForDebugging(path, PathChangeKind.Created, pathKind);
           if (!SkipPath(path)) {
             EnqueueChangeEvent(watcher.Path, new RelativePath(args.Name), PathChangeKind.Created, pathKind);
           }
@@ -136,7 +134,6 @@ namespace VsChromium.Core.Files {
         var watcher = (IFileSystemWatcher)sender;
 
         var path = PathHelpers.CombinePaths(watcher.Path.Value, args.Name);
-        LogPathForDebugging(path, PathChangeKind.Changed, pathKind);
         if (SkipPath(path))
           return this;
 

@@ -60,74 +60,6 @@ namespace VsChromium.Core.Linq {
       return list;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] ToForeachEnum<T>(this T[] list) {
-      return list;
-    }
-
-    /// <summary>
-    /// Partition a list of elements of <paramref name="weight"/> into <paramref
-    /// name="partitionCount"/> lists having identical total weight (as best as
-    /// possible).
-    /// </summary>
-    public static IEnumerable<IList<TSource>> PartitionWithWeight<TSource>(this IList<TSource> source, Func<TSource, long> weight, int partitionCount) {
-      var partitions = source
-        .GetPartitionSizes(partitionCount)
-        .Select(x => new Partition<TSource> {
-          MaxCount = x,
-          Items = new List<TSource>(x)
-        })
-        .ToList();
-
-      // Create MinHeap of partitions (wrt Weight function).
-      var minHeap = new MinHeap<Partition<TSource>>(new PartitionWeightComparer<TSource>());
-      partitions.ForAll(x => minHeap.Add(x));
-
-      // Distribute items using MinHeap.
-      source
-        // Sort so that elements with highest weight are first, so that we
-        // have a better chance of ending with partitions of same total weight
-        // - it is easier to adjust with elements of low weight than with
-        // elements of high weight.
-        .OrderByDescending(weight)
-        .ForAll(item => {
-          var min = minHeap.Remove();
-          min.Items.Add(item);
-          min.TotalWeight += weight(item);
-          if (min.Items.Count < min.MaxCount)
-            minHeap.Add(min);
-        });
-
-#if false
-      Logger.LogInfo("Created {0} partitions for a total ot {1:n0} elements and weight of {2:n0}.",
-        partitions.Count,
-        partitions.Aggregate(0L, (c, x) => c + x.Items.Count),
-        partitions.Aggregate(0L, (c, x) => c + x.TotalWeight));
-      partitions.ForAll(x => {
-        Logger.LogInfo("  Partition count is {0:n0}, total weight is {1:n0}.", x.Items.Count, x.TotalWeight);
-      });
-#endif
-      return partitions.Select(x => x.Items);
-    }
-
-    private class Partition<T> {
-      public int MaxCount { get; set; }
-      public List<T> Items { get; set; }
-      public long TotalWeight { get; set; }
-    }
-
-    private class PartitionWeightComparer<T> : IComparer<Partition<T>> {
-      public int Compare(Partition<T> x, Partition<T> y) {
-        Invariants.Assert(x != null);
-        Invariants.Assert(y != null);
-        return x.TotalWeight.CompareTo(y.TotalWeight);
-      }
-    }
-
-    public static IEnumerable<int> GetPartitionSizes<TSource>(this IList<TSource> source, int partitionCount) {
-      return GetPartitionSizes(source.Count, partitionCount);
-    }
-
     public static IEnumerable<int> GetPartitionSizes(int count, int partitionCount) {
       if (partitionCount <= 0)
         throw new ArgumentException("Invalid count", "partitionCount");
@@ -161,15 +93,6 @@ namespace VsChromium.Core.Linq {
       }
     }
 
-    public static IList<IList<TSource>> PartitionByChunks<TSource>(this IList<TSource> source, int partitionCount) {
-      var sourceIndex = 0;
-      return GetPartitionSizes(source, partitionCount).Select(size => {
-        IList<TSource> result = new ListSegment<TSource>(source, sourceIndex, size);
-        sourceIndex += size;
-        return result;
-      }).ToList();
-    }
-
     public static void ForAll<TSource>(this IEnumerable<TSource> source, Action<TSource> action) {
       foreach (var x in source) {
         action(x);
@@ -182,21 +105,6 @@ namespace VsChromium.Core.Linq {
         action(index, x);
         index++;
       }
-    }
-
-    public static IEnumerable<T> ConcatSingle<T>(this IEnumerable<T> source, T item) {
-      return source.Concat(Single(item));
-    }
-
-    public static IEnumerable<T> ConcatSingle<T>(this IEnumerable<T> source, T item, Func<bool> filter) {
-      if (filter())
-        return source.ConcatSingle(item);
-      else
-        return source;
-    }
-
-    public static IEnumerable<T> Single<T>(T item) {
-      return Enumerable.Repeat(item, 1);
     }
 
     public static ReadOnlyCollection<TSource> ToReadOnlyCollection<TSource>(this IEnumerable<TSource> source) {
@@ -241,11 +149,6 @@ namespace VsChromium.Core.Linq {
 
     private static class EmptyCollection<TSource> {
       public static readonly ReadOnlyCollection<TSource> Instance = new ReadOnlyCollection<TSource>(new TSource[0]);
-    }
-
-    public static IEnumerable<TSource> OrderByThenTake<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
-      var heap = new MaxHeap<TSource>(count + 1, new OrderByComparer<TSource, TKey>(keySelector));
-      return OrderByThenTakeImpl<TSource, TKey>(source, count, heap);
     }
 
     public static IEnumerable<TSource> OrderByDescendingThenTake<TSource, TKey>(this IEnumerable<TSource> source, int count, Func<TSource, TKey> keySelector) {
@@ -310,38 +213,6 @@ namespace VsChromium.Core.Linq {
       if (!dictionary.TryGetValue(key, out result))
         return null;
       return result;
-    }
-
-    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value) {
-      TValue result;
-      if (dictionary.TryGetValue(key, out result)) {
-        return result;
-      }
-
-      dictionary[key] = value;
-      return value;
-    }
-
-    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> valueFactory) {
-      TValue result;
-      if (dictionary.TryGetValue(key, out result)) {
-        return result;
-      }
-
-      var value = valueFactory(key);
-      dictionary[key] = value;
-      return value;
-    }
-
-    public static TValue GetOrAdd<TKey, TValue, TState>(this IDictionary<TKey, TValue> dictionary, TKey key, TState state, Func<TKey, TState, TValue> valueFactory) {
-      TValue result;
-      if (dictionary.TryGetValue(key, out result)) {
-        return result;
-      }
-
-      var value = valueFactory(key, state);
-      dictionary[key] = value;
-      return value;
     }
 
     public static void RemoveWhere<TKey, TValue>(

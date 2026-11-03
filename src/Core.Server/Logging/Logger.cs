@@ -11,7 +11,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Win32.Memory;
 
 namespace VsChromium.Core.Logging {
-  public class Logger {
+  public static class Logger {
     private static readonly Lazy<NLog.Logger> NLogLogger =
       new Lazy<NLog.Logger>(CreateNLogLogger, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -35,21 +35,6 @@ namespace VsChromium.Core.Logging {
 
     public static string FileName { get; set; }
     public static string Id { get; set; }
-
-    public static string LogInfoPath {
-      get { return GetLogFilePath(""); }
-    }
-
-    public static string LogErrorPath {
-      get { return GetLogFilePath(".errors"); }
-    }
-
-    private static string GetLogFilePath(string suffix) {
-      var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-      var dirName = "VsChromium";
-      return String.Format("{0}",
-        PathHelpers.CombinePaths(PathHelpers.CombinePaths(appData, dirName), FileName + suffix + ".log"));
-    }
 
     public static bool IsDebugEnabled { get; set; }
     public static bool IsInfoEnabled { get; set; }
@@ -93,36 +78,12 @@ namespace VsChromium.Core.Logging {
       LogException(LogLevel.Warn, exception);
     }
 
-    public static void LogError(string format, params object[] args) {
-      if (!IsErrorEnabled)
-        return;
-
-      NLogLogger.Value.Error(format, args);
-    }
-
     public static void LogError(Exception exception, string format, params object[] args) {
       if (!IsErrorEnabled)
         return;
 
       NLogLogger.Value.Error(format, args);
       LogException(LogLevel.Error, exception);
-    }
-
-    public static void LogHResult(int hresult, string format, params object[] args) {
-      if (!IsErrorEnabled)
-        return;
-
-      var exception = Marshal.GetExceptionForHR(hresult);
-      if (exception == null) {
-        LogError("{0} (hresult=0x{1:x8})",
-          string.Format(format, args),
-          hresult);
-      } else {
-        LogError("{0} (hresult=0x{1:x8}, message={2})",
-          string.Format(format, args),
-          hresult,
-          exception.Message);
-      }
     }
 
     public static void LogMemoryStats(string indent = "") {
@@ -171,20 +132,6 @@ namespace VsChromium.Core.Logging {
         action();
       } catch (Exception e) {
         LogError(e, "Error during callback execution");
-      }
-    }
-
-    public static void TestLogException() {
-      try {
-        try {
-          var s = "foo";
-          s.Substring(10);
-        }
-        catch (Exception e) {
-          throw new ApplicationException("Test Exception message", e);
-        }
-      } catch (Exception e) {
-        Logger.LogInfo(e, "Test exception");
       }
     }
   }

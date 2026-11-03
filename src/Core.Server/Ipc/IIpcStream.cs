@@ -11,9 +11,7 @@ namespace VsChromium.Core.Ipc {
   /// that it requires buffering.
   /// </summary>
   public interface IIpcStream {
-    void WriteRequest(IpcRequest request);
     void WriteResponse(IpcResponse response);
-    IpcResponse ReadResponse();
     IpcRequest ReadRequest();
   }
 }

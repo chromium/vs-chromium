@@ -18,13 +18,6 @@ namespace VsChromium.Core.Files {
       _path = path;
     }
 
-    public static FullPath? Create(string path) {
-      if (IsValid(path)) {
-        return new FullPath(path);
-      }
-      return null;
-    }
-
     public static bool IsValid(string path) {
       return PathHelpers.IsAbsolutePath(path);
     }
@@ -106,25 +99,6 @@ namespace VsChromium.Core.Files {
         return 0;
       }
       return SystemPathComparer.Instance.StringComparer.GetHashCode(_path);
-    }
-
-    /// <summary>
-    /// Returns true if this full path starts with <paramref name="x"/>
-    /// </summary>
-    public bool StartsWith(FullPath x) {
-      return SystemPathComparer.Instance.StartsWith(_path, x._path);
-    }
-
-    /// <summary>
-    /// Returns true if this full path contains <paramref name="component"/> as
-    /// one of its component, i.e. parts between directory separator.
-    /// </summary>
-    public bool HasComponent(string component) {
-      foreach (string currentComponent in PathHelpers.SplitPath(_path)) {
-        if (currentComponent.Equals(component, StringComparison.CurrentCultureIgnoreCase))
-          return true;
-      }
-      return false;
     }
   }
 

@@ -53,8 +53,8 @@ namespace VsChromium.Core.Files.PatternMatching {
     }
 
     /// <summary>
-    /// The extension of <paramref name="path"/> including the dot (same as <see
-    /// cref="RelativePath.Extension"/>), or an empty span.
+    /// The extension of <paramref name="path"/> including the dot (e.g.
+    /// ".txt"), or an empty span.
     /// </summary>
     private static ReadOnlySpan<char> GetExtension(ReadOnlySpan<char> path) {
       var index = path.LastIndexOf('.');

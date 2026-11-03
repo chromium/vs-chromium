@@ -19,7 +19,7 @@ namespace VsChromium.Server.FileSystemContents {
   /// clients (search results, file extracts) are positions in the UTF-16 decoding of the text
   /// (<see cref="Encoding.UTF8"/>, invalid bytes replaced with U+FFFD), i.e. the same as when the
   /// text was stored as UTF-16. For files containing only ASCII characters (<see
-  /// cref="IsAscii"/>), both are the same.
+  /// cref="IsAsciiText"/>), both are the same.
   /// </summary>
   public class Utf8FileContents : FileContents {
     /// <summary>
@@ -38,8 +38,6 @@ namespace VsChromium.Server.FileSystemContents {
     /// <summary>
     /// True if the text contains only ASCII characters (bytes less than 0x80).
     /// </summary>
-    public bool IsAscii => _isAscii;
-
     protected override bool IsAsciiText => _isAscii;
 
     private unsafe ReadOnlySpan<byte> Bytes => new ReadOnlySpan<byte>(Contents.Pointer.ToPointer(), ByteLength);

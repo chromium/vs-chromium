@@ -151,14 +151,6 @@ namespace VsChromium.Core.Files {
     }
 
     /// <summary>
-    /// Return the <paramref name="path"/> argument where all directory
-    /// separators are replaced with the Posix separator ("/")
-    /// </summary>
-    public static string ToPosix(string path) {
-      return path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-    }
-
-    /// <summary>
     /// Returns the parent directory of <paramref name="path"/>, or null if
     /// <paramref name="path"/> is a top level directory.
     /// </summary>
@@ -179,20 +171,6 @@ namespace VsChromium.Core.Files {
     public static bool IsPathTooLong(string path) {
       path = path ?? "";
       return path.Length >= MaxPath;
-    }
-
-    /// <summary>
-    /// Returns <code>true</code> if <paramref name="parentPath"/> combined with
-    /// <param name="relativePath"></param> is too long.
-    /// </summary>
-    public static bool IsPathTooLong(string parentPath, string relativePath) {
-      if (string.IsNullOrEmpty(parentPath))
-        throw new ArgumentException();
-
-      if (string.IsNullOrEmpty(relativePath))
-        return IsPathTooLong(parentPath);
-
-      return (parentPath.Length + 1 + relativePath.Length) >= MaxPath;
     }
 
     /// <summary>

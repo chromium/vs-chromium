@@ -47,32 +47,12 @@ namespace VsChromium.Core.Collections {
     private KeyCollection _keys;
     private ValueCollection _values;
 
-    public SlimHashTable(Func<TValue, TKey> keyProvider)
-      : this(keyProvider, 0, EqualityComparer<TKey>.Default, DefaultGrowthPolicy) {
-    }
-
-    public SlimHashTable(Func<TValue, TKey> keyProvider, ICollectionGrowthPolicy growthPolicy)
-      : this(keyProvider, 0, EqualityComparer<TKey>.Default, growthPolicy) {
-    }
-
     public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity)
       : this(keyProvider, capacity, EqualityComparer<TKey>.Default, DefaultGrowthPolicy) {
     }
 
     public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity, IEqualityComparer<TKey> comparer)
       : this(keyProvider, capacity, comparer, DefaultGrowthPolicy) {
-    }
-
-    public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity, ICollectionGrowthPolicy growthPolicy)
-      : this(keyProvider, capacity, EqualityComparer<TKey>.Default, growthPolicy) {
-    }
-
-    public SlimHashTable(Func<TValue, TKey> keyProvider, IEqualityComparer<TKey> comparer)
-      : this(keyProvider, 0, comparer, DefaultGrowthPolicy) {
-    }
-
-    public SlimHashTable(Func<TValue, TKey> keyProvider, IEqualityComparer<TKey> comparer, ICollectionGrowthPolicy growthPolicy)
-      : this(keyProvider, 0, comparer, growthPolicy) {
     }
 
     public SlimHashTable(Func<TValue, TKey> keyProvider, int capacity, IEqualityComparer<TKey> comparer, ICollectionGrowthPolicy growthPolicy) {
@@ -121,10 +101,6 @@ namespace VsChromium.Core.Collections {
     public void Clear() {
       var length = GetPrimeLength(_capacity);
       Initialize(length);
-    }
-
-    public void Add(TValue value) {
-      Add(_getKey(value), value);
     }
 
     public void Add(KeyValuePair<TKey, TValue> item) {
@@ -180,10 +156,6 @@ namespace VsChromium.Core.Collections {
       return ContainsKey(item.Key);
     }
 
-    public bool Contains(TKey key) {
-      return ContainsKey(key);
-    }
-
     public bool TryGetValue(TKey key, out TValue value) {
       var hashCode = _comparer.GetHashCode(key);
       var bucketIndex = GetBucketIndex(hashCode, _buckets.Length);
@@ -198,18 +170,6 @@ namespace VsChromium.Core.Collections {
 
       value = default(TValue);
       return false;
-    }
-
-    public TValue GetOrDefault(TKey key) {
-      return GetOrDefault(key, default(TValue));
-    }
-
-    public TValue GetOrDefault(TKey key, TValue defaultValue) {
-      TValue result;
-      if (!TryGetValue(key, out result)) {
-        return defaultValue;
-      }
-      return result;
     }
 
     public TValue GetOrAdd(TKey key, TValue value) {

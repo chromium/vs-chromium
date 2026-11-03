@@ -64,7 +64,6 @@ namespace VsChromium.Tests.Server {
     public void PositionsAreUtf16Positions() {
       var text = "é café\n日本語 café 𝄞 café";
       var contents = Utils.CreateUtf8FileContents(text);
-      Assert.IsFalse(contents.IsAscii);
       var result = Search(contents, "café", matchCase: true, wholeWord: false, regex: false, useFilters: false);
       CollectionAssert.AreEqual(new[] { (2, 4), (11, 4), (19, 4) }, result);
     }

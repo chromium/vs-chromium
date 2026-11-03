@@ -36,19 +36,6 @@ namespace VsChromium.Core.Files {
     public string Value => _relativePath ?? "";
 
     /// <summary>
-    /// Return the file extension (including the dot).
-    /// </summary>
-    public string Extension {
-      get {
-        var name = _relativePath ?? "";
-        var index = name.LastIndexOf('.');
-        if (index < 0)
-          return "";
-        return name.Substring(index);
-      }
-    }
-
-    /// <summary>
     /// Returns the parent path or <code>null</code> if this is the empty relative path
     /// </summary>
     public RelativePath? Parent {

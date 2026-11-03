@@ -22,8 +22,6 @@ namespace VsChromium.Server.FileSystemContents {
   public abstract class FileContents {
     protected const int MaxLineExtentOffset = 1024;
 
-    protected static List<FilePositionSpan> NoSpans = new List<FilePositionSpan>();
-    protected static IEnumerable<FileExtract> NoFileExtracts = Enumerable.Empty<FileExtract>();
     private readonly FileContentsMemory _contents;
     private readonly DateTime _utcLastModified;
 
@@ -98,8 +96,6 @@ namespace VsChromium.Server.FileSystemContents {
       var filters = Interlocked.Exchange(ref _trigramFilters, null);
       return filters?.ByteSize ?? 0;
     }
-
-    public bool HasTrigramFilters => _trigramFilters != null;
 
     protected virtual TrigramFilterSet CreateTrigramFilters(IReadOnlyList<TextRange> chunks) {
       return null;

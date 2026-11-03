@@ -8,10 +8,6 @@ namespace VsChromium.Core.Logging {
 
     public bool Enabled => Logger.IsDebugEnabled;
 
-    public void Log(string message) {
-      Logger.LogDebug(message);
-    }
-
     public void Log(string format, params object[] args) {
       Logger.LogDebug(format, args);
     }

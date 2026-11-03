@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -22,19 +22,5 @@ namespace VsChromium.Core.Win32.Files {
     FILE_ATTRIBUTE_OFFLINE = 0x00001000,
     FILE_ATTRIBUTE_NOT_CONTENT_INDEXED = 0x00002000,
     FILE_ATTRIBUTE_ENCRYPTED = 0x00004000,
-  }
-
-  [Serializable]
-  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-  public struct WIN32_FILE_ATTRIBUTE_DATA {
-    public int fileAttributes;
-    public uint ftCreationTimeLow;
-    public uint ftCreationTimeHigh;
-    public uint ftLastAccessTimeLow;
-    public uint ftLastAccessTimeHigh;
-    public uint ftLastWriteTimeLow;
-    public uint ftLastWriteTimeHigh;
-    public int fileSizeHigh;
-    public int fileSizeLow;
   }
 }

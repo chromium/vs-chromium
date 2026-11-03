@@ -468,16 +468,6 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    public class NonePathMatcher : IPathMatcher {
-      public bool MatchDirectoryName(ReadOnlySpan<char> path, IPathComparer comparer) {
-        return false;
-      }
-
-      public bool MatchFileName(ReadOnlySpan<char> path, IPathComparer comparer) {
-        return false;
-      }
-    }
-
     public class CompiledTextSearchProviderPathMatcher : IPathMatcher {
       private readonly ICompiledTextSearchContainer _searchContainer;
 

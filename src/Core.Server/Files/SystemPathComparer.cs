@@ -15,10 +15,6 @@ namespace VsChromium.Core.Files {
       return Instance.StringComparer.GetHashCode(name);
     }
 
-    public static bool Equals(string name1, string name2) {
-      return Instance.StringComparer.Equals(name1, name2);
-    }
-
     public static int Compare(string name1, string name2) {
       return Instance.StringComparer.Compare(name1, name2);
     }

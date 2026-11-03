@@ -58,31 +58,6 @@ namespace VsChromium.Server.TextSearch {
       }
     }
 
-    /// <summary>
-    /// Return a new fragment starting at <paramref name="index"/> up to the end
-    /// of this text fragment. <paramref name="index"/> must be comprised
-    /// between <see cref="Position"/> and <see cref="Position"/> + <see
-    /// cref="Length"/>.
-    /// </summary>
-    public TextFragment Sub(int index) {
-      if (index < _position || index > _position + _length)
-        ThrowArgumentException();
-
-      var length = _position + _length - index;
-      return new TextFragment(_textPtr, index, length, _characterSize);
-    }
-
-    /// <summary>
-    /// Return a new fragment starting at <paramref name="startPtr"/>
-    /// and containing <paramref name="count"/> characters.
-    /// </summary>
-    public TextFragment Sub(IntPtr startPtr, int count) {
-      var byteOffset = Pointers.Offset32(_textPtr, startPtr);
-      if (byteOffset < 0 || (byteOffset % _characterSize) != 0)
-        ThrowArgumentException();
-      return Sub(byteOffset / _characterSize, count);
-    }
-
     /// Return a new fragment starting at <paramref name="index"/>
     /// and containing <paramref name="count"/> characters.
     public TextFragment Sub(int index, int count) {

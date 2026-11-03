@@ -92,14 +92,6 @@ namespace VsChromium.Core.Utility {
       }
     }
 
-    public static int Combine(int h1, int h2, int h3) {
-      return Combine(Combine(h1, h2), h3);
-    }
-
-    public static int Combine(int h1, int h2, int h3, int h4) {
-      return Combine(Combine(h1, h2), Combine(h3, h4));
-    }
-
     public static int GetPrime(int min) {
       Invariants.CheckArgument(min >= 0, nameof(min), "Invalid prime seed");
       for (int index = 0; index < Primes.Length; ++index) {

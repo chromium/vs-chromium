@@ -15,8 +15,8 @@ namespace VsChromium.Tests.Core {
     [TestMethod]
     public void TestAddException() {
       var table = new SlimHashTable<string, string>(x => x, 10);
-      table.Add("10");
-      Assert.ThrowsExactly<ArgumentException>(() => table.Add("10"));
+      table.Add("10", "10");
+      Assert.ThrowsExactly<ArgumentException>(() => table.Add("10", "10"));
     }
 
     [TestMethod]
@@ -30,17 +30,17 @@ namespace VsChromium.Tests.Core {
     [TestMethod]
     public void Test_Add_Remove_CopyTo_Keys_Values() {
       var table = new SlimHashTable<string, string>(x => x, 10);
-      table.Add("foo");
+      table.Add("foo", "foo");
       AssertTableContents(table);
       var count = 32 * 5;
       for (var i = 0; i < count; i++) {
-        table.Add("foo" + i);
+        table.Add("foo" + i, "foo" + i);
         AssertTableContents(table);
       }
       AssertTableContents(table);
-      Assert.IsTrue(table.Contains("foo"));
+      Assert.IsTrue(table.ContainsKey("foo"));
       Assert.AreEqual(count + 1, table.Count);
-      Assert.IsFalse(table.Contains("bar"));
+      Assert.IsFalse(table.ContainsKey("bar"));
 
       AssertTableContents(table);
       for (var i = count - 1; i >= 0; i--) {
@@ -48,26 +48,26 @@ namespace VsChromium.Tests.Core {
         Assert.IsTrue(removed);
         AssertTableContents(table);
       }
-      Assert.IsTrue(table.Contains("foo"));
+      Assert.IsTrue(table.ContainsKey("foo"));
       Assert.AreEqual(1, table.Count);
-      Assert.IsFalse(table.Contains("bar"));
+      Assert.IsFalse(table.ContainsKey("bar"));
 
       Assert.IsTrue(table.Remove("foo"));
-      Assert.IsFalse(table.Contains("foo"));
+      Assert.IsFalse(table.ContainsKey("foo"));
       Assert.AreEqual(0, table.Count);
     }
 
     [TestMethod]
     public void TestUpdateValueType() {
       var table = new SlimHashTable<string, MyTestValueType>(x => x.Key, 10);
-      table.Add(new MyTestValueType("test", 5));
+      table.Add("test", new MyTestValueType("test", 5));
 
-      Assert.IsTrue(table.Contains("test"));
+      Assert.IsTrue(table.ContainsKey("test"));
       Assert.AreEqual(5, table["test"].Value);
 
       table["test"] = new MyTestValueType("test", 15);
 
-      Assert.IsTrue(table.Contains("test"));
+      Assert.IsTrue(table.ContainsKey("test"));
       Assert.AreEqual(15, table["test"].Value);
     }
 
@@ -103,12 +103,13 @@ namespace VsChromium.Tests.Core {
 
       var item = new MyTestType("test", 5);
       Assert.AreEqual(0, item.HashCodeCallCount);
-      table.Add(item);
+      table.Add(item, item);
       Assert.AreEqual(1, item.HashCodeCallCount);
 
       // Add 100 elements to force a grow call
       for (var i = 0; i < 100; i++) {
-        table.Add(new MyTestType(i.ToString(), i));
+        var newItem = new MyTestType(i.ToString(), i);
+        table.Add(newItem, newItem);
       }
 
       // Assert
@@ -165,7 +166,7 @@ namespace VsChromium.Tests.Core {
       var dic2 = kvp.ToDictionary(x => x.Key, x => x.Value);
 
       if (table.Count >= 1) {
-        Assert.IsTrue(table.Contains("foo"));
+        Assert.IsTrue(table.ContainsKey("foo"));
         Assert.IsTrue(dic.ContainsKey("foo"));
         Assert.IsTrue(dic2.ContainsKey("foo"));
         Assert.IsTrue(keySet.Contains("foo"));
@@ -174,7 +175,7 @@ namespace VsChromium.Tests.Core {
 
       for (var i = 0; i < table.Count - 1; i++) {
         var key = "foo" + (table.Count - 2 - i);
-        Assert.IsTrue(table.Contains(key));
+        Assert.IsTrue(table.ContainsKey(key));
         Assert.IsTrue(dic.ContainsKey(key));
         Assert.IsTrue(dic2.ContainsKey(key));
         Assert.IsTrue(keySet.Contains(key));

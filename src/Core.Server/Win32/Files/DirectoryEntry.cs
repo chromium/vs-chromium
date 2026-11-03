@@ -21,10 +21,6 @@ namespace VsChromium.Core.Win32.Files {
       get { return _name; }
     }
 
-    public FILE_ATTRIBUTE Attributes {
-      get { return _attributes; }
-    }
-
     public bool IsFile {
       get {
         return (_attributes & FILE_ATTRIBUTE.FILE_ATTRIBUTE_DIRECTORY) == 0;

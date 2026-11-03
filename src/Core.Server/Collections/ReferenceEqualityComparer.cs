@@ -11,8 +11,6 @@ namespace VsChromium.Core.Collections {
   /// identity.
   /// </summary>
   public class ReferenceEqualityComparer<T> : IEqualityComparer<T> where T : class {
-    public static ReferenceEqualityComparer<T> Instance = new ReferenceEqualityComparer<T>();
-
     public bool Equals(T x, T y) {
       return object.ReferenceEquals(x, y);
     }

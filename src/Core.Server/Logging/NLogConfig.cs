@@ -7,7 +7,7 @@ using NLog.Config;
 using NLog.Targets;
 
 namespace VsChromium.Core.Logging {
-  class NLogConfig {
+  static class NLogConfig {
     public static void ConfigureApplication(string fileName, string id) {
 
       // Step 1. Create configuration object 

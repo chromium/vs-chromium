@@ -47,10 +47,6 @@ namespace VsChromium.Server.Threads {
       RunNextTaskIfAvailableAsync(null);
     }
 
-    public void CancelCurrentTask() {
-      _taskCancellationTracker.CancelCurrent();
-    }
-
     public void CancelAll() {
       lock (_lock) {
         _taskQueue.Clear();
@@ -123,8 +119,6 @@ namespace VsChromium.Server.Threads {
         new Dictionary<TaskId, LinkedListNode<TaskEntry>>();
 
       private readonly LinkedList<TaskEntry> _queue = new LinkedList<TaskEntry>();
-
-      public bool IsEmpty { get { return _queue.Count == 0; } }
 
       public void Enqueue(TaskEntry entry) {
         LinkedListNode<TaskEntry> currentEntry;

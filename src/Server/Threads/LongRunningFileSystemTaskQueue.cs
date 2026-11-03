@@ -21,10 +21,6 @@ namespace VsChromium.Server.Threads {
       _taskQueue.Enqueue(id, task, delay);
     }
 
-    public void CancelCurrentTask() {
-      _taskQueue.CancelCurrentTask();
-    }
-
     public void CancelAll() {
       _taskQueue.CancelAll();
     }

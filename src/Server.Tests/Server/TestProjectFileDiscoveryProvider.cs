@@ -27,7 +27,7 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(@"d:\foo\bar", project.RootPath.Value);
       Assert.IsTrue(project.FileFilter.Include(new RelativePath("none.txt")));
       Assert.IsTrue(project.DirectoryFilter.Include(new RelativePath("none")));
-      Assert.IsFalse(project.SearchableFilesFilter.Include(new RelativePath("none.txt")));
+      Assert.IsFalse(project.SearchableFilesFilter.Include("none.txt"));
     }
     [TestMethod]
     public void DiscoverProjectFileFromProjectPathInWorks() {
@@ -45,7 +45,7 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(@"d:\foo\bar", project.RootPath.Value);
       Assert.IsTrue(project.FileFilter.Include(new RelativePath("none.txt")));
       Assert.IsTrue(project.DirectoryFilter.Include(new RelativePath("none")));
-      Assert.IsFalse(project.SearchableFilesFilter.Include(new RelativePath("none.txt")));
+      Assert.IsFalse(project.SearchableFilesFilter.Include("none.txt"));
     }
     [TestMethod]
     public void DiscoverProjectFileFiltersWorks() {
@@ -88,8 +88,8 @@ x64/
       Assert.IsFalse(project.FileFilter.Include(new RelativePath("test.sdf")));
       Assert.IsTrue(project.FileFilter.Include(new RelativePath(".git")));
       Assert.IsFalse(project.DirectoryFilter.Include(new RelativePath(".git")));
-      Assert.IsTrue(project.SearchableFilesFilter.Include(new RelativePath("none.txt")));
-      Assert.IsFalse(project.SearchableFilesFilter.Include(new RelativePath("none.png")));
+      Assert.IsTrue(project.SearchableFilesFilter.Include("none.txt"));
+      Assert.IsFalse(project.SearchableFilesFilter.Include("none.png"));
     }
     [TestMethod]
     public void DiscoverProjectFileInDeepSubFolderWorks() {

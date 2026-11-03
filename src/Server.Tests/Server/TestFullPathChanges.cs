@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -13,7 +14,7 @@ namespace VsChromium.Tests.Server {
   [TestClass]
   public class TestFullPathChanges {
     [TestMethod]
-    public void ShouldSkipLoadFileContentsOfFileNameIsSameAsOfFullPath() {
+    public void ShouldSkipLoadFileContentsOfFileName() {
       var rootPath = new FullPath(Path.Combine(Path.GetTempPath(), "VsChromiumRoot"));
       var changes = new FullPathChanges(new List<PathChangeEntry> {
         new PathChangeEntry(rootPath, new RelativePath(Path.Combine("src", "changed.cc")), PathChangeKind.Changed, PathKind.File),
@@ -35,12 +36,15 @@ namespace VsChromium.Tests.Server {
         factory.CreateFileName(other, "c.cc"),
         factory.CreateFileName(root, "top.cc"),
       };
-      foreach (var file in files) {
-        Assert.AreEqual(changes.ShouldSkipLoadFileContents(file.FullPath), changes.ShouldSkipLoadFileContents(file), file.FullPath.Value);
-      }
+      // Paths are compared with the case sensitivity of the operating system.
+      var caseSensitive = PathComparerRegistry.Default.Comparison == StringComparison.Ordinal;
       Assert.IsFalse(changes.ShouldSkipLoadFileContents(files[0]));
+      Assert.AreEqual(caseSensitive, changes.ShouldSkipLoadFileContents(files[1]));
       Assert.IsTrue(changes.ShouldSkipLoadFileContents(files[2]));
+      Assert.AreEqual(caseSensitive, changes.ShouldSkipLoadFileContents(files[3]));
+      Assert.AreEqual(caseSensitive, changes.ShouldSkipLoadFileContents(files[4]));
       Assert.IsTrue(changes.ShouldSkipLoadFileContents(files[5]));
+      Assert.IsTrue(changes.ShouldSkipLoadFileContents(files[6]));
     }
 
     [TestMethod]

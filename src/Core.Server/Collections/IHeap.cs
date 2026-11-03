@@ -9,9 +9,6 @@ namespace VsChromium.Core.Collections {
   /// <typeparam name="T"></typeparam>
   public interface IHeap<T> {
     int Count { get; }
-    T Root { get; }
-
-    void Clear();
 
     void Add(T item);
     T Remove();

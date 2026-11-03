@@ -58,10 +58,6 @@ namespace VsChromium.Core.Files {
       public abstract State OnWatcherAdded(FullPath directory, DirectoryWatcherhEntry watcher);
       public abstract State OnWatcherRemoved(FullPath directory, DirectoryWatcherhEntry watcher);
 
-      public virtual State OnDispose() {
-        return new DisposedState(StateHost);
-      }
-
       protected void WatchDirectoriesImpl(IEnumerable<FullPath> directories) {
         var oldSet = new HashSet<FullPath>(StateHost.WatcherDictionary.Keys);
         var newSet = new HashSet<FullPath>(directories);
@@ -88,7 +84,6 @@ namespace VsChromium.Core.Files {
         }
 
         watcherEntry = new DirectoryWatcherhEntry {
-          Path = directory,
           DirectoryNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
           FileNameWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
           FileWriteWatcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory),
@@ -178,7 +173,6 @@ namespace VsChromium.Core.Files {
       private void AddDirectorySingleWatcher(FullPath directory) {
         var watcher = StateHost.ParentWatcher._fileSystem.CreateDirectoryWatcher(directory);
         var watcherEntry = new DirectoryWatcherhEntry {
-          Path = directory,
           FileWriteWatcher = watcher,
         };
         StateHost.WatcherDictionary.Add(directory, watcherEntry);

@@ -26,36 +26,5 @@ namespace VsChromium.Core.Ipc {
         InnerError = CreateErrorResponse(e.InnerException)
       };
     }
-
-    public static ErrorResponseException CreateException(this ErrorResponse error) {
-      return new ErrorResponseException(error);
-    }
-
-    public static ErrorResponse GetBaseError(this ErrorResponse error) {
-      var result = error;
-      while (result.InnerError != null)
-        result = result.InnerError;
-      return result;
-    }
-
-    public static bool IsOperationCanceled(this ErrorResponse error) {
-      return GetBaseError(error).FullTypeName == typeof(OperationCanceledException).FullName;
-    }
-
-    public static bool IsRecoverable(this ErrorResponse error) {
-      return GetBaseError(error).FullTypeName == typeof(RecoverableErrorException).FullName;
-    }
-
-    public static bool IsReportableError(ErrorResponse error) {
-      if (error == null)
-        return false;
-      if (error.IsOperationCanceled())
-        return false;
-      return true;
-    }
-
-    public static bool IsReportableError(this PairedTypedEvent e) {
-      return IsReportableError(e.Error);
-    }
   }
 }

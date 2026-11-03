@@ -8,7 +8,5 @@ using VsChromium.Core.Files;
 namespace VsChromium.Server.Projects {
   public interface ISearchableFilesFilter {
     bool Include(ReadOnlySpan<char> fileName);
-
-    bool Include(RelativePath fileName) => Include(fileName.Value.AsSpan());
   }
 }

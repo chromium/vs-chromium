@@ -33,8 +33,6 @@ namespace VsChromium.Core.Utility {
         get { return false; }
       }
 
-      public int ResultCount { get { return 0; } }
-
       public void AddResults(int count) {
       }
     }

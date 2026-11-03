@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 namespace VsChromium.Core.Files {
-  public class PathComparerRegistry {
+  public static class PathComparerRegistry {
     private static readonly IPathComparer _caseInsensitive = new PathComparer(PathComparisonOption.CaseInsensitive);
     private static readonly IPathComparer _caseSensitive = new PathComparer(PathComparisonOption.CaseSensitive);
 

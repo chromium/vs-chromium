@@ -10,31 +10,15 @@ namespace VsChromium.Core.Collections {
   /// Implements a Max heap, using a custom (or the default) comparer.
   /// </summary>
   public class MaxHeap<T> : IHeap<T> {
-    private const int _defaultCapacity = 6;
-
     private readonly IComparer<T> _comparer;
     private int _count;
     private T[] _items;
-
-    public MaxHeap()
-      : this(_defaultCapacity, null) {
-    }
-
-    public MaxHeap(int capacity)
-      : this(capacity, null) {
-    }
 
     public MaxHeap(int capacity, IComparer<T> comparer) {
       _items = new T[capacity];
       _count = 0;
       _comparer = (comparer ?? Comparer<T>.Default);
     }
-
-    public MaxHeap(IComparer<T> comparer)
-      : this(_defaultCapacity, comparer) {
-    }
-
-    public T Max { get { return Root; } }
 
     public int Count { get { return _count; } }
 
@@ -66,11 +50,6 @@ namespace VsChromium.Core.Collections {
       _items[leaf] = value;
       _count++;
       SiftUp(leaf);
-    }
-
-    public void Clear() {
-      Array.Clear(_items, 0, _items.Length);
-      _count = 0;
     }
 
     private void SiftDown(int root) {

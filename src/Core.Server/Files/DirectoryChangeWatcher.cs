@@ -189,15 +189,5 @@ namespace VsChromium.Core.Files {
         }
       });
     }
-
-    [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-    private static void LogPathForDebugging(string path, PathChangeKind kind, PathKind pathKind) {
-#if false
-      var pathToLog = @"";
-      if (SystemPathComparer.Instance.IndexOf(path, pathToLog, 0, path.Length) == 0) {
-        Logger.LogInfo("*************************** {0}: {1}-{2} *******************", path, kind, pathKind);
-      }
-#endif
-    }
   }
 }

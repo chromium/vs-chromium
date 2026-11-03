@@ -59,7 +59,7 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(@"d:\foo\bar", project.RootPath.Value);
       Assert.IsTrue(project.FileFilter.Include(new RelativePath("none.txt")));
       Assert.IsTrue(project.DirectoryFilter.Include(new RelativePath("none")));
-      Assert.IsTrue(project.SearchableFilesFilter.Include(new RelativePath("source.cpp")));
+      Assert.IsTrue(project.SearchableFilesFilter.Include("source.cpp"));
 
 
       project = provider.GetProjectFromAnyPath(new FullPath(@"d:\foo\bar"));

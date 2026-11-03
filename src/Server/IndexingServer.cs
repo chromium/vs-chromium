@@ -64,16 +64,6 @@ namespace VsChromium.Server {
       });
     }
 
-    public void TogglePausedRunning() {
-      _stateChangeTaskQueue.ExecuteAsync(token => {
-        if (_paused) {
-          ResumeImpl();
-        } else {
-          PauseImpl(IndexingServerPauseReason.UserRequest);
-        }
-      });
-    }
-
     public void Pause() {
       _stateChangeTaskQueue.ExecuteAsync(token => {
         PauseImpl(IndexingServerPauseReason.UserRequest);

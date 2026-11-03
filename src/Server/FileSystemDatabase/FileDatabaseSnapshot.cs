@@ -116,10 +116,6 @@ namespace VsChromium.Server.FileSystemDatabase {
       return result;
     }
 
-    public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, FileName name) {
-      return IsContainedInSymLinkHelper(directories, name.Parent);
-    }
-
     public static bool IsContainedInSymLinkHelper(IDictionary<DirectoryName, DirectoryData> directories, DirectoryName name) {
       if (name == null)
         return false;

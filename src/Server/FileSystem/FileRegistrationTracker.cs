@@ -35,7 +35,6 @@ namespace VsChromium.Server.FileSystem {
     }
 
     public event EventHandler<ProjectsEventArgs> ProjectListChanged;
-    public event EventHandler<ProjectsEventArgs> ProjectListRefreshed;
 
     public void RegisterFileAsync(FullPath path) {
       Logger.LogInfo("Register path \"{0}\"", path);
@@ -148,10 +147,6 @@ namespace VsChromium.Server.FileSystem {
 
     protected virtual void OnProjectListChanged(ProjectsEventArgs e) {
       ProjectListChanged?.Invoke(this, e);
-    }
-
-    protected virtual void OnProjectListRefreshed(ProjectsEventArgs e) {
-      ProjectListRefreshed?.Invoke(this, e);
     }
   }
 }

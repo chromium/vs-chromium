@@ -32,10 +32,6 @@ namespace VsChromium.Core.Utility {
       : this(description, cancellationToken, DefaultLogger) {
     }
 
-    public TimeElapsedLogger(string description, ILogLevelLogger logger) 
-      : this(description, CancellationTokenInstance, logger) {
-    }
-
     public TimeElapsedLogger(string description, CancellationToken cancellationToken, ILogLevelLogger logger) {
       _currentThreadIndent++;
       _description = description;

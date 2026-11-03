@@ -5,7 +5,6 @@
 namespace VsChromium.Core.Logging {
   public interface ILogLevelLogger {
     bool Enabled { get; }
-    void Log(string message);
     void Log(string format, params object[] args);
   }
 }

@@ -96,7 +96,10 @@ namespace VsChromium.Server.FileSystem {
       // the lock.
       IList<FullPath> registeredPaths = _registeredFiles.ToList();
 
-      var deletedFileNames = registeredPaths.Where(x => !_fileSystem.FileExists(x)).ToList();
+      // Note: Registered paths are files (documents) or directories (workspace folders, e.g. VS
+      // Code): a directory that still exists must not be considered deleted, or each new
+      // registration would trigger a full re-index of the project.
+      var deletedFileNames = registeredPaths.Where(x => !_fileSystem.GetFileInfoSnapshot(x).Exists).ToList();
 
       if (deletedFileNames.Any()) {
         Logger.LogInfo("Some known files do not exist on disk anymore. Time to recompute the world.");

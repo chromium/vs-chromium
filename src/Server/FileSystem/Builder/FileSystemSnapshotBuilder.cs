@@ -11,17 +11,21 @@ using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
+using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystem.Builder {
   public class FileSystemSnapshotBuilder : IFileSystemSnapshotBuilder {
     private readonly IFileSystem _fileSystem;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
+    private readonly IIndexingWorkerPool _indexingWorkerPool;
 
     public FileSystemSnapshotBuilder(
       IFileSystem fileSystem,
-      IProgressTrackerFactory progressTrackerFactory) {
+      IProgressTrackerFactory progressTrackerFactory,
+      IIndexingWorkerPool indexingWorkerPool) {
       _fileSystem = fileSystem;
       _progressTrackerFactory = progressTrackerFactory;
+      _indexingWorkerPool = indexingWorkerPool;
     }
 
     public FileSystemSnapshot Compute(IFileSystemNameFactory fileNameFactory,
@@ -48,6 +52,7 @@ namespace VsChromium.Server.FileSystem.Builder {
               var projectSnapshotBuilder = new ProjectRootSnapshotBuilder(
                 _fileSystem, fileNameFactory, oldSnapshot, project, progress,
                 (pathChanges == null ? null : new ProjectPathChanges(project.RootPath, pathChanges.Entries)),
+                _indexingWorkerPool,
                 cancellationToken);
 
               var rootSnapshot = projectSnapshotBuilder.Build();

@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
@@ -20,6 +19,7 @@ using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.TextSearch;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
+using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystemDatabase.Builder {
   public class FileDatabaseBuilder {
@@ -31,14 +31,17 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     private readonly IFileSystem _fileSystem;
     private readonly IFileContentsFactory _fileContentsFactory;
     private readonly IProgressTrackerFactory _progressTrackerFactory;
+    private readonly IIndexingWorkerPool _indexingWorkerPool;
 
     public FileDatabaseBuilder(
       IFileSystem fileSystem,
       IFileContentsFactory fileContentsFactory,
-      IProgressTrackerFactory progressTrackerFactory) {
+      IProgressTrackerFactory progressTrackerFactory,
+      IIndexingWorkerPool indexingWorkerPool) {
       _fileSystem = fileSystem;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
+      _indexingWorkerPool = indexingWorkerPool;
     }
 
     public IFileDatabaseSnapshot Build(IFileDatabaseSnapshot previousDatabase,
@@ -141,9 +144,15 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             newContentsMap[x.FileName] = newContents;
           }
         }
-        // Note: Many files can change at once (e.g. switching branches): read them in parallel.
+        // Note: Many files can change at once (e.g. switching branches): read them in parallel
+        // on the indexing worker pool; keep small edits inline for low latency.
         if (filesToRead.Count > 16) {
-          System.Threading.Tasks.Parallel.ForEach(filesToRead, new System.Threading.Tasks.ParallelOptions { CancellationToken = cancellationToken }, ReadFile);
+          _indexingWorkerPool.RunBatches(filesToRead.Count, batchSize: 16, cancellationToken, (start, end) => {
+            for (var i = start; i < end; i++) {
+              ReadFile(filesToRead[i]);
+            }
+            return true;
+          });
         } else {
           filesToRead.ForAll(ReadFile);
         }
@@ -212,10 +221,10 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           // Note: We cannot use "ReferenceEqualityComparer<FileName>" here because
           // the dictionary will be used in incremental updates where FileName instances
           // may be new instances from a complete file system enumeration.
-          var files = new SlimHashTable<FileName, FileWithContents>(v => v.FileName, entities.Files.Count);
-          foreach (var kvp in entities.Files) {
+          var files = new SlimHashTable<FileName, FileWithContents>(v => v.FileName, entities.Files.Length);
+          for (var i = 0; i < entities.Files.Length; i++) {
             cancellationToken.ThrowIfCancellationRequested();
-            files.Add(kvp.Key, new FileWithContents(kvp.Value.FileName, kvp.Value.Contents));
+            files.Add(entities.Files[i].FileName, new FileWithContents(entities.Files[i].FileName, entities.Contents[i]));
           }
 
           return new FileDatabaseSnapshot(entities.ProjectHashes, directories, files);
@@ -313,7 +322,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     }
 
     private class FileSystemEntities {
-      public IDictionary<FileName, ProjectFileData> Files { get; set; }
+      public ProjectFileData[] Files { get; set; }
+      /// <summary>
+      /// Parallel array to <see cref="Files"/>: each worker writes <c>Contents[i]</c> (an atomic
+      /// reference assignment) without lock contention, and <see cref="CreateFileDatabase"/> can
+      /// safely snapshot partial progress concurrently.
+      /// </summary>
+      public FileContents[] Contents { get; set; }
       public IDictionary<DirectoryName, DirectoryData> Directories { get; set; }
       public IDictionary<FullPath, string> ProjectHashes { get; set; }
     }
@@ -343,36 +358,22 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         foreach (var directory in directories.ToForeachEnum()) {
           fileCount += directory.Value.ChildFiles.Count;
         }
-        var files = new SlimHashTable<FileName, ProjectFileData>(
-          v => v.FileName,
-          fileCount,
-          // Note: We can use reference equality here because the file names are
-          // constructed unique and the dictionary will be discarded once we are
-          // done building this snapshot.
-          new FileNameReferenceEqualityComparer());
-
+        var files = new ProjectFileData[fileCount];
+        var contents = new FileContents[fileCount];
+        var index = 0;
         foreach (var directory in directories.ToForeachEnum()) {
           foreach (var fileName in directory.Value.ChildFiles.ToForeachEnum()) {
-            files.Add(fileName, new ProjectFileData(directory.Key, fileName, null));
+            files[index++] = new ProjectFileData(directory.Key, fileName);
           }
         }
+        Invariants.Assert(index == fileCount);
 
         return new FileSystemEntities {
           Files = files,
+          Contents = contents,
           Directories = directoryNames,
           ProjectHashes = snapshot.ProjectRoots.ToDictionary(x => x.Project.RootPath, x => x.Project.VersionHash)
         };
-      }
-    }
-
-    private class FileNameReferenceEqualityComparer : IEqualityComparer<FileName> {
-      public bool Equals(FileName x, FileName y) {
-        return ReferenceEquals(x.Parent, y.Parent) &&
-               ReferenceEquals(x.Name, y.Name);
-      }
-
-      public int GetHashCode(FileName obj) {
-        return Core.Utility.HashCode.Combine(RuntimeHelpers.GetHashCode(obj.Parent), RuntimeHelpers.GetHashCode(obj.Name));
       }
     }
 
@@ -389,52 +390,42 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
                                   FileContentsLoadingContext loadingContext,
                                   CancellationToken cancellationToken) {
       using (new TimeElapsedLogger("Loading file contents from disk", cancellationToken)) {
-        using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Count)) {
-          entities.Files.AsParallelWrapper().ForAll(fileEntry => {
-            Invariants.Assert(fileEntry.Value.Contents == null);
+        using (var progress = _progressTrackerFactory.CreateTracker(entities.Files.Length)) {
+          try {
+            _indexingWorkerPool.RunBatches(entities.Files.Length, batchSize: 32, cancellationToken, (start, end) => {
+              for (var i = start; i < end; i++) {
+                var fileData = entities.Files[i];
 
-            // ReSharper disable once AccessToDisposedClosure
-            if (progress.Step()) {
-              // ReSharper disable once AccessToDisposedClosure
-              progress.DisplayProgress((i, n) =>
-                string.Format("Reading file {0:n0} of {1:n0}: {2}", i, n, fileEntry.Value.FileName.FullPath));
+                // ReSharper disable once AccessToDisposedClosure
+                if (progress.Step()) {
+                  // ReSharper disable once AccessToDisposedClosure
+                  progress.DisplayProgress((step, n) =>
+                    string.Format("Reading file {0:n0} of {1:n0}: {2}", step, n, fileData.FileName.FullPath));
 
-              // Check for cancellation
-              if (cancellationToken.IsCancellationRequested) {
-                loadingContext.PartialProgressReporter.ReportProgressNow();
-                cancellationToken.ThrowIfCancellationRequested();
+                  // Check for cancellation
+                  if (cancellationToken.IsCancellationRequested) {
+                    cancellationToken.ThrowIfCancellationRequested();
+                  }
+                }
+
+                var contents = LoadSingleFileContents(entities, loadingContext, fileData);
+                if (contents != null) {
+                  entities.Contents[i] = contents;
+                }
               }
-            }
-
-            var contents = LoadSingleFileContents(entities, loadingContext, fileEntry.Value);
-            if (contents != null) {
-              DangerousUpdateFileSystemEntitiesEntry(entities, fileEntry, contents);
-            }
-          });
+              return true;
+            });
+          }
+          catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            loadingContext.PartialProgressReporter.ReportProgressNow();
+            throw;
+          }
         }
       }
 
       Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files.",
         loadingContext.LoadedTextFileCount,
         loadingContext.LoadedBinaryFileCount);
-    }
-
-    /// <summary>
-    /// Note: Concurrency: Updating an entry of the <see cref="FileSystemEntities.Files"/> table
-    /// in this method assumes that 1) the entry exists and 2) the hash table implementation does not
-    /// mutate any of its internal state when updating an existing entry.
-    /// 
-    /// <para>
-    /// 1) is verified by virtue of the <see cref="LoadFileContents"/> method implementation.</para>
-    /// 
-    /// <para>
-    /// 2) is verified because the two possible implementations, <see cref="Dictionary{TKey,TValue}"/>
-    ///    and <see cref="SlimHashTable{TKey,TValue}"/> behave that way.</para>
-    /// </summary>
-    private static void DangerousUpdateFileSystemEntitiesEntry(FileSystemEntities entities,
-                                                               KeyValuePair<FileName, ProjectFileData> fileEntry,
-                                                               FileContents contents) {
-      entities.Files[fileEntry.Key] = fileEntry.Value.WithContents(contents);
     }
 
     /// <summary>
@@ -554,15 +545,13 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
     /// instance is needed during snapshot computation to determine if a file is
     /// searchable.
     /// </summary>
-    private struct ProjectFileData {
+    private readonly struct ProjectFileData {
       private readonly IProject _project;
       private readonly FileName _fileName;
-      private readonly FileContents _contents;
 
-      public ProjectFileData(IProject project, FileName fileName, FileContents contents) {
+      public ProjectFileData(IProject project, FileName fileName) {
         _project = project;
         _fileName = fileName;
-        _contents = contents;
       }
 
       public IProject Project => _project;
@@ -574,17 +563,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       /// </summary>
       public FileName FileName => _fileName;
 
-      /// <summary>
-      /// The file contents. May be null if this file is no part of the search
-      /// engine text index.
-      /// </summary>
-      public FileContents Contents => _contents;
-
       public bool IsSearchable => _project.IsFileSearchable(_fileName);
-
-      public ProjectFileData WithContents(FileContents contents) {
-        return new ProjectFileData(_project, _fileName, contents);
-      }
     }
 
     /// <summary>

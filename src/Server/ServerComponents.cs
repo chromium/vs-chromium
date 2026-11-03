@@ -71,7 +71,7 @@ namespace VsChromium.Server {
 
     // Server/FileSystem
     private IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
-    public IFileSystemSnapshotBuilder FileSystemSnapshotBuilder => _fileSystemSnapshotBuilder ??= Create(new FileSystemSnapshotBuilder(FileSystem, ProgressTrackerFactory));
+    public IFileSystemSnapshotBuilder FileSystemSnapshotBuilder => _fileSystemSnapshotBuilder ??= Create(new FileSystemSnapshotBuilder(FileSystem, ProgressTrackerFactory, IndexingWorkerPool));
 
     private IFileRegistrationTracker _fileRegistrationTracker;
     public IFileRegistrationTracker FileRegistrationTracker => _fileRegistrationTracker ??= Create(new FileRegistrationTracker(FileSystem, ProjectDiscovery, TaskQueueFactory));
@@ -87,7 +87,7 @@ namespace VsChromium.Server {
 
     // Server/FileSystemDatabase
     private IFileDatabaseSnapshotFactory _fileDatabaseSnapshotFactory;
-    public IFileDatabaseSnapshotFactory FileDatabaseSnapshotFactory => _fileDatabaseSnapshotFactory ??= Create(new FileDatabaseSnapshotFactory(FileSystem, FileContentsFactory, ProgressTrackerFactory));
+    public IFileDatabaseSnapshotFactory FileDatabaseSnapshotFactory => _fileDatabaseSnapshotFactory ??= Create(new FileDatabaseSnapshotFactory(FileSystem, FileContentsFactory, ProgressTrackerFactory, IndexingWorkerPool));
 
     // Server/FileSystemNames
     private IFileSystemNameFactory _fileSystemNameFactory;
@@ -145,7 +145,7 @@ namespace VsChromium.Server {
     private ISearchEngine _searchEngine;
     public ISearchEngine SearchEngine => _searchEngine ??= Create(new SearchEngine(
       FileSystemSnapshotManager, FileSystemNameFactory, LongRunningFileSystemTaskQueue, FileDatabaseSnapshotFactory, ProjectDiscovery,
-      CompiledTextSearchDataFactory, OperationProcessor));
+      CompiledTextSearchDataFactory, OperationProcessor, IndexingWorkerPool));
 
     private ISearchStringParser _searchStringParser;
     public ISearchStringParser SearchStringParser => _searchStringParser ??= Create(new SearchStringParser());
@@ -153,6 +153,9 @@ namespace VsChromium.Server {
     // Server/Threads
     private ICustomThreadPool _customThreadPool;
     public ICustomThreadPool CustomThreadPool => _customThreadPool ??= Create(new CustomThreadPool(DateTimeProvider));
+
+    private IIndexingWorkerPool _indexingWorkerPool;
+    public IIndexingWorkerPool IndexingWorkerPool => _indexingWorkerPool ??= Create(new IndexingWorkerPool());
 
     private ILongRunningFileSystemTaskQueue _longRunningFileSystemTaskQueue;
     public ILongRunningFileSystemTaskQueue LongRunningFileSystemTaskQueue => _longRunningFileSystemTaskQueue ??= Create(new LongRunningFileSystemTaskQueue(TaskQueueFactory));

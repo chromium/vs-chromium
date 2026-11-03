@@ -16,6 +16,7 @@ using VsChromium.Core.Utility;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects;
+using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystem.Builder {
   public class ProjectRootSnapshotBuilder {
@@ -25,6 +26,7 @@ namespace VsChromium.Server.FileSystem.Builder {
     private readonly IProject _project;
     private readonly IProgressTracker _progress;
     private readonly ProjectPathChanges _pathChanges;
+    private readonly IIndexingWorkerPool _indexingWorkerPool;
     private readonly CancellationToken _cancellationToken;
 
     public ProjectRootSnapshotBuilder(IFileSystem fileSystem,
@@ -33,6 +35,7 @@ namespace VsChromium.Server.FileSystem.Builder {
                                      IProject project,
                                      IProgressTracker progress,
                                      ProjectPathChanges pathChanges,
+                                     IIndexingWorkerPool indexingWorkerPool,
                                      CancellationToken cancellationToken) {
       _fileSystem = fileSystem;
       _fileSystemNameFactory = fileSystemNameFactory;
@@ -40,6 +43,7 @@ namespace VsChromium.Server.FileSystem.Builder {
       _project = project;
       _progress = progress;
       _pathChanges = pathChanges;
+      _indexingWorkerPool = indexingWorkerPool;
       _cancellationToken = cancellationToken;
     }
 
@@ -175,7 +179,11 @@ namespace VsChromium.Server.FileSystem.Builder {
     /// project directory filter.
     /// </summary>
     private Task<DirectorySnapshot> TraverseDirectoryAsync(DirectoryData directory, CancellationToken token) {
-      return Task.Run(() => ProcessDirectoryAsync(directory, token), token);
+      return Task.Factory.StartNew(
+        () => ProcessDirectoryAsync(directory, token),
+        token,
+        TaskCreationOptions.DenyChildAttach,
+        _indexingWorkerPool.Scheduler).Unwrap();
     }
 
     private async Task<DirectorySnapshot> ProcessDirectoryAsync(DirectoryData directory, CancellationToken token) {
@@ -218,7 +226,9 @@ namespace VsChromium.Server.FileSystem.Builder {
       if (childTasks == null) {
         childDirectories = ArrayUtilities.EmptyList<DirectorySnapshot>.Instance;
       } else {
-        var childSnapshots = await Task.WhenAll(childTasks).ConfigureAwait(false);
+        // Schedule the continuation on TaskScheduler.Current (the indexing worker pool) rather
+        // than escaping back to the default thread pool.
+        var childSnapshots = await Task.WhenAll(childTasks);
         childDirectories = childSnapshots
           .Where(x => x != null)
           .OrderBy(x => x.DirectoryName.Name, SystemPathComparer.NameComparer)

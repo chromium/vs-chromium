@@ -84,7 +84,8 @@ namespace VsChromium.Tests.Server {
           container.FileDatabaseSnapshotFactory,
           container.ProjectDiscovery,
           interceptingFactory,
-          container.OperationProcessor);
+          container.OperationProcessor,
+          container.IndexingWorkerPool);
 
         var loaded = new ManualResetEventSlim(false);
         searchEngine.FilesLoaded += (_, _) => loaded.Set();
@@ -135,7 +136,8 @@ namespace VsChromium.Tests.Server {
           container.FileDatabaseSnapshotFactory,
           container.ProjectDiscovery,
           interceptingFactory,
-          container.OperationProcessor);
+          container.OperationProcessor,
+          container.IndexingWorkerPool);
 
         var loaded = new ManualResetEventSlim(false);
         searchEngine.FilesLoaded += (_, _) => loaded.Set();

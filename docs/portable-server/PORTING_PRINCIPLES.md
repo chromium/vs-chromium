@@ -206,7 +206,7 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 - **Done: no dependency injection container.** MEF was first replaced with
   Microsoft.Extensions.DependencyInjection (milestone 7 groundwork), then (2026-11-02) with a hand
   written composition root, `src/Server/ServerComponents.cs`: one lazily created property per
-  component (30 singletons since P5), plain constructor calls checked by the compiler, components
+  component (31 singletons), plain constructor calls checked by the compiler, components
   disposed in reverse creation order (as the container did), a list for the former `[ImportMany]`
   (project discovery providers; the protocol and request handler lists went away with the typed
   messages protocol in P5). `TestServerComponents` checks that all components can be created.
@@ -813,3 +813,44 @@ messages: `protocol/README.md`.
   `Server/Search`, `IndexingServerStatus` to `Server`, `OperationTiming` to `Server/Diagnostics`.
   `tree/directoryStatistics` (unused by the clients, always returned zeros) was removed from the
   protocol.
+
+### Elastic indexing worker pool
+
+Bulk background indexing (`ProjectRootSnapshotBuilder`, `FileDatabaseBuilder.LoadFileContents`,
+`FileDatabaseBuilder.BuildWithChangedFiles` when updating > 16 files, and
+`SearchEngine.UpdateTrigramFilters`) runs on a dedicated `IIndexingWorkerPool` (`IndexingWorkerPool`
+in `src/Server/Threads`), while interactive queries (`SearchCode`, `SearchFilePaths`) stay on
+`ParallelBatches.For` at normal priority so typing searches remain snappy even while a foreground
+build is running.
+
+- **Why `BelowNormal` worker threads failed on Windows**: lowering process priority or running a
+  hybrid pool with `ThreadPriority.BelowNormal` workers caused > 60 s priority-inversion stalls when
+  all logical cores were saturated by normal-priority work (e.g. a parallel C++/Rust build). On
+  Windows NT, event wakeups (`KeSetEvent`) and the 4-second Balance Set Manager boost temporarily
+  let a `BelowNormal` worker claim a directory task or file batch for one quantum (~15 ms), then
+  preempt it at priority 6 for 4,000 ms while `Normal` workers sit idle waiting on
+  `Task.WhenAll(childTasks)` across a 15-level directory tree or batch completion.
+- **Design**: **all** worker threads in `IndexingWorkerPool` run at `ThreadPriority.Normal` so any
+  worker that claims a directory or file batch finishes it in < 2 ms without priority inversion:
+  - `CoreThreadCount` (`Clamp(ProcessorCount / 6, 2, 8)` — 4 on a 24-thread machine) always process
+    queued work, guaranteeing forward progress under heavy CPU contention while keeping foreground
+    build slowdown small.
+  - `ElasticThreadCount` (`Max(0, ProcessorCount - 1 - CoreThreadCount)` — 19 on a 24-thread
+    machine) expand to full machine width when CPU capacity is available and park at task/batch
+    boundaries within ~80 ms when contended. Capping total workers at `ProcessorCount - 1` on
+    multi-core machines leaves one logical core free when no external build is running so the
+    server's own workers never starve the canary.
+  - A single dedicated `ThreadPriority.BelowNormal` canary thread (`CanaryLoop`) touches no locks,
+    tasks, or files; while indexing is active (0% CPU when idle), it probes scheduling latency every
+    20 ms and stamps `_lastCanaryHealthyTick` whenever a cycle completes within 60 ms.
+  - `FileDatabaseBuilder.ComputeFileSystemEntities` also builds flat parallel `ProjectFileData[]` +
+    `FileContents[]` arrays directly instead of populating a temporary 400k-entry `SlimHashTable`.
+- **Measured results** (published Release server, `large-1-400000-v1` corpus, 24 logical cores, warm
+  OS file cache, mean of 2 runs; "+24T load" runs 24 `ThreadPriority.Normal` CPU burn threads):
+
+  | Variant | Cold index (idle) | Trigrams (idle) | Cold index (+24T load) | Trigrams (+24T load) | Foreground build slowdown | Search p50 (+24T load) |
+  |---|---:|---:|---:|---:|---:|---:|
+  | All `Normal` (`ParallelBatches`) | 6,193 ms | 2,755 ms | 9,749 ms | 5,937 ms | 46.8% | 121 ms |
+  | Process `BelowNormal` | 7,331 ms | — | > 60,000 ms | > 60,000 ms | ~7% | > 60,000 ms |
+  | Hybrid `2 Normal + 22 BelowNormal` workers | 6,031 ms | 2,612 ms | > 60,000 ms | > 60,000 ms | < 1% | — |
+  | `IndexingWorkerPool` (`4 Core + 19 Elastic + Canary`) | 6,345 ms | 3,190 ms | 33,310 ms | 10,773 ms | **13.1%** | **91 ms** |

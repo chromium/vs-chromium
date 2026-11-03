@@ -26,7 +26,7 @@ using VsChromium.Server.Projects;
 using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.Search {
-  public class SearchEngine : ISearchEngine {
+  public class SearchEngine : ISearchEngine, IDisposable {
     private static readonly TaskId UpdateFileContentsTaskId = new TaskId("UpdateFileContentsTaskId");
     private static readonly TaskId ComputeNewStatedId = new TaskId("ComputeNewStateId");
     private static readonly TaskId GarbageCollectId = new TaskId("GarbageCollectId");
@@ -35,6 +35,7 @@ namespace VsChromium.Server.Search {
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly ICompiledTextSearchDataFactory _compiledTextSearchDataFactory;
     private readonly IOperationProcessor _operationProcessor;
+    private readonly IIndexingWorkerPool _indexingWorkerPool;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
 
     /// <summary>
@@ -71,13 +72,15 @@ namespace VsChromium.Server.Search {
       IFileDatabaseSnapshotFactory fileDatabaseSnapshotFactory,
       IProjectDiscovery projectDiscovery,
       ICompiledTextSearchDataFactory compiledTextSearchDataFactory,
-      IOperationProcessor operationProcessor) {
+      IOperationProcessor operationProcessor,
+      IIndexingWorkerPool indexingWorkerPool) {
       _fileSystemNameFactory = fileSystemNameFactory;
       _taskQueue = taskQueue;
       _fileDatabaseSnapshotFactory = fileDatabaseSnapshotFactory;
       _projectDiscovery = projectDiscovery;
       _compiledTextSearchDataFactory = compiledTextSearchDataFactory;
       _operationProcessor = operationProcessor;
+      _indexingWorkerPool = indexingWorkerPool;
 
       // Create a "Null" state
       _currentFileDatabase = _fileDatabaseSnapshotFactory.CreateEmpty();
@@ -85,6 +88,21 @@ namespace VsChromium.Server.Search {
       // Setup computing a new state everytime a new tree is computed.
       fileSystemSnapshotManager.SnapshotScanFinished += FileSystemSnapshotManagerOnSnapshotScanFinished;
       fileSystemSnapshotManager.FilesChanged += FileSystemSnapshotManagerOnFilesChanged;
+    }
+
+    public void Dispose() {
+      _taskCancellation.CancelAll();
+      System.Threading.Tasks.Task trigramTask;
+      lock (_trigramFiltersLock) {
+        _disposed = true;
+        _trigramFiltersCancellation?.Cancel();
+        trigramTask = _trigramFiltersTask;
+      }
+      try {
+        trigramTask.Wait();
+      }
+      catch (AggregateException) {
+      }
     }
 
     public IFileDatabaseSnapshot CurrentFileDatabaseSnapshot {
@@ -702,6 +720,7 @@ namespace VsChromium.Server.Search {
     private readonly object _trigramFiltersLock = new object();
     private CancellationTokenSource _trigramFiltersCancellation;
     private System.Threading.Tasks.Task _trigramFiltersTask = System.Threading.Tasks.Task.CompletedTask;
+    private bool _disposed;
 
     public void SetProjectOptions(FullPath path, bool? trigramFiltersEnabled) {
       // Note: The path may be any path inside the project (or a project not known yet).
@@ -759,6 +778,8 @@ namespace VsChromium.Server.Search {
       if (!TrigramFilters.Enabled)
         return;
       lock (_trigramFiltersLock) {
+        if (_disposed)
+          return;
         _trigramFiltersCancellation?.Cancel();
         var cancellation = new CancellationTokenSource();
         _trigramFiltersCancellation = cancellation;
@@ -775,22 +796,23 @@ namespace VsChromium.Server.Search {
       var enabledByRoot = new ConcurrentDictionary<DirectoryName, bool>(System.Collections.Generic.ReferenceEqualityComparer.Instance);
       long droppedBytes = 0;
       try {
-        System.Threading.Tasks.Parallel.For(0, pieces.Count, new System.Threading.Tasks.ParallelOptions {
-          CancellationToken = cancellationToken,
-          MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
-        }, i => {
-          var piece = pieces[i];
-          if (!piece.IsFirstPiece)
-            return;
-          var root = GetProjectRootDirectory(piece.FileName);
-          var enabled = enabledByRoot.GetOrAdd(root, r => IsTrigramFiltersEnabled(r.FullPath));
-          if (enabled) {
-            piece.FileContents.BuildTrigramFilters();
-          } else {
-            var bytes = piece.FileContents.DropTrigramFilters();
-            if (bytes > 0)
-              Interlocked.Add(ref droppedBytes, bytes);
+        var maxWorkers = Math.Max(1, Environment.ProcessorCount / 2);
+        _indexingWorkerPool.RunBatches(pieces.Count, batchSize: 64, maxWorkers, cancellationToken, (start, end) => {
+          for (var i = start; i < end; i++) {
+            var piece = pieces[i];
+            if (!piece.IsFirstPiece)
+              continue;
+            var root = GetProjectRootDirectory(piece.FileName);
+            var enabled = enabledByRoot.GetOrAdd(root, r => IsTrigramFiltersEnabled(r.FullPath));
+            if (enabled) {
+              piece.FileContents.BuildTrigramFilters();
+            } else {
+              var bytes = piece.FileContents.DropTrigramFilters();
+              if (bytes > 0)
+                Interlocked.Add(ref droppedBytes, bytes);
+            }
           }
+          return true;
         });
         OperationTimings.Record(OperationTimings.TrigramFiltersBuild, stopwatch.Elapsed);
       }

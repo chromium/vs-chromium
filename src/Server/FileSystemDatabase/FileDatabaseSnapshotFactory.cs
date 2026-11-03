@@ -11,6 +11,7 @@ using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase.Builder;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
+using VsChromium.Server.Threads;
 
 namespace VsChromium.Server.FileSystemDatabase {
   /// <summary>
@@ -26,13 +27,17 @@ namespace VsChromium.Server.FileSystemDatabase {
     private readonly IFileContentsFactory _fileContentsFactory;
 
     private readonly IProgressTrackerFactory _progressTrackerFactory;
+    private readonly IIndexingWorkerPool _indexingWorkerPool;
 
-    public FileDatabaseSnapshotFactory(IFileSystem fileSystem, IFileContentsFactory fileContentsFactory,
-      IProgressTrackerFactory progressTrackerFactory) {
-
+    public FileDatabaseSnapshotFactory(
+      IFileSystem fileSystem,
+      IFileContentsFactory fileContentsFactory,
+      IProgressTrackerFactory progressTrackerFactory,
+      IIndexingWorkerPool indexingWorkerPool) {
       _fileSystem = fileSystem;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
+      _indexingWorkerPool = indexingWorkerPool;
     }
 
     public IFileDatabaseSnapshot CreateEmpty() {
@@ -72,7 +77,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       Action onLoading, Action onLoaded,
       Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
-      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
+      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory, _indexingWorkerPool)
         .BuildWithChangedFiles(previousDatabase, fileSystemSnapshot, changedFiles,
           onLoading, onLoaded, onIntermadiateResult, cancellationToken);
     }
@@ -82,7 +87,7 @@ namespace VsChromium.Server.FileSystemDatabase {
       Action onLoading, Action onLoaded,
       Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
-      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory)
+      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory, _indexingWorkerPool)
         .Build(previousDatabase, newFileSystemSnapshot, fullPathChanges,
           onLoading, onLoaded, onIntermadiateResult, cancellationToken);
     }

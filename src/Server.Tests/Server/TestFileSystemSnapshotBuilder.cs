@@ -11,6 +11,7 @@ using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.ProgressTracking;
 using VsChromium.Server.Projects.ProjectFile;
+using VsChromium.Server.Threads;
 using VsChromium.Tests.Mocks;
 
 namespace VsChromium.Tests.Server {
@@ -32,7 +33,8 @@ namespace VsChromium.Tests.Server {
       }
 
       var project = new ProjectFileDiscoveryProvider(fileSystem).GetProjectFromAnyPath(new FullPath(@"d:\foo\ab.txt"));
-      var snapshot = new FileSystemSnapshotBuilder(fileSystem, new NullProgressTrackerFactory())
+      using var workerPool = new IndexingWorkerPool();
+      var snapshot = new FileSystemSnapshotBuilder(fileSystem, new NullProgressTrackerFactory(), workerPool)
         .Compute(new FileSystemNameFactory(), null, null, new[] { project }, 1, CancellationToken.None);
 
       var directory = snapshot.ProjectRoots.Single().Directory;

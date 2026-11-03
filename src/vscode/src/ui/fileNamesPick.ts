@@ -5,8 +5,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { ServerClient } from '../server/client';
-import { flattenDirectoryEntry } from './codeSearchModel';
+import { SearchPathsRequest } from '../protocol/protocol.g';
+import { ServerClient, userErrorMessage } from '../server/client';
+import { flattenFilePaths } from './codeSearchModel';
 import { FilePathQuery, parseFilePathQuery } from './filePathQuery';
 
 interface FileItem extends vscode.QuickPickItem {
@@ -42,9 +43,17 @@ export class FileNamesPick {
     let searchId = 0;
     let timer: NodeJS.Timeout | undefined;
     let query: FilePathQuery = { pattern: '' };
+    // Cancels the running search when a new search starts or the pick is closed.
+    let cancellation: vscode.CancellationTokenSource | undefined;
+    const cancelSearch = () => {
+      cancellation?.cancel();
+      cancellation?.dispose();
+      cancellation = undefined;
+    };
 
     const search = async () => {
       const id = ++searchId;
+      cancelSearch();
       query = parseFilePathQuery(pick.value);
       if (query.pattern.length === 0) {
         pick.items = [];
@@ -53,19 +62,20 @@ export class FileNamesPick {
         return;
       }
       pick.busy = true;
+      const token = (cancellation = new vscode.CancellationTokenSource()).token;
       try {
         const current = this.getServer();
         if (!current) {
           throw new Error('The indexing server is not running.');
         }
-        const response = await current.request({
-          $type: 'SearchFilePathsRequest',
-          searchParams: { searchString: query.pattern, maxResults, includeSymLinks: true },
-        });
+        const response = await current.request(SearchPathsRequest.type, {
+          query: { text: query.pattern, includeSymLinks: true },
+          maxResults,
+        }, token);
         if (id !== searchId) {
           return; // A newer search is in progress.
         }
-        const items: FileItem[] = flattenDirectoryEntry(response.searchResult).map(f => ({
+        const items: FileItem[] = flattenFilePaths(response).map(f => ({
           label: path.basename(f.relativePath),
           description: path.dirname(f.relativePath) === '.' ? '' : path.dirname(f.relativePath),
           detail: undefined,
@@ -83,9 +93,10 @@ export class FileNamesPick {
           `${response.totalCount.toLocaleString()}${position}`;
         pick.items = items;
       } catch (e) {
-        if (id === searchId) {
+        const message = userErrorMessage(e);
+        if (id === searchId && message !== undefined) {
           pick.items = [];
-          pick.title = `VsChromium: ${e instanceof Error ? e.message : String(e)}`;
+          pick.title = `VsChromium: ${message}`;
         }
       } finally {
         if (id === searchId) {
@@ -108,6 +119,7 @@ export class FileNamesPick {
     });
     pick.onDidHide(() => {
       clearTimeout(timer);
+      cancelSearch();
       pick.dispose();
     });
 

@@ -13,9 +13,9 @@ extension.
 
 ## How it works
 
-The extension starts `VsChromium.Server.exe --stdio` and exchanges JSON messages with it, one per
-line, over stdin/stdout (see `src/Server/Ipc/Json` in the repository). The server exits when VS
-Code closes its stdin.
+The extension starts `VsChromium.Server.exe --jsonrpc` and talks to it with JSON-RPC 2.0 over
+stdin/stdout (`vscode-jsonrpc`; the protocol is defined in `protocol/*.tsp` in the repository, and
+`src/protocol/protocol.g.ts` is generated from it). The server exits when VS Code closes its stdin.
 
 Projects are discovered by the server from the workspace folders and opened files: a folder is
 indexed if it (or one of its parents) contains a `vs-chromium-project.txt` file, or is the `src`
@@ -30,7 +30,8 @@ Prerequisites: Node.js, VS Code, and the vs-chromium solution built in `Debug` (
 ```
 cd src\vscode
 npm install
-npm test          # compiles, then runs unit tests and integration tests against Binaries\Debug
+npm test          # compiles, then runs unit tests and integration tests against Binaries\Release
+                  # (or Debug; VSCHROMIUM_SERVER_PATH overrides the server)
 ```
 
 To debug the extension, open the `src\vscode` folder in VS Code and press **F5** ("Run

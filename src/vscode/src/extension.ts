@@ -3,9 +3,18 @@
 // found in the LICENSE file.
 
 import * as vscode from 'vscode';
-import { ServerClient } from './server/client';
+import {
+  FilesRegisterRequest,
+  FilesUnregisterRequest,
+  IndexingStatus,
+  IndexResumeRequest,
+  IndexStatisticsRequest,
+  ProjectSetOptionsRequest,
+  TreeGetRequest,
+} from './protocol/protocol.g';
+import { ServerClient, userErrorMessage } from './server/client';
 import { findServerPath, serverPathCandidates } from './server/serverLocator';
-import { describeIndexingState, IndexingState, nextIndexingState } from './ui/indexingState';
+import { describeIndexingState, IndexingState, nextIndexingState, subscribeIndexEvents } from './ui/indexingState';
 import { CodeSearchViewProvider } from './ui/codeSearchView';
 import { FileNamesPick } from './ui/fileNamesPick';
 
@@ -29,6 +38,11 @@ class ServerManager implements vscode.Disposable {
       this.statusBar,
       vscode.workspace.onDidChangeWorkspaceFolders(e => this.onWorkspaceFoldersChanged(e)),
       vscode.workspace.onDidOpenTextDocument(doc => this.registerDocument(doc)),
+      vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('vschromium.trigramFilters')) {
+          void this.applyProjectOptions(/*includeIndexedProjects*/ true);
+        }
+      }),
     );
     this.setState({ kind: 'starting' });
     this.statusBar.show();
@@ -56,13 +70,22 @@ class ServerManager implements vscode.Disposable {
     this.output.info(`Starting indexing server: ${serverPath}`);
     this.setState({ kind: 'starting' });
     const trace = config.get<boolean>('trace.server') ?? false;
-    const client = new ServerClient(serverPath, {
+    const client = ServerClient.start(serverPath, {
       log: message => this.output.info(message),
-      trace: trace ? (direction, json) => this.output.trace(`${direction === 'send' ? '-->' : '<--'} ${json}`) : undefined,
+      trace: trace ? message => this.output.trace(message) : undefined,
+      clientName: 'VS Code',
+      clientVersion: String(this.context.extension.packageJSON.version ?? ''),
     });
     this.client = client;
 
-    client.onEvent(event => {
+    subscribeIndexEvents(client, event => {
+      if (this.client !== client) {
+        return;
+      }
+      if (event.type === 'loaded' && !this.trigramFiltersEnabled()) {
+        // Projects discovered since the last load (e.g. from an opened file).
+        void this.applyProjectOptions(/*includeIndexedProjects*/ true);
+      }
       const next = nextIndexingState(this.state, event);
       if (next) {
         this.setState(next);
@@ -78,11 +101,11 @@ class ServerManager implements vscode.Disposable {
     });
 
     try {
-      await client.ready();
-      this.output.info(`Indexing server started (pid ${client.pid}).`);
+      const info = await client.ready();
+      this.output.info(`Indexing server ${info.serverVersion} started (pid ${info.serverProcessId}).`);
       await this.registerWorkspace();
     } catch (e) {
-      this.output.error(`Error starting indexing server: ${errorMessage(e)}`);
+      this.output.error(`Error starting indexing server: ${userErrorMessage(e)}`);
     }
   }
 
@@ -109,18 +132,27 @@ class ServerManager implements vscode.Disposable {
       return;
     }
     try {
-      const stats = await server.request({ $type: 'GetDatabaseStatisticsRequest' });
+      const stats = await server.request(IndexStatisticsRequest.type, {});
       const mb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
       const lines = [
-        `Status: ${stats.serverStatus}`,
+        `Status: ${describeStatus(stats.status)}`,
         `Projects: ${stats.projectCount}`,
         `Files: ${stats.fileCount.toLocaleString()} (${stats.searchableFileCount.toLocaleString()} searchable)`,
         `Memory: ${mb(stats.serverGcMemoryUsage)} managed, ${mb(stats.serverNativeMemoryUsage)} native`,
         `Index last updated: ${new Date(stats.indexLastUpdatedUtc).toLocaleString()}`,
       ];
-      await vscode.window.showInformationMessage('VsChromium indexing server', { modal: true, detail: lines.join('\n') });
+      const paused = stats.status === 'paused' || stats.status === 'yield';
+      const resume = 'Resume Indexing';
+      const choice = await vscode.window.showInformationMessage(
+        'VsChromium indexing server', { modal: true, detail: lines.join('\n') }, ...(paused ? [resume] : []));
+      if (choice === resume) {
+        await server.request0(IndexResumeRequest.type);
+      }
     } catch (e) {
-      void vscode.window.showErrorMessage(`VsChromium: ${errorMessage(e)}`);
+      const message = userErrorMessage(e);
+      if (message !== undefined) {
+        void vscode.window.showErrorMessage(`VsChromium: ${message}`);
+      }
     }
   }
 
@@ -140,10 +172,47 @@ class ServerManager implements vscode.Disposable {
     for (const doc of vscode.workspace.textDocuments) {
       await this.registerDocument(doc);
     }
-    // The server sends indexing events only if it found a project for one of the paths.
-    const stats = await this.server?.request({ $type: 'GetDatabaseStatisticsRequest' });
+    if (!this.trigramFiltersEnabled()) {
+      // Enabled by default: sent only when disabled (applied by the server when the project loads).
+      await this.applyProjectOptions(/*includeIndexedProjects*/ false);
+    }
+    // The server sends indexing notifications only if it found a project for one of the paths.
+    const stats = await this.server?.request(IndexStatisticsRequest.type, {});
     if (stats && stats.projectCount === 0 && this.state.kind === 'starting') {
       this.setState({ kind: 'noProject' });
+    }
+  }
+
+  private trigramFiltersEnabled(): boolean {
+    return vscode.workspace.getConfiguration('vschromium').get<boolean>('trigramFilters') ?? true;
+  }
+
+  /**
+   * Sends the project options (setting "vschromium.trigramFilters") for the workspace folders
+   * (any path inside a project identifies the project) and, if `includeIndexedProjects`, for the
+   * projects known to the server.
+   */
+  private async applyProjectOptions(includeIndexedProjects: boolean) {
+    const server = this.server;
+    if (!server) {
+      return;
+    }
+    const trigramFiltersEnabled = this.trigramFiltersEnabled();
+    try {
+      const paths = new Set((vscode.workspace.workspaceFolders ?? [])
+        .filter(folder => folder.uri.scheme === 'file')
+        .map(folder => folder.uri.fsPath));
+      if (includeIndexedProjects) {
+        const tree = await server.request(TreeGetRequest.type, {});
+        for (const project of tree.projects) {
+          paths.add(project.rootPath);
+        }
+      }
+      for (const projectPath of paths) {
+        await server.request(ProjectSetOptionsRequest.type, { projectPath, trigramFiltersEnabled });
+      }
+    } catch (e) {
+      this.output.warn(`Error setting the project options: ${userErrorMessage(e)}`);
     }
   }
 
@@ -153,6 +222,9 @@ class ServerManager implements vscode.Disposable {
     }
     for (const folder of e.removed) {
       await this.unregisterPath(folder.uri);
+    }
+    if (e.added.length > 0 && !this.trigramFiltersEnabled()) {
+      await this.applyProjectOptions(/*includeIndexedProjects*/ false);
     }
   }
 
@@ -167,9 +239,9 @@ class ServerManager implements vscode.Disposable {
       return;
     }
     try {
-      await this.server.request({ $type: 'RegisterFileRequest', fileName: uri.fsPath });
+      await this.server.request(FilesRegisterRequest.type, { path: uri.fsPath });
     } catch (e) {
-      this.output.warn(`Error registering "${uri.fsPath}": ${errorMessage(e)}`);
+      this.output.warn(`Error registering "${uri.fsPath}": ${userErrorMessage(e)}`);
     }
   }
 
@@ -178,20 +250,20 @@ class ServerManager implements vscode.Disposable {
       return;
     }
     try {
-      await this.server.request({ $type: 'UnregisterFileRequest', fileName: uri.fsPath });
+      await this.server.request(FilesUnregisterRequest.type, { path: uri.fsPath });
     } catch (e) {
-      this.output.warn(`Error unregistering "${uri.fsPath}": ${errorMessage(e)}`);
+      this.output.warn(`Error unregistering "${uri.fsPath}": ${userErrorMessage(e)}`);
     }
   }
 
   private async refreshStatistics() {
     try {
-      const stats = await this.server?.request({ $type: 'GetDatabaseStatisticsRequest' });
+      const stats = await this.server?.request(IndexStatisticsRequest.type, {});
       if (stats && this.state.kind === 'ready') {
         this.setState({ kind: 'ready', fileCount: stats.fileCount, projectCount: stats.projectCount });
       }
     } catch (e) {
-      this.output.warn(`Error getting server statistics: ${errorMessage(e)}`);
+      this.output.warn(`Error getting server statistics: ${userErrorMessage(e)}`);
     }
   }
 
@@ -204,8 +276,9 @@ class ServerManager implements vscode.Disposable {
   }
 }
 
-function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
+/** The indexing status, for display ("idle" -> "Idle"). */
+function describeStatus(status: IndexingStatus): string {
+  return status === 'yield' ? 'Paused (by the server)' : status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {

@@ -4,8 +4,8 @@
 
 import * as crypto from 'crypto';
 import * as vscode from 'vscode';
-import { ServerClient } from '../server/client';
-import { SearchCodeResponse } from '../server/messages';
+import { FilesExtractsRequest, SearchCodeRequest, SearchCodeResult } from '../protocol/protocol.g';
+import { ServerClient, userErrorMessage } from '../server/client';
 import { describeResults, flattenSearchResults, SearchResultFile, toDisplayLine } from './codeSearchModel';
 import { FromWebview, SearchOptions, ToWebview } from './codeSearchProtocol';
 
@@ -20,6 +20,8 @@ export class CodeSearchViewProvider implements vscode.WebviewViewProvider {
   private webviewReady = false;
   private pendingQuery: { query: string; search: boolean } | undefined;
   private lastSearch: { searchId: number; files: SearchResultFile[] } | undefined;
+  /** Cancels the requests (search, extracts) of the current search when a new search starts. */
+  private searchCancellation: vscode.CancellationTokenSource | undefined;
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -80,6 +82,12 @@ export class CodeSearchViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async search(searchId: number, options: SearchOptions) {
+    // A new search cancels the previous one (and its pending extracts requests).
+    this.searchCancellation?.cancel();
+    this.searchCancellation?.dispose();
+    const cancellation = new vscode.CancellationTokenSource();
+    this.searchCancellation = cancellation;
+
     const server = this.getServer();
     if (!server) {
       this.post({ type: 'error', searchId, message: 'The indexing server is not running.' });
@@ -88,23 +96,28 @@ export class CodeSearchViewProvider implements vscode.WebviewViewProvider {
     const config = vscode.workspace.getConfiguration('vschromium.searchCode');
     const maxResults = config.get<number>('maxResults') ?? 10000;
     const started = Date.now();
-    let response: SearchCodeResponse;
+    let response: SearchCodeResult;
     try {
-      response = await server.request({
-        $type: 'SearchCodeRequest',
-        searchParams: {
-          searchString: options.query,
+      response = await server.request(SearchCodeRequest.type, {
+        query: {
+          text: options.query,
           filePathPattern: options.filePathPattern,
-          maxResults,
           matchCase: options.matchCase,
           matchWholeWord: options.matchWholeWord,
           regex: options.regex,
           includeSymLinks: true,
         },
-      });
+        maxResults,
+      }, cancellation.token);
     } catch (e) {
-      this.post({ type: 'error', searchId, message: errorMessage(e) });
+      const message = userErrorMessage(e);
+      if (message !== undefined && !cancellation.token.isCancellationRequested) {
+        this.post({ type: 'error', searchId, message });
+      }
       return;
+    }
+    if (cancellation.token.isCancellationRequested) {
+      return; // A newer search started.
     }
     const files = flattenSearchResults(response);
     this.lastSearch = { searchId, files };
@@ -116,7 +129,7 @@ export class CodeSearchViewProvider implements vscode.WebviewViewProvider {
         index: f.index,
         relativePath: f.relativePath,
         fullPath: f.fullPath,
-        matchCount: f.positions.length,
+        matchCount: f.spans.length,
       })),
     });
   }
@@ -124,24 +137,26 @@ export class CodeSearchViewProvider implements vscode.WebviewViewProvider {
   private async getExtracts(searchId: number, fileIndex: number) {
     const file = this.getFile(searchId, fileIndex);
     const server = this.getServer();
-    if (!file || !server || file.positions.length === 0) {
+    if (!file || !server || file.spans.length === 0) {
       return;
     }
     const maxExtractLength = vscode.workspace.getConfiguration('vschromium.searchCode').get<number>('maxExtractLength') ?? 120;
     try {
-      const response = await server.request({
-        $type: 'GetFileExtractsRequest',
-        fileName: file.fullPath,
-        positions: file.positions,
+      const response = await server.request(FilesExtractsRequest.type, {
+        path: file.fullPath,
+        spans: file.spans,
         maxExtractLength,
-      });
-      const lines = file.positions.map((position, i) => {
-        const extract = response.fileExtracts[i];
-        return extract ? toDisplayLine(extract, position) : null;
+      }, this.searchCancellation?.token);
+      const lines = file.spans.map((span, i) => {
+        const extract = response.extracts[i];
+        return extract ? toDisplayLine(extract, span) : null;
       });
       this.post({ type: 'extracts', searchId, fileIndex, lines });
     } catch (e) {
-      this.output.warn(`Error getting text extracts for "${file.fullPath}": ${errorMessage(e)}`);
+      const message = userErrorMessage(e);
+      if (message !== undefined) {
+        this.output.warn(`Error getting text extracts for "${file.fullPath}": ${message}`);
+      }
     }
   }
 
@@ -152,7 +167,7 @@ export class CodeSearchViewProvider implements vscode.WebviewViewProvider {
     }
     try {
       const document = await vscode.workspace.openTextDocument(vscode.Uri.file(file.fullPath));
-      const span = file.positions[positionIndex];
+      const span = file.spans[positionIndex];
       // Server positions are UTF-16 character offsets, like VS Code document offsets.
       const selection = span
         ? new vscode.Selection(document.positionAt(span.position + span.length), document.positionAt(span.position))

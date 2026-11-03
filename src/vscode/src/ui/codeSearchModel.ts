@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 import * as path from 'path';
-import { DirectoryEntry, FileExtract, FilePositionSpan, SearchCodeResponse } from '../server/messages';
+import { FileExtract, SearchCodeResult, SearchPathsResult, TextSpan } from '../protocol/protocol.g';
 
-/** A file containing matches, flattened from the SearchCodeResponse tree. */
+/** A file of the search results (projects[].files[] of "search/code", flattened). */
 export interface SearchResultFile {
   /** Index in the result list (stable identifier used by the webview). */
   index: number;
@@ -13,51 +13,45 @@ export interface SearchResultFile {
   /** Path relative to the project root, used for display. */
   relativePath: string;
   projectRoot: string;
-  positions: FilePositionSpan[];
+  /** The matches in the file (empty for file path searches). */
+  spans: TextSpan[];
 }
 
 /**
- * Flattens the search results tree (root -> projects -> files, possibly with nested directories)
- * into a list of files with their match positions.
+ * Builds the list of files displayed by the Code Search view from the result of "search/code":
+ * the files of each project, in the order of the result, with their match spans.
  */
-export function flattenSearchResults(response: SearchCodeResponse): SearchResultFile[] {
-  return flattenDirectoryEntry(response.searchResults);
-}
-
-/**
- * Flattens a search result tree, as returned by SearchCode and SearchFilePaths requests: the
- * root entry contains one directory entry per project (name = project root path), containing
- * files and directories (names relative to their parent).
- */
-export function flattenDirectoryEntry(root: DirectoryEntry): SearchResultFile[] {
+export function flattenSearchResults(result: SearchCodeResult): SearchResultFile[] {
   const files: SearchResultFile[] = [];
-  for (const project of root.entries ?? []) {
-    if (!isDirectory(project)) {
-      continue;
+  for (const project of result.projects) {
+    for (const file of project.files) {
+      files.push(createFile(files.length, project.rootPath, file.relativePath, file.matches));
     }
-    const visit = (dir: DirectoryEntry, relativeDir: string) => {
-      for (const entry of dir.entries ?? []) {
-        const relativePath = relativeDir ? path.join(relativeDir, entry.name) : entry.name;
-        if (isDirectory(entry)) {
-          visit(entry, relativePath);
-        } else {
-          files.push({
-            index: files.length,
-            fullPath: path.join(project.name, relativePath),
-            relativePath,
-            projectRoot: project.name,
-            positions: entry.data?.positions ?? [],
-          });
-        }
-      }
-    };
-    visit(project, '');
   }
   return files;
 }
 
-function isDirectory(entry: { $type?: string }): entry is DirectoryEntry {
-  return entry.$type === undefined || entry.$type === 'DirectoryEntry';
+/** Builds the list of files from the result of "search/paths" (no match spans). */
+export function flattenFilePaths(result: SearchPathsResult): SearchResultFile[] {
+  const files: SearchResultFile[] = [];
+  for (const project of result.projects) {
+    for (const relativePath of project.relativePaths) {
+      files.push(createFile(files.length, project.rootPath, relativePath, []));
+    }
+  }
+  return files;
+}
+
+function createFile(index: number, projectRoot: string, relativePath: string, spans: TextSpan[]): SearchResultFile {
+  // path.normalize: relative paths use the separator of the server platform.
+  const normalizedRelativePath = path.normalize(relativePath);
+  return {
+    index,
+    fullPath: path.join(projectRoot, normalizedRelativePath),
+    relativePath: normalizedRelativePath,
+    projectRoot,
+    spans,
+  };
 }
 
 /** A line of text to display in the results, with the match highlighted. */
@@ -73,13 +67,13 @@ export interface DisplayLine {
 }
 
 /**
- * Builds the display line for a match from its file extract. The extract text is the line
- * containing the match; `position` is the match location in the file.
+ * Builds the display line for a match from its file extract ("files/extracts"). The extract text
+ * is the line containing the match; `span` is the match location in the file.
  */
-export function toDisplayLine(extract: FileExtract, position: FilePositionSpan): DisplayLine {
+export function toDisplayLine(extract: FileExtract, span: TextSpan): DisplayLine {
   const text = extract.text;
-  const start = clamp(position.position - extract.offset, 0, text.length);
-  const end = clamp(start + position.length, start, text.length);
+  const start = clamp(span.position - extract.offset, 0, text.length);
+  const end = clamp(start + span.length, start, text.length);
   return {
     lineNumber: extract.lineNumber + 1,
     columnNumber: extract.columnNumber + 1,
@@ -94,10 +88,10 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** Summary line displayed above the results. */
-export function describeResults(response: SearchCodeResponse, fileCount: number, maxResults: number, elapsedMs: number): string {
-  const hits = response.hitCount;
+export function describeResults(result: SearchCodeResult, fileCount: number, maxResults: number, elapsedMs: number): string {
+  const hits = result.hitCount;
   const truncated = hits >= maxResults ? ` (limited to ${maxResults.toLocaleString()})` : '';
   const files = `${fileCount.toLocaleString()} file${fileCount === 1 ? '' : 's'}`;
-  const searched = `searched ${response.searchedFileCount.toLocaleString()} of ${response.totalFileCount.toLocaleString()} files`;
+  const searched = `searched ${result.searchedFileCount.toLocaleString()} of ${result.totalFileCount.toLocaleString()} files`;
   return `${hits.toLocaleString()} result${hits === 1 ? '' : 's'}${truncated} in ${files}, ${searched} in ${elapsedMs.toLocaleString()} ms`;
 }

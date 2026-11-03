@@ -118,6 +118,11 @@
           "default": 2000,
           "minimum": 1,
           "description": "Maximum number of files returned by Find File Names."
+        },
+        "vschromium.trigramFilters": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use trigram filters for the projects of the workspace: faster code searches, at the cost of memory (about 5% of the size of the indexed file contents)."
         }
       }
     }
@@ -127,12 +132,12 @@
     "watch": "tsc -watch -p ./",
     "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
     "vscode:prepublish": "npm run compile",
-    "package": "node scripts/copy-server.js Release win32-x64 && vsce package --target win32-x64 --no-dependencies",
-    "package:linux-x64": "node scripts/copy-server.js Release linux-x64 && vsce package --target linux-x64 --no-dependencies",
-    "package:linux-arm64": "node scripts/copy-server.js Release linux-arm64 && vsce package --target linux-arm64 --no-dependencies",
-    "package:darwin-arm64": "node scripts/copy-server.js Release darwin-arm64 && vsce package --target darwin-arm64 --no-dependencies",
-    "package:win32-arm64": "node scripts/copy-server.js Release win32-arm64 && vsce package --target win32-arm64 --no-dependencies",
-    "package:debug": "node scripts/copy-server.js Debug win32-x64 && vsce package --target win32-x64 --no-dependencies"
+    "package": "node scripts/copy-server.js Release win32-x64 && vsce package --target win32-x64",
+    "package:linux-x64": "node scripts/copy-server.js Release linux-x64 && vsce package --target linux-x64",
+    "package:linux-arm64": "node scripts/copy-server.js Release linux-arm64 && vsce package --target linux-arm64",
+    "package:darwin-arm64": "node scripts/copy-server.js Release darwin-arm64 && vsce package --target darwin-arm64",
+    "package:win32-arm64": "node scripts/copy-server.js Release win32-arm64 && vsce package --target win32-arm64",
+    "package:debug": "node scripts/copy-server.js Debug win32-x64 && vsce package --target win32-x64"
   },
   "devDependencies": {
     "@types/node": "22.15.3",

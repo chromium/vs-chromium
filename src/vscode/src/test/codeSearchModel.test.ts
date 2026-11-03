@@ -5,50 +5,68 @@
 import * as assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { describe, it } from 'node:test';
-import { SearchCodeResponse } from '../server/messages';
-import { describeResults, flattenSearchResults, toDisplayLine } from '../ui/codeSearchModel';
+import { SearchCodeResult, SearchPathsResult } from '../protocol/protocol.g';
+import { describeResults, flattenFilePaths, flattenSearchResults, toDisplayLine } from '../ui/codeSearchModel';
 
-const response: SearchCodeResponse = {
-  $type: 'SearchCodeResponse',
+const result: SearchCodeResult = {
   hitCount: 4,
   searchedFileCount: 10,
   totalFileCount: 12,
-  searchResults: {
-    name: '',
-    entries: [
-      {
-        $type: 'DirectoryEntry',
-        name: 'C:\\src\\chromium\\src',
-        entries: [
-          { $type: 'FileEntry', name: 'base\\foo.cc', data: { $type: 'FilePositionsData', positions: [{ position: 10, length: 3 }] } },
-          {
-            $type: 'DirectoryEntry',
-            name: 'content',
-            entries: [{ $type: 'FileEntry', name: 'bar.h', data: { $type: 'FilePositionsData', positions: [{ position: 1, length: 3 }, { position: 50, length: 3 }] } }],
-          },
-        ],
-      },
-      {
-        $type: 'DirectoryEntry',
-        name: 'D:\\other',
-        entries: [{ $type: 'FileEntry', name: 'readme.txt' }],
-      },
-    ],
-  },
+  projects: [
+    {
+      rootPath: 'C:\\src\\chromium\\src',
+      files: [
+        { relativePath: 'base\\foo.cc', matches: [{ position: 10, length: 3 }] },
+        { relativePath: 'content\\bar.h', matches: [{ position: 1, length: 3 }, { position: 50, length: 3 }] },
+      ],
+    },
+    {
+      rootPath: 'D:\\other',
+      files: [{ relativePath: 'readme.txt', matches: [] }],
+    },
+  ],
 };
 
 describe('flattenSearchResults', () => {
-  it('flattens projects, nested directories and files', () => {
-    const files = flattenSearchResults(response);
-    assert.deepEqual(files.map(f => [f.index, f.fullPath, f.relativePath, f.projectRoot, f.positions.length]), [
-      [0, path.join('C:\\src\\chromium\\src', 'base\\foo.cc'), 'base\\foo.cc', 'C:\\src\\chromium\\src', 1],
-      [1, path.join('C:\\src\\chromium\\src', 'content', 'bar.h'), path.join('content', 'bar.h'), 'C:\\src\\chromium\\src', 2],
+  it('maps the files of each project (flat result) to the list displayed by the view', () => {
+    const files = flattenSearchResults(result);
+    assert.deepEqual(files.map(f => [f.index, f.fullPath, f.relativePath, f.projectRoot, f.spans.length]), [
+      [0, path.join('C:\\src\\chromium\\src', 'base\\foo.cc'), path.normalize('base\\foo.cc'), 'C:\\src\\chromium\\src', 1],
+      [1, path.join('C:\\src\\chromium\\src', 'content\\bar.h'), path.normalize('content\\bar.h'), 'C:\\src\\chromium\\src', 2],
       [2, path.join('D:\\other', 'readme.txt'), 'readme.txt', 'D:\\other', 0],
     ]);
+    assert.deepEqual(files[1].spans, [{ position: 1, length: 3 }, { position: 50, length: 3 }]);
+  });
+
+  it('normalizes the separators of the relative paths', () => {
+    const files = flattenSearchResults({
+      ...result,
+      projects: [{ rootPath: path.resolve('root'), files: [{ relativePath: 'a/b/c.h', matches: [] }] }],
+    });
+    assert.equal(files[0].relativePath, path.join('a', 'b', 'c.h'));
+    assert.equal(files[0].fullPath, path.join(path.resolve('root'), 'a', 'b', 'c.h'));
   });
 
   it('handles empty results', () => {
-    assert.deepEqual(flattenSearchResults({ ...response, searchResults: { name: '' } }), []);
+    assert.deepEqual(flattenSearchResults({ ...result, projects: [] }), []);
+  });
+});
+
+describe('flattenFilePaths', () => {
+  it('maps the relative paths of each project to files', () => {
+    const paths: SearchPathsResult = {
+      hitCount: 3,
+      totalCount: 100,
+      projects: [
+        { rootPath: 'C:\\a', relativePaths: ['x.cc', 'dir\\y.h'] },
+        { rootPath: 'C:\\b', relativePaths: ['z.txt'] },
+      ],
+    };
+    assert.deepEqual(flattenFilePaths(paths).map(f => [f.index, f.fullPath, f.projectRoot, f.spans.length]), [
+      [0, path.join('C:\\a', 'x.cc'), 'C:\\a', 0],
+      [1, path.join('C:\\a', 'dir\\y.h'), 'C:\\a', 0],
+      [2, path.join('C:\\b', 'z.txt'), 'C:\\b', 0],
+    ]);
   });
 });
 
@@ -70,10 +88,10 @@ describe('toDisplayLine', () => {
 
 describe('describeResults', () => {
   it('summarizes hits, files and searched files', () => {
-    assert.equal(describeResults(response, 2, 10000, 15), '4 results in 2 files, searched 10 of 12 files in 15 ms');
+    assert.equal(describeResults(result, 2, 10000, 15), '4 results in 2 files, searched 10 of 12 files in 15 ms');
   });
 
   it('mentions when results are truncated', () => {
-    assert.match(describeResults({ ...response, hitCount: 100 }, 2, 100, 1), /limited to 100/);
+    assert.match(describeResults({ ...result, hitCount: 100 }, 2, 100, 1), /limited to 100/);
   });
 });

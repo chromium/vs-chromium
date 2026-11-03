@@ -148,11 +148,12 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   slow, keep protobuf-net (upgraded to 3.x, `netstandard2.0`) over stdio for VS.
 - The protocol is the JSON format. Its message classes are defined three times, once per code base:
   `src/Core.Server/Ipc` (server), `src/Core.Ipc` (VS package), `src/vscode/src/server/messages.ts`
-  (VS Code extension). A protocol change updates the three, and is covered by the end-to-end tests
+  (VS Code extension, until P3). A protocol change updates the three, and is covered by the end-to-end tests
   and the client tests.
 - **In progress: JSON-RPC 2.0 protocol defined in TypeSpec** (see "Protocol definition in
-  TypeSpec" at the end): the server speaks it with `--jsonrpc` since P2; the clients move to it in
-  P3/P4, then the typed messages protocol above (`--stdio`) is removed (P5).
+  TypeSpec" at the end): the server speaks it with `--jsonrpc` since P2; the VS Code extension uses it
+  since P3 (`vscode-jsonrpc`, `src/vscode/src/server/client.ts`), the VS package moves to it in P4,
+  then the typed messages protocol above (`--stdio`) is removed (P5).
 
 ### File system
 

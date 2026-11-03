@@ -39,11 +39,15 @@
   <!--
     Protocol code (Protocol\Generated\Protocol.g.cs, namespace VsChromium.Protocol.Generated), generated from the protocol definition (protocol\*.tsp)
     by src\Tools\ProtocolGen before compiling, when a definition file or the generator changed. The
-    generated file is checked in (diffs show the effect of protocol changes).
+    generated file is checked in (diffs show the effect of protocol changes). The generator is a
+    build-only reference: Private="false" and PrivateAssets="all" keep its executable out of the
+    build and publish outputs of Core.Server and Server.
   -->
   <ItemGroup>
     <ProjectReference Include="..\Tools\ProtocolGen\ProtocolGen.csproj"
                       ReferenceOutputAssembly="false"
+                      Private="false"
+                      PrivateAssets="all"
                       SkipGetTargetFrameworkProperties="true"
                       GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun;PublishSingleFile;PublishAot" />
     <ProtocolDefinition Include="$(BuildRoot)protocol\*.tsp" />

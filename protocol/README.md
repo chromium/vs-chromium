@@ -125,7 +125,8 @@ Visual Studio extension (P4).
   by `\r\n`, an empty line (`\r\n`), then the content: `Content-Length` bytes of UTF-8 JSON.
   `Content-Length` is required; other headers (e.g. `Content-Type`) are ignored; header names are
   case-insensitive. Invalid headers (or a stream ending in the middle of a message) end the
-  connection: the server sends a `-32700` error with a null id and stops reading (exits).
+  connection: the server sends a `-32700` error with a null id and stops reading (exits). A UTF-8
+  BOM at the very start of the input is skipped (written by .NET Framework clients).
 - **Messages**: JSON-RPC 2.0. `"jsonrpc": "2.0"` is required. Requests (`id` + `method` +
   optional `params`, an object), notifications (no `id`). Ids are numbers or strings, echoed as is in
   the responses. Results are always present in successful responses (`null` for methods returning

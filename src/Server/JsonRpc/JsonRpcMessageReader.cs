@@ -20,12 +20,16 @@ namespace VsChromium.Server.JsonRpc {
   /// Reads the messages of a stream framed as in the Language Server Protocol: headers
   /// (<c>Content-Length: N</c>, other headers such as <c>Content-Type</c> are ignored, header names
   /// are case-insensitive), each terminated by "\r\n", an empty line, then N bytes of UTF-8 JSON.
+  /// A UTF-8 byte order mark at the very start of the stream is skipped (a .NET Framework client
+  /// writes the preamble of <c>Console.InputEncoding</c> to the standard input of the processes it
+  /// starts: a UTF-8 BOM with code page 65001).
   /// Not thread safe: messages are read by a single thread.
   /// </summary>
   public sealed class JsonRpcMessageReader {
     private const string ContentLengthHeader = "Content-Length";
     /// <summary>Maximum length of a header line (protection against garbage input).</summary>
     private const int MaxHeaderLineLength = 8 * 1024;
+    private static readonly byte[] Utf8Preamble = { 0xEF, 0xBB, 0xBF };
 
     private readonly Stream _stream;
     private readonly byte[] _buffer;
@@ -33,6 +37,8 @@ namespace VsChromium.Server.JsonRpc {
     private int _start;
     /// <summary>End of the bytes read in <see cref="_buffer"/>.</summary>
     private int _end;
+    /// <summary>True once the start of the stream was checked for a UTF-8 BOM.</summary>
+    private bool _preambleSkipped;
 
     public JsonRpcMessageReader(Stream stream, int bufferSize = 64 * 1024) {
       _stream = stream;
@@ -46,6 +52,10 @@ namespace VsChromium.Server.JsonRpc {
     /// of a message.
     /// </summary>
     public byte[] ReadMessage() {
+      if (!_preambleSkipped) {
+        SkipUtf8Preamble();
+      }
+
       var contentLength = -1;
       var headerCount = 0;
       while (true) {
@@ -84,6 +94,36 @@ namespace VsChromium.Server.JsonRpc {
         throw new JsonRpcFramingException("Missing Content-Length header");
       }
       return ReadContent(contentLength);
+    }
+
+    /// <summary>
+    /// Skips a UTF-8 BOM at the start of the stream (possibly split across reads). Called once,
+    /// before the first message.
+    /// </summary>
+    private void SkipUtf8Preamble() {
+      _preambleSkipped = true;
+      // Read until the preamble is buffered, a byte differs from it, or the stream ends.
+      while (_end - _start < Utf8Preamble.Length && BufferedBytesMatchPreamble()) {
+        var count = _stream.Read(_buffer, _end, _buffer.Length - _end);
+        if (count == 0) {
+          return;
+        }
+        _end += count;
+      }
+      if (BufferedBytesMatchPreamble()) {
+        _start += Utf8Preamble.Length;
+      }
+    }
+
+    /// <summary>True if the buffered bytes (at most the length of the preamble) match the preamble.</summary>
+    private bool BufferedBytesMatchPreamble() {
+      var length = Math.Min(_end - _start, Utf8Preamble.Length);
+      for (var i = 0; i < length; i++) {
+        if (_buffer[_start + i] != Utf8Preamble[i]) {
+          return false;
+        }
+      }
+      return true;
     }
 
     private byte[] ReadContent(int length) {

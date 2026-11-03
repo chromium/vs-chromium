@@ -58,6 +58,29 @@ namespace VsChromium.Tests.JsonRpc {
     }
 
     [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    [DataRow(4)]
+    [DataRow(100_000)]
+    public void Utf8BomAtTheStartOfTheStreamIsSkipped(int chunkSize) {
+      // E.g. written by a .NET Framework client (preamble of Console.InputEncoding); small chunks
+      // split the BOM across reads.
+      var messages = new[] { "{\"id\":1}", "{}" };
+      var input = "\uFEFF" + string.Concat(messages.Select(Frame));
+      CollectionAssert.AreEqual(messages, ReadAll(input, chunkSize));
+    }
+
+    [TestMethod]
+    public void StreamWithOnlyAUtf8BomHasNoMessage() {
+      CollectionAssert.AreEqual(new string[0], ReadAll("\uFEFF", 1));
+    }
+
+    [TestMethod]
+    public void Utf8BomIsOnlySkippedAtTheStartOfTheStream() {
+      Assert.ThrowsExactly<JsonRpcFramingException>(() => ReadAll(Frame("{}") + "\uFEFF" + Frame("{}"), 4));
+    }
+
+    [TestMethod]
     [DataRow("Content-Length 2\r\n\r\n{}", DisplayName = "No colon")]
     [DataRow("Content-Length: abc\r\n\r\n{}", DisplayName = "Invalid length")]
     [DataRow("Content-Length: -2\r\n\r\n{}", DisplayName = "Negative length")]

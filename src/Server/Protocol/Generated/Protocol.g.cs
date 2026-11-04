@@ -220,7 +220,8 @@ namespace VsChromium.Protocol.Generated {
     public DateTime? LastSavedUtc { get; set; }
 
     /// <summary>
-    /// Size of the cache directories of the open projects.
+    /// Size of the indexes of the caches of the open projects and of their arena files, as of their last
+    /// read or write (no disk access).
     /// </summary>
     [JsonPropertyName("sizeOnDiskBytes")]
     public long SizeOnDiskBytes { get; set; }
@@ -920,6 +921,106 @@ namespace VsChromium.Protocol.Generated {
     public List<OperationTiming> OperationTimings { get; set; } = new();
   }
 
+  public sealed partial class ServerHistoryParams {
+    /// <summary>
+    /// Only the samples taken after this time (milliseconds since the Unix epoch, UTC), e.g. the time
+    /// of the last sample already received (incremental refresh). All the samples if absent.
+    /// </summary>
+    [JsonPropertyName("sinceUnixMs")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? SinceUnixMs { get; set; }
+  }
+
+  /// <summary>
+  /// The history of the server: a sample every `intervalMs` (10 s), the last `capacity` samples (720: 2
+  /// hours), kept by the server from its start (also when no client asks for them). The samples are
+  /// returned oldest first, one array per metric (columns): the values of the sample `i` are
+  /// `timesUnixMs[i]`, `gcHeapBytes[i]`, ... (all the arrays have the same length).
+  ///
+  /// Cheap metrics only: counters and values already known by the server (no walk of the index, no
+  /// disk access). The mapped bytes of the index cache are not sampled (see the `cachedFileBytes` of
+  /// the arena statistics of `index/statistics`).
+  /// </summary>
+  public sealed partial class ServerHistory {
+    /// <summary>
+    /// The interval of the samples, in milliseconds.
+    /// </summary>
+    [JsonPropertyName("intervalMs")]
+    public int IntervalMs { get; set; }
+
+    /// <summary>
+    /// The maximum number of samples kept by the server (the oldest ones are dropped).
+    /// </summary>
+    [JsonPropertyName("capacity")]
+    public int Capacity { get; set; }
+
+    /// <summary>
+    /// Time of the samples, in milliseconds since the Unix epoch (UTC).
+    /// </summary>
+    [JsonPropertyName("timesUnixMs")]
+    public List<long> TimesUnixMs { get; set; } = new();
+
+    /// <summary>
+    /// Managed memory (`server/statistics` `gcHeapBytes`).
+    /// </summary>
+    [JsonPropertyName("gcHeapBytes")]
+    public List<long> GcHeapBytes { get; set; } = new();
+
+    /// <summary>
+    /// Total managed memory allocated since the start (`gcTotalAllocatedBytes`): the slope is the allocation rate.
+    /// </summary>
+    [JsonPropertyName("gcTotalAllocatedBytes")]
+    public List<long> GcTotalAllocatedBytes { get; set; } = new();
+
+    /// <summary>
+    /// Native memory allocated by the server (`nativeAllocatedBytes`): mostly file contents.
+    /// </summary>
+    [JsonPropertyName("nativeAllocatedBytes")]
+    public List<long> NativeAllocatedBytes { get; set; } = new();
+
+    [JsonPropertyName("workingSetBytes")]
+    public List<long> WorkingSetBytes { get; set; } = new();
+
+    [JsonPropertyName("privateBytes")]
+    public List<long> PrivateBytes { get; set; } = new();
+
+    /// <summary>
+    /// CPU time of the process since its start (user and kernel): the slope is the CPU usage.
+    /// </summary>
+    [JsonPropertyName("cpuTotalMs")]
+    public List<double> CpuTotalMs { get; set; } = new();
+
+    /// <summary>
+    /// Files of the current index.
+    /// </summary>
+    [JsonPropertyName("fileCount")]
+    public List<int> FileCount { get; set; } = new();
+
+    /// <summary>
+    /// Searchable files of the current index (files with text contents).
+    /// </summary>
+    [JsonPropertyName("searchableFileCount")]
+    public List<int> SearchableFileCount { get; set; } = new();
+
+    /// <summary>
+    /// Bytes of the text of the indexed files (`index/statistics` `indexedTextBytes`).
+    /// </summary>
+    [JsonPropertyName("indexedTextBytes")]
+    public List<long> IndexedTextBytes { get; set; } = new();
+
+    /// <summary>
+    /// Size of the index cache of the open projects (`indexCache.sizeOnDiskBytes`), as of its last read or write.
+    /// </summary>
+    [JsonPropertyName("cacheSizeOnDiskBytes")]
+    public List<long> CacheSizeOnDiskBytes { get; set; } = new();
+
+    /// <summary>
+    /// State of the indexing.
+    /// </summary>
+    [JsonPropertyName("status")]
+    public List<IndexingStatus> Status { get; set; } = new();
+  }
+
   public sealed partial class TreeParams {
     /// <summary>
     /// Version of the tree known by the client: if it is the current version, "projects" is empty.
@@ -1064,6 +1165,7 @@ namespace VsChromium.Protocol.Generated {
     public const string SearchPaths = "search/paths";
     public const string ServerInitialize = "server/initialize";
     public const string ServerStatistics = "server/statistics";
+    public const string ServerHistory = "server/history";
     public const string TreeGet = "tree/get";
     public const string TreeEntries = "tree/entries";
     public const string TreeEntriesMultiple = "tree/entriesMultiple";
@@ -1143,6 +1245,11 @@ namespace VsChromium.Protocol.Generated {
     ValueTask<ServerStatistics> ServerStatisticsAsync(ServerStatisticsParams parameters, CancellationToken cancellationToken);
 
     /// <summary>
+    /// "server/history": History of the server (charts): cheap samples every 10 s, last 2 hours.
+    /// </summary>
+    ValueTask<ServerHistory> ServerHistoryAsync(ServerHistoryParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
     /// "tree/get": The projects known to the server.
     /// </summary>
     ValueTask<FileSystemTree> TreeGetAsync(TreeParams parameters, CancellationToken cancellationToken);
@@ -1189,6 +1296,7 @@ namespace VsChromium.Protocol.Generated {
       ProtocolMethods.SearchPaths => true,
       ProtocolMethods.ServerInitialize => true,
       ProtocolMethods.ServerStatistics => true,
+      ProtocolMethods.ServerHistory => true,
       ProtocolMethods.TreeGet => true,
       ProtocolMethods.TreeEntries => true,
       ProtocolMethods.TreeEntriesMultiple => true,
@@ -1256,6 +1364,10 @@ namespace VsChromium.Protocol.Generated {
         case ProtocolMethods.ServerStatistics: {
           var result = await handler.ServerStatisticsAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ServerStatisticsParams), cancellationToken).ConfigureAwait(false);
           return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.ServerStatistics);
+        }
+        case ProtocolMethods.ServerHistory: {
+          var result = await handler.ServerHistoryAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ServerHistoryParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.ServerHistory);
         }
         case ProtocolMethods.TreeGet: {
           var result = await handler.TreeGetAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.TreeParams), cancellationToken).ConfigureAwait(false);
@@ -1418,6 +1530,8 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(FileContentsArenaStatistics))]
   [JsonSerializable(typeof(IndexCacheStatistics))]
   [JsonSerializable(typeof(ServerStatistics))]
+  [JsonSerializable(typeof(ServerHistoryParams))]
+  [JsonSerializable(typeof(ServerHistory))]
   [JsonSerializable(typeof(TreeParams))]
   [JsonSerializable(typeof(ProjectEntry))]
   [JsonSerializable(typeof(FileSystemTree))]

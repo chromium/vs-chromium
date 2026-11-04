@@ -90,7 +90,10 @@ export interface IndexCacheState {
   saving: boolean;
   /** Last write of the index of the caches of the open projects (the most recent), if any. */
   lastSavedUtc?: string;
-  /** Size of the cache directories of the open projects. */
+  /**
+   * Size of the indexes of the caches of the open projects and of their arena files, as of their last
+   * read or write (no disk access).
+   */
   sizeOnDiskBytes: number;
   /** Arena files of the indexes of the open project caches (the text of the files). */
   arenaFileCount: number;
@@ -419,6 +422,53 @@ export interface ServerStatistics {
   operationTimings: OperationTiming[];
 }
 
+export interface ServerHistoryParams {
+  /**
+   * Only the samples taken after this time (milliseconds since the Unix epoch, UTC), e.g. the time
+   * of the last sample already received (incremental refresh). All the samples if absent.
+   */
+  sinceUnixMs?: number;
+}
+
+/**
+ * The history of the server: a sample every `intervalMs` (10 s), the last `capacity` samples (720: 2
+ * hours), kept by the server from its start (also when no client asks for them). The samples are
+ * returned oldest first, one array per metric (columns): the values of the sample `i` are
+ * `timesUnixMs[i]`, `gcHeapBytes[i]`, ... (all the arrays have the same length).
+ *
+ * Cheap metrics only: counters and values already known by the server (no walk of the index, no
+ * disk access). The mapped bytes of the index cache are not sampled (see the `cachedFileBytes` of
+ * the arena statistics of `index/statistics`).
+ */
+export interface ServerHistory {
+  /** The interval of the samples, in milliseconds. */
+  intervalMs: number;
+  /** The maximum number of samples kept by the server (the oldest ones are dropped). */
+  capacity: number;
+  /** Time of the samples, in milliseconds since the Unix epoch (UTC). */
+  timesUnixMs: number[];
+  /** Managed memory (`server/statistics` `gcHeapBytes`). */
+  gcHeapBytes: number[];
+  /** Total managed memory allocated since the start (`gcTotalAllocatedBytes`): the slope is the allocation rate. */
+  gcTotalAllocatedBytes: number[];
+  /** Native memory allocated by the server (`nativeAllocatedBytes`): mostly file contents. */
+  nativeAllocatedBytes: number[];
+  workingSetBytes: number[];
+  privateBytes: number[];
+  /** CPU time of the process since its start (user and kernel): the slope is the CPU usage. */
+  cpuTotalMs: number[];
+  /** Files of the current index. */
+  fileCount: number[];
+  /** Searchable files of the current index (files with text contents). */
+  searchableFileCount: number[];
+  /** Bytes of the text of the indexed files (`index/statistics` `indexedTextBytes`). */
+  indexedTextBytes: number[];
+  /** Size of the index cache of the open projects (`indexCache.sizeOnDiskBytes`), as of its last read or write. */
+  cacheSizeOnDiskBytes: number[];
+  /** State of the indexing. */
+  status: IndexingStatus[];
+}
+
 export interface TreeParams {
   /** Version of the tree known by the client: if it is the current version, "projects" is empty. */
   knownVersion?: number;
@@ -606,6 +656,12 @@ export namespace ServerInitializeRequest {
 export namespace ServerStatisticsRequest {
   export const method = 'server/statistics';
   export const type = new RequestType<ServerStatisticsParams, ServerStatistics, void>(method);
+}
+
+/** Request (client to server) "server/history": History of the server (charts): cheap samples every 10 s, last 2 hours. */
+export namespace ServerHistoryRequest {
+  export const method = 'server/history';
+  export const type = new RequestType<ServerHistoryParams, ServerHistory, void>(method);
 }
 
 /** Request (client to server) "tree/get": The projects known to the server. */

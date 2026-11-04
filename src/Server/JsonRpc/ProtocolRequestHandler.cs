@@ -46,6 +46,7 @@ namespace VsChromium.Server.JsonRpc {
     private readonly IIndexingServer _indexingServer;
     private readonly ArenaAllocator _arenaAllocator;
     private readonly IIndexCache _indexCache;
+    private readonly ServerHistorySampler _historySampler;
 
     public ProtocolRequestHandler(
       IFileSystemSnapshotManager snapshotManager,
@@ -53,8 +54,10 @@ namespace VsChromium.Server.JsonRpc {
       IFileRegistrationTracker fileRegistrationTracker,
       IIndexingServer indexingServer,
       ArenaAllocator arenaAllocator,
-      IIndexCache indexCache = null) {
+      IIndexCache indexCache = null,
+      ServerHistorySampler historySampler = null) {
       _indexCache = indexCache;
+      _historySampler = historySampler;
       _snapshotManager = snapshotManager;
       _searchEngine = searchEngine;
       _fileRegistrationTracker = fileRegistrationTracker;
@@ -132,6 +135,27 @@ namespace VsChromium.Server.JsonRpc {
             .ToList(),
         });
       }
+    }
+
+    public ValueTask<ServerHistory> ServerHistoryAsync(ServerHistoryParams parameters, CancellationToken cancellationToken) {
+      var buffer = _historySampler?.History;
+      var samples = buffer?.GetSamples(parameters.SinceUnixMs) ?? new ServerHistoryBuffer(1).GetSamples();
+      return new ValueTask<ServerHistory>(new ServerHistory {
+        IntervalMs = (int)(_historySampler?.Interval ?? ServerHistorySampler.DefaultInterval).TotalMilliseconds,
+        Capacity = buffer?.Capacity ?? ServerHistoryBuffer.DefaultCapacity,
+        TimesUnixMs = samples.TimeUnixMs.ToList(),
+        GcHeapBytes = samples.GcHeapBytes.ToList(),
+        GcTotalAllocatedBytes = samples.GcTotalAllocatedBytes.ToList(),
+        NativeAllocatedBytes = samples.NativeAllocatedBytes.ToList(),
+        WorkingSetBytes = samples.WorkingSetBytes.ToList(),
+        PrivateBytes = samples.PrivateBytes.ToList(),
+        CpuTotalMs = samples.CpuTotalMs.ToList(),
+        FileCount = samples.FileCount.ToList(),
+        SearchableFileCount = samples.SearchableFileCount.ToList(),
+        IndexedTextBytes = samples.IndexedTextBytes.ToList(),
+        CacheSizeOnDiskBytes = samples.CacheSizeOnDiskBytes.ToList(),
+        Status = samples.Status.Select(JsonRpcEventForwarder.ToIndexingStatus).ToList(),
+      });
     }
 
     private static long GetTrigramFiltersBytes(IFileDatabaseSnapshot database) {

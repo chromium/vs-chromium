@@ -96,6 +96,7 @@ anonymous models, default values, namespace blocks, other scalar types.
 |---|---|
 | `server/initialize` | (hello protocol) |
 | `server/statistics` | `GetServerStatisticsRequest` |
+| `server/history` | (new: history of the server for the charts of the dashboards, see `ServerHistory`) |
 | `files/register`, `files/unregister` | `RegisterFileRequest`, `UnregisterFileRequest` |
 | `files/extracts` | `GetFileExtractsRequest` |
 | `project/setOptions`, `project/details` | `SetProjectOptionsRequest`, `GetProjectDetailsRequest` |

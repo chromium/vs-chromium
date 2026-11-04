@@ -63,8 +63,9 @@ namespace VsChromium.Server.Cache {
     IndexCacheStatistics GetStatistics();
 
     /// <summary>
-    /// The state of the cache on disk (status displays), from existing state only: the pending
-    /// writes, and the files of the caches of the open projects (enumerated: a few hundred files).
+    /// The state of the cache on disk (status displays, history samples), from the state in memory
+    /// only (no disk access): the pending writes, and the indexes of the open project caches (as of
+    /// their last read or write).
     /// </summary>
     IndexCacheDiskState GetDiskState();
   }
@@ -79,6 +80,7 @@ namespace VsChromium.Server.Cache {
     public DateTime? LastSavedUtc;
     /// <summary>True if this server writes the cache of at least one open project.</summary>
     public bool HasWritableProject;
+    /// <summary>The size of the indexes of the open project caches and of their arena files.</summary>
     public long SizeOnDiskBytes;
     /// <summary>The arena files of the indexes of the open project caches (see <see cref="IndexCacheArenaUsage"/>).</summary>
     public int ArenaFileCount;
@@ -360,26 +362,18 @@ namespace VsChromium.Server.Cache {
       }
       result.Saving = _scheduler.IsSaving;
       foreach (var project in projects) {
-        try {
-          foreach (var file in new DirectoryInfo(project.Directory).EnumerateFiles("*", SearchOption.AllDirectories)) {
-            result.SizeOnDiskBytes += file.Length;
-          }
-          var index = new FileInfo(Path.Combine(project.Directory, IndexCacheFile.IndexFileName));
-          DateTime? saved = index.Exists ? index.LastWriteTimeUtc : null;
-          if (saved.HasValue && (!result.LastSavedUtc.HasValue || saved.Value > result.LastSavedUtc.Value)) {
-            result.LastSavedUtc = saved;
-          }
-          if (project.IsWritable) {
-            result.HasWritableProject = true;
-          }
-          var usage = project.ArenaUsage;
-          result.ArenaFileCount += usage.ArenaCount;
-          result.ArenaBytes += usage.UsedBytes;
-          result.DeadBytes += usage.DeadBytes;
+        result.SizeOnDiskBytes += project.SizeOnDiskBytes;
+        var saved = project.LastSavedUtc;
+        if (saved.HasValue && (!result.LastSavedUtc.HasValue || saved.Value > result.LastSavedUtc.Value)) {
+          result.LastSavedUtc = saved;
         }
-        catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
-          // The directory may be deleted (e.g. "Rebuild index"): ignored.
+        if (project.IsWritable) {
+          result.HasWritableProject = true;
         }
+        var usage = project.ArenaUsage;
+        result.ArenaFileCount += usage.ArenaCount;
+        result.ArenaBytes += usage.UsedBytes;
+        result.DeadBytes += usage.DeadBytes;
       }
       // Note: Updates only mark the index dirty if this server writes the cache of a project.
       result.Dirty = result.HasWritableProject && _scheduler.IsDirty;

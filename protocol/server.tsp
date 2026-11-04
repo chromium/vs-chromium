@@ -129,10 +129,60 @@ model ServerStatistics {
   operationTimings: OperationTiming[];
 }
 
+model ServerHistoryParams {
+  /**
+   * Only the samples taken after this time (milliseconds since the Unix epoch, UTC), e.g. the time
+   * of the last sample already received (incremental refresh). All the samples if absent.
+   */
+  sinceUnixMs?: int64;
+}
+
+/**
+ * The history of the server: a sample every `intervalMs` (10 s), the last `capacity` samples (720: 2
+ * hours), kept by the server from its start (also when no client asks for them). The samples are
+ * returned oldest first, one array per metric (columns): the values of the sample `i` are
+ * `timesUnixMs[i]`, `gcHeapBytes[i]`, ... (all the arrays have the same length).
+ *
+ * Cheap metrics only: counters and values already known by the server (no walk of the index, no
+ * disk access). The mapped bytes of the index cache are not sampled (see the `cachedFileBytes` of
+ * the arena statistics of `index/statistics`).
+ */
+model ServerHistory {
+  /** The interval of the samples, in milliseconds. */
+  intervalMs: int32;
+  /** The maximum number of samples kept by the server (the oldest ones are dropped). */
+  capacity: int32;
+  /** Time of the samples, in milliseconds since the Unix epoch (UTC). */
+  timesUnixMs: int64[];
+  /** Managed memory (`server/statistics` `gcHeapBytes`). */
+  gcHeapBytes: int64[];
+  /** Total managed memory allocated since the start (`gcTotalAllocatedBytes`): the slope is the allocation rate. */
+  gcTotalAllocatedBytes: int64[];
+  /** Native memory allocated by the server (`nativeAllocatedBytes`): mostly file contents. */
+  nativeAllocatedBytes: int64[];
+  workingSetBytes: int64[];
+  privateBytes: int64[];
+  /** CPU time of the process since its start (user and kernel): the slope is the CPU usage. */
+  cpuTotalMs: float64[];
+  /** Files of the current index. */
+  fileCount: int32[];
+  /** Searchable files of the current index (files with text contents). */
+  searchableFileCount: int32[];
+  /** Bytes of the text of the indexed files (`index/statistics` `indexedTextBytes`). */
+  indexedTextBytes: int64[];
+  /** Size of the index cache of the open projects (`indexCache.sizeOnDiskBytes`), as of its last read or write. */
+  cacheSizeOnDiskBytes: int64[];
+  /** State of the indexing. */
+  status: IndexingStatus[];
+}
+
 interface Server {
   /** First request sent by a client: exchanges versions. */
   initialize(...InitializeParams): InitializeResult;
 
   /** Process, memory and index statistics. */
   statistics(...ServerStatisticsParams): ServerStatistics;
+
+  /** History of the server (charts): cheap samples every 10 s, last 2 hours. */
+  history(...ServerHistoryParams): ServerHistory;
 }

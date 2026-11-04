@@ -177,6 +177,28 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     public IndexCacheArenaUsage ArenaUsage => _arenaUsage;
 
+    private long _sizeOnDiskBytes;
+    private long _lastSavedTicks;
+
+    /// <summary>
+    /// The size of the index and of its arena files, from the last read or write of the index (no
+    /// disk access): 0 if there is no index.
+    /// </summary>
+    public long SizeOnDiskBytes => Interlocked.Read(ref _sizeOnDiskBytes);
+
+    /// <summary>The last write time of the index (when it was read or written), if any.</summary>
+    public DateTime? LastSavedUtc {
+      get {
+        var ticks = Interlocked.Read(ref _lastSavedTicks);
+        return ticks == 0 ? null : new DateTime(ticks, DateTimeKind.Utc);
+      }
+    }
+
+    private void SetDiskState(long indexBytes, IEnumerable<int> arenaBytes) {
+      Interlocked.Exchange(ref _sizeOnDiskBytes, indexBytes + arenaBytes.Sum(x => (long)x));
+      Interlocked.Exchange(ref _lastSavedTicks, File.GetLastWriteTimeUtc(_indexPath).Ticks);
+    }
+
     /// <summary>
     /// Compaction (during a write): arena files with less than this fraction of live bytes are
     /// compacted...
@@ -328,6 +350,7 @@ namespace VsChromium.Server.Cache {
             _locations.AddOrUpdate(arena.Handle, BlockLocations.ForMappedArena(arena.Id));
           }
           _arenaUsage = ComputeUsage(data);
+          SetDiskState(new FileInfo(_indexPath).Length, data.Arenas.Values);
         }
         var stopwatch = Stopwatch.StartNew();
         _lookup = new IndexCacheLookup(data, arenas, _caseSensitive);
@@ -429,6 +452,7 @@ namespace VsChromium.Server.Cache {
               out compactionPending)
           : new HashSet<int>();
         var tempPath = Path.Combine(Directory, TempIndexFileName);
+        long indexBytes = 0;
         // Note: The entries are written as they are produced (no list of entries in memory).
         var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
         var completed = false;
@@ -460,6 +484,7 @@ namespace VsChromium.Server.Cache {
           }
           stream.Flush(flushToDisk: true);
           result.BytesWritten += stream.Length;
+          indexBytes = stream.Length;
           stream.Dispose();
           completed = true;
         }
@@ -484,6 +509,7 @@ namespace VsChromium.Server.Cache {
           }
         }
 
+        SetDiskState(indexBytes, referencedArenas.Select(x => _validArenas.GetValueOrDefault(x)));
         result.CompactedArenaCount = compacted.Count;
         _compactionPending = compactionPending;
         _arenaUsage = new IndexCacheArenaUsage(referencedArenas.ToDictionary(x => x, x => (_validArenas.GetValueOrDefault(x), liveBytes[x])));
@@ -661,6 +687,8 @@ namespace VsChromium.Server.Cache {
         _validArenas.Clear();
         _arenaUsage = IndexCacheArenaUsage.Empty;
         _compactionPending = false;
+        Interlocked.Exchange(ref _sizeOnDiskBytes, 0);
+        Interlocked.Exchange(ref _lastSavedTicks, 0);
         if (IsWritable) {
           DeleteContents();
         }

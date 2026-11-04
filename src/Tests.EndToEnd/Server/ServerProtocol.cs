@@ -83,6 +83,25 @@ public static class ServerProtocol {
   public static ServerRequest GetIndexStatistics() =>
     new("index/statistics", new JsonObject());
 
+  public static ServerRequest GetIndexStatus() =>
+    new("index/status", new JsonObject());
+
+  public static ServerRequest ClearCache(string? projectPath = null) {
+    var parameters = new JsonObject();
+    if (projectPath != null) {
+      parameters["projectPath"] = projectPath;
+    }
+    return new("index/clearCache", parameters);
+  }
+
+  public static ServerRequest GetServerHistory(long? sinceUnixMs = null) {
+    var parameters = new JsonObject();
+    if (sinceUnixMs != null) {
+      parameters["sinceUnixMs"] = sinceUnixMs;
+    }
+    return new("server/history", parameters);
+  }
+
   /// <summary>The files of a "search/code" result (projects -> files -> matches).</summary>
   public static List<SearchResultFile> FlattenCodeResults(JsonObject result) {
     var files = new List<SearchResultFile>();

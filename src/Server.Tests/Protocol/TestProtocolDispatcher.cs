@@ -159,6 +159,7 @@ namespace VsChromium.Tests.Protocol {
       public ValueTask<SearchPathsResult> SearchPathsAsync(SearchParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<InitializeResult> ServerInitializeAsync(InitializeParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<ServerStatistics> ServerStatisticsAsync(ServerStatisticsParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
+      public ValueTask<ServerHistory> ServerHistoryAsync(ServerHistoryParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<FileSystemTree> TreeGetAsync(TreeParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<DirectoryEntries> TreeEntriesAsync(TreeEntriesParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<DirectoryEntriesList> TreeEntriesMultipleAsync(TreeEntriesMultipleParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();

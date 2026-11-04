@@ -18,6 +18,7 @@ namespace VsChromium.Server {
     public void Run(Stream input, Stream output, IndexCacheOptions indexCacheOptions) {
       using (var components = new ServerComponents(indexCacheOptions)) {
         Instance = components; // For debugging only.
+        components.ServerHistorySampler.Start();
         components.JsonRpcServer.Run(input, output);
       }
     }

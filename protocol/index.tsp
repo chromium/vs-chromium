@@ -46,7 +46,10 @@ model IndexCacheState {
   saving: boolean;
   /** Last write of the index of the caches of the open projects (the most recent), if any. */
   lastSavedUtc?: utcDateTime;
-  /** Size of the cache directories of the open projects. */
+  /**
+   * Size of the indexes of the caches of the open projects and of their arena files, as of their last
+   * read or write (no disk access).
+   */
   sizeOnDiskBytes: int64;
   /** Arena files of the indexes of the open project caches (the text of the files). */
   arenaFileCount: int32;

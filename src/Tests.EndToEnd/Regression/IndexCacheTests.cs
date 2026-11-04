@@ -27,6 +27,7 @@ public class IndexCacheTests {
   private const int FilesPerDirectory = 50;
   private const string VerifyDelayVariable = "VSCHROMIUM_TEST_VERIFY_DELAY_MS";
   private const string SaveDelaysVariable = "VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS";
+  private const string HistoryIntervalVariable = "VSCHROMIUM_TEST_HISTORY_INTERVAL_MS";
   /// <summary>Delays of the saves of the cache ("settle,max" milliseconds) of the tests of the save policy.</summary>
   private const string ShortSaveDelays = "1500,5000";
 
@@ -440,6 +441,64 @@ public class IndexCacheTests {
     Assert.AreEqual(1, await HitCountAsync(restarted.Client, "EDITED_FILE"), "Read by the verification");
   }
 
+  /// <summary>
+  /// "server/history": samples taken from the start of the server (every 200 ms here, 10 s by
+  /// default), returned in columns, all of them or the ones after a time.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task ServerHistoryIsSampledFromTheStart() {
+    using var tree = new TestTree();
+    tree.Generate();
+    await using var server = await StartAndLoadAsync(tree, tree.CacheDirectory, historyIntervalMs: 200);
+    await WaitForIdleAsync(server.Client);
+    await WaitForCacheWriteAsync(server.Client, 1);
+    var statistics = (await server.Client.RequestAsync(ServerProtocol.GetIndexStatistics())).Data;
+    var fileCount = statistics["fileCount"]!.GetValue<int>();
+    Assert.IsTrue(fileCount > 1000);
+
+    // Samples of the loaded index, after the save.
+    var stopwatch = Stopwatch.StartNew();
+    JsonObject history;
+    while (true) {
+      history = (await server.Client.RequestAsync(ServerProtocol.GetServerHistory())).Data;
+      var files = history["fileCount"]!.AsArray();
+      var sizes = history["cacheSizeOnDiskBytes"]!.AsArray();
+      if (files.Count >= 3 && files[^1]!.GetValue<int>() == fileCount && sizes[^1]!.GetValue<long>() > 0)
+        break;
+      Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(30), history.ToJsonString());
+      await Task.Delay(200);
+    }
+    TestContext.WriteLine(history.ToJsonString());
+    Assert.AreEqual(200, history["intervalMs"]!.GetValue<int>());
+    Assert.AreEqual(720, history["capacity"]!.GetValue<int>());
+    var times = history["timesUnixMs"]!.AsArray().Select(x => x!.GetValue<long>()).ToList();
+    var count = times.Count;
+    foreach (var column in new[] { "gcHeapBytes", "gcTotalAllocatedBytes", "nativeAllocatedBytes", "workingSetBytes",
+               "privateBytes", "cpuTotalMs", "fileCount", "searchableFileCount", "indexedTextBytes", "cacheSizeOnDiskBytes", "status" }) {
+      Assert.AreEqual(count, history[column]!.AsArray().Count, column);
+    }
+    CollectionAssert.AreEqual(times.OrderBy(x => x).ToList(), times, "Oldest first");
+    var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    Assert.IsTrue(times[^1] <= now && times[^1] > now - 60_000, $"{times[^1]} {now}");
+    Assert.IsTrue(history["workingSetBytes"]![count - 1]!.GetValue<long>() > 0);
+    Assert.IsTrue(history["cpuTotalMs"]![count - 1]!.GetValue<double>() > 0);
+    Assert.IsTrue(history["indexedTextBytes"]![count - 1]!.GetValue<long>() > 0);
+    Assert.AreEqual(statistics["searchableFileCount"]!.GetValue<int>(), history["searchableFileCount"]![count - 1]!.GetValue<int>());
+    Assert.AreEqual(statistics["indexedTextBytes"]!.GetValue<long>(), history["indexedTextBytes"]![count - 1]!.GetValue<long>());
+    Assert.AreEqual("idle", history["status"]![count - 1]!.GetValue<string>());
+    // The first samples were taken before the load (at the start of the server).
+    Assert.AreEqual(0, history["fileCount"]![0]!.GetValue<int>());
+
+    // Incremental: the samples after the last one received.
+    await Task.Delay(500);
+    var since = (await server.Client.RequestAsync(ServerProtocol.GetServerHistory(times[^1]))).Data;
+    var newTimes = since["timesUnixMs"]!.AsArray().Select(x => x!.GetValue<long>()).ToList();
+    Assert.IsTrue(newTimes.Count >= 1, since.ToJsonString());
+    Assert.IsTrue(newTimes.All(x => x > times[^1]));
+    Assert.AreEqual(newTimes.Count, since["status"]!.AsArray().Count);
+  }
+
   private static async Task<JsonNode> WaitForIndexCacheAsync(JsonRpcServerClient server, Func<JsonNode, bool> predicate, string description) {
     var stopwatch = Stopwatch.StartNew();
     while (true) {
@@ -528,10 +587,11 @@ public class IndexCacheTests {
   }
 
   private static async Task<LoadedServer> StartAndLoadAsync(TestTree tree, string? cacheDirectory, int verifyDelayMs = 0,
-                                                            string? saveDelays = null) {
+                                                            string? saveDelays = null, int historyIntervalMs = 0) {
     var environment = new Dictionary<string, string?> {
       [VerifyDelayVariable] = verifyDelayMs > 0 ? verifyDelayMs.ToString() : null,
       [SaveDelaysVariable] = saveDelays,
+      [HistoryIntervalVariable] = historyIntervalMs > 0 ? historyIntervalMs.ToString() : null,
     };
     var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath, cacheDirectory, environment);
     var loaded = await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),

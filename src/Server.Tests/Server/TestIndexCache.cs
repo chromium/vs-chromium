@@ -586,15 +586,32 @@ namespace VsChromium.Tests.Server {
         state = indexCache.GetDiskState();
         Assert.IsTrue(state.HasWritableProject);
         Assert.IsNull(state.LastSavedUtc, "Not saved yet");
-        Assert.IsTrue(state.SizeOnDiskBytes > 0, "root.txt");
+        Assert.AreEqual(0, state.SizeOnDiskBytes, "No index yet");
         Assert.IsFalse(state.Dirty, "No index update yet");
 
-        var sizeBefore = state.SizeOnDiskBytes;
         cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, CancellationToken.None);
         state = indexCache.GetDiskState();
         Assert.IsNotNull(state.LastSavedUtc);
         Assert.AreEqual(File.GetLastWriteTimeUtc(IndexPath), state.LastSavedUtc);
-        Assert.IsTrue(state.SizeOnDiskBytes > sizeBefore, "index and arena files");
+        // The index and the arena files, known without disk access.
+        var expectedSize = new FileInfo(IndexPath).Length + ArenaFiles().Sum(x => new FileInfo(x).Length);
+        Assert.AreEqual(expectedSize, state.SizeOnDiskBytes);
+
+        cache.Invalidate();
+        state = indexCache.GetDiskState();
+        Assert.AreEqual(0, state.SizeOnDiskBytes, "Deleted");
+        Assert.IsNull(state.LastSavedUtc, "Deleted");
+      }
+      // The same when the index is read.
+      using (var indexCache = new IndexCache(new IndexCacheOptions(_cacheRoot))) {
+        indexCache.GetProjectCache(new FullPath(_projectRoot)).Write(Dirs(new[] { TextItem("b.cc", "int b;\n") }), VersionHash,
+          CancellationToken.None);
+      }
+      using (var indexCache = new IndexCache(new IndexCacheOptions(_cacheRoot))) {
+        indexCache.GetProjectCache(new FullPath(_projectRoot));
+        var state = indexCache.GetDiskState();
+        Assert.AreEqual(new FileInfo(IndexPath).Length + ArenaFiles().Sum(x => new FileInfo(x).Length), state.SizeOnDiskBytes);
+        Assert.AreEqual(File.GetLastWriteTimeUtc(IndexPath), state.LastSavedUtc);
       }
     }
 

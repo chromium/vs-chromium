@@ -213,7 +213,8 @@ namespace VsChromium.Protocol.Generated {
     public DateTime? LastSavedUtc { get; set; }
 
     /// <summary>
-    /// Size of the cache directories of the open projects.
+    /// Size of the indexes of the caches of the open projects and of their arena files, as of their last
+    /// read or write (no disk access).
     /// </summary>
     [JsonProperty("sizeOnDiskBytes")]
     public long SizeOnDiskBytes { get; set; }
@@ -897,6 +898,105 @@ namespace VsChromium.Protocol.Generated {
     public List<OperationTiming> OperationTimings { get; set; } = new List<OperationTiming>();
   }
 
+  public sealed partial class ServerHistoryParams {
+    /// <summary>
+    /// Only the samples taken after this time (milliseconds since the Unix epoch, UTC), e.g. the time
+    /// of the last sample already received (incremental refresh). All the samples if absent.
+    /// </summary>
+    [JsonProperty("sinceUnixMs", NullValueHandling = NullValueHandling.Ignore)]
+    public long? SinceUnixMs { get; set; }
+  }
+
+  /// <summary>
+  /// The history of the server: a sample every `intervalMs` (10 s), the last `capacity` samples (720: 2
+  /// hours), kept by the server from its start (also when no client asks for them). The samples are
+  /// returned oldest first, one array per metric (columns): the values of the sample `i` are
+  /// `timesUnixMs[i]`, `gcHeapBytes[i]`, ... (all the arrays have the same length).
+  ///
+  /// Cheap metrics only: counters and values already known by the server (no walk of the index, no
+  /// disk access). The mapped bytes of the index cache are not sampled (see the `cachedFileBytes` of
+  /// the arena statistics of `index/statistics`).
+  /// </summary>
+  public sealed partial class ServerHistory {
+    /// <summary>
+    /// The interval of the samples, in milliseconds.
+    /// </summary>
+    [JsonProperty("intervalMs")]
+    public int IntervalMs { get; set; }
+
+    /// <summary>
+    /// The maximum number of samples kept by the server (the oldest ones are dropped).
+    /// </summary>
+    [JsonProperty("capacity")]
+    public int Capacity { get; set; }
+
+    /// <summary>
+    /// Time of the samples, in milliseconds since the Unix epoch (UTC).
+    /// </summary>
+    [JsonProperty("timesUnixMs")]
+    public List<long> TimesUnixMs { get; set; } = new List<long>();
+
+    /// <summary>
+    /// Managed memory (`server/statistics` `gcHeapBytes`).
+    /// </summary>
+    [JsonProperty("gcHeapBytes")]
+    public List<long> GcHeapBytes { get; set; } = new List<long>();
+
+    /// <summary>
+    /// Total managed memory allocated since the start (`gcTotalAllocatedBytes`): the slope is the allocation rate.
+    /// </summary>
+    [JsonProperty("gcTotalAllocatedBytes")]
+    public List<long> GcTotalAllocatedBytes { get; set; } = new List<long>();
+
+    /// <summary>
+    /// Native memory allocated by the server (`nativeAllocatedBytes`): mostly file contents.
+    /// </summary>
+    [JsonProperty("nativeAllocatedBytes")]
+    public List<long> NativeAllocatedBytes { get; set; } = new List<long>();
+
+    [JsonProperty("workingSetBytes")]
+    public List<long> WorkingSetBytes { get; set; } = new List<long>();
+
+    [JsonProperty("privateBytes")]
+    public List<long> PrivateBytes { get; set; } = new List<long>();
+
+    /// <summary>
+    /// CPU time of the process since its start (user and kernel): the slope is the CPU usage.
+    /// </summary>
+    [JsonProperty("cpuTotalMs")]
+    public List<double> CpuTotalMs { get; set; } = new List<double>();
+
+    /// <summary>
+    /// Files of the current index.
+    /// </summary>
+    [JsonProperty("fileCount")]
+    public List<int> FileCount { get; set; } = new List<int>();
+
+    /// <summary>
+    /// Searchable files of the current index (files with text contents).
+    /// </summary>
+    [JsonProperty("searchableFileCount")]
+    public List<int> SearchableFileCount { get; set; } = new List<int>();
+
+    /// <summary>
+    /// Bytes of the text of the indexed files (`index/statistics` `indexedTextBytes`).
+    /// </summary>
+    [JsonProperty("indexedTextBytes")]
+    public List<long> IndexedTextBytes { get; set; } = new List<long>();
+
+    /// <summary>
+    /// Size of the index cache of the open projects (`indexCache.sizeOnDiskBytes`), as of its last read or write.
+    /// </summary>
+    [JsonProperty("cacheSizeOnDiskBytes")]
+    public List<long> CacheSizeOnDiskBytes { get; set; } = new List<long>();
+
+    /// <summary>
+    /// State of the indexing.
+    /// </summary>
+    [JsonProperty("status")]
+    public List<IndexingStatus> Status { get; set; } = new List<IndexingStatus>();
+  }
+
   public sealed partial class TreeParams {
     /// <summary>
     /// Version of the tree known by the client: if it is the current version, "projects" is empty.
@@ -1040,6 +1140,7 @@ namespace VsChromium.Protocol.Generated {
     public const string SearchPaths = "search/paths";
     public const string ServerInitialize = "server/initialize";
     public const string ServerStatistics = "server/statistics";
+    public const string ServerHistory = "server/history";
     public const string TreeGet = "tree/get";
     public const string TreeEntries = "tree/entries";
     public const string TreeEntriesMultiple = "tree/entriesMultiple";
@@ -1142,6 +1243,12 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     public Task<ServerStatistics> ServerStatisticsAsync(ServerStatisticsParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
       _rpc.InvokeWithParameterObjectAsync<ServerStatistics>(ProtocolMethods.ServerStatistics, parameters, cancellationToken);
+
+    /// <summary>
+    /// "server/history": History of the server (charts): cheap samples every 10 s, last 2 hours.
+    /// </summary>
+    public Task<ServerHistory> ServerHistoryAsync(ServerHistoryParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync<ServerHistory>(ProtocolMethods.ServerHistory, parameters, cancellationToken);
 
     /// <summary>
     /// "tree/get": The projects known to the server.

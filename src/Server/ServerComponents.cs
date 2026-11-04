@@ -10,6 +10,7 @@ using VsChromium.Core.Memory;
 using VsChromium.Core.Threads;
 using VsChromium.Protocol.Generated;
 using VsChromium.Server.Cache;
+using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemContents;
@@ -66,6 +67,11 @@ namespace VsChromium.Server {
     // Server
     private IIndexingServer _indexingServer;
     public IIndexingServer IndexingServer => _indexingServer ??= Create(new IndexingServer(DateTimeProvider, FileSystemSnapshotManager, TaskQueueFactory, SearchEngine, IndexCache));
+
+    // Server/Diagnostics
+    private ServerHistorySampler _serverHistorySampler;
+    /// <summary>The history of the server state ("server/history"), started by <see cref="ServerStub"/>.</summary>
+    public ServerHistorySampler ServerHistorySampler => _serverHistorySampler ??= Create(new ServerHistorySampler(SearchEngine, IndexingServer, IndexCache));
 
     // Server/Cache
     private IIndexCache _indexCache;
@@ -125,7 +131,8 @@ namespace VsChromium.Server {
 
     private IProtocolRequestHandler _protocolRequestHandler;
     public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= Create(new ProtocolRequestHandler(
-      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocator, IndexCache));
+      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocator, IndexCache,
+      ServerHistorySampler));
 
     private JsonRpcNotificationSender _jsonRpcNotificationSender;
     public JsonRpcNotificationSender JsonRpcNotificationSender => _jsonRpcNotificationSender ??= Create(new JsonRpcNotificationSender(JsonRpcOutput));

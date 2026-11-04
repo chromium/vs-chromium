@@ -1,7 +1,8 @@
-﻿// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
@@ -19,6 +20,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Features.BuildOutputAnalyzer;
 using VsChromium.Features.IndexServerInfo;
+using VsChromium.Features.ServerDashboard;
 using VsChromium.Features.SourceExplorerHierarchy;
 using VsChromium.Package;
 using VsChromium.Protocol.Generated;
@@ -232,7 +234,13 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     }
 
     public void ShowServerInfo(bool forceGarbageCollection) {
-      _showServerInfoService.ShowServerStatusDialog(forceGarbageCollection);
+      // The server dashboard (tool window), or the status dialog if it can't
+      // be shown (no WebView2 runtime) or a garbage collection is requested.
+      var componentModel = (IComponentModel)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SComponentModel));
+      var dashboard = componentModel?.DefaultExportProvider.GetExportedValue<IServerDashboardService>();
+      if (forceGarbageCollection || dashboard == null || !dashboard.ShowDashboard()) {
+        _showServerInfoService.ShowServerStatusDialog(forceGarbageCollection);
+      }
     }
 
     public void RefreshFileSystemTree() {

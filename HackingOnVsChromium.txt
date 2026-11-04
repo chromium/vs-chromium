@@ -23,6 +23,15 @@ a better position than anyone else to do so.
     git clone https://github.com/chromium/vs-chromium.git
 
 === Building and running the code.
+    The server dashboard of the Visual Studio extension (the "VsChromium Server"
+    tool window) is the page of the VS Code extension: build it first (needs
+    Node.js), otherwise the build of the VsChromium project fails with these
+    instructions:
+        cd vs-chromium\src\vscode
+        npm install
+        npm run compile
+    (see docs\portable-server\VS_DASHBOARD.md).
+
     Open vs-chromium\src\vs-chromium.sln
 
     Maybe start by building everything (Debug config) via F7. If you get errors,

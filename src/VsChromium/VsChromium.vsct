@@ -70,6 +70,14 @@
           <LocCanonicalName>VsChromium.CodeSearchToolWindow</LocCanonicalName>
         </Strings>
       </Button>
+      <Button guid="guidVsChromiumCmdSet" id="cmdidServerDashboardToolWindow" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Strings>
+          <ButtonText>VsChromium Server</ButtonText>
+          <CommandName>VsChromium - Server Dashboard ToolWindow</CommandName>
+          <LocCanonicalName>VsChromium.ServerDashboardToolWindow</LocCanonicalName>
+        </Strings>
+      </Button>
       <Button guid="guidVsChromiumCmdSet" id="cmdidBuildExplorerToolWindow" priority="0x0100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
         <CommandFlag>DefaultInvisible</CommandFlag>
@@ -421,6 +429,7 @@
       <IDSymbol name="cmdidGotoPreviousLocation" value="0x0106" />
       <IDSymbol name="cmdidCancelSearch" value="0x0107" />
       <IDSymbol name="cmdidBuildExplorerToolWindow" value="0x0110" />
+      <IDSymbol name="cmdidServerDashboardToolWindow" value="0x0111" />
       <IDSymbol name="cmdidSyncWithActiveDocument" value="0x0120" />
       <IDSymbol name="cmdidCopyFullPath" value="0x0130" />
       <IDSymbol name="cmdidCopyFullPathPosix" value="0x0131" />

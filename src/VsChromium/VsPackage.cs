@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using VsChromium.Commands;
 using VsChromium.Core.Logging;
+using VsChromium.Features.ServerDashboard;
 using VsChromium.Features.ToolWindows.BuildExplorer;
 using VsChromium.Features.ToolWindows.CodeSearch;
 using VsChromium.Package;
@@ -26,9 +27,10 @@ namespace VsChromium {
   // When in development mode, update the version # below every time there is a change to the .VSCT file,
   // or Visual Studio won't take into account the changes (this is true with VS 2010, maybe not with
   // VS 2012 and later since package updates is more explicit).
-  [ProvideMenuResource("Menus.ctmenu", 13)]
+  [ProvideMenuResource("Menus.ctmenu", 14)]
   [ProvideToolWindow(typeof(CodeSearchToolWindow))]
   [ProvideToolWindow(typeof(BuildExplorerToolWindow))]
+  [ProvideToolWindow(typeof(ServerDashboardToolWindow), Style = VsDockStyle.Tabbed, Window = EnvDTE.Constants.vsDocumentKindText)]
   [Guid(GuidList.GuidVsChromiumPkgString)]
   [ProvideOptionPage(
     typeof(GeneralOptions), // Type of page to open
@@ -61,6 +63,17 @@ namespace VsChromium {
     true, // Support automation
     // List of keywords for Tools|Options search
     new[] { "VS Chromium", "Chrome", "Coding Style", "Style" },
+    SupportsProfiles = true)
+  ]
+  [ProvideOptionPage(
+    typeof(IndexServerOptions), // Type of page to open
+    "VS Chromium", // Non localized version of the top level category
+    "Index Server", // Non localized version of the page name within the category
+    210, // Localized resource id of the top level category
+    214, // Loalized resource id of the page name within the category
+    true, // Support automation
+    // List of keywords for Tools|Options search
+    new[] { "VS Chromium", "Index", "Cache", "Trigram", "Server" },
     SupportsProfiles = true)
   ]
   [ProvideAutoLoad(VSConstants.UICONTEXT.EmptySolution_string, PackageAutoLoadFlags.BackgroundLoad)]

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<!-- Copyright 2026 The Chromium Authors. All rights reserved.
+     Use of this source code is governed by a BSD-style license that can be
+     found in the LICENSE file. -->
+<!-- The server dashboard page in Visual Studio (WebView2): the page of the VS Code extension
+     (dashboard.js and dashboard.css, copied by the build from src/vscode), served from the
+     virtual host "dashboard.vschromium.example" (see ServerDashboardControl.cs). The colors and
+     fonts are sent by Visual Studio ("theme" message, applied through the CSSOM). -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://dashboard.vschromium.example; style-src https://dashboard.vschromium.example;">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="dashboard.css" rel="stylesheet">
+  <title>VsChromium Server</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="dashboard.js"></script>
+</body>
+</html>

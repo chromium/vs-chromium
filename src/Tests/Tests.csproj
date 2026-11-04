@@ -52,6 +52,8 @@
     <Compile Include="Mocks\TextSnapshotMock.cs" />
     <Compile Include="VsChromium\CodeSearch\TestSearchResultTreeBuilder.cs" />
     <Compile Include="VsChromium\ServerProxy\TestServerError.cs" />
+    <Compile Include="VsChromium\ServerDashboard\TestDashboardBridge.cs" />
+    <Compile Include="VsChromium\ServerDashboard\TestDashboardTheme.cs" />
     <Compile Include="VsChromium\ToolsOptions\TestGlobalSettings.cs" />
     <Compile Include="VsChromium\Wpf\TestHiararchyObjectNavigator.cs" />
   </ItemGroup>
@@ -84,6 +86,8 @@
          are provided by Visual Studio). Tests run outside of Visual Studio, so they need the
          runtime assemblies copied to the output directory. -->
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
+    <!-- The WebView2 assemblies referenced by VsChromium.dll (provided by Visual Studio at runtime), for the MEF catalog of the tests. -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.864.35" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

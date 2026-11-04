@@ -11,6 +11,17 @@
     <DefineConstants>TRACE;PROFILE_SERVER2;</DefineConstants>
   </PropertyGroup>
   <Import Project="..\ProjectBefore.settings" />
+  <!--
+    The server dashboard page is built by the VS Code extension (src\vscode: "npm install", then
+    "npm run compile", which bundles the page into out\media\dashboard.js), and copied into the
+    "Dashboard" folder of the output and of the VSIX (with media\dashboard.css and the HTML shell
+    Features\ServerDashboard\dashboard.html). The build fails with instructions if the bundle is
+    missing.
+  -->
+  <PropertyGroup>
+    <DashboardPageScript>$(BuildRoot)src\vscode\out\media\dashboard.js</DashboardPageScript>
+    <DashboardPageStyle>$(BuildRoot)src\vscode\media\dashboard.css</DashboardPageStyle>
+  </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -80,6 +91,25 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <!-- The server dashboard page (see DashboardPageFiles below). -->
+    <Content Include="Features\ServerDashboard\dashboard.html">
+      <Link>Dashboard\dashboard.html</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>Dashboard</VSIXSubPath>
+    </Content>
+    <Content Include="$(DashboardPageScript)">
+      <Link>Dashboard\dashboard.js</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>Dashboard</VSIXSubPath>
+    </Content>
+    <Content Include="$(DashboardPageStyle)">
+      <Link>Dashboard\dashboard.css</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <VSIXSubPath>Dashboard</VSIXSubPath>
+    </Content>
     <Content Include="$(BuildRoot)LICENSE">
       <Link>LICENSE</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -155,6 +185,9 @@
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="17.14.40264" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.9.820" />
+    <!-- WebView2 (server dashboard): compiled against this version, the assemblies of Visual Studio
+         are used at runtime (Visual Studio ships them, with binding redirects): not included in the VSIX. -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.864.35" ExcludeAssets="runtime;native;build;buildTransitive" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Features\AttachToChrome\AttachDialog.resx">
@@ -242,6 +275,20 @@
     </Compile>
     <Compile Include="Features\IndexServerInfo\DirectoryDetailsViewModel.cs" />
     <Compile Include="Features\IndexServerInfo\IShowServerInfoService.cs" />
+    <Compile Include="Features\ServerDashboard\DashboardBridge.cs" />
+    <Compile Include="Features\ServerDashboard\DashboardProtocol.cs" />
+    <Compile Include="Features\ServerDashboard\DashboardServerAdapter.cs" />
+    <Compile Include="Features\ServerDashboard\DashboardTheme.cs" />
+    <Compile Include="Features\ServerDashboard\IDashboardHost.cs" />
+    <Compile Include="Features\ServerDashboard\ProjectOptionsService.cs" />
+    <Compile Include="Features\ServerDashboard\ProjectOptionsStore.cs" />
+    <Compile Include="Features\ServerDashboard\ServerDashboardControl.cs" />
+    <Compile Include="Features\ServerDashboard\ServerDashboardToolWindow.cs" />
+    <Compile Include="Features\ServerDashboard\ShowServerDashboardCommandHandler.cs" />
+    <Compile Include="Features\ServerDashboard\VsDashboardHost.cs" />
+    <Compile Include="Features\ServerDashboard\VsDashboardTheme.cs" />
+    <Compile Include="Settings\IndexServerSettings.cs" />
+    <Compile Include="ToolsOptions\IndexServerOptions.cs" />
     <Compile Include="Features\IndexServerInfo\ProjectConfigurationDetailsDialog.xaml.cs">
       <DependentUpon>ProjectConfigurationDetailsDialog.xaml</DependentUpon>
     </Compile>
@@ -534,6 +581,10 @@
     </ItemGroup>
   </Target>  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Target Name="CheckDashboardPage" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(DashboardPageScript)')"
+           Text="The server dashboard page is missing: $(DashboardPageScript). Build it first with the VS Code extension: cd src\vscode, npm install, npm run compile (see src\vscode\README.md)." />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

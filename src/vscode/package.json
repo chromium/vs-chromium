@@ -147,6 +147,7 @@
   "devDependencies": {
     "@types/node": "22.15.3",
     "@types/vscode": "1.100.0",
+    "@vscode/codicons": "0.0.26",
     "@vscode/vsce": "3.6.0",
     "typescript": "5.9.3"
   },

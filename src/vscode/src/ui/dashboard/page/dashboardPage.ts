@@ -4,42 +4,23 @@
 
 // Entry point of the server dashboard page (bundled into out/media/dashboard.js by
 // scripts/bundle-page.js). Builds the DOM from script (the host only provides an empty page with
-// the stylesheet) and patches it on each update: texts are only written when they change, rows are
-// keyed (no flicker, selection and focus are kept). The DOM is built with textContent only (no
-// innerHTML). Talks to the host only through the shim (hostShim.ts).
+// the stylesheets: media/dashboard.css and the Codicons) and patches it on each update: texts are
+// only written when they change, rows are keyed (no flicker, selection and focus are kept). The
+// DOM is built with textContent only (no innerHTML). Talks to the host only through the shim
+// (hostShim.ts).
 
 import { DashboardAction, DashboardController } from '../dashboardController';
-import type { ActionId, DashboardViewModel, KeyValue, OperationRow, ProjectRow } from '../dashboardModel';
+import type { DashboardViewModel, KeyValue, OperationRow, ProjectRow, StatusKind } from '../dashboardModel';
 import { createHostShim, ShimWindow } from '../hostShim';
 
-const SvgNs = 'http://www.w3.org/2000/svg';
-
-/** Icons (16x16, stroked or filled with currentColor): no icon font in the page. */
-const icons: Record<string, string[]> = {
-  pause: ['M5 3h2v10H5z', 'M9 3h2v10H9z'],
-  resume: ['M5 3l8 5-8 5z'],
-  rebuild: ['M13 8a5 5 0 1 1-1.5-3.6', 'M12 2v3h-3'],
-  restart: ['M8 2v6', 'M4.5 4.5a5 5 0 1 0 7 0'],
-  output: ['M3 4h10', 'M3 7h10', 'M3 10h7', 'M3 13h5'],
-  folder: ['M2 4h4l1.5 1.5H14v7.5H2z'],
+/** The Codicon of each status. */
+const statusIcons: Record<StatusKind, string> = {
+  ok: 'codicon-pass-filled',
+  busy: 'codicon-sync codicon-modifier-spin',
+  paused: 'codicon-debug-pause',
+  stopped: 'codicon-error',
+  unknown: 'codicon-circle-large-outline',
 };
-
-const filledIcons = new Set(['pause', 'resume']);
-
-function icon(name: string): SVGSVGElement {
-  const svg = document.createElementNS(SvgNs, 'svg');
-  svg.setAttribute('viewBox', '0 0 16 16');
-  svg.setAttribute('width', '16');
-  svg.setAttribute('height', '16');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.classList.add('icon', filledIcons.has(name) ? 'filled' : 'stroked');
-  for (const d of icons[name] ?? []) {
-    const path = document.createElementNS(SvgNs, 'path');
-    path.setAttribute('d', d);
-    svg.append(path);
-  }
-  return svg;
-}
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -50,6 +31,12 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
     e.textContent = text;
   }
   return e;
+}
+
+function codicon(name: string): HTMLElement {
+  const icon = el('span', `codicon ${name}`);
+  icon.setAttribute('aria-hidden', 'true');
+  return icon;
 }
 
 function setText(e: HTMLElement, text: string) {
@@ -64,11 +51,33 @@ function setTitle(e: HTMLElement, title: string | undefined) {
   }
 }
 
-/** A button of the header. */
-interface ActionButton {
-  button: HTMLButtonElement;
-  label: HTMLElement;
-  iconName: string;
+function setClass(e: Element, className: string) {
+  if (e.className !== className) {
+    e.className = className;
+  }
+}
+
+function setDisabled(e: HTMLButtonElement | HTMLInputElement, disabled: boolean) {
+  if (e.disabled !== disabled) {
+    e.disabled = disabled;
+  }
+}
+
+/** A checkbox like the ones of the VS Code Settings editor (native input, Codicon check mark). */
+function checkbox(label: string): { root: HTMLElement; input: HTMLInputElement } {
+  const root = el('span', 'checkbox');
+  const input = el('input');
+  input.type = 'checkbox';
+  input.setAttribute('aria-label', label);
+  root.append(input, el('span', 'box codicon codicon-check'));
+  return { root, input };
+}
+
+function setChecked(input: HTMLInputElement, checked: boolean, enabled: boolean) {
+  if (input.checked !== checked) {
+    input.checked = checked;
+  }
+  setDisabled(input, !enabled);
 }
 
 /**
@@ -100,17 +109,29 @@ class KeyedRows<T extends { key: string }> {
 
 class DashboardView {
   private readonly status: HTMLElement;
+  private readonly statusIcon: HTMLElement;
+  private readonly statusText: HTMLElement;
   private readonly facts: HTMLElement;
+  private readonly progress: HTMLElement;
   private readonly error: HTMLElement;
-  private readonly buttons = new Map<string, ActionButton>();
-  private readonly settingSwitch: HTMLButtonElement;
+  private readonly errorText: HTMLElement;
+  private readonly pauseOrResume: HTMLButtonElement;
+  private readonly pauseOrResumeIcon: HTMLElement;
+  private readonly pauseOrResumeLabel: HTMLElement;
+  private readonly rebuild: HTMLButtonElement;
+  private readonly restart: HTMLButtonElement;
+  private readonly showOutput: HTMLButtonElement;
+  private readonly openLogDirectory: HTMLButtonElement;
+  private readonly setting: HTMLInputElement;
+  private readonly projectCount: HTMLElement;
+  private readonly operationCount: HTMLElement;
   private readonly projects: KeyedRows<ProjectRow>;
   private readonly memory: KeyedRows<KeyValue>;
   private readonly indexCache: KeyedRows<KeyValue>;
   private readonly operations: KeyedRows<OperationRow>;
   private readonly server: KeyedRows<KeyValue>;
   private last: DashboardViewModel | undefined;
-  /** The trigram filters switches of the projects are enabled (the server is running). */
+  /** The trigram filters checkboxes of the projects are enabled (the server is running). */
   private trigramFiltersEnabled = false;
 
   constructor(root: HTMLElement, private readonly execute: (action: DashboardAction) => void) {
@@ -120,46 +141,72 @@ class DashboardView {
     titleRow.append(el('h1', 'title', 'VsChromium Server'));
     const toolbar = el('div', 'toolbar');
     toolbar.setAttribute('role', 'toolbar');
-    toolbar.append(
-      this.button('pauseOrResume', 'pause', 'Pause', 'Pause indexing (file system changes are not processed until resumed)'),
-      this.button('rebuild', 'rebuild', 'Rebuild index', 'Scan the file system again and rebuild the index'),
-      this.button('restartServer', 'restart', 'Restart server', 'Restart the indexing server'),
-      this.button('showOutput', 'output', 'Output', 'Show the output (log) of the extension'),
-      this.button('openLogDirectory', 'folder', 'Log folder', 'Open the directory of the log files of the server'),
-    );
+    this.pauseOrResumeIcon = codicon('codicon-debug-pause');
+    this.pauseOrResumeLabel = el('span', undefined, 'Pause Indexing');
+    this.pauseOrResume = this.button('button primary', [this.pauseOrResumeIcon, this.pauseOrResumeLabel],
+      () => this.execute({ action: this.last?.pauseOrResume === 'resume' ? 'resume' : 'pause' }));
+    this.rebuild = this.button('button secondary', [codicon('codicon-refresh'), el('span', undefined, 'Rebuild Index')],
+      () => this.execute({ action: 'rebuild' }), 'Scan the file system again and rebuild the index');
+    this.restart = this.button('button secondary', [codicon('codicon-debug-restart'), el('span', undefined, 'Restart Server')],
+      () => this.execute({ action: 'restartServer' }), 'Restart the indexing server');
+    toolbar.append(this.pauseOrResume, this.rebuild, this.restart);
     titleRow.append(toolbar);
+
     const statusRow = el('div', 'status-row');
+    this.statusIcon = codicon(statusIcons.unknown);
+    this.statusText = el('span');
     this.status = el('span', 'status unknown');
+    this.status.setAttribute('role', 'status');
+    this.status.append(this.statusIcon, this.statusText);
     this.facts = el('span', 'facts');
-    statusRow.append(this.status, this.facts);
+    this.showOutput = this.button('link', [codicon('codicon-output'), el('span', undefined, 'Show Output')],
+      () => this.execute({ action: 'showOutput' }), 'Show the output (log) of the extension');
+    this.openLogDirectory = this.button('link', [codicon('codicon-folder-opened'), el('span', undefined, 'Open Log Folder')],
+      () => this.execute({ action: 'openLogDirectory' }), 'Open the directory of the log files of the server');
+    statusRow.append(this.status, this.facts, this.showOutput, this.openLogDirectory);
+
     this.error = el('div', 'error');
+    this.error.setAttribute('role', 'alert');
+    this.errorText = el('span');
+    this.error.append(codicon('codicon-error'), this.errorText);
     this.error.hidden = true;
-    header.append(titleRow, statusRow, this.error);
+    this.progress = el('div', 'progress');
+    this.progress.hidden = true;
+    header.append(titleRow, statusRow, this.error, this.progress);
 
     // Projects
     const projectsSection = this.section('Projects');
-    const settingRow = el('div', 'setting-row');
-    this.settingSwitch = this.switch('Trigram filters for all the projects (setting)');
-    this.settingSwitch.addEventListener('click', () => this.execute({ action: 'toggleTrigramFiltersSetting' }));
-    settingRow.append(this.settingSwitch, el('span', 'setting-label',
-      'Trigram filters for all the projects (setting): faster searches, about 5% of the text size in memory'));
-    const projectsTable = this.table(['Root', 'Files', 'Searchable', 'Text', 'Trigram filters', 'Cache'], [1, 2, 3]);
-    projectsSection.body.append(settingRow, projectsTable.table);
+    this.projectCount = projectsSection.badge;
+    const setting = el('div', 'setting');
+    const title = el('div', 'setting-title');
+    title.append(el('span', 'setting-category', 'VsChromium: '), el('span', 'setting-name', 'Trigram Filters'));
+    const settingCheckbox = checkbox('Trigram Filters');
+    this.setting = settingCheckbox.input;
+    this.setting.addEventListener('change', () => this.execute({ action: 'toggleTrigramFiltersSetting' }));
+    const value = el('label', 'setting-value');
+    value.append(settingCheckbox.root, el('span', undefined,
+      'Use trigram filters for all the projects: much faster selective searches, at the cost of memory ' +
+      '(about 5% of the size of the indexed text). Can be changed per project below, until the setting changes ' +
+      'or the server restarts.'));
+    setting.append(title, value);
+    const projectsTable = this.table(['Root', 'Files', 'Searchable', 'Text', 'Trigram Filters', 'Cache'], [1, 2, 3]);
+    projectsSection.section.append(setting, projectsTable.table);
     this.projects = new KeyedRows(projectsTable.body, item => this.createProjectRow(item), (row, item) => this.updateProjectRow(row, item),
       () => this.emptyRow(6, 'No project'));
 
     // Memory and index cache, side by side.
-    const grid = el('div', 'grid');
+    const columns = el('div', 'columns');
     const memorySection = this.section('Memory');
-    const cacheSection = this.section('Index cache');
-    grid.append(memorySection.section, cacheSection.section);
-    this.memory = this.keyValues(memorySection.body);
-    this.indexCache = this.keyValues(cacheSection.body);
+    const cacheSection = this.section('Index Cache');
+    columns.append(memorySection.section, cacheSection.section);
+    this.memory = this.keyValues(memorySection.section);
+    this.indexCache = this.keyValues(cacheSection.section);
 
     // Operations
     const operationsSection = this.section('Operations');
+    this.operationCount = operationsSection.badge;
     const operationsTable = this.table(['Name', 'Count', 'Last', 'Max', 'Average', 'Total'], [1, 2, 3, 4, 5]);
-    operationsSection.body.append(operationsTable.table);
+    operationsSection.section.append(operationsTable.table);
     this.operations = new KeyedRows(operationsTable.body,
       item => this.createCells(6, [1, 2, 3, 4, 5], item.name),
       (row, item) => this.updateCells(row, [item.name, item.count, item.last, item.max, item.average, item.total]),
@@ -167,35 +214,36 @@ class DashboardView {
 
     // Server
     const serverSection = this.section('Server');
-    this.server = this.keyValues(serverSection.body);
+    this.server = this.keyValues(serverSection.section);
 
-    root.replaceChildren(header, projectsSection.section, grid, operationsSection.section, serverSection.section);
+    root.replaceChildren(header, projectsSection.section, columns, operationsSection.section, serverSection.section);
   }
 
   render(vm: DashboardViewModel) {
-    setText(this.status, vm.status.text);
-    const statusClass = `status ${vm.status.kind}`;
-    if (this.status.className !== statusClass) {
-      this.status.className = statusClass;
-    }
+    setClass(this.status, `status ${vm.status.kind}`);
+    setClass(this.statusIcon, `codicon ${statusIcons[vm.status.kind]}`);
+    setText(this.statusText, vm.status.text);
     setText(this.facts, vm.facts.join(' \u00b7 '));
-    setText(this.error, vm.error ?? '');
+    this.progress.hidden = vm.status.kind !== 'busy';
+    setText(this.errorText, vm.error ?? '');
     this.error.hidden = vm.error === undefined;
 
-    const pauseOrResume = this.buttons.get('pauseOrResume')!;
-    if (this.last?.pauseOrResume !== vm.pauseOrResume) {
-      const resume = vm.pauseOrResume === 'resume';
-      setText(pauseOrResume.label, resume ? 'Resume' : 'Pause');
-      pauseOrResume.button.title = resume ? 'Resume indexing' : 'Pause indexing (file system changes are not processed until resumed)';
-      pauseOrResume.button.replaceChild(icon(resume ? 'resume' : 'pause'), pauseOrResume.button.firstChild!);
-    }
-    this.setEnabled('pauseOrResume', vm.actions[vm.pauseOrResume]);
-    for (const id of ['rebuild', 'restartServer', 'showOutput', 'openLogDirectory'] as ActionId[]) {
-      this.setEnabled(id, vm.actions[id]);
-    }
-    this.setSwitch(this.settingSwitch, vm.trigramFiltersSetting, vm.actions.toggleTrigramFilters);
+    const resume = vm.pauseOrResume === 'resume';
+    setText(this.pauseOrResumeLabel, resume ? 'Resume Indexing' : 'Pause Indexing');
+    setClass(this.pauseOrResumeIcon, `codicon ${resume ? 'codicon-debug-continue' : 'codicon-debug-pause'}`);
+    setTitle(this.pauseOrResume, resume
+      ? 'Resume indexing'
+      : 'Pause indexing (file system changes are not processed until resumed)');
+    setDisabled(this.pauseOrResume, !vm.actions[vm.pauseOrResume]);
+    setDisabled(this.rebuild, !vm.actions.rebuild);
+    setDisabled(this.restart, !vm.actions.restartServer);
+    setDisabled(this.showOutput, !vm.actions.showOutput);
+    setDisabled(this.openLogDirectory, !vm.actions.openLogDirectory);
+    setChecked(this.setting, vm.trigramFiltersSetting, vm.actions.toggleTrigramFilters);
     this.trigramFiltersEnabled = vm.actions.toggleTrigramFilters;
 
+    setText(this.projectCount, vm.projects.length > 0 ? String(vm.projects.length) : '');
+    setText(this.operationCount, vm.operations.length > 0 ? String(vm.operations.length) : '');
     this.projects.render(vm.projects);
     this.memory.render(vm.memory);
     this.indexCache.render(vm.indexCache);
@@ -204,57 +252,25 @@ class DashboardView {
     this.last = vm;
   }
 
-  private button(id: string, iconName: string, text: string, title: string): HTMLButtonElement {
-    const button = el('button', 'action');
+  private button(className: string, content: HTMLElement[], onClick: () => void, title?: string): HTMLButtonElement {
+    const button = el('button', className);
     button.type = 'button';
-    button.title = title;
-    const label = el('span', 'label', text);
-    button.append(icon(iconName), label);
+    if (title) {
+      button.title = title;
+    }
+    button.append(...content);
     button.disabled = true;
-    button.addEventListener('click', () => {
-      if (id === 'pauseOrResume') {
-        this.execute({ action: this.last?.pauseOrResume === 'resume' ? 'resume' : 'pause' });
-      } else {
-        this.execute({ action: id } as DashboardAction);
-      }
-    });
-    this.buttons.set(id, { button, label, iconName });
+    button.addEventListener('click', onClick);
     return button;
   }
 
-  private setEnabled(id: string, enabled: boolean) {
-    const button = this.buttons.get(id)?.button;
-    if (button && button.disabled === enabled) {
-      button.disabled = !enabled;
-    }
-  }
-
-  private switch(label: string): HTMLButtonElement {
-    const button = el('button', 'switch');
-    button.type = 'button';
-    button.setAttribute('role', 'switch');
-    button.setAttribute('aria-checked', 'false');
-    button.setAttribute('aria-label', label);
-    button.append(el('span', 'knob'));
-    return button;
-  }
-
-  private setSwitch(button: HTMLButtonElement, checked: boolean, enabled: boolean) {
-    const value = checked ? 'true' : 'false';
-    if (button.getAttribute('aria-checked') !== value) {
-      button.setAttribute('aria-checked', value);
-    }
-    if (button.disabled === enabled) {
-      button.disabled = !enabled;
-    }
-  }
-
-  private section(title: string): { section: HTMLElement; body: HTMLElement } {
-    const section = el('section', 'card');
-    section.append(el('h2', 'card-title', title));
-    const body = el('div', 'card-body');
-    section.append(body);
-    return { section, body };
+  private section(title: string): { section: HTMLElement; badge: HTMLElement } {
+    const section = el('section', 'section');
+    const heading = el('h2', 'section-title', title);
+    const badge = el('span', 'badge');
+    heading.append(badge);
+    section.append(heading);
+    return { section, badge };
   }
 
   private table(headers: string[], numericColumns: number[]): { table: HTMLTableElement; body: HTMLTableSectionElement } {
@@ -297,14 +313,15 @@ class DashboardView {
     root.className = 'path';
     root.title = item.rootPath;
     const trigrams = row.children[4] as HTMLElement;
-    const toggle = this.switch(`Trigram filters of ${item.rootPath}`);
-    toggle.addEventListener('click', () => this.execute({
+    const { root: box, input } = checkbox(`Trigram filters of ${item.rootPath}`);
+    input.addEventListener('change', () => this.execute({
       action: 'setProjectTrigramFilters',
       projectPath: item.rootPath,
-      enabled: toggle.getAttribute('aria-checked') !== 'true',
+      enabled: input.checked,
     }));
-    trigrams.className = 'trigrams';
-    trigrams.append(toggle, el('span', 'switch-text'));
+    const label = el('label', 'trigrams');
+    label.append(box, el('span', 'description'));
+    trigrams.append(label);
     return row;
   }
 
@@ -314,9 +331,9 @@ class DashboardView {
     setText(cells[1] as HTMLElement, item.files);
     setText(cells[2] as HTMLElement, item.searchable);
     setText(cells[3] as HTMLElement, item.textSize);
-    const trigrams = cells[4] as HTMLElement;
-    this.setSwitch(trigrams.children[0] as HTMLButtonElement, item.trigramFiltersEnabled, this.trigramFiltersEnabled);
-    setText(trigrams.children[1] as HTMLElement, item.trigramFilters);
+    const label = (cells[4] as HTMLElement).firstElementChild as HTMLElement;
+    setChecked(label.querySelector('input')!, item.trigramFiltersEnabled, this.trigramFiltersEnabled);
+    setText(label.lastElementChild as HTMLElement, item.trigramFilters);
     setText(cells[5] as HTMLElement, item.cache);
     setTitle(cells[5] as HTMLElement, item.cacheTitle);
   }

@@ -2,40 +2,54 @@
    Use of this source code is governed by a BSD-style license that can be
    found in the LICENSE file. */
 
-/* Server dashboard page. Host neutral: the colors are CSS variables provided by VS Code
-   (--vscode-*), with fallbacks for other hosts (a Visual Studio host maps its theme colors to the
-   same variables). */
-
-:root {
-  --fg: var(--vscode-foreground, #333);
-  --bg: var(--vscode-editor-background, #fff);
-  --muted: var(--vscode-descriptionForeground, #717171);
-  --border: var(--vscode-panel-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
-  --card-bg: var(--vscode-sideBar-background, var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.06)));
-  --hover: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.12));
-  --button-fg: var(--vscode-button-secondaryForeground, var(--vscode-foreground, #333));
-  --button-bg: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.16));
-  --button-hover: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.28));
-  --focus: var(--vscode-focusBorder, #0078d4);
-  --accent: var(--vscode-button-background, #0078d4);
-  --ok: var(--vscode-testing-iconPassed, #388a34);
-  --busy: var(--vscode-progressBar-background, #0078d4);
-  --warn: var(--vscode-editorWarning-foreground, #bf8803);
-  --error: var(--vscode-errorForeground, #e51400);
-  --mono: var(--vscode-editor-font-family, Consolas, "Courier New", monospace);
-}
+/* Server dashboard page, styled like the VS Code workbench (Settings and Keyboard Shortcuts
+   editors) with the VS Code theme variables (--vscode-*) and the Codicons. Host neutral: another
+   host (e.g. a Visual Studio tool window) defines the same variables from its theme. Fallbacks are
+   only a last resort (page rendered without variables). */
 
 body {
   margin: 0;
-  padding: 12px 20px 24px 20px;
-  color: var(--fg);
-  background: var(--bg);
-  font-family: var(--vscode-font-family, "Segoe UI", system-ui, sans-serif);
+  padding: 0 20px 20px 20px;
+  color: var(--vscode-foreground, #616161);
+  background: var(--vscode-editor-background, #fff);
+  font-family: var(--vscode-font-family, system-ui, sans-serif);
   font-size: var(--vscode-font-size, 13px);
+  font-weight: var(--vscode-font-weight, normal);
   line-height: 1.4;
 }
 
-/* Header */
+.codicon[class*='codicon-'] {
+  display: inline-block;
+  flex: none;
+}
+
+/* Same animation as the "~spin" icons of VS Code. */
+.codicon-modifier-spin {
+  animation: codicon-spin 1.5s steps(30) infinite;
+}
+
+@keyframes codicon-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codicon-modifier-spin {
+    animation: none;
+  }
+}
+
+/* Header (like the header of the Settings editor) */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 12px 0 8px 0;
+  background: var(--vscode-editor-background, #fff);
+  border-bottom: 1px solid var(--vscode-settings-headerBorder, var(--vscode-panel-border));
+}
 
 .title-row {
   display: flex;
@@ -46,162 +60,298 @@ body {
 
 .title {
   margin: 0;
-  font-size: 1.5em;
+  font-size: 26px;
   font-weight: 600;
+  color: var(--vscode-settings-headerForeground, var(--vscode-foreground));
 }
 
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-left: auto;
-}
-
-button.action {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  color: var(--button-fg);
-  background: var(--button-bg);
-  border: 1px solid var(--vscode-button-border, transparent);
-  border-radius: 2px;
-  font-family: inherit;
-  font-size: inherit;
-  cursor: pointer;
-}
-
-button.action:hover:not(:disabled) {
-  background: var(--button-hover);
-}
-
-button:focus-visible {
-  outline: 1px solid var(--focus);
-  outline-offset: 1px;
-}
-
-button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.icon {
-  flex: none;
-}
-
-.icon.filled {
-  fill: currentColor;
-  stroke: none;
-}
-
-.icon.stroked {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .status-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 4px 12px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
 }
 
-.status::before {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 6px;
-  border-radius: 50%;
-  background: var(--muted);
-  content: "";
+.status.ok .codicon {
+  color: var(--vscode-charts-green, var(--vscode-testing-iconPassed));
 }
 
-.status.ok::before {
-  background: var(--ok);
+.status.busy .codicon {
+  color: var(--vscode-charts-blue, var(--vscode-progressBar-background));
 }
 
-.status.busy::before {
-  background: var(--busy);
-  animation: pulse 1.2s ease-in-out infinite;
-}
-
-.status.paused::before {
-  background: var(--warn);
+.status.paused .codicon {
+  color: var(--vscode-editorWarning-foreground, var(--vscode-charts-yellow));
 }
 
 .status.stopped {
-  color: var(--error);
+  color: var(--vscode-errorForeground);
 }
 
-.status.stopped::before {
-  background: var(--error);
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.3;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status.busy::before {
-    animation: none;
-  }
+.status.unknown .codicon {
+  color: var(--vscode-descriptionForeground);
 }
 
 .facts {
-  color: var(--muted);
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Progress bar of the workbench (indeterminate) while indexing. */
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+}
+
+.progress::before {
+  position: absolute;
+  width: 2%;
+  height: 100%;
+  background: var(--vscode-progressBar-background);
+  content: "";
+  animation: progress 4s linear infinite;
+}
+
+@keyframes progress {
+  0% {
+    left: 0;
+    width: 2%;
+  }
+  50% {
+    width: 30%;
+  }
+  100% {
+    left: 100%;
+    width: 2%;
+  }
 }
 
 .error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 8px;
-  padding: 6px 10px;
-  color: var(--vscode-inputValidation-errorForeground, var(--fg));
-  background: var(--vscode-inputValidation-errorBackground, rgba(229, 20, 0, 0.1));
-  border: 1px solid var(--vscode-inputValidation-errorBorder, var(--error));
+  padding: 4px 8px;
+  color: var(--vscode-inputValidation-errorForeground, var(--vscode-foreground));
+  background: var(--vscode-inputValidation-errorBackground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
 }
 
-/* Cards */
+.error[hidden] {
+  display: none;
+}
 
-.card {
-  margin-top: 16px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--card-bg);
+/* Buttons (like the VS Code buttons) */
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  min-height: 26px;
+  padding: 4px 11px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.button.primary {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+.button.primary:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.button.secondary {
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* Commands displayed as links (like the links of the Settings editor). */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  color: var(--vscode-textLink-foreground);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.link:hover:not(:disabled) {
+  color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground));
+  text-decoration: underline;
+}
+
+button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Sections (like the groups of the Settings editor) */
+
+.section {
+  margin-top: 20px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--vscode-settings-headerForeground, var(--vscode-foreground));
+}
+
+.badge {
+  min-width: 18px;
+  box-sizing: border-box;
+  padding: 3px 6px;
+  border: 1px solid var(--vscode-contrastBorder, transparent);
+  border-radius: 11px;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 11px;
+  text-align: center;
+}
+
+.badge:empty {
+  display: none;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  column-gap: 32px;
+}
+
+.columns > .section {
   min-width: 0;
 }
 
-.card-title {
-  margin: 0;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85em;
+/* Settings (like a boolean setting of the Settings editor) */
+
+.setting {
+  padding: 8px 6px;
+  margin: 0 -6px 8px -6px;
+}
+
+.setting:hover {
+  background: var(--vscode-settings-rowHoverBackground);
+}
+
+.setting-title {
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
+  color: var(--vscode-settings-headerForeground, var(--vscode-foreground));
 }
 
-.card-body {
-  padding: 6px 12px 10px 12px;
-  overflow-x: auto;
+.setting-category {
+  opacity: 0.9;
+  font-weight: normal;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-  column-gap: 16px;
+.setting-value {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--vscode-descriptionForeground);
 }
 
-/* Tables */
+/* Checkboxes (like the checkboxes of the Settings editor) */
+
+.checkbox {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkbox .box {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--vscode-settings-checkboxBorder, var(--vscode-checkbox-border));
+  border-radius: 3px;
+  color: var(--vscode-settings-checkboxForeground, var(--vscode-checkbox-foreground));
+  background: var(--vscode-settings-checkboxBackground, var(--vscode-checkbox-background));
+  pointer-events: none;
+}
+
+.checkbox .box::before {
+  visibility: hidden;
+}
+
+.checkbox input:checked + .box::before {
+  visibility: visible;
+}
+
+.checkbox input:focus-visible + .box {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+.checkbox input:disabled {
+  cursor: default;
+}
+
+.checkbox input:disabled + .box {
+  opacity: 0.4;
+}
+
+/* Tables (like the Keyboard Shortcuts editor) */
 
 .table {
   width: 100%;
@@ -210,21 +360,29 @@ button:disabled {
 }
 
 .table th {
-  padding: 4px 8px;
+  height: 24px;
+  padding: 0 10px;
   text-align: left;
   font-weight: 600;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  background: var(--vscode-keybindingTable-headerBackground);
+  border-bottom: 1px solid var(--vscode-contrastBorder, transparent);
 }
 
 .table td {
-  padding: 3px 8px;
+  height: 24px;
+  padding: 0 10px;
   white-space: nowrap;
 }
 
+.table tbody tr:nth-child(odd) {
+  background: var(--vscode-keybindingTable-rowsBackground);
+}
+
 .table tbody tr:hover {
-  background: var(--hover);
+  background: var(--vscode-list-hoverBackground);
+  outline: 1px dashed var(--vscode-contrastActiveBorder, transparent);
+  outline-offset: -1px;
 }
 
 .table .num {
@@ -232,15 +390,18 @@ button:disabled {
 }
 
 .table td.path {
-  font-family: var(--mono);
   max-width: 40vw;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--vscode-editor-font-family, monospace);
 }
 
 .table tr.empty td {
-  color: var(--muted);
-  font-style: italic;
+  color: var(--vscode-descriptionForeground);
+}
+
+.table .description {
+  color: var(--vscode-descriptionForeground);
 }
 
 .trigrams {
@@ -254,7 +415,7 @@ button:disabled {
 .kv {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 3px 16px;
+  gap: 2px 16px;
   margin: 0;
   font-variant-numeric: tabular-nums;
 }
@@ -264,7 +425,7 @@ button:disabled {
 }
 
 .kv dt {
-  color: var(--muted);
+  color: var(--vscode-descriptionForeground);
 }
 
 .kv dd {
@@ -273,51 +434,5 @@ button:disabled {
 }
 
 .kv-empty {
-  color: var(--muted);
-}
-
-/* Switches */
-
-.setting-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0 8px 0;
-}
-
-.setting-label {
-  color: var(--muted);
-}
-
-button.switch {
-  position: relative;
-  flex: none;
-  width: 28px;
-  height: 16px;
-  padding: 0;
-  border: 1px solid var(--vscode-checkbox-border, var(--border));
-  border-radius: 8px;
-  background: var(--vscode-checkbox-background, var(--button-bg));
-  cursor: pointer;
-}
-
-button.switch .knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--muted);
-  transition: left 0.1s;
-}
-
-button.switch[aria-checked="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-button.switch[aria-checked="true"] .knob {
-  left: 14px;
-  background: var(--vscode-button-foreground, #fff);
+  color: var(--vscode-descriptionForeground);
 }

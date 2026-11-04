@@ -8,7 +8,7 @@
 // The page must not depend on other modules (e.g. vscode-jsonrpc: the page only imports types of
 // the protocol, erased by the compilation): any other `require` fails the build.
 // Usage: node scripts/bundle-page.js
-// Output: out/media/dashboard.js
+// Output: out/media/dashboard.js, and the Codicons (CSS, font, licenses) in out/media/codicons
 
 'use strict';
 
@@ -69,3 +69,22 @@ parts.push(`  require(${JSON.stringify(entry)});`, '})();', '');
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, parts.join('\n'));
 console.log(`Bundled ${modules.size} modules into ${path.relative(extensionRoot, output)}`);
+
+// The Codicons (icon font of VS Code, dev dependency "@vscode/codicons"), loaded by the page:
+// copied with their license (the font is licensed under CC BY 4.0, the CSS under MIT).
+const codiconsSource = path.join(extensionRoot, 'node_modules', '@vscode', 'codicons');
+const codiconsOutput = path.join(path.dirname(output), 'codicons');
+fs.mkdirSync(codiconsOutput, { recursive: true });
+for (const [from, to] of [
+  ['dist/codicon.css', 'codicon.css'],
+  ['dist/codicon.ttf', 'codicon.ttf'],
+  ['LICENSE', 'LICENSE'],
+  ['LICENSE-CODE', 'LICENSE-CODE'],
+]) {
+  const source = path.join(codiconsSource, from);
+  if (!fs.existsSync(source)) {
+    throw new Error(`${source} not found: run "npm install"`);
+  }
+  fs.copyFileSync(source, path.join(codiconsOutput, to));
+}
+console.log(`Copied the Codicons into ${path.relative(extensionRoot, codiconsOutput)}`);

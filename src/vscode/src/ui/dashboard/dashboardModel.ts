@@ -1,0 +1,417 @@
+// Copyright 2026 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import type {
+  IndexDetails,
+  IndexStatistics,
+  IndexingStatus,
+  OperationTiming,
+  ProgressParams,
+  ServerStatistics,
+} from '../../protocol/protocol.g';
+import { describeIndexCache } from '../indexCacheStatus';
+import { describeMemory } from '../memoryStatistics';
+import type { HostState } from './dashboardMessages';
+
+// View model of the server dashboard page: what the page displays (texts, rows, enabled actions),
+// computed from the protocol data. Free of DOM and host dependencies (compiled into the page and
+// unit tested with node).
+
+/** Interval of the refreshes while the page is visible. */
+export const RefreshIntervalMs = 2000;
+/** "server/statistics" (process, GC, operations; walks the index) is requested every N refreshes. */
+export const ServerStatisticsEveryRefreshes = 5;
+/** "index/details" (walks the directories of the projects) is requested every N refreshes. */
+export const DetailsEveryRefreshes = 15;
+
+/** What a refresh requests ("index/statistics" is always requested: status, memory, cache). */
+export interface RefreshPlan {
+  server: boolean;
+  details: boolean;
+}
+
+/**
+ * The requests of the refresh number `refresh` (0 for the first one): the cheap index statistics
+ * at each refresh, the server statistics every 10 s and the project details every 30 s, plus
+ * those forced by events (e.g. a load of the index changes the project details).
+ */
+export function planRefresh(refresh: number, forced: Partial<RefreshPlan> = {}): RefreshPlan {
+  return {
+    server: refresh % ServerStatisticsEveryRefreshes === 0 || forced.server === true,
+    details: refresh % DetailsEveryRefreshes === 0 || forced.details === true,
+  };
+}
+
+/** The data displayed by the page. */
+export interface DashboardData {
+  host?: HostState;
+  index?: IndexStatistics;
+  server?: ServerStatistics;
+  /** The server statistics before `server` (CPU usage between the two). */
+  previousServer?: ServerStatistics;
+  details?: IndexDetails;
+  /** Last progress notification of the current indexing operation. */
+  progress?: ProgressParams;
+  /** Error of the last refresh. */
+  error?: string;
+}
+
+export type ActionId =
+  | 'pause'
+  | 'resume'
+  | 'rebuild'
+  | 'restartServer'
+  | 'showOutput'
+  | 'openLogDirectory'
+  | 'toggleTrigramFilters';
+
+export type StatusKind = 'ok' | 'busy' | 'paused' | 'stopped' | 'unknown';
+
+export interface KeyValue {
+  key: string;
+  label: string;
+  value: string;
+  title?: string;
+}
+
+export interface ProjectRow {
+  key: string;
+  rootPath: string;
+  files: string;
+  searchable: string;
+  textSize: string;
+  trigramFiltersEnabled: boolean;
+  trigramFilters: string;
+  cache: string;
+  cacheTitle: string;
+}
+
+export interface OperationRow {
+  key: string;
+  name: string;
+  count: string;
+  last: string;
+  max: string;
+  average: string;
+  total: string;
+}
+
+export interface DashboardViewModel {
+  status: { kind: StatusKind; text: string };
+  /** Facts of the header line (index update time, server version, runtime, pid, uptime...). */
+  facts: string[];
+  actions: Record<ActionId, boolean>;
+  /** The pause/resume button shows "Resume" when indexing is paused. */
+  pauseOrResume: 'pause' | 'resume';
+  error?: string;
+  trigramFiltersSetting: boolean;
+  projects: ProjectRow[];
+  memory: KeyValue[];
+  indexCache: KeyValue[];
+  operations: OperationRow[];
+  server: KeyValue[];
+}
+
+export interface FormatOptions {
+  /** Formats a UTC time (protocol format) for display. */
+  formatTime: (utc: string) => string;
+}
+
+const defaultFormatOptions: FormatOptions = {
+  formatTime: utc => new Date(utc).toLocaleTimeString(),
+};
+
+const KB = 1024;
+const MB = KB * 1024;
+const GB = MB * 1024;
+
+/** "512 B", "1.5 KB", "523.4 MB", "14.0 GB". */
+export function formatBytes(bytes: number): string {
+  const format = (value: number, unit: string) =>
+    `${value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ${unit}`;
+  if (bytes >= GB) {
+    return format(bytes / GB, 'GB');
+  }
+  if (bytes >= MB) {
+    return format(bytes / MB, 'MB');
+  }
+  if (bytes >= KB) {
+    return format(bytes / KB, 'KB');
+  }
+  return `${Math.round(bytes)} B`;
+}
+
+/** "2,653,112". */
+export function formatCount(count: number): string {
+  return count.toLocaleString('en-US');
+}
+
+/** "250 ms", "4.9 s", "2 min 13 s", "2 h 13 min". */
+export function formatDuration(ms: number): string {
+  if (ms < 1000) {
+    return `${Math.round(ms)} ms`;
+  }
+  if (ms < 60_000) {
+    return `${(ms / 1000).toFixed(1)} s`;
+  }
+  const totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds < 3600) {
+    return `${Math.floor(totalSeconds / 60)} min ${totalSeconds % 60} s`;
+  }
+  return `${Math.floor(totalSeconds / 3600)} h ${Math.floor((totalSeconds % 3600) / 60)} min`;
+}
+
+/** True for a time set by the server (not the default value of a missing time). */
+function isValidTime(utc: string | undefined): utc is string {
+  if (!utc) {
+    return false;
+  }
+  const time = Date.parse(utc);
+  return !isNaN(time) && new Date(time).getUTCFullYear() > 2000;
+}
+
+/** The status displayed in the header. */
+export function describeStatus(data: DashboardData): { kind: StatusKind; text: string } {
+  const host = data.host;
+  if (!host) {
+    return { kind: 'unknown', text: 'Connecting\u2026' };
+  }
+  if (!host.serverRunning) {
+    return { kind: 'stopped', text: `Server not running${host.stoppedReason ? ` (${host.stoppedReason})` : ''}` };
+  }
+  const index = data.index;
+  if (!index) {
+    return { kind: 'unknown', text: 'Loading\u2026' };
+  }
+  switch (index.status) {
+    case 'idle':
+      return { kind: 'ok', text: 'Idle' };
+    case 'busy': {
+      const progress = data.progress;
+      const percent = progress && progress.total > 0
+        ? ` ${Math.min(100, Math.floor((progress.completed * 100) / progress.total))}%`
+        : '';
+      return { kind: 'busy', text: `Indexing${percent}` };
+    }
+    case 'verifying':
+      return { kind: 'busy', text: 'Verifying the index of the last session' };
+    case 'paused':
+      return { kind: 'paused', text: 'Paused' };
+    case 'yield':
+      return { kind: 'paused', text: 'Paused by the server (too many file system changes)' };
+  }
+}
+
+/**
+ * The actions enabled for the state of the server: pause while indexing is active, resume while it
+ * is paused, rebuild when idle (or verifying the cached index); restart and logs always.
+ */
+export function enabledActions(host: HostState | undefined, status: IndexingStatus | undefined): Record<ActionId, boolean> {
+  const running = host?.serverRunning === true;
+  const known = running && status !== undefined;
+  return {
+    pause: known && (status === 'idle' || status === 'busy' || status === 'verifying'),
+    resume: known && (status === 'paused' || status === 'yield'),
+    rebuild: known && (status === 'idle' || status === 'verifying'),
+    restartServer: host !== undefined,
+    showOutput: host !== undefined,
+    openLogDirectory: host?.logDirectory !== undefined,
+    toggleTrigramFilters: running,
+  };
+}
+
+/** Splits "Label: value" (lines of the status helpers) into a key/value row. */
+function toKeyValue(line: string): KeyValue {
+  const i = line.indexOf(': ');
+  const label = i >= 0 ? line.substring(0, i) : line;
+  const value = i >= 0 ? line.substring(i + 2) : '';
+  return { key: label, label, value };
+}
+
+function describeProjects(data: DashboardData, options: FormatOptions): ProjectRow[] {
+  const cache = data.index?.indexCache;
+  let cacheText = 'none';
+  if (cache) {
+    if (!cache.enabled) {
+      cacheText = 'disabled';
+    } else {
+      const state = cache.saving ? 'saving\u2026' : cache.dirty ? 'changed' : cache.lastSavedUtc ? 'saved' : 'not saved';
+      cacheText = cache.lastSavedUtc ? `${formatBytes(cache.sizeOnDiskBytes)}, ${state}` : state;
+    }
+  }
+  const cacheTitle = toKeyValue(describeIndexCache(cache, options.formatTime)).value +
+    ' (index cache of the open projects)';
+  return (data.details?.projects ?? []).map(project => {
+    const d = project.directoryDetails;
+    return {
+      key: project.rootPath,
+      rootPath: project.rootPath,
+      files: formatCount(d.fileCount),
+      searchable: formatCount(d.searchableFilesCount),
+      textSize: formatBytes(d.searchableFilesByteLength),
+      trigramFiltersEnabled: project.trigramFiltersEnabled,
+      trigramFilters: project.trigramFiltersEnabled
+        ? (project.trigramFiltersBytes > 0 ? formatBytes(project.trigramFiltersBytes) : 'on')
+        : 'off',
+      cache: cacheText,
+      cacheTitle,
+    };
+  });
+}
+
+function describeMemorySection(data: DashboardData): KeyValue[] {
+  const rows: KeyValue[] = [];
+  const index = data.index;
+  if (index) {
+    rows.push(...describeMemory(index, index.status === 'busy' || index.status === 'verifying').map(toKeyValue));
+  }
+  const server = data.server;
+  if (server) {
+    rows.push(
+      { key: 'process', label: 'Process', value: `working set ${formatBytes(server.workingSetBytes)} (peak ${formatBytes(server.peakWorkingSetBytes)}), private ${formatBytes(server.privateBytes)}` },
+      { key: 'gc', label: 'GC heap', value: `${formatBytes(server.gcHeapBytes)}, ${formatBytes(server.gcTotalAllocatedBytes)} allocated since the start` },
+      { key: 'trigrams', label: 'Trigram filters', value: formatBytes(server.trigramFiltersBytes) },
+    );
+  }
+  return rows;
+}
+
+function describeIndexCacheSection(data: DashboardData, options: FormatOptions): KeyValue[] {
+  const rows: KeyValue[] = [];
+  if (data.index) {
+    rows.push({ key: 'state', label: 'State', value: toKeyValue(describeIndexCache(data.index.indexCache, options.formatTime)).value });
+  }
+  const cache = data.server?.indexCache;
+  if (!cache || !cache.enabled) {
+    return rows;
+  }
+  if (cache.cacheDirectory) {
+    rows.push({ key: 'directory', label: 'Directory', value: cache.cacheDirectory });
+  }
+  const readOnly = cache.readOnlyProjectCount > 0
+    ? `, ${formatCount(cache.readOnlyProjectCount)} read-only (written by another server)`
+    : '';
+  rows.push({ key: 'projects', label: 'Projects', value: `${formatCount(cache.projectCount)} open${readOnly}` });
+  if (cache.lastLoadFilesFromCache > 0 || cache.lastLoadFilesFromDisk > 0) {
+    rows.push({
+      key: 'load',
+      label: 'Last load',
+      value: `${formatCount(cache.lastLoadFilesFromCache)} files from the cache, ${formatCount(cache.lastLoadFilesFromDisk)} from disk`,
+    });
+  }
+  if (cache.writeCount > 0) {
+    const changed = cache.lastWriteChangedFileCount > 0
+      ? `, ${formatCount(cache.lastWriteChangedFileCount)} changed during the scan (not written)`
+      : '';
+    rows.push({
+      key: 'write',
+      label: 'Last write',
+      value: `${formatDuration(cache.lastWriteMs)}, ${formatBytes(cache.lastWriteBytes)} written, ` +
+        `${formatCount(cache.lastWriteEntryCount)} files (${formatCount(cache.lastWriteNewFileCount)} new)${changed}`,
+      title: `${formatCount(cache.writeCount)} writes since the start`,
+    });
+  }
+  return rows;
+}
+
+function describeOperations(timings: OperationTiming[] | undefined): OperationRow[] {
+  return [...(timings ?? [])]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(t => ({
+      key: t.name,
+      name: t.name,
+      count: formatCount(t.count),
+      last: formatDuration(t.lastMs),
+      max: formatDuration(t.maxMs),
+      average: t.count > 0 ? formatDuration(t.totalMs / t.count) : '',
+      total: formatDuration(t.totalMs),
+    }));
+}
+
+/**
+ * CPU usage of the server between two statistics, in percent of the machine (all processors), or
+ * undefined if it can't be computed (first statistics, server restarted).
+ */
+export function cpuUsagePercent(previous: ServerStatistics | undefined, current: ServerStatistics): number | undefined {
+  if (!previous || previous.processId !== current.processId) {
+    return undefined;
+  }
+  const elapsed = current.uptimeMs - previous.uptimeMs;
+  if (elapsed <= 0 || current.processorCount <= 0) {
+    return undefined;
+  }
+  const cpu = Math.max(0, current.cpuTotalMs - previous.cpuTotalMs);
+  return Math.min(100, (cpu * 100) / (elapsed * current.processorCount));
+}
+
+function describeServerSection(data: DashboardData): KeyValue[] {
+  const server = data.server;
+  if (!server) {
+    return [];
+  }
+  const rows: KeyValue[] = [];
+  if (data.host?.serverVersion) {
+    rows.push({ key: 'version', label: 'Version', value: data.host.serverVersion });
+  }
+  const usage = cpuUsagePercent(data.previousServer, server);
+  rows.push(
+    { key: 'runtime', label: 'Runtime', value: server.runtimeDescription },
+    { key: 'process', label: 'Process', value: `pid ${server.processId}, ${server.processorCount} processors` },
+    { key: 'uptime', label: 'Uptime', value: formatDuration(server.uptimeMs) },
+    {
+      key: 'cpu',
+      label: 'CPU',
+      value: `${formatDuration(server.cpuTotalMs)} (user ${formatDuration(server.cpuUserMs)}, kernel ${formatDuration(server.cpuKernelMs)})` +
+        (usage !== undefined ? `, ${usage.toFixed(1)}% now` : ''),
+      title: 'CPU time since the start; "now": percentage of all the processors since the previous statistics',
+    },
+    { key: 'threads', label: 'Threads', value: formatCount(server.threadCount) },
+    { key: 'handles', label: 'Handles', value: formatCount(server.handleCount) },
+    {
+      key: 'gc',
+      label: 'Garbage collections',
+      value: `gen0 ${formatCount(server.gcGen0Collections)}, gen1 ${formatCount(server.gcGen1Collections)}, ` +
+        `gen2 ${formatCount(server.gcGen2Collections)}, total pause ${formatDuration(server.gcTotalPauseMs)}`,
+    },
+  );
+  return rows;
+}
+
+function describeFacts(data: DashboardData, options: FormatOptions): string[] {
+  const facts: string[] = [];
+  const index = data.index;
+  if (index) {
+    facts.push(`${formatCount(index.projectCount)} ${index.projectCount === 1 ? 'project' : 'projects'}`);
+    facts.push(`${formatCount(index.fileCount)} files`);
+    if (isValidTime(index.indexLastUpdatedUtc)) {
+      facts.push(`index updated ${options.formatTime(index.indexLastUpdatedUtc)}`);
+    }
+  }
+  if (data.host?.serverVersion) {
+    facts.push(`server ${data.host.serverVersion}`);
+  }
+  const server = data.server;
+  if (server) {
+    facts.push(server.runtimeDescription, `pid ${server.processId}`, `uptime ${formatDuration(server.uptimeMs)}`);
+  }
+  return facts;
+}
+
+/** The view model of the page for `data`. */
+export function buildViewModel(data: DashboardData, options: FormatOptions = defaultFormatOptions): DashboardViewModel {
+  const status = data.host?.serverRunning ? data.index?.status : undefined;
+  return {
+    status: describeStatus(data),
+    facts: data.host?.serverRunning ? describeFacts(data, options) : [],
+    actions: enabledActions(data.host, status),
+    pauseOrResume: status === 'paused' || status === 'yield' ? 'resume' : 'pause',
+    error: data.error,
+    trigramFiltersSetting: data.host?.trigramFiltersSetting === true,
+    projects: describeProjects(data, options),
+    memory: describeMemorySection(data),
+    indexCache: describeIndexCacheSection(data, options),
+    operations: describeOperations(data.server?.operationTimings),
+    server: describeServerSection(data),
+  };
+}

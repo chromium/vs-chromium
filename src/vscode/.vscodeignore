@@ -1,6 +1,7 @@
 .vscode/**
 src/**
 out/test/**
+out/page-modules/**
 scripts/**
 **/*.map
 **/*.ts

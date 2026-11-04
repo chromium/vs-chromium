@@ -1,0 +1,12 @@
+// The server dashboard page (DOM code, bundled by scripts/bundle-page.js into out/media).
+// The rest of the extension is compiled by tsconfig.json.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "outDir": "out/page-modules",
+    "sourceMap": false
+  },
+  "include": ["src/ui/dashboard/page"],
+  "exclude": []
+}

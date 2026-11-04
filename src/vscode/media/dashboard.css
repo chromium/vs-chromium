@@ -1,0 +1,323 @@
+/* Copyright 2026 The Chromium Authors. All rights reserved.
+   Use of this source code is governed by a BSD-style license that can be
+   found in the LICENSE file. */
+
+/* Server dashboard page. Host neutral: the colors are CSS variables provided by VS Code
+   (--vscode-*), with fallbacks for other hosts (a Visual Studio host maps its theme colors to the
+   same variables). */
+
+:root {
+  --fg: var(--vscode-foreground, #333);
+  --bg: var(--vscode-editor-background, #fff);
+  --muted: var(--vscode-descriptionForeground, #717171);
+  --border: var(--vscode-panel-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
+  --card-bg: var(--vscode-sideBar-background, var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.06)));
+  --hover: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.12));
+  --button-fg: var(--vscode-button-secondaryForeground, var(--vscode-foreground, #333));
+  --button-bg: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.16));
+  --button-hover: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.28));
+  --focus: var(--vscode-focusBorder, #0078d4);
+  --accent: var(--vscode-button-background, #0078d4);
+  --ok: var(--vscode-testing-iconPassed, #388a34);
+  --busy: var(--vscode-progressBar-background, #0078d4);
+  --warn: var(--vscode-editorWarning-foreground, #bf8803);
+  --error: var(--vscode-errorForeground, #e51400);
+  --mono: var(--vscode-editor-font-family, Consolas, "Courier New", monospace);
+}
+
+body {
+  margin: 0;
+  padding: 12px 20px 24px 20px;
+  color: var(--fg);
+  background: var(--bg);
+  font-family: var(--vscode-font-family, "Segoe UI", system-ui, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+}
+
+/* Header */
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+button.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  color: var(--button-fg);
+  background: var(--button-bg);
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+button.action:hover:not(:disabled) {
+  background: var(--button-hover);
+}
+
+button:focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: 1px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.icon {
+  flex: none;
+}
+
+.icon.filled {
+  fill: currentColor;
+  stroke: none;
+}
+
+.icon.stroked {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+
+.status {
+  font-weight: 600;
+}
+
+.status::before {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  content: "";
+}
+
+.status.ok::before {
+  background: var(--ok);
+}
+
+.status.busy::before {
+  background: var(--busy);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.status.paused::before {
+  background: var(--warn);
+}
+
+.status.stopped {
+  color: var(--error);
+}
+
+.status.stopped::before {
+  background: var(--error);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status.busy::before {
+    animation: none;
+  }
+}
+
+.facts {
+  color: var(--muted);
+}
+
+.error {
+  margin-top: 8px;
+  padding: 6px 10px;
+  color: var(--vscode-inputValidation-errorForeground, var(--fg));
+  background: var(--vscode-inputValidation-errorBackground, rgba(229, 20, 0, 0.1));
+  border: 1px solid var(--vscode-inputValidation-errorBorder, var(--error));
+}
+
+/* Cards */
+
+.card {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card-bg);
+  min-width: 0;
+}
+
+.card-title {
+  margin: 0;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.card-body {
+  padding: 6px 12px 10px 12px;
+  overflow-x: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  column-gap: 16px;
+}
+
+/* Tables */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th {
+  padding: 4px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: var(--hover);
+}
+
+.table .num {
+  text-align: right;
+}
+
+.table td.path {
+  font-family: var(--mono);
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table tr.empty td {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.trigrams {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Key/value lists */
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 3px 16px;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.kv-row {
+  display: contents;
+}
+
+.kv dt {
+  color: var(--muted);
+}
+
+.kv dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.kv-empty {
+  color: var(--muted);
+}
+
+/* Switches */
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 8px 0;
+}
+
+.setting-label {
+  color: var(--muted);
+}
+
+button.switch {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--vscode-checkbox-border, var(--border));
+  border-radius: 8px;
+  background: var(--vscode-checkbox-background, var(--button-bg));
+  cursor: pointer;
+}
+
+button.switch .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: left 0.1s;
+}
+
+button.switch[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button.switch[aria-checked="true"] .knob {
+  left: 14px;
+  background: var(--vscode-button-foreground, #fff);
+}

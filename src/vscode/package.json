@@ -133,7 +133,7 @@
     }
   },
   "scripts": {
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && tsc -p tsconfig.page.json && node scripts/bundle-page.js",
     "watch": "tsc -watch -p ./",
     "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
     "vscode:prepublish": "npm run compile",

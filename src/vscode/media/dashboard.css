@@ -3,7 +3,7 @@
    found in the LICENSE file. */
 
 /* Server dashboard page, styled like the VS Code workbench (Settings and Keyboard Shortcuts
-   editors) with the VS Code theme variables (--vscode-*) and the Codicons. Host neutral: another
+   editors) with the VS Code theme variables (--vscode-*), no icon font. Host neutral: another
    host (e.g. a Visual Studio tool window) defines the same variables from its theme. Fallbacks are
    only a last resort (page rendered without variables). */
 
@@ -16,28 +16,6 @@ body {
   font-size: var(--vscode-font-size, 13px);
   font-weight: var(--vscode-font-weight, normal);
   line-height: 1.4;
-}
-
-.codicon[class*='codicon-'] {
-  display: inline-block;
-  flex: none;
-}
-
-/* Same animation as the "~spin" icons of VS Code. */
-.codicon-modifier-spin {
-  animation: codicon-spin 1.5s steps(30) infinite;
-}
-
-@keyframes codicon-spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .codicon-modifier-spin {
-    animation: none;
-  }
 }
 
 /* Header (like the header of the Settings editor) */
@@ -88,24 +66,33 @@ body {
   font-weight: 600;
 }
 
-.status.ok .codicon {
-  color: var(--vscode-charts-green, var(--vscode-testing-iconPassed));
+/* Status: a dot of the color of the status (like the status of the Testing view). */
+.status-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
 }
 
-.status.busy .codicon {
-  color: var(--vscode-charts-blue, var(--vscode-progressBar-background));
+.status.ok .status-dot {
+  background: var(--vscode-charts-green, var(--vscode-testing-iconPassed));
 }
 
-.status.paused .codicon {
-  color: var(--vscode-editorWarning-foreground, var(--vscode-charts-yellow));
+.status.busy .status-dot {
+  background: var(--vscode-charts-blue, var(--vscode-progressBar-background));
+}
+
+.status.paused .status-dot {
+  background: var(--vscode-editorWarning-foreground, var(--vscode-charts-yellow));
 }
 
 .status.stopped {
   color: var(--vscode-errorForeground);
 }
 
-.status.unknown .codicon {
-  color: var(--vscode-descriptionForeground);
+.status.stopped .status-dot {
+  background: var(--vscode-errorForeground);
 }
 
 .facts {
@@ -320,6 +307,7 @@ button:disabled {
 }
 
 .checkbox .box {
+  position: relative;
   box-sizing: border-box;
   width: 18px;
   height: 18px;
@@ -330,7 +318,17 @@ button:disabled {
   pointer-events: none;
 }
 
+/* Check mark drawn with borders (no icon font). */
 .checkbox .box::before {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 4px;
+  height: 9px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  content: "";
   visibility: hidden;
 }
 

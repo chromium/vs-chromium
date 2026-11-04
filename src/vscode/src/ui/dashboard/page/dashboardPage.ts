@@ -4,23 +4,14 @@
 
 // Entry point of the server dashboard page (bundled into out/media/dashboard.js by
 // scripts/bundle-page.js). Builds the DOM from script (the host only provides an empty page with
-// the stylesheets: media/dashboard.css and the Codicons) and patches it on each update: texts are
+// the stylesheet media/dashboard.css) and patches it on each update: texts are
 // only written when they change, rows are keyed (no flicker, selection and focus are kept). The
 // DOM is built with textContent only (no innerHTML). Talks to the host only through the shim
 // (hostShim.ts).
 
 import { DashboardAction, DashboardController } from '../dashboardController';
-import type { DashboardViewModel, KeyValue, OperationRow, ProjectRow, StatusKind } from '../dashboardModel';
+import type { DashboardViewModel, KeyValue, OperationRow, ProjectRow } from '../dashboardModel';
 import { createHostShim, ShimWindow } from '../hostShim';
-
-/** The Codicon of each status. */
-const statusIcons: Record<StatusKind, string> = {
-  ok: 'codicon-pass-filled',
-  busy: 'codicon-sync codicon-modifier-spin',
-  paused: 'codicon-debug-pause',
-  stopped: 'codicon-error',
-  unknown: 'codicon-circle-large-outline',
-};
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -31,12 +22,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
     e.textContent = text;
   }
   return e;
-}
-
-function codicon(name: string): HTMLElement {
-  const icon = el('span', `codicon ${name}`);
-  icon.setAttribute('aria-hidden', 'true');
-  return icon;
 }
 
 function setText(e: HTMLElement, text: string) {
@@ -63,13 +48,13 @@ function setDisabled(e: HTMLButtonElement | HTMLInputElement, disabled: boolean)
   }
 }
 
-/** A checkbox like the ones of the VS Code Settings editor (native input, Codicon check mark). */
+/** A checkbox like the ones of the VS Code Settings editor (native input, check mark drawn in CSS). */
 function checkbox(label: string): { root: HTMLElement; input: HTMLInputElement } {
   const root = el('span', 'checkbox');
   const input = el('input');
   input.type = 'checkbox';
   input.setAttribute('aria-label', label);
-  root.append(input, el('span', 'box codicon codicon-check'));
+  root.append(input, el('span', 'box'));
   return { root, input };
 }
 
@@ -109,14 +94,12 @@ class KeyedRows<T extends { key: string }> {
 
 class DashboardView {
   private readonly status: HTMLElement;
-  private readonly statusIcon: HTMLElement;
   private readonly statusText: HTMLElement;
   private readonly facts: HTMLElement;
   private readonly progress: HTMLElement;
   private readonly error: HTMLElement;
   private readonly errorText: HTMLElement;
   private readonly pauseOrResume: HTMLButtonElement;
-  private readonly pauseOrResumeIcon: HTMLElement;
   private readonly pauseOrResumeLabel: HTMLElement;
   private readonly rebuild: HTMLButtonElement;
   private readonly restart: HTMLButtonElement;
@@ -141,34 +124,34 @@ class DashboardView {
     titleRow.append(el('h1', 'title', 'VsChromium Server'));
     const toolbar = el('div', 'toolbar');
     toolbar.setAttribute('role', 'toolbar');
-    this.pauseOrResumeIcon = codicon('codicon-debug-pause');
     this.pauseOrResumeLabel = el('span', undefined, 'Pause Indexing');
-    this.pauseOrResume = this.button('button primary', [this.pauseOrResumeIcon, this.pauseOrResumeLabel],
+    this.pauseOrResume = this.button('button primary', [this.pauseOrResumeLabel],
       () => this.execute({ action: this.last?.pauseOrResume === 'resume' ? 'resume' : 'pause' }));
-    this.rebuild = this.button('button secondary', [codicon('codicon-refresh'), el('span', undefined, 'Rebuild Index')],
+    this.rebuild = this.button('button secondary', [el('span', undefined, 'Rebuild Index')],
       () => this.execute({ action: 'rebuild' }), 'Scan the file system again and rebuild the index');
-    this.restart = this.button('button secondary', [codicon('codicon-debug-restart'), el('span', undefined, 'Restart Server')],
+    this.restart = this.button('button secondary', [el('span', undefined, 'Restart Server')],
       () => this.execute({ action: 'restartServer' }), 'Restart the indexing server');
     toolbar.append(this.pauseOrResume, this.rebuild, this.restart);
     titleRow.append(toolbar);
 
     const statusRow = el('div', 'status-row');
-    this.statusIcon = codicon(statusIcons.unknown);
     this.statusText = el('span');
     this.status = el('span', 'status unknown');
     this.status.setAttribute('role', 'status');
-    this.status.append(this.statusIcon, this.statusText);
+    const dot = el('span', 'status-dot');
+    dot.setAttribute('aria-hidden', 'true');
+    this.status.append(dot, this.statusText);
     this.facts = el('span', 'facts');
-    this.showOutput = this.button('link', [codicon('codicon-output'), el('span', undefined, 'Show Output')],
+    this.showOutput = this.button('link', [el('span', undefined, 'Show Output')],
       () => this.execute({ action: 'showOutput' }), 'Show the output (log) of the extension');
-    this.openLogDirectory = this.button('link', [codicon('codicon-folder-opened'), el('span', undefined, 'Open Log Folder')],
+    this.openLogDirectory = this.button('link', [el('span', undefined, 'Open Log Folder')],
       () => this.execute({ action: 'openLogDirectory' }), 'Open the directory of the log files of the server');
     statusRow.append(this.status, this.facts, this.showOutput, this.openLogDirectory);
 
     this.error = el('div', 'error');
     this.error.setAttribute('role', 'alert');
     this.errorText = el('span');
-    this.error.append(codicon('codicon-error'), this.errorText);
+    this.error.append(this.errorText);
     this.error.hidden = true;
     this.progress = el('div', 'progress');
     this.progress.hidden = true;
@@ -221,7 +204,6 @@ class DashboardView {
 
   render(vm: DashboardViewModel) {
     setClass(this.status, `status ${vm.status.kind}`);
-    setClass(this.statusIcon, `codicon ${statusIcons[vm.status.kind]}`);
     setText(this.statusText, vm.status.text);
     setText(this.facts, vm.facts.join(' \u00b7 '));
     this.progress.hidden = vm.status.kind !== 'busy';
@@ -230,7 +212,6 @@ class DashboardView {
 
     const resume = vm.pauseOrResume === 'resume';
     setText(this.pauseOrResumeLabel, resume ? 'Resume Indexing' : 'Pause Indexing');
-    setClass(this.pauseOrResumeIcon, `codicon ${resume ? 'codicon-debug-continue' : 'codicon-debug-pause'}`);
     setTitle(this.pauseOrResume, resume
       ? 'Resume indexing'
       : 'Pause indexing (file system changes are not processed until resumed)');

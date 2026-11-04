@@ -201,7 +201,7 @@ namespace VsChromium.Protocol.Generated {
     public bool Enabled { get; set; }
 
     /// <summary>
-    /// A write of the cache is queued or running.
+    /// A save of the cache is running.
     /// </summary>
     [JsonProperty("saving")]
     public bool Saving { get; set; }
@@ -219,9 +219,10 @@ namespace VsChromium.Protocol.Generated {
     public long SizeOnDiskBytes { get; set; }
 
     /// <summary>
-    /// The index changed after the last write of the caches written by this server (e.g. edited
-    /// files: only full loads write the cache). False if the cache is disabled, or if the caches of
-    /// all the open projects are written by another server (read-only).
+    /// The index changed since the last save (started) of the caches written by this server: saved
+    /// once the changes settle (30 s without change, at most 5 minutes after the first unsaved change).
+    /// False if the cache is disabled, or if the caches of all the open projects are written by another
+    /// server (read-only).
     /// </summary>
     [JsonProperty("dirty")]
     public bool Dirty { get; set; }

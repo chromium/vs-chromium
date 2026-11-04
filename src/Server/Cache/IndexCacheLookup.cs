@@ -140,7 +140,7 @@ namespace VsChromium.Server.Cache {
       }
       var arena = _arenas[entry.ArenaId];
       return new Utf8FileContents(new FileContentsMemory(arena.Handle, arena.Size, entry.Offset, entry.Length),
-        lastWriteTimeUtc, (entry.Flags & IndexCacheEntryFlags.Ascii) != 0);
+        lastWriteTimeUtc, (entry.Flags & IndexCacheEntryFlags.Ascii) != 0, entry.FileLength);
     }
   }
 }

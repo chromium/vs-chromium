@@ -42,16 +42,17 @@ model IndexStatistics {
 /** The state of the persistent index cache, for status displays. */
 model IndexCacheState {
   enabled: boolean;
-  /** A write of the cache is queued or running. */
+  /** A save of the cache is running. */
   saving: boolean;
   /** Last write of the index of the caches of the open projects (the most recent), if any. */
   lastSavedUtc?: utcDateTime;
   /** Size of the cache directories of the open projects. */
   sizeOnDiskBytes: int64;
   /**
-   * The index changed after the last write of the caches written by this server (e.g. edited
-   * files: only full loads write the cache). False if the cache is disabled, or if the caches of
-   * all the open projects are written by another server (read-only).
+   * The index changed since the last save (started) of the caches written by this server: saved
+   * once the changes settle (30 s without change, at most 5 minutes after the first unsaved change).
+   * False if the cache is disabled, or if the caches of all the open projects are written by another
+   * server (read-only).
    */
   dirty: boolean;
 }

@@ -945,14 +945,16 @@ the next full loads (VS Code or server restart) don't read the unchanged files (
   array of structs, an open addressing hash table of the relative paths, about 80 bytes per file)
   and released at the end of the first full load using them (the writes don't need them: the
   location of mapped contents is their view and offset).
-- **Writing**: after a full load (in the background, below normal priority, cancelled by a new full
-  load). Contents already in an arena file keep their location (mapped contents, and the native
-  arena slots written by a previous write of the same session: location by block and offset, weak
-  table per block, so they are written once); the others are copied to new arena files. Files whose
-  scan time differs from the time of their contents (modified after the scan), or modified less
-  than 2 s before the load started ("racy clean" problem of git), are not written. Arena files no
-  longer referenced are deleted after the index is replaced (or at the next write if still mapped,
-  or when the cache is opened next time).
+- **Writing**: see "Save policy" below (in the background, below normal priority). Contents already
+  in an arena file keep their location (mapped contents, and the native arena slots written by a
+  previous write of the same session: location by block and offset, weak table per block, so they
+  are written once); the others are copied to new arena files. The metadata of a file in the cache
+  is the metadata of the read of its contents (last write time and size from the open handle, kept
+  on the file contents: 8 bytes per file), not of the scan: edited files are re-read but the scan
+  is not updated. The contents of files modified less than 2 s before they were read ("racy clean"
+  problem of git, flag set when the file is read) are not written. Arena files no longer referenced
+  are deleted after the index is replaced (or at the next write if still mapped, or when the cache
+  is opened next time).
 - **Errors**: any error reading the cache (truncated, corrupt, other format version, missing or
   truncated arena file) is logged, the cache is deleted and the files are read from disk.
 - **Concurrency**: the server holding the `lock` file (opened exclusively for its lifetime) writes
@@ -1036,3 +1038,30 @@ including the forced GC of the "at index/loaded" measurement):
 The verification (scan, comparison, incremental update of 400 large files) takes ~1.5 s on this
 corpus, whose scan is fast (D:, ReFS, 393k files): on a 2.65M entry tree, the scan (15–17 s) is
 most of the time to first search of phase 1, and phase 2 publishes the cached index before it.
+
+### Persistent index cache: save policy
+
+The cache is saved when the index changed since the last save (any update: full load, tree
+changes, edits of existing files), once the changes settle: 30 s without index update, but at most
+5 minutes after the first unsaved change (continuous changes, e.g. a build, still save every
+5 minutes instead of rewriting the index after each batch of changes). `IndexCacheSaveScheduler`;
+the delays are constants (`IndexCacheOptions.DefaultSaveSettleDelay`/`DefaultSaveMaxDelay`, test
+override `VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS=settle,max`).
+
+- **First save**: right after a full load of a project whose cache has no index yet (first load of
+  a project, after "Rebuild index"), so that the cache exists soon after the first cold load.
+- **Saves are consistent snapshots**: a save writes the state of the last update when it starts.
+  Updates during a save make the index dirty again (saved later, same policy): a save is not
+  cancelled by new changes (it would never complete during continuous changes). A new full load
+  cancels a running save (the index stays dirty, saved after the load).
+- **No save at shutdown** (closing VS Code or Visual Studio is not delayed): a running save is
+  cancelled and not waited for (background thread). The previous index stays valid (written to a
+  temporary file, then renamed; orphan arena files are deleted when the cache is opened). The
+  changes since the last save are re-read by the verification of the tree at the next start; if the
+  client is closed before the first save after a cold load, the next start is cold again.
+- **Edited files** are saved with the metadata of their read (time and size from the open handle,
+  on the file contents: 8 bytes per file, +2.6 MB of GC heap at `index/loaded` on
+  `large-1-400000-v1`: 92.6–92.9 MB -> 95.4–95.5 MB, +0.8 MB after the save): the next start loads
+  them from the cache (the verification finds the same time and size in the scan).
+- **Status**: `index/statistics` `indexCache.dirty` (changed since the last save started),
+  `saving` (a save is running).

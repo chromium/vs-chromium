@@ -54,25 +54,35 @@ namespace VsChromium.Server.FileSystemContents {
       return (memory.Block, ArenaAllocator.GetSlotSize(bomSize + memory.ByteLength + TrailingByteCount));
     }
 
+    /// <summary>
+    /// Files modified less than this interval before they are read are "racy" (see <see
+    /// cref="FileContents.IsRacy"/>).
+    /// </summary>
+    public static readonly TimeSpan RacyInterval = TimeSpan.FromSeconds(2);
+
     public FileContents ReadFileContents(FullPath path) {
       var slice = default(NativeMemorySlice);
+      // Note: Before the read (the earliest possible read time: conservative for the racy rule).
+      var readStartUtc = DateTime.UtcNow;
       try {
         DateTime lastWriteTimeUtc;
+        long fileLength;
         if (_fileSystem is IFileContentsReader reader) {
           // Faster: a single path lookup (attributes are read from the open file), and binary
           // files are detected from their first bytes, without reading them entirely.
           slice = reader.ReadFileContents(path, TrailingByteCount, TextKindDetector.BinaryDetectionPrefixLength,
-            _allocateContents, out lastWriteTimeUtc, out var fileLength);
+            _allocateContents, out lastWriteTimeUtc, out fileLength);
           if (slice.IsNull) {
-            return new BinaryFileContents(lastWriteTimeUtc, fileLength);
+            return new BinaryFileContents(lastWriteTimeUtc, fileLength, IsRacy(lastWriteTimeUtc, readStartUtc));
           }
         } else {
           var fileInfo = _fileSystem.GetFileInfoSnapshot(path);
           var block = _fileSystem.ReadFileNulTerminated(fileInfo.Path, fileInfo.Length, TrailingByteCount);
           slice = new NativeMemorySlice(block, 0, block.ByteLength, isDedicated: true);
           lastWriteTimeUtc = fileInfo.LastWriteTimeUtc;
+          fileLength = fileInfo.Length;
         }
-        var result = ReadFileContentsWorker(slice, lastWriteTimeUtc);
+        var result = ReadFileContentsWorker(slice, lastWriteTimeUtc, fileLength, IsRacy(lastWriteTimeUtc, readStartUtc));
         slice = default; // Owned by "result" (or released)
         return result;
       }
@@ -90,7 +100,11 @@ namespace VsChromium.Server.FileSystemContents {
     /// Creates the file contents of <paramref name="slice"/> (the bytes of the file followed by
     /// <see cref="TrailingByteCount"/> null bytes): the memory is owned by the result, or released.
     /// </summary>
-    private FileContents ReadFileContentsWorker(NativeMemorySlice slice, DateTime lastWriteTimeUtc) {
+    private static bool IsRacy(DateTime lastWriteTimeUtc, DateTime readStartUtc) {
+      return lastWriteTimeUtc >= readStartUtc - RacyInterval;
+    }
+
+    private FileContents ReadFileContentsWorker(NativeMemorySlice slice, DateTime lastWriteTimeUtc, long fileLength, bool isRacy) {
       var contentsByteCount = slice.Length - TrailingByteCount; // Padding added by ReadFileNulTerminated
       var bytes = slice.Span.Slice(0, contentsByteCount);
       var kind = TextKindDetector.GetKind(bytes);
@@ -98,19 +112,19 @@ namespace VsChromium.Server.FileSystemContents {
 
       switch (kind) {
         case TextKind.Ascii:
-          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset, contentsByteCount), lastWriteTimeUtc, isAscii: true);
+          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset, contentsByteCount), lastWriteTimeUtc, isAscii: true, fileLength, isRacy);
 
         case TextKind.AsciiWithUtf8Bom:
-          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset + utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc, isAscii: true);
+          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset + utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc, isAscii: true, fileLength, isRacy);
 
         // Files with non ASCII characters are stored as UTF-8 too (half the
         // memory of UTF-16 for mostly ASCII text). Positions of search results
         // are converted to UTF-16 positions (see Utf8FileContents).
         case TextKind.Utf8:
-          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset, contentsByteCount), lastWriteTimeUtc, isAscii: false);
+          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset, contentsByteCount), lastWriteTimeUtc, isAscii: false, fileLength, isRacy);
 
         case TextKind.Utf8WithBom:
-          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset + utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc, isAscii: false);
+          return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset + utf8BomSize, contentsByteCount - utf8BomSize), lastWriteTimeUtc, isAscii: false, fileLength, isRacy);
 
         // UTF-16 files are converted to UTF-8 (same storage and search as the other text files).
         // Positions of search results are UTF-16 positions in the decoded text, i.e. the
@@ -118,14 +132,14 @@ namespace VsChromium.Server.FileSystemContents {
         case TextKind.Utf16LittleEndianWithBom:
         case TextKind.Utf16BigEndianWithBom: {
           var encoding = kind == TextKind.Utf16LittleEndianWithBom ? Encoding.Unicode : Encoding.BigEndianUnicode;
-          var result = CreateFromUtf16(bytes.Slice(TextKindDetector.Utf16BomSize), encoding, lastWriteTimeUtc);
+          var result = CreateFromUtf16(bytes.Slice(TextKindDetector.Utf16BomSize), encoding, lastWriteTimeUtc, fileLength, isRacy);
           slice.Release();
           return result;
         }
 
         case TextKind.Binary:
           slice.Release();
-          return new BinaryFileContents(lastWriteTimeUtc, contentsByteCount);
+          return new BinaryFileContents(lastWriteTimeUtc, fileLength, isRacy);
 
         default:
           Invariants.Assert(false);
@@ -133,7 +147,8 @@ namespace VsChromium.Server.FileSystemContents {
       }
     }
 
-    private FileContents CreateFromUtf16(ReadOnlySpan<byte> utf16Bytes, Encoding encoding, DateTime lastWriteTimeUtc) {
+    private FileContents CreateFromUtf16(ReadOnlySpan<byte> utf16Bytes, Encoding encoding, DateTime lastWriteTimeUtc,
+                                         long fileLength, bool isRacy) {
       // Note: Invalid sequences (lone surrogates, odd number of bytes) are decoded as U+FFFD, as
       // the editors do.
       var text = encoding.GetString(utf16Bytes);
@@ -144,7 +159,8 @@ namespace VsChromium.Server.FileSystemContents {
         Encoding.UTF8.GetBytes(text, utf8);
         utf8.Slice(utf8Length).Clear();
         var isAscii = Ascii.IsValid(utf8.Slice(0, utf8Length));
-        return new Utf8FileContents(new FileContentsMemory(utf8Slice.Block, utf8Slice.Offset, utf8Length), lastWriteTimeUtc, isAscii);
+        return new Utf8FileContents(new FileContentsMemory(utf8Slice.Block, utf8Slice.Offset, utf8Length), lastWriteTimeUtc, isAscii,
+          fileLength, isRacy);
       }
       catch (Exception) {
         utf8Slice.Release();

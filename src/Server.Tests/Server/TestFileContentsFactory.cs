@@ -159,6 +159,38 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(16, statistics.DeadBytes);
     }
 
+    [TestMethod]
+    public void ContentsHaveTheMetadataOfTheRead() {
+      var path = WriteTempFile(new byte[] { 0xEF, 0xBB, 0xBF }.Concat(Encoding.ASCII.GetBytes("text with BOM")).ToArray());
+      try {
+        var factory = new FileContentsFactory(new PortableFileSystem());
+        // Just written: racy (not saved to the index cache).
+        var contents = factory.ReadFileContents(new FullPath(path));
+        Assert.AreEqual(16, contents.FileLength, "Size of the file, with the BOM");
+        Assert.AreEqual(File.GetLastWriteTimeUtc(path), contents.UtcLastModified);
+        Assert.IsTrue(contents.IsRacy);
+
+        // Modified long ago: not racy.
+        var old = DateTime.UtcNow.AddHours(-1);
+        File.SetLastWriteTimeUtc(path, old);
+        contents = factory.ReadFileContents(new FullPath(path));
+        Assert.AreEqual(16, contents.FileLength);
+        Assert.AreEqual(old, contents.UtcLastModified);
+        Assert.IsFalse(contents.IsRacy);
+
+        // Binary files too.
+        File.WriteAllBytes(path, new byte[100]);
+        File.SetLastWriteTimeUtc(path, old);
+        var binary = (BinaryFileContents)factory.ReadFileContents(new FullPath(path));
+        Assert.AreEqual(100, binary.FileLength);
+        Assert.AreEqual(100, binary.BinaryFileSize);
+        Assert.IsFalse(binary.IsRacy);
+      }
+      finally {
+        File.Delete(path);
+      }
+    }
+
     private static string ExtractText(FileContents contents) {
       return contents.GetFileExtracts(100, new[] { new FilePositionSpan { Position = 0, Length = 1 } }).Single().Text;
     }

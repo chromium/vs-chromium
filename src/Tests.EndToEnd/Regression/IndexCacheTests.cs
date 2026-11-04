@@ -26,6 +26,9 @@ public class IndexCacheTests {
   private const int DirectoryCount = 20;
   private const int FilesPerDirectory = 50;
   private const string VerifyDelayVariable = "VSCHROMIUM_TEST_VERIFY_DELAY_MS";
+  private const string SaveDelaysVariable = "VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS";
+  /// <summary>Delays of the saves of the cache ("settle,max" milliseconds) of the tests of the save policy.</summary>
+  private const string ShortSaveDelays = "1500,5000";
 
   /// <summary>
   /// Files are older than the "racy" interval of the cache (files modified within 2 seconds of a
@@ -280,7 +283,7 @@ public class IndexCacheTests {
   public async Task IndexStatisticsShowTheStateOfTheCache() {
     using var tree = new TestTree();
     tree.Generate();
-    await using var server = await StartAndLoadAsync(tree);
+    await using var server = await StartAndLoadAsync(tree, tree.CacheDirectory, saveDelays: ShortSaveDelays);
     await WaitForIdleAsync(server.Client);
     await WaitForCacheWriteAsync(server.Client, 1);
     var cache = await WaitForIndexCacheAsync(server.Client, x => !x["saving"]!.GetValue<bool>(), "saved");
@@ -289,18 +292,75 @@ public class IndexCacheTests {
     Assert.IsTrue(cache["sizeOnDiskBytes"]!.GetValue<long>() > 1000 * 500, cache.ToJsonString());
     Assert.IsFalse(cache["dirty"]!.GetValue<bool>(), cache.ToJsonString());
 
-    // An edit: the index changes, the cache is not written.
+    // An edit: the index changes ("dirty"), then the cache is saved once the changes settle.
     File.AppendAllText(tree.FilePath(7, 7), "// EDITED_FILE\n");
-    var stopwatch = Stopwatch.StartNew();
-    while (await HitCountAsync(server.Client, "EDITED_FILE") != 1) {
-      Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(60), "Timeout waiting for the edit");
-      await Task.Delay(100);
-    }
     await WaitForIndexCacheAsync(server.Client, x => x["dirty"]!.GetValue<bool>(), "dirty");
-
-    // A new file: written again.
-    File.WriteAllText(Path.Combine(tree.Root, "dir001", "new.cc"), "// NEW_FILE\n");
+    Assert.AreEqual(1, await HitCountAsync(server.Client, "EDITED_FILE"));
     await WaitForIndexCacheAsync(server.Client, x => !x["dirty"]!.GetValue<bool>() && !x["saving"]!.GetValue<bool>(), "saved again");
+    await WaitForCacheWriteAsync(server.Client, 2);
+  }
+
+  /// <summary>
+  /// Edited files are saved to the cache (with the metadata of their read: the scan is not updated
+  /// by edits), and loaded from the cache after a restart.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task EditedFilesAreLoadedFromTheCacheAfterARestart() {
+    using var tree = new TestTree();
+    var fileCount = tree.Generate();
+    await using (var server = await StartAndLoadAsync(tree, tree.CacheDirectory, saveDelays: ShortSaveDelays)) {
+      await WaitForIdleAsync(server.Client);
+      await WaitForCacheWriteAsync(server.Client, 1);
+      // An edit (old time: not "racy").
+      var path = tree.FilePath(7, 7);
+      TestTree.WriteFile(path, File.ReadAllText(path) + "// EDITED_FILE\n", OldTime.AddMinutes(2));
+      var stopwatch = Stopwatch.StartNew();
+      while (await HitCountAsync(server.Client, "EDITED_FILE") != 1) {
+        Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(60), "Timeout waiting for the edit");
+        await Task.Delay(100);
+      }
+      var cache = await WaitForCacheWriteAsync(server.Client, 2);
+      Assert.AreEqual(fileCount - 1, cache["lastWriteEntryCount"]!.GetValue<int>(), cache.ToJsonString());
+    }
+
+    await using (var server = await StartAndLoadAsync(tree, verifyDelayMs: 3000)) {
+      Assert.IsTrue(server.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false);
+      var cache = (await server.Client.RequestAsync(ServerProtocol.GetServerStatistics())).Data["indexCache"]!;
+      Assert.AreEqual(fileCount - 1, cache["lastLoadFilesFromCache"]!.GetValue<int>(), cache.ToJsonString());
+      Assert.AreEqual(1, await HitCountAsync(server.Client, "EDITED_FILE"), "The edited file is in the cache");
+      // The verification only reads the large file (the edited file is unchanged since it was read).
+      await WaitForIdleAsync(server.Client);
+      cache = (await server.Client.RequestAsync(ServerProtocol.GetServerStatistics())).Data["indexCache"]!;
+      Assert.AreEqual(1, cache["lastLoadFilesFromDisk"]!.GetValue<int>(), cache.ToJsonString());
+    }
+  }
+
+  /// <summary>
+  /// No save at shutdown: a server with unsaved changes stops without saving them (closing the
+  /// client is not delayed); they are read by the verification at the next start.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task NoSaveAtShutdown() {
+    using var tree = new TestTree();
+    tree.Generate();
+    await ColdLoadAndWriteCacheAsync(tree);
+
+    var server = await StartAndLoadAsync(tree);
+    await WaitForIdleAsync(server.Client);
+    var path = tree.FilePath(7, 7);
+    TestTree.WriteFile(path, File.ReadAllText(path) + "// EDITED_FILE\n", OldTime.AddMinutes(2));
+    await WaitForIndexCacheAsync(server.Client, x => x["dirty"]!.GetValue<bool>(), "dirty");
+    var stopwatch = Stopwatch.StartNew();
+    await server.DisposeAsync();
+    Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Stopped in {stopwatch.Elapsed.TotalMilliseconds:n0} ms");
+
+    await using var restarted = await StartAndLoadAsync(tree, verifyDelayMs: 3000);
+    Assert.IsTrue(restarted.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false);
+    Assert.AreEqual(0, await HitCountAsync(restarted.Client, "EDITED_FILE"), "Not saved");
+    await WaitForIdleAsync(restarted.Client);
+    Assert.AreEqual(1, await HitCountAsync(restarted.Client, "EDITED_FILE"), "Read by the verification");
   }
 
   private static async Task<JsonNode> WaitForIndexCacheAsync(JsonRpcServerClient server, Func<JsonNode, bool> predicate, string description) {
@@ -390,8 +450,12 @@ public class IndexCacheTests {
     return StartAndLoadAsync(tree, tree.CacheDirectory, verifyDelayMs);
   }
 
-  private static async Task<LoadedServer> StartAndLoadAsync(TestTree tree, string? cacheDirectory, int verifyDelayMs = 0) {
-    var environment = new Dictionary<string, string?> { [VerifyDelayVariable] = verifyDelayMs > 0 ? verifyDelayMs.ToString() : null };
+  private static async Task<LoadedServer> StartAndLoadAsync(TestTree tree, string? cacheDirectory, int verifyDelayMs = 0,
+                                                            string? saveDelays = null) {
+    var environment = new Dictionary<string, string?> {
+      [VerifyDelayVariable] = verifyDelayMs > 0 ? verifyDelayMs.ToString() : null,
+      [SaveDelaysVariable] = saveDelays,
+    };
     var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath, cacheDirectory, environment);
     var loaded = await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
       () => server.RequestAsync(ServerProtocol.RegisterFile(tree.ProjectFile)));

@@ -35,17 +35,18 @@ namespace VsChromium.Server.Cache {
     void RecordLoad(int filesFromCache, int filesFromDisk);
 
     /// <summary>
-    /// Writes the cache of the projects of <paramref name="snapshot"/> in the background (low
-    /// priority), after the pending writes. <paramref name="loadStartUtc"/> is the time the full
-    /// load started (see <see cref="ProjectIndexCache.RacyInterval"/>).
+    /// The index was updated (any update: full load, tree changes, edits): the cache is saved
+    /// later (<see cref="IndexCacheSaveScheduler"/>: once the changes settle, at most 5 minutes
+    /// after the first unsaved change), or as soon as possible after a full load of a project
+    /// without saved cache (e.g. the first load, or after "Rebuild index").
     /// </summary>
-    void ScheduleWrite(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, DateTime loadStartUtc);
+    void NotifyIndexUpdated(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, bool fullLoad);
 
-    /// <summary>Cancels the pending and running writes (e.g. a new load starts).</summary>
+    /// <summary>Cancels the running write, if any (e.g. a new full load starts): saved later.</summary>
     void CancelWrites();
 
     /// <summary>
-    /// Waits for the pending writes (tests). Returns false if they are not done after
+    /// Waits for the running write (tests, invalidation). Returns false if it is not done after
     /// <paramref name="timeout"/>.
     /// </summary>
     bool WaitForWrites(TimeSpan timeout);
@@ -70,12 +71,12 @@ namespace VsChromium.Server.Cache {
 
   public sealed class IndexCacheDiskState {
     public bool Enabled;
-    /// <summary>A write of the cache is queued or running.</summary>
+    /// <summary>A write of the cache is running.</summary>
     public bool Saving;
+    /// <summary>The index changed since the last write (started) of the caches written by this server.</summary>
+    public bool Dirty;
     /// <summary>The last write time of the index of the open project caches (the most recent), if any.</summary>
     public DateTime? LastSavedUtc;
-    /// <summary>The oldest index of the caches written by this server (null if one has no index yet).</summary>
-    public DateTime? OldestWritableSavedUtc;
     /// <summary>True if this server writes the cache of at least one open project.</summary>
     public bool HasWritableProject;
     public long SizeOnDiskBytes;
@@ -100,13 +101,16 @@ namespace VsChromium.Server.Cache {
     private readonly IndexCacheOptions _options;
     private readonly object _lock = new object();
     private readonly Dictionary<FullPath, ProjectIndexCache> _projects = new Dictionary<FullPath, ProjectIndexCache>();
-    private CancellationTokenSource _writeCancellation = new CancellationTokenSource();
-    private Task _writeTask = Task.CompletedTask;
+    private readonly IndexCacheSaveScheduler _scheduler;
+    /// <summary>The state to save (the last update), until a save starts.</summary>
+    private FileSystemSnapshot _pendingSnapshot;
+    private FileDatabaseSnapshot _pendingDatabase;
     private bool _disposed;
     private readonly IndexCacheStatistics _statistics = new IndexCacheStatistics();
 
     public IndexCache(IndexCacheOptions options) {
       _options = options;
+      _scheduler = new IndexCacheSaveScheduler(options.SaveSettleDelay, options.SaveMaxDelay, Save);
       if (options.IsEnabled) {
         Logger.LogInfo("Index cache directory: \"{0}\"", options.CacheDirectory);
       } else {
@@ -152,57 +156,79 @@ namespace VsChromium.Server.Cache {
       }
     }
 
-    public void ScheduleWrite(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, DateTime loadStartUtc) {
+    public void NotifyIndexUpdated(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, bool fullLoad) {
       if (!IsEnabled || database is not FileDatabaseSnapshot fileDatabase)
         return;
+      // Only the projects whose cache is written by this server.
+      var caches = snapshot.ProjectRoots
+        .Select(x => GetOpenProjectCache(x.Project.RootPath))
+        .Where(x => x != null && x.IsWritable)
+        .ToList();
+      if (caches.Count == 0)
+        return;
+      // The cache must exist soon after the first load of a project.
+      var immediate = fullLoad && caches.Any(x => !x.HasIndex);
       lock (_lock) {
         if (_disposed)
           return;
-        _writeCancellation.Cancel();
-        var cancellation = new CancellationTokenSource();
-        _writeCancellation = cancellation;
-        _writeTask = _writeTask.ContinueWith(_ => RunWrite(snapshot, fileDatabase, loadStartUtc, cancellation.Token),
-          CancellationToken.None, TaskContinuationOptions.LongRunning, TaskScheduler.Default);
+        _pendingSnapshot = snapshot;
+        _pendingDatabase = fileDatabase;
       }
+      _scheduler.NotifyChanged(immediate);
     }
 
     public void CancelWrites() {
-      lock (_lock) {
-        _writeCancellation.Cancel();
-      }
+      _scheduler.CancelSave();
     }
 
     public bool WaitForWrites(TimeSpan timeout) {
-      Task task;
-      lock (_lock) {
-        task = _writeTask;
-      }
-      return task.Wait(timeout);
+      return _scheduler.WaitForSave(timeout);
     }
 
-    private void RunWrite(FileSystemSnapshot snapshot, FileDatabaseSnapshot database, DateTime loadStartUtc,
-                          CancellationToken cancellationToken) {
-      if (cancellationToken.IsCancellationRequested)
+    /// <summary>Saves the state of the last update (on the thread of the scheduler).</summary>
+    private void Save(CancellationToken cancellationToken) {
+      FileSystemSnapshot snapshot;
+      FileDatabaseSnapshot database;
+      lock (_lock) {
+        snapshot = _pendingSnapshot;
+        database = _pendingDatabase;
+        _pendingSnapshot = null;
+        _pendingDatabase = null;
+      }
+      if (snapshot == null)
         return;
-      // Note: Must not slow down the searches and the indexing.
-      Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+      try {
+        RunWrite(snapshot, database, cancellationToken);
+      }
+      catch (OperationCanceledException) {
+        lock (_lock) {
+          // Saved later (unless a newer update replaced it).
+          _pendingSnapshot ??= snapshot;
+          _pendingDatabase ??= database;
+        }
+        throw;
+      }
+    }
+
+    private void RunWrite(FileSystemSnapshot snapshot, FileDatabaseSnapshot database, CancellationToken cancellationToken) {
+      cancellationToken.ThrowIfCancellationRequested();
       try {
         foreach (var projectRoot in snapshot.ProjectRoots) {
           var cache = GetOpenProjectCache(projectRoot.Project.RootPath);
           if (cache == null || !cache.IsWritable)
             continue;
           var result = cache.Write(GetWriteDirectories(projectRoot, database), projectRoot.Project.VersionHash,
-            loadStartUtc, cancellationToken);
+            cancellationToken);
           if (result == null)
             continue;
           Logger.LogInfo("Wrote the index cache of \"{0}\" in {1:n0} ms: {2:n0} entries, {3:n0} new files " +
                          "({4:n0} bytes written, {5:n0} new arena files, {6:n0} deleted), skipped {7:n0} files " +
-                         "modified during the load, {8:n0} files modified after the scan, {9:n0} large files.",
+                         "modified less than 2 s before they were read, {8:n0} files read with another time or size than the scan, {9:n0} large files.",
             projectRoot.Project.RootPath, result.Elapsed.TotalMilliseconds, result.EntryCount, result.NewFileCount,
             result.BytesWritten, result.NewArenaCount, result.DeletedArenaCount, result.RacyFileCount,
             result.ChangedFileCount, result.LargeFileCount);
           if (result.ChangedFileSamples.Count > 0) {
-            Logger.LogInfo("Files of \"{0}\" modified after the scan (scan time != contents time), first {1:n0} of {2:n0}:\n  {3}",
+            Logger.LogInfo("Files of \"{0}\" read with another time or size than the scan, first {1:n0} of {2:n0}:\n  {3}",
               projectRoot.Project.RootPath, result.ChangedFileSamples.Count, result.ChangedFileCount,
               string.Join("\n  ", result.ChangedFileSamples));
           }
@@ -218,12 +244,7 @@ namespace VsChromium.Server.Cache {
       }
       catch (OperationCanceledException) {
         Logger.LogInfo("Writing the index cache was cancelled.");
-      }
-      catch (Exception e) {
-        Logger.LogWarn(e, "Error writing the index cache.");
-      }
-      finally {
-        Thread.CurrentThread.Priority = ThreadPriority.Normal;
+        throw;
       }
     }
 
@@ -284,10 +305,9 @@ namespace VsChromium.Server.Cache {
         return result;
       ProjectIndexCache[] projects;
       lock (_lock) {
-        result.Saving = !_writeTask.IsCompleted;
         projects = _projects.Values.Where(x => x != null).ToArray();
       }
-      var oldestWritable = DateTime.MaxValue;
+      result.Saving = _scheduler.IsSaving;
       foreach (var project in projects) {
         try {
           foreach (var file in new DirectoryInfo(project.Directory).EnumerateFiles("*", SearchOption.AllDirectories)) {
@@ -300,19 +320,14 @@ namespace VsChromium.Server.Cache {
           }
           if (project.IsWritable) {
             result.HasWritableProject = true;
-            // Note: A project without index yet is the oldest.
-            var value = saved ?? DateTime.MinValue;
-            if (value < oldestWritable)
-              oldestWritable = value;
           }
         }
         catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
           // The directory may be deleted (e.g. "Rebuild index"): ignored.
         }
       }
-      if (result.HasWritableProject && oldestWritable != DateTime.MinValue) {
-        result.OldestWritableSavedUtc = oldestWritable;
-      }
+      // Note: Updates only mark the index dirty if this server writes the cache of a project.
+      result.Dirty = result.HasWritableProject && _scheduler.IsDirty;
       return result;
     }
 
@@ -338,21 +353,19 @@ namespace VsChromium.Server.Cache {
       return result;
     }
 
+    /// <summary>
+    /// No save at shutdown (closing the client must not be delayed): a running write is cancelled
+    /// and not waited for (its thread is a background thread: the process can exit). The previous
+    /// index stays valid (written to a temporary file, then renamed); the unreferenced arena files of
+    /// an interrupted write are deleted the next time the cache is opened. The changes since the last
+    /// save are re-read by the verification of the tree at the next start.
+    /// </summary>
     public void Dispose() {
-      Task task;
+      _scheduler.Dispose();
       lock (_lock) {
         _disposed = true;
-        _writeCancellation.Cancel();
-        task = _writeTask;
-      }
-      try {
-        if (!task.Wait(TimeSpan.FromSeconds(10))) {
-          Logger.LogWarn("Timeout waiting for the index cache write to be cancelled.");
-        }
-      }
-      catch (AggregateException) {
-      }
-      lock (_lock) {
+        _pendingSnapshot = null;
+        _pendingDatabase = null;
         foreach (var project in _projects.Values) {
           project?.Dispose();
         }

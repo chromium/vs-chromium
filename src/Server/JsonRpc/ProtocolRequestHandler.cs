@@ -267,7 +267,7 @@ namespace VsChromium.Server.JsonRpc {
         IndexedTextBytes = database.TotalFileContentsLength,
         FileContentsArenas = GetArenaStatistics(database),
         Status = JsonRpcEventForwarder.ToIndexingStatus(indexingServerState.Status),
-        IndexCache = GetIndexCacheState(indexingServerState.LastIndexUpdateUtc),
+        IndexCache = GetIndexCacheState(),
       });
     }
 
@@ -275,7 +275,7 @@ namespace VsChromium.Server.JsonRpc {
     /// The state of the index cache for status displays (no full walk of the index: the files of
     /// the cache directories of the open projects).
     /// </summary>
-    private IndexCacheState GetIndexCacheState(DateTime lastIndexUpdateUtc) {
+    private IndexCacheState GetIndexCacheState() {
       if (_indexCache == null) {
         return null;
       }
@@ -285,19 +285,10 @@ namespace VsChromium.Server.JsonRpc {
         Saving = state.Saving,
         LastSavedUtc = state.LastSavedUtc,
         SizeOnDiskBytes = state.SizeOnDiskBytes,
-        Dirty = IsDirty(state, lastIndexUpdateUtc),
+        // Note: The index changed since the last save (false if the cache is disabled, or if the
+        // caches of all the open projects are read-only: written by another server).
+        Dirty = state.Dirty,
       };
-    }
-
-    /// <summary>
-    /// True if the index changed after the last write of the caches written by this server (false
-    /// if the cache is disabled, or if the caches of all the open projects are read-only: written
-    /// by another server).
-    /// </summary>
-    public static bool IsDirty(IndexCacheDiskState state, DateTime lastIndexUpdateUtc) {
-      if (!state.Enabled || !state.HasWritableProject || lastIndexUpdateUtc == DateTime.MinValue)
-        return false;
-      return !state.OldestWritableSavedUtc.HasValue || lastIndexUpdateUtc > state.OldestWritableSavedUtc.Value;
     }
 
     public ValueTask<IndexDetails> IndexDetailsAsync(DetailsParams parameters, CancellationToken cancellationToken) {

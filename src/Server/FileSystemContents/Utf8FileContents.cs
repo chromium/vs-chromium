@@ -29,8 +29,9 @@ namespace VsChromium.Server.FileSystemContents {
     private readonly bool _isAscii;
     private Checkpoints _checkpoints;
 
-    public Utf8FileContents(FileContentsMemory contents, DateTime utcLastModified, bool isAscii)
-      : base(contents, utcLastModified) {
+    public Utf8FileContents(FileContentsMemory contents, DateTime utcLastModified, bool isAscii,
+                            long fileLength = -1, bool isRacy = false)
+      : base(contents, utcLastModified, fileLength, isRacy) {
       _isAscii = isAscii;
     }
 

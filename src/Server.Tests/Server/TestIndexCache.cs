@@ -143,7 +143,7 @@ namespace VsChromium.Tests.Server {
       Assert.IsNull(cache.Lookup);
       // The contents loaded before stay valid, and keep their location for the next write.
       Assert.AreEqual("int a;\n", GetText(contents));
-      var result = cache.Write(Dirs(new[] { new Item("", "a.cc", item.Metadata, contents) }), VersionHash, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(new[] { new Item("", "a.cc", item.Metadata, contents) }), VersionHash, CancellationToken.None);
       Assert.AreEqual(0, result.NewFileCount);
     }
 
@@ -199,14 +199,72 @@ namespace VsChromium.Tests.Server {
       Assert.IsNotNull(lookup.TryGetContents("old.cc", old.Metadata));
     }
 
+    /// <summary>
+    /// Edited files: the contents were read after the scan (the scan is not updated): the cache
+    /// has the contents with the metadata of the read.
+    /// </summary>
     [TestMethod]
-    public void FilesModifiedAfterTheScanAreNotWritten() {
-      // The contents were read after the file was modified again (time of the scan != time of the contents).
-      var contents = CreateText("int a;\n", OldTime.AddMinutes(1));
+    public void FilesReadAfterTheScanAreWrittenWithTheMetadataOfTheRead() {
+      var contents = CreateText("int a; // edited\n", OldTime.AddMinutes(1));
       var item = new Item("", "a.cc", new FileMetadata(OldTime, 7), contents);
       var result = Write(new[] { item });
       Assert.AreEqual(1, result.ChangedFileCount);
+      Assert.AreEqual(1, result.EntryCount);
+
+      var cache = OpenNew();
+      var read = new FileMetadata(OldTime.AddMinutes(1), contents.FileLength);
+      Assert.AreEqual("int a; // edited\n", GetText(cache.Lookup.TryGetContents("a.cc", read)));
+      Assert.IsNull(cache.Lookup.TryGetContents("a.cc", item.Metadata), "Not with the metadata of the scan");
+      var tree = cache.TryLoadTree(VersionHash, new FileSystemNameFactory(), new FullPath(_projectRoot), CancellationToken.None);
+      Assert.AreEqual(read, tree.Root.ChildFileMetadata[0], "The tree has the metadata of the read");
+    }
+
+    [TestMethod]
+    public void ContentsWithUnknownMetadataAreWrittenOnlyWithTheTimeOfTheScan() {
+      var bytes = Encoding.UTF8.GetBytes("int a;\n");
+      var slice = _arenas.Allocate(bytes.Length + 2);
+      bytes.CopyTo(slice.Span);
+      slice.Span.Slice(bytes.Length).Clear();
+      var contents = new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset, bytes.Length), OldTime.AddMinutes(1), isAscii: true);
+      Assert.AreEqual(-1, contents.FileLength);
+      var result = Write(new[] { new Item("", "a.cc", new FileMetadata(OldTime, 7), contents),
+        new Item("", "error.bin", new FileMetadata(OldTime, 7), BinaryFileContents.Empty) });
+      Assert.AreEqual(2, result.ChangedFileCount);
       Assert.AreEqual(0, result.EntryCount);
+    }
+
+    [TestMethod]
+    public void CancelledWriteKeepsThePreviousIndex() {
+      var cache = OpenNew();
+      var item = TextItem("a.cc", "int a;\n");
+      cache.Write(Dirs(new[] { item }), VersionHash, CancellationToken.None);
+      var index = File.ReadAllBytes(IndexPath);
+
+      using (var cancellation = new CancellationTokenSource()) {
+        IEnumerable<IndexCacheWriteDirectory> Directories() {
+          yield return new IndexCacheWriteDirectory("", false, new[] { ToWriteItem(TextItem("b.cc", "int b;\n")) });
+          cancellation.Cancel(); // e.g. the server stops during the write
+          yield return new IndexCacheWriteDirectory("dir", false, new[] { ToWriteItem(TextItem(Path.Combine("dir", "c.cc"), "int c;\n")) });
+        }
+        Assert.Throws<OperationCanceledException>(() => cache.Write(Directories(), VersionHash, cancellation.Token));
+      }
+      CollectionAssert.AreEqual(index, File.ReadAllBytes(IndexPath), "Previous index");
+      Assert.IsFalse(File.Exists(IndexPath + ".tmp"));
+      cache.Dispose();
+      Assert.IsNotNull(OpenNew().Lookup.TryGetContents("a.cc", item.Metadata));
+    }
+
+    [TestMethod]
+    public void IndexWrittenPartiallyBeforeAProcessExitIsIgnored() {
+      // A write interrupted by the end of the process: a partial temporary index, new arena files.
+      var item = TextItem("a.cc", "int a;\n");
+      Write(new[] { item });
+      File.WriteAllBytes(IndexPath + ".tmp", new byte[] { 1, 2, 3 });
+      File.WriteAllBytes(Path.Combine(ArenasDirectory, IndexCacheFile.GetArenaFileName(50)), new byte[64]);
+      var cache = OpenNew();
+      Assert.IsNotNull(cache.Lookup.TryGetContents("a.cc", item.Metadata));
+      Assert.AreEqual(1, ArenaFiles().Length, "Orphan arena file deleted");
+      Assert.IsNotNull(cache.Write(Dirs(new[] { item }), VersionHash, CancellationToken.None));
     }
 
     [TestMethod]
@@ -243,10 +301,10 @@ namespace VsChromium.Tests.Server {
     public void ContentsAlreadyWrittenAreNotWrittenAgain() {
       var items = new[] { TextItem("a.cc", "int a;\n"), TextItem("b.cc", "int b;\n") };
       var cache = OpenNew();
-      Assert.AreEqual(2, cache.Write(Dirs(items), VersionHash, LoadStart, CancellationToken.None).NewFileCount);
+      Assert.AreEqual(2, cache.Write(Dirs(items), VersionHash, CancellationToken.None).NewFileCount);
 
       // Same contents in memory: same locations.
-      var result = cache.Write(Dirs(items), VersionHash, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(items), VersionHash, CancellationToken.None);
       Assert.AreEqual(2, result.EntryCount);
       Assert.AreEqual(0, result.NewFileCount);
       Assert.AreEqual(0, result.NewArenaCount);
@@ -256,7 +314,7 @@ namespace VsChromium.Tests.Server {
       var reopened = OpenNew();
       var loaded = items.Select(x => new Item(x.Directory, x.Name, x.Metadata,
         reopened.Lookup.TryGetContents(RelativePath(x), x.Metadata))).ToArray();
-      result = reopened.Write(Dirs(loaded), VersionHash, LoadStart, CancellationToken.None);
+      result = reopened.Write(Dirs(loaded), VersionHash, CancellationToken.None);
       Assert.AreEqual(2, result.EntryCount);
       Assert.AreEqual(0, result.NewFileCount);
       Assert.AreEqual(1, ArenaFiles().Length);
@@ -265,12 +323,12 @@ namespace VsChromium.Tests.Server {
     [TestMethod]
     public void UnreferencedArenaFilesAreDeletedAfterAWrite() {
       var cache = OpenNew();
-      cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, LoadStart, CancellationToken.None);
+      cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, CancellationToken.None);
       var first = ArenaFiles();
       Assert.AreEqual(1, first.Length);
 
       // a.cc is deleted, b.cc is new.
-      var result = cache.Write(Dirs(new[] { TextItem("b.cc", "int b;\n") }), VersionHash, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(new[] { TextItem("b.cc", "int b;\n") }), VersionHash, CancellationToken.None);
       Assert.AreEqual(1, result.DeletedArenaCount);
       var second = ArenaFiles();
       Assert.AreEqual(1, second.Length);
@@ -299,7 +357,7 @@ namespace VsChromium.Tests.Server {
       Assert.IsFalse(second.IsWritable);
       Assert.IsNotNull(second.Lookup.TryGetContents("a.cc", item.Metadata), "Read-only caches are used");
 
-      Assert.IsNull(second.Write(Dirs(new[] { TextItem("b.cc", "int b;\n") }), VersionHash, LoadStart, CancellationToken.None));
+      Assert.IsNull(second.Write(Dirs(new[] { TextItem("b.cc", "int b;\n") }), VersionHash, CancellationToken.None));
       Assert.AreEqual(indexTime, File.GetLastWriteTimeUtc(IndexPath));
       Assert.AreEqual(1, ArenaFiles().Length);
     }
@@ -345,13 +403,13 @@ namespace VsChromium.Tests.Server {
     public void InvalidateDeletesTheCache() {
       var item = TextItem("a.cc", "int a;\n");
       var cache = OpenNew();
-      cache.Write(Dirs(new[] { item }), VersionHash, LoadStart, CancellationToken.None);
+      cache.Write(Dirs(new[] { item }), VersionHash, CancellationToken.None);
       cache.Invalidate();
       Assert.IsFalse(File.Exists(IndexPath));
       Assert.AreEqual(0, ArenaFiles().Length);
 
       // The contents in memory are written again by the next write.
-      var result = cache.Write(Dirs(new[] { item }), VersionHash, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(new[] { item }), VersionHash, CancellationToken.None);
       Assert.AreEqual(1, result.NewFileCount);
     }
 
@@ -368,20 +426,14 @@ namespace VsChromium.Tests.Server {
         Assert.IsTrue(state.HasWritableProject);
         Assert.IsNull(state.LastSavedUtc, "Not saved yet");
         Assert.IsTrue(state.SizeOnDiskBytes > 0, "root.txt");
-        // Not saved yet: any index change is not in the cache.
-        Assert.IsTrue(ProtocolRequestHandler.IsDirty(state, DateTime.UtcNow));
+        Assert.IsFalse(state.Dirty, "No index update yet");
 
-        var beforeWrite = DateTime.UtcNow.AddSeconds(-1);
         var sizeBefore = state.SizeOnDiskBytes;
-        cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, LoadStart, CancellationToken.None);
+        cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, CancellationToken.None);
         state = indexCache.GetDiskState();
         Assert.IsNotNull(state.LastSavedUtc);
         Assert.AreEqual(File.GetLastWriteTimeUtc(IndexPath), state.LastSavedUtc);
         Assert.IsTrue(state.SizeOnDiskBytes > sizeBefore, "index and arena files");
-        // The index was updated before the write: clean; after: dirty.
-        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, beforeWrite));
-        Assert.IsTrue(ProtocolRequestHandler.IsDirty(state, state.LastSavedUtc.Value.AddSeconds(1)));
-        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, DateTime.MinValue), "No index yet");
       }
     }
 
@@ -394,12 +446,12 @@ namespace VsChromium.Tests.Server {
         var state = indexCache.GetDiskState();
         Assert.IsFalse(state.HasWritableProject);
         Assert.IsNotNull(state.LastSavedUtc, "Written by the other server");
-        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, DateTime.UtcNow.AddDays(1)));
+        Assert.IsFalse(state.Dirty);
       }
       using (var disabled = new IndexCache(IndexCacheOptions.Disabled)) {
         var state = disabled.GetDiskState();
         Assert.IsFalse(state.Enabled);
-        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, DateTime.UtcNow));
+        Assert.IsFalse(state.Dirty);
       }
       GC.KeepAlive(writer);
     }
@@ -436,7 +488,7 @@ namespace VsChromium.Tests.Server {
         new IndexCacheWriteDirectory("b", false, new[] { ToWriteItem(TextItem(Path.Combine("b", "b.cc"), "int b;")) }),
       };
       var cache = OpenNew();
-      var result = cache.Write(directories, VersionHash, LoadStart, CancellationToken.None);
+      var result = cache.Write(directories, VersionHash, CancellationToken.None);
       Assert.AreEqual(6, result.TreeFileCount);
       Assert.AreEqual(5, result.TreeDirectoryCount);
       Assert.AreEqual(3, result.EntryCount, "root.cc, b.bin, b.cc");
@@ -513,7 +565,7 @@ namespace VsChromium.Tests.Server {
     /// <summary>Writes the items with a new cache (released after the write).</summary>
     private IndexCacheWriteResult Write(IEnumerable<Item> items) {
       var cache = OpenNew();
-      var result = cache.Write(Dirs(items), VersionHash, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(items), VersionHash, CancellationToken.None);
       cache.Dispose();
       return result;
     }
@@ -569,13 +621,17 @@ namespace VsChromium.Tests.Server {
       return new Item(directory, name, new FileMetadata(OldTime, length), new BinaryFileContents(OldTime, length));
     }
 
+    /// <summary>
+    /// Contents read at <see cref="LoadStart"/>: racy if modified less than 2 seconds before.
+    /// </summary>
     private FileContents CreateText(string text, DateTime lastWriteTime) {
       var bytes = Encoding.UTF8.GetBytes(text);
       var slice = _arenas.Allocate(bytes.Length + 2);
       bytes.CopyTo(slice.Span);
       slice.Span.Slice(bytes.Length).Clear();
       return new Utf8FileContents(new FileContentsMemory(slice.Block, slice.Offset, bytes.Length), lastWriteTime,
-        isAscii: System.Text.Ascii.IsValid(bytes));
+        isAscii: System.Text.Ascii.IsValid(bytes), fileLength: bytes.Length,
+        isRacy: lastWriteTime >= LoadStart - ProjectIndexCache.RacyInterval);
     }
 
     private static unsafe string GetText(FileContents contents) {

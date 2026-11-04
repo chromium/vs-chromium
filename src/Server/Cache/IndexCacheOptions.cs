@@ -26,9 +26,34 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     public const string CacheDirectoryVariable = "VSCHROMIUM_CACHE_DIR";
 
+    /// <summary>
+    /// Test only: the delays of the saves of the cache, in milliseconds: "settle,max" (see
+    /// <see cref="SaveSettleDelay"/> and <see cref="SaveMaxDelay"/>).
+    /// </summary>
+    public const string SaveDelaysVariable = "VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS";
+
+    /// <summary>The cache is saved after this delay without index update...</summary>
+    public static readonly TimeSpan DefaultSaveSettleDelay = TimeSpan.FromSeconds(30);
+
+    /// <summary>... but at most this delay after the first unsaved index update.</summary>
+    public static readonly TimeSpan DefaultSaveMaxDelay = TimeSpan.FromMinutes(5);
+
     public IndexCacheOptions(string cacheDirectory) {
       CacheDirectory = cacheDirectory;
+      SaveSettleDelay = DefaultSaveSettleDelay;
+      SaveMaxDelay = DefaultSaveMaxDelay;
+      var delays = Environment.GetEnvironmentVariable(SaveDelaysVariable)?.Split(',');
+      if (delays != null && delays.Length == 2 && int.TryParse(delays[0], out var settle) && int.TryParse(delays[1], out var max)) {
+        SaveSettleDelay = TimeSpan.FromMilliseconds(settle);
+        SaveMaxDelay = TimeSpan.FromMilliseconds(max);
+      }
     }
+
+    /// <summary>The cache is saved once the index is not updated during this delay (see <see cref="IndexCacheSaveScheduler"/>).</summary>
+    public TimeSpan SaveSettleDelay { get; set; }
+
+    /// <summary>The cache is saved at most this delay after the first unsaved index update.</summary>
+    public TimeSpan SaveMaxDelay { get; set; }
 
     /// <summary>
     /// The root directory of the cache, or null if the cache is disabled.

@@ -23,13 +23,30 @@ namespace VsChromium.Server.FileSystemContents {
 
     private readonly FileContentsMemory _contents;
     private readonly DateTime _utcLastModified;
+    /// <summary>
+    /// The size of the file when it was read (-1 if unknown), and the "racy" flag (see <see
+    /// cref="IsRacy"/>) encoded as a negative value: -(size + 2). A single field: 8 bytes per file.
+    /// </summary>
+    private readonly long _fileLengthAndRacy;
 
-    protected FileContents(FileContentsMemory contents, DateTime utcLastModified) {
+    protected FileContents(FileContentsMemory contents, DateTime utcLastModified, long fileLength = -1, bool isRacy = false) {
       _contents = contents;
       _utcLastModified = utcLastModified;
+      _fileLengthAndRacy = fileLength < 0 ? -1 : isRacy ? -(fileLength + 2) : fileLength;
     }
 
+    /// <summary>The last write time of the file when it was read.</summary>
     public DateTime UtcLastModified { get { return _utcLastModified; } }
+
+    /// <summary>The size of the file (on disk) when it was read, or -1 if unknown.</summary>
+    public long FileLength => _fileLengthAndRacy >= -1 ? _fileLengthAndRacy : -_fileLengthAndRacy - 2;
+
+    /// <summary>
+    /// True if the file was modified less than 2 seconds before it was read: these contents are
+    /// not saved to the index cache ("racy clean" problem of git: a file modified again within the
+    /// granularity of its last write time could have other contents with the same time and size).
+    /// </summary>
+    public bool IsRacy => _fileLengthAndRacy < -1;
 
     public TextRange TextRange { get { return new TextRange(0, CharacterCount); } }
 

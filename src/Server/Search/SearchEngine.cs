@@ -638,11 +638,10 @@ namespace VsChromium.Server.Search {
           options.CurrentFileDatabase = _currentFileDatabase;
           var newFileDatabase = updater(options);
           ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
-          // Note: Not for trees from the index cache (the same as the cache), written after their
-          // verification.
-          if (options.IsFullLoad && !fileSystemSnapshot.IsFromCache) {
-            // In the background, after the new database is active (searches are not delayed).
-            _indexCache?.ScheduleWrite(fileSystemSnapshot, newFileDatabase, options.LoadStartUtc);
+          // The index changed: the cache is saved later (any update). Note: Not for trees from the
+          // index cache (the same as the cache): saved after their verification.
+          if (!fileSystemSnapshot.IsFromCache && !ReferenceEquals(newFileDatabase, options.CurrentFileDatabase)) {
+            _indexCache?.NotifyIndexUpdated(fileSystemSnapshot, newFileDatabase, options.IsFullLoad);
           }
 
           OnFilesLoaded(new FilesLoadedResult {
@@ -699,8 +698,7 @@ namespace VsChromium.Server.Search {
     /// </summary>
     private void StartFullLoad(UpdateFileDatabaseOptions options) {
       options.IsFullLoad = true;
-      options.LoadStartUtc = DateTime.UtcNow;
-      // The cache is written again after this load.
+      // The cache is saved again after this load.
       _indexCache?.CancelWrites();
     }
 
@@ -879,8 +877,6 @@ namespace VsChromium.Server.Search {
       public IFileDatabaseSnapshot CurrentFileDatabase { get; set; }
       /// <summary>True for full loads (see <see cref="StartFullLoad"/>).</summary>
       public bool IsFullLoad { get; set; }
-      /// <summary>The time a full load started (racy entries of the index cache).</summary>
-      public DateTime LoadStartUtc { get; set; }
     }
 
     private class TaskQueueGuard : IDisposable {

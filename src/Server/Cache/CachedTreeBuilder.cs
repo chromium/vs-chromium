@@ -17,10 +17,18 @@ namespace VsChromium.Server.Cache {
   /// by the verification of the tree).
   /// </summary>
   public sealed class CachedProjectTree {
-    public CachedProjectTree(DirectorySnapshot root, IReadOnlyCollection<FileName> filesWithoutContents) {
+    public CachedProjectTree(DirectorySnapshot root, IReadOnlyCollection<FileName> filesWithoutContents,
+                             bool filesWithoutContentsAreLarge) {
       Root = root;
       FilesWithoutContents = filesWithoutContents;
+      FilesWithoutContentsAreLarge = filesWithoutContentsAreLarge;
     }
+
+    /// <summary>
+    /// True if the files without contents are all larger than the cached files (not cached
+    /// because of their size, not because they were modified when the cache was written).
+    /// </summary>
+    public bool FilesWithoutContentsAreLarge { get; }
 
     public DirectorySnapshot Root { get; }
 
@@ -50,6 +58,7 @@ namespace VsChromium.Server.Cache {
 
       // Bottom up: the children of a directory are after it (depth first order).
       var withoutContents = new List<FileName>();
+      var withoutContentsAreLarge = true;
       var snapshots = new DirectorySnapshot[directories.Length];
       for (var i = directories.Length - 1; i >= 0; i--) {
         if ((i & 1023) == 0)
@@ -64,6 +73,7 @@ namespace VsChromium.Server.Cache {
           metadata[j] = new FileMetadata(new DateTime(file.LastWriteTimeTicks, DateTimeKind.Utc), file.FileLength);
           if ((file.Flags & IndexCacheEntryFlags.NoContents) != 0) {
             withoutContents.Add(fileNames[j]);
+            withoutContentsAreLarge &= file.FileLength > ProjectIndexCache.MaxCachedFileLength;
           }
         }
         IList<DirectorySnapshot> childSnapshots;
@@ -81,7 +91,7 @@ namespace VsChromium.Server.Cache {
         snapshots[i] = new DirectorySnapshot(new DirectoryData(names[i], isSymLink), childSnapshots.ToReadOnlyList(),
           fileNames.ToReadOnlyList(), metadata);
       }
-      return new CachedProjectTree(snapshots[0], withoutContents);
+      return new CachedProjectTree(snapshots[0], withoutContents, withoutContentsAreLarge);
     }
   }
 }

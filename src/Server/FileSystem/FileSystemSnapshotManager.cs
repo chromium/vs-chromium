@@ -63,7 +63,14 @@ namespace VsChromium.Server.FileSystem {
     /// of their tree to read from disk (without contents in the cache).
     /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
     /// </summary>
-    private readonly Dictionary<FullPath, HashSet<FileName>> _unverifiedProjects = new Dictionary<FullPath, HashSet<FileName>>();
+    private readonly Dictionary<FullPath, UnverifiedProject> _unverifiedProjects = new Dictionary<FullPath, UnverifiedProject>();
+
+    private sealed class UnverifiedProject {
+      /// <summary>The files of the tree of the cache without cached contents (read by the verification).</summary>
+      public HashSet<FileName> FilesToReload;
+      /// <summary>True if they are all larger than the files cached (not cached anyway).</summary>
+      public bool FilesToReloadAreLarge;
+    }
 
     /// <summary>
     /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
@@ -384,7 +391,10 @@ namespace VsChromium.Server.FileSystem {
       }
       if (cachedTrees != null) {
         foreach (var (root, tree) in cachedTrees) {
-          _unverifiedProjects[root] = new HashSet<FileName>(tree.FilesWithoutContents);
+          _unverifiedProjects[root] = new UnverifiedProject {
+            FilesToReload = new HashSet<FileName>(tree.FilesWithoutContents),
+            FilesToReloadAreLarge = tree.FilesWithoutContentsAreLarge,
+          };
         }
       }
       // Projects not registered anymore
@@ -437,13 +447,21 @@ namespace VsChromium.Server.FileSystem {
           var newSnapshot = BuildNewFileSystemSnapshot(_registeredProjects, oldSnapshot, EmptyChanges, null, roots,
             cancellationToken);
           var changes = new List<PathChangeEntry>();
+          // True if the verified index is the same as the cache: same trees, and the files read
+          // from disk are not cached anyway (larger than 512 KB): nothing to save.
+          var cacheUnchanged = true;
           using (new TimeElapsedLogger("Comparing the trees of the index cache with the file system", cancellationToken, InfoLogger.Instance)) {
             foreach (var root in roots) {
               var oldRoot = oldSnapshot.ProjectRoots.FirstOrDefault(x => x.Project.RootPath.Equals(root));
               var newRoot = newSnapshot.ProjectRoots.FirstOrDefault(x => x.Project.RootPath.Equals(root));
               if (oldRoot != null && newRoot != null) {
-                changes.AddRange(SnapshotDiff.Compute(root, oldRoot.Directory, newRoot.Directory, _unverifiedProjects[root],
-                  cancellationToken));
+                var project = _unverifiedProjects[root];
+                var projectChanges = SnapshotDiff.Compute(root, oldRoot.Directory, newRoot.Directory, project.FilesToReload,
+                  cancellationToken);
+                changes.AddRange(projectChanges);
+                cacheUnchanged &= project.FilesToReloadAreLarge &&
+                  projectChanges.Count == project.FilesToReload.Count &&
+                  SnapshotDiff.Compute(root, oldRoot.Directory, newRoot.Directory, null, cancellationToken).Count == 0;
               }
             }
           }
@@ -464,7 +482,8 @@ namespace VsChromium.Server.FileSystem {
             OperationInfo = info,
             PreviousSnapshot = oldSnapshot,
             FullPathChanges = new FullPathChanges(changes),
-            NewSnapshot = newSnapshot
+            NewSnapshot = newSnapshot,
+            CacheUnchanged = cacheUnchanged,
           });
         }
       });

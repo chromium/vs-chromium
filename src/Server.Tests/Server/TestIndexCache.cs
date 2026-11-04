@@ -510,6 +510,7 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(Path.Combine(_projectRoot, "a", "link", "b.bin"), a.ChildDirectories[1].ChildFiles[0].FullPath.Value);
       // The searchable files without cached contents are read by the verification of the tree.
       CollectionAssert.AreEquivalent(new[] { "large.txt", "racy.cc" }, tree.FilesWithoutContents.Select(x => x.Name).ToArray());
+      Assert.IsFalse(tree.FilesWithoutContentsAreLarge, "racy.cc is not large");
     }
 
     [TestMethod]

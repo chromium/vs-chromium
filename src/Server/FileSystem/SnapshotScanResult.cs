@@ -19,5 +19,10 @@ namespace VsChromium.Server.FileSystem {
     public FileSystemSnapshot NewSnapshot { get; set; }
     /// <summary>Maybe <code>null</code> if changes are not known.</summary>
     public FullPathChanges FullPathChanges { get; set; }
+    /// <summary>
+    /// True if the index of the new snapshot is the same as the index cache (verification of a
+    /// cached tree without change): the cache is not saved.
+    /// </summary>
+    public bool CacheUnchanged { get; set; }
   }
 }

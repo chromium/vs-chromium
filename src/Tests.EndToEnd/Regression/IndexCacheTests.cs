@@ -337,6 +337,29 @@ public class IndexCacheTests {
   }
 
   /// <summary>
+  /// A restart without changes: the verified index is the same as the cache (the large file read
+  /// by the verification is not cached anyway): nothing to save.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task NoSaveAfterAVerificationWithoutChanges() {
+    using var tree = new TestTree();
+    tree.Generate();
+    await ColdLoadAndWriteCacheAsync(tree);
+    var indexTime = File.GetLastWriteTimeUtc(Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Single());
+
+    await using var server = await StartAndLoadAsync(tree, tree.CacheDirectory, saveDelays: ShortSaveDelays);
+    Assert.IsTrue(server.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false);
+    await WaitForIdleAsync(server.Client);
+    await Task.Delay(3000); // More than the settle delay
+    var cache = (await server.Client.RequestAsync(ServerProtocol.GetServerStatistics())).Data["indexCache"]!;
+    Assert.AreEqual(0, cache["writeCount"]!.GetValue<int>(), cache.ToJsonString());
+    var state = (await server.Client.RequestAsync(ServerProtocol.GetIndexStatistics())).Data["indexCache"]!;
+    Assert.IsFalse(state["dirty"]!.GetValue<bool>(), state.ToJsonString());
+    Assert.AreEqual(indexTime, File.GetLastWriteTimeUtc(Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Single()));
+  }
+
+  /// <summary>
   /// No save at shutdown: a server with unsaved changes stops without saving them (closing the
   /// client is not delayed); they are read by the verification at the next start.
   /// </summary>

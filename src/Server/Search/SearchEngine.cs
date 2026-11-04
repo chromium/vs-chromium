@@ -357,9 +357,10 @@ namespace VsChromium.Server.Search {
       var previousVersion = e.PreviousSnapshot.Version;
       var newSnapshot = e.NewSnapshot;
       var fullPathChanges = e.FullPathChanges;
+      var cacheUnchanged = e.CacheUnchanged;
       _taskQueue.Enqueue(ComputeNewStatedId, cancellationToken => {
         using (new TaskQueueGuard(this)) {
-          ComputeNewStateLongTask(previousVersion, newSnapshot, fullPathChanges, cancellationToken);
+          ComputeNewStateLongTask(previousVersion, newSnapshot, fullPathChanges, cacheUnchanged, cancellationToken);
         }
       });
 
@@ -565,11 +566,12 @@ namespace VsChromium.Server.Search {
     }
 
     private void ComputeNewStateLongTask(int previousSnapshotVersion, FileSystemSnapshot newSnapshot,
-      FullPathChanges fullPathChanges,
+      FullPathChanges fullPathChanges, bool cacheUnchanged,
       CancellationToken cancellationToken) {
       Invariants.Assert(_inTaskQueueTask);
 
       UpdateFileDatabase(newSnapshot, options => {
+        options.CacheUnchanged = cacheUnchanged;
         // We only allow incremental updates if the last update was successfully completed
         // and if the file system snapshot version we are based on is the same as the
         // new file system snapshot we are processing
@@ -640,7 +642,8 @@ namespace VsChromium.Server.Search {
           ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
           // The index changed: the cache is saved later (any update). Note: Not for trees from the
           // index cache (the same as the cache): saved after their verification.
-          if (!fileSystemSnapshot.IsFromCache && !ReferenceEquals(newFileDatabase, options.CurrentFileDatabase)) {
+          if (!fileSystemSnapshot.IsFromCache && !options.CacheUnchanged &&
+              !ReferenceEquals(newFileDatabase, options.CurrentFileDatabase)) {
             _indexCache?.NotifyIndexUpdated(fileSystemSnapshot, newFileDatabase, options.IsFullLoad);
           }
 
@@ -877,6 +880,8 @@ namespace VsChromium.Server.Search {
       public IFileDatabaseSnapshot CurrentFileDatabase { get; set; }
       /// <summary>True for full loads (see <see cref="StartFullLoad"/>).</summary>
       public bool IsFullLoad { get; set; }
+      /// <summary>The new index is the same as the index cache (no save).</summary>
+      public bool CacheUnchanged { get; set; }
     }
 
     private class TaskQueueGuard : IDisposable {

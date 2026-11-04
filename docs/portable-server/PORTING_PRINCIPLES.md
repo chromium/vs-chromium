@@ -1180,3 +1180,14 @@ Per-project actions:
   containing the project root, or inside it), sent for each project at start and registration;
   disabling the cache asks for a confirmation. The cache root directory stays global
   (`vschromium.cacheDirectory`).
+
+Readers of a cache written by another server (read-only): the writer writes the new arena files,
+then the new index (`index.bin.tmp` renamed over `index.bin`), then deletes the arena files the new
+index doesn't reference. A reader that read the old index can find one of its arena files deleted
+(or replaced) before it maps it: it releases the views mapped so far, reads the (new) index again
+and maps its arena files, at most 3 attempts (50 ms, 100 ms between them); after that the cache is
+ignored for this load (a read-only cache is never deleted). Errors of the index itself (invalid
+contents) are not retried. Readers open `index.bin` and the arena files with `FileShare.Read |
+FileShare.Delete` (the writer can rename and delete them while they are open), and keep no handle
+after mapping (the views stay mapped); the writer's deletion of an arena file still mapped by
+another process fails on Windows and is retried by its next saves (or when it opens the cache).

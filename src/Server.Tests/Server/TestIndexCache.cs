@@ -481,6 +481,61 @@ namespace VsChromium.Tests.Server {
       Assert.IsFalse(pending);
     }
 
+    /// <summary>
+    /// A server opening the cache read-only while the writer replaces the index: the arena files of
+    /// the index it read are deleted before it maps them. It reads the new index and maps its arena
+    /// files instead.
+    /// </summary>
+    [TestMethod]
+    public void ReaderRetriesWhenTheWriterReplacesTheIndex() {
+      var writer = OpenNew();
+      var oldItems = new[] { TextItem("a.cc", "int old_a;\n") };
+      writer.Write(Dirs(oldItems), VersionHash, CancellationToken.None);
+      var oldArena = ArenaFiles().Single();
+      var newItems = new[] { TextItem("a.cc", "int new_a; // replaced\n", OldTime.AddMinutes(1)), TextItem("b.cc", "int b;\n") };
+
+      var reader = new ProjectIndexCache(_cacheRoot, _projectRoot);
+      _caches.Add(reader);
+      var reads = 0;
+      reader.OnIndexReadForTesting = () => {
+        if (++reads == 1) {
+          // The writer saves between the read of the index and the mapping of its arena files.
+          writer.Write(Dirs(newItems), VersionHash, CancellationToken.None);
+          Assert.IsFalse(File.Exists(oldArena), "The arena file of the old index is deleted");
+        }
+      };
+      reader.Open();
+      Assert.IsFalse(reader.IsWritable);
+      Assert.AreEqual(2, reads, "Read again");
+      Assert.IsNotNull(reader.Lookup, "The new index is used");
+      Assert.AreEqual("int new_a; // replaced\n", GetText(reader.Lookup.TryGetContents("a.cc", newItems[0].Metadata)));
+      Assert.AreEqual("int b;\n", GetText(reader.Lookup.TryGetContents("b.cc", newItems[1].Metadata)));
+      Assert.IsNull(reader.Lookup.TryGetContents("a.cc", oldItems[0].Metadata), "Not the old index");
+    }
+
+    /// <summary>
+    /// The arena files keep changing (more than the attempts): the read-only cache is ignored for this
+    /// load, and nothing is deleted.
+    /// </summary>
+    [TestMethod]
+    public void ReaderIgnoresTheCacheAfterTheAttempts() {
+      var writer = OpenNew();
+      writer.Write(Dirs(new[] { TextItem("a.cc", "int a0;\n") }), VersionHash, CancellationToken.None);
+
+      var reader = new ProjectIndexCache(_cacheRoot, _projectRoot);
+      _caches.Add(reader);
+      var reads = 0;
+      reader.OnIndexReadForTesting = () => {
+        reads++;
+        writer.Write(Dirs(new[] { TextItem("a.cc", $"int a{reads}; // save {reads}\n", OldTime.AddMinutes(reads)) }), VersionHash,
+          CancellationToken.None);
+      };
+      reader.Open();
+      Assert.AreEqual(ProjectIndexCache.MaxOpenAttempts, reads);
+      Assert.IsNull(reader.Lookup, "Ignored");
+      Assert.IsTrue(File.Exists(IndexPath), "Not deleted by the reader");
+      Assert.AreEqual(1, ArenaFiles().Length);
+    }
     [TestMethod]
     public void UnreferencedArenaFilesAreDeletedAfterAWrite() {
       var cache = OpenNew();

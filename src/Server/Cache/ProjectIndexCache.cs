@@ -345,12 +345,14 @@ namespace VsChromium.Server.Cache {
       if (File.Exists(_indexPath)) {
         var stopwatch = Stopwatch.StartNew();
         try {
-          data = ReadIndex();
-          arenas = MapArenas(data);
-          Logger.LogInfo("Loaded the index cache of \"{0}\": {1:n0} entries, {2:n0} arena files, in {3:n0} ms.",
-            _rootPath, data.Files.Length, data.Arenas.Count, stopwatch.ElapsedMilliseconds);
+          (data, arenas) = ReadIndexAndMapArenas();
+          if (data != null) {
+            Logger.LogInfo("Loaded the index cache of \"{0}\": {1:n0} entries, {2:n0} arena files, in {3:n0} ms.",
+              _rootPath, data.Files.Length, data.Arenas.Count, stopwatch.ElapsedMilliseconds);
+          }
         }
         catch (Exception e) when (e is IOException || e is InvalidDataException || e is UnauthorizedAccessException) {
+          // Note: A read-only cache (written by another server) is never deleted.
           Logger.LogWarn(e, "The index cache of \"{0}\" is invalid: ignored{1}.", _rootPath, IsWritable ? " and deleted" : "");
           data = null;
           arenas = null;
@@ -384,6 +386,43 @@ namespace VsChromium.Server.Cache {
         Logger.LogInfo("Built the lookup of the index cache of \"{0}\" in {1:n0} ms ({2:n0} bytes).",
           _rootPath, stopwatch.ElapsedMilliseconds, _lookup.ByteSize);
         StartPreRead(arenas);
+      }
+    }
+
+    /// <summary>The attempts to read the index and map its arena files (see <see cref="ReadIndexAndMapArenas"/>).</summary>
+    public const int MaxOpenAttempts = 3;
+
+    /// <summary>Test only: called after the index is read, before its arena files are mapped.</summary>
+    public Action OnIndexReadForTesting { get; set; }
+
+    /// <summary>
+    /// Reads the index and maps its arena files. The server writing the cache (if this one doesn't)
+    /// may replace the index while it is read: it writes the new arena files, then the new index
+    /// (renamed over the old one), then deletes the arena files of the old index. An arena file of
+    /// the index read here may then be deleted (or replaced) before it is mapped: the arena files
+    /// mapped so far are released, and the (new) index is read again, at most <see
+    /// cref="MaxOpenAttempts"/> times. Returns (null, null) if the index was deleted meanwhile.
+    /// Errors of the index itself (invalid contents) are not retried.
+    /// </summary>
+    private (IndexCacheIndex Data, List<MappedArena> Arenas) ReadIndexAndMapArenas() {
+      for (var attempt = 1; ; attempt++) {
+        IndexCacheIndex data;
+        try {
+          data = ReadIndex();
+        }
+        catch (FileNotFoundException) {
+          return (null, null);
+        }
+        OnIndexReadForTesting?.Invoke();
+        try {
+          return (data, MapArenas(data));
+        }
+        catch (Exception e) when (attempt < MaxOpenAttempts && (e is IOException || e is InvalidDataException || e is UnauthorizedAccessException)) {
+          // Note: MapArenas releases the views mapped before the error.
+          Logger.LogInfo("The arena files of the index cache of \"{0}\" changed while it was read (attempt {1:n0}): {2}",
+            _rootPath, attempt, e.Message);
+          Thread.Sleep(50 * attempt);
+        }
       }
     }
 

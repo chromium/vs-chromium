@@ -85,9 +85,9 @@ export function sampleServerStatistics(overrides: Partial<ServerStatistics> = {}
       lastWriteChangedFileCount: 0,
     },
     operationTimings: [
-      { name: 'FileSystemScan', count: 3, lastMs: 15_000, totalMs: 48_000, maxMs: 16_800 },
-      { name: 'FileDatabaseUpdate', count: 12, lastMs: 4_900, totalMs: 70_000, maxMs: 49_000 },
-      { name: 'SearchCode', count: 87, lastMs: 250, totalMs: 21_750, maxMs: 570 },
+      { name: 'FileSystemScan', count: 3, lastMs: 15_000, totalMs: 48_000, maxMs: 16_800, recentMs: [16_800, 16_200, 15_000], recentEndUnixMs: [1_780_000_000_000, 1_780_000_600_000, 1_780_001_200_000] },
+      { name: 'FileDatabaseUpdate', count: 12, lastMs: 4_900, totalMs: 70_000, maxMs: 49_000, recentMs: [49_000, 4_900], recentEndUnixMs: [1_780_000_100_000, 1_780_001_100_000] },
+      { name: 'SearchCode', count: 87, lastMs: 250, totalMs: 21_750, maxMs: 570, recentMs: [250], recentEndUnixMs: [1_780_001_150_000] },
     ],
     ...overrides,
   };

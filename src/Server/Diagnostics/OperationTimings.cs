@@ -19,21 +19,35 @@ namespace VsChromium.Server.Diagnostics {
     public const string TrigramFiltersBuild = "TrigramFiltersBuild";
     public const string RequestPrefix = "Request:";
 
+    /// <summary>The number of recent durations kept per operation (see <see cref="OperationTiming.RecentMs"/>).</summary>
+    public const int RecentCount = 20;
+
     private static readonly object Lock = new object();
-    private static readonly Dictionary<string, OperationTiming> Timings = new Dictionary<string, OperationTiming>();
+    private static readonly Dictionary<string, Entry> Timings = new Dictionary<string, Entry>();
 
     public static void Record(string name, TimeSpan duration) {
+      Record(name, duration, DateTime.UtcNow);
+    }
+
+    /// <summary>
+    /// Records an operation that ended at <paramref name="endUtc"/>. No allocation, except the first
+    /// time an operation is recorded.
+    /// </summary>
+    public static void Record(string name, TimeSpan duration, DateTime endUtc) {
       var ms = duration.TotalMilliseconds;
+      var endUnixMs = (endUtc.Ticks - DateTime.UnixEpoch.Ticks) / TimeSpan.TicksPerMillisecond;
       lock (Lock) {
-        OperationTiming timing;
-        if (!Timings.TryGetValue(name, out timing)) {
-          timing = new OperationTiming { Name = name };
+        if (!Timings.TryGetValue(name, out var timing)) {
+          timing = new Entry(name);
           Timings.Add(name, timing);
         }
         timing.Count++;
         timing.LastMs = ms;
         timing.TotalMs += ms;
         timing.MaxMs = Math.Max(timing.MaxMs, ms);
+        timing.RecentMs[timing.RecentNext] = ms;
+        timing.RecentEndUnixMs[timing.RecentNext] = endUnixMs;
+        timing.RecentNext = (timing.RecentNext + 1) % RecentCount;
       }
     }
 
@@ -48,8 +62,42 @@ namespace VsChromium.Server.Diagnostics {
       lock (Lock) {
         return Timings.Values
           .OrderBy(x => x.Name, StringComparer.Ordinal)
-          .Select(x => new OperationTiming { Name = x.Name, Count = x.Count, LastMs = x.LastMs, TotalMs = x.TotalMs, MaxMs = x.MaxMs })
+          .Select(x => x.ToTiming())
           .ToList();
+      }
+    }
+
+    /// <summary>The timings of an operation (guarded by <see cref="Lock"/>).</summary>
+    private sealed class Entry {
+      public readonly string Name;
+      public long Count;
+      public double LastMs;
+      public double TotalMs;
+      public double MaxMs;
+      /// <summary>The last <see cref="RecentCount"/> durations and end times (ring buffers).</summary>
+      public readonly double[] RecentMs = new double[RecentCount];
+      public readonly long[] RecentEndUnixMs = new long[RecentCount];
+      /// <summary>The next slot of the ring buffers.</summary>
+      public int RecentNext;
+
+      public Entry(string name) {
+        Name = name;
+      }
+
+      public OperationTiming ToTiming() {
+        var count = (int)Math.Min(Count, RecentCount);
+        var recentMs = new double[count];
+        var recentEnd = new long[count];
+        // Oldest first: the slot after the last one, if the ring buffers are full.
+        var first = Count >= RecentCount ? RecentNext : 0;
+        for (var i = 0; i < count; i++) {
+          recentMs[i] = RecentMs[(first + i) % RecentCount];
+          recentEnd[i] = RecentEndUnixMs[(first + i) % RecentCount];
+        }
+        return new OperationTiming {
+          Name = Name, Count = Count, LastMs = LastMs, TotalMs = TotalMs, MaxMs = MaxMs, RecentMs = recentMs,
+          RecentEndUnixMs = recentEnd,
+        };
       }
     }
 

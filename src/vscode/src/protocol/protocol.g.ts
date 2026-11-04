@@ -317,6 +317,10 @@ export interface OperationTiming {
   lastMs: number;
   totalMs: number;
   maxMs: number;
+  /** The last durations (at most 20), oldest first. */
+  recentMs: number[];
+  /** The end times of `recentMs`, in milliseconds since the Unix epoch (UTC). */
+  recentEndUnixMs: number[];
 }
 
 /**

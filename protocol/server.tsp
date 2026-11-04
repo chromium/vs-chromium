@@ -27,6 +27,10 @@ model OperationTiming {
   lastMs: float64;
   totalMs: float64;
   maxMs: float64;
+  /** The last durations (at most 20), oldest first. */
+  recentMs: float64[];
+  /** The end times of `recentMs`, in milliseconds since the Unix epoch (UTC). */
+  recentEndUnixMs: int64[];
 }
 
 /**

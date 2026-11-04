@@ -15,5 +15,9 @@ namespace VsChromium.Server.Diagnostics {
     public double LastMs { get; set; }
     public double TotalMs { get; set; }
     public double MaxMs { get; set; }
+    /// <summary>The last durations (at most <see cref="OperationTimings.RecentCount"/>), oldest first.</summary>
+    public double[] RecentMs { get; set; }
+    /// <summary>The end times of <see cref="RecentMs"/>, in milliseconds since the Unix epoch (UTC).</summary>
+    public long[] RecentEndUnixMs { get; set; }
   }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright 2026 The Chromium Authors. All rights reserved.
+// Copyright 2026 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -82,6 +82,9 @@ namespace VsChromium.Tests.ServerProcess {
         Assert.IsGreaterThan(0, details.GetProperty("directoryDetails").GetProperty("fileCount").GetInt32());
         var statistics = server.Request("server/statistics", "{}");
         Assert.IsTrue(statistics.GetProperty("operationTimings").EnumerateArray().Any(x => x.GetProperty("name").GetString() == "Request:search/code"));
+        var searchTiming = statistics.GetProperty("operationTimings").EnumerateArray().First(x => x.GetProperty("name").GetString() == "Request:search/code");
+        Assert.AreEqual(searchTiming.GetProperty("count").GetInt32(), searchTiming.GetProperty("recentMs").GetArrayLength());
+        Assert.AreEqual(searchTiming.GetProperty("count").GetInt32(), searchTiming.GetProperty("recentEndUnixMs").GetArrayLength());
 
         // Errors.
         var error = server.RequestError("project/details", JsonSerializer.Serialize(new { projectPath = Path.Combine(root, "foo"), maxFilesByExtensionDetailsCount = 0, maxLargeFilesDetailsCount = 0 }));

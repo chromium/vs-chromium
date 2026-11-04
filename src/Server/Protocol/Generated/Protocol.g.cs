@@ -681,6 +681,18 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("maxMs")]
     public double MaxMs { get; set; }
+
+    /// <summary>
+    /// The last durations (at most 20), oldest first.
+    /// </summary>
+    [JsonPropertyName("recentMs")]
+    public List<double> RecentMs { get; set; } = new();
+
+    /// <summary>
+    /// The end times of `recentMs`, in milliseconds since the Unix epoch (UTC).
+    /// </summary>
+    [JsonPropertyName("recentEndUnixMs")]
+    public List<long> RecentEndUnixMs { get; set; } = new();
   }
 
   /// <summary>

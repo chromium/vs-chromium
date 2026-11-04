@@ -126,6 +126,8 @@ namespace VsChromium.Server.JsonRpc {
               LastMs = x.LastMs,
               TotalMs = x.TotalMs,
               MaxMs = x.MaxMs,
+              RecentMs = x.RecentMs.ToList(),
+              RecentEndUnixMs = x.RecentEndUnixMs.ToList(),
             })
             .ToList(),
         });

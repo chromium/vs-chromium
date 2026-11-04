@@ -117,6 +117,14 @@ namespace VsChromium.Server.Cache {
       return file < 0 ? null : CreateContents(file, metadata);
     }
 
+    /// <summary>
+    /// Validation of an entry: same last write time and size as the scan (rule of the git index).
+    /// Known limitation (Windows): the scan has the metadata of the directory entries, which NTFS
+    /// doesn't update for the other names of a hard link modified through one of its names, and the
+    /// metadata of the link itself for file symbolic links (not of the target): if such a file was
+    /// cached while its directory entry was up to date, a later change through another name (or of
+    /// the target of a symbolic link) is not detected ("Rebuild index" reads all the files).
+    /// </summary>
     private FileContents CreateContents(int file, FileMetadata metadata) {
       var entry = _index.Files[file];
       if (entry.LastWriteTimeTicks != metadata.LastWriteTimeUtc.Ticks || entry.FileLength != metadata.Length)

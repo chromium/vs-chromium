@@ -208,6 +208,28 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
+    public void FilesModifiedAfterTheScanAreDescribed() {
+      // A real file: its metadata now, its attributes.
+      Directory.CreateDirectory(Path.Combine(_projectRoot, "dir"));
+      var path = Path.Combine(_projectRoot, "dir", "changed.cc");
+      File.WriteAllText(path, "int changed;\n");
+      try {
+        var items = Enumerable.Range(0, 15).Select(i => new IndexCacheWriteItem("dir", i == 0 ? "changed.cc" : $"other{i}.cc",
+          new FileMetadata(OldTime, 13), CreateText("int changed;\n", OldTime.AddMinutes(1)))).ToArray();
+        var result = Write(items);
+        Assert.AreEqual(15, result.ChangedFileCount);
+        Assert.AreEqual(10, result.ChangedFileSamples.Count, "At most 10 samples");
+        var sample = result.ChangedFileSamples[0];
+        StringAssert.Contains(sample, "\"" + Path.Combine("dir", "changed.cc") + "\"");
+        StringAssert.Contains(sample, "13 bytes, contents " + OldTime.AddMinutes(1).ToString("O"));
+        StringAssert.Contains(sample, "attributes");
+      }
+      finally {
+        File.Delete(path);
+      }
+    }
+
+    [TestMethod]
     public void LargeFilesAreNotWritten() {
       var text = new string('x', ProjectIndexCache.MaxCachedFileLength + 1);
       var result = Write(new[] { TextItem("large.txt", text), TextItem("small.txt", "small") });

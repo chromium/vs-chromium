@@ -73,6 +73,7 @@ namespace VsChromium.Server.Cache {
     public long LastWriteBytes;
     public int LastWriteEntryCount;
     public int LastWriteNewFileCount;
+    public int LastWriteChangedFileCount;
   }
 
   public sealed class IndexCache : IIndexCache, IDisposable {
@@ -179,12 +180,18 @@ namespace VsChromium.Server.Cache {
             projectRoot.Project.RootPath, result.Elapsed.TotalMilliseconds, result.EntryCount, result.NewFileCount,
             result.BytesWritten, result.NewArenaCount, result.DeletedArenaCount, result.RacyFileCount,
             result.ChangedFileCount, result.LargeFileCount);
+          if (result.ChangedFileSamples.Count > 0) {
+            Logger.LogInfo("Files of \"{0}\" modified after the scan (scan time != contents time), first {1:n0} of {2:n0}:\n  {3}",
+              projectRoot.Project.RootPath, result.ChangedFileSamples.Count, result.ChangedFileCount,
+              string.Join("\n  ", result.ChangedFileSamples));
+          }
           lock (_statistics) {
             _statistics.WriteCount++;
             _statistics.LastWriteMs = result.Elapsed.TotalMilliseconds;
             _statistics.LastWriteBytes = result.BytesWritten;
             _statistics.LastWriteEntryCount = result.EntryCount;
             _statistics.LastWriteNewFileCount = result.NewFileCount;
+            _statistics.LastWriteChangedFileCount = result.ChangedFileCount;
           }
         }
       }
@@ -263,6 +270,7 @@ namespace VsChromium.Server.Cache {
         result.LastWriteBytes = _statistics.LastWriteBytes;
         result.LastWriteEntryCount = _statistics.LastWriteEntryCount;
         result.LastWriteNewFileCount = _statistics.LastWriteNewFileCount;
+        result.LastWriteChangedFileCount = _statistics.LastWriteChangedFileCount;
       }
       result.Enabled = IsEnabled;
       result.CacheDirectory = _options.CacheDirectory;

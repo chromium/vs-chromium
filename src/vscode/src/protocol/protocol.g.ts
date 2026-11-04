@@ -333,6 +333,12 @@ export interface IndexCacheStatistics {
   lastWriteEntryCount: number;
   /** Files whose contents were written to new arena files by the last write. */
   lastWriteNewFileCount: number;
+  /**
+   * Files not written by the last write because their time in the scan is not the time of their
+   * contents: modified after the scan, or (on Windows) stale directory entries of hard links and
+   * files being written, file symbolic links. Read from disk at each load.
+   */
+  lastWriteChangedFileCount: number;
 }
 
 /** Process, memory and index statistics of the server (diagnostics and benchmarks). */

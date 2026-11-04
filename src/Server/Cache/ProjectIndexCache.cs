@@ -52,6 +52,8 @@ namespace VsChromium.Server.Cache {
     public int RacyFileCount;
     /// <summary>Files modified after the scan (contents and scan times differ).</summary>
     public int ChangedFileCount;
+    /// <summary>A few of the <see cref="ChangedFileCount"/> files, described (diagnostics).</summary>
+    public List<string> ChangedFileSamples = new List<string>();
     public int LargeFileCount;
     public int NewArenaCount;
     public long BytesWritten;
@@ -322,7 +324,11 @@ namespace VsChromium.Server.Cache {
             continue;
           }
           if (contents.UtcLastModified.Ticks != ticks) {
+            // Note: Also files whose directory entry is stale on Windows (hard links modified
+            // through another name, files being written), and file symbolic links (the scan has
+            // the metadata of the link, the contents the time of the target).
             result.ChangedFileCount++;
+            AddChangedFileSample(result, item);
             continue;
           }
 
@@ -388,6 +394,37 @@ namespace VsChromium.Server.Cache {
         result.Elapsed = stopwatch.Elapsed;
         return result;
       }
+    }
+
+    private const int MaxChangedFileSamples = 10;
+
+    /// <summary>
+    /// Records a sample of a file skipped because its scan time is not the time of its contents
+    /// (diagnostics: what these files are, see <see cref="DescribeChangedFile"/>).
+    /// </summary>
+    private void AddChangedFileSample(IndexCacheWriteResult result, IndexCacheWriteItem item) {
+      if (result.ChangedFileSamples.Count >= MaxChangedFileSamples)
+        return;
+      result.ChangedFileSamples.Add(DescribeChangedFile(item));
+    }
+
+    private string DescribeChangedFile(IndexCacheWriteItem item) {
+      var relativePath = item.Directory.Length == 0 ? item.Name : item.Directory + PathHelpers.DirectorySeparatorChar + item.Name;
+      var text = new StringBuilder();
+      text.Append('"').Append(relativePath).Append("\": scan ").Append(item.Metadata.LastWriteTimeUtc.ToString("O"))
+        .Append(' ').Append(item.Metadata.Length).Append(" bytes, contents ").Append(item.Contents.UtcLastModified.ToString("O"));
+      try {
+        var info = new FileInfo(Path.Combine(_rootPath, relativePath));
+        text.Append(", now ").Append(info.LastWriteTimeUtc.ToString("O")).Append(' ').Append(info.Exists ? info.Length : -1)
+          .Append(" bytes, attributes ").Append(info.Attributes);
+        if (info.LinkTarget != null) {
+          text.Append(", link to \"").Append(info.LinkTarget).Append('"');
+        }
+      }
+      catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+        text.Append(", ").Append(e.Message);
+      }
+      return text.ToString();
     }
 
     /// <summary>

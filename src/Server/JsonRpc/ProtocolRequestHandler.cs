@@ -171,6 +171,7 @@ namespace VsChromium.Server.JsonRpc {
         LastWriteBytes = statistics.LastWriteBytes,
         LastWriteEntryCount = statistics.LastWriteEntryCount,
         LastWriteNewFileCount = statistics.LastWriteNewFileCount,
+        LastWriteChangedFileCount = statistics.LastWriteChangedFileCount,
       };
     }
 

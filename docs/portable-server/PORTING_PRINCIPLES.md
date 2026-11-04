@@ -957,6 +957,15 @@ the next full loads (VS Code or server restart) don't read the unchanged files (
   truncated arena file) is logged, the cache is deleted and the files are read from disk.
 - **Concurrency**: the server holding the `lock` file (opened exclusively for its lifetime) writes
   the cache; the other servers on the same project use it read-only.
+- **Known limitation (Windows)**: the scan has the metadata of the directory entries. NTFS doesn't
+  update the directory entries of the other names of a hard link modified through one of its
+  names (nor the entry of a file being written until it is closed), and the entry of a file
+  symbolic link has the metadata of the link, not of its target. A file cached while its directory
+  entry was up to date and later modified through another name (or whose symbolic link target
+  changed) is not detected; "Rebuild index" reads all the files. Files whose scan time is not the
+  time of their contents when the cache is written are not cached (`lastWriteChangedFileCount`,
+  and a log line with up to 10 samples: scan and contents metadata, current metadata, attributes,
+  link target), so they are read from disk at each load.
 - **Rebuild index** (`tree/refresh`): the cache of the registered projects is deleted first (and the
   contents loaded from it are not reused), so that all the files are read from disk (e.g. files
   modified without changing their time and size).

@@ -716,6 +716,14 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonPropertyName("lastWriteNewFileCount")]
     public int LastWriteNewFileCount { get; set; }
+
+    /// <summary>
+    /// Files not written by the last write because their time in the scan is not the time of their
+    /// contents: modified after the scan, or (on Windows) stale directory entries of hard links and
+    /// files being written, file symbolic links. Read from disk at each load.
+    /// </summary>
+    [JsonPropertyName("lastWriteChangedFileCount")]
+    public int LastWriteChangedFileCount { get; set; }
   }
 
   /// <summary>

@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 using System;
+using System.Linq;
 using VsChromium.Core.Threads;
+using VsChromium.Server.Cache;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.Operations;
 using VsChromium.Server.Search;
@@ -14,6 +16,7 @@ namespace VsChromium.Server {
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IFileSystemSnapshotManager _fileSystemSnapshotManager;
     private readonly ITaskQueue _stateChangeTaskQueue;
+    private readonly IIndexCache _indexCache;
 
     private bool _paused;
     private bool _indexing;
@@ -28,8 +31,10 @@ namespace VsChromium.Server {
       IDateTimeProvider dateTimeProvider,
       IFileSystemSnapshotManager fileSystemSnapshotManager,
       ITaskQueueFactory taskQueueFactory,
-      ISearchEngine searchEngine) {
+      ISearchEngine searchEngine,
+      IIndexCache indexCache = null) {
       _dateTimeProvider = dateTimeProvider;
+      _indexCache = indexCache;
       _fileSystemSnapshotManager = fileSystemSnapshotManager;
       _stateChangeTaskQueue = taskQueueFactory.CreateQueue("IndexingServer State Change Task Queue");
 
@@ -59,6 +64,9 @@ namespace VsChromium.Server {
 
     public void Refresh() {
       _stateChangeTaskQueue.ExecuteAsync(token => {
+        // "Rebuild index": the cache of the projects is deleted, so that the full load reads all
+        // the files from disk (e.g. files modified without changing their time and size).
+        _indexCache?.Invalidate(_fileSystemSnapshotManager.CurrentSnapshot.ProjectRoots.Select(x => x.Project.RootPath).ToList());
         _fileSystemSnapshotManager.Refresh();
       });
     }

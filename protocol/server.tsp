@@ -48,6 +48,39 @@ model FileContentsArenaStatistics {
   sparseArenaCount: int32;
   /** Bytes of the files larger than 512 KB (a dedicated block per file, outside the arenas). */
   largeFileBytes: int64;
+  /**
+   * Bytes of the files loaded from the index cache: slots of the arena files of the cache, memory
+   * mapped (pages of files, not native memory, not counted in the arenas above).
+   */
+  cachedFileBytes: int64;
+}
+
+/**
+ * The persistent index cache: the contents of the files are written to a cache directory after a
+ * full load, and used by the next loads (e.g. after a restart) for the files whose last write time
+ * and size are unchanged.
+ */
+model IndexCacheStatistics {
+  enabled: boolean;
+  /** The root directory of the cache (one sub-directory per project). */
+  cacheDirectory?: string;
+  /** Projects whose cache is open. */
+  projectCount: int32;
+  /** Projects whose cache is used read-only (written by another server). */
+  readOnlyProjectCount: int32;
+  /** Files of the last full load whose contents came from the cache. */
+  lastLoadFilesFromCache: int32;
+  /** Files of the last full load read from disk. */
+  lastLoadFilesFromDisk: int32;
+  /** Completed writes of the cache. */
+  writeCount: int32;
+  lastWriteMs: float64;
+  /** Bytes written by the last write (new arena files and index). */
+  lastWriteBytes: int64;
+  /** Files in the cache after the last write. */
+  lastWriteEntryCount: int32;
+  /** Files whose contents were written to new arena files by the last write. */
+  lastWriteNewFileCount: int32;
 }
 
 /** Process, memory and index statistics of the server (diagnostics and benchmarks). */
@@ -78,6 +111,7 @@ model ServerStatistics {
   fileCount: int32;
   searchableFileCount: int32;
   projectCount: int32;
+  indexCache?: IndexCacheStatistics;
   operationTimings: OperationTiming[];
 }
 

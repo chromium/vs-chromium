@@ -641,6 +641,81 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonPropertyName("largeFileBytes")]
     public long LargeFileBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the files loaded from the index cache: slots of the arena files of the cache, memory
+    /// mapped (pages of files, not native memory, not counted in the arenas above).
+    /// </summary>
+    [JsonPropertyName("cachedFileBytes")]
+    public long CachedFileBytes { get; set; }
+  }
+
+  /// <summary>
+  /// The persistent index cache: the contents of the files are written to a cache directory after a
+  /// full load, and used by the next loads (e.g. after a restart) for the files whose last write time
+  /// and size are unchanged.
+  /// </summary>
+  public sealed partial class IndexCacheStatistics {
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; }
+
+    /// <summary>
+    /// The root directory of the cache (one sub-directory per project).
+    /// </summary>
+    [JsonPropertyName("cacheDirectory")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CacheDirectory { get; set; }
+
+    /// <summary>
+    /// Projects whose cache is open.
+    /// </summary>
+    [JsonPropertyName("projectCount")]
+    public int ProjectCount { get; set; }
+
+    /// <summary>
+    /// Projects whose cache is used read-only (written by another server).
+    /// </summary>
+    [JsonPropertyName("readOnlyProjectCount")]
+    public int ReadOnlyProjectCount { get; set; }
+
+    /// <summary>
+    /// Files of the last full load whose contents came from the cache.
+    /// </summary>
+    [JsonPropertyName("lastLoadFilesFromCache")]
+    public int LastLoadFilesFromCache { get; set; }
+
+    /// <summary>
+    /// Files of the last full load read from disk.
+    /// </summary>
+    [JsonPropertyName("lastLoadFilesFromDisk")]
+    public int LastLoadFilesFromDisk { get; set; }
+
+    /// <summary>
+    /// Completed writes of the cache.
+    /// </summary>
+    [JsonPropertyName("writeCount")]
+    public int WriteCount { get; set; }
+
+    [JsonPropertyName("lastWriteMs")]
+    public double LastWriteMs { get; set; }
+
+    /// <summary>
+    /// Bytes written by the last write (new arena files and index).
+    /// </summary>
+    [JsonPropertyName("lastWriteBytes")]
+    public long LastWriteBytes { get; set; }
+
+    /// <summary>
+    /// Files in the cache after the last write.
+    /// </summary>
+    [JsonPropertyName("lastWriteEntryCount")]
+    public int LastWriteEntryCount { get; set; }
+
+    /// <summary>
+    /// Files whose contents were written to new arena files by the last write.
+    /// </summary>
+    [JsonPropertyName("lastWriteNewFileCount")]
+    public int LastWriteNewFileCount { get; set; }
   }
 
   /// <summary>
@@ -724,6 +799,10 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("projectCount")]
     public int ProjectCount { get; set; }
+
+    [JsonPropertyName("indexCache")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IndexCacheStatistics? IndexCache { get; set; }
 
     [JsonPropertyName("operationTimings")]
     public List<OperationTiming> OperationTimings { get; set; } = new();
@@ -1224,6 +1303,7 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(ServerStatisticsParams))]
   [JsonSerializable(typeof(OperationTiming))]
   [JsonSerializable(typeof(FileContentsArenaStatistics))]
+  [JsonSerializable(typeof(IndexCacheStatistics))]
   [JsonSerializable(typeof(ServerStatistics))]
   [JsonSerializable(typeof(TreeParams))]
   [JsonSerializable(typeof(ProjectEntry))]

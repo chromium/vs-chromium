@@ -15,6 +15,7 @@ using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
+using VsChromium.Server.Cache;
 using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
@@ -36,6 +37,7 @@ namespace VsChromium.Server.Search {
     private readonly ICompiledTextSearchDataFactory _compiledTextSearchDataFactory;
     private readonly IOperationProcessor _operationProcessor;
     private readonly IIndexingWorkerPool _indexingWorkerPool;
+    private readonly IIndexCache _indexCache;
     private readonly TaskCancellation _taskCancellation = new TaskCancellation();
 
     /// <summary>
@@ -73,7 +75,9 @@ namespace VsChromium.Server.Search {
       IProjectDiscovery projectDiscovery,
       ICompiledTextSearchDataFactory compiledTextSearchDataFactory,
       IOperationProcessor operationProcessor,
-      IIndexingWorkerPool indexingWorkerPool) {
+      IIndexingWorkerPool indexingWorkerPool,
+      IIndexCache indexCache = null) {
+      _indexCache = indexCache;
       _fileSystemNameFactory = fileSystemNameFactory;
       _taskQueue = taskQueue;
       _fileDatabaseSnapshotFactory = fileDatabaseSnapshotFactory;
@@ -627,6 +631,10 @@ namespace VsChromium.Server.Search {
           options.CurrentFileDatabase = _currentFileDatabase;
           var newFileDatabase = updater(options);
           ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
+          if (options.IsFullLoad) {
+            // In the background, after the new database is active (searches are not delayed).
+            _indexCache?.ScheduleWrite(fileSystemSnapshot, newFileDatabase, options.LoadStartUtc);
+          }
 
           OnFilesLoaded(new FilesLoadedResult {
             OperationInfo = info,
@@ -640,6 +648,7 @@ namespace VsChromium.Server.Search {
       CancellationToken cancellationToken) {
       Invariants.Assert(_inTaskQueueTask);
 
+      StartFullLoad(options);
       return _fileDatabaseSnapshotFactory.CreateIncremental(
         options.CurrentFileDatabase,
         newSnapshot,
@@ -658,6 +667,7 @@ namespace VsChromium.Server.Search {
       UpdateFileDatabaseOptions options, CancellationToken cancellationToken) {
       Invariants.Assert(_inTaskQueueTask);
 
+      StartFullLoad(options);
       return _fileDatabaseSnapshotFactory.CreateIncrementalWithFileSystemUpdates(
         options.CurrentFileDatabase,
         newSnapshot,
@@ -671,6 +681,17 @@ namespace VsChromium.Server.Search {
         // activated: clients search as soon as they are notified.
         onLoaded: () => { },
         cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// A full load (all the files of the snapshot, using the index cache) starts: the cache is
+    /// written when it completes.
+    /// </summary>
+    private void StartFullLoad(UpdateFileDatabaseOptions options) {
+      options.IsFullLoad = true;
+      options.LoadStartUtc = DateTime.UtcNow;
+      // The cache is written again after this load.
+      _indexCache?.CancelWrites();
     }
 
     private IFileDatabaseSnapshot CreateWithModifiedFiles(FileSystemSnapshot fileSystemSnapshot, IList<ProjectFileName> changedFiles, UpdateFileDatabaseOptions options, CancellationToken cancellationToken) {
@@ -846,6 +867,10 @@ namespace VsChromium.Server.Search {
       public OperationInfo OperationInfo { get; set; }
       public bool PreviousUpdateCompleted { get; set; }
       public IFileDatabaseSnapshot CurrentFileDatabase { get; set; }
+      /// <summary>True for full loads (see <see cref="StartFullLoad"/>).</summary>
+      public bool IsFullLoad { get; set; }
+      /// <summary>The time a full load started (racy entries of the index cache).</summary>
+      public DateTime LoadStartUtc { get; set; }
     }
 
     private class TaskQueueGuard : IDisposable {

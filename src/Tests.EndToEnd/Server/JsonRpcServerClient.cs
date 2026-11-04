@@ -46,10 +46,20 @@ public sealed class JsonRpcServerClient : IAsyncDisposable {
 
   private sealed record Pending(string Method, TaskCompletionSource<TimedResponse> Completion, Stopwatch Stopwatch);
 
-  private JsonRpcServerClient(string serverPath) {
+  /// <summary>
+  /// The index cache directory created for this server (deleted when the server exits), or null.
+  /// </summary>
+  private readonly string? _ownedCacheDirectory;
+
+  private JsonRpcServerClient(string serverPath, string? cacheDirectory) {
+    if (cacheDirectory == null) {
+      // Note: Never the cache of the user (default directory): a new cache for each server.
+      cacheDirectory = Path.Combine(Path.GetTempPath(), "VsChromiumTestCache-" + Guid.NewGuid().ToString("N"));
+      _ownedCacheDirectory = cacheDirectory;
+    }
     _process = Process.Start(new ProcessStartInfo {
       FileName = serverPath,
-      Arguments = "--jsonrpc",
+      Arguments = $"--jsonrpc --cache-dir \"{cacheDirectory}\"",
       UseShellExecute = false,
       CreateNoWindow = true,
       RedirectStandardInput = true,
@@ -75,13 +85,17 @@ public sealed class JsonRpcServerClient : IAsyncDisposable {
   /// <summary>The result of the "server/initialize" request.</summary>
   public JsonObject InitializeResult { get; private set; } = new();
 
-  /// <summary>Starts the server and sends the "server/initialize" request.</summary>
-  public static async Task<JsonRpcServerClient> StartAsync(string serverPath) {
+  /// <summary>
+  /// Starts the server and sends the "server/initialize" request. The server uses the index cache
+  /// directory <paramref name="cacheDirectory"/> (e.g. shared by servers started one after the
+  /// other), or a new one deleted when the server exits.
+  /// </summary>
+  public static async Task<JsonRpcServerClient> StartAsync(string serverPath, string? cacheDirectory = null) {
     if (!File.Exists(serverPath)) {
       throw new FileNotFoundException($"Server executable not found: \"{serverPath}\". Build the solution first, " +
                                       "or set VSCHROMIUM_SERVER_PATH.", serverPath);
     }
-    var client = new JsonRpcServerClient(serverPath);
+    var client = new JsonRpcServerClient(serverPath, cacheDirectory);
     try {
       var response = await client.RequestAsync(ServerProtocol.Initialize(), TimeSpan.FromSeconds(30));
       client.InitializeResult = response.Data;
@@ -266,6 +280,13 @@ public sealed class JsonRpcServerClient : IAsyncDisposable {
     }
     _readerThread.Join(TimeSpan.FromSeconds(5));
     _process.Dispose();
+    if (_ownedCacheDirectory != null) {
+      try {
+        Directory.Delete(_ownedCacheDirectory, recursive: true);
+      } catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+        // Best effort
+      }
+    }
   }
 
   private sealed class Unsubscriber(Action action) : IDisposable {

@@ -4,6 +4,7 @@
 
 using System;
 using VsChromium.Core.Logging;
+using VsChromium.Server.Cache;
 
 namespace VsChromium.Server {
   static class Program {
@@ -24,12 +25,17 @@ namespace VsChromium.Server {
       try {
         if (args.Length > 0 && (args[0] == JsonRpcArgument || args[0] == StdioArgument)) {
           Logger.LogInfo("Server starting (JSON-RPC over stdin/stdout).");
-          RunJsonRpc();
+          RunJsonRpc(IndexCacheOptions.FromCommandLine(args));
         } else {
-          Console.Error.WriteLine("Usage: VsChromium.Server.exe {0} | {1}", JsonRpcArgument, StdioArgument);
+          Console.Error.WriteLine("Usage: VsChromium.Server.exe {0} | {1} [{2} <directory> | {3}]", JsonRpcArgument, StdioArgument,
+            IndexCacheOptions.CacheDirectoryArgument, IndexCacheOptions.NoCacheArgument);
           Console.Error.WriteLine("  JSON-RPC 2.0 over the standard input/output (\"Content-Length\" headers, as LSP).");
           Console.Error.WriteLine("  {0} is an alias of {1}.", StdioArgument, JsonRpcArgument);
           Console.Error.WriteLine("  The server exits when its standard input is closed.");
+          Console.Error.WriteLine("  {0}: directory of the index cache (default: {1} environment variable, or",
+            IndexCacheOptions.CacheDirectoryArgument, IndexCacheOptions.CacheDirectoryVariable);
+          Console.Error.WriteLine("    {0}).", IndexCacheOptions.GetDefaultCacheDirectory());
+          Console.Error.WriteLine("  {0}: disables the index cache.", IndexCacheOptions.NoCacheArgument);
           Environment.ExitCode = 1;
         }
       }
@@ -39,14 +45,14 @@ namespace VsChromium.Server {
       }
     }
 
-    private static void RunJsonRpc() {
+    private static void RunJsonRpc(IndexCacheOptions indexCacheOptions) {
       var input = Console.OpenStandardInput();
       var output = Console.OpenStandardOutput();
 
       // stdout is reserved for protocol messages: redirect any other console output to stderr.
       Console.SetOut(Console.Error);
 
-      new ServerStub().Run(input, output);
+      new ServerStub().Run(input, output, indexCacheOptions);
     }
   }
 }

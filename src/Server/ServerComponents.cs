@@ -9,6 +9,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Memory;
 using VsChromium.Core.Threads;
 using VsChromium.Protocol.Generated;
+using VsChromium.Server.Cache;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemContents;
@@ -35,6 +36,17 @@ namespace VsChromium.Server {
   /// </summary>
   public sealed class ServerComponents : IDisposable {
     private readonly List<IDisposable> _disposables = new List<IDisposable>();
+    private readonly IndexCacheOptions _indexCacheOptions;
+
+    /// <summary>
+    /// The components of the server, without index cache (tests).
+    /// </summary>
+    public ServerComponents() : this(IndexCacheOptions.Disabled) {
+    }
+
+    public ServerComponents(IndexCacheOptions indexCacheOptions) {
+      _indexCacheOptions = indexCacheOptions;
+    }
 
     private T Create<T>(T component) {
       var disposable = component as IDisposable;
@@ -53,7 +65,11 @@ namespace VsChromium.Server {
 
     // Server
     private IIndexingServer _indexingServer;
-    public IIndexingServer IndexingServer => _indexingServer ??= Create(new IndexingServer(DateTimeProvider, FileSystemSnapshotManager, TaskQueueFactory, SearchEngine));
+    public IIndexingServer IndexingServer => _indexingServer ??= Create(new IndexingServer(DateTimeProvider, FileSystemSnapshotManager, TaskQueueFactory, SearchEngine, IndexCache));
+
+    // Server/Cache
+    private IIndexCache _indexCache;
+    public IIndexCache IndexCache => _indexCache ??= Create(new IndexCache(_indexCacheOptions));
 
     // Core/Configuration
     private IConfigurationFileLocator _configurationFileLocator;
@@ -91,7 +107,7 @@ namespace VsChromium.Server {
 
     // Server/FileSystemDatabase
     private IFileDatabaseSnapshotFactory _fileDatabaseSnapshotFactory;
-    public IFileDatabaseSnapshotFactory FileDatabaseSnapshotFactory => _fileDatabaseSnapshotFactory ??= Create(new FileDatabaseSnapshotFactory(FileSystem, FileContentsFactory, ProgressTrackerFactory, IndexingWorkerPool));
+    public IFileDatabaseSnapshotFactory FileDatabaseSnapshotFactory => _fileDatabaseSnapshotFactory ??= Create(new FileDatabaseSnapshotFactory(FileSystem, FileContentsFactory, ProgressTrackerFactory, IndexingWorkerPool, IndexCache));
 
     // Server/FileSystemNames
     private IFileSystemNameFactory _fileSystemNameFactory;
@@ -109,7 +125,7 @@ namespace VsChromium.Server {
 
     private IProtocolRequestHandler _protocolRequestHandler;
     public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= Create(new ProtocolRequestHandler(
-      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocator));
+      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocator, IndexCache));
 
     private JsonRpcNotificationSender _jsonRpcNotificationSender;
     public JsonRpcNotificationSender JsonRpcNotificationSender => _jsonRpcNotificationSender ??= Create(new JsonRpcNotificationSender(JsonRpcOutput));
@@ -149,7 +165,7 @@ namespace VsChromium.Server {
     private ISearchEngine _searchEngine;
     public ISearchEngine SearchEngine => _searchEngine ??= Create(new SearchEngine(
       FileSystemSnapshotManager, FileSystemNameFactory, LongRunningFileSystemTaskQueue, FileDatabaseSnapshotFactory, ProjectDiscovery,
-      CompiledTextSearchDataFactory, OperationProcessor, IndexingWorkerPool));
+      CompiledTextSearchDataFactory, OperationProcessor, IndexingWorkerPool, IndexCache));
 
     private ISearchStringParser _searchStringParser;
     public ISearchStringParser SearchStringParser => _searchStringParser ??= Create(new SearchStringParser());

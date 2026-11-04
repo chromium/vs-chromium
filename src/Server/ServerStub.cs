@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.IO;
+using VsChromium.Server.Cache;
 
 namespace VsChromium.Server {
   public class ServerStub {
@@ -14,8 +15,8 @@ namespace VsChromium.Server {
     /// <summary>
     /// Runs the server (JSON-RPC protocol) until <paramref name="input"/> is closed.
     /// </summary>
-    public void Run(Stream input, Stream output) {
-      using (var components = new ServerComponents()) {
+    public void Run(Stream input, Stream output, IndexCacheOptions indexCacheOptions) {
+      using (var components = new ServerComponents(indexCacheOptions)) {
         Instance = components; // For debugging only.
         components.JsonRpcServer.Run(input, output);
       }

@@ -57,6 +57,9 @@ public static class ServerProtocol {
       ["maxExtractLength"] = maxExtractLength,
     });
 
+  public static ServerRequest RefreshTree() =>
+    new("tree/refresh", new JsonObject());
+
   public static ServerRequest GetServerStatistics(bool forceGc = false) =>
     new("server/statistics", new JsonObject { ["forceGarbageCollection"] = forceGc });
 

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using VsChromium.Core.Files;
+using VsChromium.Server.Cache;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase.Builder;
@@ -28,16 +29,19 @@ namespace VsChromium.Server.FileSystemDatabase {
 
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private readonly IIndexingWorkerPool _indexingWorkerPool;
+    private readonly IIndexCache _indexCache;
 
     public FileDatabaseSnapshotFactory(
       IFileSystem fileSystem,
       IFileContentsFactory fileContentsFactory,
       IProgressTrackerFactory progressTrackerFactory,
-      IIndexingWorkerPool indexingWorkerPool) {
+      IIndexingWorkerPool indexingWorkerPool,
+      IIndexCache indexCache = null) {
       _fileSystem = fileSystem;
       _fileContentsFactory = fileContentsFactory;
       _progressTrackerFactory = progressTrackerFactory;
       _indexingWorkerPool = indexingWorkerPool;
+      _indexCache = indexCache;
     }
 
     public IFileDatabaseSnapshot CreateEmpty() {
@@ -84,7 +88,8 @@ namespace VsChromium.Server.FileSystemDatabase {
       Action onLoading, Action onLoaded,
       Action<IFileDatabaseSnapshot> onIntermadiateResult, CancellationToken cancellationToken) {
 
-      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory, _indexingWorkerPool)
+      // Note: Full loads only use the index cache (the contents of changed files are read from disk).
+      return new FileDatabaseBuilder(_fileSystem, _fileContentsFactory, _progressTrackerFactory, _indexingWorkerPool, _indexCache)
         .Build(previousDatabase, newFileSystemSnapshot, fullPathChanges,
           onLoading, onLoaded, onIntermadiateResult, cancellationToken);
     }

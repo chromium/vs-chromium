@@ -27,6 +27,11 @@ namespace VsChromium.Core.Memory {
     /// The bytes of the live slots outside the arenas (dedicated blocks of large allocations).
     /// </summary>
     public long OtherBytes;
+    /// <summary>
+    /// The bytes of the live slots in the memory mapped arena files of the index cache (not native
+    /// heap memory: pages of the mapped files). Not computed by <see cref="ArenaAllocator.GetStatistics"/>.
+    /// </summary>
+    public long CachedBytes;
 
     /// <summary>
     /// The bytes allocated but not in use anymore (released with their arena, when none of its

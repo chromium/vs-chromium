@@ -12,14 +12,17 @@ const mb = (bytes: number) => `${(bytes / (1024 * 1024)).toLocaleString('en-US',
  *   their dead bytes are the text of files edited or deleted since the arenas were filled, and their
  *   free bytes the end of the current arena and the ends of full arenas (too small for the file
  *   that didn't fit);
- * - the text of larger files is stored in a block per file.
+ * - the text of larger files is stored in a block per file;
+ * - the text of the files loaded from the index cache is in memory mapped files of the cache.
  * While indexing, the files being read are not in the index yet: the dead bytes are not shown.
  */
 export function describeMemory(stats: IndexStatistics, indexing = false): string[] {
   const arenas = stats.fileContentsArenas;
+  // Files loaded from the index cache: memory mapped files (not native memory).
+  const cached = arenas.cachedFileBytes > 0 ? `, ${mb(arenas.cachedFileBytes)} from the cache` : '';
   const lines = [
     `Memory: ${mb(stats.serverGcMemoryUsage)} managed, ${mb(stats.serverNativeMemoryUsage)} native`,
-    `Indexed text: ${mb(stats.indexedTextBytes)} (${mb(arenas.liveBytes)} in arenas, ${mb(arenas.largeFileBytes)} in files > 512 KB)`,
+    `Indexed text: ${mb(stats.indexedTextBytes)} (${mb(arenas.liveBytes)} in arenas, ${mb(arenas.largeFileBytes)} in files > 512 KB${cached})`,
   ];
   const memory = `Arenas: ${arenas.arenaCount} (${mb(arenas.arenaBytes)})`;
   if (indexing) {

@@ -15,7 +15,9 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Memory;
 using VsChromium.Core.Utility;
+using Microsoft.Win32.SafeHandles;
 using VsChromium.Protocol.Generated;
+using VsChromium.Server.Cache;
 using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
@@ -43,13 +45,16 @@ namespace VsChromium.Server.JsonRpc {
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
     private readonly IIndexingServer _indexingServer;
     private readonly ArenaAllocator _arenaAllocator;
+    private readonly IIndexCache _indexCache;
 
     public ProtocolRequestHandler(
       IFileSystemSnapshotManager snapshotManager,
       ISearchEngine searchEngine,
       IFileRegistrationTracker fileRegistrationTracker,
       IIndexingServer indexingServer,
-      ArenaAllocator arenaAllocator) {
+      ArenaAllocator arenaAllocator,
+      IIndexCache indexCache = null) {
+      _indexCache = indexCache;
       _snapshotManager = snapshotManager;
       _searchEngine = searchEngine;
       _fileRegistrationTracker = fileRegistrationTracker;
@@ -112,6 +117,7 @@ namespace VsChromium.Server.JsonRpc {
           FileCount = ToInt32(database.FileNameCount),
           SearchableFileCount = ToInt32(database.SearchableFileCount),
           ProjectCount = snapshot.ProjectRoots.Count,
+          IndexCache = GetIndexCacheStatistics(),
 
           OperationTimings = OperationTimings.GetSnapshot()
             .Select(x => new OperationTiming {
@@ -144,6 +150,27 @@ namespace VsChromium.Server.JsonRpc {
         LiveBytes = statistics.LiveBytes,
         SparseArenaCount = statistics.SparseArenaCount,
         LargeFileBytes = statistics.OtherBytes,
+        CachedFileBytes = statistics.CachedBytes,
+      };
+    }
+
+    private Protocol.Generated.IndexCacheStatistics GetIndexCacheStatistics() {
+      if (_indexCache == null) {
+        return null;
+      }
+      var statistics = _indexCache.GetStatistics();
+      return new Protocol.Generated.IndexCacheStatistics {
+        Enabled = statistics.Enabled,
+        CacheDirectory = statistics.CacheDirectory,
+        ProjectCount = statistics.ProjectCount,
+        ReadOnlyProjectCount = statistics.ReadOnlyProjectCount,
+        LastLoadFilesFromCache = statistics.LastLoadFilesFromCache,
+        LastLoadFilesFromDisk = statistics.LastLoadFilesFromDisk,
+        WriteCount = statistics.WriteCount,
+        LastWriteMs = statistics.LastWriteMs,
+        LastWriteBytes = statistics.LastWriteBytes,
+        LastWriteEntryCount = statistics.LastWriteEntryCount,
+        LastWriteNewFileCount = statistics.LastWriteNewFileCount,
       };
     }
 
@@ -155,12 +182,27 @@ namespace VsChromium.Server.JsonRpc {
     /// load share the contents array of the load in progress (so they see the contents loaded
     /// since they were created, which are not dead), and empty files have a slot but no piece.
     /// </para>
+    /// <para>
+    /// The contents in the memory mapped arena files of the index cache are counted separately
+    /// (<see cref="ArenaStatistics.CachedBytes"/>): they are not native heap memory.
+    /// </para>
     /// </summary>
     public static ArenaStatistics GetArenaStatistics(ArenaAllocator arenaAllocator, IFileDatabaseSnapshot database) {
       var contents = database is FileDatabaseSnapshot snapshot
         ? snapshot.ContentsArray.Where(x => x is not (null or BinaryFileContents))
         : database.FileContentsPieces.Where(x => x.IsFirstPiece).Select(x => x.FileContents);
-      return arenaAllocator.GetStatistics(contents.Select(FileContentsFactory.GetArenaSlot));
+      long cachedBytes = 0;
+      var slots = new List<(SafeHandle Block, int SlotSize)>();
+      foreach (var slot in contents.Select(FileContentsFactory.GetArenaSlot)) {
+        if (slot.Block is SafeMemoryMappedViewHandle) {
+          cachedBytes += slot.SlotSize;
+        } else {
+          slots.Add(slot);
+        }
+      }
+      var result = arenaAllocator.GetStatistics(slots);
+      result.CachedBytes = cachedBytes;
+      return result;
     }
 
     // files/*

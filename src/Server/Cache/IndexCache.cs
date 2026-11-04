@@ -210,6 +210,8 @@ namespace VsChromium.Server.Cache {
         var directory = stack.Pop();
         var files = directory.ChildFiles;
         var metadata = directory.ChildFileMetadataArray;
+        // Note: One string per directory (the files use their name).
+        var directoryPath = files.Count == 0 ? "" : directory.DirectoryName.RelativePath.Value ?? "";
         for (var i = 0; i < files.Count; i++) {
           var fileName = files[i];
           if (!database.TryGetFileIndex(fileName, out var index))
@@ -217,7 +219,7 @@ namespace VsChromium.Server.Cache {
           var contents = database.GetContents(index);
           if (contents == null)
             continue;
-          yield return new IndexCacheWriteItem(fileName.RelativePath.Value, metadata[i], contents);
+          yield return new IndexCacheWriteItem(directoryPath, fileName.Name, metadata[i], contents);
         }
         for (var i = directory.ChildDirectories.Count - 1; i >= 0; i--) {
           stack.Push(directory.ChildDirectories[i]);

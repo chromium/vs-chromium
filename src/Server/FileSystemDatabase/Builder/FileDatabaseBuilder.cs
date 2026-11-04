@@ -439,6 +439,15 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       entities.Projects = null;
       entities.Metadata = null;
 
+      // The entries of the index cache are not needed anymore: the contents of the next loads are
+      // in memory (the cache writes don't need them). Released now for their memory.
+      if (loadingContext.CacheLookups != null) {
+        foreach (var project in loadingContext.CacheLookups.Keys) {
+          _indexCache.GetProjectCache(project.RootPath)?.ReleaseLookup();
+        }
+        loadingContext.CacheLookups = null;
+      }
+
       Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files, {2:n0} files from the index cache.",
         loadingContext.LoadedTextFileCount,
         loadingContext.LoadedBinaryFileCount,

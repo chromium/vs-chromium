@@ -88,6 +88,64 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
+    public void ManyDirectoriesAndArenasRoundTrip() {
+      // Nested directories (front-coded paths), a directory seen twice, files in several arena
+      // files (36 x 500 KB > 16 MB), binary files between text files (location deltas).
+      var items = new List<IndexCacheWriteItem>();
+      var directories = new[] { "", "dir", Path.Combine("dir", "sub"), Path.Combine("dir", "sub", "deeper"), "dir2", "" };
+      var large = new string('x', 500 * 1024);
+      for (var d = 0; d < directories.Length; d++) {
+        for (var f = 0; f < 10; f++) {
+          var path = Path.Combine(directories[d], $"file{d}_{f}.cc");
+          items.Add(f == 3 ? BinaryItem(path, 100 + f) : TextItem(path, (f % 2 == 0 || f == 7 ? large : "") + $"text {d} {f} caf\u00e9"));
+        }
+      }
+      var result = Write(items);
+      Assert.AreEqual(items.Count, result.EntryCount);
+      Assert.IsTrue(result.NewArenaCount >= 2, $"{result.NewArenaCount} arenas");
+
+      var lookup = OpenNew().Lookup;
+      Assert.AreEqual(items.Count, lookup.Count);
+      foreach (var item in items) {
+        var contents = lookup.TryGetContents(RelativePath(item), item.Metadata);
+        Assert.IsNotNull(contents, RelativePath(item));
+        if (item.Contents is BinaryFileContents binary) {
+          Assert.AreEqual(binary.BinaryFileSize, ((BinaryFileContents)contents).BinaryFileSize);
+        } else {
+          Assert.AreEqual(GetText(item.Contents), GetText(contents), RelativePath(item));
+        }
+      }
+    }
+
+    [TestMethod]
+    public void IndexIsCompact() {
+      var items = new List<IndexCacheWriteItem>();
+      for (var d = 0; d < 20; d++) {
+        for (var f = 0; f < 100; f++) {
+          items.Add(TextItem(Path.Combine("src", "components", $"directory{d:D2}", $"file_name_{f:D3}.cc"), $"int f{d}_{f}; // some text"));
+        }
+      }
+      Write(items);
+      var bytesPerFile = (double)new FileInfo(IndexPath).Length / items.Count;
+      // Name (~15 bytes) + flags, time, size, location deltas.
+      Assert.IsTrue(bytesPerFile < 30, $"{bytesPerFile:n1} bytes per file");
+    }
+
+    [TestMethod]
+    public void LookupIsReleased() {
+      var item = TextItem("a.cc", "int a;\n");
+      Write(new[] { item });
+      var cache = OpenNew();
+      var contents = cache.Lookup.TryGetContents("a.cc", item.Metadata);
+      cache.ReleaseLookup();
+      Assert.IsNull(cache.Lookup);
+      // The contents loaded before stay valid, and keep their location for the next write.
+      Assert.AreEqual("int a;\n", GetText(contents));
+      var result = cache.Write(new[] { new IndexCacheWriteItem("", "a.cc", item.Metadata, contents) }, LoadStart, CancellationToken.None);
+      Assert.AreEqual(0, result.NewFileCount);
+    }
+
+    [TestMethod]
     public void MappedContentsSurviveGarbageCollections() {
       var item = TextItem("a.cc", "int a;\n");
       Write(new[] { item });
@@ -143,7 +201,7 @@ namespace VsChromium.Tests.Server {
     public void FilesModifiedAfterTheScanAreNotWritten() {
       // The contents were read after the file was modified again (time of the scan != time of the contents).
       var contents = CreateText("int a;\n", OldTime.AddMinutes(1));
-      var item = new IndexCacheWriteItem("a.cc", new FileMetadata(OldTime, 7), contents);
+      var item = new IndexCacheWriteItem("", "a.cc", new FileMetadata(OldTime, 7), contents);
       var result = Write(new[] { item });
       Assert.AreEqual(1, result.ChangedFileCount);
       Assert.AreEqual(0, result.EntryCount);
@@ -172,8 +230,8 @@ namespace VsChromium.Tests.Server {
       // Contents loaded from the cache (mapped): same locations.
       cache.Dispose();
       var reopened = OpenNew();
-      var loaded = items.Select(x => new IndexCacheWriteItem(x.RelativePath, x.Metadata,
-        reopened.Lookup.TryGetContents(x.RelativePath, x.Metadata))).ToArray();
+      var loaded = items.Select(x => new IndexCacheWriteItem(x.Directory, x.Name, x.Metadata,
+        reopened.Lookup.TryGetContents(RelativePath(x), x.Metadata))).ToArray();
       result = reopened.Write(loaded, LoadStart, CancellationToken.None);
       Assert.AreEqual(2, result.EntryCount);
       Assert.AreEqual(0, result.NewFileCount);
@@ -235,8 +293,10 @@ namespace VsChromium.Tests.Server {
       Write(new[] { TextItem("a.cc", "int a;\n") });
       var bytes = File.ReadAllBytes(IndexPath);
       // The offset of the entry (after the path "a.cc", time, size and flags).
-      var pathOffset = IndexOf(bytes, Encoding.UTF8.GetBytes("a.cc"));
-      bytes[pathOffset + 4 + 8 + 8 + 1 + 4] = 0x7F;
+      // The bytes used of the arena (arena table before the trailer: 1 byte) are less than the
+      // slot of the entry (16 bytes).
+      Assert.AreEqual(16, bytes[bytes.Length - 9]);
+      bytes[bytes.Length - 9] = 8;
       File.WriteAllBytes(IndexPath, bytes);
       AssertCacheIgnoredAndDeleted();
     }
@@ -323,14 +383,24 @@ namespace VsChromium.Tests.Server {
       return result;
     }
 
+    private static string RelativePath(IndexCacheWriteItem item) {
+      return item.Directory.Length == 0 ? item.Name : Path.Combine(item.Directory, item.Name);
+    }
+
+    private static (string Directory, string Name) Split(string relativePath) {
+      return (Path.GetDirectoryName(relativePath) ?? "", Path.GetFileName(relativePath));
+    }
+
     private IndexCacheWriteItem TextItem(string relativePath, string text, DateTime? time = null) {
       var lastWriteTime = time ?? OldTime;
-      return new IndexCacheWriteItem(relativePath, new FileMetadata(lastWriteTime, Encoding.UTF8.GetByteCount(text)),
+      var (directory, name) = Split(relativePath);
+      return new IndexCacheWriteItem(directory, name, new FileMetadata(lastWriteTime, Encoding.UTF8.GetByteCount(text)),
         CreateText(text, lastWriteTime));
     }
 
     private static IndexCacheWriteItem BinaryItem(string relativePath, long length) {
-      return new IndexCacheWriteItem(relativePath, new FileMetadata(OldTime, length), new BinaryFileContents(OldTime, length));
+      var (directory, name) = Split(relativePath);
+      return new IndexCacheWriteItem(directory, name, new FileMetadata(OldTime, length), new BinaryFileContents(OldTime, length));
     }
 
     private FileContents CreateText(string text, DateTime lastWriteTime) {

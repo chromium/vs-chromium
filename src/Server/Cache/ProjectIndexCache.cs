@@ -23,17 +23,20 @@ using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Cache {
   /// <summary>
-  /// A file to write to the cache: its path relative to the project root, its metadata from the
-  /// scan, and its contents in the index.
+  /// A file to write to the cache: its directory (path relative to the project root, "" for the
+  /// root, the same string for the files of a directory) and its name, its metadata from the scan,
+  /// and its contents in the index. The files of a directory must be consecutive.
   /// </summary>
   public readonly struct IndexCacheWriteItem {
-    public IndexCacheWriteItem(string relativePath, FileMetadata metadata, FileContents contents) {
-      RelativePath = relativePath;
+    public IndexCacheWriteItem(string directory, string name, FileMetadata metadata, FileContents contents) {
+      Directory = directory;
+      Name = name;
       Metadata = metadata;
       Contents = contents;
     }
 
-    public string RelativePath { get; }
+    public string Directory { get; }
+    public string Name { get; }
     public FileMetadata Metadata { get; }
     public FileContents Contents { get; }
   }
@@ -128,10 +131,18 @@ namespace VsChromium.Server.Cache {
     public bool IsWritable => _lockFile != null;
 
     /// <summary>
-    /// The entries of the cache loaded by <see cref="Open"/>, until the first write (null if
-    /// none): the contents of the next loads are in memory, or validated by a write.
+    /// The entries of the cache loaded by <see cref="Open"/>, until the end of the first full load
+    /// that uses them (<see cref="ReleaseLookup"/>), or null: the contents of the next loads are in
+    /// memory (the writes don't need the entries).
     /// </summary>
     public IndexCacheLookup Lookup => _lookup;
+
+    /// <summary>
+    /// Releases the entries loaded by <see cref="Open"/> (their memory) after a load completed.
+    /// </summary>
+    public void ReleaseLookup() {
+      _lookup = null;
+    }
 
     /// <summary>
     /// The name of the directory of the cache of a project: a hash of its normalized root path.
@@ -165,7 +176,7 @@ namespace VsChromium.Server.Cache {
         File.WriteAllText(Path.Combine(Directory, RootFileName), _rootPath);
       }
 
-      IndexCacheData data = null;
+      IndexCacheIndex data = null;
       List<MappedArena> arenas = null;
       if (File.Exists(_indexPath)) {
         var stopwatch = Stopwatch.StartNew();
@@ -173,7 +184,7 @@ namespace VsChromium.Server.Cache {
           data = ReadIndex();
           arenas = MapArenas(data);
           Logger.LogInfo("Loaded the index cache of \"{0}\": {1:n0} entries, {2:n0} arena files, in {3:n0} ms.",
-            _rootPath, data.Entries.Count, data.Arenas.Count, stopwatch.ElapsedMilliseconds);
+            _rootPath, data.Files.Length, data.Arenas.Count, stopwatch.ElapsedMilliseconds);
         }
         catch (Exception e) when (e is IOException || e is InvalidDataException || e is UnauthorizedAccessException) {
           Logger.LogWarn(e, "The index cache of \"{0}\" is invalid: ignored{1}.", _rootPath, IsWritable ? " and deleted" : "");
@@ -202,18 +213,21 @@ namespace VsChromium.Server.Cache {
             _locations.AddOrUpdate(arena.Handle, BlockLocations.ForMappedArena(arena.Id));
           }
         }
+        var stopwatch = Stopwatch.StartNew();
         _lookup = new IndexCacheLookup(data, arenas, _caseSensitive);
+        Logger.LogInfo("Built the lookup of the index cache of \"{0}\" in {1:n0} ms ({2:n0} bytes).",
+          _rootPath, stopwatch.ElapsedMilliseconds, _lookup.ByteSize);
         StartPreRead(arenas);
       }
     }
 
-    private IndexCacheData ReadIndex() {
+    private IndexCacheIndex ReadIndex() {
       using (var stream = new FileStream(_indexPath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete, 1024 * 1024)) {
         return IndexCacheFile.Read(stream, _rootPath, _caseSensitive);
       }
     }
 
-    private List<MappedArena> MapArenas(IndexCacheData data) {
+    private List<MappedArena> MapArenas(IndexCacheIndex data) {
       var result = new List<MappedArena>();
       try {
         foreach (var (id, used) in data.Arenas) {
@@ -285,9 +299,15 @@ namespace VsChromium.Server.Cache {
         var stopwatch = Stopwatch.StartNew();
         var result = new IndexCacheWriteResult();
         var racyLimitTicks = (loadStartUtc.ToUniversalTime() - RacyInterval).Ticks;
-        var data = new IndexCacheData { RootPath = _rootPath };
         var arenaWriter = new ArenaFileWriter(this, result);
+        var referencedArenas = new HashSet<int>();
         var count = 0;
+        var tempPath = Path.Combine(Directory, TempIndexFileName);
+        // Note: The entries are written as they are produced (no list of entries in memory).
+        var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
+        var completed = false;
+        try {
+        using (var indexWriter = new IndexCacheFileWriter(stream, _rootPath, _caseSensitive)) {
         foreach (var item in items) {
           if ((++count & 1023) == 0) {
             cancellationToken.ThrowIfCancellationRequested();
@@ -295,7 +315,7 @@ namespace VsChromium.Server.Cache {
           var contents = item.Contents;
           var metadata = item.Metadata;
           var ticks = metadata.LastWriteTimeUtc.Ticks;
-          if (contents == null || item.RelativePath == null)
+          if (contents == null || item.Name == null || item.Directory == null)
             continue;
           if (ticks >= racyLimitTicks) {
             result.RacyFileCount++;
@@ -327,31 +347,37 @@ namespace VsChromium.Server.Cache {
           } else {
             continue;
           }
-          data.Entries.Add(new KeyValuePair<string, IndexCacheEntry>(item.RelativePath, entry));
+          indexWriter.Add(item.Directory, item.Name, entry);
+          if (!entry.IsBinary) {
+            referencedArenas.Add(entry.ArenaId);
+          }
         }
         cancellationToken.ThrowIfCancellationRequested();
         arenaWriter.Flush();
 
-        foreach (var item in data.Entries) {
-          if (!item.Value.IsBinary) {
-            data.Arenas[item.Value.ArenaId] = _validArenas[item.Value.ArenaId];
+        var arenas = referencedArenas.ToDictionary(x => x, x => _validArenas[x]);
+        indexWriter.Finish(arenas);
+        result.EntryCount = indexWriter.FileCount;
+        }
+        stream.Flush(flushToDisk: true);
+        result.BytesWritten += stream.Length;
+        stream.Dispose();
+        completed = true;
+        }
+        finally {
+          stream.Dispose();
+          if (!completed) {
+            TryDeleteFile(tempPath);
           }
         }
-        result.EntryCount = data.Entries.Count;
 
         // Replace the index (atomic rename).
-        var tempPath = Path.Combine(Directory, TempIndexFileName);
-        using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024)) {
-          IndexCacheFile.Write(stream, data, _caseSensitive);
-          stream.Flush(flushToDisk: true);
-          result.BytesWritten += stream.Length;
-        }
         File.Move(tempPath, _indexPath, overwrite: true);
 
         // Delete the arena files not referenced anymore (may fail if still mapped: they are deleted
         // by a later write, or when the cache is opened next time).
         foreach (var (id, path) in EnumerateArenaFiles()) {
-          if (!data.Arenas.ContainsKey(id)) {
+          if (!referencedArenas.Contains(id)) {
             _validArenas.Remove(id);
             if (TryDeleteFile(path)) {
               result.DeletedArenaCount++;
@@ -359,8 +385,6 @@ namespace VsChromium.Server.Cache {
           }
         }
 
-        // The contents of the next loads are in memory or in the locations of this write.
-        _lookup = null;
         result.Elapsed = stopwatch.Elapsed;
         return result;
       }
@@ -603,56 +627,6 @@ namespace VsChromium.Server.Cache {
           Handle.DangerousRelease();
         }
       }
-    }
-  }
-
-  /// <summary>
-  /// The entries of the index of the cache of a project, by relative path (span lookups), with
-  /// their mapped arena files.
-  /// </summary>
-  public sealed class IndexCacheLookup {
-    private readonly Dictionary<string, IndexCacheEntry>.AlternateLookup<ReadOnlySpan<char>> _entries;
-    private readonly Dictionary<int, MappedArena> _arenas;
-
-    public IndexCacheLookup(IndexCacheData data, IEnumerable<MappedArena> arenas, bool caseSensitive) {
-      // Note: Same equality as the paths of the file system (see FullPathChanges).
-      var comparer = caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
-      var entries = new Dictionary<string, IndexCacheEntry>(data.Entries.Count, comparer);
-      foreach (var item in data.Entries) {
-        entries.TryAdd(item.Key, item.Value);
-      }
-      _entries = entries.GetAlternateLookup<ReadOnlySpan<char>>();
-      _arenas = arenas.ToDictionary(x => x.Id);
-    }
-
-    public int Count => _entries.Dictionary.Count;
-
-    /// <summary>
-    /// The contents of the file of <paramref name="relativePath"/> if the cache has an entry with
-    /// the time and size of <paramref name="metadata"/>, otherwise null.
-    /// </summary>
-    public FileContents TryGetContents(ReadOnlySpan<char> relativePath, FileMetadata metadata) {
-      if (!_entries.TryGetValue(relativePath, out var entry))
-        return null;
-      return CreateContents(entry, metadata);
-    }
-
-    public FileContents TryGetContents(FileName fileName, FileMetadata metadata) {
-      var (found, entry) = fileName.UseRelativePath(
-        static (path, entries) => (entries.TryGetValue(path, out var e), e), _entries);
-      return found ? CreateContents(entry, metadata) : null;
-    }
-
-    private FileContents CreateContents(IndexCacheEntry entry, FileMetadata metadata) {
-      if (entry.LastWriteTimeTicks != metadata.LastWriteTimeUtc.Ticks || entry.FileLength != metadata.Length)
-        return null;
-      var lastWriteTimeUtc = new DateTime(entry.LastWriteTimeTicks, DateTimeKind.Utc);
-      if (entry.IsBinary) {
-        return new BinaryFileContents(lastWriteTimeUtc, entry.FileLength);
-      }
-      var arena = _arenas[entry.ArenaId];
-      return new Utf8FileContents(new FileContentsMemory(arena.Handle, arena.Size, entry.Offset, entry.Length),
-        lastWriteTimeUtc, entry.IsAscii);
     }
   }
 }

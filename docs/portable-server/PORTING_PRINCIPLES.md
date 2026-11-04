@@ -927,16 +927,24 @@ the next full loads (VS Code or server restart) don't read the unchanged files (
   a temporary cache directory.
 - **Format** (`IndexCacheFile`): `arenas/NNNNNN.arena`, the text as stored in memory (UTF-8 without
   BOM, 2 trailing NUL bytes, 8 byte aligned slots, at most 16 MB), immutable once written; and
-  `index.bin` (header with magic, format version, path case sensitivity and root path; arena table;
-  entries: relative path, last write time, size, flags ASCII/binary, arena id, offset, length;
-  trailer with magic and entry count), written to `index.bin.tmp` and renamed over the previous one.
-  Binary files have an entry without contents (no file opened to detect them again). Files larger
-  than 512 KB are not cached (read from disk at each load).
+  `index.bin` (format version 2, 7-bit encoded integers: header with magic, format version, path
+  case sensitivity and root path; groups of files of a directory: file count, relative path of the
+  directory front-coded with the previous one, then per file the name, flags ASCII/binary, last
+  write time delta, size, and for text files the arena id delta, offset delta from the end of the
+  previous slot, size minus text length; arena table; trailer with magic and entry count; about 34
+  bytes per file instead of 104 in version 1), written as the entries are produced to
+  `index.bin.tmp` and renamed over the previous one. Binary files have an entry without contents
+  (no file opened to detect them again). Files larger than 512 KB are not cached (read from disk at
+  each load).
 - **Validation**: during a full load, before reading a file, the cache entry with the same relative
   path is used if its last write time and size are the ones of the scan (rule of the git index, no
   file opened). The contents are `Utf8FileContents` over the arena files, memory mapped read-only
   (pages of files, not native heap memory), then pre-read in the background (one byte per page).
-  The changed files path (file edits) never uses the cache.
+  The changed files path (file edits) never uses the cache. The entries are kept in memory without
+  an object per entry (`IndexCacheIndex`: directory paths and names in one character buffer, an
+  array of structs, an open addressing hash table of the relative paths, about 80 bytes per file)
+  and released at the end of the first full load using them (the writes don't need them: the
+  location of mapped contents is their view and offset).
 - **Writing**: after a full load (in the background, below normal priority, cancelled by a new full
   load). Contents already in an arena file keep their location (mapped contents, and the native
   arena slots written by a previous write of the same session: location by block and offset, weak
@@ -959,12 +967,16 @@ the next full loads (VS Code or server restart) don't read the unchanged files (
 `large-1-400000-v1` (393,536 files, 3.4 GB in arenas + 3.6 GB of large files), Debug server,
 cache on C: (NTFS), corpus on D: (ReFS):
 
-| | Index (time to `index/loaded`) | Native (counted) | Private bytes | GC heap after the write |
-|---|---|---|---|---|
-| Cold load (writes the cache) | 6,870–6,876 ms | 6,985 MB | 7,180 MB | 91.2 MB |
-| Restart with the cache | 1,663–1,867 ms (-74%) | 3,593 MB (large files only) | 3,829–3,841 MB | 84.6 MB |
+| | Index (time to `index/loaded`) | Native (counted) | Private bytes | GC heap at `index/loaded` | GC heap after the write |
+|---|---|---|---|---|---|
+| No cache | 6,755 ms | 6,985 MB | 7,163 MB | 75.4 MB | 85.5 MB (no write) |
+| Cold load (writes the cache) | 6,636–7,130 ms | 6,985 MB | 7,180 MB | 92.5 MB | 90.2 MB |
+| Restart, format version 1 | 1,645–1,812 ms | 3,593 MB (large files only) | 3,880–3,895 MB | 163.1 MB | 84.6–85.7 MB |
+| Restart, format version 2 | 1,530–1,658 ms (-77%) | 3,593 MB (large files only) | 3,824–3,835 MB | 76.4 MB | 84.7–85.1 MB |
 
 The restart reads 400 files from disk (the files larger than 512 KB) and maps 378,911 files
-(3,386 MB) from 212 arena files. The cache write after the cold load takes 8.4–11.3 s in the
-background (3.4 GB); after a restart it only rewrites the index (37.5 MB, ~0.7 s). Cache size on
-disk: 3.59 GB. Searches are unchanged (within run-to-run noise).
+(3,386 MB) from 212 arena files. The cache write after the cold load takes 6.5–11.3 s in the
+background (3.4 GB); after a restart it only rewrites the index (12.2 MB instead of 39.4 MB in
+version 1, ~0.4 s instead of ~0.7 s). Cache size on disk: 3.56 GB. The GC heap grows by ~10 MB
+after `index/loaded` without the cache too (the searches of the benchmark), so the cache adds
+nothing to the steady state managed heap. Searches are unchanged (within run-to-run noise).

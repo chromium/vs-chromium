@@ -36,15 +36,20 @@ describe('serverLocator', () => {
     }
   });
 
-  it('prefers the newest repository build over a stale Debug or bundled binary in development mode', () => {
+  it('prefers the Release repository build (even when the Debug build is newer) over a stale bundled binary in development mode', () => {
     const { extensionPath, bundledExe, debugExe, releaseExe } = makeRepoLayout();
     touchFile(bundledExe, 10);
-    touchFile(debugExe, 3600);
-    touchFile(releaseExe, 60);
+    touchFile(debugExe, 5);
+    touchFile(releaseExe, 3600);
 
     assert.equal(findServerPath(extensionPath, undefined, /*preferRepositoryBuild*/ true), releaseExe);
+  });
 
-    touchFile(debugExe, 5);
+  it('uses the Debug repository build when there is no Release build in development mode', () => {
+    const { extensionPath, bundledExe, debugExe } = makeRepoLayout();
+    touchFile(bundledExe, 10);
+    touchFile(debugExe, 3600);
+
     assert.equal(findServerPath(extensionPath, undefined, /*preferRepositoryBuild*/ true), debugExe);
   });
 

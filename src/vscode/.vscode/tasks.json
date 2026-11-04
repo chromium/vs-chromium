@@ -10,13 +10,13 @@
     {
       "type": "process",
       "command": "dotnet",
-      "args": ["build", "${workspaceFolder}/../Server/Server.csproj", "--nologo", "-v:minimal"],
+      "args": ["build", "${workspaceFolder}/../Server/Server.csproj", "-c", "Release", "--nologo", "-v:minimal"],
       "problemMatcher": "$msCompile",
-      "label": "dotnet: build server"
+      "label": "dotnet: build server (Release)"
     },
     {
       "label": "build",
-      "dependsOn": ["npm: compile", "dotnet: build server"],
+      "dependsOn": ["npm: compile", "dotnet: build server (Release)"],
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": []
     },

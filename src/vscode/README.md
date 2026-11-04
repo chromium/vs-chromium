@@ -39,8 +39,11 @@ Extension"). In the Extension Development Host window, open a folder containing 
 `vs-chromium-project.txt` file (for example `src\Tests\TestData\chromium\src` of this repository,
 or a Chromium checkout).
 
-When running from the repository, the extension uses the server from `Binaries\Debug\Server` (or
-`Binaries\Release\Server`). The `vschromium.serverPath` setting overrides the server location.
+When running from the repository, the extension uses the server from `Binaries\Release\Server`
+(built by the "build" task that **F5** runs first), or from `Binaries\Debug\Server` if there is no
+Release build. The Release build is preferred even when the Debug build is newer: a Debug build of
+the server is about 2x slower on some searches (JIT optimizations disabled). The
+`vschromium.serverPath` setting overrides the server location (e.g. to run a Debug build).
 
 ## Packaging
 

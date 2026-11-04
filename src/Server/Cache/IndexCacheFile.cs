@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using VsChromium.Core.Files;
 using VsChromium.Core.Memory;
 
 namespace VsChromium.Server.Cache {
@@ -16,11 +17,25 @@ namespace VsChromium.Server.Cache {
     Ascii = 1,
     /// <summary>A binary file: no contents (not searchable), only the time and size.</summary>
     Binary = 2,
+    /// <summary>
+    /// A searchable file whose contents are not in the cache (larger than 512 KB, modified during
+    /// the load or after the scan): read from disk when the tree of the cache is used.
+    /// </summary>
+    NoContents = 4,
+    /// <summary>A file of the tree that is not searchable (no contents in the index).</summary>
+    NotSearchable = 8,
+  }
+
+  [Flags]
+  public enum IndexCacheDirectoryFlags : byte {
+    None = 0,
+    /// <summary>The directory is a symbolic link (or a junction).</summary>
+    SymLink = 1,
   }
 
   /// <summary>
-  /// An entry of the index of the cache: a file, its last write time and size when its contents
-  /// were read, and the location of its contents in an arena file.
+  /// An entry of the index of the cache: a file, its last write time and size (from the scan),
+  /// and the location of its contents in an arena file, if any.
   /// </summary>
   public readonly struct IndexCacheEntry {
     public IndexCacheEntry(long lastWriteTimeTicks, long fileLength, IndexCacheEntryFlags flags,
@@ -33,9 +48,9 @@ namespace VsChromium.Server.Cache {
       Length = length;
     }
 
-    /// <summary>The last write time (UTC ticks) of the file when its contents were read.</summary>
+    /// <summary>The last write time (UTC ticks) of the file.</summary>
     public long LastWriteTimeTicks { get; }
-    /// <summary>The size of the file (on disk) when its contents were read.</summary>
+    /// <summary>The size of the file (on disk).</summary>
     public long FileLength { get; }
     public IndexCacheEntryFlags Flags { get; }
     /// <summary>The arena file of the contents (text files only).</summary>
@@ -47,18 +62,33 @@ namespace VsChromium.Server.Cache {
 
     public bool IsBinary => (Flags & IndexCacheEntryFlags.Binary) != 0;
     public bool IsAscii => (Flags & IndexCacheEntryFlags.Ascii) != 0;
+    /// <summary>True if the entry has no contents in an arena file (binary or not cached).</summary>
+    public bool HasNoLocation => (Flags & (IndexCacheEntryFlags.Binary | IndexCacheEntryFlags.NoContents | IndexCacheEntryFlags.NotSearchable)) != 0;
+
+    public static IndexCacheEntry WithoutContents(FileMetadata metadata, IndexCacheEntryFlags flags) {
+      return new IndexCacheEntry(metadata.LastWriteTimeUtc.Ticks, metadata.Length, flags, 0, 0, 0);
+    }
   }
 
   /// <summary>
   /// The contents of <c>index.bin</c> in memory, without an object per entry: the directory paths
-  /// and the file names are ranges of a single character buffer, the files an array of structs
-  /// (see <see cref="IndexCacheLookup"/> for the lookups by relative path).
+  /// and the file names are ranges of a single character buffer, the directories and files arrays
+  /// of structs (see <see cref="IndexCacheLookup"/> for the lookups by relative path, and <see
+  /// cref="CachedTreeBuilder"/> for the snapshot of the tree).
   /// </summary>
   public sealed class IndexCacheIndex {
     public struct DirectoryEntry {
       /// <summary>The relative path of the directory ("" for the project root).</summary>
       public int PathStart;
       public int PathLength;
+      /// <summary>The start of the name of the directory in its path.</summary>
+      public int NameStart;
+      /// <summary>The parent directory (-1 for the project root).</summary>
+      public int Parent;
+      /// <summary>The files of the directory: <see cref="Files"/>[FileStart..FileStart + FileCount].</summary>
+      public int FileStart;
+      public int FileCount;
+      public IndexCacheDirectoryFlags Flags;
     }
 
     public struct FileEntry {
@@ -78,7 +108,10 @@ namespace VsChromium.Server.Cache {
     }
 
     public string RootPath;
+    /// <summary>The version hash of the project configuration when the tree was written.</summary>
+    public string VersionHash;
     public char[] Chars;
+    /// <summary>The directories of the tree, in depth first order (parents first).</summary>
     public DirectoryEntry[] Directories;
     public FileEntry[] Files;
     /// <summary>Arena id => bytes used in the arena file.</summary>
@@ -87,6 +120,11 @@ namespace VsChromium.Server.Cache {
     public ReadOnlySpan<char> GetDirectoryPath(int directory) {
       var d = Directories[directory];
       return Chars.AsSpan(d.PathStart, d.PathLength);
+    }
+
+    public ReadOnlySpan<char> GetDirectoryName(int directory) {
+      var d = Directories[directory];
+      return Chars.AsSpan(d.NameStart, d.PathStart + d.PathLength - d.NameStart);
     }
 
     public ReadOnlySpan<char> GetName(int file) {
@@ -98,11 +136,11 @@ namespace VsChromium.Server.Cache {
     public string GetRelativePath(int file) {
       var directory = GetDirectoryPath(Files[file].Directory);
       var name = GetName(file);
-      return directory.Length == 0 ? name.ToString() : string.Concat(directory, Core.Files.PathHelpers.DirectorySeparatorChar.ToString(), name);
+      return directory.Length == 0 ? name.ToString() : string.Concat(directory, PathHelpers.DirectorySeparatorChar.ToString(), name);
     }
 
     /// <summary>The managed memory of the index (approximate).</summary>
-    public long ByteSize => (long)Chars.Length * sizeof(char) + (long)Directories.Length * 8 + (long)Files.Length * 40;
+    public long ByteSize => (long)Chars.Length * sizeof(char) + (long)Directories.Length * 28 + (long)Files.Length * 40;
   }
 
   /// <summary>
@@ -113,23 +151,28 @@ namespace VsChromium.Server.Cache {
   /// bytes), at most <see cref="ArenaSize"/> bytes. Immutable once written: new contents are
   /// written to new arena files (new ids).</item>
   /// <item><c>index.bin</c> (little endian, 7-bit encoded integers, written by <see
-  /// cref="IndexCacheFileWriter"/>): header (magic, format version, path case sensitivity, root
-  /// path); groups of files of a directory (file count, relative path of the directory front-coded
-  /// with the previous one, then per file: name, flags, last write time delta, size, and for text
-  /// files arena id delta, offset delta, size minus text length), terminated by a 0 file count;
-  /// arena table (id, bytes used); trailer (magic, file count). Written to a temporary file, then
-  /// renamed over the previous one.</item>
+  /// cref="IndexCacheFileWriter"/>): the tree of the project (all the directories and files of
+  /// the snapshot) and the location of the cached contents. Header (magic, format version, path
+  /// case sensitivity, root path, version hash of the project configuration); directories in
+  /// depth first order (record kind 1, flags (symbolic link), relative path front-coded with the
+  /// previous directory, file count, then per file: name, flags (ASCII, binary, not cached, not
+  /// searchable), last write time delta, size, and for cached text files arena id delta, offset
+  /// delta, size minus text length), terminated by a record kind 0; arena table (id, bytes used);
+  /// trailer (magic, file count). Written to a temporary file, then renamed over the previous
+  /// one.</item>
   /// </list>
   /// </summary>
   public static class IndexCacheFile {
     public const uint HeaderMagic = 0x49435356; // "VSCI"
     public const uint TrailerMagic = 0x45435356; // "VSCE"
-    public const int FormatVersion = 2;
+    public const int FormatVersion = 3;
     public const int ArenaSize = ArenaAllocator.DefaultArenaSize;
     public const int TrailingByteCount = 2;
     public const string IndexFileName = "index.bin";
     public const string ArenasDirectoryName = "arenas";
     public const string ArenaExtension = ".arena";
+    internal const byte DirectoryRecord = 1;
+    internal const byte EndRecord = 0;
 
     public static string GetArenaFileName(int id) {
       return id.ToString("D6") + ArenaExtension;
@@ -175,7 +218,7 @@ namespace VsChromium.Server.Cache {
         throw new InvalidDataException($"Format version {version} instead of {FormatVersion}");
       if (reader.ReadBoolean() != caseSensitive)
         throw new InvalidDataException("Different path case sensitivity");
-      var index = new IndexCacheIndex { RootPath = reader.ReadString() };
+      var index = new IndexCacheIndex { RootPath = reader.ReadString(), VersionHash = reader.ReadString() };
       var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
       if (!string.Equals(index.RootPath, expectedRootPath, comparison))
         throw new InvalidDataException($"Root path \"{index.RootPath}\" instead of \"{expectedRootPath}\"");
@@ -184,18 +227,20 @@ namespace VsChromium.Server.Cache {
       var chars = new CharBuffer((int)Math.Clamp(stream.Length / 2, 1024, Array.MaxLength / 4));
       var directories = new ValueList<IndexCacheIndex.DirectoryEntry>(1024);
       var files = new ValueList<IndexCacheIndex.FileEntry>((int)Math.Clamp(stream.Length / 24, 1024, Array.MaxLength / 4));
+      var ancestors = new Stack<int>();
       var bytes = new byte[1024];
       int previousDirectoryStart = 0, previousDirectoryLength = 0;
       long previousTicks = 0;
       int previousArena = 0, expectedOffset = 0;
       while (true) {
-        var fileCount = reader.Read7BitEncodedInt();
-        if (fileCount == 0)
+        var kind = reader.ReadByte();
+        if (kind == EndRecord)
           break;
-        if (fileCount < 0)
-          throw new InvalidDataException("Invalid file count");
+        if (kind != DirectoryRecord)
+          throw new InvalidDataException("Invalid record");
 
-        // Directory: shared prefix with the previous directory, then the suffix.
+        // Directory: flags, shared prefix with the previous directory, then the suffix.
+        var directoryFlags = (IndexCacheDirectoryFlags)reader.ReadByte();
         var prefixLength = reader.Read7BitEncodedInt();
         if (prefixLength < 0 || prefixLength > previousDirectoryLength)
           throw new InvalidDataException("Invalid directory prefix");
@@ -204,13 +249,43 @@ namespace VsChromium.Server.Cache {
         ReadUtf8(reader, chars, ref bytes);
         previousDirectoryStart = directoryStart;
         previousDirectoryLength = chars.Length - directoryStart;
-        directories.Add(new IndexCacheIndex.DirectoryEntry { PathStart = directoryStart, PathLength = previousDirectoryLength });
+        var directory = new IndexCacheIndex.DirectoryEntry {
+          PathStart = directoryStart,
+          PathLength = previousDirectoryLength,
+          NameStart = directoryStart,
+          Parent = -1,
+          Flags = directoryFlags,
+        };
+        // The parent is the closest previous directory whose path is a prefix (depth first order):
+        // the first directory is the project root (""), the others are its descendants.
+        if (directories.Count == 0) {
+          if (directory.PathLength != 0)
+            throw new InvalidDataException("The first directory must be the project root");
+        } else {
+          var path = chars.Span(directory.PathStart, directory.PathLength);
+          while (ancestors.Count > 0 && !IsChildPath(chars, directories[ancestors.Peek()], path))
+            ancestors.Pop();
+          if (ancestors.Count == 0)
+            throw new InvalidDataException("Directory without parent");
+          var parent = directories[ancestors.Peek()];
+          directory.Parent = ancestors.Peek();
+          directory.NameStart = directory.PathStart + (parent.PathLength == 0 ? 0 : parent.PathLength + 1);
+        }
+        ancestors.Push(directories.Count);
+
+        var fileCount = reader.Read7BitEncodedInt();
+        if (fileCount < 0)
+          throw new InvalidDataException("Invalid file count");
+        directory.FileStart = files.Count;
+        directory.FileCount = fileCount;
+        directories.Add(directory);
 
         for (var i = 0; i < fileCount; i++) {
           var nameStart = chars.Length;
           ReadUtf8(reader, chars, ref bytes);
           var nameLength = chars.Length - nameStart;
-          if (nameLength == 0 || nameLength > ushort.MaxValue)
+          if (nameLength == 0 || nameLength > ushort.MaxValue ||
+              chars.Span(nameStart, nameLength).IndexOf(PathHelpers.DirectorySeparatorChar) >= 0)
             throw new InvalidDataException("Invalid file name");
           var flags = (IndexCacheEntryFlags)reader.ReadByte();
           var ticks = previousTicks + UnZigZag(reader.Read7BitEncodedInt64());
@@ -226,7 +301,7 @@ namespace VsChromium.Server.Cache {
             NameStart = nameStart,
             NameLength = (ushort)nameLength,
           };
-          if ((flags & IndexCacheEntryFlags.Binary) == 0) {
+          if (!file.ToEntry().HasNoLocation) {
             var arenaId = previousArena + UnZigZag(reader.Read7BitEncodedInt64());
             var offset = (arenaId == previousArena ? expectedOffset : 0) +
                          UnZigZag(reader.Read7BitEncodedInt64()) * ArenaAllocator.Alignment;
@@ -242,6 +317,8 @@ namespace VsChromium.Server.Cache {
           files.Add(file);
         }
       }
+      if (directories.Count == 0)
+        throw new InvalidDataException("No project root directory");
 
       var arenaCount = reader.Read7BitEncodedInt();
       if (arenaCount < 0)
@@ -261,7 +338,7 @@ namespace VsChromium.Server.Cache {
       // The contents must be in the used bytes of their arena file.
       var fileArray = files.ToArray();
       foreach (var file in fileArray) {
-        if ((file.Flags & IndexCacheEntryFlags.Binary) == 0 &&
+        if (!file.ToEntry().HasNoLocation &&
             (!index.Arenas.TryGetValue(file.ArenaId, out var used) ||
              (long)file.Offset + file.Length + TrailingByteCount > used))
           throw new InvalidDataException("Invalid location");
@@ -271,6 +348,23 @@ namespace VsChromium.Server.Cache {
       index.Directories = directories.ToArray();
       index.Files = fileArray;
       return index;
+    }
+
+    /// <summary>
+    /// True if <paramref name="path"/> is the path of a child of <paramref name="parent"/> (a
+    /// single name after the path of the parent and a separator).
+    /// </summary>
+    private static bool IsChildPath(CharBuffer chars, IndexCacheIndex.DirectoryEntry parent, ReadOnlySpan<char> path) {
+      ReadOnlySpan<char> name;
+      if (parent.PathLength == 0) {
+        name = path;
+      } else {
+        if (path.Length <= parent.PathLength + 1 || path[parent.PathLength] != PathHelpers.DirectorySeparatorChar ||
+            !path.Slice(0, parent.PathLength).SequenceEqual(chars.Span(parent.PathStart, parent.PathLength)))
+          return false;
+        name = path.Slice(parent.PathLength + 1);
+      }
+      return name.Length > 0 && name.IndexOf(PathHelpers.DirectorySeparatorChar) < 0;
     }
 
     /// <summary>
@@ -305,6 +399,8 @@ namespace VsChromium.Server.Cache {
 
       public Span<char> FreeSpan => _chars.AsSpan(Length);
 
+      public ReadOnlySpan<char> Span(int start, int length) => _chars.AsSpan(start, length);
+
       public void EnsureCapacity(int additional) {
         if (Length + additional > _chars.Length) {
           Array.Resize(ref _chars, (int)Math.Min(Math.Max(Length + additional, _chars.Length * 2L), Array.MaxLength));
@@ -324,14 +420,15 @@ namespace VsChromium.Server.Cache {
     }
 
     /// <summary>A growable array of structs (exposes the count without a List wrapper).</summary>
-    private struct ValueList<T> {
+    private sealed class ValueList<T> {
       private T[] _items;
       public int Count;
 
       public ValueList(int capacity) {
         _items = new T[capacity];
-        Count = 0;
       }
+
+      public T this[int index] => _items[index];
 
       public void Add(in T item) {
         if (Count == _items.Length) {
@@ -347,46 +444,56 @@ namespace VsChromium.Server.Cache {
   }
 
   /// <summary>
-  /// Writes <c>index.bin</c> (see <see cref="IndexCacheFile"/>) as the entries are produced (no
-  /// list of entries in memory): the files of a directory must be consecutive.
+  /// Writes <c>index.bin</c> (see <see cref="IndexCacheFile"/>) as the directories and files are
+  /// produced (no list of entries in memory): the directories in depth first order (the project
+  /// root first, parents before children), each followed by its files.
   /// </summary>
   public sealed class IndexCacheFileWriter : IDisposable {
     private readonly BinaryWriter _writer;
     private readonly MemoryStream _group = new MemoryStream();
     private readonly BinaryWriter _groupWriter;
     private string _groupDirectory;
+    private IndexCacheDirectoryFlags _groupFlags;
     private int _groupFileCount;
     private string _previousDirectory = "";
     private long _previousTicks;
     private int _previousArena;
     private int _expectedOffset;
 
-    public IndexCacheFileWriter(Stream stream, string rootPath, bool caseSensitive) {
+    public IndexCacheFileWriter(Stream stream, string rootPath, string versionHash, bool caseSensitive) {
       _writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
       _groupWriter = new BinaryWriter(_group, Encoding.UTF8, leaveOpen: true);
       _writer.Write(IndexCacheFile.HeaderMagic);
       _writer.Write(IndexCacheFile.FormatVersion);
       _writer.Write(caseSensitive);
       _writer.Write(rootPath);
+      _writer.Write(versionHash ?? "");
     }
 
     public int FileCount { get; private set; }
+    public int DirectoryCount { get; private set; }
 
     /// <summary>
-    /// Adds a file of <paramref name="directory"/> (relative path, "" for the project root).
+    /// Starts a directory (relative path, "" for the project root): the next files are its files.
     /// </summary>
-    public void Add(string directory, string name, in IndexCacheEntry entry) {
-      if (!ReferenceEquals(directory, _groupDirectory) && directory != _groupDirectory) {
-        FlushGroup();
-        _groupDirectory = directory;
-      }
+    public void AddDirectory(string path, IndexCacheDirectoryFlags flags) {
+      FlushDirectory();
+      _groupDirectory = path;
+      _groupFlags = flags;
+      DirectoryCount++;
+    }
+
+    /// <summary>Adds a file of the current directory.</summary>
+    public void AddFile(string name, in IndexCacheEntry entry) {
+      if (_groupDirectory == null)
+        throw new InvalidOperationException("No directory");
       var w = _groupWriter;
       w.Write(name);
       w.Write((byte)entry.Flags);
       w.Write7BitEncodedInt64(IndexCacheFile.ZigZag(entry.LastWriteTimeTicks - _previousTicks));
       _previousTicks = entry.LastWriteTimeTicks;
       w.Write7BitEncodedInt64(entry.FileLength);
-      if (!entry.IsBinary) {
+      if (!entry.HasNoLocation) {
         w.Write7BitEncodedInt64(IndexCacheFile.ZigZag(entry.ArenaId - (long)_previousArena));
         var expected = entry.ArenaId == _previousArena ? _expectedOffset : 0;
         w.Write7BitEncodedInt64(IndexCacheFile.ZigZag((entry.Offset - expected) / ArenaAllocator.Alignment));
@@ -398,26 +505,29 @@ namespace VsChromium.Server.Cache {
       FileCount++;
     }
 
-    private void FlushGroup() {
-      if (_groupFileCount == 0)
+    private void FlushDirectory() {
+      if (_groupDirectory == null)
         return;
       _groupWriter.Flush();
-      _writer.Write7BitEncodedInt(_groupFileCount);
+      _writer.Write(IndexCacheFile.DirectoryRecord);
+      _writer.Write((byte)_groupFlags);
       var prefix = _previousDirectory.AsSpan().CommonPrefixLength(_groupDirectory);
       _writer.Write7BitEncodedInt(prefix);
       _writer.Write(_groupDirectory.Substring(prefix));
+      _writer.Write7BitEncodedInt(_groupFileCount);
       _writer.Write(_group.GetBuffer(), 0, (int)_group.Length);
       _previousDirectory = _groupDirectory;
       _group.SetLength(0);
       _groupFileCount = 0;
+      _groupDirectory = null;
     }
 
     /// <summary>
     /// Writes the end of the index: the arena table (id => bytes used) and the trailer.
     /// </summary>
     public void Finish(IReadOnlyDictionary<int, int> arenas) {
-      FlushGroup();
-      _writer.Write7BitEncodedInt(0);
+      FlushDirectory();
+      _writer.Write(IndexCacheFile.EndRecord);
       _writer.Write7BitEncodedInt(arenas.Count);
       foreach (var (id, used) in arenas) {
         _writer.Write7BitEncodedInt(id);

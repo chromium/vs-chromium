@@ -171,7 +171,8 @@ namespace VsChromium.Server.Cache {
           var cache = GetOpenProjectCache(projectRoot.Project.RootPath);
           if (cache == null || !cache.IsWritable)
             continue;
-          var result = cache.Write(GetWriteItems(projectRoot, database), loadStartUtc, cancellationToken);
+          var result = cache.Write(GetWriteDirectories(projectRoot, database), projectRoot.Project.VersionHash,
+            loadStartUtc, cancellationToken);
           if (result == null)
             continue;
           Logger.LogInfo("Wrote the index cache of \"{0}\" in {1:n0} ms: {2:n0} entries, {3:n0} new files " +
@@ -207,27 +208,24 @@ namespace VsChromium.Server.Cache {
     }
 
     /// <summary>
-    /// The files of a project with their metadata (from the scan) and their contents (in the
-    /// database), in the order of the directories of the scan.
+    /// The tree of a project (directories in depth first order, parents first) with the metadata
+    /// of the files (from the scan) and their contents (in the database, null if not searchable).
     /// </summary>
-    private static IEnumerable<IndexCacheWriteItem> GetWriteItems(ProjectRootSnapshot projectRoot, FileDatabaseSnapshot database) {
+    private static IEnumerable<IndexCacheWriteDirectory> GetWriteDirectories(ProjectRootSnapshot projectRoot, FileDatabaseSnapshot database) {
       var stack = new Stack<DirectorySnapshot>();
       stack.Push(projectRoot.Directory);
       while (stack.Count > 0) {
         var directory = stack.Pop();
         var files = directory.ChildFiles;
         var metadata = directory.ChildFileMetadataArray;
-        // Note: One string per directory (the files use their name).
-        var directoryPath = files.Count == 0 ? "" : directory.DirectoryName.RelativePath.Value ?? "";
+        var items = new IndexCacheWriteItem[files.Count];
         for (var i = 0; i < files.Count; i++) {
           var fileName = files[i];
-          if (!database.TryGetFileIndex(fileName, out var index))
-            continue;
-          var contents = database.GetContents(index);
-          if (contents == null)
-            continue;
-          yield return new IndexCacheWriteItem(directoryPath, fileName.Name, metadata[i], contents);
+          var contents = database.TryGetFileIndex(fileName, out var index) ? database.GetContents(index) : null;
+          items[i] = new IndexCacheWriteItem(fileName.Name, metadata[i], contents);
         }
+        // Note: One string per directory (the files use their name).
+        yield return new IndexCacheWriteDirectory(directory.DirectoryName.RelativePath.Value ?? "", directory.IsSymLink, items);
         for (var i = directory.ChildDirectories.Count - 1; i >= 0; i--) {
           stack.Push(directory.ChildDirectories[i]);
         }

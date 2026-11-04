@@ -77,6 +77,9 @@ namespace VsChromium.Server.Cache {
 
     public int Count { get; }
 
+    /// <summary>The index (and tree) of the cache.</summary>
+    public IndexCacheIndex Index => _index;
+
     /// <summary>The managed memory of the lookup (approximate).</summary>
     public long ByteSize => _index.ByteSize + (long)_buckets.Length * sizeof(int);
 
@@ -127,6 +130,8 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     private FileContents CreateContents(int file, FileMetadata metadata) {
       var entry = _index.Files[file];
+      if ((entry.Flags & (IndexCacheEntryFlags.NoContents | IndexCacheEntryFlags.NotSearchable)) != 0)
+        return null;
       if (entry.LastWriteTimeTicks != metadata.LastWriteTimeUtc.Ticks || entry.FileLength != metadata.Length)
         return null;
       var lastWriteTimeUtc = new DateTime(entry.LastWriteTimeTicks, DateTimeKind.Utc);

@@ -14,6 +14,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Memory;
 using VsChromium.Server.Cache;
 using VsChromium.Server.FileSystemContents;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Tests.Server {
   [TestClass]
@@ -91,7 +92,7 @@ namespace VsChromium.Tests.Server {
     public void ManyDirectoriesAndArenasRoundTrip() {
       // Nested directories (front-coded paths), a directory seen twice, files in several arena
       // files (36 x 500 KB > 16 MB), binary files between text files (location deltas).
-      var items = new List<IndexCacheWriteItem>();
+      var items = new List<Item>();
       var directories = new[] { "", "dir", Path.Combine("dir", "sub"), Path.Combine("dir", "sub", "deeper"), "dir2", "" };
       var large = new string('x', 500 * 1024);
       for (var d = 0; d < directories.Length; d++) {
@@ -119,7 +120,7 @@ namespace VsChromium.Tests.Server {
 
     [TestMethod]
     public void IndexIsCompact() {
-      var items = new List<IndexCacheWriteItem>();
+      var items = new List<Item>();
       for (var d = 0; d < 20; d++) {
         for (var f = 0; f < 100; f++) {
           items.Add(TextItem(Path.Combine("src", "components", $"directory{d:D2}", $"file_name_{f:D3}.cc"), $"int f{d}_{f}; // some text"));
@@ -141,7 +142,7 @@ namespace VsChromium.Tests.Server {
       Assert.IsNull(cache.Lookup);
       // The contents loaded before stay valid, and keep their location for the next write.
       Assert.AreEqual("int a;\n", GetText(contents));
-      var result = cache.Write(new[] { new IndexCacheWriteItem("", "a.cc", item.Metadata, contents) }, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(new[] { new Item("", "a.cc", item.Metadata, contents) }), VersionHash, LoadStart, CancellationToken.None);
       Assert.AreEqual(0, result.NewFileCount);
     }
 
@@ -201,7 +202,7 @@ namespace VsChromium.Tests.Server {
     public void FilesModifiedAfterTheScanAreNotWritten() {
       // The contents were read after the file was modified again (time of the scan != time of the contents).
       var contents = CreateText("int a;\n", OldTime.AddMinutes(1));
-      var item = new IndexCacheWriteItem("", "a.cc", new FileMetadata(OldTime, 7), contents);
+      var item = new Item("", "a.cc", new FileMetadata(OldTime, 7), contents);
       var result = Write(new[] { item });
       Assert.AreEqual(1, result.ChangedFileCount);
       Assert.AreEqual(0, result.EntryCount);
@@ -214,7 +215,7 @@ namespace VsChromium.Tests.Server {
       var path = Path.Combine(_projectRoot, "dir", "changed.cc");
       File.WriteAllText(path, "int changed;\n");
       try {
-        var items = Enumerable.Range(0, 15).Select(i => new IndexCacheWriteItem("dir", i == 0 ? "changed.cc" : $"other{i}.cc",
+        var items = Enumerable.Range(0, 15).Select(i => new Item("dir", i == 0 ? "changed.cc" : $"other{i}.cc",
           new FileMetadata(OldTime, 13), CreateText("int changed;\n", OldTime.AddMinutes(1)))).ToArray();
         var result = Write(items);
         Assert.AreEqual(15, result.ChangedFileCount);
@@ -241,10 +242,10 @@ namespace VsChromium.Tests.Server {
     public void ContentsAlreadyWrittenAreNotWrittenAgain() {
       var items = new[] { TextItem("a.cc", "int a;\n"), TextItem("b.cc", "int b;\n") };
       var cache = OpenNew();
-      Assert.AreEqual(2, cache.Write(items, LoadStart, CancellationToken.None).NewFileCount);
+      Assert.AreEqual(2, cache.Write(Dirs(items), VersionHash, LoadStart, CancellationToken.None).NewFileCount);
 
       // Same contents in memory: same locations.
-      var result = cache.Write(items, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(items), VersionHash, LoadStart, CancellationToken.None);
       Assert.AreEqual(2, result.EntryCount);
       Assert.AreEqual(0, result.NewFileCount);
       Assert.AreEqual(0, result.NewArenaCount);
@@ -252,9 +253,9 @@ namespace VsChromium.Tests.Server {
       // Contents loaded from the cache (mapped): same locations.
       cache.Dispose();
       var reopened = OpenNew();
-      var loaded = items.Select(x => new IndexCacheWriteItem(x.Directory, x.Name, x.Metadata,
+      var loaded = items.Select(x => new Item(x.Directory, x.Name, x.Metadata,
         reopened.Lookup.TryGetContents(RelativePath(x), x.Metadata))).ToArray();
-      result = reopened.Write(loaded, LoadStart, CancellationToken.None);
+      result = reopened.Write(Dirs(loaded), VersionHash, LoadStart, CancellationToken.None);
       Assert.AreEqual(2, result.EntryCount);
       Assert.AreEqual(0, result.NewFileCount);
       Assert.AreEqual(1, ArenaFiles().Length);
@@ -263,12 +264,12 @@ namespace VsChromium.Tests.Server {
     [TestMethod]
     public void UnreferencedArenaFilesAreDeletedAfterAWrite() {
       var cache = OpenNew();
-      cache.Write(new[] { TextItem("a.cc", "int a;\n") }, LoadStart, CancellationToken.None);
+      cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, LoadStart, CancellationToken.None);
       var first = ArenaFiles();
       Assert.AreEqual(1, first.Length);
 
       // a.cc is deleted, b.cc is new.
-      var result = cache.Write(new[] { TextItem("b.cc", "int b;\n") }, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(new[] { TextItem("b.cc", "int b;\n") }), VersionHash, LoadStart, CancellationToken.None);
       Assert.AreEqual(1, result.DeletedArenaCount);
       var second = ArenaFiles();
       Assert.AreEqual(1, second.Length);
@@ -297,7 +298,7 @@ namespace VsChromium.Tests.Server {
       Assert.IsFalse(second.IsWritable);
       Assert.IsNotNull(second.Lookup.TryGetContents("a.cc", item.Metadata), "Read-only caches are used");
 
-      Assert.IsNull(second.Write(new[] { TextItem("b.cc", "int b;\n") }, LoadStart, CancellationToken.None));
+      Assert.IsNull(second.Write(Dirs(new[] { TextItem("b.cc", "int b;\n") }), VersionHash, LoadStart, CancellationToken.None));
       Assert.AreEqual(indexTime, File.GetLastWriteTimeUtc(IndexPath));
       Assert.AreEqual(1, ArenaFiles().Length);
     }
@@ -343,13 +344,13 @@ namespace VsChromium.Tests.Server {
     public void InvalidateDeletesTheCache() {
       var item = TextItem("a.cc", "int a;\n");
       var cache = OpenNew();
-      cache.Write(new[] { item }, LoadStart, CancellationToken.None);
+      cache.Write(Dirs(new[] { item }), VersionHash, LoadStart, CancellationToken.None);
       cache.Invalidate();
       Assert.IsFalse(File.Exists(IndexPath));
       Assert.AreEqual(0, ArenaFiles().Length);
 
       // The contents in memory are written again by the next write.
-      var result = cache.Write(new[] { item }, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(new[] { item }), VersionHash, LoadStart, CancellationToken.None);
       Assert.AreEqual(1, result.NewFileCount);
     }
 
@@ -367,6 +368,68 @@ namespace VsChromium.Tests.Server {
       Assert.AreEqual(Path.GetFullPath("cachedir"),
         IndexCacheOptions.FromCommandLine(new[] { "--jsonrpc", "--cache-dir", "cachedir" }).CacheDirectory);
       Assert.IsFalse(IndexCacheOptions.FromCommandLine(new[] { "--jsonrpc", "--no-cache" }).IsEnabled);
+    }
+
+    [TestMethod]
+    public void TreeRoundTrip() {
+      var factory = new FileSystemNameFactory();
+      var large = new string('x', ProjectIndexCache.MaxCachedFileLength + 1);
+      var directories = new List<IndexCacheWriteDirectory> {
+        new IndexCacheWriteDirectory("", false, new[] { ToWriteItem(TextItem("root.cc", "int root;")) }),
+        new IndexCacheWriteDirectory("a", false, new[] {
+          ToWriteItem(TextItem(Path.Combine("a", "large.txt"), large)),
+          new IndexCacheWriteItem("not_searchable.txt", new FileMetadata(OldTime, 3), null),
+          ToWriteItem(TextItem(Path.Combine("a", "racy.cc"), "int racy;", LoadStart)),
+        }),
+        new IndexCacheWriteDirectory(Path.Combine("a", "empty"), false, Array.Empty<IndexCacheWriteItem>()),
+        new IndexCacheWriteDirectory(Path.Combine("a", "link"), true, new[] { ToWriteItem(BinaryItem(Path.Combine("a", "link", "b.bin"), 10)) }),
+        new IndexCacheWriteDirectory("b", false, new[] { ToWriteItem(TextItem(Path.Combine("b", "b.cc"), "int b;")) }),
+      };
+      var cache = OpenNew();
+      var result = cache.Write(directories, VersionHash, LoadStart, CancellationToken.None);
+      Assert.AreEqual(6, result.TreeFileCount);
+      Assert.AreEqual(5, result.TreeDirectoryCount);
+      Assert.AreEqual(3, result.EntryCount, "root.cc, b.bin, b.cc");
+      cache.Dispose();
+
+      var rootPath = new FullPath(_projectRoot);
+      var tree = OpenNew().TryLoadTree(VersionHash, factory, rootPath, CancellationToken.None);
+      Assert.IsNotNull(tree);
+      var root = tree.Root;
+      Assert.AreEqual(rootPath, root.DirectoryName.FullPath);
+      CollectionAssert.AreEqual(new[] { "root.cc" }, root.ChildFiles.Select(x => x.Name).ToArray());
+      CollectionAssert.AreEqual(new[] { "a", "b" }, root.ChildDirectories.Select(x => x.DirectoryName.Name).ToArray());
+      var a = root.ChildDirectories[0];
+      CollectionAssert.AreEqual(new[] { "large.txt", "not_searchable.txt", "racy.cc" }, a.ChildFiles.Select(x => x.Name).ToArray());
+      Assert.AreEqual(new FileMetadata(OldTime, 3), a.ChildFileMetadata[1]);
+      CollectionAssert.AreEqual(new[] { "empty", "link" }, a.ChildDirectories.Select(x => x.DirectoryName.Name).ToArray());
+      Assert.IsFalse(a.ChildDirectories[0].IsSymLink);
+      Assert.IsTrue(a.ChildDirectories[1].IsSymLink);
+      Assert.AreEqual(Path.Combine(_projectRoot, "a", "link", "b.bin"), a.ChildDirectories[1].ChildFiles[0].FullPath.Value);
+      // The searchable files without cached contents are read by the verification of the tree.
+      CollectionAssert.AreEquivalent(new[] { "large.txt", "racy.cc" }, tree.FilesWithoutContents.Select(x => x.Name).ToArray());
+    }
+
+    [TestMethod]
+    public void TreeIsNotUsedIfTheConfigurationChanged() {
+      Write(new[] { TextItem("a.cc", "int a;") });
+      var cache = OpenNew();
+      Assert.IsNull(cache.TryLoadTree("other hash", new FileSystemNameFactory(), new FullPath(_projectRoot), CancellationToken.None));
+      // The contents are still used (phase 1).
+      Assert.IsNotNull(cache.Lookup);
+    }
+
+    [TestMethod]
+    public void TreeWithADirectoryWithoutParentIsIgnoredAndDeleted() {
+      Write(new[] { TextItem("a.cc", "int a;") });
+      using (var stream = new FileStream(IndexPath, FileMode.Create)) {
+        using (var writer = new IndexCacheFileWriter(stream, _projectRoot, VersionHash, PathComparerRegistry.Default.Comparison == StringComparison.Ordinal)) {
+          writer.AddDirectory("", IndexCacheDirectoryFlags.None);
+          writer.AddDirectory(Path.Combine("missing", "child"), IndexCacheDirectoryFlags.None);
+          writer.Finish(new Dictionary<int, int>());
+        }
+      }
+      AssertCacheIgnoredAndDeleted();
     }
 
     private void AssertCacheIgnoredAndDeleted() {
@@ -398,14 +461,45 @@ namespace VsChromium.Tests.Server {
     }
 
     /// <summary>Writes the items with a new cache (released after the write).</summary>
-    private IndexCacheWriteResult Write(IEnumerable<IndexCacheWriteItem> items) {
+    private IndexCacheWriteResult Write(IEnumerable<Item> items) {
       var cache = OpenNew();
-      var result = cache.Write(items, LoadStart, CancellationToken.None);
+      var result = cache.Write(Dirs(items), VersionHash, LoadStart, CancellationToken.None);
       cache.Dispose();
       return result;
     }
 
-    private static string RelativePath(IndexCacheWriteItem item) {
+    private const string VersionHash = "version hash";
+
+    /// <summary>A file of a directory (tests).</summary>
+    private sealed record Item(string Directory, string Name, FileMetadata Metadata, FileContents Contents);
+
+    private static IndexCacheWriteItem ToWriteItem(Item item) => new IndexCacheWriteItem(item.Name, item.Metadata, item.Contents);
+
+    /// <summary>
+    /// The directories of <paramref name="items"/> and their ancestors, in depth first order.
+    /// </summary>
+    private static IEnumerable<IndexCacheWriteDirectory> Dirs(IEnumerable<Item> items) {
+      var byDirectory = new Dictionary<string, List<IndexCacheWriteItem>>(StringComparer.OrdinalIgnoreCase) { [""] = new List<IndexCacheWriteItem>() };
+      foreach (var item in items) {
+        for (var d = item.Directory; d.Length > 0; d = Path.GetDirectoryName(d) ?? "") {
+          if (!byDirectory.ContainsKey(d))
+            byDirectory[d] = new List<IndexCacheWriteItem>();
+        }
+        byDirectory[item.Directory].Add(ToWriteItem(item));
+      }
+      var sorted = byDirectory.Keys.OrderBy(x => x.Split(Path.DirectorySeparatorChar), Comparer<string[]>.Create((x, y) => {
+        for (var i = 0; i < Math.Min(x.Length, y.Length); i++) {
+          var c = string.Compare(x[i], y[i], StringComparison.OrdinalIgnoreCase);
+          if (c != 0)
+            return c;
+        }
+        return x.Length.CompareTo(y.Length);
+      })).Select(x => x.Length == 0 ? x : x).ToList();
+      // "" splits into [""]: first.
+      return sorted.Select(x => new IndexCacheWriteDirectory(x, false, byDirectory[x]));
+    }
+
+    private static string RelativePath(Item item) {
       return item.Directory.Length == 0 ? item.Name : Path.Combine(item.Directory, item.Name);
     }
 
@@ -413,16 +507,16 @@ namespace VsChromium.Tests.Server {
       return (Path.GetDirectoryName(relativePath) ?? "", Path.GetFileName(relativePath));
     }
 
-    private IndexCacheWriteItem TextItem(string relativePath, string text, DateTime? time = null) {
+    private Item TextItem(string relativePath, string text, DateTime? time = null) {
       var lastWriteTime = time ?? OldTime;
       var (directory, name) = Split(relativePath);
-      return new IndexCacheWriteItem(directory, name, new FileMetadata(lastWriteTime, Encoding.UTF8.GetByteCount(text)),
+      return new Item(directory, name, new FileMetadata(lastWriteTime, Encoding.UTF8.GetByteCount(text)),
         CreateText(text, lastWriteTime));
     }
 
-    private static IndexCacheWriteItem BinaryItem(string relativePath, long length) {
+    private static Item BinaryItem(string relativePath, long length) {
       var (directory, name) = Split(relativePath);
-      return new IndexCacheWriteItem(directory, name, new FileMetadata(OldTime, length), new BinaryFileContents(OldTime, length));
+      return new Item(directory, name, new FileMetadata(OldTime, length), new BinaryFileContents(OldTime, length));
     }
 
     private FileContents CreateText(string text, DateTime lastWriteTime) {

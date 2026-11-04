@@ -23,29 +23,46 @@ using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Cache {
   /// <summary>
-  /// A file to write to the cache: its directory (path relative to the project root, "" for the
-  /// root, the same string for the files of a directory) and its name, its metadata from the scan,
-  /// and its contents in the index. The files of a directory must be consecutive.
+  /// A file to write to the cache: its name, its metadata from the scan, and its contents in the
+  /// index (null if it is not searchable).
   /// </summary>
   public readonly struct IndexCacheWriteItem {
-    public IndexCacheWriteItem(string directory, string name, FileMetadata metadata, FileContents contents) {
-      Directory = directory;
+    public IndexCacheWriteItem(string name, FileMetadata metadata, FileContents contents) {
       Name = name;
       Metadata = metadata;
       Contents = contents;
     }
 
-    public string Directory { get; }
     public string Name { get; }
     public FileMetadata Metadata { get; }
     public FileContents Contents { get; }
   }
 
   /// <summary>
+  /// A directory of the tree to write to the cache: its path relative to the project root ("" for
+  /// the root) and its files. The directories are written in depth first order (parents first).
+  /// </summary>
+  public sealed class IndexCacheWriteDirectory {
+    public IndexCacheWriteDirectory(string path, bool isSymLink, IReadOnlyList<IndexCacheWriteItem> files) {
+      Path = path;
+      IsSymLink = isSymLink;
+      Files = files;
+    }
+
+    public string Path { get; }
+    public bool IsSymLink { get; }
+    public IReadOnlyList<IndexCacheWriteItem> Files { get; }
+  }
+
+  /// <summary>
   /// The result of a write of the cache of a project (statistics).
   /// </summary>
   public sealed class IndexCacheWriteResult {
+    /// <summary>Files with cached contents (text or binary).</summary>
     public int EntryCount;
+    /// <summary>Files and directories of the tree.</summary>
+    public int TreeFileCount;
+    public int TreeDirectoryCount;
     /// <summary>Files whose contents were written to new arena files.</summary>
     public int NewFileCount;
     /// <summary>Files modified within 2 seconds of the load (see <see cref="ProjectIndexCache.RacyInterval"/>).</summary>
@@ -144,6 +161,28 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     public void ReleaseLookup() {
       _lookup = null;
+    }
+
+    /// <summary>
+    /// The tree of the project from the cache (phase 2), if the cache has one (loaded by <see
+    /// cref="Open"/>, not released yet) and it was written with the same project configuration
+    /// (<paramref name="versionHash"/>), otherwise null.
+    /// </summary>
+    public CachedProjectTree TryLoadTree(string versionHash, IFileSystemNameFactory nameFactory, FullPath rootPath,
+                                         CancellationToken cancellationToken) {
+      var lookup = _lookup;
+      if (lookup == null)
+        return null;
+      if (!string.Equals(lookup.Index.VersionHash, versionHash, StringComparison.Ordinal)) {
+        Logger.LogInfo("The tree of the index cache of \"{0}\" is not used: the project configuration changed.", _rootPath);
+        return null;
+      }
+      var stopwatch = Stopwatch.StartNew();
+      var tree = CachedTreeBuilder.Build(lookup.Index, nameFactory, rootPath, cancellationToken);
+      Logger.LogInfo("Loaded the tree of \"{0}\" from the index cache in {1:n0} ms: {2:n0} directories, {3:n0} files ({4:n0} without contents).",
+        _rootPath, stopwatch.ElapsedMilliseconds, lookup.Index.Directories.Length, lookup.Index.Files.Length,
+        tree.FilesWithoutContents.Count);
+      return tree;
     }
 
     /// <summary>
@@ -285,15 +324,17 @@ namespace VsChromium.Server.Cache {
     }
 
     /// <summary>
-    /// Writes the cache of the project: the contents of <paramref name="items"/> already in arena
-    /// files keep their location, the others are written to new arena files, then the index is
-    /// replaced, and the arena files it doesn't reference are deleted. Files modified after the
-    /// scan, or within <see cref="RacyInterval"/> before <paramref name="loadStartUtc"/>, and files
-    /// larger than <see cref="MaxCachedFileLength"/> are not written. Returns null if this server
-    /// doesn't write the cache of the project.
+    /// Writes the cache of the project: the tree (<paramref name="directories"/>, depth first) with
+    /// the version hash of the project configuration, and the contents of the files: contents
+    /// already in arena files keep their location, the others are written to new arena files, then
+    /// the index is replaced, and the arena files it doesn't reference are deleted. The contents of
+    /// files modified after the scan, or within <see cref="RacyInterval"/> before <paramref
+    /// name="loadStartUtc"/>, and of files larger than <see cref="MaxCachedFileLength"/> are not
+    /// written (the files are in the tree, without contents). Returns null if this server doesn't
+    /// write the cache of the project.
     /// </summary>
-    public IndexCacheWriteResult Write(IEnumerable<IndexCacheWriteItem> items, DateTime loadStartUtc,
-                                       CancellationToken cancellationToken) {
+    public IndexCacheWriteResult Write(IEnumerable<IndexCacheWriteDirectory> directories, string versionHash,
+                                       DateTime loadStartUtc, CancellationToken cancellationToken) {
       lock (_writeLock) {
         if (!IsWritable)
           return null;
@@ -303,72 +344,38 @@ namespace VsChromium.Server.Cache {
         var racyLimitTicks = (loadStartUtc.ToUniversalTime() - RacyInterval).Ticks;
         var arenaWriter = new ArenaFileWriter(this, result);
         var referencedArenas = new HashSet<int>();
-        var count = 0;
         var tempPath = Path.Combine(Directory, TempIndexFileName);
         // Note: The entries are written as they are produced (no list of entries in memory).
         var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
         var completed = false;
         try {
-        using (var indexWriter = new IndexCacheFileWriter(stream, _rootPath, _caseSensitive)) {
-        foreach (var item in items) {
-          if ((++count & 1023) == 0) {
+          using (var indexWriter = new IndexCacheFileWriter(stream, _rootPath, versionHash, _caseSensitive)) {
+            foreach (var directory in directories) {
+              cancellationToken.ThrowIfCancellationRequested();
+              indexWriter.AddDirectory(directory.Path, directory.IsSymLink ? IndexCacheDirectoryFlags.SymLink : IndexCacheDirectoryFlags.None);
+              foreach (var item in directory.Files) {
+                var entry = GetEntry(directory, item, racyLimitTicks, arenaWriter, result);
+                indexWriter.AddFile(item.Name, entry);
+                if (!entry.HasNoLocation) {
+                  referencedArenas.Add(entry.ArenaId);
+                  result.EntryCount++;
+                } else if (entry.IsBinary) {
+                  result.EntryCount++;
+                }
+              }
+            }
             cancellationToken.ThrowIfCancellationRequested();
-          }
-          var contents = item.Contents;
-          var metadata = item.Metadata;
-          var ticks = metadata.LastWriteTimeUtc.Ticks;
-          if (contents == null || item.Name == null || item.Directory == null)
-            continue;
-          if (ticks >= racyLimitTicks) {
-            result.RacyFileCount++;
-            continue;
-          }
-          if (contents.UtcLastModified.Ticks != ticks) {
-            // Note: Also files whose directory entry is stale on Windows (hard links modified
-            // through another name, files being written), and file symbolic links (the scan has
-            // the metadata of the link, the contents the time of the target).
-            result.ChangedFileCount++;
-            AddChangedFileSample(result, item);
-            continue;
-          }
+            arenaWriter.Flush();
 
-          IndexCacheEntry entry;
-          if (contents is BinaryFileContents binary) {
-            if (binary.BinaryFileSize != metadata.Length) {
-              result.ChangedFileCount++;
-              continue;
-            }
-            entry = new IndexCacheEntry(ticks, metadata.Length, IndexCacheEntryFlags.Binary, 0, 0, 0);
-          } else if (contents is Utf8FileContents text) {
-            if (metadata.Length > MaxCachedFileLength || text.ByteLength > MaxCachedFileLength) {
-              result.LargeFileCount++;
-              continue;
-            }
-            if (!TryGetLocation(text.Contents, out var arenaId, out var offset)) {
-              (arenaId, offset) = arenaWriter.Append(text.Contents);
-              result.NewFileCount++;
-            }
-            entry = new IndexCacheEntry(ticks, metadata.Length,
-              text.IsAscii ? IndexCacheEntryFlags.Ascii : IndexCacheEntryFlags.None, arenaId, offset, text.ByteLength);
-          } else {
-            continue;
+            var arenas = referencedArenas.ToDictionary(x => x, x => _validArenas[x]);
+            indexWriter.Finish(arenas);
+            result.TreeFileCount = indexWriter.FileCount;
+            result.TreeDirectoryCount = indexWriter.DirectoryCount;
           }
-          indexWriter.Add(item.Directory, item.Name, entry);
-          if (!entry.IsBinary) {
-            referencedArenas.Add(entry.ArenaId);
-          }
-        }
-        cancellationToken.ThrowIfCancellationRequested();
-        arenaWriter.Flush();
-
-        var arenas = referencedArenas.ToDictionary(x => x, x => _validArenas[x]);
-        indexWriter.Finish(arenas);
-        result.EntryCount = indexWriter.FileCount;
-        }
-        stream.Flush(flushToDisk: true);
-        result.BytesWritten += stream.Length;
-        stream.Dispose();
-        completed = true;
+          stream.Flush(flushToDisk: true);
+          result.BytesWritten += stream.Length;
+          stream.Dispose();
+          completed = true;
         }
         finally {
           stream.Dispose();
@@ -396,20 +403,66 @@ namespace VsChromium.Server.Cache {
       }
     }
 
+    /// <summary>
+    /// The entry of a file of the tree: its contents (in an arena file), or no contents if they
+    /// can't be cached (see <see cref="Write"/>), or not searchable.
+    /// </summary>
+    private IndexCacheEntry GetEntry(IndexCacheWriteDirectory directory, IndexCacheWriteItem item, long racyLimitTicks,
+                                     ArenaFileWriter arenaWriter, IndexCacheWriteResult result) {
+      var contents = item.Contents;
+      var metadata = item.Metadata;
+      var ticks = metadata.LastWriteTimeUtc.Ticks;
+      if (contents == null)
+        return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.NotSearchable);
+      if (ticks >= racyLimitTicks) {
+        result.RacyFileCount++;
+        return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.NoContents);
+      }
+      if (contents.UtcLastModified.Ticks != ticks) {
+        // Note: Also files whose directory entry is stale on Windows (hard links modified
+        // through another name, files being written), and file symbolic links (the scan has
+        // the metadata of the link, the contents the time of the target).
+        result.ChangedFileCount++;
+        AddChangedFileSample(result, directory, item);
+        return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.NoContents);
+      }
+
+      if (contents is BinaryFileContents binary) {
+        if (binary.BinaryFileSize != metadata.Length) {
+          result.ChangedFileCount++;
+          return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.NoContents);
+        }
+        return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.Binary);
+      }
+      if (contents is Utf8FileContents text) {
+        if (metadata.Length > MaxCachedFileLength || text.ByteLength > MaxCachedFileLength) {
+          result.LargeFileCount++;
+          return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.NoContents);
+        }
+        if (!TryGetLocation(text.Contents, out var arenaId, out var offset)) {
+          (arenaId, offset) = arenaWriter.Append(text.Contents);
+          result.NewFileCount++;
+        }
+        return new IndexCacheEntry(ticks, metadata.Length,
+          text.IsAscii ? IndexCacheEntryFlags.Ascii : IndexCacheEntryFlags.None, arenaId, offset, text.ByteLength);
+      }
+      return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.NoContents);
+    }
+
     private const int MaxChangedFileSamples = 10;
 
     /// <summary>
     /// Records a sample of a file skipped because its scan time is not the time of its contents
     /// (diagnostics: what these files are, see <see cref="DescribeChangedFile"/>).
     /// </summary>
-    private void AddChangedFileSample(IndexCacheWriteResult result, IndexCacheWriteItem item) {
+    private void AddChangedFileSample(IndexCacheWriteResult result, IndexCacheWriteDirectory directory, IndexCacheWriteItem item) {
       if (result.ChangedFileSamples.Count >= MaxChangedFileSamples)
         return;
-      result.ChangedFileSamples.Add(DescribeChangedFile(item));
+      result.ChangedFileSamples.Add(DescribeChangedFile(directory, item));
     }
 
-    private string DescribeChangedFile(IndexCacheWriteItem item) {
-      var relativePath = item.Directory.Length == 0 ? item.Name : item.Directory + PathHelpers.DirectorySeparatorChar + item.Name;
+    private string DescribeChangedFile(IndexCacheWriteDirectory directory, IndexCacheWriteItem item) {
+      var relativePath = directory.Path.Length == 0 ? item.Name : directory.Path + PathHelpers.DirectorySeparatorChar + item.Name;
       var text = new StringBuilder();
       text.Append('"').Append(relativePath).Append("\": scan ").Append(item.Metadata.LastWriteTimeUtc.ToString("O"))
         .Append(' ').Append(item.Metadata.Length).Append(" bytes, contents ").Append(item.Contents.UtcLastModified.ToString("O"));

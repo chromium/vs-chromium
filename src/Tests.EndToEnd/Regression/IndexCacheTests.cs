@@ -270,6 +270,50 @@ public class IndexCacheTests {
     Assert.AreEqual(0, cache["writeCount"]!.GetValue<int>());
   }
 
+  /// <summary>
+  /// The state of the cache in "index/statistics" (status displays): saved after a load, "dirty"
+  /// after an edit (the changed files path doesn't write the cache), saved again after a change of
+  /// the tree (new file: incremental update with file system changes, which writes the cache).
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task IndexStatisticsShowTheStateOfTheCache() {
+    using var tree = new TestTree();
+    tree.Generate();
+    await using var server = await StartAndLoadAsync(tree);
+    await WaitForIdleAsync(server.Client);
+    await WaitForCacheWriteAsync(server.Client, 1);
+    var cache = await WaitForIndexCacheAsync(server.Client, x => !x["saving"]!.GetValue<bool>(), "saved");
+    Assert.IsTrue(cache["enabled"]!.GetValue<bool>());
+    Assert.IsNotNull(cache["lastSavedUtc"], cache.ToJsonString());
+    Assert.IsTrue(cache["sizeOnDiskBytes"]!.GetValue<long>() > 1000 * 500, cache.ToJsonString());
+    Assert.IsFalse(cache["dirty"]!.GetValue<bool>(), cache.ToJsonString());
+
+    // An edit: the index changes, the cache is not written.
+    File.AppendAllText(tree.FilePath(7, 7), "// EDITED_FILE\n");
+    var stopwatch = Stopwatch.StartNew();
+    while (await HitCountAsync(server.Client, "EDITED_FILE") != 1) {
+      Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(60), "Timeout waiting for the edit");
+      await Task.Delay(100);
+    }
+    await WaitForIndexCacheAsync(server.Client, x => x["dirty"]!.GetValue<bool>(), "dirty");
+
+    // A new file: written again.
+    File.WriteAllText(Path.Combine(tree.Root, "dir001", "new.cc"), "// NEW_FILE\n");
+    await WaitForIndexCacheAsync(server.Client, x => !x["dirty"]!.GetValue<bool>() && !x["saving"]!.GetValue<bool>(), "saved again");
+  }
+
+  private static async Task<JsonNode> WaitForIndexCacheAsync(JsonRpcServerClient server, Func<JsonNode, bool> predicate, string description) {
+    var stopwatch = Stopwatch.StartNew();
+    while (true) {
+      var cache = (await server.RequestAsync(ServerProtocol.GetIndexStatistics())).Data["indexCache"]!;
+      if (predicate(cache))
+        return cache;
+      Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(60), $"Timeout waiting for the cache state \"{description}\": {cache.ToJsonString()}");
+      await Task.Delay(100);
+    }
+  }
+
   /// <summary>A generated project and its cache directory (deleted when disposed).</summary>
   private sealed class TestTree : IDisposable {
     public string Root { get; } = NewDirectory("VsChromiumIndexCacheTest-");

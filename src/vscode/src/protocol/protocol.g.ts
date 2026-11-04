@@ -79,6 +79,25 @@ export interface IndexStatistics {
   fileContentsArenas: FileContentsArenaStatistics;
   indexLastUpdatedUtc: string;
   status: IndexingStatus;
+  /** The persistent index cache (absent if the server has none). */
+  indexCache?: IndexCacheState;
+}
+
+/** The state of the persistent index cache, for status displays. */
+export interface IndexCacheState {
+  enabled: boolean;
+  /** A write of the cache is queued or running. */
+  saving: boolean;
+  /** Last write of the index of the caches of the open projects (the most recent), if any. */
+  lastSavedUtc?: string;
+  /** Size of the cache directories of the open projects. */
+  sizeOnDiskBytes: number;
+  /**
+   * The index changed after the last write of the caches written by this server (e.g. edited
+   * files: only full loads write the cache). False if the cache is disabled, or if the caches of
+   * all the open projects are written by another server (read-only).
+   */
+  dirty: boolean;
 }
 
 export interface IndexDetails {

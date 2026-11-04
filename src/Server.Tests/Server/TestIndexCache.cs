@@ -15,6 +15,7 @@ using VsChromium.Core.Memory;
 using VsChromium.Server.Cache;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.JsonRpc;
 
 namespace VsChromium.Tests.Server {
   [TestClass]
@@ -352,6 +353,55 @@ namespace VsChromium.Tests.Server {
       // The contents in memory are written again by the next write.
       var result = cache.Write(Dirs(new[] { item }), VersionHash, LoadStart, CancellationToken.None);
       Assert.AreEqual(1, result.NewFileCount);
+    }
+
+    [TestMethod]
+    public void DiskStateOfTheCache() {
+      using (var indexCache = new IndexCache(new IndexCacheOptions(_cacheRoot))) {
+        var state = indexCache.GetDiskState();
+        Assert.IsTrue(state.Enabled);
+        Assert.IsFalse(state.Saving);
+        Assert.AreEqual(0, state.SizeOnDiskBytes, "No project open");
+
+        var cache = indexCache.GetProjectCache(new FullPath(_projectRoot));
+        state = indexCache.GetDiskState();
+        Assert.IsTrue(state.HasWritableProject);
+        Assert.IsNull(state.LastSavedUtc, "Not saved yet");
+        Assert.IsTrue(state.SizeOnDiskBytes > 0, "root.txt");
+        // Not saved yet: any index change is not in the cache.
+        Assert.IsTrue(ProtocolRequestHandler.IsDirty(state, DateTime.UtcNow));
+
+        var beforeWrite = DateTime.UtcNow.AddSeconds(-1);
+        var sizeBefore = state.SizeOnDiskBytes;
+        cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, LoadStart, CancellationToken.None);
+        state = indexCache.GetDiskState();
+        Assert.IsNotNull(state.LastSavedUtc);
+        Assert.AreEqual(File.GetLastWriteTimeUtc(IndexPath), state.LastSavedUtc);
+        Assert.IsTrue(state.SizeOnDiskBytes > sizeBefore, "index and arena files");
+        // The index was updated before the write: clean; after: dirty.
+        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, beforeWrite));
+        Assert.IsTrue(ProtocolRequestHandler.IsDirty(state, state.LastSavedUtc.Value.AddSeconds(1)));
+        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, DateTime.MinValue), "No index yet");
+      }
+    }
+
+    [TestMethod]
+    public void DiskStateOfAReadOnlyOrDisabledCacheIsNeverDirty() {
+      Write(new[] { TextItem("a.cc", "int a;\n") });
+      var writer = OpenNew(); // Holds the lock
+      using (var indexCache = new IndexCache(new IndexCacheOptions(_cacheRoot))) {
+        Assert.IsFalse(indexCache.GetProjectCache(new FullPath(_projectRoot)).IsWritable);
+        var state = indexCache.GetDiskState();
+        Assert.IsFalse(state.HasWritableProject);
+        Assert.IsNotNull(state.LastSavedUtc, "Written by the other server");
+        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, DateTime.UtcNow.AddDays(1)));
+      }
+      using (var disabled = new IndexCache(IndexCacheOptions.Disabled)) {
+        var state = disabled.GetDiskState();
+        Assert.IsFalse(state.Enabled);
+        Assert.IsFalse(ProtocolRequestHandler.IsDirty(state, DateTime.UtcNow));
+      }
+      GC.KeepAlive(writer);
     }
 
     [TestMethod]

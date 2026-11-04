@@ -185,6 +185,46 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonProperty("status")]
     public IndexingStatus Status { get; set; }
+
+    /// <summary>
+    /// The persistent index cache (absent if the server has none).
+    /// </summary>
+    [JsonProperty("indexCache", NullValueHandling = NullValueHandling.Ignore)]
+    public IndexCacheState IndexCache { get; set; }
+  }
+
+  /// <summary>
+  /// The state of the persistent index cache, for status displays.
+  /// </summary>
+  public sealed partial class IndexCacheState {
+    [JsonProperty("enabled")]
+    public bool Enabled { get; set; }
+
+    /// <summary>
+    /// A write of the cache is queued or running.
+    /// </summary>
+    [JsonProperty("saving")]
+    public bool Saving { get; set; }
+
+    /// <summary>
+    /// Last write of the index of the caches of the open projects (the most recent), if any.
+    /// </summary>
+    [JsonProperty("lastSavedUtc", NullValueHandling = NullValueHandling.Ignore)]
+    public DateTime? LastSavedUtc { get; set; }
+
+    /// <summary>
+    /// Size of the cache directories of the open projects.
+    /// </summary>
+    [JsonProperty("sizeOnDiskBytes")]
+    public long SizeOnDiskBytes { get; set; }
+
+    /// <summary>
+    /// The index changed after the last write of the caches written by this server (e.g. edited
+    /// files: only full loads write the cache). False if the cache is disabled, or if the caches of
+    /// all the open projects are written by another server (read-only).
+    /// </summary>
+    [JsonProperty("dirty")]
+    public bool Dirty { get; set; }
   }
 
   public sealed partial class IndexDetails {

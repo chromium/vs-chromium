@@ -190,6 +190,48 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("status")]
     public IndexingStatus Status { get; set; }
+
+    /// <summary>
+    /// The persistent index cache (absent if the server has none).
+    /// </summary>
+    [JsonPropertyName("indexCache")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IndexCacheState? IndexCache { get; set; }
+  }
+
+  /// <summary>
+  /// The state of the persistent index cache, for status displays.
+  /// </summary>
+  public sealed partial class IndexCacheState {
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; }
+
+    /// <summary>
+    /// A write of the cache is queued or running.
+    /// </summary>
+    [JsonPropertyName("saving")]
+    public bool Saving { get; set; }
+
+    /// <summary>
+    /// Last write of the index of the caches of the open projects (the most recent), if any.
+    /// </summary>
+    [JsonPropertyName("lastSavedUtc")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTime? LastSavedUtc { get; set; }
+
+    /// <summary>
+    /// Size of the cache directories of the open projects.
+    /// </summary>
+    [JsonPropertyName("sizeOnDiskBytes")]
+    public long SizeOnDiskBytes { get; set; }
+
+    /// <summary>
+    /// The index changed after the last write of the caches written by this server (e.g. edited
+    /// files: only full loads write the cache). False if the cache is disabled, or if the caches of
+    /// all the open projects are written by another server (read-only).
+    /// </summary>
+    [JsonPropertyName("dirty")]
+    public bool Dirty { get; set; }
   }
 
   public sealed partial class IndexDetails {
@@ -1300,6 +1342,7 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(FileExtractsResult))]
   [JsonSerializable(typeof(IndexStatisticsParams))]
   [JsonSerializable(typeof(IndexStatistics))]
+  [JsonSerializable(typeof(IndexCacheState))]
   [JsonSerializable(typeof(IndexDetails))]
   [JsonSerializable(typeof(IndexStateChangedParams))]
   [JsonSerializable(typeof(OperationStartedParams))]

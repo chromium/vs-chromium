@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,6 +60,25 @@ namespace VsChromium.Server.Cache {
     bool IsFromInvalidatedCache(FileContents contents);
 
     IndexCacheStatistics GetStatistics();
+
+    /// <summary>
+    /// The state of the cache on disk (status displays), from existing state only: the pending
+    /// writes, and the files of the caches of the open projects (enumerated: a few hundred files).
+    /// </summary>
+    IndexCacheDiskState GetDiskState();
+  }
+
+  public sealed class IndexCacheDiskState {
+    public bool Enabled;
+    /// <summary>A write of the cache is queued or running.</summary>
+    public bool Saving;
+    /// <summary>The last write time of the index of the open project caches (the most recent), if any.</summary>
+    public DateTime? LastSavedUtc;
+    /// <summary>The oldest index of the caches written by this server (null if one has no index yet).</summary>
+    public DateTime? OldestWritableSavedUtc;
+    /// <summary>True if this server writes the cache of at least one open project.</summary>
+    public bool HasWritableProject;
+    public long SizeOnDiskBytes;
   }
 
   public sealed class IndexCacheStatistics {
@@ -256,6 +276,44 @@ namespace VsChromium.Server.Cache {
         projects = _projects.Values.Where(x => x != null).ToArray();
       }
       return !projects.Any(x => x.IsMappedArena(view));
+    }
+
+    public IndexCacheDiskState GetDiskState() {
+      var result = new IndexCacheDiskState { Enabled = IsEnabled };
+      if (!IsEnabled)
+        return result;
+      ProjectIndexCache[] projects;
+      lock (_lock) {
+        result.Saving = !_writeTask.IsCompleted;
+        projects = _projects.Values.Where(x => x != null).ToArray();
+      }
+      var oldestWritable = DateTime.MaxValue;
+      foreach (var project in projects) {
+        try {
+          foreach (var file in new DirectoryInfo(project.Directory).EnumerateFiles("*", SearchOption.AllDirectories)) {
+            result.SizeOnDiskBytes += file.Length;
+          }
+          var index = new FileInfo(Path.Combine(project.Directory, IndexCacheFile.IndexFileName));
+          DateTime? saved = index.Exists ? index.LastWriteTimeUtc : null;
+          if (saved.HasValue && (!result.LastSavedUtc.HasValue || saved.Value > result.LastSavedUtc.Value)) {
+            result.LastSavedUtc = saved;
+          }
+          if (project.IsWritable) {
+            result.HasWritableProject = true;
+            // Note: A project without index yet is the oldest.
+            var value = saved ?? DateTime.MinValue;
+            if (value < oldestWritable)
+              oldestWritable = value;
+          }
+        }
+        catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+          // The directory may be deleted (e.g. "Rebuild index"): ignored.
+        }
+      }
+      if (result.HasWritableProject && oldestWritable != DateTime.MinValue) {
+        result.OldestWritableSavedUtc = oldestWritable;
+      }
+      return result;
     }
 
     public IndexCacheStatistics GetStatistics() {

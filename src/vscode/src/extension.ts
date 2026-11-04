@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import {
   FilesRegisterRequest,
   FilesUnregisterRequest,
+  IndexCacheState,
   IndexingStatus,
   IndexResumeRequest,
   IndexStatisticsRequest,
@@ -17,6 +18,12 @@ import { findServerPath, serverPathCandidates } from './server/serverLocator';
 import { describeIndexingState, IndexingState, nextIndexingState, subscribeIndexEvents } from './ui/indexingState';
 import { CodeSearchViewProvider } from './ui/codeSearchView';
 import { FileNamesPick } from './ui/fileNamesPick';
+import {
+  decorateIndexingDisplay,
+  describeIndexCache,
+  IndexCacheSavingPollIntervalMs,
+  shouldPollIndexCache,
+} from './ui/indexCacheStatus';
 import { describeMemory } from './ui/memoryStatistics';
 
 /** Minimum interval between two displays of the progress of a load in the status bar. */
@@ -29,6 +36,10 @@ const ProgressDisplayIntervalMs = 1000;
 class ServerManager implements vscode.Disposable {
   private client: ServerClient | undefined;
   private state: IndexingState = { kind: 'starting' };
+  /** The state of the index cache (index/statistics), requested after each load. */
+  private indexCache: IndexCacheState | undefined;
+  /** Next request of the state of the index cache while it is being saved. */
+  private indexCachePoll: NodeJS.Timeout | undefined;
   private readonly statusBar: vscode.StatusBarItem;
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -149,6 +160,7 @@ class ServerManager implements vscode.Disposable {
         `Projects: ${stats.projectCount}`,
         `Files: ${stats.fileCount.toLocaleString()} (${stats.searchableFileCount.toLocaleString()} searchable)`,
         ...describeMemory(stats, stats.status === 'busy' || stats.status === 'verifying'),
+        describeIndexCache(stats.indexCache),
         `Index last updated: ${new Date(stats.indexLastUpdatedUtc).toLocaleString()}`,
         `Trigram filters: ${this.trigramFiltersEnabled() ? 'enabled' : 'disabled'} (faster searches, about 5% of the size of the indexed files in memory)`,
       ];
@@ -171,6 +183,10 @@ class ServerManager implements vscode.Disposable {
   }
 
   dispose(): void {
+    if (this.indexCachePoll) {
+      clearTimeout(this.indexCachePoll);
+      this.indexCachePoll = undefined;
+    }
     if (this.pendingProgressDisplay) {
       clearTimeout(this.pendingProgressDisplay);
       this.pendingProgressDisplay = undefined;
@@ -295,8 +311,22 @@ class ServerManager implements vscode.Disposable {
   private async refreshStatistics() {
     try {
       const stats = await this.server?.request(IndexStatisticsRequest.type, {});
-      if (stats && this.state.kind === 'ready') {
+      if (!stats) {
+        return;
+      }
+      this.indexCache = stats.indexCache;
+      if (this.state.kind === 'ready') {
         this.setState({ kind: 'ready', fileCount: stats.fileCount, projectCount: stats.projectCount });
+      } else {
+        this.setState(this.state);
+      }
+      // Note: No periodic requests, except while the index cache is being saved (to show the end
+      // of the save).
+      if (shouldPollIndexCache(this.indexCache) && !this.indexCachePoll) {
+        this.indexCachePoll = setTimeout(() => {
+          this.indexCachePoll = undefined;
+          void this.refreshStatistics();
+        }, IndexCacheSavingPollIntervalMs);
       }
     } catch (e) {
       this.output.warn(`Error getting server statistics: ${userErrorMessage(e)}`);
@@ -327,7 +357,7 @@ class ServerManager implements vscode.Disposable {
       clearTimeout(this.pendingProgressDisplay);
       this.pendingProgressDisplay = undefined;
     }
-    const { text, tooltip } = describeIndexingState(state);
+    const { text, tooltip } = decorateIndexingDisplay(describeIndexingState(state), state, this.indexCache);
     // Note: Only update the status bar item when its display changes (each update redraws it,
     // and an open tooltip flickers).
     if (this.statusBar.text !== text) {

@@ -4,6 +4,7 @@
 
 using System;
 using System.Linq;
+using VsChromium.Core.Files;
 using VsChromium.Core.Threads;
 using VsChromium.Server.Cache;
 using VsChromium.Server.FileSystem;
@@ -75,6 +76,13 @@ namespace VsChromium.Server {
         // the files from disk (e.g. files modified without changing their time and size).
         _indexCache?.Invalidate(_fileSystemSnapshotManager.CurrentSnapshot.ProjectRoots.Select(x => x.Project.RootPath).ToList());
         _fileSystemSnapshotManager.Refresh();
+      });
+    }
+
+    public void RebuildProject(FullPath projectRoot) {
+      _stateChangeTaskQueue.ExecuteAsync(token => {
+        _indexCache?.Invalidate(new[] { projectRoot });
+        _fileSystemSnapshotManager.RebuildProject(projectRoot);
       });
     }
 

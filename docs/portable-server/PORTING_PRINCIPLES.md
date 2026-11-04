@@ -1162,3 +1162,21 @@ accumulators per project (count, min, average, max, last; no allocation per oper
   is the time to the verified index (`scanMs`: the verification scan).
 - **Incremental updates** (file system changes, edited files): each update counts for each project
   it touches, with the duration of the whole update.
+
+Per-project actions:
+
+- `project/rebuild { projectPath }`: deletes the cache of the project, rescans only this project
+  (the other projects keep their tree: `fullScanRoots`), and publishes the new tree with the root
+  of the project as a created directory: the update reads all the files of the project again, the
+  files of the other projects are reused. Only the caches of the projects changed since their last
+  save are written (the dirty projects): the caches of the other projects are not rewritten.
+- `project/clearCache { projectPath }`: deletes the cache of the project without rescan (the
+  current index is saved again by the save policy). `index/clearCache` (no parameter) clears all.
+- `project/setOptions { cacheEnabled }`: disabled, the cache of the project is closed and its
+  directory deleted (the arena files still mapped by the current index are deleted at the next
+  start, when the option is sent again), and it is neither read nor written anymore; enabled
+  again, the index of the project is saved by the save policy. VS Code: `vschromium.cacheEnabled`
+  and `vschromium.trigramFilters` are resource scoped settings (per workspace folder: the folder
+  containing the project root, or inside it), sent for each project at start and registration;
+  disabling the cache asks for a confirmation. The cache root directory stays global
+  (`vschromium.cacheDirectory`).

@@ -98,8 +98,8 @@
         "vschromium.cacheEnabled": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Keep a persistent index cache on disk, so that the index is available a few seconds after the server starts (then verified in the background) instead of being rebuilt from the files. Applied when the indexing server (re)starts.",
-          "scope": "machine"
+          "markdownDescription": "Keep a persistent index cache on disk for the projects of this folder, so that their index is available a few seconds after the server starts (then verified in the background) instead of being rebuilt from the files. Disabling it deletes the cache of the projects (after a confirmation). Can be set per workspace folder; also available in the server dashboard.",
+          "scope": "resource"
         },
         "vschromium.cacheDirectory": {
           "type": "string",
@@ -139,7 +139,8 @@
         "vschromium.trigramFilters": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Use trigram filters for the projects of the workspace: much faster selective code searches (e.g. symbol names), at the cost of memory (about 5% of the size of the indexed file contents, e.g. ~900 MB for 15 GB of text). Disabled by default. Also available from the status bar item (**Show Indexing Server Status**) and the **VsChromium: Toggle Trigram Filters** command."
+          "scope": "resource",
+          "markdownDescription": "Use trigram filters for the projects of the workspace (can be set per workspace folder): much faster selective code searches (e.g. symbol names), at the cost of memory (about 5% of the size of the indexed file contents, e.g. ~900 MB for 15 GB of text). Disabled by default. Also available from the status bar item (**Show Indexing Server Status**) and the **VsChromium: Toggle Trigram Filters** command."
         }
       }
     }

@@ -95,14 +95,16 @@ Paths copied from build output are understood: `base/foo.cc(19,18)`,
 | Setting | Default | Description |
 |---|---|---|
 | `vschromium.serverPath` | (empty) | Path to `VsChromium.Server.exe`; empty: the bundled server (or the repository build during development) |
-| `vschromium.cacheEnabled` | `true` | Persistent index cache: the index is available a few seconds after a restart (then verified in the background). `false` starts the server with `--no-cache` |
+| `vschromium.cacheEnabled` | `true` | Persistent index cache of the projects (per workspace folder): the index is available a few seconds after a restart (then verified in the background). Disabling it deletes the cache of the projects of the folder, after a confirmation |
 | `vschromium.cacheDirectory` | (empty) | Root directory of the index cache (absolute path), passed as `--cache-dir`; empty: `%LOCALAPPDATA%\VsChromium\Cache` |
-| `vschromium.trigramFilters` | `false` | Trigram filters for the projects of the workspace (faster selective searches, ~5% of the text size in memory) |
+| `vschromium.trigramFilters` | `false` | Trigram filters for the projects (per workspace folder: faster selective searches, ~5% of the text size in memory); the dashboard toggle of a project writes the setting of its folder |
 | `vschromium.searchCode.maxResults` | `10000` | Maximum number of matches of Search Code |
 | `vschromium.searchCode.maxExtractLength` | `120` | Maximum number of characters per line in the Search Code results |
 | `vschromium.searchCode.autoSearchDelayMs` | `100` | Delay after typing before searching (Search Code, Find File Names) |
 | `vschromium.searchFilePaths.maxResults` | `2000` | Maximum number of files of Find File Names |
 | `vschromium.trace.server` | `false` | Log all the messages exchanged with the server to the VsChromium output |
 
-`vschromium.cacheEnabled` and `vschromium.cacheDirectory` are applied when the server starts: when
-they change, the extension offers to restart the server.
+`vschromium.cacheDirectory` is applied when the server starts: when it changes, the extension
+offers to restart the server. `vschromium.trigramFilters` and `vschromium.cacheEnabled` are
+resource settings: they can be set per workspace folder (`.vscode/settings.json` of the folder),
+and apply to the project containing the folder (or contained in it).

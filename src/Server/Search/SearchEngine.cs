@@ -809,6 +809,10 @@ namespace VsChromium.Server.Search {
       }
     }
 
+    public FullPath GetProjectRoot(FullPath path) {
+      return _projectDiscovery.GetProjectFromAnyPath(path)?.RootPath ?? path;
+    }
+
     public bool IsTrigramFiltersEnabled(FullPath projectRootPath) {
       return TrigramFilters.Enabled &&
              _trigramFiltersEnabled.TryGetValue(projectRootPath, out var enabled) && enabled;

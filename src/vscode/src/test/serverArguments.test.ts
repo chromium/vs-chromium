@@ -14,22 +14,18 @@ import { findServerPath, serverArguments, ServerRestartSettings } from '../serve
 describe('serverArguments', () => {
   it('uses the default cache when nothing is set', () => {
     assert.deepEqual(serverArguments({}), ['--jsonrpc']);
-    assert.deepEqual(serverArguments({ cacheEnabled: true, cacheDirectory: '' }), ['--jsonrpc']);
-    assert.deepEqual(serverArguments({ cacheEnabled: true, cacheDirectory: '   ' }), ['--jsonrpc']);
+    assert.deepEqual(serverArguments({ cacheDirectory: '' }), ['--jsonrpc']);
+    assert.deepEqual(serverArguments({ cacheDirectory: '   ' }), ['--jsonrpc']);
   });
 
   it('passes the cache directory (trimmed)', () => {
     assert.deepEqual(serverArguments({ cacheDirectory: '  D:\\Cache Dir\\VsChromium ' }), ['--jsonrpc', '--cache-dir', 'D:\\Cache Dir\\VsChromium']);
-    assert.deepEqual(serverArguments({ cacheEnabled: true, cacheDirectory: '/tmp/cache' }), ['--jsonrpc', '--cache-dir', '/tmp/cache']);
-  });
-
-  it('disables the cache, whatever the directory', () => {
-    assert.deepEqual(serverArguments({ cacheEnabled: false }), ['--jsonrpc', '--no-cache']);
-    assert.deepEqual(serverArguments({ cacheEnabled: false, cacheDirectory: 'D:\\Cache' }), ['--jsonrpc', '--no-cache']);
+    assert.deepEqual(serverArguments({ cacheDirectory: '/tmp/cache' }), ['--jsonrpc', '--cache-dir', '/tmp/cache']);
   });
 
   it('lists the settings applied when the server starts', () => {
-    assert.deepEqual([...ServerRestartSettings].sort(), ['vschromium.cacheDirectory', 'vschromium.cacheEnabled']);
+    // Note: "vschromium.cacheEnabled" is a project option (per workspace folder).
+    assert.deepEqual([...ServerRestartSettings], ['vschromium.cacheDirectory']);
   });
 });
 
@@ -60,7 +56,7 @@ describe('serverArguments with the server', { skip: serverPath ? false : 'VsChro
   });
 
   it('starts the server without cache', async () => {
-    const cache = await cacheStatistics(serverArguments({ cacheEnabled: false }));
+    const cache = await cacheStatistics(['--jsonrpc', '--no-cache']);
     assert.equal(cache?.enabled, false);
   });
 });

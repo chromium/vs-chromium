@@ -150,11 +150,15 @@ describe('DashboardBridge', () => {
     const context = setup();
     await context.bridge.handleMessage({ type: 'request', id: 1, method: 'index/status' });
     await context.bridge.handleMessage({ type: 'request', id: 2, method: 'server/history', params: { sinceUnixMs: 5 } });
-    await context.bridge.handleMessage({ type: 'request', id: 3, method: 'index/clearCache', params: { projectPath: 'C:\\a' } });
+    await context.bridge.handleMessage({ type: 'request', id: 3, method: 'index/clearCache' });
+    await context.bridge.handleMessage({ type: 'request', id: 4, method: 'project/clearCache', params: { projectPath: 'C:\\a' } });
+    await context.bridge.handleMessage({ type: 'request', id: 5, method: 'project/rebuild', params: { projectPath: 'C:\\a' } });
     assert.deepEqual(context.server.requests, [
       { method: 'index/status' },
       { method: 'server/history', params: { sinceUnixMs: 5 } },
-      { method: 'index/clearCache', params: { projectPath: 'C:\\a' } },
+      { method: 'index/clearCache' },
+      { method: 'project/clearCache', params: { projectPath: 'C:\\a' } },
+      { method: 'project/rebuild', params: { projectPath: 'C:\\a' } },
     ]);
   });
 

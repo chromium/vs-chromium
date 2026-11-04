@@ -29,6 +29,12 @@ namespace VsChromium.Server.Search {
     /// </summary>
     void SetProjectOptions(FullPath path, bool? trigramFiltersEnabled);
 
+    /// <summary>
+    /// The root path of the project containing <paramref name="path"/> (also for projects not loaded
+    /// yet), or <paramref name="path"/> if none.
+    /// </summary>
+    FullPath GetProjectRoot(FullPath path);
+
     /// <summary>True if the trigram filters of the project are enabled (the default).</summary>
     bool IsTrigramFiltersEnabled(FullPath projectRootPath);
 

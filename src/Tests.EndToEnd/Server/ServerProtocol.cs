@@ -89,13 +89,17 @@ public static class ServerProtocol {
   public static ServerRequest GetIndexStatus() =>
     new("index/status", new JsonObject());
 
-  public static ServerRequest ClearCache(string? projectPath = null) {
-    var parameters = new JsonObject();
-    if (projectPath != null) {
-      parameters["projectPath"] = projectPath;
-    }
-    return new("index/clearCache", parameters);
-  }
+  /// <summary>"project/clearCache" for a project, "index/clearCache" for all the projects.</summary>
+  public static ServerRequest ClearCache(string? projectPath = null) =>
+    projectPath != null
+      ? new("project/clearCache", new JsonObject { ["projectPath"] = projectPath })
+      : new("index/clearCache", new JsonObject());
+
+  public static ServerRequest RebuildProject(string projectPath) =>
+    new("project/rebuild", new JsonObject { ["projectPath"] = projectPath });
+
+  public static ServerRequest SetProjectCacheEnabled(string projectPath, bool enabled) =>
+    new("project/setOptions", new JsonObject { ["projectPath"] = projectPath, ["cacheEnabled"] = enabled });
 
   public static ServerRequest GetServerHistory(long? sinceUnixMs = null) {
     var parameters = new JsonObject();

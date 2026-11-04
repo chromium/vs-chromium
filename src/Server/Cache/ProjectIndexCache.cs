@@ -240,6 +240,33 @@ namespace VsChromium.Server.Cache {
     /// <summary>The directory of the cache of this project.</summary>
     public string Directory { get; }
 
+    /// <summary>
+    /// Deletes the cache of a project without opening it (e.g. the cache of the project is disabled),
+    /// unless another server uses it (holds its lock file). Returns false if it can't be deleted.
+    /// </summary>
+    public static bool DeleteCache(string cacheRootDirectory, string rootPath) {
+      var caseSensitive = PathComparerRegistry.Default.Comparison == StringComparison.Ordinal;
+      var directory = Path.Combine(cacheRootDirectory, GetProjectDirectoryName(rootPath, caseSensitive));
+      if (!System.IO.Directory.Exists(directory))
+        return true;
+      var lockPath = Path.Combine(directory, LockFileName);
+      try {
+        using (new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 1)) {
+          foreach (var file in System.IO.Directory.GetFiles(directory, "*", SearchOption.AllDirectories)) {
+            if (!string.Equals(file, lockPath, StringComparison.OrdinalIgnoreCase)) {
+              File.Delete(file);
+            }
+          }
+        }
+        System.IO.Directory.Delete(directory, recursive: true);
+        return true;
+      }
+      catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+        Logger.LogInfo("Cannot delete the index cache of \"{0}\" (in use?): {1}", rootPath, e.Message);
+        return false;
+      }
+    }
+
     public string RootPath => _rootPath;
 
     /// <summary>True if this server writes the cache (it holds the lock file).</summary>

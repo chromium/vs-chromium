@@ -99,14 +99,15 @@ anonymous models, default values, namespace blocks, other scalar types.
 | `server/history` | (new: history of the server for the charts of the dashboards, see `ServerHistory`) |
 | `files/register`, `files/unregister` | `RegisterFileRequest`, `UnregisterFileRequest` |
 | `files/extracts` | `GetFileExtractsRequest` |
-| `project/setOptions`, `project/details` | `SetProjectOptionsRequest`, `GetProjectDetailsRequest` |
+| `project/setOptions`, `project/details` | `SetProjectOptionsRequest`, `GetProjectDetailsRequest` (new: per project options `cacheEnabled`; per project `memory`, `cache` state and `operations` statistics in `ProjectDetails`) |
+| `project/rebuild`, `project/clearCache` | (new: rebuild the index of a project, delete the index cache of a project) |
 | `search/code`, `search/paths` | `SearchCodeRequest`, `SearchFilePathsRequest` (results: flat lists of files per project instead of a directory tree) |
 | `tree/get`, `tree/entries`, `tree/entriesMultiple`, `tree/refresh` | `GetFileSystemTreeRequest`, `GetDirectoryEntriesRequest`, `GetDirectoryEntriesMultipleRequest`, `RefreshFileSystemTreeRequest` |
 | `tree/directoryDetails` | `GetDirectoryDetailsRequest` |
 | `index/pause`, `index/resume` | `PauseIndexingRequest`, `ResumeIndexingRequest` |
 | `index/statistics`, `index/details` | `GetDatabaseStatisticsRequest`, `GetDatabaseDetailsRequest` |
 | `index/status` | (new: `index/statistics` without the arena statistics, for frequent refreshes) |
-| `index/clearCache` | (new: deletes the index cache of a project or of all the projects, without rescan) |
+| `index/clearCache` | (new: deletes the index cache of all the projects, without rescan; see `project/clearCache` for a project) |
 | Notifications `index/stateChanged`, `index/scanStarted`, `index/scanFinished`, `index/loading`, `index/loadingProgress`, `index/loaded`, `index/progress` | `IndexingServerStateChangedEvent`, `FileSystemScanStarted/Finished`, `SearchEngineFilesLoading/LoadingProgress/Loaded`, `ProgressReportEvent` |
 | (dropped) | `GetFileSystemRequest` (obsolete), `GetFileSystemVersionRequest` (unused), `GetDirectoryStatisticsRequest` (unused, always returned zeros; `tree/directoryStatistics` was dropped in P5) |
 

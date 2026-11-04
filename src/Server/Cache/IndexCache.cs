@@ -63,6 +63,14 @@ namespace VsChromium.Server.Cache {
     void Invalidate(IEnumerable<FullPath> rootPaths);
 
     /// <summary>
+    /// Enables or disables the cache of a project ("project/setOptions"). Disabled: the cache of the
+    /// project is closed and deleted, and is not used or written anymore. Enabled: the cache is
+    /// opened by the next load or save (the caller marks the index as changed so that it is saved).
+    /// Returns true if the setting changed.
+    /// </summary>
+    bool SetProjectCacheEnabled(FullPath rootPath, bool enabled);
+
+    /// <summary>
     /// True if <paramref name="contents"/> were loaded from the cache of a project, and the cache
     /// was deleted since (<see cref="Invalidate"/>): they must not be reused by the next load.
     /// </summary>
@@ -150,6 +158,8 @@ namespace VsChromium.Server.Cache {
     private readonly HashSet<FullPath> _dirtyProjects = new HashSet<FullPath>();
     /// <summary>The project whose cache is being written, if any.</summary>
     private volatile string _writingProject;
+    /// <summary>The projects whose cache is disabled ("project/setOptions", guarded by <see cref="_lock"/>).</summary>
+    private readonly HashSet<FullPath> _disabledProjects = new HashSet<FullPath>();
 
     public IndexCache(IndexCacheOptions options) {
       _options = options;
@@ -167,7 +177,7 @@ namespace VsChromium.Server.Cache {
       if (!IsEnabled)
         return null;
       lock (_lock) {
-        if (_disposed)
+        if (_disposed || _disabledProjects.Contains(rootPath))
           return null;
         if (_projects.TryGetValue(rootPath, out var result))
           return result;
@@ -248,9 +258,10 @@ namespace VsChromium.Server.Cache {
                                    IReadOnlyCollection<FullPath> changedProjects = null) {
       if (!IsEnabled || database is not FileDatabaseSnapshot fileDatabase)
         return;
-      // Only the projects whose cache is written by this server.
+      // Only the projects whose cache is written by this server. Note: Opened if needed (e.g. the
+      // cache of a project enabled again: not opened by the load of the project).
       var caches = snapshot.ProjectRoots
-        .Select(x => GetOpenProjectCache(x.Project.RootPath))
+        .Select(x => GetProjectCache(x.Project.RootPath))
         .Where(x => x != null && x.IsWritable)
         .ToList();
       if (caches.Count == 0)
@@ -321,7 +332,10 @@ namespace VsChromium.Server.Cache {
           if (cache == null || !cache.IsWritable)
             continue;
           lock (_lock) {
-            _dirtyProjects.Remove(projectRoot.Project.RootPath);
+            // Only the projects whose index changed since the last save of their cache (e.g. not
+            // the other projects after a rebuild of a project).
+            if (!_dirtyProjects.Remove(projectRoot.Project.RootPath) && cache.HasIndex)
+              continue;
           }
           IndexCacheWriteResult result;
           _writingProject = cache.RootPath;
@@ -413,6 +427,42 @@ namespace VsChromium.Server.Cache {
       }
     }
 
+    public bool SetProjectCacheEnabled(FullPath rootPath, bool enabled) {
+      if (!IsEnabled)
+        return false;
+      if (enabled) {
+        lock (_lock) {
+          if (!_disabledProjects.Remove(rootPath))
+            return false;
+        }
+        Logger.LogInfo("Index cache of \"{0}\" enabled.", rootPath);
+        return true;
+      }
+
+      ProjectIndexCache cache;
+      lock (_lock) {
+        if (_disposed || !_disabledProjects.Add(rootPath))
+          return false;
+        _projects.TryGetValue(rootPath, out cache);
+        _projects.Remove(rootPath);
+        _dirtyProjects.Remove(rootPath);
+      }
+      Logger.LogInfo("Index cache of \"{0}\" disabled: deleting it.", rootPath);
+      CancelWrites();
+      if (!WaitForWrites(TimeSpan.FromSeconds(30))) {
+        Logger.LogWarn("Timeout waiting for the index cache write to be cancelled.");
+      }
+      if (cache != null) {
+        // Note: The contents loaded from the cache stay in use (their views stay mapped: the files
+        // still mapped are deleted when the cache is deleted again, e.g. at the next start).
+        cache.Invalidate();
+        cache.Dispose();
+      }
+      // The directory of the cache (lock file, files not deleted by the invalidation).
+      ProjectIndexCache.DeleteCache(_options.CacheDirectory, rootPath.Value);
+      return true;
+    }
+
     public bool IsFromInvalidatedCache(FileContents contents) {
       if (contents?.Contents.Block is not SafeMemoryMappedViewHandle view)
         return false;
@@ -455,6 +505,10 @@ namespace VsChromium.Server.Cache {
       var result = new IndexCacheProjectState();
       if (!IsEnabled)
         return result;
+      lock (_lock) {
+        if (_disabledProjects.Contains(rootPath))
+          return result;
+      }
       var cache = GetOpenProjectCache(rootPath);
       if (cache == null)
         return result;

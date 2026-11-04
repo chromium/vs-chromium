@@ -10,6 +10,19 @@ model SetProjectOptionsParams {
    * the filters of the project are released. Unchanged if omitted.
    */
   trigramFiltersEnabled?: boolean;
+
+  /**
+   * Enables or disables the persistent index cache of the project (enabled by default). Disabled:
+   * the cache of the project is deleted (the client asks for a confirmation first), and is not used
+   * or saved anymore. Enabled again: the index of the project is saved to its cache by the save
+   * policy (once the index settles). Unchanged if omitted.
+   */
+  cacheEnabled?: boolean;
+}
+
+model ProjectPathParams {
+  /** Root path of the project (`rootPath` of `tree/get`). */
+  projectPath: string;
 }
 
 model DetailsParams {
@@ -168,4 +181,17 @@ interface Project {
 
   /** Details of a project: statistics of its files and configuration. */
   details(...ProjectDetailsParams): ProjectDetails;
+
+  /**
+   * Rebuilds the index of a project: deletes its index cache, rescans the project and reads all its
+   * files again (the other projects keep their tree and contents). Asynchronous: the progress is
+   * reported by the usual notifications ("index/scanStarted", ..., "index/loaded").
+   */
+  rebuild(...ProjectPathParams): void;
+
+  /**
+   * Deletes the index cache of a project, without rescan: the current index stays in use, and is
+   * saved to the cache again by the save policy (see "index/clearCache").
+   */
+  clearCache(...ProjectPathParams): ClearCacheResult;
 }

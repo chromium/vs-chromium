@@ -247,16 +247,6 @@ namespace VsChromium.Protocol.Generated {
     public IndexCacheState? IndexCache { get; set; }
   }
 
-  public sealed partial class ClearCacheParams {
-    /// <summary>
-    /// The root path of the project whose cache is deleted (`rootPath` of `tree/get`). All the
-    /// projects of the index if absent.
-    /// </summary>
-    [JsonPropertyName("projectPath")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? ProjectPath { get; set; }
-  }
-
   public sealed partial class ClearCacheResult {
     /// <summary>
     /// Projects whose cache was deleted (0 if the cache is disabled).
@@ -416,6 +406,24 @@ namespace VsChromium.Protocol.Generated {
     [JsonPropertyName("trigramFiltersEnabled")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? TrigramFiltersEnabled { get; set; }
+
+    /// <summary>
+    /// Enables or disables the persistent index cache of the project (enabled by default). Disabled:
+    /// the cache of the project is deleted (the client asks for a confirmation first), and is not used
+    /// or saved anymore. Enabled again: the index of the project is saved to its cache by the save
+    /// policy (once the index settles). Unchanged if omitted.
+    /// </summary>
+    [JsonPropertyName("cacheEnabled")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CacheEnabled { get; set; }
+  }
+
+  public sealed partial class ProjectPathParams {
+    /// <summary>
+    /// Root path of the project (`rootPath` of `tree/get`).
+    /// </summary>
+    [JsonPropertyName("projectPath")]
+    public string ProjectPath { get; set; } = "";
   }
 
   public sealed partial class DetailsParams {
@@ -1427,6 +1435,8 @@ namespace VsChromium.Protocol.Generated {
     public const string IndexProgress = "index/progress";
     public const string ProjectSetOptions = "project/setOptions";
     public const string ProjectDetails = "project/details";
+    public const string ProjectRebuild = "project/rebuild";
+    public const string ProjectClearCache = "project/clearCache";
     public const string SearchCode = "search/code";
     public const string SearchPaths = "search/paths";
     public const string ServerInitialize = "server/initialize";
@@ -1480,13 +1490,14 @@ namespace VsChromium.Protocol.Generated {
     ValueTask<IndexStatus> IndexStatusAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// "index/clearCache": Deletes the persistent index cache of a project (or of all the projects): the same deletion
-    /// as "tree/refresh" (Rebuild index), without the rescan. The current index stays in use (the
-    /// contents loaded from the cache stay readable). The cache is written again by the save policy:
-    /// the index is marked as changed, saved once it settles (30 s), or after the load in progress,
-    /// if any. A server stopped before that save starts cold the next time.
+    /// "index/clearCache": Deletes the persistent index cache of all the projects (see "project/clearCache" for a
+    /// project): the same deletion as "tree/refresh" (Rebuild index), without the rescan. The current
+    /// index stays in use (the contents loaded from the cache stay readable). The cache is written
+    /// again by the save policy: the index is marked as changed, saved once it settles (30 s), or
+    /// after the load in progress, if any. A server stopped before that save starts cold the next
+    /// time.
     /// </summary>
-    ValueTask<ClearCacheResult> IndexClearCacheAsync(ClearCacheParams parameters, CancellationToken cancellationToken);
+    ValueTask<ClearCacheResult> IndexClearCacheAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// "index/details": Details of all the projects.
@@ -1503,6 +1514,19 @@ namespace VsChromium.Protocol.Generated {
     /// "project/details": Details of a project: statistics of its files and configuration.
     /// </summary>
     ValueTask<ProjectDetails> ProjectDetailsAsync(ProjectDetailsParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "project/rebuild": Rebuilds the index of a project: deletes its index cache, rescans the project and reads all its
+    /// files again (the other projects keep their tree and contents). Asynchronous: the progress is
+    /// reported by the usual notifications ("index/scanStarted", ..., "index/loaded").
+    /// </summary>
+    ValueTask ProjectRebuildAsync(ProjectPathParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "project/clearCache": Deletes the index cache of a project, without rescan: the current index stays in use, and is
+    /// saved to the cache again by the save policy (see "index/clearCache").
+    /// </summary>
+    ValueTask<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken);
 
     /// <summary>
     /// "search/code": Searches the contents of the indexed files.
@@ -1574,6 +1598,8 @@ namespace VsChromium.Protocol.Generated {
       ProtocolMethods.IndexDetails => true,
       ProtocolMethods.ProjectSetOptions => true,
       ProtocolMethods.ProjectDetails => true,
+      ProtocolMethods.ProjectRebuild => true,
+      ProtocolMethods.ProjectClearCache => true,
       ProtocolMethods.SearchCode => true,
       ProtocolMethods.SearchPaths => true,
       ProtocolMethods.ServerInitialize => true,
@@ -1624,7 +1650,7 @@ namespace VsChromium.Protocol.Generated {
           return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.IndexStatus);
         }
         case ProtocolMethods.IndexClearCache: {
-          var result = await handler.IndexClearCacheAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ClearCacheParams), cancellationToken).ConfigureAwait(false);
+          var result = await handler.IndexClearCacheAsync(cancellationToken).ConfigureAwait(false);
           return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.ClearCacheResult);
         }
         case ProtocolMethods.IndexDetails: {
@@ -1638,6 +1664,14 @@ namespace VsChromium.Protocol.Generated {
         case ProtocolMethods.ProjectDetails: {
           var result = await handler.ProjectDetailsAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ProjectDetailsParams), cancellationToken).ConfigureAwait(false);
           return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.ProjectDetails);
+        }
+        case ProtocolMethods.ProjectRebuild: {
+          await handler.ProjectRebuildAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ProjectPathParams), cancellationToken).ConfigureAwait(false);
+          return null;
+        }
+        case ProtocolMethods.ProjectClearCache: {
+          var result = await handler.ProjectClearCacheAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ProjectPathParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.ClearCacheResult);
         }
         case ProtocolMethods.SearchCode: {
           var result = await handler.SearchCodeAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.SearchParams), cancellationToken).ConfigureAwait(false);
@@ -1791,7 +1825,6 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(IndexStatisticsParams))]
   [JsonSerializable(typeof(IndexStatistics))]
   [JsonSerializable(typeof(IndexStatus))]
-  [JsonSerializable(typeof(ClearCacheParams))]
   [JsonSerializable(typeof(ClearCacheResult))]
   [JsonSerializable(typeof(IndexCacheState))]
   [JsonSerializable(typeof(IndexDetails))]
@@ -1801,6 +1834,7 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(FilesLoadedParams))]
   [JsonSerializable(typeof(ProgressParams))]
   [JsonSerializable(typeof(SetProjectOptionsParams))]
+  [JsonSerializable(typeof(ProjectPathParams))]
   [JsonSerializable(typeof(DetailsParams))]
   [JsonSerializable(typeof(ProjectDetailsParams))]
   [JsonSerializable(typeof(FileByExtensionDetails))]

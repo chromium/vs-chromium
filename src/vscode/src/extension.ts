@@ -22,6 +22,7 @@ import {
   shouldPollIndexCache,
 } from './ui/indexCacheStatus';
 import { DashboardPanel } from './ui/dashboard/dashboardPanel';
+import { folderForProject, isSameOrInside } from './ui/projectSettings';
 
 /** Minimum interval between two displays of the progress of a load in the status bar. */
 const ProgressDisplayIntervalMs = 1000;
@@ -39,11 +40,8 @@ class ServerManager implements vscode.Disposable {
   private indexCachePoll: NodeJS.Timeout | undefined;
   private readonly statusBar: vscode.StatusBarItem;
   private readonly disposables: vscode.Disposable[] = [];
-  /**
-   * Trigram filters of projects (by root path) set from the server dashboard, overriding the
-   * setting until the setting changes or the server restarts.
-   */
-  private readonly trigramFiltersOverrides = new Map<string, boolean>();
+  /** The index cache option sent to the server for each project (by path): to confirm the deletions. */
+  private readonly cacheEnabledSent = new Map<string, boolean>();
   private readonly serverChangedEmitter = new vscode.EventEmitter<void>();
   /** Fired when the server client changes (started, restarted). */
   readonly onDidChangeServer = this.serverChangedEmitter.event;
@@ -60,12 +58,11 @@ class ServerManager implements vscode.Disposable {
       vscode.workspace.onDidChangeWorkspaceFolders(e => this.onWorkspaceFoldersChanged(e)),
       vscode.workspace.onDidOpenTextDocument(doc => this.registerDocument(doc)),
       vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('vschromium.trigramFilters')) {
-          this.trigramFiltersOverrides.clear();
-          void this.applyProjectOptions(/*includeIndexedProjects*/ true);
+        if (e.affectsConfiguration('vschromium.trigramFilters') || e.affectsConfiguration('vschromium.cacheEnabled')) {
+          void this.applyProjectOptions(/*includeIndexedProjects*/ true, /*confirmCacheDeletion*/ true);
         }
         if (ServerRestartSettings.some(name => e.affectsConfiguration(name))) {
-          void this.offerRestart('the index cache settings changed');
+          void this.offerRestart('the index cache directory changed');
         }
       }),
     );
@@ -92,10 +89,7 @@ class ServerManager implements vscode.Disposable {
       return;
     }
 
-    const args = serverArguments({
-      cacheEnabled: config.get<boolean>('cacheEnabled'),
-      cacheDirectory: config.get<string>('cacheDirectory'),
-    });
+    const args = serverArguments({ cacheDirectory: config.get<string>('cacheDirectory') });
     this.output.info(`Starting indexing server: ${serverPath} ${args.join(' ')}`);
     this.setState({ kind: 'starting' });
     const trace = config.get<boolean>('trace.server') ?? false;
@@ -107,14 +101,14 @@ class ServerManager implements vscode.Disposable {
       clientVersion: String(this.context.extension.packageJSON.version ?? ''),
     });
     this.client = client;
-    this.trigramFiltersOverrides.clear();
+    this.cacheEnabledSent.clear();
     this.serverChangedEmitter.fire();
 
     subscribeIndexEvents(client, event => {
       if (this.client !== client) {
         return;
       }
-      if (event.type === 'loaded' && (this.trigramFiltersEnabled() || this.trigramFiltersOverrides.size > 0)) {
+      if (event.type === 'loaded') {
         // Projects discovered since the last load (e.g. from an opened file).
         void this.applyProjectOptions(/*includeIndexedProjects*/ true);
       }
@@ -206,10 +200,8 @@ class ServerManager implements vscode.Disposable {
     for (const doc of vscode.workspace.textDocuments) {
       await this.registerDocument(doc);
     }
-    if (this.trigramFiltersEnabled()) {
-      // Disabled by default: sent only when enabled (applied by the server when the project loads).
-      await this.applyProjectOptions(/*includeIndexedProjects*/ false);
-    }
+    // Applied by the server when the projects load (any path inside a project identifies it).
+    await this.applyProjectOptions(/*includeIndexedProjects*/ false);
     // The server sends indexing notifications only if it found a project for one of the paths.
     const stats = await this.server?.request(IndexStatisticsRequest.type, {});
     if (stats && stats.projectCount === 0 && this.state.kind === 'starting') {
@@ -244,29 +236,52 @@ class ServerManager implements vscode.Disposable {
   }
 
   /**
-   * Enables or disables the trigram filters of a project (server dashboard), until the setting
-   * changes or the server restarts.
+   * The configuration of a project: the settings of the workspace folder containing it (or inside
+   * it), otherwise of the workspace (resource scoped settings).
    */
-  async setProjectTrigramFilters(projectPath: string, enabled: boolean): Promise<void> {
-    if (enabled === this.trigramFiltersEnabled()) {
-      this.trigramFiltersOverrides.delete(projectPath);
-    } else {
-      this.trigramFiltersOverrides.set(projectPath, enabled);
-    }
-    await this.server?.request(ProjectSetOptionsRequest.type, { projectPath, trigramFiltersEnabled: enabled });
+  private projectConfiguration(projectPath: string): { config: vscode.WorkspaceConfiguration; folder?: vscode.WorkspaceFolder } {
+    const folders = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file');
+    const folderPath = folderForProject(projectPath, folders.map(folder => folder.uri.fsPath));
+    const folder = folders.find(f => f.uri.fsPath === folderPath);
+    return { config: vscode.workspace.getConfiguration('vschromium', folder?.uri ?? vscode.Uri.file(projectPath)), folder };
   }
 
   /**
-   * Sends the project options (setting "vschromium.trigramFilters") for the workspace folders
-   * (any path inside a project identifies the project) and, if `includeIndexedProjects`, for the
-   * projects known to the server.
+   * Enables or disables the trigram filters of a project (server dashboard): sets the setting
+   * "vschromium.trigramFilters" of the workspace folder of the project (or of the workspace).
    */
-  private async applyProjectOptions(includeIndexedProjects: boolean) {
+  async setProjectTrigramFilters(projectPath: string, enabled: boolean): Promise<void> {
+    await this.updateProjectSetting(projectPath, 'trigramFilters', enabled);
+  }
+
+  /**
+   * Enables or disables the index cache of a project: sets the setting "vschromium.cacheEnabled" of
+   * the workspace folder of the project (or of the workspace). Disabling it deletes the cache of
+   * the project (after a confirmation).
+   */
+  async setProjectCacheEnabled(projectPath: string, enabled: boolean): Promise<void> {
+    await this.updateProjectSetting(projectPath, 'cacheEnabled', enabled);
+  }
+
+  private async updateProjectSetting(projectPath: string, name: string, value: boolean): Promise<void> {
+    const { config, folder } = this.projectConfiguration(projectPath);
+    const target = folder ? vscode.ConfigurationTarget.WorkspaceFolder
+      : vscode.workspace.workspaceFolders ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+    // Note: The configuration change listener sends the new options to the server.
+    await config.update(name, value, target);
+  }
+
+  /**
+   * Sends the project options (settings "vschromium.trigramFilters" and "vschromium.cacheEnabled"
+   * of the workspace folder of each project) for the workspace folders (any path inside a project
+   * identifies the project) and, if `includeIndexedProjects`, for the projects known to the server.
+   * `confirmCacheDeletion`: asks before disabling the cache of a project (its cache is deleted).
+   */
+  private async applyProjectOptions(includeIndexedProjects: boolean, confirmCacheDeletion = false) {
     const server = this.server;
     if (!server) {
       return;
     }
-    const trigramFiltersEnabled = this.trigramFiltersEnabled();
     try {
       const paths = new Set((vscode.workspace.workspaceFolders ?? [])
         .filter(folder => folder.uri.scheme === 'file')
@@ -274,13 +289,32 @@ class ServerManager implements vscode.Disposable {
       if (includeIndexedProjects) {
         const tree = await server.request(TreeGetRequest.type, {});
         for (const project of tree.projects) {
+          // The folders inside a known project identify the same project.
+          for (const p of [...paths]) {
+            if (isSameOrInside(p, project.rootPath)) {
+              paths.delete(p);
+            }
+          }
           paths.add(project.rootPath);
         }
       }
       for (const projectPath of paths) {
+        const { config } = this.projectConfiguration(projectPath);
+        let cacheEnabled = config.get<boolean>('cacheEnabled') ?? true;
+        if (!cacheEnabled && confirmCacheDeletion && this.cacheEnabledSent.get(projectPath) !== false) {
+          const choice = await vscode.window.showWarningMessage(
+            `VsChromium: disable the index cache of "${projectPath}"? Its cache is deleted (the next starts read all the files).`,
+            { modal: true }, 'Disable and Delete');
+          if (choice !== 'Disable and Delete') {
+            await this.updateProjectSetting(projectPath, 'cacheEnabled', true);
+            cacheEnabled = true;
+          }
+        }
+        this.cacheEnabledSent.set(projectPath, cacheEnabled);
         await server.request(ProjectSetOptionsRequest.type, {
           projectPath,
-          trigramFiltersEnabled: this.trigramFiltersOverrides.get(projectPath) ?? trigramFiltersEnabled,
+          trigramFiltersEnabled: config.get<boolean>('trigramFilters') ?? false,
+          cacheEnabled,
         });
       }
     } catch (e) {
@@ -295,7 +329,7 @@ class ServerManager implements vscode.Disposable {
     for (const folder of e.removed) {
       await this.unregisterPath(folder.uri);
     }
-    if (e.added.length > 0 && this.trigramFiltersEnabled()) {
+    if (e.added.length > 0) {
       await this.applyProjectOptions(/*includeIndexedProjects*/ false);
     }
   }

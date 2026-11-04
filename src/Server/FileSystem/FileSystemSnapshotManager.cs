@@ -147,6 +147,58 @@ namespace VsChromium.Server.FileSystem {
       });
     }
 
+    public void RebuildProject(FullPath projectRoot) {
+      _taskExecutor.ExecuteAsync(token => {
+        _longRunningFileSystemTaskQueue.Enqueue(new TaskId("RebuildProjectTaskId:" + projectRoot.Value),
+          cancellationToken => RebuildProjectTask(projectRoot, cancellationToken));
+      });
+    }
+
+    /// <summary>
+    /// Rescans a project (the other projects keep their tree) and publishes the new tree with its
+    /// root as a created directory: the update of the index reads all the files of the project
+    /// again (the files of the other projects are unchanged).
+    /// </summary>
+    private void RebuildProjectTask(FullPath projectRoot, CancellationToken cancellationToken) {
+      if (!_registeredProjects.Any(x => x.RootPath.Equals(projectRoot)))
+        return;
+      _operationProcessor.Execute(new OperationHandlers {
+        OnBeforeExecute = info =>
+          OnSnapshotScanStarted(info),
+
+        OnError = (info, error) => {
+          if (!error.IsCanceled()) {
+            Logger.LogError(error, "Error rebuilding the project \"{0}\"", projectRoot);
+          }
+          OnSnapshotScanFinished(new SnapshotScanResult {
+            OperationInfo = info,
+            Error = error
+          });
+        },
+
+        Execute = info => {
+          Logger.LogInfo("FileSystemSnapshotManager: Rebuilding the project \"{0}\".", projectRoot);
+          var oldSnapshot = _currentSnapshot;
+          var newSnapshot = BuildNewFileSystemSnapshot(_registeredProjects, oldSnapshot, EmptyChanges, null,
+            new HashSet<FullPath> { projectRoot }, cancellationToken);
+          // The scan verifies the tree of the cache of the project, if any.
+          _unverifiedProjects.Remove(projectRoot);
+          newSnapshot = newSnapshot.WithCachedProjectRoots(_unverifiedProjects.Keys.ToList());
+          Invariants.Assert(ReferenceEquals(oldSnapshot, _currentSnapshot));
+          _currentSnapshot = newSnapshot;
+
+          OnSnapshotScanFinished(new SnapshotScanResult {
+            OperationInfo = info,
+            PreviousSnapshot = oldSnapshot,
+            FullPathChanges = new FullPathChanges(new[] {
+              new PathChangeEntry(projectRoot, RelativePath.Empty, PathChangeKind.Created, PathKind.Directory),
+            }),
+            NewSnapshot = newSnapshot,
+          });
+        }
+      });
+    }
+
     public event EventHandler<OperationInfo> SnapshotScanStarted;
     public event EventHandler<SnapshotScanResult> SnapshotScanFinished;
     public event EventHandler<FilesChangedEventArgs> FilesChanged;

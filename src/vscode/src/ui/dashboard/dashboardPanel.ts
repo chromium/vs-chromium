@@ -6,7 +6,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as vscode from 'vscode';
-import { IndexClearCacheRequest } from '../../protocol/protocol.g';
+import { IndexClearCacheRequest, ProjectClearCacheRequest } from '../../protocol/protocol.g';
 import { DashboardBridge, DashboardServer } from './dashboardBridge';
 import { HostCommand, PageToHost } from './dashboardMessages';
 import { serverLogDirectory } from './logDirectory';
@@ -157,7 +157,9 @@ export class DashboardPanel implements vscode.Disposable {
     if (!server) {
       throw new Error('the indexing server is not running.');
     }
-    const result = await server.request(IndexClearCacheRequest.type, projectPath !== undefined ? { projectPath } : {});
+    const result = projectPath !== undefined
+      ? await server.request(ProjectClearCacheRequest.type, { projectPath })
+      : await server.request0(IndexClearCacheRequest.type);
     void vscode.window.showInformationMessage(
       `VsChromium: index cache cleared (${result.projectCount} ${result.projectCount === 1 ? 'project' : 'projects'}).`);
   }

@@ -21,6 +21,8 @@ export const DashboardRequestMethods = [
   'index/resume',
   'project/details',
   'project/setOptions',
+  'project/rebuild',
+  'project/clearCache',
   'server/statistics',
   'server/history',
   'tree/refresh',

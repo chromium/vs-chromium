@@ -243,10 +243,154 @@ public class ProjectStatisticsTests {
     }
   }
 
+  /// <summary>
+  /// "project/rebuild": the project is rescanned and all its files are read again (its cache is
+  /// deleted, then saved again); the other projects keep their tree and contents.
+  /// </summary>
+  [TestMethod]
+  [Timeout(5 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task RebuildReloadsOnlyItsProject() {
+    using var a = new TestProject("A", fileCount: 300, linesPerFile: 40);
+    using var b = new TestProject("B", fileCount: 100, linesPerFile: 40);
+    var cacheRoot = NewCacheRoot();
+    try {
+      SetOldTimes(a, b);
+      await using var server = await StartAsync(cacheRoot, a, b);
+      await WaitForSavedAsync(server, a, b);
+      var detailsB = await DetailsAsync(server, b.Root);
+      var savedA = (await DetailsAsync(server, a.Root))["cache"]!["lastSavedUtc"]!.GetValue<DateTime>();
+
+      var error = await Assert.ThrowsAsync<ServerErrorException>(() =>
+        server.RequestAsync(ServerProtocol.RebuildProject(Path.Combine(a.Root, "not-a-project"))));
+      Assert.AreEqual(-32001, error.Code);
+
+      await server.RequestAsync(ServerProtocol.RebuildProject(a.Root));
+      await WaitForAsync(server, async () =>
+        (await DetailsAsync(server, a.Root))["operations"]!["initialLoad"]!["count"]!.GetValue<long>() == 2, "A rebuilt");
+      await WaitForAsync(server, async () => {
+        var cache = (await DetailsAsync(server, a.Root))["cache"]!;
+        return cache["lastSavedUtc"] != null && cache["lastSavedUtc"]!.GetValue<DateTime>() > savedA && !cache["dirty"]!.GetValue<bool>();
+      }, "cache of A saved again");
+      var memoryA = (await DetailsAsync(server, a.Root))["memory"]!;
+      TestContext.WriteLine($"A: {memoryA.ToJsonString()}");
+      // All the files of A were read again: their previous slots are dead.
+      Assert.IsTrue(memoryA["deadBytes"]!.GetValue<long>() >= a.TextBytes, memoryA.ToJsonString());
+      Assert.IsFalse((await DetailsAsync(server, a.Root))["operations"]!["initialLoad"]!["fromCache"]!.GetValue<bool>());
+      // B is unchanged.
+      var afterB = await DetailsAsync(server, b.Root);
+      Assert.AreEqual(detailsB["memory"]!.ToJsonString(), afterB["memory"]!.ToJsonString());
+      Assert.AreEqual(1, afterB["operations"]!["initialLoad"]!["count"]!.GetValue<long>());
+      Assert.AreEqual(detailsB["cache"]!["lastSavedUtc"]!.ToJsonString(), afterB["cache"]!["lastSavedUtc"]!.ToJsonString());
+      Assert.AreEqual(300 + 100 + 2, (await server.RequestAsync(ServerProtocol.GetIndexStatus())).Data["fileCount"]!.GetValue<int>());
+    }
+    finally {
+      DeleteDirectory(cacheRoot);
+    }
+  }
+
+  /// <summary>
+  /// "project/setOptions" cacheEnabled: a disabled cache is deleted and not saved anymore, the next
+  /// start loads the project from disk; enabled again, it is saved by the save policy.
+  /// "project/clearCache": deletes the cache of a project only.
+  /// </summary>
+  [TestMethod]
+  [Timeout(5 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task CacheCanBeDisabledOrClearedPerProject() {
+    using var a = new TestProject("A", fileCount: 300, linesPerFile: 40);
+    using var b = new TestProject("B", fileCount: 100, linesPerFile: 40);
+    var cacheRoot = NewCacheRoot();
+    try {
+      SetOldTimes(a, b);
+      string directoryA;
+      await using (var server = await StartAsync(cacheRoot, a, b)) {
+        await WaitForSavedAsync(server, a, b);
+        directoryA = (await DetailsAsync(server, a.Root))["cache"]!["directory"]!.GetValue<string>();
+        var directoryB = (await DetailsAsync(server, b.Root))["cache"]!["directory"]!.GetValue<string>();
+
+        // Clear the cache of B only: saved again by the save policy.
+        Assert.AreEqual(1, (await server.RequestAsync(ServerProtocol.ClearCache(b.Root))).Data["projectCount"]!.GetValue<int>());
+        Assert.IsFalse(File.Exists(Path.Combine(directoryB, "index.bin")));
+        Assert.IsTrue(File.Exists(Path.Combine(directoryA, "index.bin")));
+        await WaitForAsync(server, () => Task.FromResult(File.Exists(Path.Combine(directoryB, "index.bin"))), "B saved again");
+
+        // Disable the cache of A (any path inside the project): deleted, not saved anymore.
+        await server.RequestAsync(ServerProtocol.SetProjectCacheEnabled(Path.Combine(a.Root, "src"), false));
+        Assert.IsFalse(Directory.Exists(directoryA), "Deleted");
+        var cacheA = (await DetailsAsync(server, a.Root))["cache"]!;
+        Assert.IsFalse(cacheA["enabled"]!.GetValue<bool>(), cacheA.ToJsonString());
+        Assert.IsNull(cacheA["directory"]);
+        File.AppendAllText(Path.Combine(a.Root, "src", "file0001.cc"), "// EDITED\n");
+        File.SetLastWriteTimeUtc(Path.Combine(a.Root, "src", "file0001.cc"), DateTime.UtcNow.AddHours(-1));
+        await WaitForAsync(server, async () =>
+          (await DetailsAsync(server, a.Root))["operations"]!["incrementalUpdates"]!["count"]!.GetValue<long>() >= 1, "edit of A");
+        await Task.Delay(3000); // More than the save delays
+        Assert.IsFalse(Directory.Exists(directoryA), "Not saved");
+        Assert.IsTrue((await DetailsAsync(server, b.Root))["cache"]!["enabled"]!.GetValue<bool>());
+      }
+
+      Assert.IsFalse(Directory.Exists(directoryA), "Not saved at shutdown");
+      // Next start: the cache of A stays disabled (the option is sent before the registration).
+      await using (var server = await StartAsync(cacheRoot, beforeRegistration: async s =>
+                     await s.RequestAsync(ServerProtocol.SetProjectCacheEnabled(a.Root, false)), a, b)) {
+        Assert.IsFalse((await DetailsAsync(server, a.Root))["operations"]!["initialLoad"]!["fromCache"]!.GetValue<bool>(), "A from disk");
+        Assert.IsTrue((await DetailsAsync(server, b.Root))["operations"]!["initialLoad"]!["fromCache"]!.GetValue<bool>(), "B from the cache");
+        Assert.IsFalse(Directory.Exists(directoryA), "Still disabled");
+
+        // Enabled again: saved by the save policy.
+        await server.RequestAsync(ServerProtocol.SetProjectCacheEnabled(a.Root, true));
+        await WaitForAsync(server, () => Task.FromResult(File.Exists(Path.Combine(directoryA, "index.bin"))), "A saved");
+        Assert.IsTrue((await DetailsAsync(server, a.Root))["cache"]!["enabled"]!.GetValue<bool>());
+      }
+    }
+    finally {
+      DeleteDirectory(cacheRoot);
+    }
+  }
+
+  private static string NewCacheRoot() {
+    return Path.Combine(Path.GetTempPath(), "VsChromiumProjectStatisticsTestCache-" + Guid.NewGuid().ToString("N"));
+  }
+
+  /// <summary>Files older than the "racy" interval of the cache (cached).</summary>
+  private static void SetOldTimes(params TestProject[] projects) {
+    foreach (var project in projects) {
+      foreach (var file in Directory.GetFiles(project.Root, "*", SearchOption.AllDirectories)) {
+        File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddHours(-1));
+      }
+    }
+  }
+
+  private static async Task WaitForSavedAsync(JsonRpcServerClient server, params TestProject[] projects) {
+    foreach (var project in projects) {
+      await WaitForAsync(server, async () => {
+        var cache = (await DetailsAsync(server, project.Root))["cache"]!;
+        return cache["lastSavedUtc"] != null && !cache["dirty"]!.GetValue<bool>() && !cache["saving"]!.GetValue<bool>();
+      }, $"cache of {project.Root} saved");
+    }
+  }
+
+  private static void DeleteDirectory(string path) {
+    try {
+      Directory.Delete(path, recursive: true);
+    }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+      // Best effort
+    }
+  }
+
   /// <summary>Starts a server with the cache <paramref name="cacheRoot"/> and waits for the projects to be loaded.</summary>
-  private static async Task<JsonRpcServerClient> StartAsync(string cacheRoot, params TestProject[] projects) {
+  private static Task<JsonRpcServerClient> StartAsync(string cacheRoot, params TestProject[] projects) {
+    return StartAsync(cacheRoot, null, projects);
+  }
+
+  /// <summary>Starts a server with the cache <paramref name="cacheRoot"/> and waits for the projects to be loaded.</summary>
+  private static async Task<JsonRpcServerClient> StartAsync(string cacheRoot, Func<JsonRpcServerClient, Task>? beforeRegistration,
+                                                           params TestProject[] projects) {
     var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath, cacheRoot,
       new Dictionary<string, string?> { ["VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS"] = "500,2000" });
+    if (beforeRegistration != null) {
+      await beforeRegistration(server);
+    }
     foreach (var project in projects) {
       await server.RequestAsync(ServerProtocol.RegisterFile(project.ProjectFile));
     }

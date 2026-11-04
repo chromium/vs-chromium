@@ -105,14 +105,6 @@ export interface IndexStatus {
   indexCache?: IndexCacheState;
 }
 
-export interface ClearCacheParams {
-  /**
-   * The root path of the project whose cache is deleted (`rootPath` of `tree/get`). All the
-   * projects of the index if absent.
-   */
-  projectPath?: string;
-}
-
 export interface ClearCacheResult {
   /** Projects whose cache was deleted (0 if the cache is disabled). */
   projectCount: number;
@@ -200,6 +192,18 @@ export interface SetProjectOptionsParams {
    * the filters of the project are released. Unchanged if omitted.
    */
   trigramFiltersEnabled?: boolean;
+  /**
+   * Enables or disables the persistent index cache of the project (enabled by default). Disabled:
+   * the cache of the project is deleted (the client asks for a confirmation first), and is not used
+   * or saved anymore. Enabled again: the index of the project is saved to its cache by the save
+   * policy (once the index settles). Unchanged if omitted.
+   */
+  cacheEnabled?: boolean;
+}
+
+export interface ProjectPathParams {
+  /** Root path of the project (`rootPath` of `tree/get`). */
+  projectPath: string;
 }
 
 export interface DetailsParams {
@@ -701,15 +705,16 @@ export namespace IndexStatusRequest {
 }
 
 /**
- * Request (client to server) "index/clearCache": Deletes the persistent index cache of a project (or of all the projects): the same deletion
- * as "tree/refresh" (Rebuild index), without the rescan. The current index stays in use (the
- * contents loaded from the cache stay readable). The cache is written again by the save policy:
- * the index is marked as changed, saved once it settles (30 s), or after the load in progress,
- * if any. A server stopped before that save starts cold the next time.
+ * Request (client to server) "index/clearCache": Deletes the persistent index cache of all the projects (see "project/clearCache" for a
+ * project): the same deletion as "tree/refresh" (Rebuild index), without the rescan. The current
+ * index stays in use (the contents loaded from the cache stay readable). The cache is written
+ * again by the save policy: the index is marked as changed, saved once it settles (30 s), or
+ * after the load in progress, if any. A server stopped before that save starts cold the next
+ * time.
  */
 export namespace IndexClearCacheRequest {
   export const method = 'index/clearCache';
-  export const type = new RequestType<ClearCacheParams, ClearCacheResult, void>(method);
+  export const type = new RequestType0<ClearCacheResult, void>(method);
 }
 
 /** Request (client to server) "index/details": Details of all the projects. */
@@ -773,6 +778,25 @@ export namespace ProjectSetOptionsRequest {
 export namespace ProjectDetailsRequest {
   export const method = 'project/details';
   export const type = new RequestType<ProjectDetailsParams, ProjectDetails, void>(method);
+}
+
+/**
+ * Request (client to server) "project/rebuild": Rebuilds the index of a project: deletes its index cache, rescans the project and reads all its
+ * files again (the other projects keep their tree and contents). Asynchronous: the progress is
+ * reported by the usual notifications ("index/scanStarted", ..., "index/loaded").
+ */
+export namespace ProjectRebuildRequest {
+  export const method = 'project/rebuild';
+  export const type = new RequestType<ProjectPathParams, null, void>(method);
+}
+
+/**
+ * Request (client to server) "project/clearCache": Deletes the index cache of a project, without rescan: the current index stays in use, and is
+ * saved to the cache again by the save policy (see "index/clearCache").
+ */
+export namespace ProjectClearCacheRequest {
+  export const method = 'project/clearCache';
+  export const type = new RequestType<ProjectPathParams, ClearCacheResult, void>(method);
 }
 
 /** Request (client to server) "search/code": Searches the contents of the indexed files. */

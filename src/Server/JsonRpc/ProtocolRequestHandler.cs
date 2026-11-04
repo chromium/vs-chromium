@@ -307,34 +307,57 @@ namespace VsChromium.Server.JsonRpc {
       });
     }
 
-    public ValueTask<ClearCacheResult> IndexClearCacheAsync(ClearCacheParams parameters, CancellationToken cancellationToken) {
+    public ValueTask<ClearCacheResult> IndexClearCacheAsync(CancellationToken cancellationToken) {
       var snapshot = _snapshotManager.CurrentSnapshot;
-      var roots = snapshot.ProjectRoots.Select(x => x.Project.RootPath).ToList();
-      if (parameters.ProjectPath != null) {
-        if (!PathHelpers.IsAbsolutePath(parameters.ProjectPath)) {
-          throw new RecoverableErrorException($"Invalid project path \"{parameters.ProjectPath}\"");
-        }
-        var projectPath = new FullPath(parameters.ProjectPath);
-        roots = roots.Where(x => x.Equals(projectPath)).ToList();
-        if (roots.Count == 0) {
-          throw new RecoverableErrorException($"Project \"{parameters.ProjectPath}\" not found");
-        }
-      }
-      if (_indexCache == null || !_indexCache.IsEnabled) {
-        return new ValueTask<ClearCacheResult>(new ClearCacheResult { ProjectCount = 0 });
-      }
+      return new ValueTask<ClearCacheResult>(ClearCache(snapshot, snapshot.ProjectRoots.Select(x => x.Project.RootPath).ToList()));
+    }
 
+    public ValueTask<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken) {
+      var snapshot = _snapshotManager.CurrentSnapshot;
+      return new ValueTask<ClearCacheResult>(ClearCache(snapshot, new List<FullPath> { FindProjectRoot(snapshot, parameters.ProjectPath) }));
+    }
+
+    public ValueTask ProjectRebuildAsync(ProjectPathParams parameters, CancellationToken cancellationToken) {
+      var root = FindProjectRoot(_snapshotManager.CurrentSnapshot, parameters.ProjectPath);
+      Logger.LogInfo("Rebuilding the index of the project \"{0}\".", root);
+      _indexingServer.RebuildProject(root);
+      return default;
+    }
+
+    /// <summary>The root path of a project of <paramref name="snapshot"/> (-32001 if not found).</summary>
+    private static FullPath FindProjectRoot(FileSystemSnapshot snapshot, string projectPath) {
+      if (string.IsNullOrEmpty(projectPath) || !PathHelpers.IsAbsolutePath(projectPath)) {
+        throw new RecoverableErrorException($"Invalid project path \"{projectPath}\"");
+      }
+      var path = new FullPath(projectPath);
+      var project = snapshot.ProjectRoots.FirstOrDefault(x => x.Project.RootPath.Equals(path));
+      if (project == null) {
+        throw new RecoverableErrorException($"Project \"{projectPath}\" not found");
+      }
+      return project.Project.RootPath;
+    }
+
+    private ClearCacheResult ClearCache(FileSystemSnapshot snapshot, List<FullPath> roots) {
+      if (_indexCache == null || !_indexCache.IsEnabled) {
+        return new ClearCacheResult { ProjectCount = 0 };
+      }
       Logger.LogInfo("Clearing the index cache of {0:n0} project(s).", roots.Count);
       _indexCache.Invalidate(roots);
-      // The current index is saved again by the save policy (the index is "changed"). If a load is
-      // in progress (or the index is the tree of the cache, being verified), it is saved after it.
+      SaveIndexCacheLater(snapshot);
+      return new ClearCacheResult { ProjectCount = roots.Count };
+    }
+
+    /// <summary>
+    /// The current index is saved to the cache by the save policy (the index is "changed"). If a
+    /// load is in progress (or the index is the tree of the cache, being verified), it is saved
+    /// after it.
+    /// </summary>
+    private void SaveIndexCacheLater(FileSystemSnapshot snapshot) {
       var database = snapshot.IsFromCache ? null : _searchEngine.GetCompleteDatabase(snapshot.Version);
       if (database != null) {
         _indexCache.NotifyIndexUpdated(snapshot, database, fullLoad: false);
       }
-      return new ValueTask<ClearCacheResult>(new ClearCacheResult { ProjectCount = roots.Count });
     }
-
     /// <summary>
     /// The state of the index cache for status displays (no walk of the index, no disk access).
     /// </summary>
@@ -375,6 +398,13 @@ namespace VsChromium.Server.JsonRpc {
         throw new RecoverableErrorException($"Invalid project path \"{parameters.ProjectPath}\"");
       }
       _searchEngine.SetProjectOptions(new FullPath(parameters.ProjectPath), parameters.TrigramFiltersEnabled);
+      if (parameters.CacheEnabled.HasValue && _indexCache != null) {
+        // Note: The path may be any path inside the project (or a project not loaded yet).
+        var root = _searchEngine.GetProjectRoot(new FullPath(parameters.ProjectPath));
+        if (_indexCache.SetProjectCacheEnabled(root, parameters.CacheEnabled.Value) && parameters.CacheEnabled.Value) {
+          SaveIndexCacheLater(_snapshotManager.CurrentSnapshot);
+        }
+      }
       return default;
     }
 

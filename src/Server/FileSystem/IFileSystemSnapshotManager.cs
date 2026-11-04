@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using VsChromium.Core.Files;
 using System;
 using VsChromium.Server.Operations;
 
@@ -20,6 +21,12 @@ namespace VsChromium.Server.FileSystem {
     void Pause();
     void Resume();
     void Refresh();
+
+    /// <summary>
+    /// Rescans the project whose root is <paramref name="projectRoot"/> and reloads all its files
+    /// ("project/rebuild"): the other projects keep their tree and contents.
+    /// </summary>
+    void RebuildProject(FullPath projectRoot);
 
     /// <summary>
     /// Event raised when a file system scan operation has started

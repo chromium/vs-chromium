@@ -19,7 +19,9 @@ import {
   IndexStateChangedNotification,
   IndexStatisticsRequest,
   InitializeResult,
+  ProjectClearCacheRequest,
   ProjectDetailsRequest,
+  ProjectRebuildRequest,
   ProjectSetOptionsRequest,
   ServerStatisticsRequest,
   TreeRefreshRequest,
@@ -55,7 +57,8 @@ const requestTypes: Partial<Record<DashboardRequestMethod, RequestType<unknown, 
   'project/setOptions': ProjectSetOptionsRequest.type as RequestType<unknown, unknown, void>,
   'server/statistics': ServerStatisticsRequest.type as RequestType<unknown, unknown, void>,
   'server/history': ServerHistoryRequest.type as RequestType<unknown, unknown, void>,
-  'index/clearCache': IndexClearCacheRequest.type as RequestType<unknown, unknown, void>,
+  'project/rebuild': ProjectRebuildRequest.type as RequestType<unknown, unknown, void>,
+  'project/clearCache': ProjectClearCacheRequest.type as RequestType<unknown, unknown, void>,
 };
 
 const requestTypes0: Partial<Record<DashboardRequestMethod, RequestType0<unknown, void>>> = {
@@ -63,6 +66,7 @@ const requestTypes0: Partial<Record<DashboardRequestMethod, RequestType0<unknown
   'index/resume': IndexResumeRequest.type,
   'tree/refresh': TreeRefreshRequest.type,
   'index/status': IndexStatusRequest.type,
+  'index/clearCache': IndexClearCacheRequest.type,
 };
 
 /** The method of the notification of each index event (forwarded as is to the page). */

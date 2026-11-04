@@ -240,15 +240,6 @@ namespace VsChromium.Protocol.Generated {
     public IndexCacheState IndexCache { get; set; }
   }
 
-  public sealed partial class ClearCacheParams {
-    /// <summary>
-    /// The root path of the project whose cache is deleted (`rootPath` of `tree/get`). All the
-    /// projects of the index if absent.
-    /// </summary>
-    [JsonProperty("projectPath", NullValueHandling = NullValueHandling.Ignore)]
-    public string ProjectPath { get; set; }
-  }
-
   public sealed partial class ClearCacheResult {
     /// <summary>
     /// Projects whose cache was deleted (0 if the cache is disabled).
@@ -403,6 +394,23 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonProperty("trigramFiltersEnabled", NullValueHandling = NullValueHandling.Ignore)]
     public bool? TrigramFiltersEnabled { get; set; }
+
+    /// <summary>
+    /// Enables or disables the persistent index cache of the project (enabled by default). Disabled:
+    /// the cache of the project is deleted (the client asks for a confirmation first), and is not used
+    /// or saved anymore. Enabled again: the index of the project is saved to its cache by the save
+    /// policy (once the index settles). Unchanged if omitted.
+    /// </summary>
+    [JsonProperty("cacheEnabled", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? CacheEnabled { get; set; }
+  }
+
+  public sealed partial class ProjectPathParams {
+    /// <summary>
+    /// Root path of the project (`rootPath` of `tree/get`).
+    /// </summary>
+    [JsonProperty("projectPath")]
+    public string ProjectPath { get; set; }
   }
 
   public sealed partial class DetailsParams {
@@ -1397,6 +1405,8 @@ namespace VsChromium.Protocol.Generated {
     public const string IndexProgress = "index/progress";
     public const string ProjectSetOptions = "project/setOptions";
     public const string ProjectDetails = "project/details";
+    public const string ProjectRebuild = "project/rebuild";
+    public const string ProjectClearCache = "project/clearCache";
     public const string SearchCode = "search/code";
     public const string SearchPaths = "search/paths";
     public const string ServerInitialize = "server/initialize";
@@ -1469,14 +1479,15 @@ namespace VsChromium.Protocol.Generated {
       _rpc.InvokeWithParameterObjectAsync<IndexStatus>(ProtocolMethods.IndexStatus, null, cancellationToken);
 
     /// <summary>
-    /// "index/clearCache": Deletes the persistent index cache of a project (or of all the projects): the same deletion
-    /// as "tree/refresh" (Rebuild index), without the rescan. The current index stays in use (the
-    /// contents loaded from the cache stay readable). The cache is written again by the save policy:
-    /// the index is marked as changed, saved once it settles (30 s), or after the load in progress,
-    /// if any. A server stopped before that save starts cold the next time.
+    /// "index/clearCache": Deletes the persistent index cache of all the projects (see "project/clearCache" for a
+    /// project): the same deletion as "tree/refresh" (Rebuild index), without the rescan. The current
+    /// index stays in use (the contents loaded from the cache stay readable). The cache is written
+    /// again by the save policy: the index is marked as changed, saved once it settles (30 s), or
+    /// after the load in progress, if any. A server stopped before that save starts cold the next
+    /// time.
     /// </summary>
-    public Task<ClearCacheResult> IndexClearCacheAsync(ClearCacheParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
-      _rpc.InvokeWithParameterObjectAsync<ClearCacheResult>(ProtocolMethods.IndexClearCache, parameters, cancellationToken);
+    public Task<ClearCacheResult> IndexClearCacheAsync(CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync<ClearCacheResult>(ProtocolMethods.IndexClearCache, null, cancellationToken);
 
     /// <summary>
     /// "index/details": Details of all the projects.
@@ -1496,6 +1507,21 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     public Task<ProjectDetails> ProjectDetailsAsync(ProjectDetailsParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
       _rpc.InvokeWithParameterObjectAsync<ProjectDetails>(ProtocolMethods.ProjectDetails, parameters, cancellationToken);
+
+    /// <summary>
+    /// "project/rebuild": Rebuilds the index of a project: deletes its index cache, rescans the project and reads all its
+    /// files again (the other projects keep their tree and contents). Asynchronous: the progress is
+    /// reported by the usual notifications ("index/scanStarted", ..., "index/loaded").
+    /// </summary>
+    public Task ProjectRebuildAsync(ProjectPathParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync(ProtocolMethods.ProjectRebuild, parameters, cancellationToken);
+
+    /// <summary>
+    /// "project/clearCache": Deletes the index cache of a project, without rescan: the current index stays in use, and is
+    /// saved to the cache again by the save policy (see "index/clearCache").
+    /// </summary>
+    public Task<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync<ClearCacheResult>(ProtocolMethods.ProjectClearCache, parameters, cancellationToken);
 
     /// <summary>
     /// "search/code": Searches the contents of the indexed files.

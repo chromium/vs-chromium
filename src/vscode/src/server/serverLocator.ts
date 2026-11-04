@@ -39,29 +39,29 @@ export function findServerPath(extensionPath: string, configuredPath: string | u
   return serverPathCandidates(extensionPath, configuredPath, preferRepositoryBuild).find(p => fs.existsSync(p));
 }
 
-/** The settings of the index cache of the server (applied when the server starts). */
+/**
+ * The settings of the index cache of the server (applied when the server starts). Note: The cache
+ * of each project can be disabled ("vschromium.cacheEnabled", per workspace folder, sent with the
+ * project options): not a server argument.
+ */
 export interface IndexCacheSettings {
-  /** Setting "vschromium.cacheEnabled" (default true). */
-  cacheEnabled?: boolean;
   /** Setting "vschromium.cacheDirectory": the root directory of the index cache, empty for the default. */
   cacheDirectory?: string;
 }
 
 /**
- * The command line arguments of the server: `--jsonrpc`, then `--no-cache` if the index cache is
- * disabled, or `--cache-dir <directory>` if a cache directory is set (otherwise the server uses its
- * default directory, e.g. `%LOCALAPPDATA%\VsChromium\Cache`).
+ * The command line arguments of the server: `--jsonrpc`, then `--cache-dir <directory>` if a cache
+ * directory is set (otherwise the server uses its default directory, e.g.
+ * `%LOCALAPPDATA%\VsChromium\Cache`).
  */
 export function serverArguments(settings: IndexCacheSettings): string[] {
   const args = ['--jsonrpc'];
   const directory = settings.cacheDirectory?.trim() ?? '';
-  if (settings.cacheEnabled === false) {
-    args.push('--no-cache');
-  } else if (directory.length > 0) {
+  if (directory.length > 0) {
     args.push('--cache-dir', directory);
   }
   return args;
 }
 
 /** The settings that need a restart of the server to be applied. */
-export const ServerRestartSettings = ['vschromium.cacheEnabled', 'vschromium.cacheDirectory'];
+export const ServerRestartSettings = ['vschromium.cacheDirectory'];

@@ -61,13 +61,6 @@ model IndexStatus {
   indexCache?: IndexCacheState;
 }
 
-model ClearCacheParams {
-  /**
-   * The root path of the project whose cache is deleted (`rootPath` of `tree/get`). All the
-   * projects of the index if absent.
-   */
-  projectPath?: string;
-}
 
 model ClearCacheResult {
   /** Projects whose cache was deleted (0 if the cache is disabled). */
@@ -161,13 +154,14 @@ interface Index {
   status(): IndexStatus;
 
   /**
-   * Deletes the persistent index cache of a project (or of all the projects): the same deletion
-   * as "tree/refresh" (Rebuild index), without the rescan. The current index stays in use (the
-   * contents loaded from the cache stay readable). The cache is written again by the save policy:
-   * the index is marked as changed, saved once it settles (30 s), or after the load in progress,
-   * if any. A server stopped before that save starts cold the next time.
+   * Deletes the persistent index cache of all the projects (see "project/clearCache" for a
+   * project): the same deletion as "tree/refresh" (Rebuild index), without the rescan. The current
+   * index stays in use (the contents loaded from the cache stay readable). The cache is written
+   * again by the save policy: the index is marked as changed, saved once it settles (30 s), or
+   * after the load in progress, if any. A server stopped before that save starts cold the next
+   * time.
    */
-  clearCache(...ClearCacheParams): ClearCacheResult;
+  clearCache(): ClearCacheResult;
 
   /** Details of all the projects. */
   details(...DetailsParams): IndexDetails;

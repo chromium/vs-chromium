@@ -13,6 +13,12 @@ namespace VsChromium.Server.Search {
   public interface ISearchEngine {
     IFileDatabaseSnapshot CurrentFileDatabaseSnapshot { get; }
 
+    /// <summary>
+    /// The current database if it is the result of a complete update of the file system snapshot
+    /// <paramref name="fileSystemSnapshotVersion"/>, otherwise null (e.g. a load is in progress).
+    /// </summary>
+    IFileDatabaseSnapshot GetCompleteDatabase(int fileSystemSnapshotVersion);
+
     SearchFilePathsResult SearchFilePaths(SearchParams searchParams, CancellationToken cancellationToken = default);
     SearchCodeResult SearchCode(SearchParams searchParams, CancellationToken cancellationToken = default);
     IEnumerable<FileExtract> GetFileExtracts(FullPath filename, IEnumerable<FilePositionSpan> spans, int maxLength);

@@ -200,6 +200,72 @@ namespace VsChromium.Protocol.Generated {
   }
 
   /// <summary>
+  /// The state of the index for frequent status refreshes (e.g. every 2 s while a dashboard is
+  /// visible): values kept by the server only, no walk of the index and no disk access (a few
+  /// microseconds). `index/statistics` returns the same values plus the arena statistics
+  /// (`fileContentsArenas`: a walk of the file contents, tens of milliseconds on large indexes).
+  /// </summary>
+  public sealed partial class IndexStatus {
+    [JsonPropertyName("status")]
+    public IndexingStatus Status { get; set; }
+
+    [JsonPropertyName("indexLastUpdatedUtc")]
+    public DateTime IndexLastUpdatedUtc { get; set; }
+
+    [JsonPropertyName("projectCount")]
+    public int ProjectCount { get; set; }
+
+    [JsonPropertyName("fileCount")]
+    public int FileCount { get; set; }
+
+    [JsonPropertyName("searchableFileCount")]
+    public int SearchableFileCount { get; set; }
+
+    /// <summary>
+    /// Bytes of the text of the indexed files.
+    /// </summary>
+    [JsonPropertyName("indexedTextBytes")]
+    public long IndexedTextBytes { get; set; }
+
+    /// <summary>
+    /// Native memory allocated by the server (file contents: arenas and blocks of large files).
+    /// </summary>
+    [JsonPropertyName("serverNativeMemoryUsage")]
+    public long ServerNativeMemoryUsage { get; set; }
+
+    /// <summary>
+    /// Managed memory of the server (GC heap).
+    /// </summary>
+    [JsonPropertyName("serverGcMemoryUsage")]
+    public long ServerGcMemoryUsage { get; set; }
+
+    /// <summary>
+    /// The persistent index cache (absent if the server has none).
+    /// </summary>
+    [JsonPropertyName("indexCache")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IndexCacheState? IndexCache { get; set; }
+  }
+
+  public sealed partial class ClearCacheParams {
+    /// <summary>
+    /// The root path of the project whose cache is deleted (`rootPath` of `tree/get`). All the
+    /// projects of the index if absent.
+    /// </summary>
+    [JsonPropertyName("projectPath")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProjectPath { get; set; }
+  }
+
+  public sealed partial class ClearCacheResult {
+    /// <summary>
+    /// Projects whose cache was deleted (0 if the cache is disabled).
+    /// </summary>
+    [JsonPropertyName("projectCount")]
+    public int ProjectCount { get; set; }
+  }
+
+  /// <summary>
   /// The state of the persistent index cache, for status displays.
   /// </summary>
   public sealed partial class IndexCacheState {
@@ -1151,6 +1217,8 @@ namespace VsChromium.Protocol.Generated {
     public const string IndexPause = "index/pause";
     public const string IndexResume = "index/resume";
     public const string IndexStatistics = "index/statistics";
+    public const string IndexStatus = "index/status";
+    public const string IndexClearCache = "index/clearCache";
     public const string IndexDetails = "index/details";
     public const string IndexStateChanged = "index/stateChanged";
     public const string IndexScanStarted = "index/scanStarted";
@@ -1204,9 +1272,23 @@ namespace VsChromium.Protocol.Generated {
     ValueTask IndexResumeAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// "index/statistics": Statistics of the index.
+    /// "index/statistics": Statistics of the index (including the arena statistics: a walk of the file contents).
     /// </summary>
     ValueTask<IndexStatistics> IndexStatisticsAsync(IndexStatisticsParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "index/status": State of the index without the arena statistics: cheap, for frequent refreshes.
+    /// </summary>
+    ValueTask<IndexStatus> IndexStatusAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "index/clearCache": Deletes the persistent index cache of a project (or of all the projects): the same deletion
+    /// as "tree/refresh" (Rebuild index), without the rescan. The current index stays in use (the
+    /// contents loaded from the cache stay readable). The cache is written again by the save policy:
+    /// the index is marked as changed, saved once it settles (30 s), or after the load in progress,
+    /// if any. A server stopped before that save starts cold the next time.
+    /// </summary>
+    ValueTask<ClearCacheResult> IndexClearCacheAsync(ClearCacheParams parameters, CancellationToken cancellationToken);
 
     /// <summary>
     /// "index/details": Details of all the projects.
@@ -1289,6 +1371,8 @@ namespace VsChromium.Protocol.Generated {
       ProtocolMethods.IndexPause => true,
       ProtocolMethods.IndexResume => true,
       ProtocolMethods.IndexStatistics => true,
+      ProtocolMethods.IndexStatus => true,
+      ProtocolMethods.IndexClearCache => true,
       ProtocolMethods.IndexDetails => true,
       ProtocolMethods.ProjectSetOptions => true,
       ProtocolMethods.ProjectDetails => true,
@@ -1336,6 +1420,14 @@ namespace VsChromium.Protocol.Generated {
         case ProtocolMethods.IndexStatistics: {
           var result = await handler.IndexStatisticsAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.IndexStatisticsParams), cancellationToken).ConfigureAwait(false);
           return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.IndexStatistics);
+        }
+        case ProtocolMethods.IndexStatus: {
+          var result = await handler.IndexStatusAsync(cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.IndexStatus);
+        }
+        case ProtocolMethods.IndexClearCache: {
+          var result = await handler.IndexClearCacheAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ClearCacheParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.ClearCacheResult);
         }
         case ProtocolMethods.IndexDetails: {
           var result = await handler.IndexDetailsAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.DetailsParams), cancellationToken).ConfigureAwait(false);
@@ -1500,6 +1592,9 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(FileExtractsResult))]
   [JsonSerializable(typeof(IndexStatisticsParams))]
   [JsonSerializable(typeof(IndexStatistics))]
+  [JsonSerializable(typeof(IndexStatus))]
+  [JsonSerializable(typeof(ClearCacheParams))]
+  [JsonSerializable(typeof(ClearCacheResult))]
   [JsonSerializable(typeof(IndexCacheState))]
   [JsonSerializable(typeof(IndexDetails))]
   [JsonSerializable(typeof(IndexStateChangedParams))]

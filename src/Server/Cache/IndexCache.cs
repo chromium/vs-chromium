@@ -42,6 +42,13 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     void NotifyIndexUpdated(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, bool fullLoad);
 
+    /// <summary>
+    /// True if the cache of a project of <paramref name="snapshot"/> is written by this server and
+    /// has no index (e.g. deleted by "index/clearCache" since it was loaded): the next update must
+    /// be saved, even if the index is the same as the cache that was loaded.
+    /// </summary>
+    bool HasProjectWithoutIndex(FileSystemSnapshot snapshot);
+
     /// <summary>Cancels the running write, if any (e.g. a new full load starts): saved later.</summary>
     void CancelWrites();
 
@@ -224,6 +231,14 @@ namespace VsChromium.Server.Cache {
         _pendingDatabase = fileDatabase;
       }
       _scheduler.NotifyChanged(immediate);
+    }
+
+    public bool HasProjectWithoutIndex(FileSystemSnapshot snapshot) {
+      if (!IsEnabled)
+        return false;
+      return snapshot.ProjectRoots
+        .Select(x => GetOpenProjectCache(x.Project.RootPath))
+        .Any(x => x != null && x.IsWritable && !x.HasIndex);
     }
 
     public void CancelWrites() {

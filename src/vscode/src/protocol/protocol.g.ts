@@ -83,6 +83,41 @@ export interface IndexStatistics {
   indexCache?: IndexCacheState;
 }
 
+/**
+ * The state of the index for frequent status refreshes (e.g. every 2 s while a dashboard is
+ * visible): values kept by the server only, no walk of the index and no disk access (a few
+ * microseconds). `index/statistics` returns the same values plus the arena statistics
+ * (`fileContentsArenas`: a walk of the file contents, tens of milliseconds on large indexes).
+ */
+export interface IndexStatus {
+  status: IndexingStatus;
+  indexLastUpdatedUtc: string;
+  projectCount: number;
+  fileCount: number;
+  searchableFileCount: number;
+  /** Bytes of the text of the indexed files. */
+  indexedTextBytes: number;
+  /** Native memory allocated by the server (file contents: arenas and blocks of large files). */
+  serverNativeMemoryUsage: number;
+  /** Managed memory of the server (GC heap). */
+  serverGcMemoryUsage: number;
+  /** The persistent index cache (absent if the server has none). */
+  indexCache?: IndexCacheState;
+}
+
+export interface ClearCacheParams {
+  /**
+   * The root path of the project whose cache is deleted (`rootPath` of `tree/get`). All the
+   * projects of the index if absent.
+   */
+  projectPath?: string;
+}
+
+export interface ClearCacheResult {
+  /** Projects whose cache was deleted (0 if the cache is disabled). */
+  projectCount: number;
+}
+
 /** The state of the persistent index cache, for status displays. */
 export interface IndexCacheState {
   enabled: boolean;
@@ -565,10 +600,28 @@ export namespace IndexResumeRequest {
   export const type = new RequestType0<null, void>(method);
 }
 
-/** Request (client to server) "index/statistics": Statistics of the index. */
+/** Request (client to server) "index/statistics": Statistics of the index (including the arena statistics: a walk of the file contents). */
 export namespace IndexStatisticsRequest {
   export const method = 'index/statistics';
   export const type = new RequestType<IndexStatisticsParams, IndexStatistics, void>(method);
+}
+
+/** Request (client to server) "index/status": State of the index without the arena statistics: cheap, for frequent refreshes. */
+export namespace IndexStatusRequest {
+  export const method = 'index/status';
+  export const type = new RequestType0<IndexStatus, void>(method);
+}
+
+/**
+ * Request (client to server) "index/clearCache": Deletes the persistent index cache of a project (or of all the projects): the same deletion
+ * as "tree/refresh" (Rebuild index), without the rescan. The current index stays in use (the
+ * contents loaded from the cache stay readable). The cache is written again by the save policy:
+ * the index is marked as changed, saved once it settles (30 s), or after the load in progress,
+ * if any. A server stopped before that save starts cold the next time.
+ */
+export namespace IndexClearCacheRequest {
+  export const method = 'index/clearCache';
+  export const type = new RequestType<ClearCacheParams, ClearCacheResult, void>(method);
 }
 
 /** Request (client to server) "index/details": Details of all the projects. */

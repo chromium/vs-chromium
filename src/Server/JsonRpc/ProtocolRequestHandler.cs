@@ -299,9 +299,54 @@ namespace VsChromium.Server.JsonRpc {
       });
     }
 
+    public ValueTask<IndexStatus> IndexStatusAsync(CancellationToken cancellationToken) {
+      var snapshot = _snapshotManager.CurrentSnapshot;
+      var database = _searchEngine.CurrentFileDatabaseSnapshot;
+      var indexingServerState = _indexingServer.CurrentState;
+      // Note: The counts of the database are computed when it is activated (PrecomputeSearchData).
+      return new ValueTask<IndexStatus>(new IndexStatus {
+        Status = JsonRpcEventForwarder.ToIndexingStatus(indexingServerState.Status),
+        IndexLastUpdatedUtc = indexingServerState.LastIndexUpdateUtc,
+        ProjectCount = snapshot.ProjectRoots.Count,
+        FileCount = ToInt32(database.FileNameCount),
+        SearchableFileCount = ToInt32(database.SearchableFileCount),
+        IndexedTextBytes = database.TotalFileContentsLength,
+        ServerNativeMemoryUsage = NativeHeap.TotalMemory,
+        ServerGcMemoryUsage = GC.GetTotalMemory(false),
+        IndexCache = GetIndexCacheState(),
+      });
+    }
+
+    public ValueTask<ClearCacheResult> IndexClearCacheAsync(ClearCacheParams parameters, CancellationToken cancellationToken) {
+      var snapshot = _snapshotManager.CurrentSnapshot;
+      var roots = snapshot.ProjectRoots.Select(x => x.Project.RootPath).ToList();
+      if (parameters.ProjectPath != null) {
+        if (!PathHelpers.IsAbsolutePath(parameters.ProjectPath)) {
+          throw new RecoverableErrorException($"Invalid project path \"{parameters.ProjectPath}\"");
+        }
+        var projectPath = new FullPath(parameters.ProjectPath);
+        roots = roots.Where(x => x.Equals(projectPath)).ToList();
+        if (roots.Count == 0) {
+          throw new RecoverableErrorException($"Project \"{parameters.ProjectPath}\" not found");
+        }
+      }
+      if (_indexCache == null || !_indexCache.IsEnabled) {
+        return new ValueTask<ClearCacheResult>(new ClearCacheResult { ProjectCount = 0 });
+      }
+
+      Logger.LogInfo("Clearing the index cache of {0:n0} project(s).", roots.Count);
+      _indexCache.Invalidate(roots);
+      // The current index is saved again by the save policy (the index is "changed"). If a load is
+      // in progress (or the index is the tree of the cache, being verified), it is saved after it.
+      var database = snapshot.IsFromCache ? null : _searchEngine.GetCompleteDatabase(snapshot.Version);
+      if (database != null) {
+        _indexCache.NotifyIndexUpdated(snapshot, database, fullLoad: false);
+      }
+      return new ValueTask<ClearCacheResult>(new ClearCacheResult { ProjectCount = roots.Count });
+    }
+
     /// <summary>
-    /// The state of the index cache for status displays (no full walk of the index: the files of
-    /// the cache directories of the open projects).
+    /// The state of the index cache for status displays (no walk of the index, no disk access).
     /// </summary>
     private IndexCacheState GetIndexCacheState() {
       if (_indexCache == null) {

@@ -499,6 +499,112 @@ public class IndexCacheTests {
     Assert.AreEqual(newTimes.Count, since["status"]!.AsArray().Count);
   }
 
+  /// <summary>
+  /// "index/status": the values of "index/statistics" without the arena statistics (cheap).
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task IndexStatusIsTheStatisticsWithoutTheArenas() {
+    using var tree = new TestTree();
+    tree.Generate();
+    await using var server = await StartAndLoadAsync(tree);
+    await WaitForIdleAsync(server.Client);
+    await WaitForCacheWriteAsync(server.Client, 1);
+    await WaitForIndexCacheAsync(server.Client, x => !x["saving"]!.GetValue<bool>(), "saved");
+
+    var status = (await server.Client.RequestAsync(ServerProtocol.GetIndexStatus())).Data;
+    var statistics = (await server.Client.RequestAsync(ServerProtocol.GetIndexStatistics())).Data;
+    TestContext.WriteLine(status.ToJsonString());
+    Assert.AreEqual("idle", status["status"]!.GetValue<string>());
+    foreach (var name in new[] { "status", "indexLastUpdatedUtc", "projectCount", "fileCount", "searchableFileCount", "indexedTextBytes" }) {
+      Assert.AreEqual(statistics[name]!.ToJsonString(), status[name]!.ToJsonString(), name);
+    }
+    Assert.IsTrue(status["serverNativeMemoryUsage"]!.GetValue<long>() > 0);
+    Assert.IsTrue(status["serverGcMemoryUsage"]!.GetValue<long>() > 0);
+    Assert.AreEqual(statistics["indexCache"]!.ToJsonString(), status["indexCache"]!.ToJsonString());
+    Assert.IsTrue(status["indexCache"]!["sizeOnDiskBytes"]!.GetValue<long>() > 0);
+    Assert.IsNull(status["fileContentsArenas"], "No arena statistics");
+  }
+
+  /// <summary>
+  /// "index/clearCache": the cache of the project is deleted without rescan, the index stays in use,
+  /// and is saved again by the save policy (the next start uses the new cache).
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task ClearCacheDeletesTheCacheThenSavesTheIndexAgain() {
+    using var tree = new TestTree();
+    tree.Generate();
+    var coldResults = await ColdLoadAndWriteCacheAsync(tree);
+
+    await using (var server = await StartAndLoadAsync(tree, tree.CacheDirectory, saveDelays: ShortSaveDelays)) {
+      Assert.IsTrue(server.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false);
+      await WaitForIdleAsync(server.Client);
+      var scans = 0;
+      using var listener = server.Client.OnNotification((method, _) => {
+        if (method == "index/scanStarted" || method == "index/loading")
+          Interlocked.Increment(ref scans);
+      });
+
+      var error = await Assert.ThrowsAsync<ServerErrorException>(() =>
+        server.Client.RequestAsync(ServerProtocol.ClearCache(Path.Combine(tree.Root, "not-a-project"))));
+      Assert.AreEqual(-32001, error.Code);
+
+      var result = (await server.Client.RequestAsync(ServerProtocol.ClearCache(tree.Root))).Data;
+      Assert.AreEqual(1, result["projectCount"]!.GetValue<int>());
+      Assert.AreEqual(0, Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Length, "Deleted");
+      // The index stays in use (the contents loaded from the cache too), and is changed: saved again.
+      var state = (await server.Client.RequestAsync(ServerProtocol.GetIndexStatus())).Data;
+      Assert.AreEqual("idle", state["status"]!.GetValue<string>());
+      Assert.IsNull(state["indexCache"]!["lastSavedUtc"], state.ToJsonString());
+      Assert.AreEqual(0, state["indexCache"]!["sizeOnDiskBytes"]!.GetValue<long>());
+      Assert.IsTrue(state["indexCache"]!["dirty"]!.GetValue<bool>(), state.ToJsonString());
+      AssertSameResults(coldResults, await AllResultsAsync(server.Client));
+
+      await WaitForCacheWriteAsync(server.Client, 1);
+      await WaitForIndexCacheAsync(server.Client, x => !x["saving"]!.GetValue<bool>() && !x["dirty"]!.GetValue<bool>(), "saved");
+      Assert.AreEqual(1, Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Length, "Saved again");
+      Assert.AreEqual(0, Volatile.Read(ref scans), "No rescan, no load");
+    }
+
+    // The next start uses the new cache.
+    await using (var server = await StartAndLoadAsync(tree, verifyDelayMs: 3000)) {
+      Assert.IsTrue(server.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false);
+      var cached = await AllResultsAsync(server.Client);
+      foreach (var (query, expected) in coldResults) {
+        CollectionAssert.AreEqual(expected.Where(x => !x.Contains("large.txt:")).ToList(), cached[query], $"Results of \"{query}\" from the cache");
+      }
+      await WaitForIdleAsync(server.Client);
+      // All the projects: a server stopped before the next save starts cold.
+      Assert.AreEqual(1, (await server.Client.RequestAsync(ServerProtocol.ClearCache())).Data["projectCount"]!.GetValue<int>());
+    }
+    await using (var server = await StartAndLoadAsync(tree)) {
+      Assert.IsFalse(server.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false, "Cold");
+      await WaitForIdleAsync(server.Client);
+      AssertSameResults(coldResults, await AllResultsAsync(server.Client));
+    }
+  }
+
+  /// <summary>
+  /// "index/clearCache" during the verification of the index of the cache: saved after the
+  /// verification, even if it finds no change.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task ClearCacheDuringTheVerificationSavesAfterIt() {
+    using var tree = new TestTree();
+    tree.Generate();
+    await ColdLoadAndWriteCacheAsync(tree);
+
+    await using var server = await StartAndLoadAsync(tree, tree.CacheDirectory, verifyDelayMs: 3000, saveDelays: ShortSaveDelays);
+    Assert.AreEqual("verifying", await StatusAsync(server.Client));
+    Assert.AreEqual(1, (await server.Client.RequestAsync(ServerProtocol.ClearCache())).Data["projectCount"]!.GetValue<int>());
+    Assert.AreEqual(0, Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Length, "Deleted");
+    await WaitForIdleAsync(server.Client);
+    await WaitForCacheWriteAsync(server.Client, 1);
+    Assert.AreEqual(1, Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Length, "Saved again");
+  }
+
   private static async Task<JsonNode> WaitForIndexCacheAsync(JsonRpcServerClient server, Func<JsonNode, bool> predicate, string description) {
     var stopwatch = Stopwatch.StartNew();
     while (true) {

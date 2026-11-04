@@ -333,6 +333,8 @@ namespace VsChromium.Tests.JsonRpc {
       public ValueTask<SearchPathsResult> SearchPathsAsync(SearchParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<ServerStatistics> ServerStatisticsAsync(ServerStatisticsParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<ServerHistory> ServerHistoryAsync(ServerHistoryParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
+      public ValueTask<IndexStatus> IndexStatusAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+      public ValueTask<ClearCacheResult> IndexClearCacheAsync(ClearCacheParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<FileSystemTree> TreeGetAsync(TreeParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<DirectoryEntries> TreeEntriesAsync(TreeEntriesParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<DirectoryEntriesList> TreeEntriesMultipleAsync(TreeEntriesMultipleParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();

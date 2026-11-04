@@ -39,6 +39,41 @@ model IndexStatistics {
   indexCache?: IndexCacheState;
 }
 
+/**
+ * The state of the index for frequent status refreshes (e.g. every 2 s while a dashboard is
+ * visible): values kept by the server only, no walk of the index and no disk access (a few
+ * microseconds). `index/statistics` returns the same values plus the arena statistics
+ * (`fileContentsArenas`: a walk of the file contents, tens of milliseconds on large indexes).
+ */
+model IndexStatus {
+  status: IndexingStatus;
+  indexLastUpdatedUtc: utcDateTime;
+  projectCount: int32;
+  fileCount: int32;
+  searchableFileCount: int32;
+  /** Bytes of the text of the indexed files. */
+  indexedTextBytes: int64;
+  /** Native memory allocated by the server (file contents: arenas and blocks of large files). */
+  serverNativeMemoryUsage: int64;
+  /** Managed memory of the server (GC heap). */
+  serverGcMemoryUsage: int64;
+  /** The persistent index cache (absent if the server has none). */
+  indexCache?: IndexCacheState;
+}
+
+model ClearCacheParams {
+  /**
+   * The root path of the project whose cache is deleted (`rootPath` of `tree/get`). All the
+   * projects of the index if absent.
+   */
+  projectPath?: string;
+}
+
+model ClearCacheResult {
+  /** Projects whose cache was deleted (0 if the cache is disabled). */
+  projectCount: int32;
+}
+
 /** The state of the persistent index cache, for status displays. */
 model IndexCacheState {
   enabled: boolean;
@@ -119,8 +154,20 @@ interface Index {
   /** Resumes indexing (after "index/pause", or when the server paused itself). */
   resume(): void;
 
-  /** Statistics of the index. */
+  /** Statistics of the index (including the arena statistics: a walk of the file contents). */
   statistics(...IndexStatisticsParams): IndexStatistics;
+
+  /** State of the index without the arena statistics: cheap, for frequent refreshes. */
+  status(): IndexStatus;
+
+  /**
+   * Deletes the persistent index cache of a project (or of all the projects): the same deletion
+   * as "tree/refresh" (Rebuild index), without the rescan. The current index stays in use (the
+   * contents loaded from the cache stay readable). The cache is written again by the save policy:
+   * the index is marked as changed, saved once it settles (30 s), or after the load in progress,
+   * if any. A server stopped before that save starts cold the next time.
+   */
+  clearCache(...ClearCacheParams): ClearCacheResult;
 
   /** Details of all the projects. */
   details(...DetailsParams): IndexDetails;

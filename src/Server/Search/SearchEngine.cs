@@ -113,6 +113,13 @@ namespace VsChromium.Server.Search {
       get { return _currentFileDatabase; }
     }
 
+    public IFileDatabaseSnapshot GetCompleteDatabase(int fileSystemSnapshotVersion) {
+      var database = _currentFileDatabase;
+      var complete = _currentFileDatabaseComplete && Interlocked.Read(ref _currentFileSystemSnapshotVersion) == fileSystemSnapshotVersion;
+      // Note: The database must not have changed while reading its state.
+      return complete && ReferenceEquals(database, _currentFileDatabase) ? database : null;
+    }
+
     public SearchFilePathsResult SearchFilePaths(SearchParams searchParams, CancellationToken cancellationToken = default) {
       cancellationToken.ThrowIfCancellationRequested();
 
@@ -642,7 +649,10 @@ namespace VsChromium.Server.Search {
           ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
           // The index changed: the cache is saved later (any update). Note: Not for trees from the
           // index cache (the same as the cache): saved after their verification.
-          if (!fileSystemSnapshot.IsFromCache && !options.CacheUnchanged &&
+          // Note: The cache of a project may have been deleted since it was loaded ("index/clearCache"):
+          // saved even if the index is the same as the cache.
+          if (!fileSystemSnapshot.IsFromCache &&
+              (!options.CacheUnchanged || (_indexCache != null && _indexCache.HasProjectWithoutIndex(fileSystemSnapshot))) &&
               !ReferenceEquals(newFileDatabase, options.CurrentFileDatabase)) {
             _indexCache?.NotifyIndexUpdated(fileSystemSnapshot, newFileDatabase, options.IsFullLoad);
           }

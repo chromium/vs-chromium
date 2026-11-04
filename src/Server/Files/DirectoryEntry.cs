@@ -13,14 +13,26 @@ namespace VsChromium.Core.Files {
   public struct DirectoryEntry {
     private readonly string _name;
     private readonly FileAttributes _attributes;
+    private readonly FileMetadata _metadata;
 
-    public DirectoryEntry(string name, FileAttributes attributes) {
+    public DirectoryEntry(string name, FileAttributes attributes) : this(name, attributes, default) {
+    }
+
+    public DirectoryEntry(string name, FileAttributes attributes, FileMetadata metadata) {
+      _metadata = metadata;
       _name = name;
       _attributes = attributes;
     }
 
     public string Name {
       get { return _name; }
+    }
+
+    /// <summary>
+    /// The last write time and size of the file (from the directory enumeration, no file opened).
+    /// </summary>
+    public FileMetadata Metadata {
+      get { return _metadata; }
     }
 
     public bool IsFile {

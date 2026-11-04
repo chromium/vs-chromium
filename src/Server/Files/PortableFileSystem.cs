@@ -141,7 +141,8 @@ namespace VsChromium.Core.Files {
       // than MAX_PATH are not skipped (see "Behavior changes" in PORTING_PRINCIPLES.md).
       return new FileSystemEnumerable<DirectoryEntry>(
           path.Value,
-          (ref FileSystemEntry entry) => new DirectoryEntry(entry.FileName.ToString(), entry.Attributes),
+          (ref FileSystemEntry entry) => new DirectoryEntry(entry.FileName.ToString(), entry.Attributes,
+          new FileMetadata(entry.LastWriteTimeUtc.UtcDateTime, entry.Length)),
           DirectoryEnumerationOptions)
         .ToList();
     }

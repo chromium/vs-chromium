@@ -106,6 +106,10 @@ namespace VsChromium.Tests.Mocks {
 
       public string Text { get; set; }
 
+      public DateTime LastWriteTimeUtc { get; set; } = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+      public FileMetadata Metadata => new FileMetadata(LastWriteTimeUtc, Text?.Length ?? 0);
+
       public override string ToString() {
         return $"File {Name}";
       }
@@ -166,6 +170,8 @@ namespace VsChromium.Tests.Mocks {
           Path = path,
           Exists = true,
           IsFile = true,
+          LastWriteTimeUtc = ((FileMock)entry).LastWriteTimeUtc,
+          Length = ((FileMock)entry).Metadata.Length,
         };
       }
 
@@ -189,7 +195,7 @@ namespace VsChromium.Tests.Mocks {
       Invariants.CheckArgument(entry != null, nameof(path), "Invalid directory name");
       return entry.Directories
         .Select(x => new DirectoryEntry(x.Name, FileAttributes.Directory))
-        .Concat(entry.Files.Select(x => new DirectoryEntry(x.Name, FileAttributes.Normal)))
+        .Concat(entry.Files.Select(x => new DirectoryEntry(x.Name, FileAttributes.Normal, x.Metadata)))
         .ToList();
     }
 

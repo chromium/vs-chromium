@@ -145,30 +145,36 @@ namespace VsChromium.Server.FileSystem.Builder {
       // Match non deleted files
       // Sepcial case: if no file deleted or created, just re-use the list.
       IList<FileName> newFileList;
+      FileMetadata[] newFileMetadata;
       if (_pathChanges.GetDeletedEntries(oldDirectoryPath).Count == 0 && createdFiles == null) {
         newFileList = oldDirectory.ChildFiles;
+        newFileMetadata = oldDirectory.ChildFileMetadataArray;
       } else {
         // Copy the list of previous children, minus deleted files.
-        var newFileListTemp = oldDirectory.ChildFiles
-          .Where(x => !_pathChanges.IsDeleted(x.RelativePath))
-          .ToList();
+        var newFileListTemp = new List<(FileName Name, FileMetadata Metadata)>();
+        for (var i = 0; i < oldDirectory.ChildFiles.Count; i++) {
+          var name = oldDirectory.ChildFiles[i];
+          if (!_pathChanges.IsDeleted(name.RelativePath)) {
+            newFileListTemp.Add((name, oldDirectory.ChildFileMetadata[i]));
+          }
+        }
 
         // Add created files
         if (createdFiles != null) {
           foreach (var info in createdFiles.ToForeachEnum()) {
             var name = _fileSystemNameFactory.CreateFileName(oldDirectory.DirectoryName, info.Path.FileName);
-            newFileListTemp.Add(name);
+            // Note: File system change notifications are not always 100%
+            // reliable. We may get a "create" event for files we already know
+            // about: the new metadata replaces the previous one.
+            newFileListTemp.RemoveAll(x => SystemPathComparer.EqualsNames(x.Name.Name, name.Name));
+            newFileListTemp.Add((name, new FileMetadata(info.LastWriteTimeUtc, info.Length)));
           }
 
           // We need to re-sort the array since we added new entries
-          newFileListTemp.Sort((x, y) => SystemPathComparer.Compare(x.Name, y.Name));
-
-          // Note: File system change notifications are not always 100%
-          // reliable. We may get a "create" event for files we already know
-          // about.
-          ArrayUtilities.RemoveDuplicates(newFileListTemp, (x, y) => SystemPathComparer.EqualsNames(x.Name, y.Name));
+          newFileListTemp.Sort((x, y) => SystemPathComparer.Compare(x.Name.Name, y.Name.Name));
         }
-        newFileList = newFileListTemp;
+        newFileList = newFileListTemp.Select(x => x.Name).ToReadOnlyList();
+        newFileMetadata = newFileListTemp.Select(x => x.Metadata).ToArray();
       }
 
       var newData = new DirectoryData(oldDirectory.DirectoryName, oldDirectory.IsSymLink);
@@ -176,7 +182,8 @@ namespace VsChromium.Server.FileSystem.Builder {
       return new DirectorySnapshot(
         newData,
         childDirectories.ToReadOnlyList(),
-        newFileList.ToReadOnlyList());
+        newFileList.ToReadOnlyList(),
+        newFileMetadata);
     }
 
     /// <summary>
@@ -201,7 +208,7 @@ namespace VsChromium.Server.FileSystem.Builder {
 
       List<Task<DirectorySnapshot>> childTasks = null;
       var childEntries = GetDirectoryEntries(directory);
-      var childFileNames = new List<FileName>();
+      var childFiles = new List<(FileName Name, FileMetadata Metadata)>();
       // Note: Use "for" loop to avoid memory allocations.
       for (var i = 0; i < childEntries.Count; i++) {
         var entry = childEntries[i];
@@ -212,16 +219,18 @@ namespace VsChromium.Server.FileSystem.Builder {
             childTasks = new List<Task<DirectorySnapshot>>();
           childTasks.Add(TraverseDirectoryAsync(subDir, token));
         } else if (entry.IsFile) {
-          childFileNames.Add(_fileSystemNameFactory.CreateFileName(directory.DirectoryName, entry.Name));
+          childFiles.Add((_fileSystemNameFactory.CreateFileName(directory.DirectoryName, entry.Name), entry.Metadata));
         }
       }
 
-      var fileNames = childFileNames
-        .Where(childFilename => childFilename.TestRelativePath(static (path, filter) => filter.Include(path), _project.FileFilter))
+      var files = childFiles
+        .Where(x => x.Name.TestRelativePath(static (path, filter) => filter.Include(path), _project.FileFilter))
         // Note: Ordinal (case-insensitive on Windows/macOS) sort, same as ApplyDirectorySnapshotDelta
         // (see "Behavior changes" in PORTING_PRINCIPLES.md).
-        .OrderBy(x => x.Name, SystemPathComparer.NameComparer)
-        .ToReadOnlyList();
+        .OrderBy(x => x.Name.Name, SystemPathComparer.NameComparer)
+        .ToList();
+      var fileNames = files.Select(x => x.Name).ToReadOnlyList();
+      var fileMetadata = files.Count == 0 ? Array.Empty<FileMetadata>() : files.Select(x => x.Metadata).ToArray();
 
       // Note: The progress of the traversal counts the files found (displayed by the clients).
       if (_progress.Step(fileNames.Count)) {
@@ -243,7 +252,7 @@ namespace VsChromium.Server.FileSystem.Builder {
           .ToReadOnlyList();
       }
 
-      return new DirectorySnapshot(directory, childDirectories, fileNames);
+      return new DirectorySnapshot(directory, childDirectories, fileNames, fileMetadata);
     }
 
     private IList<DirectoryEntry> GetDirectoryEntries(DirectoryData directory) {

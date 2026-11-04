@@ -9,11 +9,11 @@ import type {
   IndexingStatus,
   OperationTiming,
   ProgressParams,
+  ProjectDetails,
   ServerHistory,
   ServerStatistics,
 } from '../../protocol/protocol.g';
 import { describeIndexCache } from '../indexCacheStatus';
-import { describeMemory } from '../memoryStatistics';
 import {
   cpuPercentSeries,
   HistoryWindowMs,
@@ -37,8 +37,11 @@ export const RefreshIntervalMs = 2000;
  * operations; walks the index) and "server/history" (incremental) are requested every N refreshes.
  */
 export const StatisticsEveryRefreshes = 5;
-/** "index/details" (walks the directories of the projects) is requested every N refreshes. */
-export const DetailsEveryRefreshes = 15;
+/**
+ * "index/details" (the details of all the projects: files, memory, cache, operations; walks the
+ * directories of the projects) is requested every N refreshes.
+ */
+export const DetailsEveryRefreshes = 5;
 
 /** What a refresh requests ("index/status", cheap, is always requested: status, counts, cache). */
 export interface RefreshPlan {
@@ -49,7 +52,7 @@ export interface RefreshPlan {
 
 /**
  * The requests of the refresh number `refresh` (0 for the first one): the cheap index status at
- * each refresh, the statistics and the history every 10 s and the project details every 30 s, plus
+ * each refresh, the statistics, the history and the project details every 10 s, plus
  * those forced by events (e.g. a load of the index changes the project details).
  */
 export function planRefresh(refresh: number, forced: Partial<RefreshPlan> = {}): RefreshPlan {
@@ -98,17 +101,48 @@ export interface KeyValue {
   title?: string;
 }
 
-export interface ProjectRow {
+/** A row of the operations of a project. */
+export interface ProjectOperationRow {
+  key: string;
+  name: string;
+  count: string;
+  min: string;
+  avg: string;
+  max: string;
+  last: string;
+  /** Details of the last operation (e.g. the scan time, the load from the cache). */
+  note: string;
+}
+
+/** The cache of a project. */
+export interface ProjectCacheView {
+  enabled: boolean;
+  /** False if the cache is written by another server (used read-only). */
+  writable: boolean;
+  directory?: string;
+  /** "9.4 GB on disk (120 MB dead) · saved 2:42 PM · changed". */
+  state: string;
+}
+
+/** The block of a project (collapsible). */
+export interface ProjectBlock {
   key: string;
   rootPath: string;
-  files: string;
-  searchable: string;
-  textSize: string;
+  /** One line summary (displayed when the block is collapsed). */
+  summary: string;
+  /** Expanded unless there are many projects (the user can toggle it). */
+  defaultExpanded: boolean;
+  index: KeyValue[];
+  memory: KeyValue[];
+  cache: ProjectCacheView;
   trigramFiltersEnabled: boolean;
+  /** "812.0 MB" (memory of the filters) or "off". */
   trigramFilters: string;
-  cache: string;
-  cacheTitle: string;
+  operations: ProjectOperationRow[];
 }
+
+/** Projects expanded by default up to this count. */
+export const ExpandedProjectsMax = 2;
 
 export interface OperationRow {
   key: string;
@@ -175,8 +209,10 @@ export interface DashboardViewModel {
   pauseOrResume: 'pause' | 'resume';
   error?: string;
   trigramFiltersSetting: boolean;
-  projects: ProjectRow[];
+  projects: ProjectBlock[];
+  /** Memory of the whole process (process section). */
   memory: KeyValue[];
+  /** The index cache of the whole process: directory, total size (process section). */
   indexCache: KeyValue[];
   cacheSettings?: CacheSettingsView;
   operations: OperationRow[];
@@ -315,95 +351,160 @@ function toKeyValue(line: string): KeyValue {
   return { key: label, label, value };
 }
 
-function describeProjects(data: DashboardData, options: FormatOptions): ProjectRow[] {
-  const cache = currentStatus(data)?.indexCache;
-  let cacheText = 'none';
-  if (cache) {
-    if (!cache.enabled) {
-      cacheText = 'disabled';
-    } else {
-      const state = cache.saving ? 'saving\u2026' : cache.dirty ? 'changed' : cache.lastSavedUtc ? 'saved' : 'not saved';
-      cacheText = cache.lastSavedUtc ? `${formatBytes(cache.sizeOnDiskBytes)}, ${state}` : state;
-    }
+/** "9.4 GB on disk (120 MB dead) · saved 2:42 PM · changed" (or "disabled", "not saved yet"). */
+function describeProjectCacheState(project: ProjectDetails, options: FormatOptions): string {
+  const cache = project.cache;
+  if (!cache.enabled) {
+    return 'disabled';
   }
-  const cacheTitle = toKeyValue(describeIndexCache(cache, options.formatTime)).value +
-    ' (index cache of the open projects)';
-  return (data.details?.projects ?? []).map(project => {
+  const parts: string[] = [];
+  if (cache.lastSavedUtc) {
+    const dead = cache.deadBytes > 0 ? ` (${formatBytes(cache.deadBytes)} dead)` : '';
+    parts.push(`${formatBytes(cache.sizeOnDiskBytes)} on disk${dead}`, `saved ${options.formatTime(cache.lastSavedUtc)}`);
+  } else {
+    parts.push('not saved yet');
+  }
+  if (cache.saving) {
+    parts.push('saving\u2026');
+  } else if (cache.dirty) {
+    parts.push('changed since');
+  }
+  return parts.join(' \u00b7 ');
+}
+
+function durationRow(key: string, name: string, stats: { count: number; minMs: number; avgMs: number; maxMs: number; lastMs: number }, note: string): ProjectOperationRow {
+  const none = stats.count === 0;
+  const format = (ms: number) => (none ? '\u2014' : formatDuration(ms));
+  return {
+    key,
+    name,
+    count: formatCount(stats.count),
+    min: format(stats.minMs),
+    avg: format(stats.avgMs),
+    max: format(stats.maxMs),
+    last: format(stats.lastMs),
+    note: none ? '' : note,
+  };
+}
+
+/** The operations of a project: initial loads and incremental updates (no search times). */
+export function describeProjectOperations(project: ProjectDetails): ProjectOperationRow[] {
+  const load = project.operations.initialLoad;
+  const notes = [`scan ${formatDuration(load.scanMs)}`];
+  if (load.fromCache) {
+    notes.push(load.cachedIndexMs !== undefined ? `from the cache: ${formatDuration(load.cachedIndexMs)}` : 'from the cache');
+  }
+  return [
+    durationRow('initialLoad', 'Initial load', load, notes.join(', ')),
+    durationRow('incrementalUpdates', 'Incremental updates', project.operations.incrementalUpdates, ''),
+  ];
+}
+
+function describeProjects(data: DashboardData, options: FormatOptions): ProjectBlock[] {
+  const projects = data.details?.projects ?? [];
+  const updated = currentStatus(data)?.indexLastUpdatedUtc;
+  return projects.map(project => {
     const d = project.directoryDetails;
+    const m = project.memory;
+    const cacheState = describeProjectCacheState(project, options);
+    const index: KeyValue[] = [
+      { key: 'files', label: 'Files', value: `${formatCount(d.fileCount)} files \u00b7 ${formatCount(d.searchableFilesCount)} searchable \u00b7 ${formatBytes(d.searchableFilesByteLength)} of text` },
+    ];
+    if (isValidTime(updated)) {
+      index.push({ key: 'updated', label: 'Updated', value: options.formatTime(updated), title: 'Last update of the index (all the projects)' });
+    }
+    const memory: KeyValue[] = [
+      {
+        key: 'native',
+        label: 'Native',
+        value: `${formatBytes(m.nativeBytes)} (${formatCount(m.arenaCount)} arenas, ${formatBytes(m.deadBytes)} dead, ${formatBytes(m.freeBytes)} free; ${formatBytes(m.largeFileBytes)} in files > 512 KB)`,
+      },
+      { key: 'mapped', label: 'Mapped', value: `${formatBytes(m.mappedCacheBytes)} from the cache` },
+      { key: 'trigrams', label: 'Trigram filters', value: formatBytes(m.trigramFiltersBytes) },
+    ];
+    const cacheSummary = project.cache.enabled
+      ? (project.cache.lastSavedUtc ? `cache ${formatBytes(project.cache.sizeOnDiskBytes)}${project.cache.dirty ? ', changed' : ''}` : 'cache not saved yet')
+      : 'cache disabled';
     return {
       key: project.rootPath,
       rootPath: project.rootPath,
-      files: formatCount(d.fileCount),
-      searchable: formatCount(d.searchableFilesCount),
-      textSize: formatBytes(d.searchableFilesByteLength),
+      summary: `${formatCount(d.fileCount)} files \u00b7 native ${formatBytes(m.nativeBytes)} \u00b7 ${cacheSummary}`,
+      defaultExpanded: projects.length <= ExpandedProjectsMax,
+      index,
+      memory,
+      cache: {
+        enabled: project.cache.enabled,
+        writable: project.cache.writable,
+        directory: project.cache.directory,
+        state: cacheState,
+      },
       trigramFiltersEnabled: project.trigramFiltersEnabled,
       trigramFilters: project.trigramFiltersEnabled
-        ? (project.trigramFiltersBytes > 0 ? formatBytes(project.trigramFiltersBytes) : 'on')
+        ? (m.trigramFiltersBytes > 0 ? formatBytes(m.trigramFiltersBytes) : 'on')
         : 'off',
-      cache: cacheText,
-      cacheTitle,
+      operations: describeProjectOperations(project),
     };
   });
 }
 
+/** The memory of the whole process (the details per project are in the projects). */
 function describeMemorySection(data: DashboardData): KeyValue[] {
   const rows: KeyValue[] = [];
-  const index = data.index;
-  if (index) {
-    rows.push(...describeMemory(index, index.status === 'busy' || index.status === 'verifying').map(toKeyValue));
-  }
+  const status = currentStatus(data);
   const server = data.server;
+  const gcHeap = server?.gcHeapBytes ?? status?.serverGcMemoryUsage;
+  if (gcHeap !== undefined) {
+    rows.push({
+      key: 'managed',
+      label: 'Managed',
+      value: formatBytes(gcHeap) + (server ? ` (${formatBytes(server.gcTotalAllocatedBytes)} allocated since the start)` : ''),
+    });
+  }
+  const native = server?.nativeAllocatedBytes ?? status?.serverNativeMemoryUsage;
+  if (native !== undefined) {
+    rows.push({ key: 'native', label: 'Native', value: `${formatBytes(native)} (file contents of all the projects)` });
+  }
+  const mapped = data.index?.fileContentsArenas.cachedFileBytes;
+  if (mapped !== undefined) {
+    rows.push({ key: 'mapped', label: 'Mapped', value: `${formatBytes(mapped)} from the index caches` });
+  }
   if (server) {
-    rows.push(
-      { key: 'process', label: 'Process', value: `working set ${formatBytes(server.workingSetBytes)} (peak ${formatBytes(server.peakWorkingSetBytes)}), private ${formatBytes(server.privateBytes)}` },
-      { key: 'gc', label: 'GC heap', value: `${formatBytes(server.gcHeapBytes)}, ${formatBytes(server.gcTotalAllocatedBytes)} allocated since the start` },
-      { key: 'trigrams', label: 'Trigram filters', value: formatBytes(server.trigramFiltersBytes) },
-    );
+    rows.push({
+      key: 'process',
+      label: 'Process',
+      value: `working set ${formatBytes(server.workingSetBytes)} (peak ${formatBytes(server.peakWorkingSetBytes)}), private ${formatBytes(server.privateBytes)}`,
+    });
   }
   return rows;
 }
 
+/** The index cache of the whole process: root directory and total size of the caches. */
 function describeIndexCacheSection(data: DashboardData, options: FormatOptions): KeyValue[] {
   const rows: KeyValue[] = [];
-  const status = currentStatus(data);
-  if (status) {
-    rows.push({ key: 'state', label: 'State', value: toKeyValue(describeIndexCache(status.indexCache, options.formatTime)).value });
+  const statistics = data.server?.indexCache;
+  const directory = statistics?.cacheDirectory;
+  if (directory) {
+    rows.push({ key: 'directory', label: 'Directory', value: directory, title: 'Root directory of the caches (a sub-directory per project)' });
   }
-  const cache = data.server?.indexCache;
-  if (!cache || !cache.enabled) {
-    return rows;
-  }
-  if (cache.cacheDirectory) {
-    rows.push({ key: 'directory', label: 'Directory', value: cache.cacheDirectory });
-  }
-  const readOnly = cache.readOnlyProjectCount > 0
-    ? `, ${formatCount(cache.readOnlyProjectCount)} read-only (written by another server)`
-    : '';
-  rows.push({ key: 'projects', label: 'Projects', value: `${formatCount(cache.projectCount)} open${readOnly}` });
-  if (cache.lastLoadFilesFromCache > 0 || cache.lastLoadFilesFromDisk > 0) {
-    rows.push({
-      key: 'load',
-      label: 'Last load',
-      value: `${formatCount(cache.lastLoadFilesFromCache)} files from the cache, ${formatCount(cache.lastLoadFilesFromDisk)} from disk`,
-    });
-  }
-  if (cache.writeCount > 0) {
-    const changed = cache.lastWriteChangedFileCount > 0
-      ? `, ${formatCount(cache.lastWriteChangedFileCount)} changed during the scan (not written)`
+  const state = currentStatus(data)?.indexCache;
+  if (state) {
+    const projects = statistics && statistics.enabled
+      ? ` \u00b7 ${formatCount(statistics.projectCount)} ${statistics.projectCount === 1 ? 'project' : 'projects'}` +
+        (statistics.readOnlyProjectCount > 0 ? ` (${formatCount(statistics.readOnlyProjectCount)} read-only)` : '')
       : '';
-    rows.push({
-      key: 'write',
-      label: 'Last write',
-      value: `${formatDuration(cache.lastWriteMs)}, ${formatBytes(cache.lastWriteBytes)} written, ` +
-        `${formatCount(cache.lastWriteEntryCount)} files (${formatCount(cache.lastWriteNewFileCount)} new)${changed}`,
-      title: `${formatCount(cache.writeCount)} writes since the start`,
-    });
+    rows.push({ key: 'total', label: 'Total', value: toKeyValue(describeIndexCache(state, options.formatTime)).value + projects });
   }
   return rows;
+}
+
+/** Search times are not displayed (decision of the dashboard v2 design). */
+function isSearchTiming(name: string): boolean {
+  return /^Request:search\//.test(name) || /^Search/.test(name);
 }
 
 function describeOperations(timings: OperationTiming[] | undefined): OperationRow[] {
   return [...(timings ?? [])]
+    .filter(t => !isSearchTiming(t.name))
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(t => ({
       key: t.name,
@@ -571,8 +672,8 @@ function normalizePath(p: string): string {
 }
 
 /**
- * The cache settings of the host, and whether they differ from the cache of the running server
- * (applied when the server restarts).
+ * The cache settings of the host, and whether the cache directory differs from the one of the
+ * running server (applied when the server restarts).
  */
 export function describeCacheSettings(data: DashboardData): CacheSettingsView | undefined {
   const settings = data.host?.cacheSettings;
@@ -581,13 +682,11 @@ export function describeCacheSettings(data: DashboardData): CacheSettingsView | 
   }
   const directory = settings.directory.trim();
   let restartNeeded = false;
-  const serverEnabled = currentStatus(data)?.indexCache?.enabled ?? data.server?.indexCache?.enabled;
-  if (data.host?.serverRunning && serverEnabled !== undefined) {
-    restartNeeded = serverEnabled !== settings.enabled;
-    const serverDirectory = data.server?.indexCache?.cacheDirectory;
-    if (!restartNeeded && settings.enabled && directory && serverDirectory) {
-      restartNeeded = normalizePath(directory) !== normalizePath(serverDirectory);
-    }
+  // Note: The cache directory is applied when the server starts (the cache on/off setting is
+  // applied per project at any time).
+  const serverDirectory = data.server?.indexCache?.cacheDirectory;
+  if (data.host?.serverRunning && directory && serverDirectory) {
+    restartNeeded = normalizePath(directory) !== normalizePath(serverDirectory);
   }
   return { enabled: settings.enabled, directory: directory || 'default', restartNeeded };
 }
@@ -599,7 +698,8 @@ export function buildViewModel(data: DashboardData, options: FormatOptions = def
   return {
     status: describeStatus(data),
     facts: data.host?.serverRunning ? describeFacts(data, options) : [],
-    actions: enabledActions(data.host, status, current?.indexCache?.enabled === true),
+    actions: enabledActions(data.host, status,
+      current?.indexCache?.enabled === true || (data.details?.projects ?? []).some(p => p.cache.enabled)),
     pauseOrResume: status === 'paused' || status === 'yield' ? 'resume' : 'pause',
     error: data.error,
     trigramFiltersSetting: data.host?.trigramFiltersSetting === true,

@@ -210,7 +210,7 @@ describe('DashboardController', () => {
     await flush();
     assert.equal(last().status.text, 'Idle');
     assert.equal(last().projects.length, 1);
-    assert.equal(last().operations.length, 3);
+    assert.equal(last().operations.length, 2, 'without the search times');
     assert.deepEqual(timers.delays, [RefreshIntervalMs]);
 
     timers.run(RefreshIntervalMs);
@@ -346,7 +346,7 @@ describe('DashboardController', () => {
     }
     timers.run(RefreshIntervalMs);
     const requests = host.takeRequests();
-    assert.deepEqual(requests.map(r => r.method), ['index/status', 'index/statistics', 'server/statistics', 'server/history']);
+    assert.deepEqual(requests.map(r => r.method), FullRefresh);
     assert.deepEqual(requests[3].params, { sinceUnixMs: 1_010_000 });
     host.answer(requests, { 'server/history': historyOf([{ time: 1_020_000 }]) });
     await flush();
@@ -390,6 +390,25 @@ describe('DashboardController', () => {
       { type: 'command', command: 'clearCache', projectPath: 'C:\\a' },
       { type: 'command', command: 'openCacheSettings' },
     ]);
+  });
+
+  it('sends the project commands, then refreshes the project details', async () => {
+    const { host, timers, controller } = await setupRunning();
+    host.posted.length = 0;
+    timers.timers.clear();
+    await controller.execute({ action: 'rebuildProject', projectPath: 'C:\\a' });
+    await controller.execute({ action: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false });
+    await controller.execute({ action: 'setProjectTrigramFilters', projectPath: 'C:\\a', enabled: true });
+    await controller.execute({ action: 'openProjectCacheFolder', projectPath: 'C:\\a' });
+    assert.deepEqual(host.posted.filter(m => m.type === 'command'), [
+      { type: 'command', command: 'rebuildProject', projectPath: 'C:\\a' },
+      { type: 'command', command: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false },
+      { type: 'command', command: 'setProjectTrigramFilters', projectPath: 'C:\\a', enabled: true },
+      { type: 'command', command: 'openProjectCacheFolder', projectPath: 'C:\\a' },
+    ]);
+    assert.deepEqual(timers.delays, [NotificationRefreshDelayMs]);
+    timers.run(NotificationRefreshDelayMs);
+    assert.deepEqual(host.takeRequests().map(r => r.method), FullRefresh);
   });
 
   it('fails the pending requests when disposed', async () => {

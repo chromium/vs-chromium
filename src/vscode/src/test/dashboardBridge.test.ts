@@ -225,6 +225,21 @@ describe('DashboardBridge', () => {
     assert.equal(context.lastHostState().trigramFiltersSetting, true);
   });
 
+  it('passes the project commands to the host (confirmations, settings)', async () => {
+    const context = setup();
+    await context.bridge.handleMessage({ type: 'command', command: 'rebuildProject', projectPath: 'C:\\a' });
+    await context.bridge.handleMessage({ type: 'command', command: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false });
+    await context.bridge.handleMessage({ type: 'command', command: 'openProjectCacheFolder', projectPath: 'C:\\a' });
+    await context.bridge.handleMessage({ type: 'command', command: 'clearCache' });
+    assert.deepEqual(context.commands, [
+      { command: 'rebuildProject', projectPath: 'C:\\a' },
+      { command: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false },
+      { command: 'openProjectCacheFolder', projectPath: 'C:\\a' },
+      { command: 'clearCache' },
+    ]);
+    assert.deepEqual(context.server.requests, [], 'no request without the host');
+  });
+
   it('stops forwarding when disposed', async () => {
     const context = setup();
     await context.bridge.handleMessage({ type: 'ready' });

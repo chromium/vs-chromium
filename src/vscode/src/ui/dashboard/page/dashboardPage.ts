@@ -8,9 +8,14 @@
 // only written when they change, rows are keyed (no flicker, selection and focus are kept). The
 // DOM is built with textContent only (no innerHTML). Talks to the host only through the shim
 // (hostShim.ts).
+//
+// Layout: the header (process status and actions), the "Process" section (memory, charts, index
+// cache root and defaults), the "Projects" section (a collapsible block per project: index, memory,
+// cache, options, operations, actions) and the "Details" section (collapsed: raw operation timings,
+// server, cache size chart).
 
 import { DashboardAction, DashboardController } from '../dashboardController';
-import type { DashboardViewModel, KeyValue, OperationRow, ProjectRow } from '../dashboardModel';
+import type { DashboardViewModel, KeyValue, OperationRow, ProjectBlock, ProjectOperationRow } from '../dashboardModel';
 import { createHostShim, ShimWindow } from '../hostShim';
 import { HistoryChartView, renderSparkline, StatusTimelineView } from './charts';
 
@@ -49,6 +54,12 @@ function setDisabled(e: HTMLButtonElement | HTMLInputElement, disabled: boolean)
   }
 }
 
+function setHidden(e: HTMLElement, hidden: boolean) {
+  if (e.hidden !== hidden) {
+    e.hidden = hidden;
+  }
+}
+
 /** A checkbox like the ones of the VS Code Settings editor (native input, check mark drawn in CSS). */
 function checkbox(label: string): { root: HTMLElement; input: HTMLInputElement } {
   const root = el('span', 'checkbox');
@@ -64,6 +75,49 @@ function setChecked(input: HTMLInputElement, checked: boolean, enabled: boolean)
     input.checked = checked;
   }
   setDisabled(input, !enabled);
+}
+
+function button(className: string, text: string, onClick: () => void, title?: string): HTMLButtonElement {
+  const b = el('button', className, text);
+  b.type = 'button';
+  if (title) {
+    b.title = title;
+  }
+  b.disabled = true;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+/** A table with its header; numeric columns right aligned. */
+function table(headers: string[], numericColumns: number[], className = 'table'): { table: HTMLTableElement; body: HTMLTableSectionElement } {
+  const t = el('table', className);
+  const head = el('thead');
+  const row = el('tr');
+  headers.forEach((header, i) => row.append(el('th', numericColumns.includes(i) ? 'num' : undefined, header)));
+  head.append(row);
+  const body = el('tbody');
+  t.append(head, body);
+  return { table: t, body };
+}
+
+function cells(count: number, numericColumns: number[]): HTMLTableRowElement {
+  const row = el('tr');
+  for (let i = 0; i < count; i++) {
+    row.append(el('td', numericColumns.includes(i) ? 'num' : undefined));
+  }
+  return row;
+}
+
+function updateCells(row: HTMLElement, texts: string[]) {
+  texts.forEach((text, i) => setText(row.children[i] as HTMLElement, text));
+}
+
+function emptyRow(columns: number, text: string): HTMLElement {
+  const row = el('tr', 'empty');
+  const cell = el('td', undefined, text);
+  cell.colSpan = columns;
+  row.append(cell);
+  return row;
 }
 
 /**
@@ -93,6 +147,69 @@ class KeyedRows<T extends { key: string }> {
   }
 }
 
+/** A key/value list (label column, value column). */
+function keyValues(container: HTMLElement): KeyedRows<KeyValue> {
+  const list = el('dl', 'kv');
+  container.append(list);
+  return new KeyedRows<KeyValue>(list,
+    () => {
+      const row = el('div', 'kv-row');
+      row.append(el('dt'), el('dd'));
+      return row;
+    },
+    (row, item) => {
+      setText(row.children[0] as HTMLElement, item.label);
+      setText(row.children[1] as HTMLElement, item.value);
+      setTitle(row, item.title);
+    },
+    () => el('div', 'kv-empty', '\u2014'));
+}
+
+/** A section with a title and a count badge, optionally collapsible (twistie in the title). */
+function section(title: string, collapsible?: { expanded: boolean }): { section: HTMLElement; badge: HTMLElement; body: HTMLElement } {
+  const s = el('section', 'section');
+  const heading = el('h2', 'section-title');
+  const badge = el('span', 'badge');
+  const body = el('div', 'section-body');
+  if (collapsible) {
+    const toggle = el('button', 'twistie-button');
+    toggle.type = 'button';
+    toggle.append(el('span', 'twistie'), el('span', undefined, title));
+    const apply = (expanded: boolean) => {
+      toggle.setAttribute('aria-expanded', String(expanded));
+      body.hidden = !expanded;
+    };
+    toggle.addEventListener('click', () => apply(toggle.getAttribute('aria-expanded') !== 'true'));
+    apply(collapsible.expanded);
+    heading.append(toggle, badge);
+  } else {
+    heading.append(el('span', undefined, title), badge);
+  }
+  s.append(heading, body);
+  return { section: s, badge, body };
+}
+
+/** The elements of the block of a project. */
+interface ProjectElements {
+  root: HTMLElement;
+  toggle: HTMLButtonElement;
+  path: HTMLElement;
+  summary: HTMLElement;
+  body: HTMLElement;
+  rebuild: HTMLButtonElement;
+  clearCache: HTMLButtonElement;
+  index: HTMLElement;
+  memory: HTMLElement;
+  cacheEnabled: HTMLInputElement;
+  cacheState: HTMLElement;
+  cacheDirectory: HTMLElement;
+  openFolder: HTMLButtonElement;
+  readOnly: HTMLElement;
+  trigramFilters: HTMLInputElement;
+  trigramFiltersText: HTMLElement;
+  operations: KeyedRows<ProjectOperationRow>;
+}
+
 class DashboardView {
   private readonly status: HTMLElement;
   private readonly statusText: HTMLElement;
@@ -101,51 +218,41 @@ class DashboardView {
   private readonly error: HTMLElement;
   private readonly errorText: HTMLElement;
   private readonly pauseOrResume: HTMLButtonElement;
-  private readonly pauseOrResumeLabel: HTMLElement;
-  private readonly rebuild: HTMLButtonElement;
   private readonly restart: HTMLButtonElement;
   private readonly showOutput: HTMLButtonElement;
   private readonly openLogDirectory: HTMLButtonElement;
-  private readonly setting: HTMLInputElement;
+  private readonly processMemory: KeyedRows<KeyValue>;
+  private readonly processCache: KeyedRows<KeyValue>;
+  private readonly cacheRestart: HTMLElement;
+  private readonly openCacheSettings: HTMLButtonElement;
+  private readonly clearAllCaches: HTMLButtonElement;
+  private readonly trigramFiltersDefault: HTMLInputElement;
   private readonly projectCount: HTMLElement;
+  private readonly projects: KeyedRows<ProjectBlock>;
+  private readonly projectElements = new WeakMap<HTMLElement, ProjectElements>();
+  /** The projects expanded or collapsed by the user (otherwise: their default). */
+  private readonly expanded = new Map<string, boolean>();
   private readonly operationCount: HTMLElement;
-  private readonly projects: KeyedRows<ProjectRow>;
-  private readonly memory: KeyedRows<KeyValue>;
-  private readonly indexCache: KeyedRows<KeyValue>;
   private readonly operations: KeyedRows<OperationRow>;
   private readonly server: KeyedRows<KeyValue>;
-  private last: DashboardViewModel | undefined;
   private readonly memoryChart = new HistoryChartView('Memory Usage');
   private readonly statusTimeline = new StatusTimelineView();
-  private readonly cpuChart = new HistoryChartView('CPU', 110);
-  private readonly cacheChart = new HistoryChartView('Size on Disk', 110);
-  private readonly clearCache: HTMLButtonElement;
-  private readonly cacheEnabled: HTMLInputElement;
-  private readonly cacheEnabledText: HTMLElement;
-  private readonly cacheDirectory: HTMLElement;
-  private readonly cacheRestart: HTMLElement;
-  private readonly cacheSettings: HTMLElement;
-  private readonly openCacheSettings: HTMLButtonElement;
-  /** The trigram filters checkboxes of the projects are enabled (the server is running). */
-  private trigramFiltersEnabled = false;
-  /** The "Clear Cache" links of the projects are enabled. */
-  private clearCacheEnabled = false;
+  private readonly cpuChart = new HistoryChartView('CPU');
+  private readonly cacheChart = new HistoryChartView('Index Cache Size on Disk (All Projects)', 110);
+  private last: DashboardViewModel | undefined;
 
   constructor(root: HTMLElement, private readonly execute: (action: DashboardAction) => void) {
-    // Header
+    // Header: the process status and the process actions.
     const header = el('header', 'header');
     const titleRow = el('div', 'title-row');
     titleRow.append(el('h1', 'title', 'VsChromium Server'));
     const toolbar = el('div', 'toolbar');
     toolbar.setAttribute('role', 'toolbar');
-    this.pauseOrResumeLabel = el('span', undefined, 'Pause Indexing');
-    this.pauseOrResume = this.button('button primary', [this.pauseOrResumeLabel],
+    this.pauseOrResume = button('button primary', 'Pause Indexing',
       () => this.execute({ action: this.last?.pauseOrResume === 'resume' ? 'resume' : 'pause' }));
-    this.rebuild = this.button('button secondary', [el('span', undefined, 'Rebuild Index')],
-      () => this.execute({ action: 'rebuild' }), 'Scan the file system again and rebuild the index');
-    this.restart = this.button('button secondary', [el('span', undefined, 'Restart Server')],
-      () => this.execute({ action: 'restartServer' }), 'Restart the indexing server');
-    toolbar.append(this.pauseOrResume, this.rebuild, this.restart);
+    this.restart = button('button secondary', 'Restart Server', () => this.execute({ action: 'restartServer' }),
+      'Restart the indexing server');
+    toolbar.append(this.pauseOrResume, this.restart);
     titleRow.append(toolbar);
 
     const statusRow = el('div', 'status-row');
@@ -156,10 +263,10 @@ class DashboardView {
     dot.setAttribute('aria-hidden', 'true');
     this.status.append(dot, this.statusText);
     this.facts = el('span', 'facts');
-    this.showOutput = this.button('link', [el('span', undefined, 'Show Output')],
-      () => this.execute({ action: 'showOutput' }), 'Show the output (log) of the extension');
-    this.openLogDirectory = this.button('link', [el('span', undefined, 'Open Log Folder')],
-      () => this.execute({ action: 'openLogDirectory' }), 'Open the directory of the log files of the server');
+    this.showOutput = button('link', 'Show Output', () => this.execute({ action: 'showOutput' }),
+      'Show the output (log) of the extension');
+    this.openLogDirectory = button('link', 'Open Log Folder', () => this.execute({ action: 'openLogDirectory' }),
+      'Open the directory of the log files of the server');
     statusRow.append(this.status, this.facts, this.showOutput, this.openLogDirectory);
 
     this.error = el('div', 'error');
@@ -171,113 +278,112 @@ class DashboardView {
     this.progress.hidden = true;
     header.append(titleRow, statusRow, this.error, this.progress);
 
-    // Projects
-    const projectsSection = this.section('Projects');
-    this.projectCount = projectsSection.badge;
-    const setting = el('div', 'setting');
-    const title = el('div', 'setting-title');
-    title.append(el('span', 'setting-category', 'VsChromium: '), el('span', 'setting-name', 'Trigram Filters'));
-    const settingCheckbox = checkbox('Trigram Filters');
-    this.setting = settingCheckbox.input;
-    this.setting.addEventListener('change', () => this.execute({ action: 'toggleTrigramFiltersSetting' }));
-    const value = el('label', 'setting-value');
-    value.append(settingCheckbox.root, el('span', undefined,
-      'Use trigram filters for all the projects: much faster selective searches, at the cost of memory ' +
-      '(about 5% of the size of the indexed text). Can be changed per project below, until the setting changes ' +
-      'or the server restarts.'));
-    setting.append(title, value);
-    const projectsTable = this.table(['Root', 'Files', 'Searchable', 'Text', 'Trigram Filters', 'Cache', ''], [1, 2, 3]);
-    projectsSection.section.append(setting, projectsTable.table);
-    this.projects = new KeyedRows(projectsTable.body, item => this.createProjectRow(item), (row, item) => this.updateProjectRow(row, item),
-      () => this.emptyRow(7, 'No project'));
+    // Process: memory, charts, index cache root, defaults.
+    const process = section('Process');
+    this.processMemory = keyValues(process.body);
+    const charts = el('div', 'charts');
+    const memoryColumn = el('div', 'chart-column');
+    memoryColumn.append(this.memoryChart.element, this.statusTimeline.element);
+    const cpuColumn = el('div', 'chart-column');
+    cpuColumn.append(this.cpuChart.element);
+    charts.append(memoryColumn, cpuColumn);
+    process.body.append(charts);
 
-    // Memory and index cache, side by side.
-    const columns = el('div', 'columns');
-    const memorySection = this.section('Memory');
-    const cacheSection = this.section('Index Cache');
-    columns.append(memorySection.section, cacheSection.section);
-    this.memory = this.keyValues(memorySection.section);
-    memorySection.section.append(this.memoryChart.element, this.statusTimeline.element, this.cpuChart.element);
-    this.indexCache = this.keyValues(cacheSection.section);
-
-    // Cache settings (host settings, applied when the server restarts) and actions.
-    this.cacheSettings = el('div', 'cache-settings');
-    const enabledRow = el('label', 'setting-value');
-    const enabledCheckbox = checkbox('Index cache enabled (setting)');
-    this.cacheEnabled = enabledCheckbox.input;
-    this.cacheEnabled.disabled = true;
-    this.cacheEnabledText = el('span');
-    enabledRow.append(enabledCheckbox.root, this.cacheEnabledText);
-    const directoryRow = el('div', 'setting-value');
-    this.cacheDirectory = el('span', 'path');
-    directoryRow.append(el('span', undefined, 'Directory:'), this.cacheDirectory);
-    const settingsTitle = el('div', 'setting-title');
-    settingsTitle.append(el('span', 'setting-category', 'VsChromium: '), el('span', 'setting-name', 'Cache Settings'));
-    this.cacheRestart = el('div', 'restart-needed', 'Changed: applied when the server restarts.');
+    const cacheGroup = el('div', 'group');
+    cacheGroup.append(el('h3', 'group-title', 'Index Cache'));
+    this.processCache = keyValues(cacheGroup);
+    this.cacheRestart = el('div', 'restart-needed', 'The cache directory setting changed: applied when the server restarts.');
     this.cacheRestart.hidden = true;
-    this.openCacheSettings = this.button('link', [el('span', undefined, 'Change\u2026')],
-      () => this.execute({ action: 'openCacheSettings' }), 'Open the cache settings');
-    this.cacheSettings.append(settingsTitle, enabledRow, directoryRow, this.cacheRestart, this.openCacheSettings);
-    this.clearCache = this.button('button secondary', [el('span', undefined, 'Clear Cache')],
-      () => this.execute({ action: 'clearCache' }),
+    const cacheActions = el('div', 'group-actions');
+    this.openCacheSettings = button('link', 'Change\u2026', () => this.execute({ action: 'openCacheSettings' }),
+      'Change the cache directory (settings)');
+    this.clearAllCaches = button('button secondary', 'Clear All Caches', () => this.execute({ action: 'clearCache' }),
       'Delete the index cache of all the projects (the current index stays in use)');
-    const cacheActions = el('div', 'section-actions');
-    cacheActions.append(this.clearCache);
-    cacheSection.section.append(this.cacheChart.element, this.cacheSettings, cacheActions);
+    cacheActions.append(this.clearAllCaches, this.openCacheSettings);
+    cacheGroup.append(this.cacheRestart, cacheActions);
 
-    // Operations
-    const operationsSection = this.section('Operations');
-    this.operationCount = operationsSection.badge;
-    const operationsTable = this.table(['Name', 'Count', 'Last', 'Max', 'Average', 'Total', 'Recent'], [1, 2, 3, 4, 5]);
-    operationsSection.section.append(operationsTable.table);
+    const defaults = el('div', 'setting');
+    const defaultsTitle = el('div', 'setting-title');
+    defaultsTitle.append(el('span', 'setting-category', 'VsChromium: '), el('span', 'setting-name', 'Trigram Filters'));
+    const defaultCheckbox = checkbox('Trigram filters (workspace default)');
+    this.trigramFiltersDefault = defaultCheckbox.input;
+    this.trigramFiltersDefault.addEventListener('change', () => this.execute({ action: 'toggleTrigramFiltersSetting' }));
+    const defaultValue = el('label', 'setting-value');
+    defaultValue.append(defaultCheckbox.root, el('span', undefined,
+      'Use trigram filters by default (workspace setting): much faster selective searches, at the cost of memory ' +
+      '(about 5% of the size of the indexed text). Each project can override it (folder setting) below.'));
+    defaults.append(defaultsTitle, defaultValue);
+    process.body.append(cacheGroup, defaults);
+
+    // Projects: a block per project.
+    const projectsSection = section('Projects');
+    this.projectCount = projectsSection.badge;
+    const projectList = el('div', 'projects');
+    projectsSection.body.append(projectList);
+    this.projects = new KeyedRows(projectList, item => this.createProject(item), (row, item) => this.updateProject(row, item),
+      () => el('div', 'kv-empty', 'No project'));
+
+    // Details (collapsed): raw operation timings, server, cache size chart.
+    const details = section('Details', { expanded: false });
+    this.operationCount = details.badge;
+    const operationsGroup = el('div', 'group');
+    operationsGroup.append(el('h3', 'group-title', 'Operation Timings'));
+    const operationsTable = table(['Name', 'Count', 'Last', 'Max', 'Average', 'Total', 'Recent'], [1, 2, 3, 4, 5]);
+    operationsGroup.append(operationsTable.table);
     this.operations = new KeyedRows(operationsTable.body,
-      item => this.createCells(7, [1, 2, 3, 4, 5], item.name),
+      item => {
+        const row = cells(7, [1, 2, 3, 4, 5]);
+        row.title = item.name;
+        return row;
+      },
       (row, item) => {
-        this.updateCells(row, [item.name, item.count, item.last, item.max, item.average, item.total]);
+        updateCells(row, [item.name, item.count, item.last, item.max, item.average, item.total]);
         const recent = row.children[6] as HTMLElement;
         renderSparkline(recent, item.recentMs);
         setTitle(recent, item.recentTitle || undefined);
       },
-      () => this.emptyRow(7, 'No operation yet'));
+      () => emptyRow(7, 'No operation yet'));
+    const serverGroup = el('div', 'group');
+    serverGroup.append(el('h3', 'group-title', 'Server'));
+    this.server = keyValues(serverGroup);
+    details.body.append(operationsGroup, serverGroup, this.cacheChart.element);
+    // Note: The charts of a collapsed section are drawn when it is expanded (their width is known).
+    details.section.querySelector('.twistie-button')!.addEventListener('click', () => this.renderCharts());
 
-    // Server
-    const serverSection = this.section('Server');
-    this.server = this.keyValues(serverSection.section);
-
-    root.replaceChildren(header, projectsSection.section, columns, operationsSection.section, serverSection.section);
+    root.replaceChildren(header, process.section, projectsSection.section, details.section);
   }
 
   render(vm: DashboardViewModel) {
     setClass(this.status, `status ${vm.status.kind}`);
     setText(this.statusText, vm.status.text);
     setText(this.facts, vm.facts.join(' \u00b7 '));
-    this.progress.hidden = vm.status.kind !== 'busy';
+    setHidden(this.progress, vm.status.kind !== 'busy');
     setText(this.errorText, vm.error ?? '');
-    this.error.hidden = vm.error === undefined;
+    setHidden(this.error, vm.error === undefined);
 
     const resume = vm.pauseOrResume === 'resume';
-    setText(this.pauseOrResumeLabel, resume ? 'Resume Indexing' : 'Pause Indexing');
+    setText(this.pauseOrResume, resume ? 'Resume Indexing' : 'Pause Indexing');
     setTitle(this.pauseOrResume, resume
       ? 'Resume indexing'
       : 'Pause indexing (file system changes are not processed until resumed)');
     setDisabled(this.pauseOrResume, !vm.actions[vm.pauseOrResume]);
-    setDisabled(this.rebuild, !vm.actions.rebuild);
     setDisabled(this.restart, !vm.actions.restartServer);
     setDisabled(this.showOutput, !vm.actions.showOutput);
     setDisabled(this.openLogDirectory, !vm.actions.openLogDirectory);
-    setChecked(this.setting, vm.trigramFiltersSetting, vm.actions.toggleTrigramFilters);
-    this.trigramFiltersEnabled = vm.actions.toggleTrigramFilters;
-    this.clearCacheEnabled = vm.actions.clearCache;
 
+    this.processMemory.render(vm.memory);
+    this.processCache.render(vm.indexCache);
+    setHidden(this.cacheRestart, !vm.cacheSettings?.restartNeeded);
+    setDisabled(this.openCacheSettings, !vm.actions.openCacheSettings);
+    setDisabled(this.clearAllCaches, !vm.actions.clearCache);
+    setChecked(this.trigramFiltersDefault, vm.trigramFiltersSetting, vm.actions.toggleTrigramFilters);
+
+    this.last = vm;
     setText(this.projectCount, vm.projects.length > 0 ? String(vm.projects.length) : '');
-    setText(this.operationCount, vm.operations.length > 0 ? String(vm.operations.length) : '');
     this.projects.render(vm.projects);
-    this.memory.render(vm.memory);
-    this.indexCache.render(vm.indexCache);
+    setText(this.operationCount, '');
     this.operations.render(vm.operations);
     this.server.render(vm.server);
-    this.renderCache(vm);
-    this.last = vm;
     this.renderCharts(vm, false);
   }
 
@@ -289,132 +395,118 @@ class DashboardView {
     this.memoryChart.render(vm.memoryChart, force);
     this.statusTimeline.render(vm.statusTimeline, this.memoryChart.plotFrame, this.memoryChart.element.clientWidth, force);
     this.cpuChart.render(vm.cpuChart, force);
-    // Note: No cache chart when the server has no cache.
-    this.cacheChart.element.hidden = vm.cacheChart === undefined;
-    this.cacheChart.render(vm.cacheChart, force);
-  }
-
-  private renderCache(vm: DashboardViewModel) {
-    setDisabled(this.clearCache, !vm.actions.clearCache);
-    const settings = vm.cacheSettings;
-    this.cacheSettings.hidden = settings === undefined;
-    if (settings) {
-      if (this.cacheEnabled.checked !== settings.enabled) {
-        this.cacheEnabled.checked = settings.enabled;
-      }
-      setText(this.cacheEnabledText, settings.enabled ? 'Enabled' : 'Disabled');
-      setText(this.cacheDirectory, settings.directory);
-      this.cacheRestart.hidden = !settings.restartNeeded;
+    setHidden(this.cacheChart.element, vm.cacheChart === undefined);
+    if (this.cacheChart.element.offsetParent !== null) {
+      this.cacheChart.render(vm.cacheChart, force);
     }
-    setDisabled(this.openCacheSettings, !vm.actions.openCacheSettings);
   }
 
-  private button(className: string, content: HTMLElement[], onClick: () => void, title?: string): HTMLButtonElement {
-    const button = el('button', className);
-    button.type = 'button';
-    if (title) {
-      button.title = title;
-    }
-    button.append(...content);
-    button.disabled = true;
-    button.addEventListener('click', onClick);
-    return button;
-  }
-
-  private section(title: string): { section: HTMLElement; badge: HTMLElement } {
-    const section = el('section', 'section');
-    const heading = el('h2', 'section-title', title);
-    const badge = el('span', 'badge');
-    heading.append(badge);
-    section.append(heading);
-    return { section, badge };
-  }
-
-  private table(headers: string[], numericColumns: number[]): { table: HTMLTableElement; body: HTMLTableSectionElement } {
-    const table = el('table', 'table');
-    const head = el('thead');
-    const row = el('tr');
-    headers.forEach((header, i) => row.append(el('th', numericColumns.includes(i) ? 'num' : undefined, header)));
-    head.append(row);
-    const body = el('tbody');
-    table.append(head, body);
-    return { table, body };
-  }
-
-  private createCells(count: number, numericColumns: number[], title?: string): HTMLTableRowElement {
-    const row = el('tr');
-    for (let i = 0; i < count; i++) {
-      row.append(el('td', numericColumns.includes(i) ? 'num' : undefined));
-    }
-    if (title) {
-      row.title = title;
-    }
-    return row;
-  }
-
-  private updateCells(row: HTMLElement, texts: string[]) {
-    texts.forEach((text, i) => setText(row.children[i] as HTMLElement, text));
-  }
-
-  private emptyRow(columns: number, text: string): HTMLElement {
-    const row = el('tr', 'empty');
-    const cell = el('td', undefined, text);
-    cell.colSpan = columns;
-    row.append(cell);
-    return row;
-  }
-
-  private createProjectRow(item: ProjectRow): HTMLElement {
-    const row = this.createCells(7, [1, 2, 3]);
-    const root = row.children[0] as HTMLElement;
-    root.className = 'path';
-    root.title = item.rootPath;
-    const trigrams = row.children[4] as HTMLElement;
-    const { root: box, input } = checkbox(`Trigram filters of ${item.rootPath}`);
-    input.addEventListener('change', () => this.execute({
-      action: 'setProjectTrigramFilters',
-      projectPath: item.rootPath,
-      enabled: input.checked,
-    }));
-    const label = el('label', 'trigrams');
-    label.append(box, el('span', 'description'));
-    trigrams.append(label);
-    const clear = this.button('link', [el('span', undefined, 'Clear Cache')],
+  private createProject(item: ProjectBlock): HTMLElement {
+    const root = el('div', 'project');
+    const header = el('div', 'project-header');
+    const toggle = el('button', 'twistie-button project-toggle');
+    toggle.type = 'button';
+    const path = el('span', 'project-path');
+    const summary = el('span', 'project-summary');
+    toggle.append(el('span', 'twistie'), path, summary);
+    const actions = el('div', 'project-actions');
+    const rebuild = button('button secondary small', 'Rebuild Index',
+      () => this.execute({ action: 'rebuildProject', projectPath: item.rootPath }),
+      'Delete the cache of the project, scan and read its files again');
+    const clearCache = button('button secondary small', 'Clear Cache',
       () => this.execute({ action: 'clearCache', projectPath: item.rootPath }),
-      `Delete the index cache of ${item.rootPath}`);
-    row.children[6].append(clear);
-    return row;
+      'Delete the index cache of the project (its current index stays in use)');
+    actions.append(rebuild, clearCache);
+    header.append(toggle, actions);
+
+    const body = el('dl', 'project-body');
+    const group = (label: string, ...content: HTMLElement[]) => {
+      const row = el('div', 'kv-row');
+      const dd = el('dd');
+      dd.append(...content);
+      row.append(el('dt', undefined, label), dd);
+      body.append(row);
+    };
+    const index = el('div', 'line');
+    const memory = el('div', 'line');
+    group('Index', index);
+    group('Memory', memory);
+
+    const cacheLine = el('label', 'line control-line');
+    const cacheCheckbox = checkbox(`Index cache of ${item.rootPath}`);
+    cacheCheckbox.input.addEventListener('change', () => this.execute({
+      action: 'setProjectCacheEnabled', projectPath: item.rootPath, enabled: cacheCheckbox.input.checked,
+    }));
+    const cacheState = el('span');
+    cacheLine.append(cacheCheckbox.root, el('span', 'control-label', 'Enabled'), cacheState);
+    const directoryLine = el('div', 'line');
+    const cacheDirectory = el('span', 'path');
+    const openFolder = button('link', 'Open Folder', () => this.execute({ action: 'openProjectCacheFolder', projectPath: item.rootPath }),
+      'Open the cache directory of the project');
+    directoryLine.append(cacheDirectory, openFolder);
+    const readOnly = el('div', 'line restart-needed', 'Read-only: this cache is written by another server (e.g. another window).');
+    group('Cache', cacheLine, directoryLine, readOnly);
+
+    const optionsLine = el('label', 'line control-line');
+    const trigramCheckbox = checkbox(`Trigram filters of ${item.rootPath}`);
+    trigramCheckbox.input.addEventListener('change', () => this.execute({
+      action: 'setProjectTrigramFilters', projectPath: item.rootPath, enabled: trigramCheckbox.input.checked,
+    }));
+    const trigramText = el('span', 'description');
+    optionsLine.append(trigramCheckbox.root, el('span', 'control-label', 'Trigram filters'), trigramText);
+    group('Options', optionsLine);
+
+    const operationsTable = table(['Operation', 'Count', 'Min', 'Avg', 'Max', 'Last', ''], [1, 2, 3, 4, 5], 'table compact');
+    group('Operations', operationsTable.table);
+    const operations = new KeyedRows<ProjectOperationRow>(operationsTable.body,
+      () => cells(7, [1, 2, 3, 4, 5]),
+      (row, op) => {
+        updateCells(row, [op.name, op.count, op.min, op.avg, op.max, op.last, op.note]);
+        (row.children[6] as HTMLElement).className = 'description';
+      });
+
+    root.append(header, body);
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+      this.expanded.set(item.rootPath, expanded);
+      this.applyExpanded(elements, expanded);
+    });
+    const elements: ProjectElements = {
+      root, toggle, path, summary, body, rebuild, clearCache, index, memory,
+      cacheEnabled: cacheCheckbox.input, cacheState, cacheDirectory, openFolder, readOnly,
+      trigramFilters: trigramCheckbox.input, trigramFiltersText: trigramText, operations,
+    };
+    this.projectElements.set(root, elements);
+    this.applyExpanded(elements, this.expanded.get(item.rootPath) ?? item.defaultExpanded);
+    return root;
   }
 
-  private updateProjectRow(row: HTMLElement, item: ProjectRow) {
-    const cells = row.children;
-    setText(cells[0] as HTMLElement, item.rootPath);
-    setText(cells[1] as HTMLElement, item.files);
-    setText(cells[2] as HTMLElement, item.searchable);
-    setText(cells[3] as HTMLElement, item.textSize);
-    const label = (cells[4] as HTMLElement).firstElementChild as HTMLElement;
-    setChecked(label.querySelector('input')!, item.trigramFiltersEnabled, this.trigramFiltersEnabled);
-    setText(label.lastElementChild as HTMLElement, item.trigramFilters);
-    setText(cells[5] as HTMLElement, item.cache);
-    setTitle(cells[5] as HTMLElement, item.cacheTitle);
-    setDisabled((cells[6] as HTMLElement).firstElementChild as HTMLButtonElement, !this.clearCacheEnabled);
+  private applyExpanded(elements: ProjectElements, expanded: boolean) {
+    elements.toggle.setAttribute('aria-expanded', String(expanded));
+    setHidden(elements.body, !expanded);
+    setHidden(elements.summary, expanded);
   }
 
-  private keyValues(container: HTMLElement): KeyedRows<KeyValue> {
-    const list = el('dl', 'kv');
-    container.append(list);
-    return new KeyedRows<KeyValue>(list,
-      () => {
-        const row = el('div', 'kv-row');
-        row.append(el('dt'), el('dd'));
-        return row;
-      },
-      (row, item) => {
-        setText(row.children[0] as HTMLElement, item.label);
-        setText(row.children[1] as HTMLElement, item.value);
-        setTitle(row, item.title);
-      },
-      () => el('div', 'kv-empty', '\u2014'));
+  private updateProject(row: HTMLElement, item: ProjectBlock) {
+    const e = this.projectElements.get(row)!;
+    const vm = this.last!;
+    setText(e.path, item.rootPath);
+    setTitle(e.path, item.rootPath);
+    setText(e.summary, item.summary);
+    this.applyExpanded(e, this.expanded.get(item.rootPath) ?? item.defaultExpanded);
+    setDisabled(e.rebuild, !vm.actions.rebuild);
+    setDisabled(e.clearCache, !(vm.actions.clearCache && item.cache.enabled && item.cache.writable));
+    setText(e.index, item.index.map(kv => (kv.key === 'updated' ? `updated ${kv.value}` : kv.value)).join(' \u00b7 '));
+    setText(e.memory, item.memory.map(kv => `${kv.label.toLowerCase()} ${kv.value}`).join(' \u00b7 '));
+    setChecked(e.cacheEnabled, item.cache.enabled, vm.actions.toggleTrigramFilters);
+    setText(e.cacheState, item.cache.enabled ? `\u00b7 ${item.cache.state}` : '');
+    setText(e.cacheDirectory, item.cache.directory ?? '');
+    setHidden(e.cacheDirectory.parentElement!, !item.cache.directory);
+    setDisabled(e.openFolder, !vm.actions.toggleTrigramFilters || !item.cache.directory);
+    setHidden(e.readOnly, !item.cache.enabled || item.cache.writable);
+    setChecked(e.trigramFilters, item.trigramFiltersEnabled, vm.actions.toggleTrigramFilters);
+    setText(e.trigramFiltersText, item.trigramFiltersEnabled ? `\u00b7 ${item.trigramFilters}` : '');
+    e.operations.render(item.operations);
   }
 }
 

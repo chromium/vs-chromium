@@ -635,3 +635,203 @@ button:disabled {
   gap: 4px;
   white-space: nowrap;
 }
+
+/* Dashboard v2 layout: process section, project blocks, collapsible details */
+
+.section-body[hidden],
+.project-body[hidden],
+.project-summary[hidden],
+.line[hidden] {
+  display: none;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  column-gap: 32px;
+}
+
+.chart-column {
+  min-width: 0;
+}
+
+.group {
+  margin-top: 16px;
+}
+
+.group-title {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-settings-headerForeground, var(--vscode-foreground));
+}
+
+.group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.section > .section-body > .setting {
+  margin-top: 12px;
+}
+
+/* Twisties (expand/collapse), like the trees of VS Code: text glyphs, no icon font. */
+
+.twistie-button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.twistie::before {
+  display: inline-block;
+  width: 10px;
+  content: "\25B8";
+  color: var(--vscode-foreground);
+}
+
+.twistie-button[aria-expanded="true"] .twistie::before {
+  content: "\25BE";
+}
+
+/* Project blocks */
+
+.projects {
+  display: flex;
+  flex-direction: column;
+}
+
+.project {
+  border-top: 1px solid var(--vscode-settings-headerBorder, var(--vscode-panel-border));
+  padding: 6px 0 10px 0;
+}
+
+.project:first-child {
+  border-top: none;
+}
+
+.project-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.project-toggle {
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.project-path {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-weight: 600;
+  color: var(--vscode-settings-headerForeground, var(--vscode-foreground));
+  overflow-wrap: anywhere;
+}
+
+.project-summary {
+  color: var(--vscode-descriptionForeground);
+}
+
+.project-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.button.small {
+  min-height: 22px;
+  padding: 1px 8px;
+}
+
+.project-body {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 16px;
+  margin: 8px 0 0 16px;
+}
+
+.project-body dt {
+  color: var(--vscode-descriptionForeground);
+}
+
+.project-body dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.project-body .line + .line {
+  margin-top: 2px;
+}
+
+.project-body .path {
+  margin-right: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  overflow-wrap: anywhere;
+}
+
+.control-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.control-label {
+  color: var(--vscode-foreground);
+}
+
+.table.compact {
+  width: auto;
+  min-width: 60%;
+}
+
+.table.compact td,
+.table.compact th {
+  height: 22px;
+}
+
+.section-title .twistie::before {
+  width: 14px;
+  font-size: 16px;
+}
+
+
+.table.compact td.description {
+  white-space: normal;
+  min-width: 90px;
+}
+
+.project-body dd {
+  overflow-x: auto;
+}
+
+@media (max-width: 760px) {
+  .project-body {
+    margin-left: 0;
+  }
+}
+
+
+.table.compact td,
+.table.compact th {
+  padding: 0 6px;
+}
+
+@media (max-width: 760px) {
+  .table.compact {
+    min-width: 0;
+  }
+}

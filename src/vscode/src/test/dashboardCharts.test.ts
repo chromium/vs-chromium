@@ -191,8 +191,8 @@ describe('describeCacheSettings', () => {
     assert.equal(describeCacheSettings({ host: host() }), undefined);
   });
 
-  it('tells when the settings differ from the running server', () => {
-    assert.equal(describeCacheSettings(data({ enabled: false, directory: '' }))?.restartNeeded, true);
+  it('tells when the cache directory differs from the running server', () => {
+    assert.equal(describeCacheSettings(data({ enabled: false, directory: '' }))?.restartNeeded, false, 'the cache on/off setting is applied per project at any time');
     assert.equal(describeCacheSettings(data({ enabled: true, directory: 'D:\\Cache' }))?.restartNeeded, true);
     assert.equal(describeCacheSettings(data({ enabled: true, directory: 'c:\\users\\me\\appdata\\local\\vschromium\\indexcache\\' }))?.restartNeeded, false);
   });

@@ -8,6 +8,7 @@ import type { IndexingStatus } from '../protocol/protocol.g';
 import type { HostState } from '../ui/dashboard/dashboardMessages';
 import {
   buildViewModel,
+  describeProjectOperations,
   cpuUsagePercent,
   describeStatus,
   enabledActions,
@@ -128,10 +129,10 @@ describe('enabledActions', () => {
 });
 
 describe('planRefresh', () => {
-  it('requests the statistics and the history every 5 refreshes and the details every 15', () => {
+  it('requests the statistics, the history and the project details every 5 refreshes', () => {
     const plans = Array.from({ length: 16 }, (_, i) => planRefresh(i));
     assert.deepEqual(plans.map((p, i) => p.statistics ? i : -1).filter(i => i >= 0), [0, 5, 10, 15]);
-    assert.deepEqual(plans.map((p, i) => p.details ? i : -1).filter(i => i >= 0), [0, 15]);
+    assert.deepEqual(plans.map((p, i) => p.details ? i : -1).filter(i => i >= 0), [0, 5, 10, 15]);
   });
 
   it('requests what is forced', () => {
@@ -183,61 +184,102 @@ describe('buildViewModel', () => {
     const details = {
       projects: [
         sampleProjectDetails('C:\\a'),
-        sampleProjectDetails('C:\\b', { trigramFiltersEnabled: true, trigramFiltersBytes: 812 * 1024 * 1024 }),
+        sampleProjectDetails('C:\\b', {
+          trigramFiltersEnabled: true,
+          memory: { ...sampleProjectDetails('C:\\b').memory, trigramFiltersBytes: 812 * 1024 * 1024 },
+        }),
       ],
     };
     const vm = buildViewModel({ ...data(), details }, options);
     assert.equal(vm.projects.length, 2);
-    assert.deepEqual(vm.projects[0], {
-      key: 'C:\\a',
-      rootPath: 'C:\\a',
-      files: '2,653,112',
-      searchable: '2,176,934',
-      textSize: '14.0 GB',
-      trigramFiltersEnabled: false,
-      trigramFilters: 'off',
-      cache: '9.4 GB, saved',
-      cacheTitle: '9,626 MB on disk (120 MB dead), saved time(2026-11-04T22:42:00Z) (index cache of the open projects)',
+    const a = vm.projects[0];
+    assert.equal(a.key, 'C:\\a');
+    assert.equal(a.summary, '2,653,112 files \u00b7 native 4.6 GB \u00b7 cache 9.4 GB');
+    assert.equal(a.defaultExpanded, true);
+    assert.deepEqual(a.index.map(kv => kv.value), [
+      '2,653,112 files \u00b7 2,176,934 searchable \u00b7 14.0 GB of text',
+      'time(2026-11-04T22:42:13Z)',
+    ]);
+    assert.deepEqual(a.memory.map(kv => [kv.label, kv.value]), [
+      ['Native', '4.6 GB (290 arenas, 0 B dead, 30.0 MB free; 70.0 MB in files > 512 KB)'],
+      ['Mapped', '9.3 GB from the cache'],
+      ['Trigram filters', '0 B'],
+    ]);
+    assert.deepEqual(a.cache, {
+      enabled: true,
+      writable: true,
+      directory: 'C:\\Users\\me\\AppData\\Local\\VsChromium\\Cache\\3f2a0b1c2d3e4f50',
+      state: '9.4 GB on disk (120.0 MB dead) \u00b7 saved time(2026-11-04T22:42:13Z)',
     });
+    assert.equal(a.trigramFilters, 'off');
     assert.equal(vm.projects[1].trigramFilters, '812.0 MB');
     assert.equal(vm.projects[1].trigramFiltersEnabled, true);
   });
 
-  it('shows the state of the cache in the projects', () => {
+  it('collapses the projects by default when there are more than 2', () => {
+    const details = { projects: ['C:\\a', 'C:\\b', 'C:\\c'].map(p => sampleProjectDetails(p)) };
+    assert.deepEqual(buildViewModel({ ...data(), details }, options).projects.map(p => p.defaultExpanded), [false, false, false]);
+  });
+
+  it('shows the state of the cache of the projects', () => {
     const cache = (state: object) => buildViewModel({
       ...data(),
-      index: sampleIndexStatistics({ indexCache: { ...sampleIndexStatistics().indexCache!, ...state } }),
-    }, options).projects[0].cache;
-    assert.equal(cache({ dirty: true }), '9.4 GB, changed');
-    assert.equal(cache({ saving: true }), '9.4 GB, saving\u2026');
-    assert.equal(cache({ lastSavedUtc: undefined }), 'not saved');
-    assert.equal(cache({ enabled: false }), 'disabled');
+      details: { projects: [sampleProjectDetails('C:\\a', { cache: { ...sampleProjectDetails('C:\\a').cache, ...state } })] },
+    }, options).projects[0];
+    assert.equal(cache({ dirty: true }).cache.state, '9.4 GB on disk (120.0 MB dead) \u00b7 saved time(2026-11-04T22:42:13Z) \u00b7 changed since');
+    assert.equal(cache({ saving: true, deadBytes: 0 }).cache.state, '9.4 GB on disk \u00b7 saved time(2026-11-04T22:42:13Z) \u00b7 saving\u2026');
+    assert.equal(cache({ lastSavedUtc: undefined }).cache.state, 'not saved yet');
+    assert.equal(cache({ enabled: false }).cache.state, 'disabled');
+    assert.equal(cache({ enabled: false }).summary, '2,653,112 files \u00b7 native 4.6 GB \u00b7 cache disabled');
+    assert.equal(cache({ writable: false }).cache.writable, false);
   });
 
-  it('describes the memory with the lines of the status helpers', () => {
+  it('describes the operations of the projects (no search times)', () => {
     const vm = buildViewModel(data(), options);
-    assert.deepEqual(vm.memory.map(row => row.label), ['Memory', 'Indexed text', 'Arenas', 'Process', 'GC heap', 'Trigram filters']);
-    assert.equal(vm.memory[0].value, '523.0 MB managed, 4,812.8 MB native');
-    assert.match(vm.memory[2].value, /^586 \(9,376\.0 MB\): .* in use, 0\.0 MB dead, 33\.0 MB free$/);
+    assert.deepEqual(vm.projects[0].operations, [
+      { key: 'initialLoad', name: 'Initial load', count: '1', min: '1 min 6 s', avg: '1 min 6 s', max: '1 min 6 s', last: '1 min 6 s', note: 'scan 15.0 s, from the cache: 4.9 s' },
+      { key: 'incrementalUpdates', name: 'Incremental updates', count: '48', min: '40 ms', avg: '300 ms', max: '2.1 s', last: '120 ms', note: '' },
+    ]);
+    const none = describeProjectOperations(sampleProjectDetails('C:\\a', {
+      operations: {
+        initialLoad: { count: 0, minMs: 0, avgMs: 0, maxMs: 0, lastMs: 0, scanMs: 0, fromCache: false },
+        incrementalUpdates: { count: 0, minMs: 0, avgMs: 0, maxMs: 0, lastMs: 0 },
+      },
+    }));
+    assert.deepEqual(none.map(op => [op.count, op.min, op.last, op.note]), [['0', '\u2014', '\u2014', ''], ['0', '\u2014', '\u2014', '']]);
   });
 
-  it('describes the index cache', () => {
+  it('describes the memory of the process', () => {
     const vm = buildViewModel(data(), options);
-    assert.deepEqual(vm.indexCache.map(row => [row.label, row.value]), [
-      ['State', '9,626 MB on disk (120 MB dead), saved time(2026-11-04T22:42:00Z)'],
-      ['Directory', 'C:\\Users\\me\\AppData\\Local\\VsChromium\\IndexCache'],
-      ['Projects', '1 open'],
-      ['Last load', '2,227,630 files from the cache, 42,326 from disk'],
-      ['Last write', '4.9 s, 120.0 MB written, 2,176,934 files (1,204 new)'],
+    assert.deepEqual(vm.memory.map(row => [row.label, row.value]), [
+      ['Managed', '523.0 MB (48.0 GB allocated since the start)'],
+      ['Native', '4.7 GB (file contents of all the projects)'],
+      ['Mapped', '9.3 GB from the index caches'],
+      ['Process', 'working set 6.1 GB (peak 7.2 GB), private 5.4 GB'],
     ]);
   });
 
-  it('describes the operations, sorted by name', () => {
+  it('describes the index cache of the process', () => {
     const vm = buildViewModel(data(), options);
-    assert.deepEqual(vm.operations.map(row => row.name), ['FileDatabaseUpdate', 'FileSystemScan', 'SearchCode']);
-    assert.deepEqual(vm.operations[2], {
-      key: 'SearchCode', name: 'SearchCode', count: '87', last: '250 ms', max: '570 ms', average: '250 ms', total: '21.8 s',
-      recentMs: [250], recentTitle: 'Last duration: 250 ms',
+    assert.deepEqual(vm.indexCache.map(row => [row.label, row.value]), [
+      ['Directory', 'C:\\Users\\me\\AppData\\Local\\VsChromium\\IndexCache'],
+      ['Total', '9,626 MB on disk (120 MB dead), saved time(2026-11-04T22:42:00Z) \u00b7 1 project'],
+    ]);
+  });
+
+  it('describes the operation timings, without the search times, sorted by name', () => {
+    const server = sampleServerStatistics({
+      operationTimings: [
+        ...sampleServerStatistics().operationTimings,
+        { name: 'Request:search/code', count: 3, lastMs: 1, totalMs: 3, maxMs: 1, recentMs: [1], recentEndUnixMs: [1] },
+        { name: 'Request:index/status', count: 3, lastMs: 1, totalMs: 3, maxMs: 1, recentMs: [1], recentEndUnixMs: [1] },
+      ],
+    });
+    const vm = buildViewModel({ ...data(), server }, options);
+    assert.deepEqual(vm.operations.map(row => row.name), ['FileDatabaseUpdate', 'FileSystemScan', 'Request:index/status']);
+    assert.deepEqual(vm.operations[1], {
+      key: 'FileSystemScan', name: 'FileSystemScan', count: '3', last: '15.0 s', max: '16.8 s', average: '16.0 s', total: '48.0 s',
+      recentMs: [16_800, 16_200, 15_000], recentTitle: 'Last 3 durations (oldest first): 16.8 s, 16.2 s, 15.0 s',
     });
   });
 

@@ -6,7 +6,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as vscode from 'vscode';
-import { IndexClearCacheRequest, ProjectClearCacheRequest } from '../../protocol/protocol.g';
+import { IndexClearCacheRequest, ProjectClearCacheRequest, ProjectDetailsRequest, ProjectRebuildRequest } from '../../protocol/protocol.g';
 import { DashboardBridge, DashboardServer } from './dashboardBridge';
 import { HostCommand, PageToHost } from './dashboardMessages';
 import { serverLogDirectory } from './logDirectory';
@@ -19,6 +19,8 @@ export interface DashboardServices {
   trigramFiltersSetting(): boolean;
   setTrigramFiltersSetting(enabled: boolean): Promise<void>;
   setProjectTrigramFilters(projectPath: string, enabled: boolean): Promise<void>;
+  /** Sets the cache setting of a project (disabling it deletes its cache, after a confirmation). */
+  setProjectCacheEnabled(projectPath: string, enabled: boolean): Promise<void>;
   errorMessage(e: unknown): string;
   /** The cache settings (applied when the server restarts). */
   cacheSettings(): { enabled: boolean; directory: string };
@@ -130,6 +132,15 @@ export class DashboardPanel implements vscode.Disposable {
         case 'clearCache':
           await this.clearCache(command.projectPath);
           break;
+        case 'rebuildProject':
+          await this.rebuildProject(command.projectPath);
+          break;
+        case 'setProjectCacheEnabled':
+          await this.services.setProjectCacheEnabled(command.projectPath, command.enabled);
+          break;
+        case 'openProjectCacheFolder':
+          await this.openProjectCacheFolder(command.projectPath);
+          break;
         case 'openCacheSettings':
           await vscode.commands.executeCommand('workbench.action.openSettings', 'vschromium.cache');
           break;
@@ -137,6 +148,46 @@ export class DashboardPanel implements vscode.Disposable {
     } catch (e) {
       void vscode.window.showErrorMessage(`VsChromium: ${this.services.errorMessage(e)}`);
     }
+  }
+
+  /** Rebuilds the index of a project (its cache is deleted, its files scanned and read again), after a confirmation. */
+  private async rebuildProject(projectPath: string): Promise<void> {
+    const rebuild = 'Rebuild Index';
+    const choice = await vscode.window.showWarningMessage(
+      `Rebuild the index of "${projectPath}"?`,
+      {
+        modal: true,
+        detail: 'The cache of the project is deleted, then its files are scanned and read again. ' +
+          'Searches use the current index until the new one is ready. The other projects are not affected.',
+      },
+      rebuild);
+    if (choice !== rebuild) {
+      return;
+    }
+    const server = this.services.getServer();
+    if (!server) {
+      throw new Error('the indexing server is not running.');
+    }
+    await server.request(ProjectRebuildRequest.type, { projectPath });
+  }
+
+  /** Opens the cache directory of a project (as reported by the server, not by the page). */
+  private async openProjectCacheFolder(projectPath: string): Promise<void> {
+    const server = this.services.getServer();
+    if (!server) {
+      throw new Error('the indexing server is not running.');
+    }
+    const details = await server.request(ProjectDetailsRequest.type, {
+      projectPath,
+      maxFilesByExtensionDetailsCount: 0,
+      maxLargeFilesDetailsCount: 0,
+    });
+    const directory = details.cache.directory;
+    if (!directory || !fs.existsSync(directory)) {
+      void vscode.window.showInformationMessage(`VsChromium: the project "${projectPath}" has no cache directory yet.`);
+      return;
+    }
+    await vscode.env.openExternal(vscode.Uri.file(directory));
   }
 
   /** Deletes the index cache of a project (or of all the projects), after a confirmation. */

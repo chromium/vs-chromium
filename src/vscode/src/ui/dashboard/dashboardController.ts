@@ -47,7 +47,10 @@ export type DashboardAction =
   | { action: 'toggleTrigramFiltersSetting' }
   | { action: 'setProjectTrigramFilters'; projectPath: string; enabled: boolean }
   | { action: 'clearCache'; projectPath?: string }
-  | { action: 'openCacheSettings' };
+  | { action: 'openCacheSettings' }
+  | { action: 'rebuildProject'; projectPath: string }
+  | { action: 'setProjectCacheEnabled'; projectPath: string; enabled: boolean }
+  | { action: 'openProjectCacheFolder'; projectPath: string };
 
 const detailsParams: DetailsParams = { maxFilesByExtensionDetailsCount: 0, maxLargeFilesDetailsCount: 0 };
 
@@ -191,6 +194,16 @@ export class DashboardController {
           break;
         case 'openCacheSettings':
           this.command({ command: 'openCacheSettings' });
+          return;
+        case 'rebuildProject':
+          // Note: The host asks for a confirmation, then sends "project/rebuild".
+          this.command({ command: 'rebuildProject', projectPath: action.projectPath });
+          break;
+        case 'setProjectCacheEnabled':
+          this.command({ command: 'setProjectCacheEnabled', projectPath: action.projectPath, enabled: action.enabled });
+          break;
+        case 'openProjectCacheFolder':
+          this.command({ command: 'openProjectCacheFolder', projectPath: action.projectPath });
           return;
       }
     } catch (e) {

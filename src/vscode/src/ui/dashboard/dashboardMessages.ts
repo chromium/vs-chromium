@@ -39,11 +39,11 @@ export type HostCommand =
   | { command: 'restartServer' }
   | { command: 'showOutput' }
   | { command: 'openLogDirectory' }
-  /** Enables or disables the trigram filters of all the projects (the host setting). */
+  /** Enables or disables the trigram filters by default (the host setting of the workspace). */
   | { command: 'setTrigramFiltersSetting'; enabled: boolean }
   /**
-   * Enables or disables the trigram filters of a project, until the setting changes or the server
-   * restarts (the host decides how this combines with its setting).
+   * Enables or disables the trigram filters of a project (the host setting of the project, e.g. the
+   * VS Code folder setting).
    */
   | { command: 'setProjectTrigramFilters'; projectPath: string; enabled: boolean }
   /**
@@ -52,7 +52,16 @@ export type HostCommand =
    */
   | { command: 'clearCache'; projectPath?: string }
   /** Shows the cache settings of the host (e.g. the VS Code settings, a Visual Studio options page). */
-  | { command: 'openCacheSettings' };
+  | { command: 'openCacheSettings' }
+  /** Rebuilds the index of a project ("project/rebuild"), after a confirmation of the user by the host. */
+  | { command: 'rebuildProject'; projectPath: string }
+  /**
+   * Enables or disables the index cache of a project (the host setting of the project, e.g. the
+   * VS Code folder setting): disabling it deletes the cache, after a confirmation by the host.
+   */
+  | { command: 'setProjectCacheEnabled'; projectPath: string; enabled: boolean }
+  /** Opens the cache directory of a project (resolved by the host from "project/details"). */
+  | { command: 'openProjectCacheFolder'; projectPath: string };
 
 /** Messages from the page to the host. */
 export type PageToHost =
@@ -69,7 +78,7 @@ export interface HostState {
   /** Why the server is not running (e.g. its exit reason). */
   stoppedReason?: string;
   serverVersion?: string;
-  /** The host setting enabling the trigram filters of all the projects. */
+  /** The host setting enabling the trigram filters (workspace level: the default of the projects). */
   trigramFiltersSetting: boolean;
   /** Directory of the log files of the server, if known. */
   logDirectory?: string;

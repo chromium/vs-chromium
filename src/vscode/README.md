@@ -86,7 +86,7 @@ Paths copied from build output are understood: `base/foo.cc(19,18)`,
 |---|---|
 | VsChromium: Search Code (Ctrl+Alt+;) | Opens the Code Search panel with the selection or word under the cursor |
 | VsChromium: Find File Names (Ctrl+Alt+') | Searches file names/paths in the index (prefilled with the selection) |
-| VsChromium: Show Indexing Server Status | Server dashboard (editor tab): status, projects (with their trigram filters), memory, index cache, operation timings, process statistics, with charts of the last 2 hours (memory, CPU, indexing status, cache size, recent operation durations); pause/resume indexing, rebuild the index, clear the index cache (all projects or one), restart the server, open the logs and the cache settings (also available by clicking the status bar item) |
+| VsChromium: Show Indexing Server Status | Server dashboard (editor tab): the process (memory, charts of the last 2 hours: memory, CPU, indexing status; index cache directory and total; default trigram filters; pause/resume indexing, restart the server, clear all the caches, open the logs) and each project (files, memory, cache, trigram filters, initial load and incremental update times; rebuild its index, clear or disable its cache, open its cache folder), plus collapsed details (operation timings, server, cache size chart) (also available by clicking the status bar item) |
 | VsChromium: Restart Indexing Server | Stops and restarts the server |
 | VsChromium: Show Output | Shows the VsChromium log (enable `vschromium.trace.server` to log all messages) |
 

@@ -439,6 +439,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     trigramFiltersSetting: () => manager.trigramFiltersEnabled(),
     setTrigramFiltersSetting: enabled => manager.setTrigramFilters(enabled),
     setProjectTrigramFilters: (projectPath, enabled) => manager.setProjectTrigramFilters(projectPath, enabled),
+    setProjectCacheEnabled: (projectPath, enabled) => manager.setProjectCacheEnabled(projectPath, enabled),
     errorMessage: e => userErrorMessage(e) ?? String(e),
     cacheSettings: () => {
       const config = vscode.workspace.getConfiguration('vschromium');

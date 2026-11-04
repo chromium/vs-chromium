@@ -24,12 +24,10 @@ a better position than anyone else to do so.
 
 === Building and running the code.
     The server dashboard of the Visual Studio extension (the "VsChromium Server"
-    tool window) is the page of the VS Code extension: build it first (needs
-    Node.js), otherwise the build of the VsChromium project fails with these
-    instructions:
-        cd vs-chromium\src\vscode
-        npm install
-        npm run compile
+    tool window) is the page of the VS Code extension: the build of the
+    VsChromium project builds it automatically from src\vscode ("npm ci" the
+    first time, then "npm run compile:page" when its sources change). This
+    requires Node.js (https://nodejs.org) on the PATH
     (see docs\portable-server\VS_DASHBOARD.md).
 
     Open vs-chromium\src\vs-chromium.sln

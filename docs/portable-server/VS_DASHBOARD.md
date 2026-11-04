@@ -35,19 +35,13 @@ Visual Studio has no per folder settings like VS Code:
 
 ## Build
 
-The page is built by the VS Code extension. The VsChromium project fails with instructions if `src\vscode\out\media\dashboard.js` is missing:
-
-```
-cd src\vscode
-npm install
-npm run compile
-```
+The page is built from the VS Code extension sources by the build of the VsChromium project (target `BuildDashboardPage`): `npm ci` in `src\vscode` the first time, then `npm run compile:page` when the sources of the page change. This requires Node.js on the PATH; the build fails with instructions otherwise.
 
 WebView2: the project references the `Microsoft.Web.WebView2` package (1.0.864.35) for compilation only; at runtime the assemblies of Visual Studio are used (Visual Studio ships them with binding redirects), nothing WebView2 is included in the VSIX. The runtime is the evergreen WebView2 runtime that Visual Studio requires. If WebView2 is not available, the Code Search "server status" button shows the legacy status dialog.
 
 ## Manual test (experimental instance)
 
-1. Build the VS Code extension (above), then the solution (Debug). Set VsChromium as the startup project, F5 (experimental instance).
+1. Build the solution (Debug). Set VsChromium as the startup project, F5 (experimental instance).
 2. Open a folder or solution with a `vs-chromium-project.txt` (or open a file of such a project) and wait for the index.
 3. Open the dashboard: View > Other Windows > VsChromium Server, or the server status button of the Code Search tool window. Check: the header (status, versions, uptime), the Process section (memory, charts after 10-20 s), the Projects section (one block per project), Details (collapsed).
 4. Theme: Tools > Options > Environment > General > Color Theme: switch Dark / Light / Blue: the page follows immediately (background, text, buttons, checkboxes, charts palette). Windows high contrast (Left Alt + Left Shift + Print Screen): borders appear around buttons, badges, table headers.

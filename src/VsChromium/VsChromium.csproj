@@ -12,11 +12,10 @@
   </PropertyGroup>
   <Import Project="..\ProjectBefore.settings" />
   <!--
-    The server dashboard page is built by the VS Code extension (src\vscode: "npm install", then
-    "npm run compile", which bundles the page into out\media\dashboard.js), and copied into the
-    "Dashboard" folder of the output and of the VSIX (with media\dashboard.css and the HTML shell
-    Features\ServerDashboard\dashboard.html). The build fails with instructions if the bundle is
-    missing.
+    The server dashboard page is built from the VS Code extension sources (src\vscode, see the
+    BuildDashboardPage target: requires Node.js), into src\vscode\out\media\dashboard.js, and copied
+    into the "Dashboard" folder of the output and of the VSIX (with media\dashboard.css and the HTML
+    shell Features\ServerDashboard\dashboard.html).
   -->
   <PropertyGroup>
     <DashboardPageScript>$(BuildRoot)src\vscode\out\media\dashboard.js</DashboardPageScript>
@@ -581,9 +580,31 @@
     </ItemGroup>
   </Target>  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
-  <Target Name="CheckDashboardPage" BeforeTargets="BeforeBuild">
+  <!-- Builds the server dashboard page with the VS Code extension tooling (src\vscode: TypeScript
+       compiler and bundler) when its sources changed, so that the solution builds and runs (F5)
+       without manual steps: "npm ci" the first time (node_modules missing), then
+       "npm run compile:page". Requires Node.js. -->
+  <PropertyGroup>
+    <DashboardPageProjectDir>$(BuildRoot)src\vscode\</DashboardPageProjectDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <DashboardPageInput Include="$(DashboardPageProjectDir)src\ui\**\*.ts" />
+    <DashboardPageInput Include="$(DashboardPageProjectDir)src\protocol\*.ts" />
+    <DashboardPageInput Include="$(DashboardPageProjectDir)tsconfig.json;$(DashboardPageProjectDir)tsconfig.page.json" />
+    <DashboardPageInput Include="$(DashboardPageProjectDir)scripts\bundle-page.js;$(DashboardPageProjectDir)package-lock.json" />
+  </ItemGroup>
+  <Target Name="BuildDashboardPage" BeforeTargets="BeforeBuild" Inputs="@(DashboardPageInput)" Outputs="$(DashboardPageScript)">
+    <Exec Command="node --version" IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="_DashboardNodeExitCode" />
+    </Exec>
+    <Error Condition="'$(_DashboardNodeExitCode)' != '0'"
+           Text="Node.js is required to build the server dashboard page (src\vscode): install Node.js (https://nodejs.org), then rebuild." />
+    <Exec Condition="!Exists('$(DashboardPageProjectDir)node_modules\typescript')" Command="npm ci --no-audit --no-fund" WorkingDirectory="$(DashboardPageProjectDir)" />
+    <Exec Command="npm run compile:page" WorkingDirectory="$(DashboardPageProjectDir)" />
+  </Target>
+  <Target Name="CheckDashboardPage" BeforeTargets="BeforeBuild" DependsOnTargets="BuildDashboardPage">
     <Error Condition="!Exists('$(DashboardPageScript)')"
-           Text="The server dashboard page is missing: $(DashboardPageScript). Build it first with the VS Code extension: cd src\vscode, npm install, npm run compile (see src\vscode\README.md)." />
+           Text="The server dashboard page is missing: $(DashboardPageScript). It is built from src\vscode (npm run compile:page); see the build output above." />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

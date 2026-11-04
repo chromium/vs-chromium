@@ -89,3 +89,20 @@ Paths copied from build output are understood: `base/foo.cc(19,18)`,
 | VsChromium: Show Indexing Server Status | Server dashboard (editor tab): status, projects (with their trigram filters), memory, index cache, operation timings, process statistics; pause/resume indexing, rebuild the index, restart the server, open the logs (also available by clicking the status bar item) |
 | VsChromium: Restart Indexing Server | Stops and restarts the server |
 | VsChromium: Show Output | Shows the VsChromium log (enable `vschromium.trace.server` to log all messages) |
+
+## Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| `vschromium.serverPath` | (empty) | Path to `VsChromium.Server.exe`; empty: the bundled server (or the repository build during development) |
+| `vschromium.cacheEnabled` | `true` | Persistent index cache: the index is available a few seconds after a restart (then verified in the background). `false` starts the server with `--no-cache` |
+| `vschromium.cacheDirectory` | (empty) | Root directory of the index cache (absolute path), passed as `--cache-dir`; empty: `%LOCALAPPDATA%\VsChromium\Cache` |
+| `vschromium.trigramFilters` | `false` | Trigram filters for the projects of the workspace (faster selective searches, ~5% of the text size in memory) |
+| `vschromium.searchCode.maxResults` | `10000` | Maximum number of matches of Search Code |
+| `vschromium.searchCode.maxExtractLength` | `120` | Maximum number of characters per line in the Search Code results |
+| `vschromium.searchCode.autoSearchDelayMs` | `100` | Delay after typing before searching (Search Code, Find File Names) |
+| `vschromium.searchFilePaths.maxResults` | `2000` | Maximum number of files of Find File Names |
+| `vschromium.trace.server` | `false` | Log all the messages exchanged with the server to the VsChromium output |
+
+`vschromium.cacheEnabled` and `vschromium.cacheDirectory` are applied when the server starts: when
+they change, the extension offers to restart the server.

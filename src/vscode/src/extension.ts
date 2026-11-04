@@ -12,7 +12,7 @@ import {
   TreeGetRequest,
 } from './protocol/protocol.g';
 import { ServerClient, userErrorMessage } from './server/client';
-import { findServerPath, serverPathCandidates } from './server/serverLocator';
+import { findServerPath, serverArguments, serverPathCandidates, ServerRestartSettings } from './server/serverLocator';
 import { describeIndexingState, IndexingState, nextIndexingState, subscribeIndexEvents } from './ui/indexingState';
 import { CodeSearchViewProvider } from './ui/codeSearchView';
 import { FileNamesPick } from './ui/fileNamesPick';
@@ -64,6 +64,9 @@ class ServerManager implements vscode.Disposable {
           this.trigramFiltersOverrides.clear();
           void this.applyProjectOptions(/*includeIndexedProjects*/ true);
         }
+        if (ServerRestartSettings.some(name => e.affectsConfiguration(name))) {
+          void this.offerRestart('the index cache settings changed');
+        }
       }),
     );
     this.setState({ kind: 'starting' });
@@ -89,10 +92,15 @@ class ServerManager implements vscode.Disposable {
       return;
     }
 
-    this.output.info(`Starting indexing server: ${serverPath}`);
+    const args = serverArguments({
+      cacheEnabled: config.get<boolean>('cacheEnabled'),
+      cacheDirectory: config.get<string>('cacheDirectory'),
+    });
+    this.output.info(`Starting indexing server: ${serverPath} ${args.join(' ')}`);
     this.setState({ kind: 'starting' });
     const trace = config.get<boolean>('trace.server') ?? false;
     const client = ServerClient.start(serverPath, {
+      args,
       log: message => this.output.info(message),
       trace: trace ? message => this.output.trace(message) : undefined,
       clientName: 'VS Code',
@@ -148,6 +156,15 @@ class ServerManager implements vscode.Disposable {
       await old.dispose();
     }
     await this.start();
+  }
+
+  /** Settings applied when the server starts changed: offers to restart it. */
+  private async offerRestart(reason: string): Promise<void> {
+    const choice = await vscode.window.showInformationMessage(
+      `VsChromium: ${reason}. Restart the indexing server to apply them.`, 'Restart Server');
+    if (choice === 'Restart Server') {
+      await this.restart();
+    }
   }
 
   /** Shows the server dashboard, or offers to restart the server if it is not running. */

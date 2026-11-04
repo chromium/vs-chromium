@@ -95,6 +95,18 @@
           "description": "Path to VsChromium.Server.exe. Leave empty to use the server bundled with the extension (or, during development, the latest build in Binaries\\Debug or Binaries\\Release of the vs-chromium repository).",
           "scope": "machine"
         },
+        "vschromium.cacheEnabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Keep a persistent index cache on disk, so that the index is available a few seconds after the server starts (then verified in the background) instead of being rebuilt from the files. Applied when the indexing server (re)starts.",
+          "scope": "machine"
+        },
+        "vschromium.cacheDirectory": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Root directory of the persistent index cache (absolute path, one sub-directory per project). Leave empty for the default (`%LOCALAPPDATA%\\VsChromium\\Cache` on Windows). Applied when the indexing server (re)starts.",
+          "scope": "machine"
+        },
         "vschromium.trace.server": {
           "type": "boolean",
           "default": false,

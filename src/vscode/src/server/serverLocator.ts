@@ -38,3 +38,30 @@ export function serverPathCandidates(extensionPath: string, configuredPath: stri
 export function findServerPath(extensionPath: string, configuredPath: string | undefined, preferRepositoryBuild = false): string | undefined {
   return serverPathCandidates(extensionPath, configuredPath, preferRepositoryBuild).find(p => fs.existsSync(p));
 }
+
+/** The settings of the index cache of the server (applied when the server starts). */
+export interface IndexCacheSettings {
+  /** Setting "vschromium.cacheEnabled" (default true). */
+  cacheEnabled?: boolean;
+  /** Setting "vschromium.cacheDirectory": the root directory of the index cache, empty for the default. */
+  cacheDirectory?: string;
+}
+
+/**
+ * The command line arguments of the server: `--jsonrpc`, then `--no-cache` if the index cache is
+ * disabled, or `--cache-dir <directory>` if a cache directory is set (otherwise the server uses its
+ * default directory, e.g. `%LOCALAPPDATA%\VsChromium\Cache`).
+ */
+export function serverArguments(settings: IndexCacheSettings): string[] {
+  const args = ['--jsonrpc'];
+  const directory = settings.cacheDirectory?.trim() ?? '';
+  if (settings.cacheEnabled === false) {
+    args.push('--no-cache');
+  } else if (directory.length > 0) {
+    args.push('--cache-dir', directory);
+  }
+  return args;
+}
+
+/** The settings that need a restart of the server to be applied. */
+export const ServerRestartSettings = ['vschromium.cacheEnabled', 'vschromium.cacheDirectory'];

@@ -91,6 +91,8 @@ export interface ServerProcess extends EventEmitter {
 }
 
 export interface ServerClientOptions {
+  /** The command line arguments of the server (default: `--jsonrpc`, see `serverArguments`). */
+  args?: string[];
   /** Called with diagnostic messages (server stderr, protocol errors, ...). */
   log?: (message: string) => void;
   /** Called with every message sent/received, for tracing. */
@@ -124,10 +126,10 @@ export class ServerClient {
   private exitReason: string | undefined;
   private rejectStartup: ((error: Error) => void) | undefined;
 
-  /** Starts the server executable (`--jsonrpc`) and connects to it. */
+  /** Starts the server executable (`--jsonrpc`, or `options.args`) and connects to it. */
   static start(serverPath: string, options: ServerClientOptions = {}): ServerClient {
     ensureExecutable(serverPath);
-    const process = spawn(serverPath, ['--jsonrpc'], { windowsHide: true, stdio: 'pipe' });
+    const process = spawn(serverPath, options.args ?? ['--jsonrpc'], { windowsHide: true, stdio: 'pipe' });
     // Nothing is written before the process is started: writing to the stdin of a process that
     // failed to start makes vscode-jsonrpc raise an unhandled promise rejection.
     const spawned = new Promise<void>(resolve => process.once('spawn', () => resolve()));

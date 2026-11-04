@@ -1121,3 +1121,32 @@ compaction across 6 runs, 2.5–13.3 s without; the table shows one pair of runs
 
 The idle time of a restart (verification of the tree in the background) varied between 2.7 and
 5.6 s across runs, with or without compaction.
+
+### Per-project memory (dashboard v2)
+
+The file contents of each project are allocated in arenas of their own (`ProjectArenaAllocators`:
+one `ArenaAllocator` per project root, created on first use). `FileContentsFactory` gets the project
+root for every read (full loads and reads of edited files), so that:
+
+- The memory of each project is exact: `project/details` `memory` (native bytes, arenas, live, dead
+  and free bytes, large files, contents mapped from the cache of the project, trigram filters), and
+  the process-wide `fileContentsArenas` of `index/statistics` is the sum over the projects.
+- The arenas of a project are released once the project is removed and its contents are not used
+  anymore (old snapshots, running searches): the allocator of a removed project is forgotten when
+  the first complete index without the project is activated. With a shared allocator, the slots of
+  a removed project were dead bytes of arenas shared with the other projects.
+- The files of a project are found from the ranges of its directories in the database (one walk of
+  the parents per directory, not per file), then the slots of their contents are matched with the
+  arenas of the project (contents in dedicated blocks are large files, contents in mapped views come
+  from the cache of the project).
+
+The cost is the unused end of the current arena of each project (less than 16 MB per project) and
+a dictionary lookup per file read. `project/details` also returns the state of the cache of the
+project (`cache`: directory, size, dead bytes, last save, dirty, saving), from the state in memory:
+a project is dirty if an update touched it since the last save of its cache (updates record the
+projects whose files changed).
+
+On `large-1-400000-v1` (one project, Debug build, 2 runs each, forced full GC): the same memory
+(GC heap 96.3–96.4 MB after a cold load, 78.1–78.4 MB after a restart; native 6,985 MB cold, 3,593
+MB after a restart: 212 arenas, 3,386 MB live), cold load 6,569–7,037 ms before and 6,917–6,921 ms
+after, first `index/loaded` of a restart 837–1,122 ms before and 829–896 ms after (run-to-run noise).

@@ -23,6 +23,9 @@ public static class ServerProtocol {
   public static ServerRequest RegisterFile(string path) =>
     new("files/register", new JsonObject { ["path"] = path });
 
+  public static ServerRequest UnregisterFile(string path) =>
+    new("files/unregister", new JsonObject { ["path"] = path });
+
   public static ServerRequest SearchCode(string text, int maxResults = 10000, bool matchCase = false,
                                          bool matchWholeWord = false, bool regex = false, string? filePathPattern = null) =>
     new("search/code", new JsonObject {

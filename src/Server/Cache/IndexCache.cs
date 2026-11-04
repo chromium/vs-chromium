@@ -40,7 +40,8 @@ namespace VsChromium.Server.Cache {
     /// after the first unsaved change), or as soon as possible after a full load of a project
     /// without saved cache (e.g. the first load, or after "Rebuild index").
     /// </summary>
-    void NotifyIndexUpdated(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, bool fullLoad);
+    void NotifyIndexUpdated(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, bool fullLoad,
+                            IReadOnlyCollection<FullPath> changedProjects = null);
 
     /// <summary>
     /// True if the cache of a project of <paramref name="snapshot"/> is written by this server and
@@ -75,6 +76,29 @@ namespace VsChromium.Server.Cache {
     /// their last read or write).
     /// </summary>
     IndexCacheDiskState GetDiskState();
+
+    /// <summary>
+    /// The state of the cache of a project (status displays): from the state in memory only, as
+    /// <see cref="GetDiskState"/>.
+    /// </summary>
+    IndexCacheProjectState GetProjectState(FullPath rootPath);
+  }
+
+  /// <summary>The state of the cache of a project (see <see cref="IIndexCache.GetProjectState"/>).</summary>
+  public sealed class IndexCacheProjectState {
+    /// <summary>The project has a cache (the cache is enabled, and the cache of the project could be opened).</summary>
+    public bool Enabled;
+    /// <summary>The directory of the cache of the project (null if none).</summary>
+    public string Directory;
+    /// <summary>True if this server writes the cache of the project (false: read-only, written by another server).</summary>
+    public bool IsWritable;
+    public long SizeOnDiskBytes;
+    public long DeadBytes;
+    public DateTime? LastSavedUtc;
+    /// <summary>The index of the project changed since the last save (started) of its cache.</summary>
+    public bool Dirty;
+    /// <summary>The cache of the project is being written.</summary>
+    public bool Saving;
   }
 
   public sealed class IndexCacheDiskState {
@@ -122,6 +146,10 @@ namespace VsChromium.Server.Cache {
     private FileDatabaseSnapshot _pendingDatabase;
     private bool _disposed;
     private readonly IndexCacheStatistics _statistics = new IndexCacheStatistics();
+    /// <summary>The projects whose index changed since the last save (started) of their cache (guarded by <see cref="_lock"/>).</summary>
+    private readonly HashSet<FullPath> _dirtyProjects = new HashSet<FullPath>();
+    /// <summary>The project whose cache is being written, if any.</summary>
+    private volatile string _writingProject;
 
     public IndexCache(IndexCacheOptions options) {
       _options = options;
@@ -212,7 +240,12 @@ namespace VsChromium.Server.Cache {
       }
     }
 
-    public void NotifyIndexUpdated(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, bool fullLoad) {
+    /// <summary>
+    /// <paramref name="changedProjects"/>: the projects whose index changed (they are "dirty" until
+    /// the next save of their cache), or null: all the projects.
+    /// </summary>
+    public void NotifyIndexUpdated(FileSystemSnapshot snapshot, IFileDatabaseSnapshot database, bool fullLoad,
+                                   IReadOnlyCollection<FullPath> changedProjects = null) {
       if (!IsEnabled || database is not FileDatabaseSnapshot fileDatabase)
         return;
       // Only the projects whose cache is written by this server.
@@ -229,6 +262,12 @@ namespace VsChromium.Server.Cache {
           return;
         _pendingSnapshot = snapshot;
         _pendingDatabase = fileDatabase;
+        foreach (var cache in caches) {
+          var root = new FullPath(cache.RootPath);
+          if (changedProjects == null || changedProjects.Contains(root)) {
+            _dirtyProjects.Add(root);
+          }
+        }
       }
       _scheduler.NotifyChanged(immediate);
     }
@@ -281,8 +320,25 @@ namespace VsChromium.Server.Cache {
           var cache = GetOpenProjectCache(projectRoot.Project.RootPath);
           if (cache == null || !cache.IsWritable)
             continue;
-          var result = cache.Write(GetWriteDirectories(projectRoot, database), projectRoot.Project.VersionHash,
-            cancellationToken);
+          lock (_lock) {
+            _dirtyProjects.Remove(projectRoot.Project.RootPath);
+          }
+          IndexCacheWriteResult result;
+          _writingProject = cache.RootPath;
+          try {
+            result = cache.Write(GetWriteDirectories(projectRoot, database), projectRoot.Project.VersionHash,
+              cancellationToken);
+          }
+          catch (OperationCanceledException) {
+            lock (_lock) {
+              // Saved later.
+              _dirtyProjects.Add(projectRoot.Project.RootPath);
+            }
+            throw;
+          }
+          finally {
+            _writingProject = null;
+          }
           if (result == null)
             continue;
           Logger.LogInfo("Wrote the index cache of \"{0}\" in {1:n0} ms: {2:n0} entries, {3:n0} new files " +
@@ -392,6 +448,26 @@ namespace VsChromium.Server.Cache {
       }
       // Note: Updates only mark the index dirty if this server writes the cache of a project.
       result.Dirty = result.HasWritableProject && _scheduler.IsDirty;
+      return result;
+    }
+
+    public IndexCacheProjectState GetProjectState(FullPath rootPath) {
+      var result = new IndexCacheProjectState();
+      if (!IsEnabled)
+        return result;
+      var cache = GetOpenProjectCache(rootPath);
+      if (cache == null)
+        return result;
+      result.Enabled = true;
+      result.Directory = cache.Directory;
+      result.IsWritable = cache.IsWritable;
+      result.SizeOnDiskBytes = cache.SizeOnDiskBytes;
+      result.DeadBytes = cache.ArenaUsage.DeadBytes;
+      result.LastSavedUtc = cache.LastSavedUtc;
+      result.Saving = cache.IsWritable && _scheduler.IsSaving && _writingProject == cache.RootPath;
+      lock (_lock) {
+        result.Dirty = cache.IsWritable && _dirtyProjects.Contains(rootPath);
+      }
       return result;
     }
 

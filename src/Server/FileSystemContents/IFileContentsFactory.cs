@@ -7,5 +7,11 @@ using VsChromium.Core.Files;
 namespace VsChromium.Server.FileSystemContents {
   public interface IFileContentsFactory {
     FileContents ReadFileContents(FullPath path);
+
+    /// <summary>
+    /// Reads a file of the project whose root is <paramref name="projectRoot"/>: the contents are
+    /// allocated in the arenas of the project (see <see cref="VsChromium.Core.Memory.ProjectArenaAllocators"/>).
+    /// </summary>
+    FileContents ReadFileContents(FullPath path, FullPath projectRoot);
   }
 }

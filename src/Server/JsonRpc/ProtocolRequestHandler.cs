@@ -44,7 +44,7 @@ namespace VsChromium.Server.JsonRpc {
     private readonly ISearchEngine _searchEngine;
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
     private readonly IIndexingServer _indexingServer;
-    private readonly ArenaAllocator _arenaAllocator;
+    private readonly ProjectArenaAllocators _arenaAllocators;
     private readonly IIndexCache _indexCache;
     private readonly ServerHistorySampler _historySampler;
 
@@ -53,7 +53,7 @@ namespace VsChromium.Server.JsonRpc {
       ISearchEngine searchEngine,
       IFileRegistrationTracker fileRegistrationTracker,
       IIndexingServer indexingServer,
-      ArenaAllocator arenaAllocator,
+      ProjectArenaAllocators arenaAllocators,
       IIndexCache indexCache = null,
       ServerHistorySampler historySampler = null) {
       _indexCache = indexCache;
@@ -62,7 +62,7 @@ namespace VsChromium.Server.JsonRpc {
       _searchEngine = searchEngine;
       _fileRegistrationTracker = fileRegistrationTracker;
       _indexingServer = indexingServer;
-      _arenaAllocator = arenaAllocator;
+      _arenaAllocators = arenaAllocators;
     }
 
     // server/*
@@ -167,8 +167,9 @@ namespace VsChromium.Server.JsonRpc {
       return total;
     }
 
+    /// <summary>The memory of the file contents of all the projects (the sum of the projects).</summary>
     private FileContentsArenaStatistics GetArenaStatistics(IFileDatabaseSnapshot database) {
-      var statistics = GetArenaStatistics(_arenaAllocator, database);
+      var statistics = FileContentsStatistics.Sum(FileContentsStatistics.GetProjectStatistics(_arenaAllocators, database).Values);
       return new FileContentsArenaStatistics {
         ArenaCount = statistics.ArenaCount,
         ArenaBytes = statistics.ArenaBytes,
@@ -218,20 +219,9 @@ namespace VsChromium.Server.JsonRpc {
     /// </summary>
     public static ArenaStatistics GetArenaStatistics(ArenaAllocator arenaAllocator, IFileDatabaseSnapshot database) {
       var contents = database is FileDatabaseSnapshot snapshot
-        ? snapshot.ContentsArray.Where(x => x is not (null or BinaryFileContents))
+        ? snapshot.ContentsArray
         : database.FileContentsPieces.Where(x => x.IsFirstPiece).Select(x => x.FileContents);
-      long cachedBytes = 0;
-      var slots = new List<(SafeHandle Block, int SlotSize)>();
-      foreach (var slot in contents.Select(FileContentsFactory.GetArenaSlot)) {
-        if (slot.Block is SafeMemoryMappedViewHandle) {
-          cachedBytes += slot.SlotSize;
-        } else {
-          slots.Add(slot);
-        }
-      }
-      var result = arenaAllocator.GetStatistics(slots);
-      result.CachedBytes = cachedBytes;
-      return result;
+      return FileContentsStatistics.GetArenaStatistics(arenaAllocator, contents);
     }
 
     // files/*
@@ -413,6 +403,37 @@ namespace VsChromium.Server.JsonRpc {
         },
         TrigramFiltersEnabled = _searchEngine.IsTrigramFiltersEnabled(project.Project.RootPath),
         TrigramFiltersBytes = _searchEngine.GetTrigramFiltersBytes(project.Project.RootPath),
+        Memory = CreateProjectMemory(database, project.Project.RootPath),
+        Cache = CreateProjectCacheState(project.Project.RootPath),
+      };
+    }
+
+    private ProjectMemory CreateProjectMemory(IFileDatabaseSnapshot database, FullPath rootPath) {
+      var statistics = FileContentsStatistics.GetProjectStatistics(_arenaAllocators, database).GetValueOrDefault(rootPath);
+      return new ProjectMemory {
+        NativeBytes = statistics.ArenaBytes + statistics.OtherBytes,
+        ArenaCount = statistics.ArenaCount,
+        ArenaBytes = statistics.ArenaBytes,
+        LiveBytes = statistics.LiveBytes,
+        DeadBytes = statistics.DeadBytes,
+        FreeBytes = statistics.ArenaBytes - statistics.UsedBytes,
+        LargeFileBytes = statistics.OtherBytes,
+        MappedCacheBytes = statistics.CachedBytes,
+        TrigramFiltersBytes = _searchEngine.GetTrigramFiltersBytes(rootPath),
+      };
+    }
+
+    private ProjectCacheState CreateProjectCacheState(FullPath rootPath) {
+      var state = _indexCache?.GetProjectState(rootPath) ?? new IndexCacheProjectState();
+      return new ProjectCacheState {
+        Enabled = state.Enabled,
+        Directory = state.Directory,
+        Writable = state.IsWritable,
+        SizeOnDiskBytes = state.SizeOnDiskBytes,
+        DeadBytes = state.DeadBytes,
+        LastSavedUtc = state.LastSavedUtc,
+        Dirty = state.Dirty,
+        Saving = state.Saving,
       };
     }
 

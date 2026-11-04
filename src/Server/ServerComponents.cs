@@ -106,10 +106,11 @@ namespace VsChromium.Server {
 
     // Server/FileSystemContents
     private IFileContentsFactory _fileContentsFactory;
-    public IFileContentsFactory FileContentsFactory => _fileContentsFactory ??= Create(new FileContentsFactory(FileSystem, ArenaAllocator));
+    public IFileContentsFactory FileContentsFactory => _fileContentsFactory ??= Create(new FileContentsFactory(FileSystem, ArenaAllocators));
 
-    private ArenaAllocator _arenaAllocator;
-    public ArenaAllocator ArenaAllocator => _arenaAllocator ??= Create(new ArenaAllocator());
+    private ProjectArenaAllocators _arenaAllocators;
+    /// <summary>The arena allocators of the file contents, one per project.</summary>
+    public ProjectArenaAllocators ArenaAllocators => _arenaAllocators ??= Create(new ProjectArenaAllocators());
 
     // Server/FileSystemDatabase
     private IFileDatabaseSnapshotFactory _fileDatabaseSnapshotFactory;
@@ -131,7 +132,7 @@ namespace VsChromium.Server {
 
     private IProtocolRequestHandler _protocolRequestHandler;
     public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= Create(new ProtocolRequestHandler(
-      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocator, IndexCache,
+      FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocators, IndexCache,
       ServerHistorySampler));
 
     private JsonRpcNotificationSender _jsonRpcNotificationSender;
@@ -172,7 +173,7 @@ namespace VsChromium.Server {
     private ISearchEngine _searchEngine;
     public ISearchEngine SearchEngine => _searchEngine ??= Create(new SearchEngine(
       FileSystemSnapshotManager, FileSystemNameFactory, LongRunningFileSystemTaskQueue, FileDatabaseSnapshotFactory, ProjectDiscovery,
-      CompiledTextSearchDataFactory, OperationProcessor, IndexingWorkerPool, IndexCache));
+      CompiledTextSearchDataFactory, OperationProcessor, IndexingWorkerPool, IndexCache, ArenaAllocators));
 
     private ISearchStringParser _searchStringParser;
     public ISearchStringParser SearchStringParser => _searchStringParser ??= Create(new SearchStringParser());

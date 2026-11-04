@@ -125,6 +125,14 @@ export function sampleProjectDetails(rootPath: string, overrides: Partial<Projec
     },
     trigramFiltersEnabled: false,
     trigramFiltersBytes: 0,
+    memory: {
+      nativeBytes: 4.6 * GB, arenaCount: 290, arenaBytes: 4.53 * GB, liveBytes: 4.5 * GB, deadBytes: 0, freeBytes: 30 * MB,
+      largeFileBytes: 70 * MB, mappedCacheBytes: 9.3 * GB, trigramFiltersBytes: 0,
+    },
+    cache: {
+      enabled: true, directory: `C:\\Users\\me\\AppData\\Local\\VsChromium\\Cache\\3f2a0b1c2d3e4f50`, writable: true,
+      sizeOnDiskBytes: 9.4 * GB, deadBytes: 120 * MB, lastSavedUtc: '2026-11-04T22:42:13Z', dirty: false, saving: false,
+    },
     ...overrides,
   };
 }

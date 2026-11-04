@@ -148,7 +148,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         var changes = new (FileContents OldContents, FileContents NewContents)[filesToRead.Count];
         void ReadFile(int i) {
           var (file, index) = filesToRead[i];
-          var newContents = _fileContentsFactory.ReadFileContents(file.FileName.FullPath);
+          var newContents = _fileContentsFactory.ReadFileContents(file.FileName.FullPath, file.Project.RootPath);
           changes[i] = (previousFileDatabase.GetContents(index), newContents);
           previousFileDatabase.DangerousSetContents(index, newContents);
         }
@@ -549,7 +549,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         return null;
       }
 
-      var fileContents = _fileContentsFactory.ReadFileContents(fileName.FullPath);
+      var fileContents = _fileContentsFactory.ReadFileContents(fileName.FullPath, project.RootPath);
       if (fileContents is BinaryFileContents) {
         Interlocked.Increment(ref loadingContext.LoadedBinaryFileCount);
       } else {

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using VsChromium.Core.Files;
@@ -15,16 +16,30 @@ namespace VsChromium.Server.FileSystemContents {
     private const int TrailingByteCount = 2;
 
     private readonly IFileSystem _fileSystem;
-    private readonly ArenaAllocator _arenaAllocator;
-    private readonly FileContentsAllocator _allocateContents;
+    /// <summary>The allocator of <see cref="ReadFileContents(FullPath)"/> (files of no project).</summary>
+    private readonly ArenaAllocator _defaultAllocator;
+    /// <summary>The allocators of the projects (<see cref="ReadFileContents(FullPath, FullPath)"/>).</summary>
+    private readonly ProjectArenaAllocators _projectAllocators;
+    /// <summary>The allocation callback of the reads, for each allocator (allocated once per allocator).</summary>
+    private readonly ConditionalWeakTable<ArenaAllocator, FileContentsAllocator> _allocateContents =
+      new ConditionalWeakTable<ArenaAllocator, FileContentsAllocator>();
+    private readonly ConditionalWeakTable<ArenaAllocator, FileContentsAllocator>.CreateValueCallback _createAllocateContents;
 
     public FileContentsFactory(IFileSystem fileSystem) : this(fileSystem, new ArenaAllocator()) {
     }
 
-    public FileContentsFactory(IFileSystem fileSystem, ArenaAllocator arenaAllocator) {
+    public FileContentsFactory(IFileSystem fileSystem, ArenaAllocator arenaAllocator) : this(fileSystem, arenaAllocator, null) {
+    }
+
+    public FileContentsFactory(IFileSystem fileSystem, ProjectArenaAllocators projectAllocators)
+      : this(fileSystem, new ArenaAllocator(), projectAllocators) {
+    }
+
+    private FileContentsFactory(IFileSystem fileSystem, ArenaAllocator defaultAllocator, ProjectArenaAllocators projectAllocators) {
       _fileSystem = fileSystem;
-      _arenaAllocator = arenaAllocator;
-      _allocateContents = AllocateContents;
+      _defaultAllocator = defaultAllocator;
+      _projectAllocators = projectAllocators;
+      _createAllocateContents = allocator => (prefix, size) => AllocateContents(allocator, prefix, size);
     }
 
     /// <summary>
@@ -33,14 +48,14 @@ namespace VsChromium.Server.FileSystemContents {
     /// <see cref="CreateFromUtf16"/>), a slot of an arena for the other files (the text is stored
     /// as is).
     /// </summary>
-    private NativeMemorySlice AllocateContents(ReadOnlySpan<byte> prefix, int size) {
+    private static NativeMemorySlice AllocateContents(ArenaAllocator allocator, ReadOnlySpan<byte> prefix, int size) {
       if (TextKindDetector.IsBinaryPrefix(prefix)) {
         return default;
       }
       if (TextKindDetector.HasUtf16Bom(prefix)) {
         return new NativeMemorySlice(NativeHeap.Alloc(size), 0, size, isDedicated: true);
       }
-      return _arenaAllocator.Allocate(size);
+      return allocator.Allocate(size);
     }
 
     /// <summary>
@@ -61,6 +76,14 @@ namespace VsChromium.Server.FileSystemContents {
     public static readonly TimeSpan RacyInterval = TimeSpan.FromSeconds(2);
 
     public FileContents ReadFileContents(FullPath path) {
+      return ReadFileContents(path, _defaultAllocator);
+    }
+
+    public FileContents ReadFileContents(FullPath path, FullPath projectRoot) {
+      return ReadFileContents(path, _projectAllocators?.Get(projectRoot) ?? _defaultAllocator);
+    }
+
+    private FileContents ReadFileContents(FullPath path, ArenaAllocator allocator) {
       var slice = default(NativeMemorySlice);
       // Note: Before the read (the earliest possible read time: conservative for the racy rule).
       var readStartUtc = DateTime.UtcNow;
@@ -71,7 +94,7 @@ namespace VsChromium.Server.FileSystemContents {
           // Faster: a single path lookup (attributes are read from the open file), and binary
           // files are detected from their first bytes, without reading them entirely.
           slice = reader.ReadFileContents(path, TrailingByteCount, TextKindDetector.BinaryDetectionPrefixLength,
-            _allocateContents, out lastWriteTimeUtc, out fileLength);
+            _allocateContents.GetValue(allocator, _createAllocateContents), out lastWriteTimeUtc, out fileLength);
           if (slice.IsNull) {
             return new BinaryFileContents(lastWriteTimeUtc, fileLength, IsRacy(lastWriteTimeUtc, readStartUtc));
           }
@@ -82,7 +105,7 @@ namespace VsChromium.Server.FileSystemContents {
           lastWriteTimeUtc = fileInfo.LastWriteTimeUtc;
           fileLength = fileInfo.Length;
         }
-        var result = ReadFileContentsWorker(slice, lastWriteTimeUtc, fileLength, IsRacy(lastWriteTimeUtc, readStartUtc));
+        var result = ReadFileContentsWorker(allocator, slice, lastWriteTimeUtc, fileLength, IsRacy(lastWriteTimeUtc, readStartUtc));
         slice = default; // Owned by "result" (or released)
         return result;
       }
@@ -104,7 +127,7 @@ namespace VsChromium.Server.FileSystemContents {
       return lastWriteTimeUtc >= readStartUtc - RacyInterval;
     }
 
-    private FileContents ReadFileContentsWorker(NativeMemorySlice slice, DateTime lastWriteTimeUtc, long fileLength, bool isRacy) {
+    private FileContents ReadFileContentsWorker(ArenaAllocator allocator, NativeMemorySlice slice, DateTime lastWriteTimeUtc, long fileLength, bool isRacy) {
       var contentsByteCount = slice.Length - TrailingByteCount; // Padding added by ReadFileNulTerminated
       var bytes = slice.Span.Slice(0, contentsByteCount);
       var kind = TextKindDetector.GetKind(bytes);
@@ -132,7 +155,7 @@ namespace VsChromium.Server.FileSystemContents {
         case TextKind.Utf16LittleEndianWithBom:
         case TextKind.Utf16BigEndianWithBom: {
           var encoding = kind == TextKind.Utf16LittleEndianWithBom ? Encoding.Unicode : Encoding.BigEndianUnicode;
-          var result = CreateFromUtf16(bytes.Slice(TextKindDetector.Utf16BomSize), encoding, lastWriteTimeUtc, fileLength, isRacy);
+          var result = CreateFromUtf16(allocator, bytes.Slice(TextKindDetector.Utf16BomSize), encoding, lastWriteTimeUtc, fileLength, isRacy);
           slice.Release();
           return result;
         }
@@ -147,13 +170,13 @@ namespace VsChromium.Server.FileSystemContents {
       }
     }
 
-    private FileContents CreateFromUtf16(ReadOnlySpan<byte> utf16Bytes, Encoding encoding, DateTime lastWriteTimeUtc,
-                                         long fileLength, bool isRacy) {
+    private static FileContents CreateFromUtf16(ArenaAllocator allocator, ReadOnlySpan<byte> utf16Bytes, Encoding encoding, DateTime lastWriteTimeUtc,
+                                                long fileLength, bool isRacy) {
       // Note: Invalid sequences (lone surrogates, odd number of bytes) are decoded as U+FFFD, as
       // the editors do.
       var text = encoding.GetString(utf16Bytes);
       var utf8Length = Encoding.UTF8.GetByteCount(text);
-      var utf8Slice = _arenaAllocator.Allocate(utf8Length + TrailingByteCount);
+      var utf8Slice = allocator.Allocate(utf8Length + TrailingByteCount);
       try {
         var utf8 = utf8Slice.Span;
         Encoding.UTF8.GetBytes(text, utf8);

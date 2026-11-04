@@ -258,6 +258,52 @@ export interface ProjectConfiguration {
   includeSearchableFilesSection: ProjectConfigurationSection;
 }
 
+/**
+ * The memory of a project. The file contents of each project are allocated in its own arenas (16 MB
+ * blocks shared by the files of the project up to 512 KB), released when the project is removed
+ * and its contents are not used anymore. The sums over the projects are the `fileContentsArenas`
+ * of `index/statistics`.
+ */
+export interface ProjectMemory {
+  /** Native memory of the file contents of the project: `arenaBytes` + `largeFileBytes`. */
+  nativeBytes: number;
+  arenaCount: number;
+  /** Native memory of the arenas of the project. */
+  arenaBytes: number;
+  /** Bytes of the arenas used by the files of the current index. */
+  liveBytes: number;
+  /** Bytes of the arenas used by files edited or deleted since they were read (released with their arena). */
+  deadBytes: number;
+  /** Bytes of the arenas never allocated: the end of the current arena and of the full arenas. */
+  freeBytes: number;
+  /** Bytes of the files larger than 512 KB (a dedicated block per file, outside the arenas). */
+  largeFileBytes: number;
+  /** Bytes of the files loaded from the index cache of the project (memory mapped files, not native memory). */
+  mappedCacheBytes: number;
+  /** Memory used by the trigram filters of the project (managed memory). */
+  trigramFiltersBytes: number;
+}
+
+/** The state of the persistent index cache of a project (from the state of the server, no disk access). */
+export interface ProjectCacheState {
+  /** True if the project has a cache (the cache of the server is enabled and could be opened for the project). */
+  enabled: boolean;
+  /** The directory of the cache of the project (`<cache root>\<hash of the root path>`), if any. */
+  directory?: string;
+  /** False if the cache of the project is written by another server (used read-only). */
+  writable: boolean;
+  /** Size of the index of the cache and of its arena files, as of their last read or write. */
+  sizeOnDiskBytes: number;
+  /** Bytes of the arena files of the cache not used anymore (removed by the compaction of the saves). */
+  deadBytes: number;
+  /** Last save of the cache of the project, if any. */
+  lastSavedUtc?: string;
+  /** The index of the project changed since the last save (started) of its cache: saved by the save policy. */
+  dirty: boolean;
+  /** The cache of the project is being written. */
+  saving: boolean;
+}
+
 export interface ProjectDetails {
   rootPath: string;
   directoryDetails: DirectoryDetails;
@@ -266,6 +312,8 @@ export interface ProjectDetails {
   trigramFiltersEnabled: boolean;
   /** Memory used by the trigram filters of the project. */
   trigramFiltersBytes: number;
+  memory: ProjectMemory;
+  cache: ProjectCacheState;
 }
 
 export interface SearchQuery {

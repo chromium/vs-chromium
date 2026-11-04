@@ -13,6 +13,7 @@ using VsChromium.Core.Collections;
 using VsChromium.Core.Files;
 using VsChromium.Core.Files.PatternMatching;
 using VsChromium.Core.Logging;
+using VsChromium.Core.Memory;
 using VsChromium.Core.Threads;
 using VsChromium.Core.Utility;
 using VsChromium.Server.Cache;
@@ -76,8 +77,10 @@ namespace VsChromium.Server.Search {
       ICompiledTextSearchDataFactory compiledTextSearchDataFactory,
       IOperationProcessor operationProcessor,
       IIndexingWorkerPool indexingWorkerPool,
-      IIndexCache indexCache = null) {
+      IIndexCache indexCache = null,
+      ProjectArenaAllocators arenaAllocators = null) {
       _indexCache = indexCache;
+      _arenaAllocators = arenaAllocators;
       _fileSystemNameFactory = fileSystemNameFactory;
       _taskQueue = taskQueue;
       _fileDatabaseSnapshotFactory = fileDatabaseSnapshotFactory;
@@ -654,7 +657,7 @@ namespace VsChromium.Server.Search {
           if (!fileSystemSnapshot.IsFromCache &&
               (!options.CacheUnchanged || (_indexCache != null && _indexCache.HasProjectWithoutIndex(fileSystemSnapshot))) &&
               !ReferenceEquals(newFileDatabase, options.CurrentFileDatabase)) {
-            _indexCache?.NotifyIndexUpdated(fileSystemSnapshot, newFileDatabase, options.IsFullLoad);
+            _indexCache?.NotifyIndexUpdated(fileSystemSnapshot, newFileDatabase, options.IsFullLoad, options.TouchedProjects);
           }
 
           OnFilesLoaded(new FilesLoadedResult {
@@ -690,6 +693,7 @@ namespace VsChromium.Server.Search {
       Invariants.Assert(_inTaskQueueTask);
 
       StartFullLoad(options);
+      options.TouchedProjects = GetTouchedProjects(newSnapshot, fullPathChanges);
       return _fileDatabaseSnapshotFactory.CreateIncrementalWithFileSystemUpdates(
         options.CurrentFileDatabase,
         newSnapshot,
@@ -715,9 +719,24 @@ namespace VsChromium.Server.Search {
       _indexCache?.CancelWrites();
     }
 
+    /// <summary>The projects of <paramref name="snapshot"/> containing the paths of <paramref name="changes"/>.</summary>
+    private static IReadOnlyCollection<FullPath> GetTouchedProjects(FileSystemSnapshot snapshot, FullPathChanges changes) {
+      var result = new HashSet<FullPath>();
+      foreach (var entry in changes.Entries) {
+        var path = entry.Path;
+        foreach (var root in snapshot.ProjectRoots) {
+          if (root.Project.RootPath.ContainsPath(path)) {
+            result.Add(root.Project.RootPath);
+          }
+        }
+      }
+      return result;
+    }
+
     private IFileDatabaseSnapshot CreateWithModifiedFiles(FileSystemSnapshot fileSystemSnapshot, IList<ProjectFileName> changedFiles, UpdateFileDatabaseOptions options, CancellationToken cancellationToken) {
       Invariants.Assert(_inTaskQueueTask);
 
+      options.TouchedProjects = new HashSet<FullPath>(changedFiles.Select(x => x.Project.RootPath));
       return _fileDatabaseSnapshotFactory.CreateIncrementalWithModifiedFiles(
         options.CurrentFileDatabase,
         fileSystemSnapshot,
@@ -744,6 +763,9 @@ namespace VsChromium.Server.Search {
       _currentFileDatabaseComplete = complete;
       if (complete) {
         StartUpdatingTrigramFilters(databaseSnapshot);
+        // The arenas of the projects removed from the index are released once their contents
+        // are not used anymore.
+        _arenaAllocators?.Retain(fileSystemSnapshot.ProjectRoots.Select(x => x.Project.RootPath));
       }
     }
 
@@ -752,6 +774,8 @@ namespace VsChromium.Server.Search {
     /// intermediate result of a load in progress).
     /// </summary>
     private volatile bool _currentFileDatabaseComplete;
+
+    private readonly ProjectArenaAllocators _arenaAllocators;
 
     /// <summary>
     /// The trigram filter setting of the projects (see <see cref="SetProjectOptions"/>), by project
@@ -892,6 +916,11 @@ namespace VsChromium.Server.Search {
       public bool IsFullLoad { get; set; }
       /// <summary>The new index is the same as the index cache (no save).</summary>
       public bool CacheUnchanged { get; set; }
+      /// <summary>
+      /// The projects whose files changed in this update (incremental updates), or null: all the
+      /// projects of the snapshot (full scans).
+      /// </summary>
+      public IReadOnlyCollection<FullPath> TouchedProjects { get; set; }
     }
 
     private class TaskQueueGuard : IDisposable {

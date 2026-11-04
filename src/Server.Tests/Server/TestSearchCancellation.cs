@@ -149,7 +149,7 @@ namespace VsChromium.Tests.Server {
           searchEngine,
           container.FileRegistrationTracker,
           container.IndexingServer,
-          container.ArenaAllocator);
+          container.ArenaAllocators);
         var output = new JsonRpcOutput();
         var connection = new JsonRpcConnection(handler, output);
 

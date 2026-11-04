@@ -524,6 +524,118 @@ namespace VsChromium.Protocol.Generated {
     public ProjectConfigurationSection IncludeSearchableFilesSection { get; set; }
   }
 
+  /// <summary>
+  /// The memory of a project. The file contents of each project are allocated in its own arenas (16 MB
+  /// blocks shared by the files of the project up to 512 KB), released when the project is removed
+  /// and its contents are not used anymore. The sums over the projects are the `fileContentsArenas`
+  /// of `index/statistics`.
+  /// </summary>
+  public sealed partial class ProjectMemory {
+    /// <summary>
+    /// Native memory of the file contents of the project: `arenaBytes` + `largeFileBytes`.
+    /// </summary>
+    [JsonProperty("nativeBytes")]
+    public long NativeBytes { get; set; }
+
+    [JsonProperty("arenaCount")]
+    public int ArenaCount { get; set; }
+
+    /// <summary>
+    /// Native memory of the arenas of the project.
+    /// </summary>
+    [JsonProperty("arenaBytes")]
+    public long ArenaBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the arenas used by the files of the current index.
+    /// </summary>
+    [JsonProperty("liveBytes")]
+    public long LiveBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the arenas used by files edited or deleted since they were read (released with their arena).
+    /// </summary>
+    [JsonProperty("deadBytes")]
+    public long DeadBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the arenas never allocated: the end of the current arena and of the full arenas.
+    /// </summary>
+    [JsonProperty("freeBytes")]
+    public long FreeBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the files larger than 512 KB (a dedicated block per file, outside the arenas).
+    /// </summary>
+    [JsonProperty("largeFileBytes")]
+    public long LargeFileBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the files loaded from the index cache of the project (memory mapped files, not native memory).
+    /// </summary>
+    [JsonProperty("mappedCacheBytes")]
+    public long MappedCacheBytes { get; set; }
+
+    /// <summary>
+    /// Memory used by the trigram filters of the project (managed memory).
+    /// </summary>
+    [JsonProperty("trigramFiltersBytes")]
+    public long TrigramFiltersBytes { get; set; }
+  }
+
+  /// <summary>
+  /// The state of the persistent index cache of a project (from the state of the server, no disk access).
+  /// </summary>
+  public sealed partial class ProjectCacheState {
+    /// <summary>
+    /// True if the project has a cache (the cache of the server is enabled and could be opened for the project).
+    /// </summary>
+    [JsonProperty("enabled")]
+    public bool Enabled { get; set; }
+
+    /// <summary>
+    /// The directory of the cache of the project (`&lt;cache root&gt;\&lt;hash of the root path&gt;`), if any.
+    /// </summary>
+    [JsonProperty("directory", NullValueHandling = NullValueHandling.Ignore)]
+    public string Directory { get; set; }
+
+    /// <summary>
+    /// False if the cache of the project is written by another server (used read-only).
+    /// </summary>
+    [JsonProperty("writable")]
+    public bool Writable { get; set; }
+
+    /// <summary>
+    /// Size of the index of the cache and of its arena files, as of their last read or write.
+    /// </summary>
+    [JsonProperty("sizeOnDiskBytes")]
+    public long SizeOnDiskBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of the arena files of the cache not used anymore (removed by the compaction of the saves).
+    /// </summary>
+    [JsonProperty("deadBytes")]
+    public long DeadBytes { get; set; }
+
+    /// <summary>
+    /// Last save of the cache of the project, if any.
+    /// </summary>
+    [JsonProperty("lastSavedUtc", NullValueHandling = NullValueHandling.Ignore)]
+    public DateTime? LastSavedUtc { get; set; }
+
+    /// <summary>
+    /// The index of the project changed since the last save (started) of its cache: saved by the save policy.
+    /// </summary>
+    [JsonProperty("dirty")]
+    public bool Dirty { get; set; }
+
+    /// <summary>
+    /// The cache of the project is being written.
+    /// </summary>
+    [JsonProperty("saving")]
+    public bool Saving { get; set; }
+  }
+
   public sealed partial class ProjectDetails {
     [JsonProperty("rootPath")]
     public string RootPath { get; set; }
@@ -545,6 +657,12 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonProperty("trigramFiltersBytes")]
     public long TrigramFiltersBytes { get; set; }
+
+    [JsonProperty("memory")]
+    public ProjectMemory Memory { get; set; }
+
+    [JsonProperty("cache")]
+    public ProjectCacheState Cache { get; set; }
   }
 
   public sealed partial class SearchQuery {

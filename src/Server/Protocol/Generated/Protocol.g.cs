@@ -226,6 +226,25 @@ namespace VsChromium.Protocol.Generated {
     public long SizeOnDiskBytes { get; set; }
 
     /// <summary>
+    /// Arena files of the indexes of the open project caches (the text of the files).
+    /// </summary>
+    [JsonPropertyName("arenaFileCount")]
+    public int ArenaFileCount { get; set; }
+
+    /// <summary>
+    /// Bytes used in these arena files.
+    /// </summary>
+    [JsonPropertyName("arenaBytes")]
+    public long ArenaBytes { get; set; }
+
+    /// <summary>
+    /// Bytes of these arena files not used by the index anymore (files modified or deleted since
+    /// they were saved): removed by the compaction during the saves.
+    /// </summary>
+    [JsonPropertyName("deadBytes")]
+    public long DeadBytes { get; set; }
+
+    /// <summary>
     /// The index changed since the last save (started) of the caches written by this server: saved
     /// once the changes settle (30 s without change, at most 5 minutes after the first unsaved change).
     /// False if the cache is disabled, or if the caches of all the open projects are written by another
@@ -775,6 +794,20 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonPropertyName("lastWriteNewFileCount")]
     public int LastWriteNewFileCount { get; set; }
+
+    /// <summary>
+    /// Arena files compacted by the last write (live slots copied to new arena files).
+    /// </summary>
+    [JsonPropertyName("lastWriteCompactedArenaCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LastWriteCompactedArenaCount { get; set; }
+
+    /// <summary>
+    /// Bytes copied by the compaction of the last write.
+    /// </summary>
+    [JsonPropertyName("lastWriteCompactedBytes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? LastWriteCompactedBytes { get; set; }
 
     /// <summary>
     /// Files not written by the last write because their time in the scan is not the time of their

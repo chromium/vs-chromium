@@ -81,6 +81,10 @@ model IndexCacheStatistics {
   lastWriteEntryCount: int32;
   /** Files whose contents were written to new arena files by the last write. */
   lastWriteNewFileCount: int32;
+  /** Arena files compacted by the last write (live slots copied to new arena files). */
+  lastWriteCompactedArenaCount?: int32;
+  /** Bytes copied by the compaction of the last write. */
+  lastWriteCompactedBytes?: int64;
   /**
    * Files not written by the last write because their time in the scan is not the time of their
    * contents: modified after the scan, or (on Windows) stale directory entries of hard links and

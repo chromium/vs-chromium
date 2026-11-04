@@ -337,6 +337,60 @@ public class IndexCacheTests {
   }
 
   /// <summary>
+  /// Deleted and edited files are dead bytes of the arena files of the cache; a save compacts them
+  /// (live slots copied to new arena files); a restart loads the compacted cache.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task DeadBytesAreCompacted() {
+    using var tree = new TestTree();
+    tree.Generate();
+    Dictionary<string, List<string>> results;
+    await using (var server = await StartAndLoadAsync(tree, tree.CacheDirectory, saveDelays: ShortSaveDelays)) {
+      await WaitForIdleAsync(server.Client);
+      await WaitForCacheWriteAsync(server.Client, 1);
+      var state = await WaitForIndexCacheAsync(server.Client, x => !x["saving"]!.GetValue<bool>(), "saved");
+      Assert.AreEqual(0, state["deadBytes"]!.GetValue<long>(), state.ToJsonString());
+
+      // 20% of the files deleted: dead bytes.
+      for (var d = 0; d < DirectoryCount; d++) {
+        for (var f = 0; f < FilesPerDirectory; f += 5) {
+          File.Delete(tree.FilePath(d, f));
+        }
+      }
+      await WaitForCacheWriteAsync(server.Client, 2);
+      state = await WaitForIndexCacheAsync(server.Client, x => !x["saving"]!.GetValue<bool>() && !x["dirty"]!.GetValue<bool>(), "saved");
+      var deadAfterDeletions = state["deadBytes"]!.GetValue<long>();
+      Assert.IsTrue(deadAfterDeletions > 0, state.ToJsonString());
+
+      // 20% of the files edited: more than 25% of the arena bytes would be dead: the save compacts.
+      for (var d = 0; d < DirectoryCount; d++) {
+        for (var f = 1; f < FilesPerDirectory; f += 5) {
+          TestTree.WriteFile(tree.FilePath(d, f), File.ReadAllText(tree.FilePath(d, f)).Replace("COMMON_TEXT", "EDITED_TEXT"), OldTime.AddMinutes(1));
+        }
+      }
+      var cache = await WaitForCacheWriteAsync(server.Client, 3);
+      TestContext.WriteLine($"Compaction: {cache.ToJsonString()}");
+      Assert.IsTrue(cache["lastWriteCompactedArenaCount"]!.GetValue<int>() >= 1, cache.ToJsonString());
+      state = await WaitForIndexCacheAsync(server.Client, x => !x["saving"]!.GetValue<bool>() && !x["dirty"]!.GetValue<bool>(), "saved");
+      Assert.IsTrue(state["deadBytes"]!.GetValue<long>() < deadAfterDeletions, state.ToJsonString());
+      results = await AllResultsAsync(server.Client);
+      Assert.IsTrue(results["COMMON_TEXT"].Count > 0 && (await HitCountAsync(server.Client, "EDITED_TEXT")) > 0);
+    }
+
+    // Restart: the compacted cache.
+    await using (var server = await StartAndLoadAsync(tree, verifyDelayMs: 3000)) {
+      Assert.IsTrue(server.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false);
+      var cached = await AllResultsAsync(server.Client);
+      foreach (var (query, expected) in results) {
+        CollectionAssert.AreEqual(expected.Where(x => !x.Contains("large.txt:")).ToList(), cached[query], $"Results of \"{query}\" from the cache");
+      }
+      await WaitForIdleAsync(server.Client);
+      AssertSameResults(results, await AllResultsAsync(server.Client));
+    }
+  }
+
+  /// <summary>
   /// A restart without changes: the verified index is the same as the cache (the large file read
   /// by the verification is not cached anyway): nothing to save.
   /// </summary>

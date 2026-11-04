@@ -80,6 +80,10 @@ namespace VsChromium.Server.Cache {
     /// <summary>True if this server writes the cache of at least one open project.</summary>
     public bool HasWritableProject;
     public long SizeOnDiskBytes;
+    /// <summary>The arena files of the indexes of the open project caches (see <see cref="IndexCacheArenaUsage"/>).</summary>
+    public int ArenaFileCount;
+    public long ArenaBytes;
+    public long DeadBytes;
   }
 
   public sealed class IndexCacheStatistics {
@@ -95,6 +99,8 @@ namespace VsChromium.Server.Cache {
     public int LastWriteEntryCount;
     public int LastWriteNewFileCount;
     public int LastWriteChangedFileCount;
+    public int LastWriteCompactedArenaCount;
+    public long LastWriteCompactedBytes;
   }
 
   public sealed class IndexCache : IIndexCache, IDisposable {
@@ -139,6 +145,7 @@ namespace VsChromium.Server.Cache {
         }
         // Note: Not retried if it failed.
         _projects.Add(rootPath, result);
+        ScheduleCleanupLocked();
         return result;
       }
     }
@@ -146,6 +153,46 @@ namespace VsChromium.Server.Cache {
     private ProjectIndexCache GetOpenProjectCache(FullPath rootPath) {
       lock (_lock) {
         return _projects.TryGetValue(rootPath, out var result) ? result : null;
+      }
+    }
+
+    /// <summary>Test only: the delay of the cleanup of the cache root directory, in milliseconds.</summary>
+    public const string CleanupDelayVariable = "VSCHROMIUM_TEST_CACHE_CLEANUP_DELAY_MS";
+
+    private Timer _cleanupTimer;
+
+    /// <summary>
+    /// Once, after the first project cache is opened (during the first load): the cleanup of the
+    /// caches of the other projects (<see cref="IndexCacheCleanup"/>), in the background.
+    /// </summary>
+    private void ScheduleCleanupLocked() {
+      if (_cleanupTimer != null)
+        return;
+      var delay = int.TryParse(Environment.GetEnvironmentVariable(CleanupDelayVariable), out var ms) && ms >= 0
+        ? TimeSpan.FromMilliseconds(ms)
+        : IndexCacheCleanup.DefaultDelay;
+      _cleanupTimer = new Timer(_ => RunCleanup(), null, delay, Timeout.InfiniteTimeSpan);
+    }
+
+    private void RunCleanup() {
+      string[] openDirectories;
+      lock (_lock) {
+        if (_disposed)
+          return;
+        openDirectories = _projects.Values.Where(x => x != null).Select(x => x.Directory).ToArray();
+      }
+      var thread = Thread.CurrentThread;
+      var priority = thread.Priority;
+      thread.Priority = ThreadPriority.BelowNormal;
+      try {
+        IndexCacheCleanup.Run(_options.CacheDirectory, openDirectories, IndexCacheCleanup.DefaultMaxAge,
+          IndexCacheCleanup.DefaultMaxTotalBytes, DateTime.UtcNow);
+      }
+      catch (Exception e) {
+        Logger.LogWarn(e, "Error cleaning up the index cache directory.");
+      }
+      finally {
+        thread.Priority = priority;
       }
     }
 
@@ -223,10 +270,12 @@ namespace VsChromium.Server.Cache {
             continue;
           Logger.LogInfo("Wrote the index cache of \"{0}\" in {1:n0} ms: {2:n0} entries, {3:n0} new files " +
                          "({4:n0} bytes written, {5:n0} new arena files, {6:n0} deleted), skipped {7:n0} files " +
-                         "modified less than 2 s before they were read, {8:n0} files read with another time or size than the scan, {9:n0} large files.",
+                         "modified less than 2 s before they were read, {8:n0} files read with another time or size than the scan, {9:n0} large files; " +
+                         "compacted {10:n0} arena files ({11:n0} bytes copied); arena files: {12:n0} bytes used, {13:n0} dead.",
             projectRoot.Project.RootPath, result.Elapsed.TotalMilliseconds, result.EntryCount, result.NewFileCount,
             result.BytesWritten, result.NewArenaCount, result.DeletedArenaCount, result.RacyFileCount,
-            result.ChangedFileCount, result.LargeFileCount);
+            result.ChangedFileCount, result.LargeFileCount, result.CompactedArenaCount, result.CompactedBytes,
+            cache.ArenaUsage.UsedBytes, cache.ArenaUsage.DeadBytes);
           if (result.ChangedFileSamples.Count > 0) {
             Logger.LogInfo("Files of \"{0}\" read with another time or size than the scan, first {1:n0} of {2:n0}:\n  {3}",
               projectRoot.Project.RootPath, result.ChangedFileSamples.Count, result.ChangedFileCount,
@@ -239,6 +288,8 @@ namespace VsChromium.Server.Cache {
             _statistics.LastWriteEntryCount = result.EntryCount;
             _statistics.LastWriteNewFileCount = result.NewFileCount;
             _statistics.LastWriteChangedFileCount = result.ChangedFileCount;
+            _statistics.LastWriteCompactedArenaCount = result.CompactedArenaCount;
+            _statistics.LastWriteCompactedBytes = result.CompactedBytes;
           }
         }
       }
@@ -321,6 +372,10 @@ namespace VsChromium.Server.Cache {
           if (project.IsWritable) {
             result.HasWritableProject = true;
           }
+          var usage = project.ArenaUsage;
+          result.ArenaFileCount += usage.ArenaCount;
+          result.ArenaBytes += usage.UsedBytes;
+          result.DeadBytes += usage.DeadBytes;
         }
         catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
           // The directory may be deleted (e.g. "Rebuild index"): ignored.
@@ -342,6 +397,8 @@ namespace VsChromium.Server.Cache {
         result.LastWriteEntryCount = _statistics.LastWriteEntryCount;
         result.LastWriteNewFileCount = _statistics.LastWriteNewFileCount;
         result.LastWriteChangedFileCount = _statistics.LastWriteChangedFileCount;
+        result.LastWriteCompactedArenaCount = _statistics.LastWriteCompactedArenaCount;
+        result.LastWriteCompactedBytes = _statistics.LastWriteCompactedBytes;
       }
       result.Enabled = IsEnabled;
       result.CacheDirectory = _options.CacheDirectory;
@@ -364,6 +421,7 @@ namespace VsChromium.Server.Cache {
       _scheduler.Dispose();
       lock (_lock) {
         _disposed = true;
+        _cleanupTimer?.Dispose();
         _pendingSnapshot = null;
         _pendingDatabase = null;
         foreach (var project in _projects.Values) {

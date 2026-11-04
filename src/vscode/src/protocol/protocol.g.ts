@@ -92,6 +92,15 @@ export interface IndexCacheState {
   lastSavedUtc?: string;
   /** Size of the cache directories of the open projects. */
   sizeOnDiskBytes: number;
+  /** Arena files of the indexes of the open project caches (the text of the files). */
+  arenaFileCount: number;
+  /** Bytes used in these arena files. */
+  arenaBytes: number;
+  /**
+   * Bytes of these arena files not used by the index anymore (files modified or deleted since
+   * they were saved): removed by the compaction during the saves.
+   */
+  deadBytes: number;
   /**
    * The index changed since the last save (started) of the caches written by this server: saved
    * once the changes settle (30 s without change, at most 5 minutes after the first unsaved change).
@@ -362,6 +371,10 @@ export interface IndexCacheStatistics {
   lastWriteEntryCount: number;
   /** Files whose contents were written to new arena files by the last write. */
   lastWriteNewFileCount: number;
+  /** Arena files compacted by the last write (live slots copied to new arena files). */
+  lastWriteCompactedArenaCount?: number;
+  /** Bytes copied by the compaction of the last write. */
+  lastWriteCompactedBytes?: number;
   /**
    * Files not written by the last write because their time in the scan is not the time of their
    * contents: modified after the scan, or (on Windows) stale directory entries of hard links and

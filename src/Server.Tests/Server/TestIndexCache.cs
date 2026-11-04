@@ -321,6 +321,167 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
+    public void ArenaUsageCountsTheLiveAndDeadBytes() {
+      var items = new[] { TextItem("a.cc", "int a;\n"), TextItem("b.cc", "int b;\n"), TextItem("c.cc", "int c;\n"), TextItem("d.cc", "int d;\n") };
+      var cache = OpenNew();
+      cache.CompactionMaxBytes = 0;
+      cache.Write(Dirs(items), VersionHash, CancellationToken.None);
+      Assert.AreEqual(1, cache.ArenaUsage.ArenaCount);
+      Assert.AreEqual(4 * 16, cache.ArenaUsage.UsedBytes);
+      Assert.AreEqual(0, cache.ArenaUsage.DeadBytes);
+
+      // 2 files deleted: their slots are dead.
+      cache.Write(Dirs(items.Take(2)), VersionHash, CancellationToken.None);
+      Assert.AreEqual(4 * 16, cache.ArenaUsage.UsedBytes);
+      Assert.AreEqual(2 * 16, cache.ArenaUsage.LiveBytes);
+      Assert.AreEqual(2 * 16, cache.ArenaUsage.DeadBytes);
+
+      // Same usage when the index is read.
+      cache.Dispose();
+      var reopened = OpenNew();
+      Assert.AreEqual(4 * 16, reopened.ArenaUsage.UsedBytes);
+      Assert.AreEqual(2 * 16, reopened.ArenaUsage.DeadBytes);
+    }
+
+    [TestMethod]
+    public void SparseArenaFilesAreCompacted() {
+      var items = Enumerable.Range(0, 8).Select(i => TextItem($"f{i}.cc", $"int f{i}; // file {i}\n")).ToArray();
+      var cache = OpenNew();
+      cache.Write(Dirs(items), VersionHash, CancellationToken.None);
+      var first = ArenaFiles().Single();
+      // 6 of 8 files deleted: 75% dead: the write compacts the arena file (the live slots are
+      // copied to a new arena file).
+      var kept = items.Take(2).ToArray();
+      var result = cache.Write(Dirs(kept), VersionHash, CancellationToken.None);
+      Assert.AreEqual(1, result.CompactedArenaCount);
+      Assert.AreEqual(cache.ArenaUsage.LiveBytes, result.CompactedBytes);
+      Assert.AreEqual(0, result.NewFileCount, "Not new files");
+      Assert.AreEqual(0, cache.ArenaUsage.DeadBytes);
+      Assert.AreEqual(1, result.DeletedArenaCount);
+      Assert.IsFalse(File.Exists(first), "The compacted arena file is deleted");
+      Assert.AreEqual(1, ArenaFiles().Length);
+
+      // The contents are preserved, byte for byte.
+      cache.Dispose();
+      var reopened = OpenNew();
+      foreach (var item in kept) {
+        Assert.AreEqual(GetText(item.Contents), GetText(reopened.Lookup.TryGetContents(item.Name, item.Metadata)));
+      }
+      Assert.AreEqual(0, reopened.ArenaUsage.DeadBytes);
+    }
+
+    [TestMethod]
+    public void MappedContentsOfCompactedArenaFilesStayValid() {
+      var items = Enumerable.Range(0, 8).Select(i => TextItem($"f{i}.cc", $"int f{i}; // file {i}\n")).ToArray();
+      Write(items);
+      // Contents loaded from the cache (mapped), 6 files deleted, then compacted.
+      var cache = OpenNew();
+      var loaded = items.Take(2).Select(x => new Item(x.Directory, x.Name, x.Metadata, cache.Lookup.TryGetContents(x.Name, x.Metadata))).ToArray();
+      var result = cache.Write(Dirs(loaded), VersionHash, CancellationToken.None);
+      Assert.AreEqual(1, result.CompactedArenaCount);
+      // The mapped contents are still readable (they keep their view), and keep their new location.
+      foreach (var item in loaded) {
+        Assert.AreEqual(GetText(item.Contents), GetText(item.Contents));
+        StringAssert.StartsWith(GetText(item.Contents), "int f");
+      }
+      Assert.AreEqual(0, cache.Write(Dirs(loaded), VersionHash, CancellationToken.None).NewFileCount);
+      Assert.AreEqual(0, cache.Write(Dirs(loaded), VersionHash, CancellationToken.None).CompactedArenaCount);
+      cache.Dispose();
+      var reopened = OpenNew();
+      foreach (var item in loaded) {
+        StringAssert.StartsWith(GetText(reopened.Lookup.TryGetContents(item.Name, item.Metadata)), "int f");
+      }
+    }
+
+    [TestMethod]
+    public void CompactedContentsCanBeCompactedAgain() {
+      var items = Enumerable.Range(0, 64).Select(i => TextItem($"f{i}.cc", $"int f{i}; // file {i}\n")).ToArray();
+      var cache = OpenNew();
+      cache.Write(Dirs(items), VersionHash, CancellationToken.None);
+      // Half of the files deleted each time: the arena files are compacted each time, the contents
+      // copied again from their last location.
+      for (var count = 32; count >= 1; count /= 2) {
+        var result = cache.Write(Dirs(items.Take(count).ToArray()), VersionHash, CancellationToken.None);
+        Assert.AreEqual(1, result.CompactedArenaCount, $"{count} files");
+        Assert.AreEqual(0, result.NewFileCount, $"{count} files: not new files");
+        Assert.AreEqual(0, cache.ArenaUsage.DeadBytes, $"{count} files");
+      }
+      // The location of the contents is their last one: nothing to write or compact anymore.
+      var kept = items.Take(1).ToArray();
+      var last = cache.Write(Dirs(kept), VersionHash, CancellationToken.None);
+      Assert.AreEqual(0, last.NewFileCount, "Located");
+      Assert.AreEqual(0, last.CompactedArenaCount);
+      Assert.AreEqual(0, last.NewArenaCount);
+      cache.Dispose();
+      var reopened = OpenNew();
+      Assert.AreEqual(GetText(kept[0].Contents), GetText(reopened.Lookup.TryGetContents(kept[0].Name, kept[0].Metadata)));
+    }
+    [TestMethod]
+    public void CancelledCompactionKeepsThePreviousIndex() {
+      var items = Enumerable.Range(0, 8).Select(i => TextItem($"f{i}.cc", $"int f{i}; // file {i}\n")).ToArray();
+      var cache = OpenNew();
+      cache.Write(Dirs(items), VersionHash, CancellationToken.None);
+      var index = File.ReadAllBytes(IndexPath);
+      var arenaFiles = ArenaFiles();
+      var kept = items.Take(2).ToArray();
+
+      using (var cancellation = new CancellationTokenSource()) {
+        var enumerations = 0;
+        IEnumerable<IndexCacheWriteDirectory> Directories() {
+          enumerations++;
+          yield return new IndexCacheWriteDirectory("", false, kept.Select(ToWriteItem).ToArray());
+          if (enumerations == 2) {
+            // After the selection of the arena files to compact, during the copy.
+            cancellation.Cancel();
+          }
+          yield return new IndexCacheWriteDirectory("dir", false, new IndexCacheWriteItem[0]);
+        }
+        Assert.Throws<OperationCanceledException>(() => cache.Write(Directories(), VersionHash, cancellation.Token));
+        Assert.AreEqual(2, enumerations);
+      }
+      CollectionAssert.AreEqual(index, File.ReadAllBytes(IndexPath), "Previous index");
+      CollectionAssert.AreEquivalent(arenaFiles, ArenaFiles(), "Previous arena files");
+      Assert.AreEqual(0, cache.ArenaUsage.DeadBytes, "Usage of the previous index");
+
+      // The next write compacts.
+      var result = cache.Write(Dirs(kept), VersionHash, CancellationToken.None);
+      Assert.AreEqual(1, result.CompactedArenaCount);
+      Assert.AreEqual(0, result.NewFileCount);
+      cache.Dispose();
+      var reopened = OpenNew();
+      foreach (var item in kept) {
+        Assert.AreEqual(GetText(item.Contents), GetText(reopened.Lookup.TryGetContents(item.Name, item.Metadata)));
+      }
+    }
+    [TestMethod]
+    public void CompactionIsBoundedPerWrite() {
+      var usage = new IndexCacheArenaUsage(new Dictionary<int, (int, long)> {
+        [1] = (1000, 100), // 10% live
+        [2] = (1000, 300), // 30% live
+        [3] = (1000, 900), // 90% live
+      });
+      // Sparse files first; the 90% live file only while too much is dead.
+      CollectionAssert.AreEquivalent(new[] { 1, 2 }, ProjectIndexCache.SelectArenasToCompact(usage, 10_000).ToArray());
+      // Budget of the bytes copied.
+      CollectionAssert.AreEquivalent(new[] { 1 }, ProjectIndexCache.SelectArenasToCompact(usage, 200).ToArray());
+      Assert.AreEqual(0, ProjectIndexCache.SelectArenasToCompact(usage, 0).Count);
+      // Nothing to compact: less than 25% dead and no sparse file.
+      var dense = new IndexCacheArenaUsage(new Dictionary<int, (int, long)> { [1] = (1000, 900), [2] = (1000, 800) });
+      Assert.AreEqual(0, ProjectIndexCache.SelectArenasToCompact(dense, 10_000).Count);
+      // More than 25% dead without sparse file: the sparsest ones until less than 10%
+      // (hysteresis): 800 dead of 3000, then 400 of 2600, then 100 of 2300.
+      var dead = new IndexCacheArenaUsage(new Dictionary<int, (int, long)> { [1] = (1000, 600), [2] = (1000, 700), [3] = (1000, 900) });
+      CollectionAssert.AreEquivalent(new[] { 1, 2 }, ProjectIndexCache.SelectArenasToCompact(dead, 10_000).ToArray());
+      // Stopped at the limit: pending, the next write resumes it (less than 25% dead).
+      CollectionAssert.AreEquivalent(new[] { 1 }, ProjectIndexCache.SelectArenasToCompact(dead, 600, false, out var pending).ToArray());
+      Assert.IsTrue(pending);
+      var resumed = new IndexCacheArenaUsage(new Dictionary<int, (int, long)> { [1] = (1000, 850), [2] = (1000, 850), [3] = (1000, 900) });
+      Assert.AreEqual(0, ProjectIndexCache.SelectArenasToCompact(resumed, 10_000).Count);
+      CollectionAssert.AreEquivalent(new[] { 1 }, ProjectIndexCache.SelectArenasToCompact(resumed, 10_000, true, out pending).ToArray());
+      Assert.IsFalse(pending);
+    }
+
+    [TestMethod]
     public void UnreferencedArenaFilesAreDeletedAfterAWrite() {
       var cache = OpenNew();
       cache.Write(Dirs(new[] { TextItem("a.cc", "int a;\n") }), VersionHash, CancellationToken.None);

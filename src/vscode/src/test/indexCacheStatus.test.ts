@@ -11,13 +11,18 @@ const MB = 1024 * 1024;
 const time = (utc: string) => `time(${utc})`;
 
 function cache(state: Partial<IndexCacheState>): IndexCacheState {
-  return { enabled: true, saving: false, sizeOnDiskBytes: 9_412 * MB, dirty: false, ...state };
+  return { enabled: true, saving: false, sizeOnDiskBytes: 9_412 * MB, arenaFileCount: 580, arenaBytes: 9_300 * MB, deadBytes: 0, dirty: false, ...state };
 }
 
 describe('describeIndexCache', () => {
   it('shows the size on disk and the time of the last save', () => {
     assert.equal(describeIndexCache(cache({ lastSavedUtc: '2026-01-01T22:42:13Z' }), time),
       'Index cache: 9,412 MB on disk, saved time(2026-01-01T22:42:13Z)');
+  });
+
+  it('shows the dead bytes of the arena files', () => {
+    assert.equal(describeIndexCache(cache({ lastSavedUtc: 'T', deadBytes: 412 * MB }), time),
+      'Index cache: 9,412 MB on disk (412 MB dead), saved time(T)');
   });
 
   it('shows a save in progress and a changed index', () => {

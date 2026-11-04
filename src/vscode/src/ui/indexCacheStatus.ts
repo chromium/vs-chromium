@@ -26,7 +26,9 @@ export function describeIndexCache(
     return `Index cache: not saved yet${saving}`;
   }
   const changed = cache.dirty && !cache.saving ? ', index changed since' : '';
-  return `Index cache: ${mb(cache.sizeOnDiskBytes)} on disk, saved ${formatTime(cache.lastSavedUtc)}${changed}${saving}`;
+  // Dead bytes: files modified or deleted since they were saved (removed by the compaction).
+  const dead = cache.deadBytes > 0 ? ` (${mb(cache.deadBytes)} dead)` : '';
+  return `Index cache: ${mb(cache.sizeOnDiskBytes)} on disk${dead}, saved ${formatTime(cache.lastSavedUtc)}${changed}${saving}`;
 }
 
 /**

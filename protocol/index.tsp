@@ -48,6 +48,15 @@ model IndexCacheState {
   lastSavedUtc?: utcDateTime;
   /** Size of the cache directories of the open projects. */
   sizeOnDiskBytes: int64;
+  /** Arena files of the indexes of the open project caches (the text of the files). */
+  arenaFileCount: int32;
+  /** Bytes used in these arena files. */
+  arenaBytes: int64;
+  /**
+   * Bytes of these arena files not used by the index anymore (files modified or deleted since
+   * they were saved): removed by the compaction during the saves.
+   */
+  deadBytes: int64;
   /**
    * The index changed since the last save (started) of the caches written by this server: saved
    * once the changes settle (30 s without change, at most 5 minutes after the first unsaved change).

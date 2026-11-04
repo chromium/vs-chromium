@@ -172,6 +172,8 @@ namespace VsChromium.Server.JsonRpc {
         LastWriteEntryCount = statistics.LastWriteEntryCount,
         LastWriteNewFileCount = statistics.LastWriteNewFileCount,
         LastWriteChangedFileCount = statistics.LastWriteChangedFileCount,
+        LastWriteCompactedArenaCount = statistics.LastWriteCompactedArenaCount,
+        LastWriteCompactedBytes = statistics.LastWriteCompactedBytes,
       };
     }
 
@@ -285,6 +287,9 @@ namespace VsChromium.Server.JsonRpc {
         Saving = state.Saving,
         LastSavedUtc = state.LastSavedUtc,
         SizeOnDiskBytes = state.SizeOnDiskBytes,
+        ArenaFileCount = state.ArenaFileCount,
+        ArenaBytes = state.ArenaBytes,
+        DeadBytes = state.DeadBytes,
         // Note: The index changed since the last save (false if the cache is disabled, or if the
         // caches of all the open projects are read-only: written by another server).
         Dirty = state.Dirty,

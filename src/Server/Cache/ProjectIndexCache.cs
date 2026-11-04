@@ -78,7 +78,35 @@ namespace VsChromium.Server.Cache {
     public int NewArenaCount;
     public long BytesWritten;
     public int DeletedArenaCount;
+    /// <summary>Arena files compacted (their live slots copied to new arena files).</summary>
+    public int CompactedArenaCount;
+    /// <summary>Bytes of the live slots copied by the compaction.</summary>
+    public long CompactedBytes;
     public TimeSpan Elapsed;
+  }
+
+  /// <summary>
+  /// The arena files of the index of a cache: bytes used (from the arena table) and bytes of the
+  /// slots referenced by the entries (live). The rest is dead: slots of files modified or deleted
+  /// since they were written.
+  /// </summary>
+  public sealed class IndexCacheArenaUsage {
+    public static readonly IndexCacheArenaUsage Empty = new IndexCacheArenaUsage(new Dictionary<int, (int, long)>());
+
+    public IndexCacheArenaUsage(IReadOnlyDictionary<int, (int Used, long Live)> arenas) {
+      Arenas = arenas;
+      foreach (var (used, live) in arenas.Values) {
+        UsedBytes += used;
+        LiveBytes += live;
+      }
+    }
+
+    /// <summary>Arena id => bytes used, bytes of the live slots.</summary>
+    public IReadOnlyDictionary<int, (int Used, long Live)> Arenas { get; }
+    public int ArenaCount => Arenas.Count;
+    public long UsedBytes { get; }
+    public long LiveBytes { get; }
+    public long DeadBytes => UsedBytes - LiveBytes;
   }
 
   /// <summary>
@@ -136,6 +164,48 @@ namespace VsChromium.Server.Cache {
     /// <summary>The arena files known to be complete: id => bytes used.</summary>
     private readonly Dictionary<int, int> _validArenas = new Dictionary<int, int>();
     private int _nextArenaId = 1;
+    private volatile IndexCacheArenaUsage _arenaUsage = IndexCacheArenaUsage.Empty;
+    /// <summary>
+    /// The compaction of the last write stopped at <see cref="CompactionMaxBytes"/> with more than
+    /// <see cref="CompactionTargetDeadFraction"/> of dead bytes: the next write continues it.
+    /// </summary>
+    private bool _compactionPending;
+
+    /// <summary>
+    /// The arena files of the index (written or loaded): used, live and dead bytes. Computed when
+    /// the index is read or written (no walk at request time).
+    /// </summary>
+    public IndexCacheArenaUsage ArenaUsage => _arenaUsage;
+
+    /// <summary>
+    /// Compaction (during a write): arena files with less than this fraction of live bytes are
+    /// compacted...
+    /// </summary>
+    public const double CompactionMinLiveFraction = 0.5;
+
+    /// <summary>
+    /// ... and when more than this fraction of the arena bytes is dead, the sparsest ones until less
+    /// than <see cref="CompactionTargetDeadFraction"/> is dead (hysteresis: not a few files at each
+    /// save around the threshold).
+    /// </summary>
+    public const double CompactionMaxDeadFraction = 0.25;
+
+    public const double CompactionTargetDeadFraction = 0.10;
+
+    /// <summary>The default limit of the bytes copied by the compaction of a write (a write stays short).</summary>
+    public const long DefaultCompactionMaxBytes = 1024L * 1024 * 1024;
+
+    /// <summary>Test only: the limit of the bytes copied by a compaction, in MB (0: no compaction).</summary>
+    public const string CompactionMaxBytesVariable = "VSCHROMIUM_TEST_CACHE_COMPACTION_MAX_MB";
+
+    /// <summary>The limit of the bytes copied by the compaction of a write (0: no compaction).</summary>
+    public long CompactionMaxBytes { get; set; } = GetDefaultCompactionMaxBytes();
+
+    private static long GetDefaultCompactionMaxBytes() {
+      return long.TryParse(Environment.GetEnvironmentVariable(CompactionMaxBytesVariable), out var mb) && mb >= 0
+        ? mb * 1024 * 1024
+        : DefaultCompactionMaxBytes;
+    }
 
     public ProjectIndexCache(string cacheRootDirectory, string rootPath) {
       _rootPath = rootPath;
@@ -257,6 +327,7 @@ namespace VsChromium.Server.Cache {
             _validArenas[arena.Id] = arena.Size;
             _locations.AddOrUpdate(arena.Handle, BlockLocations.ForMappedArena(arena.Id));
           }
+          _arenaUsage = ComputeUsage(data);
         }
         var stopwatch = Stopwatch.StartNew();
         _lookup = new IndexCacheLookup(data, arenas, _caseSensitive);
@@ -348,6 +419,15 @@ namespace VsChromium.Server.Cache {
         var result = new IndexCacheWriteResult();
         var arenaWriter = new ArenaFileWriter(this, result);
         var referencedArenas = new HashSet<int>();
+        var liveBytes = new Dictionary<int, long>();
+        // The contents in these arena files are copied to new arena files (compaction), decided
+        // from the live bytes of the existing arena files in this write (a first pass on the
+        // locations of the contents: no I/O).
+        var compactionPending = false;
+        var compacted = CompactionMaxBytes > 0
+          ? SelectArenasToCompact(GetCurrentUsage(directories, cancellationToken), CompactionMaxBytes, _compactionPending,
+              out compactionPending)
+          : new HashSet<int>();
         var tempPath = Path.Combine(Directory, TempIndexFileName);
         // Note: The entries are written as they are produced (no list of entries in memory).
         var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
@@ -358,10 +438,12 @@ namespace VsChromium.Server.Cache {
               cancellationToken.ThrowIfCancellationRequested();
               indexWriter.AddDirectory(directory.Path, directory.IsSymLink ? IndexCacheDirectoryFlags.SymLink : IndexCacheDirectoryFlags.None);
               foreach (var item in directory.Files) {
-                var entry = GetEntry(directory, item, arenaWriter, result);
+                var entry = GetEntry(directory, item, arenaWriter, compacted, result);
                 indexWriter.AddFile(item.Name, entry);
                 if (!entry.HasNoLocation) {
                   referencedArenas.Add(entry.ArenaId);
+                  liveBytes[entry.ArenaId] = liveBytes.GetValueOrDefault(entry.ArenaId) +
+                    ArenaAllocator.GetSlotSize(entry.Length + IndexCacheFile.TrailingByteCount);
                   result.EntryCount++;
                 } else if (entry.IsBinary) {
                   result.EntryCount++;
@@ -402,9 +484,79 @@ namespace VsChromium.Server.Cache {
           }
         }
 
+        result.CompactedArenaCount = compacted.Count;
+        _compactionPending = compactionPending;
+        _arenaUsage = new IndexCacheArenaUsage(referencedArenas.ToDictionary(x => x, x => (_validArenas.GetValueOrDefault(x), liveBytes[x])));
         result.Elapsed = stopwatch.Elapsed;
         return result;
       }
+    }
+
+    /// <summary>
+    /// The usage of the existing arena files by the contents of <paramref name="directories"/>
+    /// (contents already in arena files).
+    /// </summary>
+    private IndexCacheArenaUsage GetCurrentUsage(IEnumerable<IndexCacheWriteDirectory> directories, CancellationToken cancellationToken) {
+      var live = new Dictionary<int, long>();
+      foreach (var directory in directories) {
+        cancellationToken.ThrowIfCancellationRequested();
+        foreach (var item in directory.Files) {
+          if (item.Contents is Utf8FileContents text && !text.IsRacy && TryGetLocation(text.Contents, out var arenaId, out _)) {
+            live[arenaId] = live.GetValueOrDefault(arenaId) + ArenaAllocator.GetSlotSize(text.ByteLength + IndexCacheFile.TrailingByteCount);
+          }
+        }
+      }
+      return new IndexCacheArenaUsage(_validArenas.ToDictionary(x => x.Key, x => (x.Value, live.GetValueOrDefault(x.Key))));
+    }
+
+    private static IndexCacheArenaUsage ComputeUsage(IndexCacheIndex index) {
+      var live = new Dictionary<int, long>();
+      foreach (var file in index.Files) {
+        if (!file.ToEntry().HasNoLocation) {
+          live[file.ArenaId] = live.GetValueOrDefault(file.ArenaId) + ArenaAllocator.GetSlotSize(file.Length + IndexCacheFile.TrailingByteCount);
+        }
+      }
+      return new IndexCacheArenaUsage(index.Arenas.ToDictionary(x => x.Key, x => (x.Value, live.GetValueOrDefault(x.Key))));
+    }
+
+    /// <summary>
+    /// The arena files to compact during a write (from the usage of the arena files by the contents
+    /// of the write): the files with less than <see cref="CompactionMinLiveFraction"/> of
+    /// live bytes, and, when more than <see cref="CompactionMaxDeadFraction"/> of the arena bytes
+    /// are dead, the sparsest ones until less than <see cref="CompactionTargetDeadFraction"/> are
+    /// dead (hysteresis: the next writes don't compact a few files each),
+    /// at most <paramref name="maxBytes"/> of live bytes to copy. <paramref name="resume"/>: the
+    /// previous compaction stopped at the limit (the sparsest ones until less than <see
+    /// cref="CompactionTargetDeadFraction"/> are dead). <paramref name="pending"/>: this one stops
+    /// at the limit.
+    /// </summary>
+    public static HashSet<int> SelectArenasToCompact(IndexCacheArenaUsage usage, long maxBytes, bool resume, out bool pending) {
+      var result = new HashSet<int>();
+      pending = false;
+      if (maxBytes <= 0 || usage.ArenaCount == 0)
+        return result;
+      long used = usage.UsedBytes;
+      long live = usage.LiveBytes;
+      long budget = maxBytes;
+      var compactDead = used > 0 && (resume || (used - live) > used * CompactionMaxDeadFraction);
+      foreach (var (id, arena) in usage.Arenas.OrderBy(x => (double)x.Value.Live / Math.Max(1, x.Value.Used)).ThenBy(x => x.Key)) {
+        var sparse = arena.Live < arena.Used * CompactionMinLiveFraction;
+        var tooMuchDead = compactDead && used > 0 && (used - live) > used * CompactionTargetDeadFraction;
+        if (!sparse && !tooMuchDead)
+          break;
+        if (arena.Live > budget)
+          break;
+        result.Add(id);
+        budget -= arena.Live;
+        // After the compaction: the live bytes are in new (full) arena files.
+        used = used - arena.Used + arena.Live;
+      }
+      pending = compactDead && (used - live) > used * CompactionTargetDeadFraction;
+      return result;
+    }
+
+    public static HashSet<int> SelectArenasToCompact(IndexCacheArenaUsage usage, long maxBytes) {
+      return SelectArenasToCompact(usage, maxBytes, resume: false, out _);
     }
 
     /// <summary>
@@ -412,7 +564,7 @@ namespace VsChromium.Server.Cache {
     /// can't be cached (see <see cref="Write"/>), or not searchable.
     /// </summary>
     private IndexCacheEntry GetEntry(IndexCacheWriteDirectory directory, IndexCacheWriteItem item,
-                                     ArenaFileWriter arenaWriter, IndexCacheWriteResult result) {
+                                     ArenaFileWriter arenaWriter, HashSet<int> compacted, IndexCacheWriteResult result) {
       var contents = item.Contents;
       var metadata = item.Metadata;
       if (contents == null)
@@ -448,9 +600,17 @@ namespace VsChromium.Server.Cache {
           result.LargeFileCount++;
           return IndexCacheEntry.WithoutContents(metadata, IndexCacheEntryFlags.NoContents);
         }
-        if (!TryGetLocation(text.Contents, out var arenaId, out var offset)) {
-          (arenaId, offset) = arenaWriter.Append(text.Contents);
+        var located = TryGetLocation(text.Contents, out var arenaId, out var offset);
+        if (located && compacted.Contains(arenaId)) {
+          // Compaction: the live slot is copied (from the contents in memory: the mapped view of
+          // the arena file, or the native memory).
+          located = false;
+          result.CompactedBytes += ArenaAllocator.GetSlotSize(text.ByteLength + IndexCacheFile.TrailingByteCount);
+        } else if (!located) {
           result.NewFileCount++;
+        }
+        if (!located) {
+          (arenaId, offset) = arenaWriter.Append(text.Contents);
         }
         return new IndexCacheEntry(ticks, metadata.Length,
           text.IsAscii ? IndexCacheEntryFlags.Ascii : IndexCacheEntryFlags.None, arenaId, offset, text.ByteLength);
@@ -499,6 +659,8 @@ namespace VsChromium.Server.Cache {
         _lookup = null;
         _locations = new ConditionalWeakTable<SafeHandle, BlockLocations>();
         _validArenas.Clear();
+        _arenaUsage = IndexCacheArenaUsage.Empty;
+        _compactionPending = false;
         if (IsWritable) {
           DeleteContents();
         }
@@ -654,14 +816,24 @@ namespace VsChromium.Server.Cache {
         return new BlockLocations(id, null);
       }
 
+      /// <summary>
+      /// The locations of <paramref name="existing"/> (if they are slots), and <paramref name="slots"/>
+      /// in arena file <paramref name="arenaId"/>, which replace the existing locations of the same
+      /// contents (compaction: the contents are copied from their previous arena file).
+      /// </summary>
       public static BlockLocations Merge(BlockLocations existing, int arenaId, IEnumerable<(int Offset, int ArenaOffset)> slots) {
-        var list = new List<(int, int, int)>();
+        var locations = new Dictionary<int, (int ArenaId, int ArenaOffset)>();
         if (existing?._slots != null) {
-          list.AddRange(existing._slots);
+          foreach (var slot in existing._slots) {
+            locations[slot.Offset] = (slot.ArenaId, slot.ArenaOffset);
+          }
         }
-        list.AddRange(slots.Select(x => (x.Offset, arenaId, x.ArenaOffset)));
-        list.Sort((x, y) => x.Item1.CompareTo(y.Item1));
-        return new BlockLocations(0, list.ToArray());
+        foreach (var slot in slots) {
+          locations[slot.Offset] = (arenaId, slot.ArenaOffset);
+        }
+        var result = locations.Select(x => (x.Key, x.Value.ArenaId, x.Value.ArenaOffset)).ToArray();
+        Array.Sort(result, (x, y) => x.Item1.CompareTo(y.Item1));
+        return new BlockLocations(0, result);
       }
 
       public bool TryFind(int offset, out int arenaId, out int arenaOffset) {

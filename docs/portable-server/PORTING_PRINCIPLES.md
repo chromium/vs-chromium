@@ -1065,3 +1065,59 @@ override `VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS=settle,max`).
   them from the cache (the verification finds the same time and size in the scan).
 - **Status**: `index/statistics` `indexCache.dirty` (changed since the last save started),
   `saving` (a save is running).
+
+### Persistent index cache: compaction and cleanup (phase 3)
+
+The arena files are never modified: the contents of new and edited files are appended to new arena
+files, and the slots of modified or deleted files stay in their arena file (dead bytes) until it is
+compacted.
+
+- **Dead bytes**: `IndexCacheArenaUsage`, computed when the index is read (from its entries) and at
+  the end of each write (from the written entries): bytes used by the arena files of the index,
+  bytes of the slots referenced by its entries (live), and the rest (dead). No walk at request
+  time: `index/statistics` `indexCache.arenaFileCount`, `arenaBytes`, `deadBytes` (summed over the
+  open projects); the VS Code status shows "(N MB dead)".
+- **Compaction, during a save**: a first pass over the contents of the snapshot to save gives the
+  live bytes of each existing arena file (from the location of the contents in memory, no I/O), so
+  that the save which follows a churn compacts it. Compacted: the arena files with less than 50%
+  live bytes, and, when more than 25% of the arena bytes are dead, the sparsest ones until less
+  than 10% are dead (hysteresis: the next saves don't compact a few files each). At most 1 GB of
+  live bytes copied per save (`ProjectIndexCache.DefaultCompactionMaxBytes`, test override
+  `VSCHROMIUM_TEST_CACHE_COMPACTION_MAX_MB`, 0: no compaction): a compaction stopped at the limit
+  is resumed by the next save (until less than 10% are dead).
+  - The live slots are copied from the contents in memory (the mapped view of the old arena file,
+    or the native memory of contents read from disk) to new arena files, like new contents: the
+    contents in memory are not changed (searches keep using the old mapped views), only their
+    location (in the cache) is updated. The next load maps the new arena files.
+  - The old arena files are deleted after the index is replaced; on Windows, the deletion of an
+    arena file still mapped by this server fails: retried by the next saves, or deleted when the
+    cache is opened next time.
+  - A compaction is part of the save: cancelled with it (new full load, shutdown: no save at
+    shutdown), the previous index stays valid (the new arena files are orphans, deleted when the
+    cache is opened).
+- **Cleanup of old caches** (`IndexCacheCleanup`): 2 minutes after the first project cache is
+  opened by a server, in the background (below normal priority), the caches of projects not used
+  for 30 days are deleted, then the least recently used ones while the total size of the cache
+  directory is above 50 GB (fixed limit). Never deleted: the caches open by this server, and the
+  caches locked by another server (the lock file is taken exclusively during the deletion: no
+  server can open the cache meanwhile). The last use of a cache is the last write time of its
+  index (each save) or of its `root.txt` (each open to write): no additional bookkeeping.
+
+Churn benchmark (Debug build, `large-1-400000-v1` copy, 379,311 text files): cold load and first
+save, then 20% of the files rewritten (79,920) and 10% deleted (39,960) while the server runs, a
+save, another change (one new file) and a save, then a restart. Save times vary a lot on this
+machine (disk flushes, other processes): the first save after the churn took 6.7–31.7 s with
+compaction across 6 runs, 2.5–13.3 s without; the table shows one pair of runs.
+
+| | Compaction (default) | No compaction |
+|---|---|---|
+| Cold save | 12.4 s, 3,399 MB, 212 arena files | 12.3 s, 3,399 MB |
+| First save after the churn | 12.8 s, 1,708 MB written (93 arena files compacted, 1,018 MB copied: the limit) | 2.7 s, 691 MB written |
+| Dead bytes after it | 549 MB of 3,598 MB (15%) | 1,015 MB of 4,065 MB (25%) |
+| Second save | 2.4 s, 505 MB written (resumed: 44 arena files compacted, 493 MB copied) | 0.3 s, 12 MB written |
+| Dead bytes after it | 339 MB of 3,388 MB (10%) | 1,015 MB of 4,065 MB (25%, stays) |
+| Disk size | 3,400 MB | 4,077 MB |
+| Restart: first `index/loaded` / idle | 1.23 s / 3.8 s (341,042 files from the cache) | 1.22 s / 2.7 s |
+
+The idle time of a restart (verification of the tree in the background) varied between 2.7 and
+5.6 s across runs, with or without compaction.

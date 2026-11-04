@@ -7,8 +7,6 @@ import {
   FilesRegisterRequest,
   FilesUnregisterRequest,
   IndexCacheState,
-  IndexingStatus,
-  IndexResumeRequest,
   IndexStatisticsRequest,
   ProjectSetOptionsRequest,
   TreeGetRequest,
@@ -20,11 +18,10 @@ import { CodeSearchViewProvider } from './ui/codeSearchView';
 import { FileNamesPick } from './ui/fileNamesPick';
 import {
   decorateIndexingDisplay,
-  describeIndexCache,
   IndexCacheSavingPollIntervalMs,
   shouldPollIndexCache,
 } from './ui/indexCacheStatus';
-import { describeMemory } from './ui/memoryStatistics';
+import { DashboardPanel } from './ui/dashboard/dashboardPanel';
 
 /** Minimum interval between two displays of the progress of a load in the status bar. */
 const ProgressDisplayIntervalMs = 1000;
@@ -42,6 +39,14 @@ class ServerManager implements vscode.Disposable {
   private indexCachePoll: NodeJS.Timeout | undefined;
   private readonly statusBar: vscode.StatusBarItem;
   private readonly disposables: vscode.Disposable[] = [];
+  /**
+   * Trigram filters of projects (by root path) set from the server dashboard, overriding the
+   * setting until the setting changes or the server restarts.
+   */
+  private readonly trigramFiltersOverrides = new Map<string, boolean>();
+  private readonly serverChangedEmitter = new vscode.EventEmitter<void>();
+  /** Fired when the server client changes (started, restarted). */
+  readonly onDidChangeServer = this.serverChangedEmitter.event;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -51,10 +56,12 @@ class ServerManager implements vscode.Disposable {
     this.statusBar.name = 'VsChromium Indexing';
     this.disposables.push(
       this.statusBar,
+      this.serverChangedEmitter,
       vscode.workspace.onDidChangeWorkspaceFolders(e => this.onWorkspaceFoldersChanged(e)),
       vscode.workspace.onDidOpenTextDocument(doc => this.registerDocument(doc)),
       vscode.workspace.onDidChangeConfiguration(e => {
         if (e.affectsConfiguration('vschromium.trigramFilters')) {
+          this.trigramFiltersOverrides.clear();
           void this.applyProjectOptions(/*includeIndexedProjects*/ true);
         }
       }),
@@ -92,12 +99,14 @@ class ServerManager implements vscode.Disposable {
       clientVersion: String(this.context.extension.packageJSON.version ?? ''),
     });
     this.client = client;
+    this.trigramFiltersOverrides.clear();
+    this.serverChangedEmitter.fire();
 
     subscribeIndexEvents(client, event => {
       if (this.client !== client) {
         return;
       }
-      if (event.type === 'loaded' && this.trigramFiltersEnabled()) {
+      if (event.type === 'loaded' && (this.trigramFiltersEnabled() || this.trigramFiltersOverrides.size > 0)) {
         // Projects discovered since the last load (e.g. from an opened file).
         void this.applyProjectOptions(/*includeIndexedProjects*/ true);
       }
@@ -141,9 +150,9 @@ class ServerManager implements vscode.Disposable {
     await this.start();
   }
 
-  async showStatus(): Promise<void> {
-    const server = this.server;
-    if (!server) {
+  /** Shows the server dashboard, or offers to restart the server if it is not running. */
+  async showStatus(dashboard: { show(): void }): Promise<void> {
+    if (!this.server) {
       const choice = await vscode.window.showWarningMessage(
         'VsChromium: the indexing server is not running.', 'Restart Server', 'Show Output');
       if (choice === 'Restart Server') {
@@ -153,33 +162,7 @@ class ServerManager implements vscode.Disposable {
       }
       return;
     }
-    try {
-      const stats = await server.request(IndexStatisticsRequest.type, {});
-      const lines = [
-        `Status: ${describeStatus(stats.status)}`,
-        `Projects: ${stats.projectCount}`,
-        `Files: ${stats.fileCount.toLocaleString()} (${stats.searchableFileCount.toLocaleString()} searchable)`,
-        ...describeMemory(stats, stats.status === 'busy' || stats.status === 'verifying'),
-        describeIndexCache(stats.indexCache),
-        `Index last updated: ${new Date(stats.indexLastUpdatedUtc).toLocaleString()}`,
-        `Trigram filters: ${this.trigramFiltersEnabled() ? 'enabled' : 'disabled'} (faster searches, about 5% of the size of the indexed files in memory)`,
-      ];
-      const paused = stats.status === 'paused' || stats.status === 'yield';
-      const resume = 'Resume Indexing';
-      const toggleTrigrams = this.trigramFiltersEnabled() ? 'Disable Trigram Filters' : 'Enable Trigram Filters';
-      const choice = await vscode.window.showInformationMessage(
-        'VsChromium indexing server', { modal: true, detail: lines.join('\n') }, ...(paused ? [resume] : []), toggleTrigrams);
-      if (choice === toggleTrigrams) {
-        await this.toggleTrigramFilters();
-      } else if (choice === resume) {
-        await server.request0(IndexResumeRequest.type);
-      }
-    } catch (e) {
-      const message = userErrorMessage(e);
-      if (message !== undefined) {
-        void vscode.window.showErrorMessage(`VsChromium: ${message}`);
-      }
-    }
+    dashboard.show();
   }
 
   dispose(): void {
@@ -217,7 +200,7 @@ class ServerManager implements vscode.Disposable {
     }
   }
 
-  private trigramFiltersEnabled(): boolean {
+  trigramFiltersEnabled(): boolean {
     return vscode.workspace.getConfiguration('vschromium').get<boolean>('trigramFilters') ?? false;
   }
 
@@ -226,8 +209,12 @@ class ServerManager implements vscode.Disposable {
    * workspace settings if the workspace overrides the setting, otherwise in the user settings.
    */
   async toggleTrigramFilters(): Promise<void> {
+    await this.setTrigramFilters(!this.trigramFiltersEnabled());
+  }
+
+  /** Sets the setting "vschromium.trigramFilters" (see toggleTrigramFilters). */
+  async setTrigramFilters(enabled: boolean): Promise<void> {
     const config = vscode.workspace.getConfiguration('vschromium');
-    const enabled = !this.trigramFiltersEnabled();
     const inspect = config.inspect<boolean>('trigramFilters');
     const target = inspect?.workspaceFolderValue !== undefined || inspect?.workspaceValue !== undefined
       ? vscode.ConfigurationTarget.Workspace
@@ -237,6 +224,19 @@ class ServerManager implements vscode.Disposable {
     void vscode.window.showInformationMessage(enabled
       ? 'VsChromium: trigram filters enabled (built in the background; uses about 5% of the size of the indexed files in memory).'
       : 'VsChromium: trigram filters disabled (memory released).');
+  }
+
+  /**
+   * Enables or disables the trigram filters of a project (server dashboard), until the setting
+   * changes or the server restarts.
+   */
+  async setProjectTrigramFilters(projectPath: string, enabled: boolean): Promise<void> {
+    if (enabled === this.trigramFiltersEnabled()) {
+      this.trigramFiltersOverrides.delete(projectPath);
+    } else {
+      this.trigramFiltersOverrides.set(projectPath, enabled);
+    }
+    await this.server?.request(ProjectSetOptionsRequest.type, { projectPath, trigramFiltersEnabled: enabled });
   }
 
   /**
@@ -261,7 +261,10 @@ class ServerManager implements vscode.Disposable {
         }
       }
       for (const projectPath of paths) {
-        await server.request(ProjectSetOptionsRequest.type, { projectPath, trigramFiltersEnabled });
+        await server.request(ProjectSetOptionsRequest.type, {
+          projectPath,
+          trigramFiltersEnabled: this.trigramFiltersOverrides.get(projectPath) ?? trigramFiltersEnabled,
+        });
       }
     } catch (e) {
       this.output.warn(`Error setting the project options: ${userErrorMessage(e)}`);
@@ -373,25 +376,31 @@ class ServerManager implements vscode.Disposable {
   }
 }
 
-/** The indexing status, for display ("idle" -> "Idle"). */
-function describeStatus(status: IndexingStatus): string {
-  return status === 'yield' ? 'Paused (by the server)' : status.charAt(0).toUpperCase() + status.slice(1);
-}
-
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const output = vscode.window.createOutputChannel('VsChromium', { log: true });
   const manager = new ServerManager(context, output);
   const codeSearch = new CodeSearchViewProvider(context.extensionUri, () => manager.server, output);
   const fileNames = new FileNamesPick(() => manager.server, output);
+  const dashboard = new DashboardPanel(context.extensionUri, {
+    getServer: () => manager.server,
+    restartServer: () => manager.restart(),
+    showOutput: () => output.show(),
+    trigramFiltersSetting: () => manager.trigramFiltersEnabled(),
+    setTrigramFiltersSetting: enabled => manager.setTrigramFilters(enabled),
+    setProjectTrigramFilters: (projectPath, enabled) => manager.setProjectTrigramFilters(projectPath, enabled),
+    errorMessage: e => userErrorMessage(e) ?? String(e),
+  });
   context.subscriptions.push(
     output,
     manager,
+    dashboard,
+    manager.onDidChangeServer(() => dashboard.serverChanged()),
     vscode.window.registerWebviewViewProvider(CodeSearchViewProvider.viewType, codeSearch, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.commands.registerCommand('vschromium.searchCode', () => codeSearch.show(getSearchTextFromEditor())),
     vscode.commands.registerCommand('vschromium.findFileNames', () => fileNames.show(getSelectedText())),
-    vscode.commands.registerCommand('vschromium.showServerStatus', () => manager.showStatus()),
+    vscode.commands.registerCommand('vschromium.showServerStatus', () => manager.showStatus(dashboard)),
     vscode.commands.registerCommand('vschromium.restartServer', () => manager.restart()),
     vscode.commands.registerCommand('vschromium.showOutput', () => output.show()),
     vscode.commands.registerCommand('vschromium.toggleTrigramFilters', () => manager.toggleTrigramFilters()),

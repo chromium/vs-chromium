@@ -15,6 +15,11 @@ namespace VsChromium.Server.FileSystemNames {
   public delegate bool RelativePathPredicate<in TState>(ReadOnlySpan<char> relativePath, TState state);
 
   /// <summary>
+  /// Function of a relative path, see <see cref="FileName.UseRelativePath{TState, TResult}"/>.
+  /// </summary>
+  public delegate TResult RelativePathFunc<in TState, out TResult>(ReadOnlySpan<char> relativePath, TState state);
+
+  /// <summary>
   /// A value type representing a file name as a pair of parent <see cref="DirectoryName"/>
   /// and file name <see cref="String"/>.
   /// </summary>
@@ -88,10 +93,19 @@ namespace VsChromium.Server.FileSystemNames {
     /// all the files, e.g. pattern matching.
     /// </summary>
     public bool TestRelativePath<TState>(RelativePathPredicate<TState> predicate, TState state) {
+      return UseRelativePath(static (path, s) => s.predicate(path, s.state), (predicate, state));
+    }
+
+    /// <summary>
+    /// Returns the result of <paramref name="func"/> on the relative path of this file name, built
+    /// in a temporary buffer (no allocation, unlike <see cref="RelativePath"/>), e.g. for lookups
+    /// by relative path.
+    /// </summary>
+    public TResult UseRelativePath<TState, TResult>(RelativePathFunc<TState, TResult> func, TState state) {
       Invariants.CheckOperation(_parent != null, "File name is invalid (uninitialized value type)");
 
       if (_parent.RelativePathLength == 0)
-        return predicate(_name.AsSpan(), state);
+        return func(_name.AsSpan(), state);
 
       var length = RelativePathLength;
       char[] rented = null;
@@ -100,7 +114,7 @@ namespace VsChromium.Server.FileSystemNames {
         : (rented = ArrayPool<char>.Shared.Rent(length)).AsSpan(0, length);
       try {
         CopyRelativePathTo(buffer);
-        return predicate(buffer, state);
+        return func(buffer, state);
       }
       finally {
         if (rented != null)

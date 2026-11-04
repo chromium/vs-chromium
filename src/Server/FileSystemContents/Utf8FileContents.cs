@@ -39,6 +39,11 @@ namespace VsChromium.Server.FileSystemContents {
     /// </summary>
     protected override bool IsAsciiText => _isAscii;
 
+    /// <summary>
+    /// True if the text contains only ASCII characters (bytes less than 0x80).
+    /// </summary>
+    public bool IsAscii => _isAscii;
+
     private unsafe ReadOnlySpan<byte> Bytes => new ReadOnlySpan<byte>(Contents.Pointer.ToPointer(), ByteLength);
 
     protected override ITextLineOffsets GetFileOffsets() {

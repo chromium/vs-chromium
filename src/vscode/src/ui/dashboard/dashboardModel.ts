@@ -209,6 +209,8 @@ export interface DashboardViewModel {
   pauseOrResume: 'pause' | 'resume';
   error?: string;
   trigramFiltersSetting: boolean;
+  /** Host specific texts (defaults: the VS Code wording). */
+  labels: { trigramFiltersDefault: string };
   projects: ProjectBlock[];
   /** Memory of the whole process (process section). */
   memory: KeyValue[];
@@ -691,6 +693,13 @@ export function describeCacheSettings(data: DashboardData): CacheSettingsView | 
   return { enabled: settings.enabled, directory: directory || 'default', restartNeeded };
 }
 
+/** The texts of the page when the host doesn't supply its own wording (VS Code). */
+export const DefaultLabels = {
+  trigramFiltersDefault:
+    'Use trigram filters by default (workspace setting): much faster selective searches, at the cost of memory ' +
+    '(about 5% of the size of the indexed text). Each project can override it (folder setting) below.',
+};
+
 /** The view model of the page for `data`. */
 export function buildViewModel(data: DashboardData, options: FormatOptions = defaultFormatOptions): DashboardViewModel {
   const current = data.host?.serverRunning ? currentStatus(data) : undefined;
@@ -703,6 +712,9 @@ export function buildViewModel(data: DashboardData, options: FormatOptions = def
     pauseOrResume: status === 'paused' || status === 'yield' ? 'resume' : 'pause',
     error: data.error,
     trigramFiltersSetting: data.host?.trigramFiltersSetting === true,
+    labels: {
+      trigramFiltersDefault: data.host?.labels?.trigramFiltersDefault ?? DefaultLabels.trigramFiltersDefault,
+    },
     projects: describeProjects(data, options),
     memory: describeMemorySection(data),
     indexCache: describeIndexCacheSection(data, options),

@@ -84,6 +84,14 @@ export interface HostState {
   logDirectory?: string;
   /** The cache settings of the host, applied when the server (re)starts (absent if the host has none). */
   cacheSettings?: { enabled: boolean; directory: string };
+  /** Host specific wording (e.g. where the settings are stored); the page has defaults. */
+  labels?: HostLabels;
+}
+
+/** Host specific texts of the page. */
+export interface HostLabels {
+  /** The description of the default trigram filters checkbox (process section). */
+  trigramFiltersDefault?: string;
 }
 
 /** Messages from the host to the page. */
@@ -93,4 +101,10 @@ export type HostToPage =
   | { type: 'visibility'; visible: boolean }
   | { type: 'response'; id: number; result?: unknown; error?: string }
   /** A notification of the server ("index/stateChanged", "index/progress", ...). */
-  | { type: 'notification'; method: string; params: unknown };
+  | { type: 'notification'; method: string; params: unknown }
+  /**
+   * The colors and fonts of the host, as values of the CSS variables of the page ("--vscode-*").
+   * VS Code defines them itself (not sent); other hosts (e.g. Visual Studio) send them at start and
+   * when their theme changes.
+   */
+  | { type: 'theme'; variables: Record<string, string> };

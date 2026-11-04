@@ -17,6 +17,7 @@
 import { DashboardAction, DashboardController } from '../dashboardController';
 import type { DashboardViewModel, KeyValue, OperationRow, ProjectBlock, ProjectOperationRow } from '../dashboardModel';
 import { createHostShim, ShimWindow } from '../hostShim';
+import { applyThemeVariables } from '../theme';
 import { HistoryChartView, renderSparkline, StatusTimelineView } from './charts';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -227,6 +228,7 @@ class DashboardView {
   private readonly openCacheSettings: HTMLButtonElement;
   private readonly clearAllCaches: HTMLButtonElement;
   private readonly trigramFiltersDefault: HTMLInputElement;
+  private readonly trigramFiltersDefaultText: HTMLElement;
   private readonly projectCount: HTMLElement;
   private readonly projects: KeyedRows<ProjectBlock>;
   private readonly projectElements = new WeakMap<HTMLElement, ProjectElements>();
@@ -305,13 +307,13 @@ class DashboardView {
     const defaults = el('div', 'setting');
     const defaultsTitle = el('div', 'setting-title');
     defaultsTitle.append(el('span', 'setting-category', 'VsChromium: '), el('span', 'setting-name', 'Trigram Filters'));
-    const defaultCheckbox = checkbox('Trigram filters (workspace default)');
+    const defaultCheckbox = checkbox('Trigram filters (default)');
     this.trigramFiltersDefault = defaultCheckbox.input;
     this.trigramFiltersDefault.addEventListener('change', () => this.execute({ action: 'toggleTrigramFiltersSetting' }));
     const defaultValue = el('label', 'setting-value');
-    defaultValue.append(defaultCheckbox.root, el('span', undefined,
-      'Use trigram filters by default (workspace setting): much faster selective searches, at the cost of memory ' +
-      '(about 5% of the size of the indexed text). Each project can override it (folder setting) below.'));
+    // Note: The wording (where the setting is stored) is supplied by the host (vm.labels).
+    this.trigramFiltersDefaultText = el('span');
+    defaultValue.append(defaultCheckbox.root, this.trigramFiltersDefaultText);
     defaults.append(defaultsTitle, defaultValue);
     process.body.append(cacheGroup, defaults);
 
@@ -377,6 +379,7 @@ class DashboardView {
     setDisabled(this.openCacheSettings, !vm.actions.openCacheSettings);
     setDisabled(this.clearAllCaches, !vm.actions.clearCache);
     setChecked(this.trigramFiltersDefault, vm.trigramFiltersSetting, vm.actions.toggleTrigramFilters);
+    setText(this.trigramFiltersDefaultText, vm.labels.trigramFiltersDefault);
 
     this.last = vm;
     setText(this.projectCount, vm.projects.length > 0 ? String(vm.projects.length) : '');
@@ -541,6 +544,13 @@ function main() {
   }).observe(root);
   document.addEventListener('visibilitychange', () => controller?.setPageVisible(document.visibilityState !== 'hidden'));
   window.addEventListener('unload', () => controller?.dispose());
+  // The theme of hosts other than VS Code (which defines the "--vscode-*" variables itself).
+  let themeVariables = new Set<string>();
+  host.onMessage(message => {
+    if (message.type === 'theme') {
+      themeVariables = applyThemeVariables(document.documentElement.style, message.variables, themeVariables);
+    }
+  });
   controller.start();
 }
 

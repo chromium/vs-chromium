@@ -63,7 +63,7 @@ VSIX...* in VS Code).
 
 ## Code Search
 
-Open the **VsChromium** panel (next to Terminal/Output), or press **Ctrl+Alt+;** (*VsChromium:
+Open the **VsChromium - Code Search** panel (next to Terminal/Output), or press **Ctrl+Alt+;** (*VsChromium:
 Search Code*) to search for the selected text or the word under the cursor.
 
 - Results update as you type. Options: **Aa** match case, **ab** whole word, **.\*** regular
@@ -71,6 +71,8 @@ Search Code*) to search for the selected text or the word under the cursor.
 - Results are grouped by file; the matching lines are loaded as files scroll into view.
 - Click a line to preview it, double-click (or **Enter**) to open it. Keyboard: **Down** from
   the search box moves into the results, **Up/Down** navigate, **Left/Right** collapse/expand.
+- The gear button in the panel title opens the server dashboard (same as clicking the VsChromium
+  status bar item).
 
 ## Find File Names
 

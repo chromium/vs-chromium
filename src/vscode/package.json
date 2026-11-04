@@ -30,7 +30,7 @@
       "panel": [
         {
           "id": "vschromium",
-          "title": "VsChromium",
+          "title": "VsChromium - Code Search",
           "icon": "$(search)"
         }
       ]
@@ -68,6 +68,7 @@
       {
         "command": "vschromium.showServerStatus",
         "title": "Show Indexing Server Status",
+        "icon": "$(gear)",
         "category": "VsChromium"
       },
       {
@@ -86,6 +87,15 @@
         "category": "VsChromium"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "vschromium.showServerStatus",
+          "when": "view == vschromium.codeSearch",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "VsChromium",
       "properties": {

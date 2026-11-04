@@ -5,40 +5,56 @@
 import type {
   IndexDetails,
   IndexStatistics,
+  IndexStatus,
   IndexingStatus,
   OperationTiming,
   ProgressParams,
+  ServerHistory,
   ServerStatistics,
 } from '../../protocol/protocol.g';
 import { describeIndexCache } from '../indexCacheStatus';
 import { describeMemory } from '../memoryStatistics';
+import {
+  cpuPercentSeries,
+  HistoryWindowMs,
+  lastSampleTime,
+  niceScale,
+  seriesMax,
+  statusSegments,
+  StatusSegment,
+  timeTicks,
+} from './dashboardCharts';
 import type { HostState } from './dashboardMessages';
 
-// View model of the server dashboard page: what the page displays (texts, rows, enabled actions),
-// computed from the protocol data. Free of DOM and host dependencies (compiled into the page and
-// unit tested with node).
+// View model of the server dashboard page: what the page displays (texts, rows, enabled actions,
+// charts), computed from the protocol data. Free of DOM and host dependencies (compiled into the
+// page and unit tested with node).
 
 /** Interval of the refreshes while the page is visible. */
 export const RefreshIntervalMs = 2000;
-/** "server/statistics" (process, GC, operations; walks the index) is requested every N refreshes. */
-export const ServerStatisticsEveryRefreshes = 5;
+/**
+ * "index/statistics" (arena statistics: walks the index), "server/statistics" (process, GC,
+ * operations; walks the index) and "server/history" (incremental) are requested every N refreshes.
+ */
+export const StatisticsEveryRefreshes = 5;
 /** "index/details" (walks the directories of the projects) is requested every N refreshes. */
 export const DetailsEveryRefreshes = 15;
 
-/** What a refresh requests ("index/statistics" is always requested: status, memory, cache). */
+/** What a refresh requests ("index/status", cheap, is always requested: status, counts, cache). */
 export interface RefreshPlan {
-  server: boolean;
+  /** "index/statistics", "server/statistics" and "server/history". */
+  statistics: boolean;
   details: boolean;
 }
 
 /**
- * The requests of the refresh number `refresh` (0 for the first one): the cheap index statistics
- * at each refresh, the server statistics every 10 s and the project details every 30 s, plus
+ * The requests of the refresh number `refresh` (0 for the first one): the cheap index status at
+ * each refresh, the statistics and the history every 10 s and the project details every 30 s, plus
  * those forced by events (e.g. a load of the index changes the project details).
  */
 export function planRefresh(refresh: number, forced: Partial<RefreshPlan> = {}): RefreshPlan {
   return {
-    server: refresh % ServerStatisticsEveryRefreshes === 0 || forced.server === true,
+    statistics: refresh % StatisticsEveryRefreshes === 0 || forced.statistics === true,
     details: refresh % DetailsEveryRefreshes === 0 || forced.details === true,
   };
 }
@@ -46,10 +62,15 @@ export function planRefresh(refresh: number, forced: Partial<RefreshPlan> = {}):
 /** The data displayed by the page. */
 export interface DashboardData {
   host?: HostState;
+  /** The last "index/status" (or the status part of the last "index/statistics"). */
+  status?: IndexStatus;
+  /** The last "index/statistics" (arena statistics), updated with the last status. */
   index?: IndexStatistics;
   server?: ServerStatistics;
   /** The server statistics before `server` (CPU usage between the two). */
   previousServer?: ServerStatistics;
+  /** The history of the server (merged "server/history" responses). */
+  history?: ServerHistory;
   details?: IndexDetails;
   /** Last progress notification of the current indexing operation. */
   progress?: ProgressParams;
@@ -64,7 +85,9 @@ export type ActionId =
   | 'restartServer'
   | 'showOutput'
   | 'openLogDirectory'
-  | 'toggleTrigramFilters';
+  | 'toggleTrigramFilters'
+  | 'clearCache'
+  | 'openCacheSettings';
 
 export type StatusKind = 'ok' | 'busy' | 'paused' | 'stopped' | 'unknown';
 
@@ -95,6 +118,52 @@ export interface OperationRow {
   max: string;
   average: string;
   total: string;
+  /** The last durations (oldest first), for the sparkline. */
+  recentMs: number[];
+  /** Tooltip of the sparkline. */
+  recentTitle: string;
+}
+
+/** A series of a history chart. */
+export interface ChartSeries {
+  key: string;
+  label: string;
+  /** Index of the color of the series (CSS class "series-N": the VS Code chart colors). */
+  color: number;
+  values: number[];
+}
+
+/** A line chart over the history of the server (time axis: the last 2 hours, "now" at the right). */
+export interface HistoryChart {
+  key: string;
+  /** Changes when the data of the chart changes (the page redraws the chart only then). */
+  version: string;
+  unit: 'bytes' | 'percent';
+  times: number[];
+  intervalMs: number;
+  startMs: number;
+  endMs: number;
+  yMax: number;
+  yTicks: { value: number; label: string }[];
+  xTicks: { time: number; label: string }[];
+  series: ChartSeries[];
+}
+
+/** The status timeline under the memory chart. */
+export interface StatusTimeline {
+  version: string;
+  startMs: number;
+  endMs: number;
+  segments: StatusSegment[];
+}
+
+/** The cache settings of the host (e.g. VS Code settings), applied when the server (re)starts. */
+export interface CacheSettingsView {
+  enabled: boolean;
+  /** The directory, "default" if not set. */
+  directory: string;
+  /** The settings differ from the cache of the running server. */
+  restartNeeded: boolean;
 }
 
 export interface DashboardViewModel {
@@ -109,8 +178,13 @@ export interface DashboardViewModel {
   projects: ProjectRow[];
   memory: KeyValue[];
   indexCache: KeyValue[];
+  cacheSettings?: CacheSettingsView;
   operations: OperationRow[];
   server: KeyValue[];
+  memoryChart?: HistoryChart;
+  cpuChart?: HistoryChart;
+  cacheChart?: HistoryChart;
+  statusTimeline?: StatusTimeline;
 }
 
 export interface FormatOptions {
@@ -171,6 +245,11 @@ function isValidTime(utc: string | undefined): utc is string {
   return !isNaN(time) && new Date(time).getUTCFullYear() > 2000;
 }
 
+/** The current state of the index: the last status, or the last statistics. */
+function currentStatus(data: DashboardData): IndexStatus | undefined {
+  return data.status ?? data.index;
+}
+
 /** The status displayed in the header. */
 export function describeStatus(data: DashboardData): { kind: StatusKind; text: string } {
   const host = data.host;
@@ -180,7 +259,7 @@ export function describeStatus(data: DashboardData): { kind: StatusKind; text: s
   if (!host.serverRunning) {
     return { kind: 'stopped', text: `Server not running${host.stoppedReason ? ` (${host.stoppedReason})` : ''}` };
   }
-  const index = data.index;
+  const index = currentStatus(data);
   if (!index) {
     return { kind: 'unknown', text: 'Loading\u2026' };
   }
@@ -205,9 +284,14 @@ export function describeStatus(data: DashboardData): { kind: StatusKind; text: s
 
 /**
  * The actions enabled for the state of the server: pause while indexing is active, resume while it
- * is paused, rebuild when idle (or verifying the cached index); restart and logs always.
+ * is paused, rebuild when idle (or verifying the cached index), clear the cache when the server
+ * has one; restart and logs always.
  */
-export function enabledActions(host: HostState | undefined, status: IndexingStatus | undefined): Record<ActionId, boolean> {
+export function enabledActions(
+  host: HostState | undefined,
+  status: IndexingStatus | undefined,
+  cacheEnabled = false,
+): Record<ActionId, boolean> {
   const running = host?.serverRunning === true;
   const known = running && status !== undefined;
   return {
@@ -218,6 +302,8 @@ export function enabledActions(host: HostState | undefined, status: IndexingStat
     showOutput: host !== undefined,
     openLogDirectory: host?.logDirectory !== undefined,
     toggleTrigramFilters: running,
+    clearCache: known && cacheEnabled,
+    openCacheSettings: host?.cacheSettings !== undefined,
   };
 }
 
@@ -230,7 +316,7 @@ function toKeyValue(line: string): KeyValue {
 }
 
 function describeProjects(data: DashboardData, options: FormatOptions): ProjectRow[] {
-  const cache = data.index?.indexCache;
+  const cache = currentStatus(data)?.indexCache;
   let cacheText = 'none';
   if (cache) {
     if (!cache.enabled) {
@@ -279,8 +365,9 @@ function describeMemorySection(data: DashboardData): KeyValue[] {
 
 function describeIndexCacheSection(data: DashboardData, options: FormatOptions): KeyValue[] {
   const rows: KeyValue[] = [];
-  if (data.index) {
-    rows.push({ key: 'state', label: 'State', value: toKeyValue(describeIndexCache(data.index.indexCache, options.formatTime)).value });
+  const status = currentStatus(data);
+  if (status) {
+    rows.push({ key: 'state', label: 'State', value: toKeyValue(describeIndexCache(status.indexCache, options.formatTime)).value });
   }
   const cache = data.server?.indexCache;
   if (!cache || !cache.enabled) {
@@ -326,6 +413,10 @@ function describeOperations(timings: OperationTiming[] | undefined): OperationRo
       max: formatDuration(t.maxMs),
       average: t.count > 0 ? formatDuration(t.totalMs / t.count) : '',
       total: formatDuration(t.totalMs),
+      recentMs: t.recentMs ?? [],
+      recentTitle: (t.recentMs ?? []).length > 1
+        ? `Last ${t.recentMs.length} durations (oldest first): ${t.recentMs.map(formatDuration).join(', ')}`
+        : (t.recentMs ?? []).length === 1 ? `Last duration: ${formatDuration(t.recentMs[0])}` : '',
     }));
 }
 
@@ -380,7 +471,7 @@ function describeServerSection(data: DashboardData): KeyValue[] {
 
 function describeFacts(data: DashboardData, options: FormatOptions): string[] {
   const facts: string[] = [];
-  const index = data.index;
+  const index = currentStatus(data);
   if (index) {
     facts.push(`${formatCount(index.projectCount)} ${index.projectCount === 1 ? 'project' : 'projects'}`);
     facts.push(`${formatCount(index.fileCount)} files`);
@@ -398,20 +489,126 @@ function describeFacts(data: DashboardData, options: FormatOptions): string[] {
   return facts;
 }
 
+/** The scale of a bytes axis: a nice maximum in MB or GB, and its labeled ticks. */
+export function bytesScale(maxBytes: number): { max: number; ticks: { value: number; label: string }[] } {
+  const [unit, name] = maxBytes >= GB ? [GB, 'GB'] : [MB, 'MB'];
+  const scale = niceScale(maxBytes / unit);
+  return {
+    max: scale.max * unit,
+    ticks: scale.ticks.map(t => ({ value: t * unit, label: t === 0 ? '0' : `${formatCount(t)} ${name}` })),
+  };
+}
+
+/** The scale of a percent axis: at least 10%, at most 100%. */
+export function percentScale(maxPercent: number): { max: number; ticks: { value: number; label: string }[] } {
+  const scale = niceScale(Math.min(100, Math.max(10, maxPercent)));
+  return { max: scale.max, ticks: scale.ticks.map(t => ({ value: t, label: `${t}%` })) };
+}
+
+function historyChart(
+  key: string,
+  history: ServerHistory,
+  unit: 'bytes' | 'percent',
+  series: ChartSeries[],
+  version: string,
+): HistoryChart {
+  const endMs = lastSampleTime(history)!;
+  const startMs = endMs - HistoryWindowMs;
+  const max = seriesMax(history.timesUnixMs, series.map(s => s.values), startMs);
+  const scale = unit === 'bytes' ? bytesScale(max) : percentScale(max);
+  return {
+    key,
+    version: `${version}:${history.timesUnixMs.length}:${endMs}`,
+    unit,
+    times: history.timesUnixMs,
+    intervalMs: history.intervalMs,
+    startMs,
+    endMs,
+    yMax: scale.max,
+    yTicks: scale.ticks,
+    xTicks: timeTicks(endMs),
+    series,
+  };
+}
+
+/** The charts of the history of the server (none until the first samples are received). */
+function describeCharts(data: DashboardData): Pick<DashboardViewModel, 'memoryChart' | 'cpuChart' | 'cacheChart' | 'statusTimeline'> {
+  const history = data.history;
+  if (!data.host?.serverRunning || !history || history.timesUnixMs.length === 0) {
+    return {};
+  }
+  const memoryChart = historyChart('memory', history, 'bytes', [
+    { key: 'gc', label: 'GC heap', color: 0, values: history.gcHeapBytes },
+    { key: 'native', label: 'Native', color: 1, values: history.nativeAllocatedBytes },
+    { key: 'workingSet', label: 'Working set', color: 2, values: history.workingSetBytes },
+    { key: 'private', label: 'Private bytes', color: 3, values: history.privateBytes },
+  ], 'memory');
+  const processorCount = data.server?.processorCount;
+  const cpuChart = processorCount
+    ? historyChart('cpu', history, 'percent', [
+      { key: 'cpu', label: 'CPU', color: 0, values: cpuPercentSeries(history.timesUnixMs, history.cpuTotalMs, processorCount) },
+    ], `cpu${processorCount}`)
+    : undefined;
+  const cacheEnabled = currentStatus(data)?.indexCache?.enabled === true;
+  const cacheChart = cacheEnabled
+    ? historyChart('cache', history, 'bytes', [
+      { key: 'cache', label: 'Size on disk', color: 0, values: history.cacheSizeOnDiskBytes },
+    ], 'cache')
+    : undefined;
+  const endMs = memoryChart.endMs;
+  const statusTimeline: StatusTimeline = {
+    version: memoryChart.version,
+    startMs: memoryChart.startMs,
+    endMs,
+    segments: statusSegments(history.timesUnixMs, history.status, history.intervalMs, memoryChart.startMs),
+  };
+  return { memoryChart, cpuChart, cacheChart, statusTimeline };
+}
+
+function normalizePath(p: string): string {
+  const trimmed = p.trim().replace(/[\\/]+$/, '');
+  return /^[a-zA-Z]:|\\/.test(trimmed) ? trimmed.toLowerCase() : trimmed;
+}
+
+/**
+ * The cache settings of the host, and whether they differ from the cache of the running server
+ * (applied when the server restarts).
+ */
+export function describeCacheSettings(data: DashboardData): CacheSettingsView | undefined {
+  const settings = data.host?.cacheSettings;
+  if (!settings) {
+    return undefined;
+  }
+  const directory = settings.directory.trim();
+  let restartNeeded = false;
+  const serverEnabled = currentStatus(data)?.indexCache?.enabled ?? data.server?.indexCache?.enabled;
+  if (data.host?.serverRunning && serverEnabled !== undefined) {
+    restartNeeded = serverEnabled !== settings.enabled;
+    const serverDirectory = data.server?.indexCache?.cacheDirectory;
+    if (!restartNeeded && settings.enabled && directory && serverDirectory) {
+      restartNeeded = normalizePath(directory) !== normalizePath(serverDirectory);
+    }
+  }
+  return { enabled: settings.enabled, directory: directory || 'default', restartNeeded };
+}
+
 /** The view model of the page for `data`. */
 export function buildViewModel(data: DashboardData, options: FormatOptions = defaultFormatOptions): DashboardViewModel {
-  const status = data.host?.serverRunning ? data.index?.status : undefined;
+  const current = data.host?.serverRunning ? currentStatus(data) : undefined;
+  const status = current?.status;
   return {
     status: describeStatus(data),
     facts: data.host?.serverRunning ? describeFacts(data, options) : [],
-    actions: enabledActions(data.host, status),
+    actions: enabledActions(data.host, status, current?.indexCache?.enabled === true),
     pauseOrResume: status === 'paused' || status === 'yield' ? 'resume' : 'pause',
     error: data.error,
     trigramFiltersSetting: data.host?.trigramFiltersSetting === true,
     projects: describeProjects(data, options),
     memory: describeMemorySection(data),
     indexCache: describeIndexCacheSection(data, options),
+    cacheSettings: describeCacheSettings(data),
     operations: describeOperations(data.server?.operationTimings),
     server: describeServerSection(data),
+    ...describeCharts(data),
   };
 }

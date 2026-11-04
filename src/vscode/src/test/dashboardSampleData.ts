@@ -5,7 +5,15 @@
 // Sample protocol data for the tests of the server dashboard (and to render the page in a browser
 // during development).
 
-import type { IndexDetails, IndexStatistics, ProjectDetails, ServerStatistics } from '../protocol/protocol.g';
+import type {
+  IndexDetails,
+  IndexingStatus,
+  IndexStatistics,
+  IndexStatus,
+  ProjectDetails,
+  ServerHistory,
+  ServerStatistics,
+} from '../protocol/protocol.g';
 
 const MB = 1024 * 1024;
 const GB = 1024 * MB;
@@ -123,4 +131,96 @@ export function sampleProjectDetails(rootPath: string, overrides: Partial<Projec
 
 export function sampleIndexDetails(): IndexDetails {
   return { projects: [sampleProjectDetails('C:\\src\\chromium\\src')] };
+}
+
+/** The status part of `sampleIndexStatistics` ("index/status"). */
+export function sampleIndexStatus(overrides: Partial<IndexStatus> = {}): IndexStatus {
+  const s = sampleIndexStatistics();
+  return {
+    status: s.status,
+    indexLastUpdatedUtc: s.indexLastUpdatedUtc,
+    projectCount: s.projectCount,
+    fileCount: s.fileCount,
+    searchableFileCount: s.searchableFileCount,
+    indexedTextBytes: s.indexedTextBytes,
+    serverNativeMemoryUsage: s.serverNativeMemoryUsage,
+    serverGcMemoryUsage: s.serverGcMemoryUsage,
+    indexCache: s.indexCache,
+    ...overrides,
+  };
+}
+
+/** A history built from explicit samples (tests). */
+export function historyOf(samples: { time: number; cpuTotalMs?: number; gcHeapBytes?: number; status?: IndexingStatus }[]): ServerHistory {
+  return {
+    intervalMs: 10_000,
+    capacity: 720,
+    timesUnixMs: samples.map(s => s.time),
+    gcHeapBytes: samples.map(s => s.gcHeapBytes ?? 100 * MB),
+    gcTotalAllocatedBytes: samples.map((_, i) => i * 10 * MB),
+    nativeAllocatedBytes: samples.map(() => 4 * GB),
+    workingSetBytes: samples.map(() => 6 * GB),
+    privateBytes: samples.map(() => 5 * GB),
+    cpuTotalMs: samples.map((s, i) => s.cpuTotalMs ?? i * 1000),
+    fileCount: samples.map(() => 2_653_112),
+    searchableFileCount: samples.map(() => 2_176_934),
+    indexedTextBytes: samples.map(() => 14 * GB),
+    cacheSizeOnDiskBytes: samples.map(() => 9.4 * GB),
+    status: samples.map(s => s.status ?? 'idle'),
+  };
+}
+
+/**
+ * Two hours of synthetic samples (every 10 s, the last one at `endMs`) of a server that starts,
+ * indexes, verifies and idles, with a pause: for the screenshots of the charts.
+ */
+export function syntheticHistory(endMs: number, count = 720): ServerHistory {
+  const times: number[] = [];
+  const statuses: IndexingStatus[] = [];
+  const gc: number[] = [];
+  const native: number[] = [];
+  const workingSet: number[] = [];
+  const privateBytes: number[] = [];
+  const cpu: number[] = [];
+  const allocated: number[] = [];
+  const cache: number[] = [];
+  let cpuMs = 0;
+  let allocatedBytes = 0;
+  for (let i = 0; i < count; i++) {
+    const t = endMs - (count - 1 - i) * 10_000;
+    const phase = i / count;
+    const status: IndexingStatus = phase < 0.12 ? 'busy' : phase < 0.2 ? 'verifying' : phase > 0.55 && phase < 0.6 ? 'paused' : phase > 0.8 && phase < 0.84 ? 'busy' : 'idle';
+    const loading = Math.min(1, phase / 0.12);
+    const wave = Math.sin(i / 9) * 0.5 + 0.5;
+    const busy = status === 'busy' || status === 'verifying';
+    const gcBytes = (busy ? 900 : 480) * MB + wave * 120 * MB;
+    const nativeBytes = 4.2 * GB * loading + (phase > 0.8 ? 0.3 * GB : 0);
+    cpuMs += 10_000 * 16 * (busy ? 0.35 + wave * 0.2 : 0.01 + wave * 0.02);
+    allocatedBytes += (busy ? 300 : 20) * MB;
+    times.push(t);
+    statuses.push(status);
+    gc.push(gcBytes);
+    native.push(nativeBytes);
+    workingSet.push(nativeBytes + gcBytes + 0.9 * GB);
+    privateBytes.push(nativeBytes + gcBytes + 0.4 * GB);
+    cpu.push(cpuMs);
+    allocated.push(allocatedBytes);
+    cache.push(phase < 0.15 ? 0 : phase < 0.85 ? 9.2 * GB : 9.4 * GB);
+  }
+  return {
+    intervalMs: 10_000,
+    capacity: 720,
+    timesUnixMs: times,
+    gcHeapBytes: gc,
+    gcTotalAllocatedBytes: allocated,
+    nativeAllocatedBytes: native,
+    workingSetBytes: workingSet,
+    privateBytes,
+    cpuTotalMs: cpu,
+    fileCount: times.map(() => 2_653_112),
+    searchableFileCount: times.map(() => 2_176_934),
+    indexedTextBytes: times.map(() => 14 * GB),
+    cacheSizeOnDiskBytes: cache,
+    status: statuses,
+  };
 }

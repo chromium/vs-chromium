@@ -7,10 +7,13 @@ import type {
   IndexDetails,
   IndexStateChangedParams,
   IndexStatistics,
+  IndexStatus,
+  ServerHistory,
   ProgressParams,
   ServerStatistics,
 } from '../../protocol/protocol.g';
 import type { DashboardRequestMethod, HostCommand, HostToPage } from './dashboardMessages';
+import { lastSampleTime, mergeHistory } from './dashboardCharts';
 import { buildViewModel, DashboardData, DashboardViewModel, FormatOptions, planRefresh, RefreshIntervalMs, RefreshPlan } from './dashboardModel';
 import type { HostShim } from './hostShim';
 
@@ -42,7 +45,9 @@ export type DashboardAction =
   | { action: 'showOutput' }
   | { action: 'openLogDirectory' }
   | { action: 'toggleTrigramFiltersSetting' }
-  | { action: 'setProjectTrigramFilters'; projectPath: string; enabled: boolean };
+  | { action: 'setProjectTrigramFilters'; projectPath: string; enabled: boolean }
+  | { action: 'clearCache'; projectPath?: string }
+  | { action: 'openCacheSettings' };
 
 const detailsParams: DetailsParams = { maxFilesByExtensionDetailsCount: 0, maxLargeFilesDetailsCount: 0 };
 
@@ -63,7 +68,7 @@ export class DashboardController {
   private refreshing = false;
   /** A refresh was requested while one was running. */
   private refreshAgain = false;
-  private forced: Partial<RefreshPlan> = { server: true, details: true };
+  private forced: Partial<RefreshPlan> = { statistics: true, details: true };
   private timer: unknown;
   private unsubscribe: (() => void) | undefined;
   private disposed = false;
@@ -115,14 +120,16 @@ export class DashboardController {
         this.data.host = message.state;
         if (!message.state.serverRunning) {
           // Note: The statistics of a server that stopped are not displayed.
+          this.data.status = undefined;
           this.data.index = undefined;
+          this.data.history = undefined;
           this.data.server = undefined;
           this.data.previousServer = undefined;
           this.data.details = undefined;
           this.data.progress = undefined;
           this.data.error = undefined;
         } else if (!wasRunning) {
-          this.refreshSoon({ server: true, details: true }, 0);
+          this.refreshSoon({ statistics: true, details: true }, 0);
         }
         this.update();
         break;
@@ -178,6 +185,13 @@ export class DashboardController {
         case 'setProjectTrigramFilters':
           this.command({ command: 'setProjectTrigramFilters', projectPath: action.projectPath, enabled: action.enabled });
           break;
+        case 'clearCache':
+          // Note: The host asks for a confirmation, then sends "index/clearCache".
+          this.command(action.projectPath !== undefined ? { command: 'clearCache', projectPath: action.projectPath } : { command: 'clearCache' });
+          break;
+        case 'openCacheSettings':
+          this.command({ command: 'openCacheSettings' });
+          return;
       }
     } catch (e) {
       this.data.error = errorMessage(e);
@@ -186,7 +200,7 @@ export class DashboardController {
     }
     // Note: The project options are applied by the host (asynchronously): the details are
     // requested a bit later.
-    this.refreshSoon({ server: true, details: true }, NotificationRefreshDelayMs);
+    this.refreshSoon({ statistics: true, details: true }, NotificationRefreshDelayMs);
   }
 
   /** Sends a protocol request to the host (forwarded to the server). */
@@ -215,8 +229,12 @@ export class DashboardController {
         return; // Note: Up to 10 per second: no refresh.
       case 'index/stateChanged': {
         const state = params as IndexStateChangedParams;
+        const update = { status: state.status, indexLastUpdatedUtc: state.lastIndexUpdatedUtc };
+        if (this.data.status) {
+          this.data.status = { ...this.data.status, ...update };
+        }
         if (this.data.index) {
-          this.data.index = { ...this.data.index, status: state.status, indexLastUpdatedUtc: state.lastIndexUpdatedUtc };
+          this.data.index = { ...this.data.index, ...update };
         }
         if (state.status !== 'busy') {
           this.data.progress = undefined;
@@ -228,7 +246,7 @@ export class DashboardController {
       case 'index/loaded':
       case 'index/scanFinished':
         this.data.progress = undefined;
-        this.refreshSoon({ server: true, details: true }, NotificationRefreshDelayMs);
+        this.refreshSoon({ statistics: true, details: true }, NotificationRefreshDelayMs);
         return;
       default:
         this.refreshSoon({}, NotificationRefreshDelayMs);
@@ -249,7 +267,7 @@ export class DashboardController {
   /** Schedules a refresh in `delayMs` (if visible), unless one is scheduled sooner. */
   private refreshSoon(forced: Partial<RefreshPlan>, delayMs: number) {
     this.forced = {
-      server: this.forced.server || forced.server,
+      statistics: this.forced.statistics || forced.statistics,
       details: this.forced.details || forced.details,
     };
     if (!this.visible) {
@@ -286,21 +304,36 @@ export class DashboardController {
     const plan = planRefresh(this.refreshCount++, this.forced);
     this.forced = {};
     try {
-      const [index, server, details] = await Promise.all([
-        this.request<IndexStatistics>('index/statistics', {}),
-        plan.server ? this.request<ServerStatistics>('server/statistics', {}) : Promise.resolve(undefined),
+      const since = lastSampleTime(this.data.history);
+      const [status, index, server, history, details] = await Promise.all([
+        this.request<IndexStatus>('index/status'),
+        plan.statistics ? this.request<IndexStatistics>('index/statistics', {}) : Promise.resolve(undefined),
+        plan.statistics ? this.request<ServerStatistics>('server/statistics', {}) : Promise.resolve(undefined),
+        plan.statistics
+          ? this.request<ServerHistory>('server/history', since !== undefined ? { sinceUnixMs: since } : {})
+          : Promise.resolve(undefined),
         plan.details ? this.request<IndexDetails>('index/details', detailsParams) : Promise.resolve(undefined),
       ]);
       if (this.data.host?.serverRunning) {
-        this.data.index = index;
+        this.data.status = status;
+        // Note: The arena statistics are refreshed less often than the status.
+        this.data.index = index ? { ...index, ...status } : this.data.index && { ...this.data.index, ...status };
         if (server) {
+          if (this.data.server && this.data.server.processId !== server.processId) {
+            // Another server process: its history starts again.
+            this.data.history = undefined;
+            this.data.server = undefined;
+          }
           this.data.previousServer = this.data.server;
           this.data.server = server;
+        }
+        if (history) {
+          this.data.history = mergeHistory(this.data.history, history);
         }
         if (details) {
           this.data.details = details;
         }
-        if (index.status !== 'busy') {
+        if (status.status !== 'busy') {
           this.data.progress = undefined;
         }
         this.data.error = undefined;

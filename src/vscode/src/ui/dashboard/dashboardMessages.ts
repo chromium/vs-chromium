@@ -14,12 +14,15 @@
 /** The protocol requests the page may send (the host rejects any other method). */
 export const DashboardRequestMethods = [
   'index/statistics',
+  'index/status',
+  'index/clearCache',
   'index/details',
   'index/pause',
   'index/resume',
   'project/details',
   'project/setOptions',
   'server/statistics',
+  'server/history',
   'tree/refresh',
 ] as const;
 
@@ -40,7 +43,14 @@ export type HostCommand =
    * Enables or disables the trigram filters of a project, until the setting changes or the server
    * restarts (the host decides how this combines with its setting).
    */
-  | { command: 'setProjectTrigramFilters'; projectPath: string; enabled: boolean };
+  | { command: 'setProjectTrigramFilters'; projectPath: string; enabled: boolean }
+  /**
+   * Deletes the index cache of a project, or of all the projects ("index/clearCache"), after a
+   * confirmation of the user by the host.
+   */
+  | { command: 'clearCache'; projectPath?: string }
+  /** Shows the cache settings of the host (e.g. the VS Code settings, a Visual Studio options page). */
+  | { command: 'openCacheSettings' };
 
 /** Messages from the page to the host. */
 export type PageToHost =
@@ -61,6 +71,8 @@ export interface HostState {
   trigramFiltersSetting: boolean;
   /** Directory of the log files of the server, if known. */
   logDirectory?: string;
+  /** The cache settings of the host, applied when the server (re)starts (absent if the host has none). */
+  cacheSettings?: { enabled: boolean; directory: string };
 }
 
 /** Messages from the host to the page. */

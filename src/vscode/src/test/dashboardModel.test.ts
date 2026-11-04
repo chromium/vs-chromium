@@ -111,18 +111,32 @@ describe('enabledActions', () => {
     assert.deepEqual(enabled(undefined, { logDirectory: undefined, serverRunning: false }), ['restartServer', 'showOutput']);
     assert.deepEqual(Object.values(enabledActions(undefined, undefined)).filter(x => x), []);
   });
+
+  it('enables clearing the cache when the server has one', () => {
+    assert.equal(enabledActions(host(), 'idle', true).clearCache, true);
+    assert.equal(enabledActions(host(), 'busy', true).clearCache, true);
+    assert.equal(enabledActions(host(), 'idle', false).clearCache, false);
+    assert.equal(enabledActions(host({ serverRunning: false }), 'idle', true).clearCache, false);
+    assert.equal(enabledActions(host(), undefined, true).clearCache, false);
+  });
+
+  it('enables the cache settings when the host has some', () => {
+    assert.equal(enabledActions(host(), 'idle').openCacheSettings, false);
+    assert.equal(enabledActions(host({ cacheSettings: { enabled: true, directory: '' } }), 'idle').openCacheSettings, true);
+    assert.equal(enabledActions(host({ serverRunning: false, cacheSettings: { enabled: true, directory: '' } }), undefined).openCacheSettings, true);
+  });
 });
 
 describe('planRefresh', () => {
-  it('requests the server statistics every 5 refreshes and the details every 15', () => {
+  it('requests the statistics and the history every 5 refreshes and the details every 15', () => {
     const plans = Array.from({ length: 16 }, (_, i) => planRefresh(i));
-    assert.deepEqual(plans.map((p, i) => p.server ? i : -1).filter(i => i >= 0), [0, 5, 10, 15]);
+    assert.deepEqual(plans.map((p, i) => p.statistics ? i : -1).filter(i => i >= 0), [0, 5, 10, 15]);
     assert.deepEqual(plans.map((p, i) => p.details ? i : -1).filter(i => i >= 0), [0, 15]);
   });
 
   it('requests what is forced', () => {
-    assert.deepEqual(planRefresh(1, { details: true }), { server: false, details: true });
-    assert.deepEqual(planRefresh(1, { server: true }), { server: true, details: false });
+    assert.deepEqual(planRefresh(1, { details: true }), { statistics: false, details: true });
+    assert.deepEqual(planRefresh(1, { statistics: true }), { statistics: true, details: false });
   });
 });
 
@@ -223,6 +237,7 @@ describe('buildViewModel', () => {
     assert.deepEqual(vm.operations.map(row => row.name), ['FileDatabaseUpdate', 'FileSystemScan', 'SearchCode']);
     assert.deepEqual(vm.operations[2], {
       key: 'SearchCode', name: 'SearchCode', count: '87', last: '250 ms', max: '570 ms', average: '250 ms', total: '21.8 s',
+      recentMs: [250], recentTitle: 'Last duration: 250 ms',
     });
   });
 

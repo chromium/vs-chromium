@@ -434,3 +434,204 @@ button:disabled {
 .kv-empty {
   color: var(--vscode-descriptionForeground);
 }
+
+/* Charts (inline SVG): the VS Code chart colors */
+
+.chart {
+  margin-top: 12px;
+}
+
+.chart-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 2px;
+}
+
+.chart-title {
+  font-weight: 600;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  color: var(--vscode-descriptionForeground);
+  font-variant-numeric: tabular-nums;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.swatch {
+  flex: none;
+  width: 10px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.chart-plot {
+  position: relative;
+}
+
+.chart-plot[hidden],
+.chart-placeholder[hidden],
+.timeline[hidden],
+.chart[hidden] {
+  display: none;
+}
+
+.chart-placeholder {
+  padding: 8px 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.chart-svg,
+.timeline-svg {
+  display: block;
+  overflow: visible;
+}
+
+.chart-svg .grid {
+  stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+  stroke-opacity: 0.5;
+  stroke-dasharray: 2 3;
+}
+
+.chart-svg .axis-line {
+  stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+}
+
+.chart-svg .axis-label {
+  fill: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-svg .line {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.chart-svg .cursor {
+  stroke: var(--vscode-foreground);
+  stroke-opacity: 0.6;
+  stroke-dasharray: 3 2;
+}
+
+.series-0 { stroke: var(--vscode-charts-blue); background: var(--vscode-charts-blue); }
+.series-1 { stroke: var(--vscode-charts-orange); background: var(--vscode-charts-orange); }
+.series-2 { stroke: var(--vscode-charts-green); background: var(--vscode-charts-green); }
+.series-3 { stroke: var(--vscode-charts-purple); background: var(--vscode-charts-purple); }
+.series-4 { stroke: var(--vscode-charts-red); background: var(--vscode-charts-red); }
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  padding: 4px 8px;
+  color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+  background: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background));
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-panel-border));
+  border-radius: 3px;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, transparent);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chart-tooltip[hidden] {
+  display: none;
+}
+
+.tooltip-time {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Status timeline (aligned with the plot of the memory chart) */
+
+.timeline {
+  margin-top: 2px;
+}
+
+.timeline rect {
+  shape-rendering: crispEdges;
+}
+
+.status-idle { fill: var(--vscode-charts-green); }
+.status-busy { fill: var(--vscode-charts-blue); }
+.status-verifying { fill: var(--vscode-charts-blue); fill-opacity: 0.55; }
+.status-paused,
+.status-yield { fill: var(--vscode-charts-yellow, var(--vscode-editorWarning-foreground)); }
+
+/* Sparklines of the operations */
+
+.sparkline {
+  display: block;
+}
+
+.sparkline .spark {
+  fill: var(--vscode-charts-blue);
+  fill-opacity: 0.45;
+}
+
+.sparkline .spark.last {
+  fill-opacity: 1;
+}
+
+/* Index cache settings and actions */
+
+.cache-settings {
+  margin-top: 12px;
+}
+
+.cache-settings[hidden] {
+  display: none;
+}
+
+.cache-settings .setting-value {
+  margin-top: 4px;
+}
+
+.cache-settings .path {
+  color: var(--vscode-foreground);
+  overflow-wrap: anywhere;
+}
+
+.cache-settings .link {
+  margin-top: 4px;
+}
+
+.restart-needed {
+  margin-top: 4px;
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.restart-needed[hidden] {
+  display: none;
+}
+
+.section-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.timeline-legend {
+  justify-content: flex-end;
+  margin-top: 2px;
+  padding-right: 8px;
+}
+
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}

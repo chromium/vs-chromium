@@ -120,6 +120,7 @@ describe('DashboardBridge', () => {
       serverVersion: undefined,
       trigramFiltersSetting: false,
       logDirectory: '/logs',
+      cacheSettings: undefined,
     });
     context.server.start();
     await flush();
@@ -142,6 +143,18 @@ describe('DashboardBridge', () => {
       { type: 'response', id: 7, result: sampleIndexStatistics() },
       { type: 'response', id: 8, result: null },
       { type: 'response', id: 9, result: null },
+    ]);
+  });
+
+  it('forwards the requests of the charts and of the cache', async () => {
+    const context = setup();
+    await context.bridge.handleMessage({ type: 'request', id: 1, method: 'index/status' });
+    await context.bridge.handleMessage({ type: 'request', id: 2, method: 'server/history', params: { sinceUnixMs: 5 } });
+    await context.bridge.handleMessage({ type: 'request', id: 3, method: 'index/clearCache', params: { projectPath: 'C:\\a' } });
+    assert.deepEqual(context.server.requests, [
+      { method: 'index/status' },
+      { method: 'server/history', params: { sinceUnixMs: 5 } },
+      { method: 'index/clearCache', params: { projectPath: 'C:\\a' } },
     ]);
   });
 

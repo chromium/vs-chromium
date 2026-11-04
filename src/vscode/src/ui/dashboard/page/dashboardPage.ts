@@ -12,6 +12,7 @@
 import { DashboardAction, DashboardController } from '../dashboardController';
 import type { DashboardViewModel, KeyValue, OperationRow, ProjectRow } from '../dashboardModel';
 import { createHostShim, ShimWindow } from '../hostShim';
+import { HistoryChartView, renderSparkline, StatusTimelineView } from './charts';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -114,8 +115,21 @@ class DashboardView {
   private readonly operations: KeyedRows<OperationRow>;
   private readonly server: KeyedRows<KeyValue>;
   private last: DashboardViewModel | undefined;
+  private readonly memoryChart = new HistoryChartView('Memory Usage');
+  private readonly statusTimeline = new StatusTimelineView();
+  private readonly cpuChart = new HistoryChartView('CPU', 110);
+  private readonly cacheChart = new HistoryChartView('Size on Disk', 110);
+  private readonly clearCache: HTMLButtonElement;
+  private readonly cacheEnabled: HTMLInputElement;
+  private readonly cacheEnabledText: HTMLElement;
+  private readonly cacheDirectory: HTMLElement;
+  private readonly cacheRestart: HTMLElement;
+  private readonly cacheSettings: HTMLElement;
+  private readonly openCacheSettings: HTMLButtonElement;
   /** The trigram filters checkboxes of the projects are enabled (the server is running). */
   private trigramFiltersEnabled = false;
+  /** The "Clear Cache" links of the projects are enabled. */
+  private clearCacheEnabled = false;
 
   constructor(root: HTMLElement, private readonly execute: (action: DashboardAction) => void) {
     // Header
@@ -172,10 +186,10 @@ class DashboardView {
       '(about 5% of the size of the indexed text). Can be changed per project below, until the setting changes ' +
       'or the server restarts.'));
     setting.append(title, value);
-    const projectsTable = this.table(['Root', 'Files', 'Searchable', 'Text', 'Trigram Filters', 'Cache'], [1, 2, 3]);
+    const projectsTable = this.table(['Root', 'Files', 'Searchable', 'Text', 'Trigram Filters', 'Cache', ''], [1, 2, 3]);
     projectsSection.section.append(setting, projectsTable.table);
     this.projects = new KeyedRows(projectsTable.body, item => this.createProjectRow(item), (row, item) => this.updateProjectRow(row, item),
-      () => this.emptyRow(6, 'No project'));
+      () => this.emptyRow(7, 'No project'));
 
     // Memory and index cache, side by side.
     const columns = el('div', 'columns');
@@ -183,17 +197,48 @@ class DashboardView {
     const cacheSection = this.section('Index Cache');
     columns.append(memorySection.section, cacheSection.section);
     this.memory = this.keyValues(memorySection.section);
+    memorySection.section.append(this.memoryChart.element, this.statusTimeline.element, this.cpuChart.element);
     this.indexCache = this.keyValues(cacheSection.section);
+
+    // Cache settings (host settings, applied when the server restarts) and actions.
+    this.cacheSettings = el('div', 'cache-settings');
+    const enabledRow = el('label', 'setting-value');
+    const enabledCheckbox = checkbox('Index cache enabled (setting)');
+    this.cacheEnabled = enabledCheckbox.input;
+    this.cacheEnabled.disabled = true;
+    this.cacheEnabledText = el('span');
+    enabledRow.append(enabledCheckbox.root, this.cacheEnabledText);
+    const directoryRow = el('div', 'setting-value');
+    this.cacheDirectory = el('span', 'path');
+    directoryRow.append(el('span', undefined, 'Directory:'), this.cacheDirectory);
+    const settingsTitle = el('div', 'setting-title');
+    settingsTitle.append(el('span', 'setting-category', 'VsChromium: '), el('span', 'setting-name', 'Cache Settings'));
+    this.cacheRestart = el('div', 'restart-needed', 'Changed: applied when the server restarts.');
+    this.cacheRestart.hidden = true;
+    this.openCacheSettings = this.button('link', [el('span', undefined, 'Change\u2026')],
+      () => this.execute({ action: 'openCacheSettings' }), 'Open the cache settings');
+    this.cacheSettings.append(settingsTitle, enabledRow, directoryRow, this.cacheRestart, this.openCacheSettings);
+    this.clearCache = this.button('button secondary', [el('span', undefined, 'Clear Cache')],
+      () => this.execute({ action: 'clearCache' }),
+      'Delete the index cache of all the projects (the current index stays in use)');
+    const cacheActions = el('div', 'section-actions');
+    cacheActions.append(this.clearCache);
+    cacheSection.section.append(this.cacheChart.element, this.cacheSettings, cacheActions);
 
     // Operations
     const operationsSection = this.section('Operations');
     this.operationCount = operationsSection.badge;
-    const operationsTable = this.table(['Name', 'Count', 'Last', 'Max', 'Average', 'Total'], [1, 2, 3, 4, 5]);
+    const operationsTable = this.table(['Name', 'Count', 'Last', 'Max', 'Average', 'Total', 'Recent'], [1, 2, 3, 4, 5]);
     operationsSection.section.append(operationsTable.table);
     this.operations = new KeyedRows(operationsTable.body,
-      item => this.createCells(6, [1, 2, 3, 4, 5], item.name),
-      (row, item) => this.updateCells(row, [item.name, item.count, item.last, item.max, item.average, item.total]),
-      () => this.emptyRow(6, 'No operation yet'));
+      item => this.createCells(7, [1, 2, 3, 4, 5], item.name),
+      (row, item) => {
+        this.updateCells(row, [item.name, item.count, item.last, item.max, item.average, item.total]);
+        const recent = row.children[6] as HTMLElement;
+        renderSparkline(recent, item.recentMs);
+        setTitle(recent, item.recentTitle || undefined);
+      },
+      () => this.emptyRow(7, 'No operation yet'));
 
     // Server
     const serverSection = this.section('Server');
@@ -222,6 +267,7 @@ class DashboardView {
     setDisabled(this.openLogDirectory, !vm.actions.openLogDirectory);
     setChecked(this.setting, vm.trigramFiltersSetting, vm.actions.toggleTrigramFilters);
     this.trigramFiltersEnabled = vm.actions.toggleTrigramFilters;
+    this.clearCacheEnabled = vm.actions.clearCache;
 
     setText(this.projectCount, vm.projects.length > 0 ? String(vm.projects.length) : '');
     setText(this.operationCount, vm.operations.length > 0 ? String(vm.operations.length) : '');
@@ -230,7 +276,37 @@ class DashboardView {
     this.indexCache.render(vm.indexCache);
     this.operations.render(vm.operations);
     this.server.render(vm.server);
+    this.renderCache(vm);
     this.last = vm;
+    this.renderCharts(vm, false);
+  }
+
+  /** Draws the charts (only those whose data or width changed, unless `force`). */
+  renderCharts(vm: DashboardViewModel | undefined = this.last, force = true) {
+    if (!vm) {
+      return;
+    }
+    this.memoryChart.render(vm.memoryChart, force);
+    this.statusTimeline.render(vm.statusTimeline, this.memoryChart.plotFrame, this.memoryChart.element.clientWidth, force);
+    this.cpuChart.render(vm.cpuChart, force);
+    // Note: No cache chart when the server has no cache.
+    this.cacheChart.element.hidden = vm.cacheChart === undefined;
+    this.cacheChart.render(vm.cacheChart, force);
+  }
+
+  private renderCache(vm: DashboardViewModel) {
+    setDisabled(this.clearCache, !vm.actions.clearCache);
+    const settings = vm.cacheSettings;
+    this.cacheSettings.hidden = settings === undefined;
+    if (settings) {
+      if (this.cacheEnabled.checked !== settings.enabled) {
+        this.cacheEnabled.checked = settings.enabled;
+      }
+      setText(this.cacheEnabledText, settings.enabled ? 'Enabled' : 'Disabled');
+      setText(this.cacheDirectory, settings.directory);
+      this.cacheRestart.hidden = !settings.restartNeeded;
+    }
+    setDisabled(this.openCacheSettings, !vm.actions.openCacheSettings);
   }
 
   private button(className: string, content: HTMLElement[], onClick: () => void, title?: string): HTMLButtonElement {
@@ -289,7 +365,7 @@ class DashboardView {
   }
 
   private createProjectRow(item: ProjectRow): HTMLElement {
-    const row = this.createCells(6, [1, 2, 3]);
+    const row = this.createCells(7, [1, 2, 3]);
     const root = row.children[0] as HTMLElement;
     root.className = 'path';
     root.title = item.rootPath;
@@ -303,6 +379,10 @@ class DashboardView {
     const label = el('label', 'trigrams');
     label.append(box, el('span', 'description'));
     trigrams.append(label);
+    const clear = this.button('link', [el('span', undefined, 'Clear Cache')],
+      () => this.execute({ action: 'clearCache', projectPath: item.rootPath }),
+      `Delete the index cache of ${item.rootPath}`);
+    row.children[6].append(clear);
     return row;
   }
 
@@ -317,6 +397,7 @@ class DashboardView {
     setText(label.lastElementChild as HTMLElement, item.trigramFilters);
     setText(cells[5] as HTMLElement, item.cache);
     setTitle(cells[5] as HTMLElement, item.cacheTitle);
+    setDisabled((cells[6] as HTMLElement).firstElementChild as HTMLButtonElement, !this.clearCacheEnabled);
   }
 
   private keyValues(container: HTMLElement): KeyedRows<KeyValue> {
@@ -358,6 +439,14 @@ function main() {
   const view = new DashboardView(root, action => void controller?.execute(action));
   const host = createHostShim(window as unknown as ShimWindow);
   controller = new DashboardController(host, coalesce(vm => view.render(vm)));
+  // The charts are drawn at the width of the page: redrawn when it changes.
+  let width = root.clientWidth;
+  new ResizeObserver(() => {
+    if (root.clientWidth !== width) {
+      width = root.clientWidth;
+      view.renderCharts();
+    }
+  }).observe(root);
   document.addEventListener('visibilitychange', () => controller?.setPageVisible(document.visibilityState !== 'hidden'));
   window.addEventListener('unload', () => controller?.dispose());
   controller.start();

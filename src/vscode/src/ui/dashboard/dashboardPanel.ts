@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as vscode from 'vscode';
+import { IndexClearCacheRequest } from '../../protocol/protocol.g';
 import { DashboardBridge, DashboardServer } from './dashboardBridge';
 import { HostCommand, PageToHost } from './dashboardMessages';
 import { serverLogDirectory } from './logDirectory';
@@ -19,6 +20,8 @@ export interface DashboardServices {
   setTrigramFiltersSetting(enabled: boolean): Promise<void>;
   setProjectTrigramFilters(projectPath: string, enabled: boolean): Promise<void>;
   errorMessage(e: unknown): string;
+  /** The cache settings (applied when the server restarts). */
+  cacheSettings(): { enabled: boolean; directory: string };
 }
 
 /**
@@ -59,6 +62,7 @@ export class DashboardPanel implements vscode.Disposable {
       post: message => void panel.webview.postMessage(message),
       trigramFiltersSetting: () => this.services.trigramFiltersSetting(),
       logDirectory: this.logDirectory,
+      cacheSettings: () => this.services.cacheSettings(),
       executeCommand: command => this.executeCommand(command),
       errorMessage: e => this.services.errorMessage(e),
     });
@@ -75,7 +79,8 @@ export class DashboardPanel implements vscode.Disposable {
         }
       }),
       vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('vschromium.trigramFilters')) {
+        if (e.affectsConfiguration('vschromium.trigramFilters') || e.affectsConfiguration('vschromium.cacheEnabled') ||
+            e.affectsConfiguration('vschromium.cacheDirectory')) {
           bridge.postHostState();
         }
       }),
@@ -122,10 +127,39 @@ export class DashboardPanel implements vscode.Disposable {
         case 'setProjectTrigramFilters':
           await this.services.setProjectTrigramFilters(command.projectPath, command.enabled);
           break;
+        case 'clearCache':
+          await this.clearCache(command.projectPath);
+          break;
+        case 'openCacheSettings':
+          await vscode.commands.executeCommand('workbench.action.openSettings', 'vschromium.cache');
+          break;
       }
     } catch (e) {
       void vscode.window.showErrorMessage(`VsChromium: ${this.services.errorMessage(e)}`);
     }
+  }
+
+  /** Deletes the index cache of a project (or of all the projects), after a confirmation. */
+  private async clearCache(projectPath: string | undefined): Promise<void> {
+    const clear = 'Clear Cache';
+    const choice = await vscode.window.showWarningMessage(
+      projectPath ? `Clear the index cache of "${projectPath}"?` : 'Clear the index cache of all the projects?',
+      {
+        modal: true,
+        detail: 'The cache files are deleted. The current index stays in use; the cache is written again ' +
+          'once the index settles. Until then, a restarted server indexes the files from disk.',
+      },
+      clear);
+    if (choice !== clear) {
+      return;
+    }
+    const server = this.services.getServer();
+    if (!server) {
+      throw new Error('the indexing server is not running.');
+    }
+    const result = await server.request(IndexClearCacheRequest.type, projectPath !== undefined ? { projectPath } : {});
+    void vscode.window.showInformationMessage(
+      `VsChromium: index cache cleared (${result.projectCount} ${result.projectCount === 1 ? 'project' : 'projects'}).`);
   }
 
   private getHtml(webview: vscode.Webview): string {

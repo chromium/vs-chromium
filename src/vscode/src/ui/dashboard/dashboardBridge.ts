@@ -5,6 +5,9 @@
 import { RequestType, RequestType0 } from 'vscode-jsonrpc';
 import {
   IndexDetailsRequest,
+  IndexClearCacheRequest,
+  IndexStatusRequest,
+  ServerHistoryRequest,
   IndexLoadedNotification,
   IndexLoadingNotification,
   IndexLoadingProgressNotification,
@@ -51,12 +54,15 @@ const requestTypes: Partial<Record<DashboardRequestMethod, RequestType<unknown, 
   'project/details': ProjectDetailsRequest.type as RequestType<unknown, unknown, void>,
   'project/setOptions': ProjectSetOptionsRequest.type as RequestType<unknown, unknown, void>,
   'server/statistics': ServerStatisticsRequest.type as RequestType<unknown, unknown, void>,
+  'server/history': ServerHistoryRequest.type as RequestType<unknown, unknown, void>,
+  'index/clearCache': IndexClearCacheRequest.type as RequestType<unknown, unknown, void>,
 };
 
 const requestTypes0: Partial<Record<DashboardRequestMethod, RequestType0<unknown, void>>> = {
   'index/pause': IndexPauseRequest.type,
   'index/resume': IndexResumeRequest.type,
   'tree/refresh': TreeRefreshRequest.type,
+  'index/status': IndexStatusRequest.type,
 };
 
 /** The method of the notification of each index event (forwarded as is to the page). */
@@ -76,6 +82,8 @@ export interface DashboardBridgeOptions {
   post(message: HostToPage): void;
   trigramFiltersSetting(): boolean;
   logDirectory?: string;
+  /** The cache settings of the host (applied when the server restarts), if it has some. */
+  cacheSettings?(): { enabled: boolean; directory: string };
   /** Executes a command of the page (restart the server, show the logs, change a setting...). */
   executeCommand(command: HostCommand): Promise<void>;
   /** The message of an error of a request, for display. */
@@ -169,6 +177,7 @@ export class DashboardBridge {
       serverVersion: this.serverVersion,
       trigramFiltersSetting: this.options.trigramFiltersSetting(),
       logDirectory: this.options.logDirectory,
+      cacheSettings: this.options.cacheSettings?.(),
     };
     this.options.post({ type: 'hostState', state });
   }

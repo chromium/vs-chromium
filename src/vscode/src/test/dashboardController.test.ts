@@ -9,7 +9,10 @@ import type { HostState, HostToPage, PageToHost } from '../ui/dashboard/dashboar
 import type { DashboardViewModel } from '../ui/dashboard/dashboardModel';
 import { RefreshIntervalMs } from '../ui/dashboard/dashboardModel';
 import { createHostShim, HostShim, ShimWindow } from '../ui/dashboard/hostShim';
-import { sampleIndexDetails, sampleIndexStatistics, sampleServerStatistics } from './dashboardSampleData';
+import { historyOf, sampleIndexDetails, sampleIndexStatistics, sampleIndexStatus, sampleServerStatistics } from './dashboardSampleData';
+
+/** The requests of a full refresh (the first one, after events). */
+const FullRefresh = ['index/status', 'index/statistics', 'server/statistics', 'server/history', 'index/details'];
 
 type Listener = (event: { data: unknown }) => void;
 
@@ -139,7 +142,9 @@ class FakeHost implements HostShim {
   /** Answers the requests with the sample data. */
   answer(requests: Extract<PageToHost, { type: 'request' }>[], results: Record<string, unknown> = {}) {
     const defaults: Record<string, unknown> = {
+      'index/status': sampleIndexStatus(),
       'index/statistics': sampleIndexStatistics(),
+      'server/history': historyOf([{ time: 1_000_000 }, { time: 1_010_000 }]),
       'server/statistics': sampleServerStatistics(),
       'index/details': sampleIndexDetails(),
     };
@@ -198,8 +203,9 @@ describe('DashboardController', () => {
     assert.deepEqual(timers.delays, [0]);
     timers.run(0);
     const first = host.takeRequests();
-    assert.deepEqual(first.map(r => r.method), ['index/statistics', 'server/statistics', 'index/details']);
-    assert.deepEqual(first[2].params, { maxFilesByExtensionDetailsCount: 0, maxLargeFilesDetailsCount: 0 });
+    assert.deepEqual(first.map(r => r.method), FullRefresh);
+    assert.deepEqual(first[3].params, {});
+    assert.deepEqual(first[4].params, { maxFilesByExtensionDetailsCount: 0, maxLargeFilesDetailsCount: 0 });
     host.answer(first);
     await flush();
     assert.equal(last().status.text, 'Idle');
@@ -209,8 +215,8 @@ describe('DashboardController', () => {
 
     timers.run(RefreshIntervalMs);
     const second = host.takeRequests();
-    assert.deepEqual(second.map(r => r.method), ['index/statistics']);
-    host.answer(second, { 'index/statistics': sampleIndexStatistics({ status: 'busy' }) });
+    assert.deepEqual(second.map(r => r.method), ['index/status']);
+    host.answer(second, { 'index/status': sampleIndexStatus({ status: 'busy' }) });
     await flush();
     assert.equal(last().status.text, 'Indexing');
     assert.equal(last().projects.length, 1, 'details kept');
@@ -229,7 +235,7 @@ describe('DashboardController', () => {
     controller.setPageVisible(true);
     timers.run(0);
     // Everything is requested again when the page becomes visible.
-    assert.deepEqual(host.takeRequests().map(r => r.method), ['index/statistics', 'server/statistics', 'index/details']);
+    assert.deepEqual(host.takeRequests().map(r => r.method), FullRefresh);
   });
 
   it('updates the status from the notifications and refreshes soon', async () => {
@@ -247,7 +253,7 @@ describe('DashboardController', () => {
 
     host.send({ type: 'notification', method: 'index/loaded', params: { operationId: 1, treeVersion: 2 } });
     timers.run(NotificationRefreshDelayMs);
-    assert.deepEqual(host.takeRequests().map(r => r.method), ['index/statistics', 'server/statistics', 'index/details']);
+    assert.deepEqual(host.takeRequests().map(r => r.method), FullRefresh);
   });
 
   it('sends the protocol requests of the actions, then refreshes', async () => {
@@ -263,7 +269,7 @@ describe('DashboardController', () => {
       assert.deepEqual(timers.delays, [NotificationRefreshDelayMs]);
       timers.run(NotificationRefreshDelayMs);
       const refresh = host.takeRequests();
-      assert.deepEqual(refresh.map(r => r.method), ['index/statistics', 'server/statistics', 'index/details']);
+      assert.deepEqual(refresh.map(r => r.method), FullRefresh);
       host.answer(refresh);
       await flush();
     }
@@ -289,7 +295,7 @@ describe('DashboardController', () => {
   it('shows the errors of the requests', async () => {
     const { host, timers, last } = await setupRunning();
     timers.run(RefreshIntervalMs);
-    host.answer(host.takeRequests(), { 'index/statistics': new Error('Server error') });
+    host.answer(host.takeRequests(), { 'index/status': new Error('Server error') });
     await flush();
     assert.equal(last().error, 'Server error');
     assert.deepEqual(timers.delays, [RefreshIntervalMs], 'refreshes continue');
@@ -321,7 +327,69 @@ describe('DashboardController', () => {
 
     host.send({ type: 'hostState', state: running });
     timers.run(0);
-    assert.deepEqual(host.takeRequests().map(r => r.method), ['index/statistics', 'server/statistics', 'index/details']);
+    assert.deepEqual(host.takeRequests().map(r => r.method), FullRefresh);
+  });
+
+  it('polls the history incrementally and merges it', async () => {
+    const { host, timers, last } = setup();
+    host.send({ type: 'hostState', state: running });
+    timers.run(0);
+    host.answer(host.takeRequests());
+    await flush();
+    assert.deepEqual(last().memoryChart?.times, [1_000_000, 1_010_000]);
+    for (let i = 1; i < 5; i++) {
+      timers.run(RefreshIntervalMs);
+      const requests = host.takeRequests();
+      assert.deepEqual(requests.map(r => r.method), ['index/status']);
+      host.answer(requests);
+      await flush();
+    }
+    timers.run(RefreshIntervalMs);
+    const requests = host.takeRequests();
+    assert.deepEqual(requests.map(r => r.method), ['index/status', 'index/statistics', 'server/statistics', 'server/history']);
+    assert.deepEqual(requests[3].params, { sinceUnixMs: 1_010_000 });
+    host.answer(requests, { 'server/history': historyOf([{ time: 1_020_000 }]) });
+    await flush();
+    assert.deepEqual(last().memoryChart?.times, [1_000_000, 1_010_000, 1_020_000]);
+    assert.equal(last().memoryChart?.version.includes(':3:'), true);
+  });
+
+  it('starts the history again with another server process', async () => {
+    const { host, timers, last } = await setupRunning();
+    assert.equal(last().memoryChart?.times.length, 2);
+    host.send({ type: 'notification', method: 'index/loaded', params: { operationId: 1, treeVersion: 2 } });
+    timers.run(NotificationRefreshDelayMs);
+    const requests = host.takeRequests();
+    assert.deepEqual(requests[3].params, { sinceUnixMs: 1_010_000 });
+    host.answer(requests, {
+      'server/statistics': sampleServerStatistics({ processId: 7 }),
+      'server/history': historyOf([{ time: 2_000_000 }]),
+    });
+    await flush();
+    assert.deepEqual(last().memoryChart?.times, [2_000_000]);
+  });
+
+  it('switches to the status of the last "index/status"', async () => {
+    const { host, timers, last } = await setupRunning();
+    timers.run(RefreshIntervalMs);
+    host.answer(host.takeRequests(), { 'index/status': sampleIndexStatus({ status: 'paused', fileCount: 12 }) });
+    await flush();
+    assert.equal(last().status.text, 'Paused');
+    assert.equal(last().facts[1], '12 files');
+    assert.equal(last().memory.length > 0, true, 'arena statistics kept');
+  });
+
+  it('sends the cache commands', async () => {
+    const { host, controller } = await setupRunning();
+    host.posted.length = 0;
+    await controller.execute({ action: 'clearCache' });
+    await controller.execute({ action: 'clearCache', projectPath: 'C:\\a' });
+    await controller.execute({ action: 'openCacheSettings' });
+    assert.deepEqual(host.posted.filter(m => m.type === 'command'), [
+      { type: 'command', command: 'clearCache' },
+      { type: 'command', command: 'clearCache', projectPath: 'C:\\a' },
+      { type: 'command', command: 'openCacheSettings' },
+    ]);
   });
 
   it('fails the pending requests when disposed', async () => {

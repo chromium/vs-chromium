@@ -104,7 +104,7 @@
         "vschromium.cacheDirectory": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Root directory of the persistent index cache (absolute path, one sub-directory per project). Leave empty for the default (`%LOCALAPPDATA%\\VsChromium\\Cache` on Windows). Applied when the indexing server (re)starts.",
+          "markdownDescription": "Root directory of the persistent index cache (absolute path, one sub-directory per project). Leave empty for the default (`%LOCALAPPDATA%\\VsChromium\\Cache` on Windows). Applied when the indexing server (re)starts. Must be on a local disk (lock files on network shares are not reliable).",
           "scope": "machine"
         },
         "vschromium.trace.server": {

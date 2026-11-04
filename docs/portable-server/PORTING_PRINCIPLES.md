@@ -1191,3 +1191,11 @@ contents) are not retried. Readers open `index.bin` and the arena files with `Fi
 FileShare.Delete` (the writer can rename and delete them while they are open), and keep no handle
 after mapping (the views stay mapped); the writer's deletion of an arena file still mapped by
 another process fails on Windows and is retried by its next saves (or when it opens the cache).
+
+The writer of a project cache is the server holding its `lock` file: opened with
+`FileShare.None` for the lifetime of the cache (on Linux/macOS, .NET implements it with an advisory
+`flock`). The lock is the open handle, not the existence of the file: the file stays on disk, and
+the operating system releases the lock when the process exits, including when it is killed (no
+stale lock to clean up). This relies on the lock semantics of a local file system: a cache
+directory on a network share (`vschromium.cacheDirectory`) depends on the file server (SMB
+generally honors it, NFS `flock` is not reliable), which is not supported.

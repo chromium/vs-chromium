@@ -108,3 +108,6 @@ Paths copied from build output are understood: `base/foo.cc(19,18)`,
 offers to restart the server. `vschromium.trigramFilters` and `vschromium.cacheEnabled` are
 resource settings: they can be set per workspace folder (`.vscode/settings.json` of the folder),
 and apply to the project containing the folder (or contained in it).
+
+`vschromium.cacheDirectory` must be on a local disk: the servers coordinate through a lock file in
+each project cache, and lock files on network shares are not reliable (NFS in particular).

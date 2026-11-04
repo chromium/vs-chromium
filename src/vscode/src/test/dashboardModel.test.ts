@@ -183,7 +183,7 @@ describe('buildViewModel', () => {
       trigramFiltersEnabled: false,
       trigramFilters: 'off',
       cache: '9.4 GB, saved',
-      cacheTitle: '9,626 MB on disk, saved time(2026-11-04T22:42:00Z) (index cache of the open projects)',
+      cacheTitle: '9,626 MB on disk (120 MB dead), saved time(2026-11-04T22:42:00Z) (index cache of the open projects)',
     });
     assert.equal(vm.projects[1].trigramFilters, '812.0 MB');
     assert.equal(vm.projects[1].trigramFiltersEnabled, true);
@@ -210,7 +210,7 @@ describe('buildViewModel', () => {
   it('describes the index cache', () => {
     const vm = buildViewModel(data(), options);
     assert.deepEqual(vm.indexCache.map(row => [row.label, row.value]), [
-      ['State', '9,626 MB on disk, saved time(2026-11-04T22:42:00Z)'],
+      ['State', '9,626 MB on disk (120 MB dead), saved time(2026-11-04T22:42:00Z)'],
       ['Directory', 'C:\\Users\\me\\AppData\\Local\\VsChromium\\IndexCache'],
       ['Projects', '1 open'],
       ['Last load', '2,227,630 files from the cache, 42,326 from disk'],

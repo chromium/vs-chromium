@@ -405,6 +405,24 @@ namespace VsChromium.Server.JsonRpc {
         TrigramFiltersBytes = _searchEngine.GetTrigramFiltersBytes(project.Project.RootPath),
         Memory = CreateProjectMemory(database, project.Project.RootPath),
         Cache = CreateProjectCacheState(project.Project.RootPath),
+        Operations = CreateProjectOperations(project.Project.RootPath),
+      };
+    }
+
+    private static ProjectOperationsStatistics CreateProjectOperations(FullPath rootPath) {
+      var statistics = ProjectOperations.GetStatistics(rootPath);
+      var load = statistics.InitialLoad;
+      var updates = statistics.IncrementalUpdates;
+      return new ProjectOperationsStatistics {
+        InitialLoad = new InitialLoadStatistics {
+          Count = load.Count, MinMs = load.MinMs, AvgMs = load.AverageMs, MaxMs = load.MaxMs, LastMs = load.LastMs,
+          ScanMs = statistics.LastScanMs,
+          FromCache = statistics.LastFromCache,
+          CachedIndexMs = statistics.LastFromCache ? statistics.LastCachedIndexMs : null,
+        },
+        IncrementalUpdates = new DurationStatistics {
+          Count = updates.Count, MinMs = updates.MinMs, AvgMs = updates.AverageMs, MaxMs = updates.MaxMs, LastMs = updates.LastMs,
+        },
       };
     }
 

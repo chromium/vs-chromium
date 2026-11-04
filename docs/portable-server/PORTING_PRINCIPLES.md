@@ -1150,3 +1150,15 @@ On `large-1-400000-v1` (one project, Debug build, 2 runs each, forced full GC): 
 (GC heap 96.3–96.4 MB after a cold load, 78.1–78.4 MB after a restart; native 6,985 MB cold, 3,593
 MB after a restart: 212 arenas, 3,386 MB live), cold load 6,569–7,037 ms before and 6,917–6,921 ms
 after, first `index/loaded` of a restart 837–1,122 ms before and 829–896 ms after (run-to-run noise).
+
+Per-project operation statistics (`project/details` `operations`, `ProjectOperations`): fixed size
+accumulators per project (count, min, average, max, last; no allocation per operation).
+
+- **Initial load** (first load of a project, rebuilds, full rescans): from the start of the scan of
+  the project to its complete index. The scan time of each project is exact (projects are scanned
+  one after the other); the time of the load of the files is shared by the projects loaded together
+  in proportion of their files with contents (the files read, for a cold load). A load from the
+  index cache records the time to the published index of the cache (`cachedIndexMs`), and its total
+  is the time to the verified index (`scanMs`: the verification scan).
+- **Incremental updates** (file system changes, edited files): each update counts for each project
+  it touches, with the duration of the whole update.

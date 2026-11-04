@@ -175,6 +175,74 @@ public class ProjectStatisticsTests {
     }
   }
 
+  /// <summary>
+  /// The initial loads and incremental updates of each project: scan and load times, loads from the
+  /// cache (time to the published index of the cache, then to the verified index).
+  /// </summary>
+  [TestMethod]
+  [Timeout(5 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task EachProjectHasItsOwnOperationStatistics() {
+    using var a = new TestProject("A", fileCount: 600, linesPerFile: 40);
+    using var b = new TestProject("B", fileCount: 200, linesPerFile: 40);
+    var cacheRoot = Path.Combine(Path.GetTempPath(), "VsChromiumProjectStatisticsTestCache-" + Guid.NewGuid().ToString("N"));
+    try {
+      foreach (var file in Directory.GetFiles(a.Root, "*", SearchOption.AllDirectories).Concat(Directory.GetFiles(b.Root, "*", SearchOption.AllDirectories))) {
+        File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddHours(-1));
+      }
+      await using (var server = await StartAsync(cacheRoot, a, b)) {
+        var operationsA = (await DetailsAsync(server, a.Root))["operations"]!;
+        var operationsB = (await DetailsAsync(server, b.Root))["operations"]!;
+        TestContext.WriteLine($"A: {operationsA.ToJsonString()}\nB: {operationsB.ToJsonString()}");
+        foreach (var operations in new[] { operationsA, operationsB }) {
+          var load = operations["initialLoad"]!;
+          Assert.AreEqual(1, load["count"]!.GetValue<long>());
+          Assert.IsFalse(load["fromCache"]!.GetValue<bool>());
+          Assert.IsNull(load["cachedIndexMs"]);
+          var lastMs = load["lastMs"]!.GetValue<double>();
+          Assert.IsTrue(lastMs > 0);
+          Assert.AreEqual(lastMs, load["minMs"]!.GetValue<double>());
+          Assert.AreEqual(lastMs, load["maxMs"]!.GetValue<double>());
+          Assert.AreEqual(lastMs, load["avgMs"]!.GetValue<double>());
+          var scanMs = load["scanMs"]!.GetValue<double>();
+          Assert.IsTrue(scanMs > 0 && scanMs <= lastMs, $"scan {scanMs} ms, load {lastMs} ms");
+          Assert.AreEqual(0, operations["incrementalUpdates"]!["count"]!.GetValue<long>());
+        }
+
+        // An edit is an incremental update of its project only.
+        File.AppendAllText(Path.Combine(a.Root, "src", "file0001.cc"), "// EDITED\n");
+        await WaitForAsync(server, async () =>
+          (await DetailsAsync(server, a.Root))["operations"]!["incrementalUpdates"]!["count"]!.GetValue<long>() >= 1, "update of A");
+        var updates = (await DetailsAsync(server, a.Root))["operations"]!["incrementalUpdates"]!;
+        Assert.IsTrue(updates["lastMs"]!.GetValue<double>() > 0);
+        Assert.IsTrue(updates["minMs"]!.GetValue<double>() <= updates["maxMs"]!.GetValue<double>());
+        Assert.AreEqual(0, (await DetailsAsync(server, b.Root))["operations"]!["incrementalUpdates"]!["count"]!.GetValue<long>());
+        Assert.AreEqual(1, (await DetailsAsync(server, a.Root))["operations"]!["initialLoad"]!["count"]!.GetValue<long>());
+        await WaitForAsync(server, async () =>
+          !(await DetailsAsync(server, a.Root))["cache"]!["dirty"]!.GetValue<bool>(), "A saved");
+      }
+
+      // A restart: loads from the cache, then verified.
+      await using (var server = await StartAsync(cacheRoot, a, b)) {
+        foreach (var project in new[] { a, b }) {
+          var load = (await DetailsAsync(server, project.Root))["operations"]!["initialLoad"]!;
+          TestContext.WriteLine($"{project.Root}: {load.ToJsonString()}");
+          Assert.AreEqual(1, load["count"]!.GetValue<long>());
+          Assert.IsTrue(load["fromCache"]!.GetValue<bool>(), load.ToJsonString());
+          var cachedIndexMs = load["cachedIndexMs"]!.GetValue<double>();
+          Assert.IsTrue(cachedIndexMs > 0 && cachedIndexMs <= load["lastMs"]!.GetValue<double>(), load.ToJsonString());
+          Assert.IsTrue(load["scanMs"]!.GetValue<double>() > 0, "Verification scan");
+        }
+      }
+    }
+    finally {
+      try {
+        Directory.Delete(cacheRoot, recursive: true);
+      }
+      catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+      }
+    }
+  }
+
   /// <summary>Starts a server with the cache <paramref name="cacheRoot"/> and waits for the projects to be loaded.</summary>
   private static async Task<JsonRpcServerClient> StartAsync(string cacheRoot, params TestProject[] projects) {
     var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath, cacheRoot,

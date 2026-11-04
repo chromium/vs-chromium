@@ -304,6 +304,45 @@ export interface ProjectCacheState {
   saving: boolean;
 }
 
+/** Statistics of the durations of an operation. */
+export interface DurationStatistics {
+  count: number;
+  minMs: number;
+  avgMs: number;
+  maxMs: number;
+  lastMs: number;
+}
+
+/**
+ * The initial loads of a project (its first load, rebuilds, full rescans): from the start of the
+ * scan of the project to its complete index. The scan time of the project is exact (projects are
+ * scanned one after the other); the load of the files is shared by the projects loaded together in
+ * proportion of their files with contents. A load from the index cache is the time to the verified
+ * index (`cachedIndexMs`: the time to the published index of the cache).
+ */
+export interface InitialLoadStatistics {
+  count: number;
+  minMs: number;
+  avgMs: number;
+  maxMs: number;
+  lastMs: number;
+  /** The scan of the project during its last initial load (the verification scan for a load from the cache). */
+  scanMs: number;
+  /** The last initial load published the index of the cache first, then verified it. */
+  fromCache: boolean;
+  /** The time to the published index of the cache of the last initial load (if `fromCache`). */
+  cachedIndexMs?: number;
+}
+
+/**
+ * The high level operations of a project. Incremental updates: each update of the index (file system
+ * changes, edited files) counts for each project it touches, with the duration of the whole update.
+ */
+export interface ProjectOperationsStatistics {
+  initialLoad: InitialLoadStatistics;
+  incrementalUpdates: DurationStatistics;
+}
+
 export interface ProjectDetails {
   rootPath: string;
   directoryDetails: DirectoryDetails;
@@ -314,6 +353,7 @@ export interface ProjectDetails {
   trigramFiltersBytes: number;
   memory: ProjectMemory;
   cache: ProjectCacheState;
+  operations: ProjectOperationsStatistics;
 }
 
 export interface SearchQuery {

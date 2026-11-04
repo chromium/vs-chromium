@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
@@ -37,6 +38,7 @@ namespace VsChromium.Server.FileSystem.Builder {
                                           IReadOnlyDictionary<FullPath, DirectorySnapshot> precomputedRoots = null,
                                           ISet<FullPath> fullScanRoots = null) {
       cancellationToken.ThrowIfCancellationRequested(); // cancellation
+      var computeStart = Stopwatch.GetTimestamp();
       using (OperationTimings.Measure(OperationTimings.FileSystemScan))
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
         try {
@@ -48,6 +50,7 @@ namespace VsChromium.Server.FileSystem.Builder {
 
                 // The tree of the index cache (phase 2), not scanned.
                 if (precomputedRoots != null && precomputedRoots.TryGetValue(project.RootPath, out var precomputed)) {
+                  ProjectOperations.RecordCachedTree(project.RootPath, computeStart);
                   return new ProjectRootSnapshot(project, precomputed);
                 }
 
@@ -59,7 +62,14 @@ namespace VsChromium.Server.FileSystem.Builder {
                   _indexingWorkerPool,
                   cancellationToken);
 
+                var scanStart = Stopwatch.GetTimestamp();
                 var rootSnapshot = projectSnapshotBuilder.Build();
+                // A new project is scanned entirely too.
+                var newProject = oldSnapshot == null || !oldSnapshot.ProjectRoots.Any(x => x.Project.RootPath.Equals(project.RootPath));
+                if (fullScan || newProject) {
+                  // The scan of a project, for its initial load statistics.
+                  ProjectOperations.RecordFullScan(project.RootPath, scanStart, Stopwatch.GetElapsedTime(scanStart).TotalMilliseconds);
+                }
 
                 return new ProjectRootSnapshot(project, rootSnapshot);
               })

@@ -133,7 +133,10 @@ export function sampleProjectDetails(rootPath: string, overrides: Partial<Projec
       enabled: true, directory: `C:\\Users\\me\\AppData\\Local\\VsChromium\\Cache\\3f2a0b1c2d3e4f50`, writable: true,
       sizeOnDiskBytes: 9.4 * GB, deadBytes: 120 * MB, lastSavedUtc: '2026-11-04T22:42:13Z', dirty: false, saving: false,
     },
-    ...overrides,
+    operations: {
+      initialLoad: { count: 1, minMs: 66_000, avgMs: 66_000, maxMs: 66_000, lastMs: 66_000, scanMs: 15_000, fromCache: true, cachedIndexMs: 4_900 },
+      incrementalUpdates: { count: 48, minMs: 40, avgMs: 300, maxMs: 2_100, lastMs: 120 },
+    },    ...overrides,
   };
 }
 

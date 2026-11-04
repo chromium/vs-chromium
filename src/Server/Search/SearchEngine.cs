@@ -648,8 +648,12 @@ namespace VsChromium.Server.Search {
 
         Execute = info => {
           options.CurrentFileDatabase = _currentFileDatabase;
+          var updateStart = System.Diagnostics.Stopwatch.GetTimestamp();
           var newFileDatabase = updater(options);
           ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
+          // Initial loads and incremental updates of the projects (statistics).
+          ProjectOperations.RecordUpdate(fileSystemSnapshot, newFileDatabase,
+            System.Diagnostics.Stopwatch.GetElapsedTime(updateStart).TotalMilliseconds, options.TouchedProjects);
           // The index changed: the cache is saved later (any update). Note: Not for trees from the
           // index cache (the same as the cache): saved after their verification.
           // Note: The cache of a project may have been deleted since it was loaded ("index/clearCache"):

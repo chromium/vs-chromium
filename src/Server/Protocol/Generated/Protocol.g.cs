@@ -651,6 +651,81 @@ namespace VsChromium.Protocol.Generated {
     public bool Saving { get; set; }
   }
 
+  /// <summary>
+  /// Statistics of the durations of an operation.
+  /// </summary>
+  public sealed partial class DurationStatistics {
+    [JsonPropertyName("count")]
+    public long Count { get; set; }
+
+    [JsonPropertyName("minMs")]
+    public double MinMs { get; set; }
+
+    [JsonPropertyName("avgMs")]
+    public double AvgMs { get; set; }
+
+    [JsonPropertyName("maxMs")]
+    public double MaxMs { get; set; }
+
+    [JsonPropertyName("lastMs")]
+    public double LastMs { get; set; }
+  }
+
+  /// <summary>
+  /// The initial loads of a project (its first load, rebuilds, full rescans): from the start of the
+  /// scan of the project to its complete index. The scan time of the project is exact (projects are
+  /// scanned one after the other); the load of the files is shared by the projects loaded together in
+  /// proportion of their files with contents. A load from the index cache is the time to the verified
+  /// index (`cachedIndexMs`: the time to the published index of the cache).
+  /// </summary>
+  public sealed partial class InitialLoadStatistics {
+    [JsonPropertyName("count")]
+    public long Count { get; set; }
+
+    [JsonPropertyName("minMs")]
+    public double MinMs { get; set; }
+
+    [JsonPropertyName("avgMs")]
+    public double AvgMs { get; set; }
+
+    [JsonPropertyName("maxMs")]
+    public double MaxMs { get; set; }
+
+    [JsonPropertyName("lastMs")]
+    public double LastMs { get; set; }
+
+    /// <summary>
+    /// The scan of the project during its last initial load (the verification scan for a load from the cache).
+    /// </summary>
+    [JsonPropertyName("scanMs")]
+    public double ScanMs { get; set; }
+
+    /// <summary>
+    /// The last initial load published the index of the cache first, then verified it.
+    /// </summary>
+    [JsonPropertyName("fromCache")]
+    public bool FromCache { get; set; }
+
+    /// <summary>
+    /// The time to the published index of the cache of the last initial load (if `fromCache`).
+    /// </summary>
+    [JsonPropertyName("cachedIndexMs")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? CachedIndexMs { get; set; }
+  }
+
+  /// <summary>
+  /// The high level operations of a project. Incremental updates: each update of the index (file system
+  /// changes, edited files) counts for each project it touches, with the duration of the whole update.
+  /// </summary>
+  public sealed partial class ProjectOperationsStatistics {
+    [JsonPropertyName("initialLoad")]
+    public InitialLoadStatistics InitialLoad { get; set; } = null!;
+
+    [JsonPropertyName("incrementalUpdates")]
+    public DurationStatistics IncrementalUpdates { get; set; } = null!;
+  }
+
   public sealed partial class ProjectDetails {
     [JsonPropertyName("rootPath")]
     public string RootPath { get; set; } = "";
@@ -678,6 +753,9 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("cache")]
     public ProjectCacheState Cache { get; set; } = null!;
+
+    [JsonPropertyName("operations")]
+    public ProjectOperationsStatistics Operations { get; set; } = null!;
   }
 
   public sealed partial class SearchQuery {
@@ -1732,6 +1810,9 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(ProjectConfiguration))]
   [JsonSerializable(typeof(ProjectMemory))]
   [JsonSerializable(typeof(ProjectCacheState))]
+  [JsonSerializable(typeof(DurationStatistics))]
+  [JsonSerializable(typeof(InitialLoadStatistics))]
+  [JsonSerializable(typeof(ProjectOperationsStatistics))]
   [JsonSerializable(typeof(ProjectDetails))]
   [JsonSerializable(typeof(SearchQuery))]
   [JsonSerializable(typeof(SearchParams))]

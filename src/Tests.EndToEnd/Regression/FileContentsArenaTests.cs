@@ -46,6 +46,7 @@ public class FileContentsArenaTests {
       var liveBytes = arenas["liveBytes"]!.GetValue<long>();
       Assert.IsTrue(liveBytes > FileCount * 400, $"live bytes: {liveBytes}");
       Assert.AreEqual(arenas["usedBytes"]!.GetValue<long>(), liveBytes);
+      Assert.AreEqual(0L, arenas["largeFileBytes"]!.GetValue<long>(), "No file larger than 512 KB");
 
       // The previous text of an edited file is dead.
       var path = Path.Combine(root, "src", "file000.cc");
@@ -59,9 +60,14 @@ public class FileContentsArenaTests {
       arenas = await ArenaStatisticsAsync(server);
       Assert.AreEqual(oldSlotSize, arenas["usedBytes"]!.GetValue<long>() - arenas["liveBytes"]!.GetValue<long>());
 
-      // Same statistics in "index/statistics" (status dialogs).
-      var indexArenas = (await server.RequestAsync(ServerProtocol.GetIndexStatistics())).Data["fileContentsArenas"]!;
+      // Same statistics in "index/statistics" (status dialogs), with the native memory (at least the
+      // arena) and the size of the indexed text (the live bytes without the trailing bytes).
+      var indexStatistics = (await server.RequestAsync(ServerProtocol.GetIndexStatistics())).Data;
+      var indexArenas = indexStatistics["fileContentsArenas"]!;
       Assert.AreEqual(arenas["liveBytes"]!.GetValue<long>(), indexArenas["liveBytes"]!.GetValue<long>());
+      Assert.IsTrue(indexStatistics["serverNativeMemoryUsage"]!.GetValue<long>() >= 16L * 1024 * 1024);
+      var textBytes = indexStatistics["indexedTextBytes"]!.GetValue<long>();
+      Assert.IsTrue(textBytes > 0 && textBytes < arenas["liveBytes"]!.GetValue<long>(), $"indexed text: {textBytes}");
     }
     finally {
       try {

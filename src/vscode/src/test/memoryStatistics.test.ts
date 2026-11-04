@@ -4,32 +4,49 @@
 
 import * as assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { describeArenas } from '../ui/memoryStatistics';
+import { IndexStatistics } from '../protocol/protocol.g';
+import { describeMemory } from '../ui/memoryStatistics';
 
 const MB = 1024 * 1024;
 
-describe('describeArenas', () => {
-  it('shows the memory and the dead bytes of the arenas', () => {
-    assert.equal(
-      describeArenas({ arenaCount: 2, arenaBytes: 32 * MB, usedBytes: 20 * MB, liveBytes: 15 * MB, sparseArenaCount: 0 }),
-      'File contents: 2 arenas (32.0 MB), 5.0 MB dead (25%)');
+function statistics(arenas: Partial<IndexStatistics['fileContentsArenas']>): IndexStatistics {
+  return {
+    projectCount: 1,
+    fileCount: 10,
+    searchableFileCount: 10,
+    serverNativeMemoryUsage: 14_037 * MB,
+    serverGcMemoryUsage: 523 * MB,
+    indexedTextBytes: 14_004 * MB,
+    indexLastUpdatedUtc: '2026-01-01T00:00:00Z',
+    status: 'idle',
+    fileContentsArenas: {
+      arenaCount: 586,
+      arenaBytes: 586 * 16 * MB,
+      usedBytes: 9_343 * MB,
+      liveBytes: 9_343 * MB,
+      sparseArenaCount: 0,
+      largeFileBytes: 4_661 * MB,
+      ...arenas,
+    },
+  };
+}
+
+describe('describeMemory', () => {
+  it('shows the native memory, the indexed text and the arenas', () => {
+    assert.deepEqual(describeMemory(statistics({})), [
+      'Memory: 523.0 MB managed, 14,037.0 MB native',
+      'Indexed text: 14,004.0 MB (9,343.0 MB in arenas, 4,661.0 MB in files > 512 KB)',
+      'Arenas: 586 (9,376.0 MB): 9,343.0 MB in use, 0.0 MB dead, 33.0 MB free',
+    ]);
   });
 
-  it('shows the arenas more than half dead', () => {
-    assert.equal(
-      describeArenas({ arenaCount: 3, arenaBytes: 48 * MB, usedBytes: 40 * MB, liveBytes: 10 * MB, sparseArenaCount: 2 }),
-      'File contents: 3 arenas (48.0 MB), 30.0 MB dead (75%), 2 more than half dead');
+  it('shows the dead bytes and the arenas more than half dead', () => {
+    const lines = describeMemory(statistics({ liveBytes: 9_000 * MB, sparseArenaCount: 3 }));
+    assert.equal(lines[2], 'Arenas: 586 (9,376.0 MB): 9,000.0 MB in use, 343.0 MB dead, 33.0 MB free, 3 arenas more than half dead');
   });
 
   it('does not show the dead bytes while indexing (files being read are not in the index yet)', () => {
-    assert.equal(
-      describeArenas({ arenaCount: 2, arenaBytes: 32 * MB, usedBytes: 20 * MB, liveBytes: 5 * MB, sparseArenaCount: 1 }, true),
-      'File contents: 2 arenas (32.0 MB), dead bytes shown when indexing is done');
-  });
-
-  it('handles empty arenas', () => {
-    assert.equal(
-      describeArenas({ arenaCount: 0, arenaBytes: 0, usedBytes: 0, liveBytes: 0, sparseArenaCount: 0 }),
-      'File contents: 0 arenas (0.0 MB), 0.0 MB dead (0%)');
+    const lines = describeMemory(statistics({ liveBytes: 5_000 * MB }), true);
+    assert.equal(lines[2], 'Arenas: 586 (9,376.0 MB), dead bytes shown when indexing is done');
   });
 });

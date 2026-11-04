@@ -17,7 +17,7 @@ import { findServerPath, serverPathCandidates } from './server/serverLocator';
 import { describeIndexingState, IndexingState, nextIndexingState, subscribeIndexEvents } from './ui/indexingState';
 import { CodeSearchViewProvider } from './ui/codeSearchView';
 import { FileNamesPick } from './ui/fileNamesPick';
-import { describeArenas } from './ui/memoryStatistics';
+import { describeMemory } from './ui/memoryStatistics';
 
 /** Minimum interval between two displays of the progress of a load in the status bar. */
 const ProgressDisplayIntervalMs = 1000;
@@ -144,13 +144,11 @@ class ServerManager implements vscode.Disposable {
     }
     try {
       const stats = await server.request(IndexStatisticsRequest.type, {});
-      const mb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
       const lines = [
         `Status: ${describeStatus(stats.status)}`,
         `Projects: ${stats.projectCount}`,
         `Files: ${stats.fileCount.toLocaleString()} (${stats.searchableFileCount.toLocaleString()} searchable)`,
-        `Memory: ${mb(stats.serverGcMemoryUsage)} managed, ${mb(stats.serverNativeMemoryUsage)} native`,
-        describeArenas(stats.fileContentsArenas, stats.status === 'busy'),
+        ...describeMemory(stats, stats.status === 'busy'),
         `Index last updated: ${new Date(stats.indexLastUpdatedUtc).toLocaleString()}`,
         `Trigram filters: ${this.trigramFiltersEnabled() ? 'enabled' : 'disabled'} (faster searches, about 5% of the size of the indexed files in memory)`,
       ];

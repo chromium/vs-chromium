@@ -69,9 +69,11 @@ namespace VsChromium.Core.Memory {
           if (end <= ArenaSize) {
             return new NativeMemorySlice(block, end - alignedSize, size, isDedicated: false);
           }
+          // The arena is full: the bytes allocated are the start of the first reservation that
+          // didn't fit (the reservations are consecutive).
+          arena.RecordFull(end - alignedSize);
         }
-        // The arena is full (the slot it would have returned is never used: at most one
-        // allocation wasted per arena).
+        // The rest of the full arena is never used (less than one allocation).
         NewArena(arena);
       }
     }
@@ -105,7 +107,7 @@ namespace VsChromium.Core.Memory {
       lock (_lock) {
         foreach (var arena in _arenas) {
           if (arena.WeakBlock.TryGetTarget(out var block) && !block.IsClosed) {
-            result.Add((block, Math.Min(ArenaSize, Volatile.Read(ref arena.Used))));
+            result.Add((block, arena.GetUsedBytes(ArenaSize)));
           }
         }
       }
@@ -121,9 +123,10 @@ namespace VsChromium.Core.Memory {
 
     /// <summary>
     /// The arenas still allocated, and the bytes of their slots still used by
-    /// <paramref name="liveSlots"/> (the block and slot size of live allocations: blocks that are
-    /// not arenas are ignored). The other allocated bytes are dead: slots of released allocations
-    /// (until their arena is released) and the unused end of full arenas.
+    /// <paramref name="liveSlots"/> (the block and slot size of live allocations). The other
+    /// allocated bytes of the arenas are dead: slots of released allocations (until their arena is
+    /// released). The end of full arenas (too small for the next allocation) is not allocated.
+    /// Live slots in other blocks (dedicated blocks of large allocations) are counted separately.
     /// </summary>
     public ArenaStatistics GetStatistics(IEnumerable<(SafeHandle Block, int SlotSize)> liveSlots) {
       var arenas = GetArenas();
@@ -131,13 +134,18 @@ namespace VsChromium.Core.Memory {
       foreach (var arena in arenas) {
         liveBytes.Add(arena.Block, 0);
       }
+      long otherBytes = 0;
       foreach (var slot in liveSlots) {
-        if (slot.Block != null && liveBytes.TryGetValue(slot.Block, out var bytes)) {
+        if (slot.Block == null)
+          continue;
+        if (liveBytes.TryGetValue(slot.Block, out var bytes)) {
           liveBytes[slot.Block] = bytes + slot.SlotSize;
+        } else {
+          otherBytes += slot.SlotSize;
         }
       }
 
-      var result = new ArenaStatistics { ArenaCount = arenas.Count, ArenaBytes = (long)arenas.Count * ArenaSize };
+      var result = new ArenaStatistics { ArenaCount = arenas.Count, ArenaBytes = (long)arenas.Count * ArenaSize, OtherBytes = otherBytes };
       var current = Volatile.Read(ref _current)?.Block;
       foreach (var arena in arenas) {
         var live = liveBytes[arena.Block];
@@ -157,6 +165,10 @@ namespace VsChromium.Core.Memory {
       public SafeNativeMemoryHandle Block;
       public readonly WeakReference<SafeNativeMemoryHandle> WeakBlock;
       public int Used;
+      /// <summary>
+      /// The bytes allocated when the arena is full (int.MaxValue until then).
+      /// </summary>
+      private int _filled = int.MaxValue;
 
       public Arena(SafeNativeMemoryHandle block) {
         Block = block;
@@ -164,6 +176,24 @@ namespace VsChromium.Core.Memory {
       }
 
       public bool IsAllocated => WeakBlock.TryGetTarget(out var block) && !block.IsClosed;
+
+      /// <summary>
+      /// Records a reservation starting at <paramref name="start"/> that didn't fit: the smallest
+      /// one is the end of the last slot allocated.
+      /// </summary>
+      public void RecordFull(int start) {
+        var filled = Volatile.Read(ref _filled);
+        while (start < filled) {
+          var previous = Interlocked.CompareExchange(ref _filled, start, filled);
+          if (previous == filled)
+            return;
+          filled = previous;
+        }
+      }
+
+      public int GetUsedBytes(int arenaSize) {
+        return Math.Min(Math.Min(arenaSize, Volatile.Read(ref Used)), Volatile.Read(ref _filled));
+      }
     }
   }
 }

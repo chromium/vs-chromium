@@ -35,7 +35,8 @@ const emptyStatistics = {
   searchableFileCount: 0,
   serverNativeMemoryUsage: 0,
   serverGcMemoryUsage: 0,
-  fileContentsArenas: { arenaCount: 0, arenaBytes: 0, usedBytes: 0, liveBytes: 0, sparseArenaCount: 0 },
+  indexedTextBytes: 0,
+  fileContentsArenas: { arenaCount: 0, arenaBytes: 0, usedBytes: 0, liveBytes: 0, sparseArenaCount: 0, largeFileBytes: 0 },
   indexLastUpdatedUtc: '2026-01-01T00:00:00Z',
   status: 'idle' as const,
 };

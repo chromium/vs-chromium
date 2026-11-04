@@ -68,8 +68,11 @@ export interface IndexStatistics {
   projectCount: number;
   fileCount: number;
   searchableFileCount: number;
+  /** Native memory allocated by the server (file contents: arenas and blocks of large files). */
   serverNativeMemoryUsage: number;
   serverGcMemoryUsage: number;
+  /** Bytes of the text of the indexed files. */
+  indexedTextBytes: number;
   fileContentsArenas: FileContentsArenaStatistics;
   indexLastUpdatedUtc: string;
   status: IndexingStatus;
@@ -286,12 +289,17 @@ export interface OperationTiming {
 export interface FileContentsArenaStatistics {
   arenaCount: number;
   arenaBytes: number;
-  /** Bytes allocated in the arenas (the rest of the current arena is free). */
+  /**
+   * Bytes allocated in the arenas. The rest is free: the end of the current arena, and the ends of
+   * the full arenas (too small for the file that didn't fit).
+   */
   usedBytes: number;
   /** Bytes of the files of the current index. */
   liveBytes: number;
   /** Number of full arenas with less than half of their allocated bytes in use. */
   sparseArenaCount: number;
+  /** Bytes of the files larger than 512 KB (a dedicated block per file, outside the arenas). */
+  largeFileBytes: number;
 }
 
 /** Process, memory and index statistics of the server (diagnostics and benchmarks). */

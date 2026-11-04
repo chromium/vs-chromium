@@ -155,11 +155,20 @@ namespace VsChromium.Protocol.Generated {
     [JsonProperty("searchableFileCount")]
     public int SearchableFileCount { get; set; }
 
+    /// <summary>
+    /// Native memory allocated by the server (file contents: arenas and blocks of large files).
+    /// </summary>
     [JsonProperty("serverNativeMemoryUsage")]
     public long ServerNativeMemoryUsage { get; set; }
 
     [JsonProperty("serverGcMemoryUsage")]
     public long ServerGcMemoryUsage { get; set; }
+
+    /// <summary>
+    /// Bytes of the text of the indexed files.
+    /// </summary>
+    [JsonProperty("indexedTextBytes")]
+    public long IndexedTextBytes { get; set; }
 
     [JsonProperty("fileContentsArenas")]
     public FileContentsArenaStatistics FileContentsArenas { get; set; }
@@ -593,7 +602,8 @@ namespace VsChromium.Protocol.Generated {
     public long ArenaBytes { get; set; }
 
     /// <summary>
-    /// Bytes allocated in the arenas (the rest of the current arena is free).
+    /// Bytes allocated in the arenas. The rest is free: the end of the current arena, and the ends of
+    /// the full arenas (too small for the file that didn't fit).
     /// </summary>
     [JsonProperty("usedBytes")]
     public long UsedBytes { get; set; }
@@ -609,6 +619,12 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonProperty("sparseArenaCount")]
     public int SparseArenaCount { get; set; }
+
+    /// <summary>
+    /// Bytes of the files larger than 512 KB (a dedicated block per file, outside the arenas).
+    /// </summary>
+    [JsonProperty("largeFileBytes")]
+    public long LargeFileBytes { get; set; }
   }
 
   /// <summary>

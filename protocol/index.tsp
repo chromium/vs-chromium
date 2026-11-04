@@ -21,8 +21,11 @@ model IndexStatistics {
   projectCount: int32;
   fileCount: int32;
   searchableFileCount: int32;
+  /** Native memory allocated by the server (file contents: arenas and blocks of large files). */
   serverNativeMemoryUsage: int64;
   serverGcMemoryUsage: int64;
+  /** Bytes of the text of the indexed files. */
+  indexedTextBytes: int64;
   fileContentsArenas: FileContentsArenaStatistics;
   indexLastUpdatedUtc: utcDateTime;
   status: IndexingStatus;

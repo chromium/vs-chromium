@@ -74,6 +74,10 @@ namespace VsChromium.Tests.Core {
           Assert.IsTrue(ordered[i - 1].Offset + ordered[i - 1].Length <= ordered[i].Offset, "Overlapping slots");
         }
         Assert.IsTrue(ordered.Last().Offset + ordered.Last().Length <= 64 * 1024);
+        // The bytes allocated are the end of the last slot (also for full arenas, whatever the
+        // reservations that didn't fit).
+        var usedBytes = allocator.GetArenas().Single(x => x.Block == group.Key).UsedBytes;
+        Assert.AreEqual(ordered.Last().Offset + ArenaAllocator.GetSlotSize(ordered.Last().Length), usedBytes);
       }
     }
 
@@ -93,10 +97,11 @@ namespace VsChromium.Tests.Core {
 
       Assert.AreEqual(2, statistics.ArenaCount);
       Assert.AreEqual(2 * 1024, statistics.ArenaBytes);
-      // The unused end of the full arena is counted as used (and dead).
-      Assert.AreEqual(1024 + 208, statistics.UsedBytes);
+      // The end of the full arena (24 bytes, too small for the next slot) is not allocated (nor dead).
+      Assert.AreEqual(1000 + 208, statistics.UsedBytes);
       Assert.AreEqual(200 + 208, statistics.LiveBytes, "Dedicated blocks are not arenas");
-      Assert.AreEqual(824, statistics.DeadBytes);
+      Assert.AreEqual(800, statistics.DeadBytes);
+      Assert.AreEqual(304, statistics.OtherBytes, "Live bytes of the dedicated blocks");
       Assert.AreEqual(1, statistics.SparseArenaCount, "The current arena is not sparse");
       GC.KeepAlive(first);
     }

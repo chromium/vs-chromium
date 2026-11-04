@@ -37,12 +37,17 @@ model OperationTiming {
 model FileContentsArenaStatistics {
   arenaCount: int32;
   arenaBytes: int64;
-  /** Bytes allocated in the arenas (the rest of the current arena is free). */
+  /**
+   * Bytes allocated in the arenas. The rest is free: the end of the current arena, and the ends of
+   * the full arenas (too small for the file that didn't fit).
+   */
   usedBytes: int64;
   /** Bytes of the files of the current index. */
   liveBytes: int64;
   /** Number of full arenas with less than half of their allocated bytes in use. */
   sparseArenaCount: int32;
+  /** Bytes of the files larger than 512 KB (a dedicated block per file, outside the arenas). */
+  largeFileBytes: int64;
 }
 
 /** Process, memory and index statistics of the server (diagnostics and benchmarks). */

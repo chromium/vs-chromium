@@ -202,7 +202,7 @@ namespace VsChromium.Features.IndexServerInfo {
     }
 
     public string GetIndexStatusText(IndexStatistics response) {
-      var memoryUsageMb = (double) response.ServerNativeMemoryUsage / 1024L / 1024L;
+      var memoryUsageMb = (double) response.IndexedTextBytes / 1024L / 1024L;
       var message = String.Format("Index: {0:n0} files - {1:n0} MB", response.SearchableFileCount, memoryUsageMb);
       return message;
     }

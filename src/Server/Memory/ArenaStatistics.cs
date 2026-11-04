@@ -12,7 +12,10 @@ namespace VsChromium.Core.Memory {
     public int ArenaCount;
     /// <summary>The native memory of the arenas.</summary>
     public long ArenaBytes;
-    /// <summary>The bytes allocated in the arenas (the rest of the current arena is free).</summary>
+    /// <summary>
+    /// The bytes allocated in the arenas. The rest is free: the end of the current arena, and the
+    /// ends of the full arenas (too small for the allocation that didn't fit).
+    /// </summary>
     public long UsedBytes;
     /// <summary>The bytes of the slots still in use.</summary>
     public long LiveBytes;
@@ -20,6 +23,10 @@ namespace VsChromium.Core.Memory {
     /// The number of full arenas with less than half of their allocated bytes still in use.
     /// </summary>
     public int SparseArenaCount;
+    /// <summary>
+    /// The bytes of the live slots outside the arenas (dedicated blocks of large allocations).
+    /// </summary>
+    public long OtherBytes;
 
     /// <summary>
     /// The bytes allocated but not in use anymore (released with their arena, when none of its

@@ -143,6 +143,7 @@ namespace VsChromium.Server.JsonRpc {
         UsedBytes = statistics.UsedBytes,
         LiveBytes = statistics.LiveBytes,
         SparseArenaCount = statistics.SparseArenaCount,
+        LargeFileBytes = statistics.OtherBytes,
       };
     }
 
@@ -157,7 +158,7 @@ namespace VsChromium.Server.JsonRpc {
     /// </summary>
     public static ArenaStatistics GetArenaStatistics(ArenaAllocator arenaAllocator, IFileDatabaseSnapshot database) {
       var contents = database is FileDatabaseSnapshot snapshot
-        ? snapshot.ContentsArray.Where(x => x != null)
+        ? snapshot.ContentsArray.Where(x => x is not (null or BinaryFileContents))
         : database.FileContentsPieces.Where(x => x.IsFirstPiece).Select(x => x.FileContents);
       return arenaAllocator.GetStatistics(contents.Select(FileContentsFactory.GetArenaSlot));
     }
@@ -217,9 +218,10 @@ namespace VsChromium.Server.JsonRpc {
         ProjectCount = snapshot.ProjectRoots.Count,
         FileCount = ToInt32(database.FileNameCount),
         SearchableFileCount = ToInt32(database.SearchableFileCount),
-        ServerNativeMemoryUsage = database.TotalFileContentsLength,
+        ServerNativeMemoryUsage = NativeHeap.TotalMemory,
         IndexLastUpdatedUtc = indexingServerState.LastIndexUpdateUtc,
         ServerGcMemoryUsage = GC.GetTotalMemory(false),
+        IndexedTextBytes = database.TotalFileContentsLength,
         FileContentsArenas = GetArenaStatistics(database),
         Status = JsonRpcEventForwarder.ToIndexingStatus(indexingServerState.Status),
       });

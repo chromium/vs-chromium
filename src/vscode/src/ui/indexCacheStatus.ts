@@ -32,8 +32,9 @@ export function describeIndexCache(
 }
 
 /**
- * The status bar display of a ready index, with the state of the index cache: a spinner while it
- * is being saved, a dot if the index changed since it was last saved, nothing otherwise.
+ * The status bar display of a ready index, with the state of the index cache. A single icon:
+ * "busy" (the spinner replaces the leading icon) while the cache is being saved, the icon of the
+ * ready index otherwise. A change since the last save is only described in the tooltip.
  */
 export function decorateIndexingDisplay(
   display: { text: string; tooltip: string },
@@ -44,10 +45,10 @@ export function decorateIndexingDisplay(
     return display;
   }
   if (cache.saving) {
-    return { text: `${display.text} $(sync~spin)`, tooltip: `${display.tooltip}\nSaving the index cache...` };
+    return { text: display.text.replace(/^\$\([^)]*\)/, '$(sync~spin)'), tooltip: `${display.tooltip}\nSaving the index cache...` };
   }
   if (cache.dirty) {
-    return { text: `${display.text} $(circle-filled)`, tooltip: `${display.tooltip}\nThe index changed since the last save of the index cache.` };
+    return { text: display.text, tooltip: `${display.tooltip}\nThe index changed since the last save of the index cache.` };
   }
   return display;
 }

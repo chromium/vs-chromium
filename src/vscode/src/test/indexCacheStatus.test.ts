@@ -44,9 +44,9 @@ describe('decorateIndexingDisplay', () => {
   const display = { text: '$(database) VsChromium', tooltip: 'VsChromium: index ready.' };
 
   it('adds a spinner while saving, a dot when the index changed since the last save', () => {
-    assert.equal(decorateIndexingDisplay(display, { kind: 'ready' }, cache({ saving: true, dirty: true })).text, '$(database) VsChromium $(sync~spin)');
+    assert.equal(decorateIndexingDisplay(display, { kind: 'ready' }, cache({ saving: true, dirty: true })).text, '$(sync~spin) VsChromium');
     const dirty = decorateIndexingDisplay(display, { kind: 'ready' }, cache({ dirty: true }));
-    assert.equal(dirty.text, '$(database) VsChromium $(circle-filled)');
+    assert.equal(dirty.text, '$(database) VsChromium', 'A change since the last save has no icon (tooltip only)');
     assert.match(dirty.tooltip, /changed since the last save/);
   });
 

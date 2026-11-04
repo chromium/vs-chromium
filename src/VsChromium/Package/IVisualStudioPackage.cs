@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -20,5 +20,7 @@ namespace VsChromium.Package {
 
     ToolWindowPane FindToolWindow(Type toolWindowType, int id, bool create);
     T GetToolsOptionsPage<T>() where T : DialogPage;
+    /// <summary>Shows a page of "Tools > Options" (implemented by <see cref="Microsoft.VisualStudio.Shell.Package"/>).</summary>
+    void ShowOptionPage(Type optionsPageType);
   }
 }

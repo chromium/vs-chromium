@@ -1,4 +1,4 @@
-﻿// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using VsChromium.Core.Logging;
 using VsChromium.Package;
+using VsChromium.Settings;
 
 namespace VsChromium.ServerProxy {
   /// <summary>
@@ -31,21 +32,52 @@ namespace VsChromium.ServerProxy {
     /// </summary>
     private const string ServerName = "Server\\VsChromium.Server.exe";
     private const string JsonRpcArgument = "--jsonrpc";
+    private const string CacheDirectoryArgument = "--cache-dir";
 
     private readonly object _serverProcessLock = new object();
     private readonly CancellationTokenSource _processStartTokenSource = new CancellationTokenSource();
+    private readonly IIndexServerSettingsProvider _settingsProvider;
     private Task<ServerProcess> _startServerTask;
 
+    [ImportingConstructor]
+    public ServerProcessLauncher(IIndexServerSettingsProvider settingsProvider) {
+      _settingsProvider = settingsProvider;
+    }
+
     public Task<ServerProcess> StartServerAsync() {
-      if (_startServerTask == null) {
-        lock (_serverProcessLock) {
-          if (_startServerTask == null) {
-            // Create the process on the thread pool
-            _startServerTask = Task.Run(() => StartServerWorker(_processStartTokenSource.Token));
-          }
+      lock (_serverProcessLock) {
+        if (_startServerTask == null) {
+          // Create the process on the thread pool
+          var arguments = GetArguments(_settingsProvider.Settings);
+          _startServerTask = Task.Run(() => StartServerWorker(arguments, _processStartTokenSource.Token));
         }
+        return _startServerTask;
       }
-      return _startServerTask;
+    }
+
+    public void StopServer() {
+      Task<ServerProcess> task;
+      lock (_serverProcessLock) {
+        task = _startServerTask;
+        _startServerTask = null;
+      }
+      if (task != null && task.Status == TaskStatus.RanToCompletion) {
+        task.Result.Stop(TimeSpan.FromSeconds(2));
+      }
+    }
+
+    /// <summary>
+    /// The command line arguments of the server: JSON-RPC mode, and the cache
+    /// directory of the "Index Server" options (if set).
+    /// </summary>
+    public static string GetArguments(IndexServerSettings settings) {
+      var directory = (settings?.CacheDirectory ?? "").Trim();
+      if (directory.Length == 0) {
+        return JsonRpcArgument;
+      }
+      return string.Format("{0} {1} \"{2}\"", JsonRpcArgument, CacheDirectoryArgument,
+        // Note: A trailing backslash would escape the closing quote.
+        directory.EndsWith("\\") ? directory + "." : directory);
     }
 
     public void Dispose() {
@@ -56,14 +88,14 @@ namespace VsChromium.ServerProxy {
       }
     }
 
-    private static ServerProcess StartServerWorker(CancellationToken token) {
+    private static ServerProcess StartServerWorker(string arguments, CancellationToken token) {
       token.ThrowIfCancellationRequested();
 
       var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       var serverPath = Path.Combine(folder ?? "", ServerName);
-      Logger.LogInfo("Starting server process: \"{0}\" {1}", serverPath, JsonRpcArgument);
+      Logger.LogInfo("Starting server process: \"{0}\" {1}", serverPath, arguments);
 
-      var startInfo = new ProcessStartInfo(serverPath, JsonRpcArgument) {
+      var startInfo = new ProcessStartInfo(serverPath, arguments) {
         UseShellExecute = false,
         CreateNoWindow = true,
         RedirectStandardInput = true,

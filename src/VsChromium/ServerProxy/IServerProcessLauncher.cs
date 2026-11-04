@@ -21,6 +21,12 @@ namespace VsChromium.ServerProxy {
     /// created.
     /// </summary>
     Task<ServerProcess> StartServerAsync();
+
+    /// <summary>
+    /// Stops the server process, if started: the next call to
+    /// <see cref="StartServerAsync"/> starts a new one (restart of the server).
+    /// </summary>
+    void StopServer();
   }
 
   /// <summary>

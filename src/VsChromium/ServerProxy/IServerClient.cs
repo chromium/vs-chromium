@@ -34,6 +34,26 @@ namespace VsChromium.ServerProxy {
     bool IsServerRunning { get; }
 
     /// <summary>
+    /// The result of "server/initialize" of the running server (version,
+    /// process id), null until the server is started.
+    /// </summary>
+    InitializeResult ServerInfo { get; }
+
+    /// <summary>
+    /// The number of times the server was started (1 after the first start,
+    /// incremented by <see cref="RestartAsync"/>).
+    /// </summary>
+    int StartCount { get; }
+
+    /// <summary>
+    /// Stops the server and starts a new one (e.g. to apply settings read when
+    /// the server starts). <see cref="ProcessStarted"/> is raised when the new
+    /// server is initialized; the end of the old connection is not reported as
+    /// an error.
+    /// </summary>
+    Task RestartAsync();
+
+    /// <summary>
     /// Raised when the server has been started and initialized.
     /// </summary>
     event EventHandler ProcessStarted;

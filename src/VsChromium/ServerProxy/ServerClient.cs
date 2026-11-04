@@ -7,6 +7,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using StreamJsonRpc;
 using VsChromium.Core.Logging;
@@ -39,6 +40,8 @@ namespace VsChromium.ServerProxy {
     private JsonRpc _rpc;
     private volatile bool _isServerRunning;
     private volatile bool _disposed;
+    private volatile InitializeResult _serverInfo;
+    private int _startCount;
 
     [ImportingConstructor]
     public ServerClient(IServerProcessLauncher serverProcessLauncher) {
@@ -56,6 +59,35 @@ namespace VsChromium.ServerProxy {
     public event Action<ProgressParams> IndexProgress;
 
     public bool IsServerRunning => _isServerRunning;
+
+    public InitializeResult ServerInfo => _serverInfo;
+
+    public int StartCount => _startCount;
+
+    public async Task RestartAsync() {
+      JsonRpc rpc;
+      lock (_lock) {
+        if (_disposed) {
+          throw new ObjectDisposedException(nameof(ServerClient));
+        }
+        rpc = _rpc;
+        // Note: The disconnection of the old connection is ignored (see
+        // RpcOnDisconnected): it is not the current connection anymore.
+        _rpc = null;
+        _startTask = null;
+      }
+      _isServerRunning = false;
+      _serverInfo = null;
+      Logger.LogInfo("Restarting the index server.");
+      try {
+        rpc?.Dispose();
+      }
+      catch (Exception e) {
+        Logger.LogWarn(e, "Error closing the connection to the server.");
+      }
+      _serverProcessLauncher.StopServer();
+      await GetProtocolClientAsync().ConfigureAwait(false);
+    }
 
     public Task<ProtocolClient> GetProtocolClientAsync() {
       lock (_lock) {
@@ -146,6 +178,8 @@ namespace VsChromium.ServerProxy {
         Logger.LogInfo("Connected to server (version {0}, protocol version {1}, pid={2}).",
           result.ServerVersion, result.ProtocolVersion, result.ServerProcessId);
 
+        _serverInfo = result;
+        Interlocked.Increment(ref _startCount);
         _isServerRunning = true;
         OnProcessStarted();
         return client;
@@ -165,6 +199,13 @@ namespace VsChromium.ServerProxy {
     }
 
     private void RpcOnDisconnected(object sender, JsonRpcDisconnectedEventArgs e) {
+      lock (_lock) {
+        if (!_disposed && !ReferenceEquals(sender, _rpc)) {
+          // A previous connection (the server was restarted).
+          Logger.LogInfo("Connection to the previous server closed.");
+          return;
+        }
+      }
       var wasRunning = _isServerRunning;
       _isServerRunning = false;
       if (_disposed) {

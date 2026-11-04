@@ -22,6 +22,13 @@ namespace VsChromium.Tests.ServerProcess {
   /// through <see cref="IServerClient"/>.
   /// </summary>
   public abstract class TestServerBase : MefTestBase {
+    static TestServerBase() {
+      // The servers started by these tests (child processes) don't use the index cache: not the cache of
+      // the user (default directory), and a single "index/loaded" notification per load (a load from the
+      // cache is followed by a second one, after its verification).
+      Environment.SetEnvironmentVariable("VSCHROMIUM_CACHE_DIR", "none");
+    }
+
     // When using interactive debugger:
     //protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5000.0);
     protected static readonly TimeSpan ServerResponseTimeout = TimeSpan.FromSeconds(5.0);

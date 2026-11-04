@@ -96,7 +96,7 @@ namespace VsChromium.Server {
     private IFileSystemSnapshotManager _fileSystemSnapshotManager;
     public IFileSystemSnapshotManager FileSystemSnapshotManager => _fileSystemSnapshotManager ??= Create(new FileSystemSnapshotManager(
       FileSystemNameFactory, FileSystem, FileRegistrationTracker, FileSystemSnapshotBuilder, OperationProcessor, ProjectDiscovery,
-      DirectoryChangeWatcherFactory, TaskQueueFactory, LongRunningFileSystemTaskQueue));
+      DirectoryChangeWatcherFactory, TaskQueueFactory, LongRunningFileSystemTaskQueue, IndexCache));
 
     // Server/FileSystemContents
     private IFileContentsFactory _fileContentsFactory;

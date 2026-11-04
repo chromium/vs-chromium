@@ -351,9 +351,15 @@ namespace VsChromium.Server.Search {
       if (e.Error != null)
         return;
 
+      // Note: The task doesn't reference the previous snapshot (only its version): the last task
+      // of a queue can stay referenced after it ran (e.g. by an idle thread), which kept the tree
+      // of the index cache alive after its verification (twice the memory of the tree).
+      var previousVersion = e.PreviousSnapshot.Version;
+      var newSnapshot = e.NewSnapshot;
+      var fullPathChanges = e.FullPathChanges;
       _taskQueue.Enqueue(ComputeNewStatedId, cancellationToken => {
         using (new TaskQueueGuard(this)) {
-          ComputeNewStateLongTask(e.PreviousSnapshot, e.NewSnapshot, e.FullPathChanges, cancellationToken);
+          ComputeNewStateLongTask(previousVersion, newSnapshot, fullPathChanges, cancellationToken);
         }
       });
 
@@ -558,7 +564,7 @@ namespace VsChromium.Server.Search {
       }
     }
 
-    private void ComputeNewStateLongTask(FileSystemSnapshot previousSnapshot, FileSystemSnapshot newSnapshot,
+    private void ComputeNewStateLongTask(int previousSnapshotVersion, FileSystemSnapshot newSnapshot,
       FullPathChanges fullPathChanges,
       CancellationToken cancellationToken) {
       Invariants.Assert(_inTaskQueueTask);
@@ -567,7 +573,7 @@ namespace VsChromium.Server.Search {
         // We only allow incremental updates if the last update was successfully completed
         // and if the file system snapshot version we are based on is the same as the
         // new file system snapshot we are processing
-        if (previousSnapshot.Version == _currentFileSystemSnapshotVersion &&
+        if (previousSnapshotVersion == _currentFileSystemSnapshotVersion &&
             options.PreviousUpdateCompleted &&
             fullPathChanges != null) {
           return CreateWithFileSystemChanges(newSnapshot, fullPathChanges, options, cancellationToken);
@@ -575,7 +581,7 @@ namespace VsChromium.Server.Search {
           Logger.LogInfo($"Starting a full database update: " +
                          $"CurrentSnapshotVersion={_currentFileSystemSnapshotVersion}, " +
                          $"PreviousUpdateCompleted={options.PreviousUpdateCompleted}, " +
-                         $"PreviousSnapshotVersion={previousSnapshot.Version}, " +
+                         $"PreviousSnapshotVersion={previousSnapshotVersion}, " +
                          $"FullPathChanges={fullPathChanges?.Entries.Count ?? -1}.");
           return CreateFullScan(newSnapshot, options, cancellationToken);
         }
@@ -624,6 +630,7 @@ namespace VsChromium.Server.Search {
             OperationInfo = info,
             Error = error,
             TreeVersion = _currentFileSystemSnapshotVersion,
+            FromCache = fileSystemSnapshot.IsFromCache,
           });
         },
 
@@ -631,14 +638,17 @@ namespace VsChromium.Server.Search {
           options.CurrentFileDatabase = _currentFileDatabase;
           var newFileDatabase = updater(options);
           ActivateCurrentDatabase(fileSystemSnapshot, newFileDatabase, true);
-          if (options.IsFullLoad) {
+          // Note: Not for trees from the index cache (the same as the cache), written after their
+          // verification.
+          if (options.IsFullLoad && !fileSystemSnapshot.IsFromCache) {
             // In the background, after the new database is active (searches are not delayed).
             _indexCache?.ScheduleWrite(fileSystemSnapshot, newFileDatabase, options.LoadStartUtc);
           }
 
           OnFilesLoaded(new FilesLoadedResult {
             OperationInfo = info,
-            TreeVersion = fileSystemSnapshot.Version
+            TreeVersion = fileSystemSnapshot.Version,
+            FromCache = fileSystemSnapshot.IsFromCache,
           });
         }
       });

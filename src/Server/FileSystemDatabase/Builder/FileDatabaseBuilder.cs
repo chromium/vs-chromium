@@ -89,6 +89,7 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
             OldFileDatabaseSnapshot = fileDatabase,
             UnchangedProjects = unchangedProjectSet,
             CacheLookups = GetCacheLookups(newSnapshot),
+            NewSnapshot = newSnapshot,
             PartialProgressReporter = new PartialProgressReporter(
               TimeSpan.FromSeconds(5.0),
               () => {
@@ -374,6 +375,8 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
       public int LoadedTextFileCount;
       public int LoadedBinaryFileCount;
       public int LoadedFromCacheFileCount;
+      public int NotLoadedFileCount;
+      public FileSystemSnapshot NewSnapshot;
       /// <summary>
       /// The entries of the index cache of the projects that have one (null if none).
       /// </summary>
@@ -448,10 +451,12 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
         loadingContext.CacheLookups = null;
       }
 
-      Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files, {2:n0} files from the index cache.",
+      Logger.LogInfo("Loaded {0:n0} text files from disk, skipped {1:n0} binary files, {2:n0} files from the index cache" +
+                     " ({3:n0} files not loaded: tree of the index cache, verified later).",
         loadingContext.LoadedTextFileCount,
         loadingContext.LoadedBinaryFileCount,
-        loadingContext.LoadedFromCacheFileCount);
+        loadingContext.LoadedFromCacheFileCount,
+        loadingContext.NotLoadedFileCount);
       if (_indexCache != null && _indexCache.IsEnabled) {
         _indexCache.RecordLoad(loadingContext.LoadedFromCacheFileCount,
           loadingContext.LoadedTextFileCount + loadingContext.LoadedBinaryFileCount);
@@ -532,6 +537,16 @@ namespace VsChromium.Server.FileSystemDatabase.Builder {
           Interlocked.Increment(ref loadingContext.LoadedFromCacheFileCount);
           return cachedContents;
         }
+      }
+
+      // Projects whose tree comes from the index cache (phase 2): no disk access, the files
+      // without cached contents (e.g. larger than 512 KB) are read by the verification of the tree
+      // (they are in its changes). The files of the changes (e.g. from the directory watcher) are
+      // read.
+      if (loadingContext.NewSnapshot.IsCachedProject(project.RootPath) &&
+          (loadingContext.FullPathChanges == null || loadingContext.FullPathChanges.ShouldSkipLoadFileContents(fileName))) {
+        Interlocked.Increment(ref loadingContext.NotLoadedFileCount);
+        return null;
       }
 
       var fileContents = _fileContentsFactory.ReadFileContents(fileName.FullPath);

@@ -721,7 +721,7 @@ namespace VsChromium.Features.ToolWindows.CodeSearch {
     private void UpdateIndexingServerToolbarStatus(IndexStatistics response) {
       ViewModel.IndexingPaused = response.Status == IndexingStatus.Paused || response.Status == IndexingStatus.Yield;
       ViewModel.IndexingPausedDueToError = response.Status == IndexingStatus.Yield;
-      ViewModel.IndexingBusy = response.Status == IndexingStatus.Busy;
+      ViewModel.IndexingBusy = response.Status == IndexingStatus.Busy || response.Status == IndexingStatus.Verifying;
       ViewModel.IndexStatusText = _showServerInfoService.GetIndexStatusText(response);
       ViewModel.IndexingServerStateText = _showServerInfoService.GetIndexingServerStatusText(response);
       ViewModel.ServerStatusToolTipText = _showServerInfoService.GetIndexingServerStatusToolTipText(response);

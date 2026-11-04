@@ -68,6 +68,8 @@ namespace VsChromium.Server.JsonRpc {
           return IndexingStatus.Yield;
         case IndexingServerStatus.Busy:
           return IndexingStatus.Busy;
+        case IndexingServerStatus.Verifying:
+          return IndexingStatus.Verifying;
         default:
           throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown indexing status");
       }
@@ -115,6 +117,7 @@ namespace VsChromium.Server.JsonRpc {
         OperationId = e.OperationInfo.OperationId,
         TreeVersion = e.TreeVersion,
         Error = JsonRpcErrors.CreateErrorInfo(e.Error),
+        FromCache = e.FromCache ? true : null,
       });
     }
   }

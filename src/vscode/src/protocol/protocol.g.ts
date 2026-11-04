@@ -12,8 +12,11 @@ import { NotificationType, RequestType, RequestType0 } from 'vscode-jsonrpc';
  * - `'paused'`: Indexing is paused (see "index/pause").
  * - `'yield'`: The server paused itself (file system watcher buffer overflow): call "index/resume".
  * - `'busy'`: The server is indexing the file system.
+ * - `'verifying'`: The index of the last session (index cache) is in use, and is being verified in the background
+ *   (scan and incremental update): search results may contain deleted files or miss new or large
+ *   files until it ends.
  */
-export type IndexingStatus = 'idle' | 'paused' | 'yield' | 'busy';
+export type IndexingStatus = 'idle' | 'paused' | 'yield' | 'busy' | 'verifying';
 
 /** A span of text in a file: offset and length in UTF-16 code units. */
 export interface TextSpan {
@@ -107,6 +110,12 @@ export interface FilesLoadedParams {
   treeVersion: number;
   /** Set if the load failed. */
   error?: ErrorInfo;
+  /**
+   * True if the loaded index comes from the index cache (tree and contents of the last session)
+   * and is being verified (status "verifying"): another "loaded" notification follows when the
+   * verification completes.
+   */
+  fromCache?: boolean;
 }
 
 export interface ProgressParams {

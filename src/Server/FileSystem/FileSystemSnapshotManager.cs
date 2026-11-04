@@ -11,6 +11,7 @@ using VsChromium.Core.Files;
 using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
+using VsChromium.Server.Cache;
 using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Operations;
@@ -23,6 +24,23 @@ namespace VsChromium.Server.FileSystem {
     private static readonly TaskId FilesChangedTaskId = new TaskId("FilesChangedTaskId");
     private static readonly TaskId ProjectListChangedTaskId = new TaskId("ProjectListChangedTaskId");
     private static readonly TaskId FullRescanRequiredTaskId = new TaskId("FullRescanRequiredTaskId");
+    private static readonly TaskId VerifyCachedTreesTaskId = new TaskId("VerifyCachedTreesTaskId");
+
+    /// <summary>
+    /// Delay before publishing the tree of a project from the index cache (phase 2): 0 (decision),
+    /// the index of the last session is usable as soon as it is loaded, and verified in the
+    /// background. A delay would let quick verifications complete first (no stale results shown).
+    /// Hard-coded for now (a setting later): only 0 is implemented.
+    /// </summary>
+    public static readonly TimeSpan CachedTreePublishDelay = TimeSpan.Zero;
+
+    /// <summary>
+    /// Test only: delay (milliseconds) before verifying the trees of the index cache, so that tests
+    /// can observe the "verifying" state.
+    /// </summary>
+    private const string TestVerifyDelayVariable = "VSCHROMIUM_TEST_VERIFY_DELAY_MS";
+
+    private static readonly FullPathChanges EmptyChanges = new FullPathChanges(ArrayUtilities.EmptyList<PathChangeEntry>.Instance);
 
     private readonly IProjectDiscovery _projectDiscovery;
     private readonly IDirectoryChangeWatcher _directoryChangeWatcher;
@@ -38,6 +56,14 @@ namespace VsChromium.Server.FileSystem {
       new ConcurrentBufferQueue<IList<PathChangeEntry>>();
 
     private readonly IFileRegistrationTracker _fileRegistrationTracker;
+    private readonly IIndexCache _indexCache;
+
+    /// <summary>
+    /// The projects whose tree comes from the index cache and is not verified yet, with the files
+    /// of their tree to read from disk (without contents in the cache).
+    /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
+    /// </summary>
+    private readonly Dictionary<FullPath, HashSet<FileName>> _unverifiedProjects = new Dictionary<FullPath, HashSet<FileName>>();
 
     /// <summary>
     /// Access to this field is serialized through tasks executed on the <see cref="_longRunningFileSystemTaskQueue"/>
@@ -66,7 +92,9 @@ namespace VsChromium.Server.FileSystem {
       IProjectDiscovery projectDiscovery,
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
       ITaskQueueFactory taskQueueFactory,
-      ILongRunningFileSystemTaskQueue longRunningFileSystemTaskQueue) {
+      ILongRunningFileSystemTaskQueue longRunningFileSystemTaskQueue,
+      IIndexCache indexCache = null) {
+      _indexCache = indexCache;
       _fileSystemNameFactory = fileSystemNameFactory;
       _fileSystem = fileSystem;
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
@@ -295,7 +323,13 @@ namespace VsChromium.Server.FileSystem {
         Execute = info => {
           // Compute and assign new snapshot
           var oldSnapshot = _currentSnapshot;
-          var newSnapshot = BuildNewFileSystemSnapshot(projects, oldSnapshot, pathChanges, cancellationToken);
+          // Phase 2 of the index cache: the new projects with a tree in the index cache are not
+          // scanned (verified later). Not for full rescans ("Rebuild index").
+          var cachedTrees = pathChanges == null ? null : LoadCachedTrees(projects, oldSnapshot, cancellationToken);
+          var newSnapshot = BuildNewFileSystemSnapshot(projects, oldSnapshot, pathChanges,
+            cachedTrees?.ToDictionary(x => x.Key, x => x.Value.Root), null, cancellationToken);
+          UpdateUnverifiedProjects(projects, pathChanges, cachedTrees);
+          newSnapshot = newSnapshot.WithCachedProjectRoots(_unverifiedProjects.Keys.ToList());
           // Update of new tree (assert calls are serialized).
           Invariants.Assert(ReferenceEquals(oldSnapshot, _currentSnapshot));
           _currentSnapshot = newSnapshot;
@@ -313,12 +347,133 @@ namespace VsChromium.Server.FileSystem {
             FullPathChanges = pathChanges,
             NewSnapshot = newSnapshot
           });
+
+          // Note: After the event, so that the index of the cached trees is loaded first (same task
+          // queue).
+          ScheduleVerification();
+        }
+      });
+    }
+
+    /// <summary>
+    /// The trees of the index cache of the projects not in <paramref name="oldSnapshot"/> (new
+    /// projects), if their cache has one written with the current configuration of the project.
+    /// </summary>
+    private Dictionary<FullPath, CachedProjectTree> LoadCachedTrees(IList<IProject> projects, FileSystemSnapshot oldSnapshot,
+                                                                   CancellationToken cancellationToken) {
+      if (_indexCache == null || !_indexCache.IsEnabled)
+        return null;
+      Dictionary<FullPath, CachedProjectTree> result = null;
+      foreach (var project in projects) {
+        if (oldSnapshot.ProjectRoots.Any(x => x.Project.RootPath.Equals(project.RootPath)))
+          continue;
+        var tree = _indexCache.GetProjectCache(project.RootPath)?.TryLoadTree(project.VersionHash, _fileSystemNameFactory,
+          project.RootPath, cancellationToken);
+        if (tree != null) {
+          (result ??= new Dictionary<FullPath, CachedProjectTree>())[project.RootPath] = tree;
+        }
+      }
+      return result;
+    }
+
+    private void UpdateUnverifiedProjects(IList<IProject> projects, FullPathChanges pathChanges,
+                                          Dictionary<FullPath, CachedProjectTree> cachedTrees) {
+      // A full rescan verifies all the trees.
+      if (pathChanges == null) {
+        _unverifiedProjects.Clear();
+      }
+      if (cachedTrees != null) {
+        foreach (var (root, tree) in cachedTrees) {
+          _unverifiedProjects[root] = new HashSet<FileName>(tree.FilesWithoutContents);
+        }
+      }
+      // Projects not registered anymore
+      foreach (var root in _unverifiedProjects.Keys.ToList()) {
+        if (!projects.Any(x => x.RootPath.Equals(root))) {
+          _unverifiedProjects.Remove(root);
+        }
+      }
+    }
+
+    private void ScheduleVerification() {
+      if (_unverifiedProjects.Count > 0) {
+        _longRunningFileSystemTaskQueue.Enqueue(VerifyCachedTreesTaskId, VerifyCachedTrees);
+      }
+    }
+
+    /// <summary>
+    /// Verifies the trees of the index cache in use (phase 2): scans the projects (the directory
+    /// watcher already runs: changes during the scan are queued and applied after), compares the
+    /// scan with the cached tree, and publishes the scanned tree with the differences as synthetic
+    /// changes (<see cref="SnapshotDiff"/>): the incremental update of the index re-reads the files
+    /// with another time or size and the files without cached contents, so that the index is the
+    /// same as the index of a cold load.
+    /// </summary>
+    private void VerifyCachedTrees(CancellationToken cancellationToken) {
+      if (_unverifiedProjects.Count == 0 || _isPaused)
+        return;
+      if (int.TryParse(Environment.GetEnvironmentVariable(TestVerifyDelayVariable), out var delayMs) && delayMs > 0) {
+        cancellationToken.WaitHandle.WaitOne(delayMs);
+        cancellationToken.ThrowIfCancellationRequested();
+      }
+
+      var roots = new HashSet<FullPath>(_unverifiedProjects.Keys);
+      _operationProcessor.Execute(new OperationHandlers {
+        OnBeforeExecute = info =>
+          OnSnapshotScanStarted(info),
+
+        OnError = (info, error) => {
+          if (!error.IsCanceled()) {
+            Logger.LogError(error, "Error verifying the trees of the index cache");
+          }
+          OnSnapshotScanFinished(new SnapshotScanResult {
+            OperationInfo = info,
+            Error = error
+          });
+        },
+
+        Execute = info => {
+          var oldSnapshot = _currentSnapshot;
+          var newSnapshot = BuildNewFileSystemSnapshot(_registeredProjects, oldSnapshot, EmptyChanges, null, roots,
+            cancellationToken);
+          var changes = new List<PathChangeEntry>();
+          using (new TimeElapsedLogger("Comparing the trees of the index cache with the file system", cancellationToken, InfoLogger.Instance)) {
+            foreach (var root in roots) {
+              var oldRoot = oldSnapshot.ProjectRoots.FirstOrDefault(x => x.Project.RootPath.Equals(root));
+              var newRoot = newSnapshot.ProjectRoots.FirstOrDefault(x => x.Project.RootPath.Equals(root));
+              if (oldRoot != null && newRoot != null) {
+                changes.AddRange(SnapshotDiff.Compute(root, oldRoot.Directory, newRoot.Directory, _unverifiedProjects[root],
+                  cancellationToken));
+              }
+            }
+          }
+          foreach (var root in roots) {
+            _unverifiedProjects.Remove(root);
+          }
+          newSnapshot = newSnapshot.WithCachedProjectRoots(_unverifiedProjects.Keys.ToList());
+          Invariants.Assert(ReferenceEquals(oldSnapshot, _currentSnapshot));
+          _currentSnapshot = newSnapshot;
+          Logger.LogInfo("FileSystemSnapshotManager: Verified the trees of the index cache: {0:n0} changes " +
+                         "({1:n0} created, {2:n0} deleted, {3:n0} changed).",
+            changes.Count,
+            changes.Count(x => x.ChangeKind == PathChangeKind.Created),
+            changes.Count(x => x.ChangeKind == PathChangeKind.Deleted),
+            changes.Count(x => x.ChangeKind == PathChangeKind.Changed));
+
+          OnSnapshotScanFinished(new SnapshotScanResult {
+            OperationInfo = info,
+            PreviousSnapshot = oldSnapshot,
+            FullPathChanges = new FullPathChanges(changes),
+            NewSnapshot = newSnapshot
+          });
         }
       });
     }
 
     private FileSystemSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
-      FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges, CancellationToken cancellationToken) {
+      FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges,
+      IReadOnlyDictionary<FullPath, DirectorySnapshot> precomputedRoots, ISet<FullPath> fullScanRoots,
+      CancellationToken cancellationToken) {
 
       using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes", cancellationToken, InfoLogger.Instance)) {
         // Compute new snapshot
@@ -328,7 +483,9 @@ namespace VsChromium.Server.FileSystem {
           pathChanges,
           projects,
           Interlocked.Increment(ref _version),
-          cancellationToken);
+          cancellationToken,
+          precomputedRoots,
+          fullScanRoots);
 
         // Monitor all project roots for file changes.
         var newRoots = newSnapshot.ProjectRoots

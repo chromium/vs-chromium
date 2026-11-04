@@ -33,7 +33,9 @@ namespace VsChromium.Server.FileSystem.Builder {
                                           FullPathChanges pathChanges/* may be null */,
                                           IList<IProject> projects,
                                           int version,
-                                          CancellationToken cancellationToken) {
+                                          CancellationToken cancellationToken,
+                                          IReadOnlyDictionary<FullPath, DirectorySnapshot> precomputedRoots = null,
+                                          ISet<FullPath> fullScanRoots = null) {
       cancellationToken.ThrowIfCancellationRequested(); // cancellation
       using (OperationTimings.Measure(OperationTimings.FileSystemScan))
       using (var progress = _progressTrackerFactory.CreateIndeterminateTracker()) {
@@ -44,9 +46,16 @@ namespace VsChromium.Server.FileSystem.Builder {
               .Select(project => {
                 cancellationToken.ThrowIfCancellationRequested(); // cancellation
 
+                // The tree of the index cache (phase 2), not scanned.
+                if (precomputedRoots != null && precomputedRoots.TryGetValue(project.RootPath, out var precomputed)) {
+                  return new ProjectRootSnapshot(project, precomputed);
+                }
+
+                // Note: A null path changes means a full scan of the project.
+                var fullScan = pathChanges == null || (fullScanRoots != null && fullScanRoots.Contains(project.RootPath));
                 var projectSnapshotBuilder = new ProjectRootSnapshotBuilder(
                   _fileSystem, fileNameFactory, oldSnapshot, project, progress,
-                  (pathChanges == null ? null : new ProjectPathChanges(project.RootPath, pathChanges.Entries)),
+                  (fullScan ? null : new ProjectPathChanges(project.RootPath, pathChanges.Entries)),
                   _indexingWorkerPool,
                   cancellationToken);
 

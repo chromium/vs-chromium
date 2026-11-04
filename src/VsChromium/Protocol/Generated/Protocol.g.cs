@@ -38,6 +38,13 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [EnumMember(Value = "busy")]
     Busy,
+    /// <summary>
+    /// The index of the last session (index cache) is in use, and is being verified in the background
+    /// (scan and incremental update): search results may contain deleted files or miss new or large
+    /// files until it ends.
+    /// </summary>
+    [EnumMember(Value = "verifying")]
+    Verifying,
   }
 
   /// <summary>
@@ -236,6 +243,14 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonProperty("error", NullValueHandling = NullValueHandling.Ignore)]
     public ErrorInfo Error { get; set; }
+
+    /// <summary>
+    /// True if the loaded index comes from the index cache (tree and contents of the last session)
+    /// and is being verified (status "verifying"): another "loaded" notification follows when the
+    /// verification completes.
+    /// </summary>
+    [JsonProperty("fromCache", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? FromCache { get; set; }
   }
 
   public sealed partial class ProgressParams {

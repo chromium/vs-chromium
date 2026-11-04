@@ -148,7 +148,7 @@ class ServerManager implements vscode.Disposable {
         `Status: ${describeStatus(stats.status)}`,
         `Projects: ${stats.projectCount}`,
         `Files: ${stats.fileCount.toLocaleString()} (${stats.searchableFileCount.toLocaleString()} searchable)`,
-        ...describeMemory(stats, stats.status === 'busy'),
+        ...describeMemory(stats, stats.status === 'busy' || stats.status === 'verifying'),
         `Index last updated: ${new Date(stats.indexLastUpdatedUtc).toLocaleString()}`,
         `Trigram filters: ${this.trigramFiltersEnabled() ? 'enabled' : 'disabled'} (faster searches, about 5% of the size of the indexed files in memory)`,
       ];

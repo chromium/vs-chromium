@@ -81,7 +81,7 @@ describe('ServerClient', { skip }, () => {
     const stats = await client.request(IndexStatisticsRequest.type, {});
     assert.equal(stats.projectCount, 1);
     assert.ok(stats.fileCount > 0, 'fileCount should be > 0');
-    assert.ok(['idle', 'paused', 'yield', 'busy'].includes(stats.status));
+    assert.ok(['idle', 'paused', 'yield', 'busy', 'verifying'].includes(stats.status));
   });
 
   it('searches code and returns text extracts for the matches', async () => {

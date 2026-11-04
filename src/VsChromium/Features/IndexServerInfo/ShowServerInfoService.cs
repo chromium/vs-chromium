@@ -217,6 +217,8 @@ namespace VsChromium.Features.IndexServerInfo {
           return "Yield";
         case IndexingStatus.Busy:
           return "Busy";
+        case IndexingStatus.Verifying:
+          return "Verifying";
         default:
           throw new ArgumentOutOfRangeException();
       }
@@ -238,6 +240,10 @@ namespace VsChromium.Features.IndexServerInfo {
                  "Press the \"Run\" button to resume automatic indexing now.";
         case IndexingStatus.Busy:
           return "The server is working on updating the index to match the contents of files on disk.\r\n" +
+                 "Press the \"Pause\" button to pause indexing.";
+        case IndexingStatus.Verifying:
+          return "The index of the last session is in use and is being verified against the files on disk.\r\n" +
+                 "Until then, search results may contain deleted files and miss new, changed or large files.\r\n" +
                  "Press the \"Pause\" button to pause indexing.";
         default:
           throw new ArgumentOutOfRangeException();

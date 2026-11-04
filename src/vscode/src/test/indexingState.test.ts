@@ -96,4 +96,28 @@ describe('nextIndexingState', () => {
     assert.equal(nextIndexingState({ kind: 'scanning' }, { type: 'stateChanged', params: { status: 'busy', lastIndexUpdatedUtc: at } }), undefined);
     assert.equal(nextIndexingState({ kind: 'loading' }, { type: 'stateChanged', params: { status: 'idle', lastIndexUpdatedUtc: at } }), undefined);
   });
-});
+
+  it('shows the verification of the index of the last session (index cache)', () => {
+    const at = '2026-01-01T00:00:00Z';
+    // The index of the cache is loaded: usable, verified in the background.
+    let state = step({ kind: 'scanning' }, { type: 'stateChanged', params: { status: 'verifying', lastIndexUpdatedUtc: at } });
+    assert.deepEqual(state, { kind: 'verifying' });
+    state = step(state, { type: 'loaded', params: { operationId: 1, treeVersion: 1, fromCache: true } });
+    assert.deepEqual(state, { kind: 'verifying' });
+    assert.match(describeIndexingState(state).text, /verifying/);
+    // The scan and load of the verification don't change the state.
+    for (const event of [
+      { type: 'scanStarted', params: { operationId: 2 } },
+      { type: 'scanFinished', params: { operationId: 2, oldVersion: 1, newVersion: 2 } },
+      { type: 'loading', params: { operationId: 3 } },
+      { type: 'loadingProgress', params: { operationId: 3 } },
+      { type: 'progress', params: { displayText: 'Reading file 1 of 2', completed: 1, total: 2 } },
+    ] as IndexEvent[]) {
+      assert.equal(nextIndexingState(state, event), undefined, event.type);
+    }
+    // Verified: ready.
+    state = step(state, { type: 'loaded', params: { operationId: 3, treeVersion: 2 } });
+    assert.deepEqual(state, { kind: 'ready' });
+    // Or idle (e.g. the verification was replaced by a rebuild).
+    assert.deepEqual(nextIndexingState({ kind: 'verifying' }, { type: 'stateChanged', params: { status: 'idle', lastIndexUpdatedUtc: at } }), { kind: 'ready' });
+  });});

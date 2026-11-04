@@ -21,6 +21,10 @@ namespace VsChromium.Server {
     private bool _paused;
     private bool _indexing;
     private bool _pausedDueToError;
+    /// <summary>
+    /// True from the publication of a tree of the index cache until the load of the verified tree.
+    /// </summary>
+    private bool _verifying;
     private DateTime _lastIndexUpdateUtc = DateTime.MinValue;
     /// <summary>
     /// Note: Updated in the processing thread, read from any thread.
@@ -51,6 +55,9 @@ namespace VsChromium.Server {
     public IndexingServerState CurrentState => _currentState;
 
     private IndexingServerStatus GetStatus() {
+      // Note: The verification of the tree of the index cache is a scan and a load ("busy").
+      if (_verifying && !_paused)
+        return IndexingServerStatus.Verifying;
       if (_indexing)
         return IndexingServerStatus.Busy;
       if (_pausedDueToError)
@@ -105,8 +112,13 @@ namespace VsChromium.Server {
     }
 
     private void FileSystemSnapshotManagerOnSnapshotScanFinished(object sender, SnapshotScanResult snapshotScanResult) {
+      // Note: The task doesn't reference the snapshots (see SearchEngine).
+      var fromCache = snapshotScanResult.NewSnapshot != null && snapshotScanResult.NewSnapshot.IsFromCache;
       _stateChangeTaskQueue.ExecuteAsync(token => {
         _indexing = false;
+        if (fromCache) {
+          _verifying = true;
+        }
         OnStatusUpdated();
       });
     }
@@ -123,6 +135,7 @@ namespace VsChromium.Server {
         _indexing = false;
         if (filesLoadedResult.Error == null) {
           _lastIndexUpdateUtc = _dateTimeProvider.UtcNow;
+          _verifying = filesLoadedResult.FromCache;
         }
         OnStatusUpdated();
       });

@@ -57,6 +57,12 @@ public static class ServerProtocol {
       ["maxExtractLength"] = maxExtractLength,
     });
 
+  public static ServerRequest PauseIndexing() =>
+    new("index/pause", new JsonObject());
+
+  public static ServerRequest ResumeIndexing() =>
+    new("index/resume", new JsonObject());
+
   public static ServerRequest RefreshTree() =>
     new("tree/refresh", new JsonObject());
 

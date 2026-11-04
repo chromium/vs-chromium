@@ -20,5 +20,11 @@ namespace VsChromium.Server {
     /// The server is busy indexing the file system
     /// </summary>
     Busy,
+    /// <summary>
+    /// The index of the last session (index cache) is in use, and is being verified in the
+    /// background (scan and incremental update): searches may contain deleted files or miss new
+    /// files until it ends.
+    /// </summary>
+    Verifying,
   }
 }

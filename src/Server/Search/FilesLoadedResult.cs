@@ -17,5 +17,10 @@ namespace VsChromium.Server.Search {
     /// The version of the file system tree for which files have been loaded.
     /// </summary>
     public long TreeVersion { get; set; }
+    /// <summary>
+    /// True if the tree of at least one project comes from the index cache and is not verified
+    /// yet (see <see cref="FileSystem.FileSystemSnapshot.IsFromCache"/>).
+    /// </summary>
+    public bool FromCache { get; set; }
   }
 }

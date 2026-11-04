@@ -927,7 +927,7 @@ the next full loads (VS Code or server restart) don't read the unchanged files (
   a temporary cache directory.
 - **Format** (`IndexCacheFile`): `arenas/NNNNNN.arena`, the text as stored in memory (UTF-8 without
   BOM, 2 trailing NUL bytes, 8 byte aligned slots, at most 16 MB), immutable once written; and
-  `index.bin` (format version 2, 7-bit encoded integers: header with magic, format version, path
+  `index.bin` (format version 2, version 3 adds the tree: see phase 2; 7-bit encoded integers: header with magic, format version, path
   case sensitivity and root path; groups of files of a directory: file count, relative path of the
   directory front-coded with the previous one, then per file the name, flags ASCII/binary, last
   write time delta, size, and for text files the arena id delta, offset delta from the end of the
@@ -989,3 +989,50 @@ background (3.4 GB); after a restart it only rewrites the index (12.2 MB instead
 version 1, ~0.4 s instead of ~0.7 s). Cache size on disk: 3.56 GB. The GC heap grows by ~10 MB
 after `index/loaded` without the cache too (the searches of the benchmark), so the cache adds
 nothing to the steady state managed heap. Searches are unchanged (within run-to-run noise).
+
+### Persistent index cache (phase 2: cached tree, verified in the background)
+
+`index.bin` (format version 3) also contains the tree of the project (all the directories in depth
+first order with their symbolic link flag, all the files with their last write time and size,
+including the files without cached contents: larger than 512 KB, not searchable, modified during
+the load) and the version hash of the project configuration. When a project is registered and its
+cache has a tree written with the same version hash:
+
+1. The snapshot of the project is built from the tree of the cache (no scan), and its index from
+   the cached contents (no disk access except the cache files): published immediately (publish
+   delay 0, `FileSystemSnapshotManager.CachedTreePublishDelay`, hard-coded), "index/loaded" with
+   `fromCache: true`, status `verifying` (VS Code status bar "VsChromium: verifying", Visual Studio
+   status text "Verifying"). The files without cached contents (e.g. larger than 512 KB) are in the
+   tree, without contents: missing from code searches until the verification.
+2. In the background (`VerifyCachedTrees`, after the load of the cached index on the same task
+   queue): the directory watcher already runs (changes are queued as during any scan), the project
+   is scanned, the scan is compared with the cached tree (`SnapshotDiff`): files with another time
+   or size and files without cached contents are changed, new files and directories created,
+   missing ones deleted. The scanned tree is published with these synthetic changes, applied by
+   the incremental update of the index (`CreateWithFileSystemChanges`, the tested path of the
+   incremental updates): the index is then the same as the index of a cold load. "index/loaded"
+   without `fromCache`, status `idle`, and the cache is written (tree and contents).
+3. If the version hash differs (configuration or ignore rules changed), or the cache has no tree,
+   the project is scanned first and the cached contents of the unchanged files are used (phase 1).
+
+Interactions: searches and file extracts use the cached index during the verification. A project
+registered during the verification cancels it (it runs again after the scan of the new project).
+"Rebuild index" cancels it and deletes the cache (full rescan, all the files read from disk).
+Pausing cancels it (resuming rescans everything). A second server on the same project publishes
+from the cache too (read-only, no write). Note: the tasks of the task queues don't reference the
+previous snapshot (only its version): the last task of a queue can stay referenced after it ran
+(e.g. by an idle thread of the custom thread pool), which kept the cached tree alive after its
+verification (+37 MB of managed heap on `large-1-400000-v1`).
+
+`large-1-400000-v1`, Debug server (same machine and settings as above; "idle": status `idle`,
+including the forced GC of the "at index/loaded" measurement):
+
+| | First `index/loaded` | Idle (up to date) | GC heap at `index/loaded` | GC heap after the write |
+|---|---|---|---|---|
+| Cold load | 6,346–6,501 ms | 6,820–7,060 ms | 92.7 MB | 90.3–92.9 MB |
+| Restart, phase 1 | 1,437–1,454 ms | 1,766–1,797 ms | 76.4 MB | 82.7–85.6 MB |
+| Restart, phase 2 | 760–784 ms (`fromCache`) | 2,231–2,272 ms | 85.1–95.5 MB (verification running) | 85.3–85.7 MB |
+
+The verification (scan, comparison, incremental update of 400 large files) takes ~1.5 s on this
+corpus, whose scan is fast (D:, ReFS, 393k files): on a 2.65M entry tree, the scan (15–17 s) is
+most of the time to first search of phase 1, and phase 2 publishes the cached index before it.

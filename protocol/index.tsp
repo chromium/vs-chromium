@@ -10,6 +10,12 @@ enum IndexingStatus {
   yield,
   /** The server is indexing the file system. */
   busy,
+  /**
+   * The index of the last session (index cache) is in use, and is being verified in the background
+   * (scan and incremental update): search results may contain deleted files or miss new or large
+   * files until it ends.
+   */
+  verifying,
 }
 
 model IndexStatisticsParams {
@@ -60,6 +66,12 @@ model FilesLoadedParams {
   treeVersion: int64;
   /** Set if the load failed. */
   error?: ErrorInfo;
+  /**
+   * True if the loaded index comes from the index cache (tree and contents of the last session)
+   * and is being verified (status "verifying"): another "loaded" notification follows when the
+   * verification completes.
+   */
+  fromCache?: boolean;
 }
 
 model ProgressParams {

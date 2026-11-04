@@ -55,6 +55,7 @@ export type IndexingState =
   | { kind: 'scanning' }
   | { kind: 'loading'; progress?: LoadingProgress }
   | { kind: 'ready'; fileCount?: number; projectCount?: number }
+  | { kind: 'verifying' }
   | { kind: 'paused'; yielded: boolean }
   | { kind: 'noProject' }
   | { kind: 'error'; message: string }
@@ -95,18 +96,21 @@ export function subscribeIndexEvents(source: NotificationSource, listener: (even
  * tested.
  */
 export function nextIndexingState(state: IndexingState, event: IndexEvent): IndexingState | undefined {
+  // The verification of the index of the last session (index cache) is a scan and a load in the
+  // background: the index is usable, the state stays "verifying" until it is loaded.
+  const verifying = state.kind === 'verifying';
   switch (event.type) {
     case 'scanStarted':
-      return { kind: 'scanning' };
+      return verifying ? undefined : { kind: 'scanning' };
     case 'scanFinished':
       if (event.params.error) {
         return { kind: 'error', message: event.params.error.message || 'Error indexing files' };
       }
-      return { kind: 'loading' };
+      return verifying ? undefined : { kind: 'loading' };
     case 'loading':
-      return { kind: 'loading' };
+      return verifying ? undefined : { kind: 'loading' };
     case 'loadingProgress':
-      return state.kind === 'loading' ? undefined : { kind: 'loading' };
+      return state.kind === 'loading' || verifying ? undefined : { kind: 'loading' };
     case 'progress':
       if (state.kind === 'scanning' || state.kind === 'loading') {
         const { completed, total } = event.params;
@@ -131,14 +135,16 @@ export function nextIndexingState(state: IndexingState, event: IndexEvent): Inde
       if (event.params.error) {
         return { kind: 'error', message: event.params.error.message || 'Error loading files' };
       }
-      return { kind: 'ready' };
+      return event.params.fromCache ? (verifying ? undefined : { kind: 'verifying' }) : { kind: 'ready' };
     case 'stateChanged':
       switch (event.params.status) {
         case 'paused':
         case 'yield':
           return { kind: 'paused', yielded: event.params.status === 'yield' };
+        case 'verifying':
+          return verifying ? undefined : { kind: 'verifying' };
         case 'idle':
-          return state.kind === 'paused' ? { kind: 'ready' } : undefined;
+          return state.kind === 'paused' || verifying ? { kind: 'ready' } : undefined;
         default:
           // "busy": the scan/load notifications report the progress.
           return undefined;
@@ -165,6 +171,12 @@ export function describeIndexingState(state: IndexingState): { text: string; too
       const files = state.fileCount !== undefined ? ` (${state.fileCount.toLocaleString()} files)` : '';
       return { text: '$(database) VsChromium', tooltip: `VsChromium: index ready${files}. Click for details.` };
     }
+    case 'verifying':
+      return {
+        text: '$(sync~spin) VsChromium: verifying',
+        tooltip: 'VsChromium: index of the last session ready, verifying it against the files on disk ' +
+          '(until then, search results may contain deleted files and miss new, changed or large files)...',
+      };
     case 'paused':
       return {
         text: '$(debug-pause) VsChromium',

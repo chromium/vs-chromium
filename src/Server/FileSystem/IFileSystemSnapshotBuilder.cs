@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 using System.Threading;
+using VsChromium.Core.Files;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Projects;
 
@@ -15,6 +16,10 @@ namespace VsChromium.Server.FileSystem {
       FullPathChanges pathChanges /* may be null */,
       IList<IProject> projects, 
       int version,
-      CancellationToken cancellationToken);
+      CancellationToken cancellationToken,
+      /* The trees of projects not to scan (index cache) */
+      IReadOnlyDictionary<FullPath, DirectorySnapshot> precomputedRoots = null,
+      /* Projects to scan entirely, even if path changes are given */
+      ISet<FullPath> fullScanRoots = null);
   }
 }

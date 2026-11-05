@@ -3,10 +3,13 @@
 // found in the LICENSE file.
 
 import type {
+  DirectorySizeEntry,
+  DirectorySizes,
   IndexDetails,
   IndexStatistics,
   IndexStatus,
   IndexingStatus,
+  MeasureState,
   OperationTiming,
   ProgressParams,
   ProjectDetails,
@@ -27,8 +30,8 @@ import {
 import type { HostState } from './dashboardMessages';
 
 // View model of the server dashboard page: what the page displays (texts, rows, enabled actions,
-// charts), computed from the protocol data. Free of DOM and host dependencies (compiled into the
-// page and unit tested with node).
+// charts, disk usage explorer), computed from the protocol data. Free of DOM and host dependencies
+// (compiled into the page and unit tested with node).
 
 /** Interval of the refreshes while the page is visible. */
 export const RefreshIntervalMs = 2000;
@@ -62,6 +65,15 @@ export function planRefresh(refresh: number, forced: Partial<RefreshPlan> = {}):
   };
 }
 
+/** State of the drill-down project disk usage explorer. */
+export interface DiskUsageState {
+  projectPath: string;
+  relativePath: string;
+  loading: boolean;
+  sizes?: DirectorySizes;
+  error?: string;
+}
+
 /** The data displayed by the page. */
 export interface DashboardData {
   host?: HostState;
@@ -79,6 +91,8 @@ export interface DashboardData {
   progress?: ProgressParams;
   /** Error of the last refresh. */
   error?: string;
+  /** Active disk usage explorer state (when viewing a project's directory sizes). */
+  diskUsage?: DiskUsageState;
 }
 
 export type ActionId =
@@ -200,7 +214,66 @@ export interface CacheSettingsView {
   restartNeeded: boolean;
 }
 
+/** A segment of the clickable directory breadcrumb bar in the disk usage view. */
+export interface DiskUsageBreadcrumb {
+  key: string;
+  label: string;
+  relativePath: string;
+  current: boolean;
+}
+
+/** A row (directory or file) in the project disk usage explorer. */
+export interface DiskUsageRowView {
+  key: string;
+  name: string;
+  /** Display name (`name + '/'` for directories, `name` for files). */
+  displayName: string;
+  relativePath: string;
+  isDirectory: boolean;
+  excluded: boolean;
+  /** Non-excluded directory while server is running: clicking drills down into `relativePath`. */
+  drillable: boolean;
+  measureState: MeasureState;
+  /** Primary size text, e.g. "48.0 MB / 64.0 MB" or "excluded — size not measured". */
+  sizeText: string;
+  sizeTitle?: string;
+  /** Width of the searchable segment of the size bar, in percent (0..100) of the largest row. */
+  searchableBarPercent: number;
+  /** Width of the non-searchable/excluded segment of the size bar, in percent (0..100) of the largest row. */
+  notSearchableBarPercent: number;
+  showBar: boolean;
+  filesText: string;
+  filesTitle?: string;
+  measureAction?: 'measure' | 'cancel' | 'remeasure';
+  pattern?: string;
+  canCopyPattern: boolean;
+  copyPatternTitle: string;
+  canAddExplorerIgnore: boolean;
+  explorerIgnoreTitle: string;
+  canAddSearchableIgnore: boolean;
+  searchableIgnoreTitle: string;
+}
+
+/** View model of the drill-down project disk usage explorer. */
+export interface DiskUsageViewModel {
+  projectPath: string;
+  relativePath: string;
+  parentRelativePath?: string;
+  loading: boolean;
+  error?: string;
+  breadcrumbs: DiskUsageBreadcrumb[];
+  summary: string;
+  projectFile?: string;
+  readOnlyReason?: string;
+  currentDirectoryPattern?: string;
+  canCopyCurrentPattern: boolean;
+  canExcludeCurrentExplorer: boolean;
+  canExcludeCurrentSearchable: boolean;
+  rows: DiskUsageRowView[];
+}
+
 export interface DashboardViewModel {
+  view: 'overview' | 'diskUsage';
   status: { kind: StatusKind; text: string };
   /** Facts of the header line (index update time, server version, runtime, pid, uptime...). */
   facts: string[];
@@ -223,6 +296,7 @@ export interface DashboardViewModel {
   cpuChart?: HistoryChart;
   cacheChart?: HistoryChart;
   statusTimeline?: StatusTimeline;
+  diskUsage?: DiskUsageViewModel;
 }
 
 export interface FormatOptions {
@@ -447,6 +521,209 @@ function describeProjects(data: DashboardData, options: FormatOptions): ProjectB
       operations: describeProjectOperations(project),
     };
   });
+}
+
+/** Normalizes a project-relative directory path to `/` separators without leading/trailing slashes. */
+export function normalizeRelativePath(relativePath: string): string {
+  return relativePath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+}
+
+function buildBreadcrumbs(projectPath: string, relativePath: string): DiskUsageBreadcrumb[] {
+  const normalized = normalizeRelativePath(relativePath);
+  const crumbs: DiskUsageBreadcrumb[] = [
+    { key: '', label: projectPath, relativePath: '', current: normalized === '' },
+  ];
+  if (!normalized) {
+    return crumbs;
+  }
+  const segments = normalized.split('/');
+  let acc = '';
+  for (let i = 0; i < segments.length; i++) {
+    acc = acc ? `${acc}/${segments[i]}` : segments[i];
+    crumbs.push({
+      key: acc,
+      label: segments[i],
+      relativePath: acc,
+      current: i === segments.length - 1,
+    });
+  }
+  return crumbs;
+}
+
+function describeDiskUsageRow(
+  entry: DirectorySizeEntry,
+  parentRelPath: string,
+  maxBytes: number,
+  serverRunning: boolean,
+  projectFile: string | undefined,
+): DiskUsageRowView {
+  const relativePath = parentRelPath ? `${parentRelPath}/${entry.name}` : entry.name;
+  const displayName = entry.isDirectory ? `${entry.name}/` : entry.name;
+  const drillable = entry.isDirectory && !entry.excluded && serverRunning;
+
+  let sizeText: string;
+  let sizeTitle: string | undefined;
+  let searchableBarPercent = 0;
+  let notSearchableBarPercent = 0;
+  let showBar = false;
+  let filesText: string;
+  let filesTitle: string | undefined;
+  let measureAction: DiskUsageRowView['measureAction'];
+
+  if (entry.excluded && entry.isDirectory && entry.measureState === 'notMeasured') {
+    sizeText = 'excluded \u2014 size not measured';
+    sizeTitle = 'Excluded by [SourceExplorer.ignore] and skipped during scans. Click Measure to enumerate its size on disk.';
+    filesText = '\u2014';
+    measureAction = serverRunning ? 'measure' : undefined;
+  } else if (entry.excluded && entry.isDirectory && entry.measureState === 'running') {
+    sizeText = entry.totalBytes > 0 ? `${formatBytes(entry.totalBytes)} so far\u2026` : 'measuring\u2026';
+    sizeTitle = 'Enumerating files on disk in the background';
+    showBar = entry.totalBytes > 0 && maxBytes > 0;
+    notSearchableBarPercent = showBar ? Math.min(100, (entry.totalBytes * 100) / maxBytes) : 0;
+    filesText = entry.fileCount > 0 ? `${formatCount(entry.fileCount)}\u2026` : '\u2026';
+    measureAction = serverRunning ? 'cancel' : undefined;
+  } else if (entry.excluded && entry.isDirectory && entry.measureState === 'cancelled') {
+    sizeText = entry.totalBytes > 0 ? `cancelled (${formatBytes(entry.totalBytes)} scanned)` : 'measurement cancelled';
+    filesText = entry.fileCount > 0 ? formatCount(entry.fileCount) : '\u2014';
+    measureAction = serverRunning ? 'measure' : undefined;
+  } else if (entry.excluded && entry.isDirectory && entry.measureState === 'failed') {
+    sizeText = 'measurement failed';
+    filesText = '\u2014';
+    measureAction = serverRunning ? 'measure' : undefined;
+  } else if (entry.excluded) {
+    sizeText = `0 B / ${formatBytes(entry.totalBytes)}`;
+    sizeTitle = `Excluded by [SourceExplorer.ignore] \u2014 ${formatBytes(entry.totalBytes)} on disk (0 B searchable)`;
+    showBar = entry.totalBytes > 0 && maxBytes > 0;
+    notSearchableBarPercent = showBar ? Math.min(100, (entry.totalBytes * 100) / maxBytes) : 0;
+    filesText = entry.isDirectory ? formatCount(entry.fileCount) : '1';
+    filesTitle = entry.isDirectory ? `${formatCount(entry.fileCount)} excluded files on disk` : 'Excluded file';
+    measureAction = entry.isDirectory && serverRunning ? 'remeasure' : undefined;
+  } else {
+    sizeText = `${formatBytes(entry.searchableBytes)} / ${formatBytes(entry.totalBytes)}`;
+    sizeTitle = `${formatBytes(entry.searchableBytes)} searchable in code search, ${formatBytes(entry.notSearchableBytes)} not searchable (${formatBytes(entry.totalBytes)} total on disk)`;
+    showBar = entry.totalBytes > 0 && maxBytes > 0;
+    if (showBar) {
+      searchableBarPercent = Math.min(100, (entry.searchableBytes * 100) / maxBytes);
+      notSearchableBarPercent = Math.max(0, Math.min(100 - searchableBarPercent, (entry.notSearchableBytes * 100) / maxBytes));
+    }
+    filesText = entry.isDirectory ? formatCount(entry.fileCount) : '1';
+    filesTitle = entry.isDirectory
+      ? `${formatCount(entry.fileCount)} indexed files (${formatCount(entry.searchableFileCount)} searchable)`
+      : (entry.searchableFileCount > 0
+        ? 'Searchable text file'
+        : 'Indexed file path, not searchable in code search (binary, too large, or excluded by [SearchableFiles.ignore])');
+  }
+
+  const hasPattern = entry.pattern !== undefined;
+  const editable = serverRunning && Boolean(projectFile);
+  const canCopyPattern = hasPattern;
+  const copyPatternTitle = hasPattern
+    ? `Copy "${entry.pattern}" to the clipboard`
+    : 'Cannot build an exact pattern because the path contains "*"';
+
+  const canAddExplorerIgnore = editable && !entry.excluded && hasPattern;
+  const explorerIgnoreTitle = !hasPattern
+    ? 'Cannot build an exact pattern because the path contains "*"'
+    : entry.excluded
+      ? 'Already excluded by [SourceExplorer.ignore]'
+      : !projectFile
+        ? 'No editable vs-chromium-project.txt file in this project'
+        : !serverRunning
+          ? 'The indexing server is not running'
+          : `Add "${entry.pattern}" to [SourceExplorer.ignore] (excludes from tree and all searches)`;
+
+  const canAddSearchableIgnore = editable && !entry.excluded && entry.searchableBytes > 0 && hasPattern;
+  const searchableIgnoreTitle = !hasPattern
+    ? 'Cannot build an exact pattern because the path contains "*"'
+    : entry.excluded
+      ? 'Already excluded by [SourceExplorer.ignore]'
+      : !projectFile
+        ? 'No editable vs-chromium-project.txt file in this project'
+        : !serverRunning
+          ? 'The indexing server is not running'
+          : entry.searchableBytes === 0
+            ? 'No searchable text bytes in this entry'
+            : `Add "${entry.pattern}" to [SearchableFiles.ignore] (keeps in file name search, excludes from code search)`;
+
+  return {
+    key: `${entry.isDirectory ? 'd' : 'f'}:${entry.name}`,
+    name: entry.name,
+    displayName,
+    relativePath,
+    isDirectory: entry.isDirectory,
+    excluded: entry.excluded,
+    drillable,
+    measureState: entry.measureState,
+    sizeText,
+    sizeTitle,
+    searchableBarPercent,
+    notSearchableBarPercent,
+    showBar,
+    filesText,
+    filesTitle,
+    measureAction,
+    pattern: entry.pattern,
+    canCopyPattern,
+    copyPatternTitle,
+    canAddExplorerIgnore,
+    explorerIgnoreTitle,
+    canAddSearchableIgnore,
+    searchableIgnoreTitle,
+  };
+}
+
+function describeDiskUsage(data: DashboardData): DiskUsageViewModel | undefined {
+  const state = data.diskUsage;
+  if (!state) {
+    return undefined;
+  }
+  const serverRunning = data.host?.serverRunning === true;
+  const sizes = serverRunning ? state.sizes : undefined;
+  const rel = normalizeRelativePath(sizes?.relativePath ?? state.relativePath);
+  const slash = rel.lastIndexOf('/');
+  const parentRelativePath = rel === '' ? undefined : (slash >= 0 ? rel.slice(0, slash) : '');
+
+  let summary = '';
+  if (sizes) {
+    const t = sizes.totals;
+    summary = `Indexed: ${formatBytes(t.searchableBytes)} searchable / ${formatBytes(t.totalBytes)} total \u00b7 ` +
+      `${formatCount(t.fileCount)} ${t.fileCount === 1 ? 'file' : 'files'} (${formatCount(t.searchableFileCount)} searchable)`;
+  } else if (state.loading && serverRunning) {
+    summary = 'Loading directory sizes\u2026';
+  }
+
+  const projectFile = sizes?.projectFile;
+  const readOnlyReason = sizes && !projectFile
+    ? 'This project has no vs-chromium-project.txt file (e.g. discovered via .gn). Use Copy Pattern to copy rules manually.'
+    : undefined;
+
+  const children = sizes?.children ?? [];
+  let maxBytes = 0;
+  for (const child of children) {
+    if (child.totalBytes > maxBytes) {
+      maxBytes = child.totalBytes;
+    }
+  }
+
+  const currentPattern = rel !== '' ? sizes?.totals.pattern : undefined;
+  const editable = serverRunning && Boolean(projectFile);
+
+  return {
+    projectPath: state.projectPath,
+    relativePath: rel,
+    parentRelativePath,
+    loading: state.loading && serverRunning,
+    error: state.error,
+    breadcrumbs: buildBreadcrumbs(state.projectPath, rel),
+    summary,
+    projectFile,
+    readOnlyReason,
+    currentDirectoryPattern: currentPattern,
+    canCopyCurrentPattern: currentPattern !== undefined,
+    canExcludeCurrentExplorer: editable && currentPattern !== undefined,
+    canExcludeCurrentSearchable: editable && currentPattern !== undefined && (sizes?.totals.searchableBytes ?? 0) > 0,
+    rows: children.map(entry => describeDiskUsageRow(entry, rel, maxBytes, serverRunning, projectFile)),
+  };
 }
 
 /** The memory of the whole process (the details per project are in the projects). */
@@ -704,7 +981,9 @@ export const DefaultLabels = {
 export function buildViewModel(data: DashboardData, options: FormatOptions = defaultFormatOptions): DashboardViewModel {
   const current = data.host?.serverRunning ? currentStatus(data) : undefined;
   const status = current?.status;
+  const diskUsage = describeDiskUsage(data);
   return {
+    view: diskUsage ? 'diskUsage' : 'overview',
     status: describeStatus(data),
     facts: data.host?.serverRunning ? describeFacts(data, options) : [],
     actions: enabledActions(data.host, status,
@@ -722,5 +1001,6 @@ export function buildViewModel(data: DashboardData, options: FormatOptions = def
     operations: describeOperations(data.server?.operationTimings),
     server: describeServerSection(data),
     ...describeCharts(data),
+    diskUsage,
   };
 }

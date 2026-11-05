@@ -4,7 +4,7 @@
 
 import * as assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DashboardController, NotificationRefreshDelayMs, Timers } from '../ui/dashboard/dashboardController';
+import { DashboardController, MeasurePollIntervalMs, NotificationRefreshDelayMs, Timers } from '../ui/dashboard/dashboardController';
 import type { HostState, HostToPage, PageToHost } from '../ui/dashboard/dashboardMessages';
 import type { DashboardViewModel } from '../ui/dashboard/dashboardModel';
 import { RefreshIntervalMs } from '../ui/dashboard/dashboardModel';
@@ -418,5 +418,191 @@ describe('DashboardController', () => {
     controller.dispose();
     await flush();
     assert.deepEqual(timers.timers.size, 0);
+  });
+});
+
+
+describe('DashboardController disk usage', () => {
+  function sampleSizes(relativePath: string, childrenOverrides: object[] = []) {
+    return {
+      projectPath: 'C:\\a',
+      relativePath,
+      projectFile: 'C:\\a\\vs-chromium-project.txt',
+      snapshotVersion: 1,
+      computeMs: 2,
+      totals: {
+        name: relativePath || 'a',
+        isDirectory: true,
+        excluded: false,
+        measureState: 'done',
+        totalBytes: 2048,
+        searchableBytes: 1024,
+        notSearchableBytes: 1024,
+        fileCount: 2,
+        searchableFileCount: 1,
+        pattern: relativePath ? `/${relativePath}/` : undefined,
+      },
+      children: childrenOverrides.length > 0 ? childrenOverrides : [
+        {
+          name: 'sub',
+          isDirectory: true,
+          excluded: false,
+          measureState: 'done',
+          totalBytes: 2048,
+          searchableBytes: 1024,
+          notSearchableBytes: 1024,
+          fileCount: 2,
+          searchableFileCount: 1,
+          pattern: relativePath ? `/${relativePath}/sub/` : '/sub/',
+        },
+      ],
+    };
+  }
+
+  it('opens disk usage, drills down, and returns to overview', async () => {
+    const { host, controller, last } = await setupRunning();
+    host.posted.length = 0;
+
+    const openRoot = controller.execute({ action: 'openDiskUsage', projectPath: 'C:\\a' });
+    assert.equal(last().view, 'diskUsage');
+    assert.equal(last().diskUsage?.loading, true);
+    const req1 = host.takeRequests();
+    assert.deepEqual(req1.map(r => [r.method, r.params]), [
+      ['project/directorySizes', { projectPath: 'C:\\a', relativePath: '' }],
+    ]);
+    host.answer(req1, { 'project/directorySizes': sampleSizes('') });
+    await openRoot;
+    assert.equal(last().diskUsage?.loading, false);
+    assert.equal(last().diskUsage?.rows[0].name, 'sub');
+
+    const drill = controller.execute({ action: 'openDiskUsage', projectPath: 'C:\\a', relativePath: 'sub' });
+    const req2 = host.takeRequests();
+    assert.deepEqual(req2.map(r => [r.method, r.params]), [
+      ['project/directorySizes', { projectPath: 'C:\\a', relativePath: 'sub' }],
+    ]);
+    host.answer(req2, { 'project/directorySizes': sampleSizes('sub') });
+    await drill;
+    assert.equal(last().diskUsage?.relativePath, 'sub');
+
+    await controller.execute({ action: 'closeDiskUsage' });
+    assert.equal(last().view, 'overview');
+    assert.equal(last().diskUsage, undefined);
+  });
+
+  it('starts excluded directory measurement, polls while running, and cancels', async () => {
+    const { host, timers, controller, last } = await setupRunning();
+    host.posted.length = 0;
+
+    const open = controller.execute({ action: 'openDiskUsage', projectPath: 'C:\\a' });
+    host.answer(host.takeRequests(), {
+      'project/directorySizes': sampleSizes('', [{
+        name: 'out',
+        isDirectory: true,
+        excluded: true,
+        measureState: 'notMeasured',
+        totalBytes: 0,
+        searchableBytes: 0,
+        notSearchableBytes: 0,
+        fileCount: 0,
+        searchableFileCount: 0,
+        pattern: '/out/',
+      }]),
+    });
+    await open;
+    assert.equal(last().diskUsage?.rows[0].measureAction, 'measure');
+
+    const measure = controller.execute({ action: 'measureDirectory', projectPath: 'C:\\a', relativePath: 'out' });
+    const mReq = host.takeRequests();
+    assert.deepEqual(mReq.map(r => [r.method, r.params]), [
+      ['project/measureDirectory', { projectPath: 'C:\\a', relativePath: 'out' }],
+    ]);
+    host.answer(mReq, {
+      'project/measureDirectory': { relativePath: 'out', state: 'running', totalBytes: 512, fileCount: 1, directoryCount: 1, elapsedMs: 15 },
+    });
+    await flush();
+    const refreshReq = host.takeRequests();
+    assert.deepEqual(refreshReq.map(r => r.method), ['project/directorySizes']);
+    host.answer(refreshReq, {
+      'project/directorySizes': sampleSizes('', [{
+        name: 'out',
+        isDirectory: true,
+        excluded: true,
+        measureState: 'running',
+        totalBytes: 4096,
+        searchableBytes: 0,
+        notSearchableBytes: 4096,
+        fileCount: 4,
+        searchableFileCount: 0,
+        pattern: '/out/',
+      }]),
+    });
+    await measure;
+    assert.equal(last().diskUsage?.rows[0].measureAction, 'cancel');
+    assert.equal(timers.delays.includes(MeasurePollIntervalMs), true, 'schedules poll while running');
+
+    // Poll completes the measurement
+    timers.run(MeasurePollIntervalMs);
+    const pollReq = host.takeRequests();
+    assert.deepEqual(pollReq.map(r => r.method), ['project/directorySizes']);
+    host.answer(pollReq, {
+      'project/directorySizes': sampleSizes('', [{
+        name: 'out',
+        isDirectory: true,
+        excluded: true,
+        measureState: 'done',
+        totalBytes: 8192,
+        searchableBytes: 0,
+        notSearchableBytes: 8192,
+        fileCount: 10,
+        searchableFileCount: 0,
+        pattern: '/out/',
+      }]),
+    });
+    await flush();
+    assert.equal(last().diskUsage?.rows[0].measureAction, 'remeasure');
+    assert.equal(timers.delays.includes(MeasurePollIntervalMs), false, 'stops polling once done');
+  });
+
+  it('steps up to parent directory if the browsed directory is excluded after rescan', async () => {
+    const { host, timers, controller, last } = await setupRunning();
+    const open = controller.execute({ action: 'openDiskUsage', projectPath: 'C:\\a', relativePath: 'src/gen' });
+    host.answer(host.takeRequests(), { 'project/directorySizes': sampleSizes('src/gen') });
+    await open;
+    assert.equal(last().diskUsage?.relativePath, 'src/gen');
+
+    await controller.execute({
+      action: 'addIgnorePattern',
+      projectPath: 'C:\\a',
+      section: 'sourceExplorerIgnore',
+      pattern: '/src/gen/',
+    });
+    assert.deepEqual(host.posted.filter(m => m.type === 'command'), [
+      { type: 'command', command: 'addIgnorePattern', projectPath: 'C:\\a', section: 'sourceExplorerIgnore', pattern: '/src/gen/' },
+    ]);
+    host.posted.length = 0;
+
+    // Simulate server rescan finishing after vs-chromium-project.txt changed
+    host.send({ type: 'notification', method: 'index/loaded', params: { operationId: 2, treeVersion: 3 } });
+    timers.run(NotificationRefreshDelayMs);
+    const refreshReqs = host.takeRequests();
+    host.answer(refreshReqs);
+    await flush();
+
+    // Controller now refreshes diskUsage for 'src/gen', which fails with "Directory not found", then falls back to 'src'
+    const duReq1 = host.takeRequests();
+    assert.deepEqual(duReq1.map(r => [r.method, r.params]), [
+      ['project/directorySizes', { projectPath: 'C:\\a', relativePath: 'src/gen' }],
+    ]);
+    host.answer(duReq1, { 'project/directorySizes': new Error('Directory "src/gen" was not found in project "C:\\a".') });
+    await flush();
+
+    const duReq2 = host.takeRequests();
+    assert.deepEqual(duReq2.map(r => [r.method, r.params]), [
+      ['project/directorySizes', { projectPath: 'C:\\a', relativePath: 'src' }],
+    ]);
+    host.answer(duReq2, { 'project/directorySizes': sampleSizes('src') });
+    await flush();
+    assert.equal(last().diskUsage?.relativePath, 'src');
+    assert.equal(last().diskUsage?.error, undefined);
   });
 });

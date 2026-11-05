@@ -6,9 +6,15 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as vscode from 'vscode';
-import { IndexClearCacheRequest, ProjectClearCacheRequest, ProjectDetailsRequest, ProjectRebuildRequest } from '../../protocol/protocol.g';
+import {
+  IndexClearCacheRequest,
+  ProjectAddIgnorePatternRequest,
+  ProjectClearCacheRequest,
+  ProjectDetailsRequest,
+  ProjectRebuildRequest,
+} from '../../protocol/protocol.g';
 import { DashboardBridge, DashboardServer } from './dashboardBridge';
-import { HostCommand, PageToHost } from './dashboardMessages';
+import { DashboardIgnoreSection, HostCommand, PageToHost } from './dashboardMessages';
 import { serverLogDirectory } from './logDirectory';
 
 /** What the dashboard needs from the extension (the server manager). */
@@ -144,9 +150,43 @@ export class DashboardPanel implements vscode.Disposable {
         case 'openCacheSettings':
           await vscode.commands.executeCommand('workbench.action.openSettings', 'vschromium.cache');
           break;
+        case 'copyToClipboard':
+          await vscode.env.clipboard.writeText(command.text);
+          break;
+        case 'addIgnorePattern':
+          await this.addIgnorePattern(command.projectPath, command.section, command.pattern);
+          break;
       }
     } catch (e) {
       void vscode.window.showErrorMessage(`VsChromium: ${this.services.errorMessage(e)}`);
+    }
+  }
+
+  /** Adds an ignore pattern to `vs-chromium-project.txt`, after a confirmation. */
+  private async addIgnorePattern(projectPath: string, section: DashboardIgnoreSection, pattern: string): Promise<void> {
+    const sectionName = section === 'sourceExplorerIgnore' ? 'SourceExplorer.ignore' : 'SearchableFiles.ignore';
+    const effect = section === 'sourceExplorerIgnore'
+      ? 'Matching files and directories will be excluded from the project tree, file name search, and code search.'
+      : 'Matching files will remain in the project tree and file name search, but their contents will be excluded from code search.';
+    const confirmLabel = 'Add Rule';
+    const choice = await vscode.window.showWarningMessage(
+      `Add "${pattern}" to [${sectionName}] in "${projectPath}"?`,
+      {
+        modal: true,
+        detail: `${effect}\n\nUpdating vs-chromium-project.txt triggers a rescan of the project.`,
+      },
+      confirmLabel);
+    if (choice !== confirmLabel) {
+      return;
+    }
+    const server = this.services.getServer();
+    if (!server) {
+      throw new Error('the indexing server is not running.');
+    }
+    const result = await server.request(ProjectAddIgnorePatternRequest.type, { projectPath, section, pattern });
+    if (!result.added) {
+      void vscode.window.showInformationMessage(
+        `VsChromium: "${pattern}" is already present in [${result.sectionName}] (${result.projectFile}).`);
     }
   }
 

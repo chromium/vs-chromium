@@ -251,3 +251,60 @@ describe('DashboardBridge', () => {
     assert.equal(server.listenerCount, 0);
   });
 });
+
+
+describe('DashboardBridge disk usage', () => {
+  it('forwards directorySizes, measureDirectory, and cancelMeasure requests', async () => {
+    const context = setup();
+    await context.bridge.handleMessage({
+      type: 'request',
+      id: 10,
+      method: 'project/directorySizes',
+      params: { projectPath: 'C:\\a', relativePath: 'src' },
+    });
+    await context.bridge.handleMessage({
+      type: 'request',
+      id: 11,
+      method: 'project/measureDirectory',
+      params: { projectPath: 'C:\\a', relativePath: 'out', restart: true },
+    });
+    await context.bridge.handleMessage({
+      type: 'request',
+      id: 12,
+      method: 'project/cancelMeasure',
+      params: { projectPath: 'C:\\a', relativePath: 'out' },
+    });
+    assert.deepEqual(context.server.requests, [
+      { method: 'project/directorySizes', params: { projectPath: 'C:\\a', relativePath: 'src' } },
+      { method: 'project/measureDirectory', params: { projectPath: 'C:\\a', relativePath: 'out', restart: true } },
+      { method: 'project/cancelMeasure', params: { projectPath: 'C:\\a', relativePath: 'out' } },
+    ]);
+  });
+
+  it('rejects direct project/addIgnorePattern requests from the page and routes commands through the host', async () => {
+    const context = setup();
+    await context.bridge.handleMessage({
+      type: 'request',
+      id: 20,
+      method: 'project/addIgnorePattern' as never,
+      params: { projectPath: 'C:\\a', section: 'sourceExplorerIgnore', pattern: '/out/' },
+    });
+    assert.deepEqual(context.server.requests, []);
+    assert.deepEqual(context.posted.filter(m => m.type === 'response'), [
+      { type: 'response', id: 20, error: 'Request not allowed: project/addIgnorePattern' },
+    ]);
+
+    await context.bridge.handleMessage({ type: 'command', command: 'copyToClipboard', text: '/out/' });
+    await context.bridge.handleMessage({
+      type: 'command',
+      command: 'addIgnorePattern',
+      projectPath: 'C:\\a',
+      section: 'sourceExplorerIgnore',
+      pattern: '/out/',
+    });
+    assert.deepEqual(context.commands, [
+      { command: 'copyToClipboard', text: '/out/' },
+      { command: 'addIgnorePattern', projectPath: 'C:\\a', section: 'sourceExplorerIgnore', pattern: '/out/' },
+    ]);
+  });
+});

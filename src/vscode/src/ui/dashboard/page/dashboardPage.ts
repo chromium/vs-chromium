@@ -9,16 +9,16 @@
 // DOM is built with textContent only (no innerHTML). Talks to the host only through the shim
 // (hostShim.ts).
 //
-// Layout: the header (process status and actions), the "Process" section (memory, charts, index
-// cache root and defaults), the "Projects" section (a collapsible block per project: index, memory,
-// cache, options, operations, actions) and the "Details" section (collapsed: raw operation timings,
-// server, cache size chart).
+// Layout: the header (process status and actions), and either the overview sections ("Process",
+// "Projects" with clickable project paths, and collapsible "Details") or the drill-down "Disk Usage"
+// explorer for a selected project.
 
 import { DashboardAction, DashboardController } from '../dashboardController';
 import type { DashboardViewModel, KeyValue, OperationRow, ProjectBlock, ProjectOperationRow } from '../dashboardModel';
 import { createHostShim, ShimWindow } from '../hostShim';
 import { applyThemeVariables } from '../theme';
 import { HistoryChartView, renderSparkline, StatusTimelineView } from './charts';
+import { DiskUsageView } from './diskUsage';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -194,9 +194,10 @@ function section(title: string, collapsible?: { expanded: boolean }): { section:
 interface ProjectElements {
   root: HTMLElement;
   toggle: HTMLButtonElement;
-  path: HTMLElement;
+  path: HTMLButtonElement;
   summary: HTMLElement;
   body: HTMLElement;
+  diskUsage: HTMLButtonElement;
   rebuild: HTMLButtonElement;
   clearCache: HTMLButtonElement;
   index: HTMLElement;
@@ -222,6 +223,10 @@ class DashboardView {
   private readonly restart: HTMLButtonElement;
   private readonly showOutput: HTMLButtonElement;
   private readonly openLogDirectory: HTMLButtonElement;
+  private readonly processSection: HTMLElement;
+  private readonly projectsSection: HTMLElement;
+  private readonly detailsSection: HTMLElement;
+  private readonly diskUsageView: DiskUsageView;
   private readonly processMemory: KeyedRows<KeyValue>;
   private readonly processCache: KeyedRows<KeyValue>;
   private readonly cacheRestart: HTMLElement;
@@ -282,6 +287,7 @@ class DashboardView {
 
     // Process: memory, charts, index cache root, defaults.
     const process = section('Process');
+    this.processSection = process.section;
     this.processMemory = keyValues(process.body);
     const charts = el('div', 'charts');
     const memoryColumn = el('div', 'chart-column');
@@ -319,6 +325,7 @@ class DashboardView {
 
     // Projects: a block per project.
     const projectsSection = section('Projects');
+    this.projectsSection = projectsSection.section;
     this.projectCount = projectsSection.badge;
     const projectList = el('div', 'projects');
     projectsSection.body.append(projectList);
@@ -327,6 +334,7 @@ class DashboardView {
 
     // Details (collapsed): raw operation timings, server, cache size chart.
     const details = section('Details', { expanded: false });
+    this.detailsSection = details.section;
     this.operationCount = details.badge;
     const operationsGroup = el('div', 'group');
     operationsGroup.append(el('h3', 'group-title', 'Operation Timings'));
@@ -352,10 +360,15 @@ class DashboardView {
     // Note: The charts of a collapsed section are drawn when it is expanded (their width is known).
     details.section.querySelector('.twistie-button')!.addEventListener('click', () => this.renderCharts());
 
-    root.replaceChildren(header, process.section, projectsSection.section, details.section);
+    this.diskUsageView = new DiskUsageView(this.execute);
+
+    root.replaceChildren(header, process.section, projectsSection.section, details.section, this.diskUsageView.element);
   }
 
   render(vm: DashboardViewModel) {
+    const wasDiskUsage = this.last?.view === 'diskUsage';
+    const isDiskUsage = vm.view === 'diskUsage';
+
     setClass(this.status, `status ${vm.status.kind}`);
     setText(this.statusText, vm.status.text);
     setText(this.facts, vm.facts.join(' \u00b7 '));
@@ -373,6 +386,10 @@ class DashboardView {
     setDisabled(this.showOutput, !vm.actions.showOutput);
     setDisabled(this.openLogDirectory, !vm.actions.openLogDirectory);
 
+    setHidden(this.processSection, isDiskUsage);
+    setHidden(this.projectsSection, isDiskUsage);
+    setHidden(this.detailsSection, isDiskUsage);
+
     this.processMemory.render(vm.memory);
     this.processCache.render(vm.indexCache);
     setHidden(this.cacheRestart, !vm.cacheSettings?.restartNeeded);
@@ -387,12 +404,15 @@ class DashboardView {
     setText(this.operationCount, '');
     this.operations.render(vm.operations);
     this.server.render(vm.server);
-    this.renderCharts(vm, false);
+    this.diskUsageView.render(vm.diskUsage);
+    if (!isDiskUsage) {
+      this.renderCharts(vm, wasDiskUsage);
+    }
   }
 
   /** Draws the charts (only those whose data or width changed, unless `force`). */
   renderCharts(vm: DashboardViewModel | undefined = this.last, force = true) {
-    if (!vm) {
+    if (!vm || vm.view === 'diskUsage') {
       return;
     }
     this.memoryChart.render(vm.memoryChart, force);
@@ -407,20 +427,28 @@ class DashboardView {
   private createProject(item: ProjectBlock): HTMLElement {
     const root = el('div', 'project');
     const header = el('div', 'project-header');
-    const toggle = el('button', 'twistie-button project-toggle');
+    const titleGroup = el('div', 'project-title-group');
+    const toggle = el('button', 'twistie-button project-twistie');
     toggle.type = 'button';
-    const path = el('span', 'project-path');
+    toggle.setAttribute('aria-label', `Expand or collapse ${item.rootPath}`);
+    toggle.append(el('span', 'twistie'));
+    const path = button('link project-path', item.rootPath,
+      () => this.execute({ action: 'openDiskUsage', projectPath: item.rootPath }),
+      'Explore directory and file sizes on disk to find exclusions');
     const summary = el('span', 'project-summary');
-    toggle.append(el('span', 'twistie'), path, summary);
+    titleGroup.append(toggle, path, summary);
     const actions = el('div', 'project-actions');
+    const diskUsage = button('button secondary small', 'Disk Usage',
+      () => this.execute({ action: 'openDiskUsage', projectPath: item.rootPath }),
+      'Explore directory and file sizes on disk and add ignore patterns');
     const rebuild = button('button secondary small', 'Rebuild Index',
       () => this.execute({ action: 'rebuildProject', projectPath: item.rootPath }),
       'Delete the cache of the project, scan and read its files again');
     const clearCache = button('button secondary small', 'Clear Cache',
       () => this.execute({ action: 'clearCache', projectPath: item.rootPath }),
       'Delete the index cache of the project (its current index stays in use)');
-    actions.append(rebuild, clearCache);
-    header.append(toggle, actions);
+    actions.append(diskUsage, rebuild, clearCache);
+    header.append(titleGroup, actions);
 
     const body = el('dl', 'project-body');
     const group = (label: string, ...content: HTMLElement[]) => {
@@ -469,13 +497,15 @@ class DashboardView {
       });
 
     root.append(header, body);
-    toggle.addEventListener('click', () => {
+    const toggleExpand = () => {
       const expanded = toggle.getAttribute('aria-expanded') !== 'true';
       this.expanded.set(item.rootPath, expanded);
       this.applyExpanded(elements, expanded);
-    });
+    };
+    toggle.addEventListener('click', toggleExpand);
+    summary.addEventListener('click', toggleExpand);
     const elements: ProjectElements = {
-      root, toggle, path, summary, body, rebuild, clearCache, index, memory,
+      root, toggle, path, summary, body, diskUsage, rebuild, clearCache, index, memory,
       cacheEnabled: cacheCheckbox.input, cacheState, cacheDirectory, openFolder, readOnly,
       trigramFilters: trigramCheckbox.input, trigramFiltersText: trigramText, operations,
     };
@@ -494,7 +524,9 @@ class DashboardView {
     const e = this.projectElements.get(row)!;
     const vm = this.last!;
     setText(e.path, item.rootPath);
-    setTitle(e.path, item.rootPath);
+    setTitle(e.path, `Explore directory and file sizes of ${item.rootPath}`);
+    setDisabled(e.path, !vm.actions.toggleTrigramFilters);
+    setDisabled(e.diskUsage, !vm.actions.toggleTrigramFilters);
     setText(e.summary, item.summary);
     this.applyExpanded(e, this.expanded.get(item.rootPath) ?? item.defaultExpanded);
     setDisabled(e.rebuild, !vm.actions.rebuild);

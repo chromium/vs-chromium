@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 // Messages exchanged between the server dashboard page (media: out/media/dashboard.js) and its
-// host (the VS Code extension today, a Visual Studio tool window with WebView2 later).
+// host (the VS Code extension today, a Visual Studio tool window with WebView2).
 //
 // The page is host neutral: it sends protocol requests (method names and parameters of the
 // generated protocol, forwarded as is to the server by the host), receives their results and the
@@ -23,6 +23,9 @@ export const DashboardRequestMethods = [
   'project/setOptions',
   'project/rebuild',
   'project/clearCache',
+  'project/directorySizes',
+  'project/measureDirectory',
+  'project/cancelMeasure',
   'server/statistics',
   'server/history',
   'tree/refresh',
@@ -33,6 +36,9 @@ export type DashboardRequestMethod = typeof DashboardRequestMethods[number];
 export function isDashboardRequestMethod(method: unknown): method is DashboardRequestMethod {
   return typeof method === 'string' && (DashboardRequestMethods as readonly string[]).includes(method);
 }
+
+/** Section of `vs-chromium-project.txt` where ignore patterns can be added. */
+export type DashboardIgnoreSection = 'sourceExplorerIgnore' | 'searchableFilesIgnore';
 
 /** Commands only the host can execute. */
 export type HostCommand =
@@ -61,7 +67,14 @@ export type HostCommand =
    */
   | { command: 'setProjectCacheEnabled'; projectPath: string; enabled: boolean }
   /** Opens the cache directory of a project (resolved by the host from "project/details"). */
-  | { command: 'openProjectCacheFolder'; projectPath: string };
+  | { command: 'openProjectCacheFolder'; projectPath: string }
+  /** Copies text (e.g. an ignore pattern) to the system clipboard. */
+  | { command: 'copyToClipboard'; text: string }
+  /**
+   * Adds an ignore pattern to `vs-chromium-project.txt` ("project/addIgnorePattern"), after a
+   * confirmation of the user by the host.
+   */
+  | { command: 'addIgnorePattern'; projectPath: string; section: DashboardIgnoreSection; pattern: string };
 
 /** Messages from the page to the host. */
 export type PageToHost =

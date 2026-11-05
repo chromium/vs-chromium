@@ -728,6 +728,15 @@ button:disabled {
   gap: 6px 12px;
 }
 
+.project-title-group {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  min-width: 0;
+}
+
 .project-toggle {
   flex: 1 1 320px;
   flex-wrap: wrap;
@@ -742,6 +751,7 @@ button:disabled {
 }
 
 .project-summary {
+  cursor: pointer;
   color: var(--vscode-descriptionForeground);
 }
 
@@ -834,4 +844,219 @@ button:disabled {
   .table.compact {
     min-width: 0;
   }
+}
+
+
+/* Disk usage drill-down explorer */
+
+[hidden] {
+  display: none !important;
+}
+
+.link.project-path {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.explorer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--vscode-settings-headerBorder, var(--vscode-panel-border));
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+.breadcrumb-sep {
+  color: var(--vscode-descriptionForeground);
+}
+
+.breadcrumb-current {
+  font-weight: 600;
+  color: var(--vscode-settings-headerForeground, var(--vscode-foreground));
+  overflow-wrap: anywhere;
+}
+
+.explorer-loading {
+  margin-left: auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.explorer-subheader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin: 10px 0 8px 0;
+}
+
+.explorer-summary {
+  color: var(--vscode-descriptionForeground);
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch-other {
+  background: var(--vscode-charts-orange);
+  opacity: 0.75;
+}
+
+.explorer-current-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: var(--vscode-keybindingTable-headerBackground);
+  border-radius: 2px;
+}
+
+.explorer-current-label {
+  margin-right: 4px;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+.explorer-note {
+  margin: 6px 0 8px 0;
+}
+
+.explorer-table-wrap {
+  margin-top: 6px;
+  overflow-x: auto;
+}
+
+.disk-usage-table td {
+  height: 28px;
+  vertical-align: middle;
+}
+
+.entry-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 180px;
+}
+
+/* Pure CSS folder and file shapes (no icon font) */
+.entry-icon {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  box-sizing: border-box;
+}
+
+.entry-icon.folder {
+  width: 14px;
+  height: 10px;
+  margin-top: 2px;
+  border-radius: 1px;
+  background: var(--vscode-charts-yellow, var(--vscode-descriptionForeground));
+  opacity: 0.85;
+}
+
+.entry-icon.folder::before {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 6px;
+  height: 2px;
+  border-radius: 1px 1px 0 0;
+  background: inherit;
+  content: "";
+}
+
+.entry-icon.file {
+  width: 11px;
+  height: 13px;
+  margin: 0 1px 0 2px;
+  border: 1.5px solid var(--vscode-descriptionForeground);
+  border-radius: 1px;
+  opacity: 0.8;
+}
+
+.entry-link,
+.entry-name {
+  font-family: var(--vscode-editor-font-family, monospace);
+  text-align: left;
+}
+
+.excluded-row .entry-name {
+  color: var(--vscode-descriptionForeground);
+}
+
+.excluded-badge {
+  padding: 1px 5px;
+  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+  border-radius: 8px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.size-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.size-bar {
+  display: inline-flex;
+  flex: none;
+  width: 96px;
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+  border-radius: 2px;
+  background: var(--vscode-keybindingTable-headerBackground);
+}
+
+.size-bar-searchable {
+  height: 100%;
+  background: var(--vscode-charts-blue);
+}
+
+.size-bar-other {
+  height: 100%;
+  background: var(--vscode-charts-orange);
+  opacity: 0.75;
+}
+
+.size-bar-searchable.non-zero,
+.size-bar-other.non-zero {
+  min-width: 2px;
+}
+
+.size-text {
+  min-width: 120px;
+}
+
+.size-text.muted {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.remeasure-link {
+  font-size: 12px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }

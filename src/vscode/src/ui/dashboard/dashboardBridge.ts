@@ -19,8 +19,11 @@ import {
   IndexStateChangedNotification,
   IndexStatisticsRequest,
   InitializeResult,
+  ProjectCancelMeasureRequest,
   ProjectClearCacheRequest,
   ProjectDetailsRequest,
+  ProjectDirectorySizesRequest,
+  ProjectMeasureDirectoryRequest,
   ProjectRebuildRequest,
   ProjectSetOptionsRequest,
   ServerStatisticsRequest,
@@ -59,6 +62,9 @@ const requestTypes: Partial<Record<DashboardRequestMethod, RequestType<unknown, 
   'server/history': ServerHistoryRequest.type as RequestType<unknown, unknown, void>,
   'project/rebuild': ProjectRebuildRequest.type as RequestType<unknown, unknown, void>,
   'project/clearCache': ProjectClearCacheRequest.type as RequestType<unknown, unknown, void>,
+  'project/directorySizes': ProjectDirectorySizesRequest.type as RequestType<unknown, unknown, void>,
+  'project/measureDirectory': ProjectMeasureDirectoryRequest.type as RequestType<unknown, unknown, void>,
+  'project/cancelMeasure': ProjectCancelMeasureRequest.type as RequestType<unknown, unknown, void>,
 };
 
 const requestTypes0: Partial<Record<DashboardRequestMethod, RequestType0<unknown, void>>> = {

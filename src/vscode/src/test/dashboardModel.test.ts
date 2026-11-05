@@ -313,3 +313,175 @@ describe('serverLogDirectory', () => {
     assert.equal(serverLogDirectory('linux', { XDG_DATA_HOME: '/data' }, '/home/me'), '/data/VsChromium');
   });
 });
+
+
+describe('diskUsage view model', () => {
+  const MB = 1024 * 1024;
+
+  it('builds breadcrumbs, stacked bars, sizes, and ignore button states', () => {
+    const vm = buildViewModel({
+      host: host(),
+      diskUsage: {
+        projectPath: 'C:\\repo',
+        relativePath: 'src/core',
+        loading: false,
+        sizes: {
+          projectPath: 'C:\\repo',
+          relativePath: 'src/core',
+          projectFile: 'C:\\repo\\vs-chromium-project.txt',
+          snapshotVersion: 3,
+          computeMs: 1.5,
+          totals: {
+            name: 'core',
+            isDirectory: true,
+            excluded: false,
+            measureState: 'done',
+            totalBytes: 64 * MB,
+            searchableBytes: 48 * MB,
+            notSearchableBytes: 16 * MB,
+            fileCount: 120,
+            searchableFileCount: 95,
+            pattern: '/src/core/',
+          },
+          children: [
+            {
+              name: 'generated',
+              isDirectory: true,
+              excluded: false,
+              measureState: 'done',
+              totalBytes: 64 * MB,
+              searchableBytes: 48 * MB,
+              notSearchableBytes: 16 * MB,
+              fileCount: 100,
+              searchableFileCount: 80,
+              pattern: '/src/core/generated/',
+            },
+            {
+              name: 'assets.pak',
+              isDirectory: false,
+              excluded: false,
+              measureState: 'done',
+              totalBytes: 16 * MB,
+              searchableBytes: 0,
+              notSearchableBytes: 16 * MB,
+              fileCount: 1,
+              searchableFileCount: 0,
+              pattern: '/src/core/assets.pak',
+            },
+            {
+              name: 'out',
+              isDirectory: true,
+              excluded: true,
+              measureState: 'notMeasured',
+              totalBytes: 0,
+              searchableBytes: 0,
+              notSearchableBytes: 0,
+              fileCount: 0,
+              searchableFileCount: 0,
+              pattern: '/src/core/out/',
+            },
+            {
+              name: 'cache',
+              isDirectory: true,
+              excluded: true,
+              measureState: 'done',
+              totalBytes: 32 * MB,
+              searchableBytes: 0,
+              notSearchableBytes: 32 * MB,
+              fileCount: 400,
+              searchableFileCount: 0,
+              pattern: '/src/core/cache/',
+            },
+          ],
+        },
+      },
+    }, options);
+
+    assert.equal(vm.view, 'diskUsage');
+    const du = vm.diskUsage!;
+    assert.equal(du.parentRelativePath, 'src');
+    assert.deepEqual(du.breadcrumbs.map(b => [b.label, b.relativePath, b.current]), [
+      ['C:\\repo', '', false],
+      ['src', 'src', false],
+      ['core', 'src/core', true],
+    ]);
+    assert.equal(du.summary, 'Indexed: 48.0 MB searchable / 64.0 MB total \u00b7 120 files (95 searchable)');
+    assert.equal(du.currentDirectoryPattern, '/src/core/');
+    assert.equal(du.canExcludeCurrentExplorer, true);
+    assert.equal(du.canExcludeCurrentSearchable, true);
+
+    const [gen, pak, out, cache] = du.rows;
+    assert.equal(gen.drillable, true);
+    assert.equal(gen.sizeText, '48.0 MB / 64.0 MB');
+    assert.equal(gen.searchableBarPercent, 75);
+    assert.equal(gen.notSearchableBarPercent, 25);
+    assert.equal(gen.canAddExplorerIgnore, true);
+    assert.equal(gen.canAddSearchableIgnore, true);
+
+    assert.equal(pak.drillable, false);
+    assert.equal(pak.sizeText, '0 B / 16.0 MB');
+    assert.equal(pak.searchableBarPercent, 0);
+    assert.equal(pak.notSearchableBarPercent, 25);
+    assert.equal(pak.canAddExplorerIgnore, true);
+    assert.equal(pak.canAddSearchableIgnore, false, 'already 0 searchable bytes');
+
+    assert.equal(out.drillable, false);
+    assert.equal(out.sizeText, 'excluded \u2014 size not measured');
+    assert.equal(out.measureAction, 'measure');
+    assert.equal(out.canCopyPattern, true);
+    assert.equal(out.canAddExplorerIgnore, false);
+
+    assert.equal(cache.sizeText, '0 B / 32.0 MB');
+    assert.equal(cache.measureAction, 'remeasure');
+    assert.equal(cache.notSearchableBarPercent, 50);
+  });
+
+  it('disables adding ignore rules when the project has no editable vs-chromium-project.txt', () => {
+    const vm = buildViewModel({
+      host: host(),
+      diskUsage: {
+        projectPath: 'C:\\chromium\\src',
+        relativePath: '',
+        loading: false,
+        sizes: {
+          projectPath: 'C:\\chromium\\src',
+          relativePath: '',
+          projectFile: undefined,
+          snapshotVersion: 1,
+          computeMs: 5,
+          totals: {
+            name: 'src',
+            isDirectory: true,
+            excluded: false,
+            measureState: 'done',
+            totalBytes: 1024,
+            searchableBytes: 1024,
+            notSearchableBytes: 0,
+            fileCount: 1,
+            searchableFileCount: 1,
+          },
+          children: [
+            {
+              name: 'third_party',
+              isDirectory: true,
+              excluded: false,
+              measureState: 'done',
+              totalBytes: 1024,
+              searchableBytes: 1024,
+              notSearchableBytes: 0,
+              fileCount: 1,
+              searchableFileCount: 1,
+              pattern: '/third_party/',
+            },
+          ],
+        },
+      },
+    }, options);
+
+    const du = vm.diskUsage!;
+    assert.ok(du.readOnlyReason);
+    assert.equal(du.rows[0].canCopyPattern, true);
+    assert.equal(du.rows[0].canAddExplorerIgnore, false);
+    assert.equal(du.rows[0].canAddSearchableIgnore, false);
+  });
+});

@@ -28,6 +28,9 @@ namespace VsChromium.Features.ServerDashboard {
       "project/setOptions",
       "project/rebuild",
       "project/clearCache",
+      "project/directorySizes",
+      "project/measureDirectory",
+      "project/cancelMeasure",
       "server/statistics",
       "server/history",
       "tree/refresh",
@@ -48,6 +51,8 @@ namespace VsChromium.Features.ServerDashboard {
       "rebuildProject",
       "setProjectCacheEnabled",
       "openProjectCacheFolder",
+      "copyToClipboard",
+      "addIgnorePattern",
     };
 
     public static bool IsAllowedRequest(string method) {

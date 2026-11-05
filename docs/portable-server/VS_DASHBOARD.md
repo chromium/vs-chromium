@@ -24,6 +24,8 @@ The "VsChromium Server" tool window of the Visual Studio extension hosts the ser
 | `clearCache`, `rebuildProject` | Confirmation (message box), then `project/clearCache` / `index/clearCache` / `project/rebuild` |
 | `setTrigramFiltersSetting` | The default of the options page |
 | `setProjectTrigramFilters`, `setProjectCacheEnabled` | Per project override (see below); disabling the cache of a project asks for a confirmation (its cache is deleted) |
+| `copyToClipboard` | Copies an ignore pattern from the project disk usage explorer to the clipboard |
+| `addIgnorePattern` | Confirmation (message box showing the exact pattern and `[SourceExplorer.ignore]` or `[SearchableFiles.ignore]`), then `project/addIgnorePattern` (updates `vs-chromium-project.txt` and triggers a rescan) |
 
 ## Settings policy
 

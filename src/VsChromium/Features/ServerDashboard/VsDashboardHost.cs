@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -111,6 +112,80 @@ namespace VsChromium.Features.ServerDashboard {
         case "rebuildProject":
           await RebuildProjectAsync(projectPath);
           break;
+        case "copyToClipboard":
+          CopyToClipboard((string)message["text"]);
+          break;
+        case "addIgnorePattern":
+          await AddIgnorePatternAsync(projectPath, (string)message["section"], (string)message["pattern"]);
+          break;
+      }
+    }
+
+    private static void CopyToClipboard(string text) {
+      if (string.IsNullOrEmpty(text)) {
+        return;
+      }
+      try {
+        System.Windows.Clipboard.SetText(text);
+      }
+      catch (ExternalException e) {
+        Logger.LogWarn(e, "Failed to copy dashboard text to clipboard.");
+      }
+    }
+
+    private async Task AddIgnorePatternAsync(string projectPath, string sectionValue, string pattern) {
+      if (string.IsNullOrEmpty(projectPath) || string.IsNullOrEmpty(pattern)) {
+        return;
+      }
+      IgnoreSection section;
+      string sectionName;
+      string effect;
+      if (sectionValue == "sourceExplorerIgnore") {
+        section = IgnoreSection.SourceExplorerIgnore;
+        sectionName = "SourceExplorer.ignore";
+        effect = "Matching files and directories will be excluded from the project tree, file name search, and code search.";
+      } else if (sectionValue == "searchableFilesIgnore") {
+        section = IgnoreSection.SearchableFilesIgnore;
+        sectionName = "SearchableFiles.ignore";
+        effect = "Matching files will remain in the project tree and file name search, but their contents will be excluded from code search.";
+      } else {
+        Logger.LogWarn("Unknown ignore section \"{0}\".", sectionValue);
+        return;
+      }
+
+      if (!Confirm(
+            string.Format("Add \"{0}\" to [{1}] in \"{2}\"?", pattern, sectionName, projectPath),
+            effect + "\r\n\r\nUpdating vs-chromium-project.txt triggers a rescan of the project.")) {
+        return;
+      }
+
+      try {
+        var client = await _serverClient.GetProtocolClientAsync();
+        var result = await client.ProjectAddIgnorePatternAsync(new AddIgnorePatternParams {
+          ProjectPath = projectPath,
+          Section = section,
+          Pattern = pattern,
+        });
+        if (!result.Added) {
+          await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+          VsShellUtilities.ShowMessageBox(
+            _serviceProvider,
+            string.Format("\"{0}\" is already present in [{1}] ({2}).", pattern, result.SectionName, result.ProjectFile),
+            "VsChromium",
+            OLEMSGICON.OLEMSGICON_INFO,
+            OLEMSGBUTTON.OLEMSGBUTTON_OK,
+            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+        }
+      }
+      catch (Exception e) {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        VsShellUtilities.ShowMessageBox(
+          _serviceProvider,
+          GetErrorMessage(e),
+          "VsChromium",
+          OLEMSGICON.OLEMSGICON_CRITICAL,
+          OLEMSGBUTTON.OLEMSGBUTTON_OK,
+          OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
       }
     }
 

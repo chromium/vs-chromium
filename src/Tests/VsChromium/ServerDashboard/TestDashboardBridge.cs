@@ -4,7 +4,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -110,13 +112,16 @@ namespace VsChromium.Tests.VsChromium.ServerDashboard {
       await bridge.HandleMessageAsync("{\"type\":\"request\",\"id\":7,\"method\":\"index/status\"}");
       await bridge.HandleMessageAsync("{\"type\":\"request\",\"id\":8,\"method\":\"server/history\",\"params\":{\"sinceUnixMs\":5}}");
       await bridge.HandleMessageAsync("{\"type\":\"request\",\"id\":9,\"method\":\"project/rebuild\",\"params\":{\"projectPath\":\"C:\\\\a\"}}");
+      await bridge.HandleMessageAsync("{\"type\":\"request\",\"id\":10,\"method\":\"project/directorySizes\",\"params\":{\"projectPath\":\"C:\\\\a\",\"relativePath\":\"src\"}}");
 
-      Assert.AreEqual(3, server.Requests.Count);
+      Assert.AreEqual(4, server.Requests.Count);
       Assert.AreEqual("index/status", server.Requests[0].Item1);
       Assert.IsNull(server.Requests[0].Item2, "no parameters");
       Assert.AreEqual("server/history", server.Requests[1].Item1);
       Assert.AreEqual(5, (int)server.Requests[1].Item2["sinceUnixMs"]);
       Assert.AreEqual("C:\\a", (string)server.Requests[2].Item2["projectPath"]);
+      Assert.AreEqual("project/directorySizes", server.Requests[3].Item1);
+      Assert.AreEqual("src", (string)server.Requests[3].Item2["relativePath"]);
 
       var responses = host.OfType("response").ToList();
       Assert.AreEqual(7, (int)responses[0]["id"]);
@@ -130,19 +135,33 @@ namespace VsChromium.Tests.VsChromium.ServerDashboard {
       var (bridge, server, host) = Setup();
       await bridge.HandleMessageAsync("{\"type\":\"request\",\"id\":1,\"method\":\"search/code\",\"params\":{}}");
       await bridge.HandleMessageAsync("{\"type\":\"request\",\"id\":2,\"method\":\"files/register\",\"params\":{}}");
+      await bridge.HandleMessageAsync("{\"type\":\"request\",\"id\":3,\"method\":\"project/addIgnorePattern\",\"params\":{}}");
       Assert.AreEqual(0, server.Requests.Count);
       var responses = host.OfType("response").ToList();
       Assert.AreEqual("Request not allowed: search/code", (string)responses[0]["error"]);
       Assert.AreEqual("Request not allowed: files/register", (string)responses[1]["error"]);
+      Assert.AreEqual("Request not allowed: project/addIgnorePattern", (string)responses[2]["error"]);
     }
 
     [TestMethod]
-    public void TheAllowListIsTheOneOfTheVsCodeBridge() {
-      CollectionAssert.AreEquivalent(new[] {
-        "index/statistics", "index/status", "index/clearCache", "index/details", "index/pause", "index/resume",
-        "project/details", "project/setOptions", "project/rebuild", "project/clearCache",
-        "server/statistics", "server/history", "tree/refresh",
-      }, DashboardProtocol.RequestMethods.ToList());
+    public void TheAllowListAndCommandsMatchTheTypeScriptDashboardMessages() {
+      var messagesPath = Path.Combine(RepoRootDirectory(), "src", "vscode", "src", "ui", "dashboard", "dashboardMessages.ts");
+      var ts = File.ReadAllText(messagesPath);
+
+      var methodsBlock = Regex.Match(ts, @"DashboardRequestMethods\s*=\s*\[(?<body>[^\]]+)\]");
+      Assert.IsTrue(methodsBlock.Success, "DashboardRequestMethods not found in dashboardMessages.ts");
+      var tsMethods = Regex.Matches(methodsBlock.Groups["body"].Value, @"'([^']+)'")
+        .Cast<Match>()
+        .Select(m => m.Groups[1].Value)
+        .ToList();
+      CollectionAssert.AreEquivalent(tsMethods, DashboardProtocol.RequestMethods.ToList());
+
+      var tsCommands = Regex.Matches(ts, @"\{\s*command:\s*'([^']+)'")
+        .Cast<Match>()
+        .Select(m => m.Groups[1].Value)
+        .Distinct()
+        .ToList();
+      CollectionAssert.AreEquivalent(tsCommands, DashboardProtocol.Commands.ToList());
     }
 
     [TestMethod]
@@ -181,10 +200,17 @@ namespace VsChromium.Tests.VsChromium.ServerDashboard {
       var (bridge, server, host) = Setup();
       await bridge.HandleMessageAsync("{\"type\":\"command\",\"command\":\"setTrigramFiltersSetting\",\"enabled\":true}");
       await bridge.HandleMessageAsync("{\"type\":\"command\",\"command\":\"rebuildProject\",\"projectPath\":\"C:\\\\a\"}");
+      await bridge.HandleMessageAsync("{\"type\":\"command\",\"command\":\"copyToClipboard\",\"text\":\"/out/\"}");
+      await bridge.HandleMessageAsync("{\"type\":\"command\",\"command\":\"addIgnorePattern\",\"projectPath\":\"C:\\\\a\",\"section\":\"sourceExplorerIgnore\",\"pattern\":\"/out/\"}");
       await bridge.HandleMessageAsync("{\"type\":\"command\",\"command\":\"deleteEverything\"}");
-      Assert.AreEqual(2, host.Commands.Count, "unknown commands are ignored");
+      Assert.AreEqual(4, host.Commands.Count, "unknown commands are ignored");
       Assert.AreEqual("setTrigramFiltersSetting", host.Commands[0].Item1);
       Assert.AreEqual("C:\\a", (string)host.Commands[1].Item2["projectPath"]);
+      Assert.AreEqual("copyToClipboard", host.Commands[2].Item1);
+      Assert.AreEqual("/out/", (string)host.Commands[2].Item2["text"]);
+      Assert.AreEqual("addIgnorePattern", host.Commands[3].Item1);
+      Assert.AreEqual("sourceExplorerIgnore", (string)host.Commands[3].Item2["section"]);
+      Assert.AreEqual("/out/", (string)host.Commands[3].Item2["pattern"]);
       Assert.AreEqual(0, server.Requests.Count, "the commands are executed by the host");
       var state = (JObject)host.OfType("hostState").First()["state"];
       Assert.AreEqual(true, (bool)state["trigramFiltersSetting"]);
@@ -208,6 +234,15 @@ namespace VsChromium.Tests.VsChromium.ServerDashboard {
       bridge.Dispose();
       server.Notify("index/loaded", new JObject());
       Assert.AreEqual(0, host.Posted.Count);
+    }
+
+    private static string RepoRootDirectory() {
+      var directory = new DirectoryInfo(Path.GetDirectoryName(typeof(TestDashboardBridge).Assembly.Location));
+      while (directory != null && !File.Exists(Path.Combine(directory.FullName, "build.root"))) {
+        directory = directory.Parent;
+      }
+      Assert.IsNotNull(directory, "build.root not found");
+      return directory.FullName;
     }
   }
 }

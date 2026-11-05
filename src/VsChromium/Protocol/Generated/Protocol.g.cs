@@ -48,6 +48,43 @@ namespace VsChromium.Protocol.Generated {
   }
 
   /// <summary>
+  /// A section of the project file (`vs-chromium-project.txt`) listing path patterns.
+  /// </summary>
+  [JsonConverter(typeof(StringEnumConverter))]
+  public enum IgnoreSection {
+    /// <summary>
+    /// "[SourceExplorer.ignore]": the matching files and directories are not indexed (not in the tree).
+    /// </summary>
+    [EnumMember(Value = "sourceExplorerIgnore")]
+    SourceExplorerIgnore,
+    /// <summary>
+    /// "[SearchableFiles.ignore]": the matching files are in the tree but not searchable (no contents).
+    /// </summary>
+    [EnumMember(Value = "searchableFilesIgnore")]
+    SearchableFilesIgnore,
+  }
+
+  /// <summary>
+  /// The state of the measurement of a directory excluded from the index ("project/measureDirectory").
+  /// </summary>
+  [JsonConverter(typeof(StringEnumConverter))]
+  public enum MeasureState {
+    /// <summary>
+    /// Never measured (since the server started).
+    /// </summary>
+    [EnumMember(Value = "notMeasured")]
+    NotMeasured,
+    [EnumMember(Value = "running")]
+    Running,
+    [EnumMember(Value = "done")]
+    Done,
+    [EnumMember(Value = "cancelled")]
+    Cancelled,
+    [EnumMember(Value = "failed")]
+    Failed,
+  }
+
+  /// <summary>
   /// A span of text in a file: offset and length in UTF-16 code units.
   /// </summary>
   public sealed partial class TextSpan {
@@ -750,6 +787,216 @@ namespace VsChromium.Protocol.Generated {
     public ProjectOperationsStatistics Operations { get; set; }
   }
 
+  public sealed partial class DirectoryPathParams {
+    /// <summary>
+    /// Root path of the project (`rootPath` of `tree/get`).
+    /// </summary>
+    [JsonProperty("projectPath")]
+    public string ProjectPath { get; set; }
+
+    /// <summary>
+    /// Path of a directory of the project, relative to its root ("" for the root; "/" or "\\" separators).
+    /// </summary>
+    [JsonProperty("relativePath")]
+    public string RelativePath { get; set; }
+  }
+
+  /// <summary>
+  /// The size on disk of a directory or a file of a project (disk usage view of the dashboards).
+  /// </summary>
+  public sealed partial class DirectorySizeEntry {
+    [JsonProperty("name")]
+    public string Name { get; set; }
+
+    [JsonProperty("isDirectory")]
+    public bool IsDirectory { get; set; }
+
+    /// <summary>
+    /// Excluded from the index by "[SourceExplorer.ignore]": never scanned. The sizes of an excluded
+    /// directory are those of its last measurement ("project/measureDirectory"), 0 if not measured; the
+    /// sizes of an excluded file are known (directory listing).
+    /// </summary>
+    [JsonProperty("excluded")]
+    public bool Excluded { get; set; }
+
+    /// <summary>
+    /// Excluded directories: the state of their measurement. `done` for the other entries.
+    /// </summary>
+    [JsonProperty("measureState")]
+    public MeasureState MeasureState { get; set; }
+
+    /// <summary>
+    /// Size on disk of the files (sum of their lengths, recursively for a directory).
+    /// </summary>
+    [JsonProperty("totalBytes")]
+    public long TotalBytes { get; set; }
+
+    /// <summary>
+    /// Size of the searchable files (with text contents in the index; large files included).
+    /// </summary>
+    [JsonProperty("searchableBytes")]
+    public long SearchableBytes { get; set; }
+
+    /// <summary>
+    /// `totalBytes` - `searchableBytes`: binary files, files of "[SearchableFiles.ignore]", unread files.
+    /// </summary>
+    [JsonProperty("notSearchableBytes")]
+    public long NotSearchableBytes { get; set; }
+
+    [JsonProperty("fileCount")]
+    public long FileCount { get; set; }
+
+    [JsonProperty("searchableFileCount")]
+    public long SearchableFileCount { get; set; }
+
+    /// <summary>
+    /// The pattern of the project file matching exactly this entry (relative to the project root, e.g.
+    /// "/out/Debug/" for a directory, "/data/big.bin" for a file). Absent if the entry can't be matched
+    /// exactly by a pattern (a name containing "*").
+    /// </summary>
+    [JsonProperty("pattern", NullValueHandling = NullValueHandling.Ignore)]
+    public string Pattern { get; set; }
+  }
+
+  /// <summary>
+  /// The sizes of a directory of a project and of its children ("project/directorySizes").
+  /// </summary>
+  public sealed partial class DirectorySizes {
+    [JsonProperty("projectPath")]
+    public string ProjectPath { get; set; }
+
+    /// <summary>
+    /// The relative path of the directory ("/" separators, "" for the root).
+    /// </summary>
+    [JsonProperty("relativePath")]
+    public string RelativePath { get; set; }
+
+    /// <summary>
+    /// The totals of the directory (indexed files only: excluded entries not included).
+    /// </summary>
+    [JsonProperty("totals")]
+    public DirectorySizeEntry Totals { get; set; }
+
+    /// <summary>
+    /// The children of the directory: directories and files, the largest first, then the excluded entries.
+    /// </summary>
+    [JsonProperty("children")]
+    public List<DirectorySizeEntry> Children { get; set; } = new List<DirectorySizeEntry>();
+
+    /// <summary>
+    /// The project file, if it can be edited ("project/addIgnorePattern"); absent otherwise (e.g. Chromium projects).
+    /// </summary>
+    [JsonProperty("projectFile", NullValueHandling = NullValueHandling.Ignore)]
+    public string ProjectFile { get; set; }
+
+    /// <summary>
+    /// The version of the file system snapshot of the sizes.
+    /// </summary>
+    [JsonProperty("snapshotVersion")]
+    public int SnapshotVersion { get; set; }
+
+    /// <summary>
+    /// Time to compute the sizes of all the directories of the project (0 if they were already computed for this snapshot).
+    /// </summary>
+    [JsonProperty("computeMs")]
+    public double ComputeMs { get; set; }
+  }
+
+  public sealed partial class MeasureDirectoryParams {
+    /// <summary>
+    /// Root path of the project (`rootPath` of `tree/get`).
+    /// </summary>
+    [JsonProperty("projectPath")]
+    public string ProjectPath { get; set; }
+
+    /// <summary>
+    /// Path of a directory of the project, relative to its root ("" for the root; "/" or "\\" separators).
+    /// </summary>
+    [JsonProperty("relativePath")]
+    public string RelativePath { get; set; }
+
+    /// <summary>
+    /// Measure again a directory already measured.
+    /// </summary>
+    [JsonProperty("restart", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Restart { get; set; }
+  }
+
+  /// <summary>
+  /// The measurement of a directory excluded from the index (enumeration of its files, in the background).
+  /// </summary>
+  public sealed partial class DirectoryMeasurement {
+    [JsonProperty("relativePath")]
+    public string RelativePath { get; set; }
+
+    [JsonProperty("state")]
+    public MeasureState State { get; set; }
+
+    /// <summary>
+    /// The size of the files found so far (final when `done`).
+    /// </summary>
+    [JsonProperty("totalBytes")]
+    public long TotalBytes { get; set; }
+
+    [JsonProperty("fileCount")]
+    public long FileCount { get; set; }
+
+    [JsonProperty("directoryCount")]
+    public long DirectoryCount { get; set; }
+
+    [JsonProperty("elapsedMs")]
+    public double ElapsedMs { get; set; }
+
+    /// <summary>
+    /// The error of a `failed` measurement.
+    /// </summary>
+    [JsonProperty("error", NullValueHandling = NullValueHandling.Ignore)]
+    public string Error { get; set; }
+  }
+
+  public sealed partial class AddIgnorePatternParams {
+    /// <summary>
+    /// Root path of the project.
+    /// </summary>
+    [JsonProperty("projectPath")]
+    public string ProjectPath { get; set; }
+
+    [JsonProperty("section")]
+    public IgnoreSection Section { get; set; }
+
+    /// <summary>
+    /// The pattern to add (e.g. the `pattern` of a `DirectorySizeEntry`).
+    /// </summary>
+    [JsonProperty("pattern")]
+    public string Pattern { get; set; }
+  }
+
+  public sealed partial class AddIgnorePatternResult {
+    /// <summary>
+    /// False if the section already contains the pattern (the file is not modified).
+    /// </summary>
+    [JsonProperty("added")]
+    public bool Added { get; set; }
+
+    /// <summary>
+    /// The project file.
+    /// </summary>
+    [JsonProperty("projectFile")]
+    public string ProjectFile { get; set; }
+
+    /// <summary>
+    /// The name of the section (e.g. "SourceExplorer.ignore").
+    /// </summary>
+    [JsonProperty("sectionName")]
+    public string SectionName { get; set; }
+
+    /// <summary>
+    /// The line added (or already present).
+    /// </summary>
+    [JsonProperty("line")]
+    public string Line { get; set; }
+  }
+
   public sealed partial class SearchQuery {
     /// <summary>
     /// The text to search, with "*" wildcards, or a regular expression (see "regex").
@@ -1407,6 +1654,10 @@ namespace VsChromium.Protocol.Generated {
     public const string ProjectDetails = "project/details";
     public const string ProjectRebuild = "project/rebuild";
     public const string ProjectClearCache = "project/clearCache";
+    public const string ProjectDirectorySizes = "project/directorySizes";
+    public const string ProjectMeasureDirectory = "project/measureDirectory";
+    public const string ProjectCancelMeasure = "project/cancelMeasure";
+    public const string ProjectAddIgnorePattern = "project/addIgnorePattern";
     public const string SearchCode = "search/code";
     public const string SearchPaths = "search/paths";
     public const string ServerInitialize = "server/initialize";
@@ -1522,6 +1773,39 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     public Task<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
       _rpc.InvokeWithParameterObjectAsync<ClearCacheResult>(ProtocolMethods.ProjectClearCache, parameters, cancellationToken);
+
+    /// <summary>
+    /// "project/directorySizes": The size on disk of a directory of a project and of its children (disk usage view), from the
+    /// scan of the project (no disk access) and the file database (searchable files). The sizes of all
+    /// the directories of the project are computed by the first request for a snapshot (one pass) and
+    /// kept until the snapshot changes. The directories and files excluded by "[SourceExplorer.ignore]"
+    /// are listed with a directory listing of the requested directory only.
+    /// </summary>
+    public Task<DirectorySizes> ProjectDirectorySizesAsync(DirectoryPathParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync<DirectorySizes>(ProtocolMethods.ProjectDirectorySizes, parameters, cancellationToken);
+
+    /// <summary>
+    /// "project/measureDirectory": Starts the measurement of a directory excluded from the index (enumeration of its files in the
+    /// background, never part of the scan), or returns its progress or result (call again to poll).
+    /// Results are kept for the lifetime of the server.
+    /// </summary>
+    public Task<DirectoryMeasurement> ProjectMeasureDirectoryAsync(MeasureDirectoryParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync<DirectoryMeasurement>(ProtocolMethods.ProjectMeasureDirectory, parameters, cancellationToken);
+
+    /// <summary>
+    /// "project/cancelMeasure": Cancels the measurement of a directory, if running.
+    /// </summary>
+    public Task<DirectoryMeasurement> ProjectCancelMeasureAsync(DirectoryPathParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync<DirectoryMeasurement>(ProtocolMethods.ProjectCancelMeasure, parameters, cancellationToken);
+
+    /// <summary>
+    /// "project/addIgnorePattern": Adds a pattern to a section of the project file (`vs-chromium-project.txt`), if not already
+    /// present (the formatting, encoding and line endings of the file are kept). The change of the
+    /// project file makes the server rescan the project. Recoverable error if the project has no
+    /// editable project file (e.g. Chromium projects) or the pattern is invalid.
+    /// </summary>
+    public Task<AddIgnorePatternResult> ProjectAddIgnorePatternAsync(AddIgnorePatternParams parameters, CancellationToken cancellationToken = default(CancellationToken)) =>
+      _rpc.InvokeWithParameterObjectAsync<AddIgnorePatternResult>(ProtocolMethods.ProjectAddIgnorePattern, parameters, cancellationToken);
 
     /// <summary>
     /// "search/code": Searches the contents of the indexed files.

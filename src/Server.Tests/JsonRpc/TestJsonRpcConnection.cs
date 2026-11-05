@@ -337,6 +337,10 @@ namespace VsChromium.Tests.JsonRpc {
       public ValueTask<ClearCacheResult> IndexClearCacheAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask ProjectRebuildAsync(ProjectPathParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
+      public ValueTask<DirectorySizes> ProjectDirectorySizesAsync(DirectoryPathParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
+      public ValueTask<DirectoryMeasurement> ProjectMeasureDirectoryAsync(MeasureDirectoryParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
+      public ValueTask<DirectoryMeasurement> ProjectCancelMeasureAsync(DirectoryPathParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
+      public ValueTask<AddIgnorePatternResult> ProjectAddIgnorePatternAsync(AddIgnorePatternParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<FileSystemTree> TreeGetAsync(TreeParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<DirectoryEntries> TreeEntriesAsync(TreeEntriesParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();
       public ValueTask<DirectoryEntriesList> TreeEntriesMultipleAsync(TreeEntriesMultipleParams parameters, CancellationToken cancellationToken) => throw new NotSupportedException();

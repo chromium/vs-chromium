@@ -18,6 +18,21 @@ import { NotificationType, RequestType, RequestType0 } from 'vscode-jsonrpc';
  */
 export type IndexingStatus = 'idle' | 'paused' | 'yield' | 'busy' | 'verifying';
 
+/**
+ * A section of the project file (`vs-chromium-project.txt`) listing path patterns.
+ *
+ * - `'sourceExplorerIgnore'`: "[SourceExplorer.ignore]": the matching files and directories are not indexed (not in the tree).
+ * - `'searchableFilesIgnore'`: "[SearchableFiles.ignore]": the matching files are in the tree but not searchable (no contents).
+ */
+export type IgnoreSection = 'sourceExplorerIgnore' | 'searchableFilesIgnore';
+
+/**
+ * The state of the measurement of a directory excluded from the index ("project/measureDirectory").
+ *
+ * - `'notMeasured'`: Never measured (since the server started).
+ */
+export type MeasureState = 'notMeasured' | 'running' | 'done' | 'cancelled' | 'failed';
+
 /** A span of text in a file: offset and length in UTF-16 code units. */
 export interface TextSpan {
   /** Offset of the first character of the span, from the beginning of the file. */
@@ -358,6 +373,99 @@ export interface ProjectDetails {
   memory: ProjectMemory;
   cache: ProjectCacheState;
   operations: ProjectOperationsStatistics;
+}
+
+export interface DirectoryPathParams {
+  /** Root path of the project (`rootPath` of `tree/get`). */
+  projectPath: string;
+  /** Path of a directory of the project, relative to its root ("" for the root; "/" or "\\" separators). */
+  relativePath: string;
+}
+
+/** The size on disk of a directory or a file of a project (disk usage view of the dashboards). */
+export interface DirectorySizeEntry {
+  name: string;
+  isDirectory: boolean;
+  /**
+   * Excluded from the index by "[SourceExplorer.ignore]": never scanned. The sizes of an excluded
+   * directory are those of its last measurement ("project/measureDirectory"), 0 if not measured; the
+   * sizes of an excluded file are known (directory listing).
+   */
+  excluded: boolean;
+  /** Excluded directories: the state of their measurement. `done` for the other entries. */
+  measureState: MeasureState;
+  /** Size on disk of the files (sum of their lengths, recursively for a directory). */
+  totalBytes: number;
+  /** Size of the searchable files (with text contents in the index; large files included). */
+  searchableBytes: number;
+  /** `totalBytes` - `searchableBytes`: binary files, files of "[SearchableFiles.ignore]", unread files. */
+  notSearchableBytes: number;
+  fileCount: number;
+  searchableFileCount: number;
+  /**
+   * The pattern of the project file matching exactly this entry (relative to the project root, e.g.
+   * "/out/Debug/" for a directory, "/data/big.bin" for a file). Absent if the entry can't be matched
+   * exactly by a pattern (a name containing "*").
+   */
+  pattern?: string;
+}
+
+/** The sizes of a directory of a project and of its children ("project/directorySizes"). */
+export interface DirectorySizes {
+  projectPath: string;
+  /** The relative path of the directory ("/" separators, "" for the root). */
+  relativePath: string;
+  /** The totals of the directory (indexed files only: excluded entries not included). */
+  totals: DirectorySizeEntry;
+  /** The children of the directory: directories and files, the largest first, then the excluded entries. */
+  children: DirectorySizeEntry[];
+  /** The project file, if it can be edited ("project/addIgnorePattern"); absent otherwise (e.g. Chromium projects). */
+  projectFile?: string;
+  /** The version of the file system snapshot of the sizes. */
+  snapshotVersion: number;
+  /** Time to compute the sizes of all the directories of the project (0 if they were already computed for this snapshot). */
+  computeMs: number;
+}
+
+export interface MeasureDirectoryParams {
+  /** Root path of the project (`rootPath` of `tree/get`). */
+  projectPath: string;
+  /** Path of a directory of the project, relative to its root ("" for the root; "/" or "\\" separators). */
+  relativePath: string;
+  /** Measure again a directory already measured. */
+  restart?: boolean;
+}
+
+/** The measurement of a directory excluded from the index (enumeration of its files, in the background). */
+export interface DirectoryMeasurement {
+  relativePath: string;
+  state: MeasureState;
+  /** The size of the files found so far (final when `done`). */
+  totalBytes: number;
+  fileCount: number;
+  directoryCount: number;
+  elapsedMs: number;
+  /** The error of a `failed` measurement. */
+  error?: string;
+}
+
+export interface AddIgnorePatternParams {
+  /** Root path of the project. */
+  projectPath: string;
+  section: IgnoreSection;
+  /** The pattern to add (e.g. the `pattern` of a `DirectorySizeEntry`). */
+  pattern: string;
+}
+
+export interface AddIgnorePatternResult {
+  /** False if the section already contains the pattern (the file is not modified). */
+  added: boolean;
+  /** The project file. */
+  projectFile: string;
+  /** The name of the section (e.g. "SourceExplorer.ignore"). */
+  sectionName: string;
+  /** The line added (or already present). */
+  line: string;
 }
 
 export interface SearchQuery {
@@ -797,6 +905,45 @@ export namespace ProjectRebuildRequest {
 export namespace ProjectClearCacheRequest {
   export const method = 'project/clearCache';
   export const type = new RequestType<ProjectPathParams, ClearCacheResult, void>(method);
+}
+
+/**
+ * Request (client to server) "project/directorySizes": The size on disk of a directory of a project and of its children (disk usage view), from the
+ * scan of the project (no disk access) and the file database (searchable files). The sizes of all
+ * the directories of the project are computed by the first request for a snapshot (one pass) and
+ * kept until the snapshot changes. The directories and files excluded by "[SourceExplorer.ignore]"
+ * are listed with a directory listing of the requested directory only.
+ */
+export namespace ProjectDirectorySizesRequest {
+  export const method = 'project/directorySizes';
+  export const type = new RequestType<DirectoryPathParams, DirectorySizes, void>(method);
+}
+
+/**
+ * Request (client to server) "project/measureDirectory": Starts the measurement of a directory excluded from the index (enumeration of its files in the
+ * background, never part of the scan), or returns its progress or result (call again to poll).
+ * Results are kept for the lifetime of the server.
+ */
+export namespace ProjectMeasureDirectoryRequest {
+  export const method = 'project/measureDirectory';
+  export const type = new RequestType<MeasureDirectoryParams, DirectoryMeasurement, void>(method);
+}
+
+/** Request (client to server) "project/cancelMeasure": Cancels the measurement of a directory, if running. */
+export namespace ProjectCancelMeasureRequest {
+  export const method = 'project/cancelMeasure';
+  export const type = new RequestType<DirectoryPathParams, DirectoryMeasurement, void>(method);
+}
+
+/**
+ * Request (client to server) "project/addIgnorePattern": Adds a pattern to a section of the project file (`vs-chromium-project.txt`), if not already
+ * present (the formatting, encoding and line endings of the file are kept). The change of the
+ * project file makes the server rescan the project. Recoverable error if the project has no
+ * editable project file (e.g. Chromium projects) or the pattern is invalid.
+ */
+export namespace ProjectAddIgnorePatternRequest {
+  export const method = 'project/addIgnorePattern';
+  export const type = new RequestType<AddIgnorePatternParams, AddIgnorePatternResult, void>(method);
 }
 
 /** Request (client to server) "search/code": Searches the contents of the indexed files. */

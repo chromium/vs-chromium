@@ -23,6 +23,7 @@ using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
 using VsChromium.Server.FileSystemNames;
+using VsChromium.Server.Projects;
 using ISearchEngine = VsChromium.Server.Search.ISearchEngine;
 using EngineFilePositionSpan = VsChromium.Server.Search.FilePositionSpan;
 using EngineSearchParams = VsChromium.Server.Search.SearchParams;
@@ -47,6 +48,7 @@ namespace VsChromium.Server.JsonRpc {
     private readonly ProjectArenaAllocators _arenaAllocators;
     private readonly IIndexCache _indexCache;
     private readonly ServerHistorySampler _historySampler;
+    private readonly ProjectDiskUsageService _diskUsage;
 
     public ProtocolRequestHandler(
       IFileSystemSnapshotManager snapshotManager,
@@ -55,7 +57,9 @@ namespace VsChromium.Server.JsonRpc {
       IIndexingServer indexingServer,
       ProjectArenaAllocators arenaAllocators,
       IIndexCache indexCache = null,
-      ServerHistorySampler historySampler = null) {
+      ServerHistorySampler historySampler = null,
+      ProjectDiskUsageService diskUsage = null) {
+      _diskUsage = diskUsage;
       _indexCache = indexCache;
       _historySampler = historySampler;
       _snapshotManager = snapshotManager;
@@ -322,6 +326,32 @@ namespace VsChromium.Server.JsonRpc {
       Logger.LogInfo("Rebuilding the index of the project \"{0}\".", root);
       _indexingServer.RebuildProject(root);
       return default;
+    }
+
+    public ValueTask<DirectorySizes> ProjectDirectorySizesAsync(DirectoryPathParams parameters, CancellationToken cancellationToken) {
+      EnsureDiskUsageService();
+      return new ValueTask<DirectorySizes>(_diskUsage.GetDirectorySizes(parameters));
+    }
+
+    public ValueTask<DirectoryMeasurement> ProjectMeasureDirectoryAsync(MeasureDirectoryParams parameters, CancellationToken cancellationToken) {
+      EnsureDiskUsageService();
+      return _diskUsage.MeasureDirectoryAsync(parameters, cancellationToken);
+    }
+
+    public ValueTask<DirectoryMeasurement> ProjectCancelMeasureAsync(DirectoryPathParams parameters, CancellationToken cancellationToken) {
+      EnsureDiskUsageService();
+      return new ValueTask<DirectoryMeasurement>(_diskUsage.CancelMeasure(parameters));
+    }
+
+    public ValueTask<AddIgnorePatternResult> ProjectAddIgnorePatternAsync(AddIgnorePatternParams parameters, CancellationToken cancellationToken) {
+      EnsureDiskUsageService();
+      return new ValueTask<AddIgnorePatternResult>(_diskUsage.AddIgnorePattern(parameters));
+    }
+
+    private void EnsureDiskUsageService() {
+      if (_diskUsage == null) {
+        throw new RecoverableErrorException("Disk usage service is not available.");
+      }
     }
 
     /// <summary>The root path of a project of <paramref name="snapshot"/> (-32001 if not found).</summary>

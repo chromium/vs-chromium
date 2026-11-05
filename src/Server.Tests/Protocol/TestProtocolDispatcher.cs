@@ -164,6 +164,10 @@ namespace VsChromium.Tests.Protocol {
       public ValueTask<ClearCacheResult> IndexClearCacheAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask ProjectRebuildAsync(ProjectPathParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
+      public ValueTask<DirectorySizes> ProjectDirectorySizesAsync(DirectoryPathParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
+      public ValueTask<DirectoryMeasurement> ProjectMeasureDirectoryAsync(MeasureDirectoryParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
+      public ValueTask<DirectoryMeasurement> ProjectCancelMeasureAsync(DirectoryPathParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
+      public ValueTask<AddIgnorePatternResult> ProjectAddIgnorePatternAsync(AddIgnorePatternParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<FileSystemTree> TreeGetAsync(TreeParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<DirectoryEntries> TreeEntriesAsync(TreeEntriesParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<DirectoryEntriesList> TreeEntriesMultipleAsync(TreeEntriesMultipleParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();

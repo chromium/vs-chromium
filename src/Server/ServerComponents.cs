@@ -133,7 +133,7 @@ namespace VsChromium.Server {
     private IProtocolRequestHandler _protocolRequestHandler;
     public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= Create(new ProtocolRequestHandler(
       FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocators, IndexCache,
-      ServerHistorySampler));
+      ServerHistorySampler, ProjectDiskUsageService));
 
     private JsonRpcNotificationSender _jsonRpcNotificationSender;
     public JsonRpcNotificationSender JsonRpcNotificationSender => _jsonRpcNotificationSender ??= Create(new JsonRpcNotificationSender(JsonRpcOutput));
@@ -162,6 +162,9 @@ namespace VsChromium.Server {
 
     private IProjectDiscovery _projectDiscovery;
     public IProjectDiscovery ProjectDiscovery => _projectDiscovery ??= Create(new ProjectDiscovery(ProjectDiscoveryProviders));
+
+    private ProjectDiskUsageService _projectDiskUsageService;
+    public ProjectDiskUsageService ProjectDiskUsageService => _projectDiskUsageService ??= Create(new ProjectDiskUsageService(FileSystem, FileSystemSnapshotManager, SearchEngine));
 
     // Server/Search
     private ICompiledTextSearchDataFactory _compiledTextSearchDataFactory;

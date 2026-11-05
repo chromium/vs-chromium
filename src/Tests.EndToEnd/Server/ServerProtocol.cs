@@ -1,4 +1,4 @@
-// Copyright 2026 The Chromium Authors. All rights reserved.
+﻿// Copyright 2026 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -97,6 +97,27 @@ public static class ServerProtocol {
 
   public static ServerRequest RebuildProject(string projectPath) =>
     new("project/rebuild", new JsonObject { ["projectPath"] = projectPath });
+
+  public static ServerRequest GetDirectorySizes(string projectPath, string relativePath = "") =>
+    new("project/directorySizes", new JsonObject { ["projectPath"] = projectPath, ["relativePath"] = relativePath });
+
+  public static ServerRequest MeasureDirectory(string projectPath, string relativePath, bool? restart = null) {
+    var parameters = new JsonObject { ["projectPath"] = projectPath, ["relativePath"] = relativePath };
+    if (restart != null) {
+      parameters["restart"] = restart;
+    }
+    return new("project/measureDirectory", parameters);
+  }
+
+  public static ServerRequest CancelMeasure(string projectPath, string relativePath) =>
+    new("project/cancelMeasure", new JsonObject { ["projectPath"] = projectPath, ["relativePath"] = relativePath });
+
+  public static ServerRequest AddIgnorePattern(string projectPath, string section, string pattern) =>
+    new("project/addIgnorePattern", new JsonObject {
+      ["projectPath"] = projectPath,
+      ["section"] = section,
+      ["pattern"] = pattern,
+    });
 
   public static ServerRequest SetProjectCacheEnabled(string projectPath, bool enabled) =>
     new("project/setOptions", new JsonObject { ["projectPath"] = projectPath, ["cacheEnabled"] = enabled });

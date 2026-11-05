@@ -172,6 +172,114 @@ model ProjectDetails {
   operations: ProjectOperationsStatistics;
 }
 
+/** A section of the project file (`vs-chromium-project.txt`) listing path patterns. */
+enum IgnoreSection {
+  /** "[SourceExplorer.ignore]": the matching files and directories are not indexed (not in the tree). */
+  sourceExplorerIgnore,
+  /** "[SearchableFiles.ignore]": the matching files are in the tree but not searchable (no contents). */
+  searchableFilesIgnore,
+}
+
+/** The state of the measurement of a directory excluded from the index ("project/measureDirectory"). */
+enum MeasureState {
+  /** Never measured (since the server started). */
+  notMeasured,
+  running,
+  done,
+  cancelled,
+  failed,
+}
+
+model DirectoryPathParams {
+  /** Root path of the project (`rootPath` of `tree/get`). */
+  projectPath: string;
+  /** Path of a directory of the project, relative to its root ("" for the root; "/" or "\\" separators). */
+  relativePath: string;
+}
+
+/** The size on disk of a directory or a file of a project (disk usage view of the dashboards). */
+model DirectorySizeEntry {
+  name: string;
+  isDirectory: boolean;
+  /**
+   * Excluded from the index by "[SourceExplorer.ignore]": never scanned. The sizes of an excluded
+   * directory are those of its last measurement ("project/measureDirectory"), 0 if not measured; the
+   * sizes of an excluded file are known (directory listing).
+   */
+  excluded: boolean;
+  /** Excluded directories: the state of their measurement. `done` for the other entries. */
+  measureState: MeasureState;
+  /** Size on disk of the files (sum of their lengths, recursively for a directory). */
+  totalBytes: int64;
+  /** Size of the searchable files (with text contents in the index; large files included). */
+  searchableBytes: int64;
+  /** `totalBytes` - `searchableBytes`: binary files, files of "[SearchableFiles.ignore]", unread files. */
+  notSearchableBytes: int64;
+  fileCount: int64;
+  searchableFileCount: int64;
+  /**
+   * The pattern of the project file matching exactly this entry (relative to the project root, e.g.
+   * "/out/Debug/" for a directory, "/data/big.bin" for a file). Absent if the entry can't be matched
+   * exactly by a pattern (a name containing "*").
+   */
+  pattern?: string;
+}
+
+/** The sizes of a directory of a project and of its children ("project/directorySizes"). */
+model DirectorySizes {
+  projectPath: string;
+  /** The relative path of the directory ("/" separators, "" for the root). */
+  relativePath: string;
+  /** The totals of the directory (indexed files only: excluded entries not included). */
+  totals: DirectorySizeEntry;
+  /** The children of the directory: directories and files, the largest first, then the excluded entries. */
+  children: DirectorySizeEntry[];
+  /** The project file, if it can be edited ("project/addIgnorePattern"); absent otherwise (e.g. Chromium projects). */
+  projectFile?: string;
+  /** The version of the file system snapshot of the sizes. */
+  snapshotVersion: int32;
+  /** Time to compute the sizes of all the directories of the project (0 if they were already computed for this snapshot). */
+  computeMs: float64;
+}
+
+model MeasureDirectoryParams {
+  ...DirectoryPathParams;
+  /** Measure again a directory already measured. */
+  restart?: boolean;
+}
+
+/** The measurement of a directory excluded from the index (enumeration of its files, in the background). */
+model DirectoryMeasurement {
+  relativePath: string;
+  state: MeasureState;
+  /** The size of the files found so far (final when `done`). */
+  totalBytes: int64;
+  fileCount: int64;
+  directoryCount: int64;
+  elapsedMs: float64;
+  /** The error of a `failed` measurement. */
+  error?: string;
+}
+
+model AddIgnorePatternParams {
+  /** Root path of the project. */
+  projectPath: string;
+  section: IgnoreSection;
+  /** The pattern to add (e.g. the `pattern` of a `DirectorySizeEntry`). */
+  pattern: string;
+}
+
+model AddIgnorePatternResult {
+  /** False if the section already contains the pattern (the file is not modified). */
+  added: boolean;
+  /** The project file. */
+  projectFile: string;
+  /** The name of the section (e.g. "SourceExplorer.ignore"). */
+  sectionName: string;
+  /** The line added (or already present). */
+  line: string;
+}
+
 interface Project {
   /**
    * Changes the options of a project, at any time (also before the project is loaded). Options are
@@ -194,4 +302,31 @@ interface Project {
    * saved to the cache again by the save policy (see "index/clearCache").
    */
   clearCache(...ProjectPathParams): ClearCacheResult;
+
+  /**
+   * The size on disk of a directory of a project and of its children (disk usage view), from the
+   * scan of the project (no disk access) and the file database (searchable files). The sizes of all
+   * the directories of the project are computed by the first request for a snapshot (one pass) and
+   * kept until the snapshot changes. The directories and files excluded by "[SourceExplorer.ignore]"
+   * are listed with a directory listing of the requested directory only.
+   */
+  directorySizes(...DirectoryPathParams): DirectorySizes;
+
+  /**
+   * Starts the measurement of a directory excluded from the index (enumeration of its files in the
+   * background, never part of the scan), or returns its progress or result (call again to poll).
+   * Results are kept for the lifetime of the server.
+   */
+  measureDirectory(...MeasureDirectoryParams): DirectoryMeasurement;
+
+  /** Cancels the measurement of a directory, if running. */
+  cancelMeasure(...DirectoryPathParams): DirectoryMeasurement;
+
+  /**
+   * Adds a pattern to a section of the project file (`vs-chromium-project.txt`), if not already
+   * present (the formatting, encoding and line endings of the file are kept). The change of the
+   * project file makes the server rescan the project. Recoverable error if the project has no
+   * editable project file (e.g. Chromium projects) or the pattern is invalid.
+   */
+  addIgnorePattern(...AddIgnorePatternParams): AddIgnorePatternResult;
 }

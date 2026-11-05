@@ -49,6 +49,43 @@ namespace VsChromium.Protocol.Generated {
   }
 
   /// <summary>
+  /// A section of the project file (`vs-chromium-project.txt`) listing path patterns.
+  /// </summary>
+  [JsonConverter(typeof(JsonStringEnumConverter<IgnoreSection>))]
+  public enum IgnoreSection {
+    /// <summary>
+    /// "[SourceExplorer.ignore]": the matching files and directories are not indexed (not in the tree).
+    /// </summary>
+    [JsonStringEnumMemberName("sourceExplorerIgnore")]
+    SourceExplorerIgnore,
+    /// <summary>
+    /// "[SearchableFiles.ignore]": the matching files are in the tree but not searchable (no contents).
+    /// </summary>
+    [JsonStringEnumMemberName("searchableFilesIgnore")]
+    SearchableFilesIgnore,
+  }
+
+  /// <summary>
+  /// The state of the measurement of a directory excluded from the index ("project/measureDirectory").
+  /// </summary>
+  [JsonConverter(typeof(JsonStringEnumConverter<MeasureState>))]
+  public enum MeasureState {
+    /// <summary>
+    /// Never measured (since the server started).
+    /// </summary>
+    [JsonStringEnumMemberName("notMeasured")]
+    NotMeasured,
+    [JsonStringEnumMemberName("running")]
+    Running,
+    [JsonStringEnumMemberName("done")]
+    Done,
+    [JsonStringEnumMemberName("cancelled")]
+    Cancelled,
+    [JsonStringEnumMemberName("failed")]
+    Failed,
+  }
+
+  /// <summary>
   /// A span of text in a file: offset and length in UTF-16 code units.
   /// </summary>
   public sealed partial class TextSpan {
@@ -766,6 +803,220 @@ namespace VsChromium.Protocol.Generated {
     public ProjectOperationsStatistics Operations { get; set; } = null!;
   }
 
+  public sealed partial class DirectoryPathParams {
+    /// <summary>
+    /// Root path of the project (`rootPath` of `tree/get`).
+    /// </summary>
+    [JsonPropertyName("projectPath")]
+    public string ProjectPath { get; set; } = "";
+
+    /// <summary>
+    /// Path of a directory of the project, relative to its root ("" for the root; "/" or "\\" separators).
+    /// </summary>
+    [JsonPropertyName("relativePath")]
+    public string RelativePath { get; set; } = "";
+  }
+
+  /// <summary>
+  /// The size on disk of a directory or a file of a project (disk usage view of the dashboards).
+  /// </summary>
+  public sealed partial class DirectorySizeEntry {
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("isDirectory")]
+    public bool IsDirectory { get; set; }
+
+    /// <summary>
+    /// Excluded from the index by "[SourceExplorer.ignore]": never scanned. The sizes of an excluded
+    /// directory are those of its last measurement ("project/measureDirectory"), 0 if not measured; the
+    /// sizes of an excluded file are known (directory listing).
+    /// </summary>
+    [JsonPropertyName("excluded")]
+    public bool Excluded { get; set; }
+
+    /// <summary>
+    /// Excluded directories: the state of their measurement. `done` for the other entries.
+    /// </summary>
+    [JsonPropertyName("measureState")]
+    public MeasureState MeasureState { get; set; }
+
+    /// <summary>
+    /// Size on disk of the files (sum of their lengths, recursively for a directory).
+    /// </summary>
+    [JsonPropertyName("totalBytes")]
+    public long TotalBytes { get; set; }
+
+    /// <summary>
+    /// Size of the searchable files (with text contents in the index; large files included).
+    /// </summary>
+    [JsonPropertyName("searchableBytes")]
+    public long SearchableBytes { get; set; }
+
+    /// <summary>
+    /// `totalBytes` - `searchableBytes`: binary files, files of "[SearchableFiles.ignore]", unread files.
+    /// </summary>
+    [JsonPropertyName("notSearchableBytes")]
+    public long NotSearchableBytes { get; set; }
+
+    [JsonPropertyName("fileCount")]
+    public long FileCount { get; set; }
+
+    [JsonPropertyName("searchableFileCount")]
+    public long SearchableFileCount { get; set; }
+
+    /// <summary>
+    /// The pattern of the project file matching exactly this entry (relative to the project root, e.g.
+    /// "/out/Debug/" for a directory, "/data/big.bin" for a file). Absent if the entry can't be matched
+    /// exactly by a pattern (a name containing "*").
+    /// </summary>
+    [JsonPropertyName("pattern")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Pattern { get; set; }
+  }
+
+  /// <summary>
+  /// The sizes of a directory of a project and of its children ("project/directorySizes").
+  /// </summary>
+  public sealed partial class DirectorySizes {
+    [JsonPropertyName("projectPath")]
+    public string ProjectPath { get; set; } = "";
+
+    /// <summary>
+    /// The relative path of the directory ("/" separators, "" for the root).
+    /// </summary>
+    [JsonPropertyName("relativePath")]
+    public string RelativePath { get; set; } = "";
+
+    /// <summary>
+    /// The totals of the directory (indexed files only: excluded entries not included).
+    /// </summary>
+    [JsonPropertyName("totals")]
+    public DirectorySizeEntry Totals { get; set; } = null!;
+
+    /// <summary>
+    /// The children of the directory: directories and files, the largest first, then the excluded entries.
+    /// </summary>
+    [JsonPropertyName("children")]
+    public List<DirectorySizeEntry> Children { get; set; } = new();
+
+    /// <summary>
+    /// The project file, if it can be edited ("project/addIgnorePattern"); absent otherwise (e.g. Chromium projects).
+    /// </summary>
+    [JsonPropertyName("projectFile")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProjectFile { get; set; }
+
+    /// <summary>
+    /// The version of the file system snapshot of the sizes.
+    /// </summary>
+    [JsonPropertyName("snapshotVersion")]
+    public int SnapshotVersion { get; set; }
+
+    /// <summary>
+    /// Time to compute the sizes of all the directories of the project (0 if they were already computed for this snapshot).
+    /// </summary>
+    [JsonPropertyName("computeMs")]
+    public double ComputeMs { get; set; }
+  }
+
+  public sealed partial class MeasureDirectoryParams {
+    /// <summary>
+    /// Root path of the project (`rootPath` of `tree/get`).
+    /// </summary>
+    [JsonPropertyName("projectPath")]
+    public string ProjectPath { get; set; } = "";
+
+    /// <summary>
+    /// Path of a directory of the project, relative to its root ("" for the root; "/" or "\\" separators).
+    /// </summary>
+    [JsonPropertyName("relativePath")]
+    public string RelativePath { get; set; } = "";
+
+    /// <summary>
+    /// Measure again a directory already measured.
+    /// </summary>
+    [JsonPropertyName("restart")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Restart { get; set; }
+  }
+
+  /// <summary>
+  /// The measurement of a directory excluded from the index (enumeration of its files, in the background).
+  /// </summary>
+  public sealed partial class DirectoryMeasurement {
+    [JsonPropertyName("relativePath")]
+    public string RelativePath { get; set; } = "";
+
+    [JsonPropertyName("state")]
+    public MeasureState State { get; set; }
+
+    /// <summary>
+    /// The size of the files found so far (final when `done`).
+    /// </summary>
+    [JsonPropertyName("totalBytes")]
+    public long TotalBytes { get; set; }
+
+    [JsonPropertyName("fileCount")]
+    public long FileCount { get; set; }
+
+    [JsonPropertyName("directoryCount")]
+    public long DirectoryCount { get; set; }
+
+    [JsonPropertyName("elapsedMs")]
+    public double ElapsedMs { get; set; }
+
+    /// <summary>
+    /// The error of a `failed` measurement.
+    /// </summary>
+    [JsonPropertyName("error")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Error { get; set; }
+  }
+
+  public sealed partial class AddIgnorePatternParams {
+    /// <summary>
+    /// Root path of the project.
+    /// </summary>
+    [JsonPropertyName("projectPath")]
+    public string ProjectPath { get; set; } = "";
+
+    [JsonPropertyName("section")]
+    public IgnoreSection Section { get; set; }
+
+    /// <summary>
+    /// The pattern to add (e.g. the `pattern` of a `DirectorySizeEntry`).
+    /// </summary>
+    [JsonPropertyName("pattern")]
+    public string Pattern { get; set; } = "";
+  }
+
+  public sealed partial class AddIgnorePatternResult {
+    /// <summary>
+    /// False if the section already contains the pattern (the file is not modified).
+    /// </summary>
+    [JsonPropertyName("added")]
+    public bool Added { get; set; }
+
+    /// <summary>
+    /// The project file.
+    /// </summary>
+    [JsonPropertyName("projectFile")]
+    public string ProjectFile { get; set; } = "";
+
+    /// <summary>
+    /// The name of the section (e.g. "SourceExplorer.ignore").
+    /// </summary>
+    [JsonPropertyName("sectionName")]
+    public string SectionName { get; set; } = "";
+
+    /// <summary>
+    /// The line added (or already present).
+    /// </summary>
+    [JsonPropertyName("line")]
+    public string Line { get; set; } = "";
+  }
+
   public sealed partial class SearchQuery {
     /// <summary>
     /// The text to search, with "*" wildcards, or a regular expression (see "regex").
@@ -1437,6 +1688,10 @@ namespace VsChromium.Protocol.Generated {
     public const string ProjectDetails = "project/details";
     public const string ProjectRebuild = "project/rebuild";
     public const string ProjectClearCache = "project/clearCache";
+    public const string ProjectDirectorySizes = "project/directorySizes";
+    public const string ProjectMeasureDirectory = "project/measureDirectory";
+    public const string ProjectCancelMeasure = "project/cancelMeasure";
+    public const string ProjectAddIgnorePattern = "project/addIgnorePattern";
     public const string SearchCode = "search/code";
     public const string SearchPaths = "search/paths";
     public const string ServerInitialize = "server/initialize";
@@ -1529,6 +1784,35 @@ namespace VsChromium.Protocol.Generated {
     ValueTask<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken);
 
     /// <summary>
+    /// "project/directorySizes": The size on disk of a directory of a project and of its children (disk usage view), from the
+    /// scan of the project (no disk access) and the file database (searchable files). The sizes of all
+    /// the directories of the project are computed by the first request for a snapshot (one pass) and
+    /// kept until the snapshot changes. The directories and files excluded by "[SourceExplorer.ignore]"
+    /// are listed with a directory listing of the requested directory only.
+    /// </summary>
+    ValueTask<DirectorySizes> ProjectDirectorySizesAsync(DirectoryPathParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "project/measureDirectory": Starts the measurement of a directory excluded from the index (enumeration of its files in the
+    /// background, never part of the scan), or returns its progress or result (call again to poll).
+    /// Results are kept for the lifetime of the server.
+    /// </summary>
+    ValueTask<DirectoryMeasurement> ProjectMeasureDirectoryAsync(MeasureDirectoryParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "project/cancelMeasure": Cancels the measurement of a directory, if running.
+    /// </summary>
+    ValueTask<DirectoryMeasurement> ProjectCancelMeasureAsync(DirectoryPathParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "project/addIgnorePattern": Adds a pattern to a section of the project file (`vs-chromium-project.txt`), if not already
+    /// present (the formatting, encoding and line endings of the file are kept). The change of the
+    /// project file makes the server rescan the project. Recoverable error if the project has no
+    /// editable project file (e.g. Chromium projects) or the pattern is invalid.
+    /// </summary>
+    ValueTask<AddIgnorePatternResult> ProjectAddIgnorePatternAsync(AddIgnorePatternParams parameters, CancellationToken cancellationToken);
+
+    /// <summary>
     /// "search/code": Searches the contents of the indexed files.
     /// </summary>
     ValueTask<SearchCodeResult> SearchCodeAsync(SearchParams parameters, CancellationToken cancellationToken);
@@ -1600,6 +1884,10 @@ namespace VsChromium.Protocol.Generated {
       ProtocolMethods.ProjectDetails => true,
       ProtocolMethods.ProjectRebuild => true,
       ProtocolMethods.ProjectClearCache => true,
+      ProtocolMethods.ProjectDirectorySizes => true,
+      ProtocolMethods.ProjectMeasureDirectory => true,
+      ProtocolMethods.ProjectCancelMeasure => true,
+      ProtocolMethods.ProjectAddIgnorePattern => true,
       ProtocolMethods.SearchCode => true,
       ProtocolMethods.SearchPaths => true,
       ProtocolMethods.ServerInitialize => true,
@@ -1672,6 +1960,22 @@ namespace VsChromium.Protocol.Generated {
         case ProtocolMethods.ProjectClearCache: {
           var result = await handler.ProjectClearCacheAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.ProjectPathParams), cancellationToken).ConfigureAwait(false);
           return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.ClearCacheResult);
+        }
+        case ProtocolMethods.ProjectDirectorySizes: {
+          var result = await handler.ProjectDirectorySizesAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.DirectoryPathParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.DirectorySizes);
+        }
+        case ProtocolMethods.ProjectMeasureDirectory: {
+          var result = await handler.ProjectMeasureDirectoryAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.MeasureDirectoryParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.DirectoryMeasurement);
+        }
+        case ProtocolMethods.ProjectCancelMeasure: {
+          var result = await handler.ProjectCancelMeasureAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.DirectoryPathParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.DirectoryMeasurement);
+        }
+        case ProtocolMethods.ProjectAddIgnorePattern: {
+          var result = await handler.ProjectAddIgnorePatternAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.AddIgnorePatternParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.AddIgnorePatternResult);
         }
         case ProtocolMethods.SearchCode: {
           var result = await handler.SearchCodeAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.SearchParams), cancellationToken).ConfigureAwait(false);
@@ -1848,6 +2152,13 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(InitialLoadStatistics))]
   [JsonSerializable(typeof(ProjectOperationsStatistics))]
   [JsonSerializable(typeof(ProjectDetails))]
+  [JsonSerializable(typeof(DirectoryPathParams))]
+  [JsonSerializable(typeof(DirectorySizeEntry))]
+  [JsonSerializable(typeof(DirectorySizes))]
+  [JsonSerializable(typeof(MeasureDirectoryParams))]
+  [JsonSerializable(typeof(DirectoryMeasurement))]
+  [JsonSerializable(typeof(AddIgnorePatternParams))]
+  [JsonSerializable(typeof(AddIgnorePatternResult))]
   [JsonSerializable(typeof(SearchQuery))]
   [JsonSerializable(typeof(SearchParams))]
   [JsonSerializable(typeof(FileMatches))]

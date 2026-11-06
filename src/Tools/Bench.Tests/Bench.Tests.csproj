@@ -1,0 +1,26 @@
+<Project Sdk="MSTest.Sdk/4.5.2">
+
+  <!--
+    Unit tests of the benchmark app (src/Tools/Bench) and of the code base generator
+    (src/Tools/Bench.Shared): pure logic only (no server, no large corpus).
+
+    Run: cd src/Tools/Bench.Tests; dotnet run
+  -->
+
+  <Import Project="..\..\..\Build\Common.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>VsChromium.Bench.Tests</AssemblyName>
+    <RootNamespace>VsChromium.Bench.Tests</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Tools\Bench.Tests\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bench.Shared\Bench.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

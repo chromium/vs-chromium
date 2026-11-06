@@ -29,7 +29,7 @@ dotnet test --filter "TestCategory=Benchmark"    # benchmarks
 |---|---|---|
 | `VSCHROMIUM_SERVER_PATH` | `<repo>/Binaries/<Configuration>/Server/VsChromium.Server.exe` | Server executable under test |
 | `VSCHROMIUM_TEST_CORPORA` | `%LOCALAPPDATA%/VsChromium/TestCorpora` | Where generated code bases are kept |
-| `VSCHROMIUM_BENCHMARK_SIZE` | `small` | `small` (3k files), `medium` (40k files), `large` (400k files, ~8 GB) |
+| `VSCHROMIUM_BENCHMARK_SIZE` | `small` | `small` (3k files), `medium` (40k files), `large` (400k files, ~4 GB), `xlarge` (1M files), `xxlarge` (2M files) |
 | `VSCHROMIUM_BENCHMARK_RESULTS` | `src/Tests.EndToEnd/bin/BenchmarkResults` | Output directory of benchmark results (`.json` and `.md`) |
 | `VSCHROMIUM_BENCHMARK_BASELINE` | (none) | Result `.json` of a previous run: writes a `.comparison.md` report |
 

@@ -59,7 +59,7 @@ public static class TestSettings {
   }
 
   /// <summary>
-  /// Size of the code base used by benchmarks: VSCHROMIUM_BENCHMARK_SIZE (small, medium, large),
+  /// Size of the code base used by benchmarks: VSCHROMIUM_BENCHMARK_SIZE (small, medium, large, xlarge, xxlarge),
   /// default small.
   /// </summary>
   public static string BenchmarkSize =>

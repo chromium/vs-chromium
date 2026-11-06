@@ -1,6 +1,8 @@
 # Builds and tests the indexing server (src/Server) on Windows, Linux and macOS, and publishes the
-# self-contained server executables. The Visual Studio package (.NET Framework, legacy projects) is
-# not built here (it requires Visual Studio).
+# self-contained server executables; tests the VS Code extension; builds the Visual Studio package
+# (.NET Framework, legacy projects: Windows with Visual Studio) and runs its unit tests; checks that
+# every file has the version of the VERSION file (see docs/release.md). The release packages are
+# built by release.yml.
 #
 # Linux and macOS jobs are allowed to fail (continue-on-error) until the server has been validated
 # on these platforms (milestone 7 of docs/portable-server/PORTING_PRINCIPLES.md): some server unit
@@ -51,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rid: [ win-x64, win-arm64, linux-x64, linux-arm64, osx-arm64 ]
+        rid: [ win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64 ]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,3 +71,59 @@ jobs:
           path: |
             Binaries/Release/ServerPublish/${{ matrix.rid }}/
             !Binaries/Release/ServerPublish/${{ matrix.rid }}/*.pdb
+
+  vscode:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/vscode
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          # No package-lock.json (see src/vscode/.gitignore): exact versions in package.json.
+          cache-dependency-path: src/vscode/package.json
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Unit tests
+        run: npm test
+
+  visualstudio:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/vscode/package.json
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Version of every file (VERSION)
+        run: node tools/release/set-version.js --check
+
+      - name: Install the dashboard page tools
+        working-directory: src/vscode
+        run: npm install --no-audit --no-fund
+
+      - name: Build the solution (Debug)
+        run: msbuild src/vs-chromium.sln -restore -p:Configuration=Debug -m -v:minimal -nologo
+
+      - name: Visual Studio package unit tests
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vstest = & $vswhere -latest -prerelease -products * -find '**\vstest.console.exe' | Select-Object -First 1
+          & $vstest Binaries\Debug\VsChromium.Tests.dll /Tests:TestDashboardBridge,TestDashboardTheme,TestProjectOptionsStore,TestServerLocation
+          exit $LASTEXITCODE

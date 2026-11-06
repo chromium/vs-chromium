@@ -1,0 +1,199 @@
+# Release: builds every package of a version and creates a DRAFT GitHub release (see
+# docs/release.md). The release is published by hand after review.
+#
+# - Push of a tag v<version> (e.g. v0.10.1): the tag must match the VERSION file and the release
+#   notes docs/release-notes/<version>.md must exist.
+# - Manual run (workflow_dispatch): dry run by default (builds and verifies everything, uploads the
+#   packages as a workflow artifact, creates no release). A release is created only for a tag
+#   (run the workflow on the tag with dry_run unchecked).
+#
+# Each platform is built on a runner of that platform: NativeAOT vschromium-bench, smoke tests, and
+# code signing (ad-hoc) of the macOS executables, required on Apple Silicon.
+name: release
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: build and verify the packages, create no release'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Version, release notes and tag
+        id: version
+        shell: bash
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" = "tag" ]; then
+            node tools/release/set-version.js --check --notes --tag "$REF_NAME"
+          else
+            node tools/release/set-version.js --check --notes
+          fi
+          echo "version=$(node tools/release/set-version.js --print)" >> "$GITHUB_OUTPUT"
+
+  # Server, vschromium-bench and VS Code extension of one platform.
+  build:
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: win-x64, target: win32-x64, runner: windows-latest }
+          - { rid: win-arm64, target: win32-arm64, runner: windows-11-arm }
+          - { rid: linux-x64, target: linux-x64, runner: ubuntu-24.04 }
+          - { rid: linux-arm64, target: linux-arm64, runner: ubuntu-24.04-arm }
+          - { rid: osx-x64, target: darwin-x64, runner: macos-15-intel }
+          - { rid: osx-arm64, target: darwin-arm64, runner: macos-15 }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: nuget-${{ matrix.rid }}-${{ hashFiles('src/Server/*.csproj', 'src/Tools/**/*.csproj', 'Build/*.props') }}
+          restore-keys: nuget-${{ matrix.rid }}-
+
+      - name: NativeAOT prerequisites (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Server
+        run: node tools/release/release.js server ${{ matrix.rid }}
+
+      - name: vschromium-bench
+        run: node tools/release/release.js bench ${{ matrix.rid }}
+
+      - name: VS Code extension
+        run: node tools/release/release.js vscode ${{ matrix.target }} --no-publish
+
+      - name: Verify the packages
+        run: node tools/release/release.js verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.rid }}
+          path: Binaries/Release/Packages/${{ needs.check.outputs.version }}/
+          if-no-files-found: error
+
+      # The Windows servers, for the Visual Studio extension (job visualstudio).
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: server-publish-${{ matrix.rid }}
+          path: Binaries/Release/ServerPublish/${{ matrix.rid }}/
+          if-no-files-found: error
+
+  # Visual Studio extension: one VSIX with the win-x64 and win-arm64 servers of the build job.
+  visualstudio:
+    needs: [ check, build ]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: server-publish-win-x64
+          path: Binaries/Release/ServerPublish/win-x64
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: server-publish-win-arm64
+          path: Binaries/Release/ServerPublish/win-arm64
+
+      - name: Visual Studio extension
+        run: node tools/release/release.js visualstudio --no-publish
+
+      - name: Verify the package
+        run: node tools/release/release.js verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-visualstudio
+          path: Binaries/Release/Packages/${{ needs.check.outputs.version }}/
+          if-no-files-found: error
+
+  release:
+    needs: [ check, build, visualstudio ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: Binaries/Release/Packages/${{ needs.check.outputs.version }}
+
+      - name: Verify all the packages, checksums
+        run: |
+          node tools/release/release.js verify --complete
+          node tools/release/release.js checksums
+          cd "Binaries/Release/Packages/$VERSION"
+          sha256sum -c SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vschromium-${{ needs.check.outputs.version }}
+          path: Binaries/Release/Packages/${{ needs.check.outputs.version }}/
+          if-no-files-found: error
+
+      - name: Create the draft release
+        if: github.ref_type == 'tag' && (github.event_name == 'push' || inputs.dry_run == false)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" --draft --verify-tag \
+            --title "VsChromium $VERSION" \
+            --notes-file "docs/release-notes/$VERSION.md" \
+            Binaries/Release/Packages/$VERSION/*

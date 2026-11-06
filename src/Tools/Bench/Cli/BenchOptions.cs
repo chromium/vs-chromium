@@ -34,7 +34,10 @@ public sealed record BenchOptions {
   /// <summary>The corpus: 400k, 1M, 2M (or small, medium for quick tests).</summary>
   public string? Corpus { get; init; }
 
-  /// <summary>Generate the corpus with symbolic links (a separate corpus directory).</summary>
+  /// <summary>
+  /// Generate the corpus with symbolic links (a separate corpus directory). Default (null): yes when
+  /// the OS allows them.
+  /// </summary>
   public bool? Symlinks { get; init; }
 
   /// <summary>
@@ -84,6 +87,9 @@ public sealed record BenchOptions {
 
   /// <summary>Omit the security products and filter drivers from the shareable reports.</summary>
   public bool RedactSecurity { get; init; }
+
+  /// <summary>List the virtual and remote display adapters by name in the shareable reports.</summary>
+  public bool IncludeVirtualDisplays { get; init; }
 
   /// <summary>"compare" and "report": the result files.</summary>
   public IReadOnlyList<string> Files { get; init; } = [];

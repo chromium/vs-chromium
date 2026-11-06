@@ -34,6 +34,8 @@ public sealed record MachineInfo {
   /// <summary>Memory speed in MT/s, if readable without admin.</summary>
   public int? MemorySpeedMTs { get; init; }
   public List<GpuInfo> Gpus { get; init; } = [];
+  /// <summary>The bench runs in a remote session (Remote Desktop, SSH), null if unknown.</summary>
+  public bool? RemoteSession { get; init; }
   /// <summary>Windows power plan (e.g. "Balanced"), null elsewhere.</summary>
   public string? PowerPlan { get; init; }
   /// <summary>The .NET runtime of the bench.</summary>
@@ -80,6 +82,11 @@ public sealed record DiskInfo {
 public sealed record GpuInfo {
   public string Name { get; init; } = "";
   public string? DriverVersion { get; init; }
+  /// <summary>
+  /// A virtual or remote display adapter (remote desktop, indirect display, virtual machine), see
+  /// <see cref="InventoryCollector.IsVirtualDisplay"/>: not listed by name in the shareable reports.
+  /// </summary>
+  public bool IsVirtual { get; init; }
 }
 
 public sealed record AntivirusProduct {

@@ -80,7 +80,7 @@ public class CommandLineTests {
       NonInteractive = false,
       Disk = "D:",
       Corpus = "1M",
-      Symlinks = true,
+      Symlinks = false,
       Server = "release:v0.13.0",
       Scenarios = [Scenario.Cold, Scenario.Live, Scenario.RawFs],
       Repeat = 2,

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using VsChromium.Bench.Corpora;
 using VsChromium.Bench.Inventory;
 using VsChromium.Bench.Reports;
 using VsChromium.Bench.Results;
@@ -232,6 +233,64 @@ public class ShareableReportTests {
         Directory.Delete(dir, recursive: true);
       }
     }
+  }
+
+  [TestMethod]
+  [DataRow("AMD Radeon Pro W6400", null, false)]
+  [DataRow("NVIDIA GeForce RTX 4090", @"PCI\VEN_10DE&DEV_2684&SUBSYS_00000000&REV_A1\4&1A2B3C4D&0&0008", false)]
+  [DataRow("Intel(R) UHD Graphics 770", @"PCI\VEN_8086&DEV_4680", false)]
+  [DataRow("Jump Desktop Virtual Monitor", null, true)]
+  [DataRow("Microsoft Remote Display Adapter", null, true)]
+  [DataRow("Microsoft Basic Display Adapter", null, true)]
+  [DataRow("Microsoft Hyper-V Video", null, true)]
+  [DataRow("VMware SVGA 3D", null, true)]
+  [DataRow("VirtualBox Graphics Adapter (WDDM)", null, true)]
+  [DataRow("Parallels Display Adapter (WDDM)", null, true)]
+  [DataRow("Citrix Indirect Display Adapter", null, true)]
+  [DataRow("Parsec Virtual Display Adapter", null, true)]
+  [DataRow("Some Unknown Display", @"ROOT\DISPLAY\0000", true)]
+  [DataRow("Some Unknown Display", @"SWD\REMOTEDISPLAYENUM\1&2", true)]
+  [DataRow("Red Hat QXL controller", null, true)]
+  [DataRow("Cirrus Logic GD 5446", null, true)]
+  public void DetectsVirtualDisplayAdapters(string name, string? pnpDeviceId, bool expected) {
+    Assert.AreEqual(expected, InventoryCollector.IsVirtualDisplay(name, pnpDeviceId));
+  }
+
+  [TestMethod]
+  public void VirtualDisplaysAreNotNamedByDefault() {
+    var result = SampleResult() with { };
+    result = result with {
+      Machine = result.Machine with {
+        Gpus = [.. result.Machine.Gpus, new GpuInfo { Name = "Jump Desktop Virtual Monitor", DriverVersion = "10.15.21.0", IsVirtual = true },
+                new GpuInfo { Name = "Microsoft Remote Display Adapter" /* old results file: no flag, detected by name */ }],
+        RemoteSession = true,
+      },
+    };
+    var text = ShareableReport.Render(result, new ReportOptions { MachineId = result.MachineId! });
+    StringAssert.Contains(text, "| GPU | Example GPU (driver 32.0.21041.1000) |");
+    StringAssert.Contains(text, "| Remote session software | detected |");
+    StringAssert.Contains(text, "| Remote session | yes |");
+    Assert.DoesNotContain("Jump", text);
+    Assert.DoesNotContain("Remote Display Adapter", text);
+
+    var named = ShareableReport.Render(result, new ReportOptions { MachineId = result.MachineId!, IncludeVirtualDisplays = true });
+    StringAssert.Contains(named, "Jump Desktop Virtual Monitor (driver 10.15.21.0) (virtual)");
+    Assert.DoesNotContain("Remote session software", named);
+
+    var physicalOnly = ShareableReport.Render(SampleResult(), new ReportOptions { MachineId = result.MachineId! });
+    Assert.DoesNotContain("Remote session software", physicalOnly);
+    StringAssert.Contains(physicalOnly, "| Remote session | - |");
+  }
+
+  [TestMethod]
+  public void SymlinksAreOnByDefaultAndCanBeDisabled() {
+    Assert.IsNull(Cli.CommandLineParser.Parse(["run"]).Symlinks, "default: when the OS allows them");
+    Assert.IsFalse(Cli.CommandLineParser.Parse(["run", "--no-symlinks"]).Symlinks);
+    Assert.IsTrue(Cli.CommandLineParser.Parse(["run", "--include-virtual-displays"]).IncludeVirtualDisplays);
+    CollectionAssert.Contains(Cli.RerunScript.ToArguments(new Cli.BenchOptions { Symlinks = false }), "--no-symlinks");
+    CollectionAssert.DoesNotContain(Cli.RerunScript.ToArguments(new Cli.BenchOptions { Symlinks = null }), "--no-symlinks");
+    // Corpora with and without links are separate directories (never reused for one another).
+    Assert.AreNotEqual(CorpusCatalog.Spec("400k", true).DirectoryName, CorpusCatalog.Spec("400k", false).DirectoryName);
   }
 
   [TestMethod]

@@ -89,6 +89,11 @@ internal static unsafe partial class WindowsNative {
   [return: MarshalAs(UnmanagedType.Bool)]
   public static partial bool IsUserAnAdmin();
 
+  public const int SM_REMOTESESSION = 0x1000;
+
+  [LibraryImport("user32.dll")]
+  public static partial int GetSystemMetrics(int index);
+
   // Standby list purge (cold file cache, elevated only).
   public const int SystemMemoryListInformation = 80;
   public const int MemoryFlushModifiedList = 3;

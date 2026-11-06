@@ -17,6 +17,8 @@ public sealed record ReportOptions {
   public string? MachineLabel { get; init; }
   /// <summary>Omit the names of the security products and filter drivers.</summary>
   public bool RedactSecurity { get; init; }
+  /// <summary>List the virtual and remote display adapters by name (default: "Remote session software: detected").</summary>
+  public bool IncludeVirtualDisplays { get; init; }
 }
 
 /// <summary>
@@ -123,7 +125,17 @@ public static class ShareableReport {
       memory += $" ({string.Join(" ", new[] { m.MemoryType, m.MemorySpeedMTs is { } mts ? $"{mts} MT/s" : null }.Where(s => s != null))})";
     }
     text.Append($"| RAM | {memory} |\n");
-    text.Append($"| GPU | {((m.Gpus ?? []).Count > 0 ? Cell(string.Join("; ", m.Gpus!.Select(g => g.Name + (g.DriverVersion != null ? $" (driver {g.DriverVersion})" : "")))) : "-")} |\n");
+    var gpus = m.Gpus ?? [];
+    var virtualGpus = gpus.Where(g => g.IsVirtual || InventoryCollector.IsVirtualDisplay(g.Name)).ToList();
+    var listed = options.IncludeVirtualDisplays ? gpus : gpus.Except(virtualGpus).ToList();
+    var gpuText = string.Join("; ", listed.Select(g => g.Name + (g.DriverVersion != null ? $" (driver {g.DriverVersion})" : "") +
+                                                       (options.IncludeVirtualDisplays && virtualGpus.Contains(g) ? " (virtual)" : "")));
+    text.Append($"| GPU | {Cell(gpuText)} |\n");
+    if (virtualGpus.Count > 0 && !options.IncludeVirtualDisplays) {
+      // Note: Virtual and remote display adapters reveal the remote access software in use: not named.
+      text.Append("| Remote session software | detected |\n");
+    }
+    text.Append($"| Remote session | {(m.RemoteSession switch { true => "yes", false => "no", null => "-" })} |\n");
     text.Append($"| Power plan | {Cell(m.PowerPlan)} |\n");
     text.Append($"| Bench runtime | {Cell(m.BenchRuntime)}{(m.IsElevated ? ", elevated" : "")} |\n\n");
 

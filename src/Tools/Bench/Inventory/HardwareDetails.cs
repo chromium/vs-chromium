@@ -14,6 +14,7 @@ namespace VsChromium.Bench.Inventory;
 /// </summary>
 public static partial class InventoryCollector {
   public static MachineInfo AddHardwareDetails(MachineInfo machine) {
+    machine = machine with { RemoteSession = IsRemoteSession() };
     try {
       if (OperatingSystem.IsWindows()) {
         return AddWindowsHardware(machine);
@@ -36,7 +37,7 @@ public static partial class InventoryCollector {
     var output = ProcessRunner.PowerShell(
       "Get-CimInstance Win32_Processor | Select-Object -First 1 NumberOfCores,MaxClockSpeed | ConvertTo-Json -Compress; '---'; " +
       "@(Get-CimInstance Win32_PhysicalMemory | Select-Object Speed,ConfiguredClockSpeed,SMBIOSMemoryType) | ConvertTo-Json -Compress; '---'; " +
-      "@(Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion) | ConvertTo-Json -Compress",
+      "@(Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion,PNPDeviceID) | ConvertTo-Json -Compress",
       TimeSpan.FromSeconds(30));
     if (output == null) {
       return machine;
@@ -47,8 +48,13 @@ public static partial class InventoryCollector {
     }
     var cpu = ParseJsonArray(parts[0]).FirstOrDefault();
     var memory = ParseJsonArray(parts[1]).ToList();
+    // Note: The device instance path (PNPDeviceID) is only used to tell physical (PCI) adapters from
+    // software ones, never stored.
     var gpus = ParseJsonArray(parts[2])
-      .Select(g => new GpuInfo { Name = ((string?)g["Name"] ?? "").Trim(), DriverVersion = (string?)g["DriverVersion"] })
+      .Select(g => {
+        var name = ((string?)g["Name"] ?? "").Trim();
+        return new GpuInfo { Name = name, DriverVersion = (string?)g["DriverVersion"], IsVirtual = IsVirtualDisplay(name, (string?)g["PNPDeviceID"]) };
+      })
       .Where(g => g.Name.Length > 0)
       .ToList();
     var speed = memory.Select(m => (int?)m["ConfiguredClockSpeed"] is > 0 and var c ? c : (int?)m["Speed"]).Where(s => s > 0).DefaultIfEmpty().Max();
@@ -60,6 +66,46 @@ public static partial class InventoryCollector {
       MemoryType = type,
       Gpus = gpus,
     };
+  }
+
+  /// <summary>Name fragments of virtual and remote display adapters (case-insensitive).</summary>
+  private static readonly string[] VirtualDisplayNames = [
+    "virtual", "remote display", "remote desktop", "basic display", "basic render", "indirect display", "iddcx", "idd", "rdp",
+    "hyper-v", "vmware", "virtualbox", "vbox", "parallels", "qxl", "virtio", "bochs", "cirrus logic gd 5446", "citrix",
+    "jump desktop", "parsec", "splashtop", "teamviewer", "anydesk", "chrome remote", "mirage driver", "spacedesk",
+    "duet display", "luminon", "usbmmidd", "sunshine", "nomachine", "gfxdummy", "xorg dummy", "llvmpipe", "softpipe",
+  ];
+
+  /// <summary>
+  /// A virtual or remote display adapter: a known name (remote desktop, indirect display, virtual
+  /// machine adapters), or (Windows) a device not enumerated on a physical bus (PCI): software
+  /// devices ("ROOT\", "SWD\").
+  /// </summary>
+  public static bool IsVirtualDisplay(string name, string? pnpDeviceId = null) {
+    var lower = name.ToLowerInvariant();
+    if (VirtualDisplayNames.Any(fragment => fragment.Length <= 3
+          ? System.Text.RegularExpressions.Regex.IsMatch(lower, $@"(^|[^a-z]){fragment}([^a-z]|$)")
+          : lower.Contains(fragment, StringComparison.Ordinal))) {
+      return true;
+    }
+    if (pnpDeviceId != null) {
+      var bus = pnpDeviceId.Split('\\')[0].ToUpperInvariant();
+      return bus is "ROOT" or "SWD" or "VMBUS" || bus.StartsWith("UMB", StringComparison.Ordinal);
+    }
+    return false;
+  }
+
+  /// <summary>
+  /// The bench runs in a remote session: Windows Remote Desktop (SM_REMOTESESSION, or a session name
+  /// "RDP-..."), SSH on Linux and macOS (SSH_CONNECTION, SSH_CLIENT).
+  /// </summary>
+  public static bool IsRemoteSession() {
+    if (OperatingSystem.IsWindows()) {
+      return WindowsNative.GetSystemMetrics(WindowsNative.SM_REMOTESESSION) != 0 ||
+             (Environment.GetEnvironmentVariable("SESSIONNAME")?.StartsWith("RDP-", StringComparison.OrdinalIgnoreCase) ?? false);
+    }
+    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SSH_CONNECTION")) ||
+           !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SSH_CLIENT"));
   }
 
   /// <summary>SMBIOS memory types (SMBIOS specification, type 17).</summary>
@@ -103,7 +149,8 @@ public static partial class InventoryCollector {
       foreach (var line in lspci.Output.Split('\n')) {
         var index = line.IndexOf(" controller: ", StringComparison.Ordinal);
         if (index > 0 && (line.Contains("VGA", StringComparison.Ordinal) || line.Contains("3D", StringComparison.Ordinal) || line.Contains("Display", StringComparison.Ordinal))) {
-          gpus.Add(new GpuInfo { Name = line[(index + " controller: ".Length)..].Trim() });
+          var gpuName = line[(index + " controller: ".Length)..].Trim();
+          gpus.Add(new GpuInfo { Name = gpuName, IsVirtual = IsVirtualDisplay(gpuName) });
         }
       }
     }
@@ -125,7 +172,7 @@ public static partial class InventoryCollector {
     if (displays is { Success: true } && JsonNode.Parse(displays.Output)?["SPDisplaysDataType"] is JsonArray items) {
       foreach (var item in items.OfType<JsonObject>()) {
         if ((string?)item["sppci_model"] is { Length: > 0 } model) {
-          gpus.Add(new GpuInfo { Name = model });
+          gpus.Add(new GpuInfo { Name = model, IsVirtual = IsVirtualDisplay(model) });
         }
       }
     }

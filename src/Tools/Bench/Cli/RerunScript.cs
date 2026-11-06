@@ -28,8 +28,8 @@ public static class RerunScript {
     Add("disk", options.Disk);
     Add("corpora-dir", options.CorporaDirectory);
     Add("corpus", options.Corpus);
-    if (options.Symlinks == true) {
-      Add("symlinks", "yes");
+    if (options.Symlinks == false) {
+      args.Add("--no-symlinks");
     }
     Add("server", options.Server);
     if (options.Scenarios != null) {
@@ -59,6 +59,9 @@ public static class RerunScript {
     Add("machine-label", options.MachineLabel);
     if (options.RedactSecurity) {
       args.Add("--redact-security");
+    }
+    if (options.IncludeVirtualDisplays) {
+      args.Add("--include-virtual-displays");
     }
     // The rerun of a rerun script doesn't write another script.
     Add("rerun-script", "none");

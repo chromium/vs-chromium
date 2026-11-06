@@ -39,8 +39,9 @@ At the end of an interactive run, the bench offers to save `rerun-<name>.cmd` (W
    | 1M | 1,000,000 | ~220k | ~9.5 GB | ~18.5 GB total |
    | 2M | 2,000,000 | ~440k | ~19 GB | ~37 GB total |
 
-   `--symlinks yes`: the same corpus plus file and directory symbolic links (a separate directory),
-   skipped with the reason when the OS doesn't allow them (Windows without Developer Mode).
+   Symbolic links are included by default (file and directory links, a separate corpus directory
+   `<name>-symlinks-v2`) when the OS allows them (Windows: Developer Mode or elevation); otherwise
+   the corpus without links is used and the reason is recorded. `--no-symlinks` disables them.
 3. **Server**, in this order: `--server <path>`; a repository build next to the bench or in the
    current directory (`Binaries/Release/Server`, then `Debug`); an installed VS Code extension
    (`~/.vscode/extensions/chromium.vs-chromium-*/server`); GitHub releases of `chromium/vs-chromium`
@@ -78,7 +79,9 @@ At the end of an interactive run, the bench offers to save `rerun-<name>.cmd` (W
    an anonymous random machine id). Meant to be committed to
    [docs/benchmarks/results/](../../../docs/benchmarks/results/README.md). `--machine-label <text>`
    adds a label (included verbatim), `--redact-security` omits the security products and filter
-   drivers. The text is scrubbed, and the report is not written if the user, machine or domain name,
+   drivers. Virtual and remote display adapters (remote desktop, indirect displays, virtual machines)
+   are not named: the report says "Remote session software: detected" (and whether the bench ran in
+   a remote session); `--include-virtual-displays` lists them. The text is scrubbed, and the report is not written if the user, machine or domain name,
    a local path, a SID or a GUID is still in it.
 
 ## Server features

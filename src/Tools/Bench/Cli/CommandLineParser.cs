@@ -29,7 +29,8 @@ public static class CommandLineParser {
       --disk <drive|mount>       Working disk, e.g. D: or /mnt/data (default: the disk of the current directory).
       --corpora-dir <dir>        Directory of the corpora (default: <disk>/vschromium-corpora).
       --corpus <400k|1M|2M>      Corpus size (default: 400k; small and medium for quick tests).
-      --symlinks <yes|no>        Corpus with symbolic links (default: no).
+      --symlinks <yes|no>        Corpus with symbolic links (default: yes when the OS allows them).
+      --no-symlinks              Same as --symlinks no.
       --server <source>          auto (default), repo, vscode, release:latest, release:<tag>, or a path.
       --scenarios <list>         cold,save,restart,live,offline,search,rawfs,threads (default: all but threads).
       --repeat <n>               Repeats of each scenario (default: 3).
@@ -46,9 +47,10 @@ public static class CommandLineParser {
       --report-dir <dir>         Directory of the shareable report (default: the results directory).
       --machine-label <text>     Label of the machine in the shareable report (included verbatim).
       --redact-security          Omit security products and filter drivers from the shareable report.
+      --include-virtual-displays List the virtual and remote display adapters by name in the shareable report.
 
     Options of "compare":   <files...> [--output <file.md>]
-    Options of "report":    <files...> [--report-dir <dir>] [--machine-label <text>] [--redact-security]
+    Options of "report":    <files...> [--report-dir <dir>] [--machine-label <text>] [--redact-security] [--include-virtual-displays]
     Options of "cleanup":   [--corpora] [--caches] [--servers] [--results] [--all] [--disk <d>] [--yes]
     Options of "inventory": [--json] [--list-filters <yes|no>]
     """;
@@ -106,6 +108,8 @@ public static class CommandLineParser {
         case "corpora-dir": options = options with { CorporaDirectory = Value() }; break;
         case "corpus": options = options with { Corpus = ParseCorpus(Value()) }; break;
         case "symlinks": options = options with { Symlinks = ParseYesNo(name, Value()) }; break;
+        case "no-symlinks": NoValue(); options = options with { Symlinks = false }; break;
+        case "include-virtual-displays": NoValue(); options = options with { IncludeVirtualDisplays = true }; break;
         case "server": options = options with { Server = ParseServer(Value()) }; break;
         case "scenarios": options = options with { Scenarios = ParseScenarios(Value()) }; break;
         case "repeat": options = options with { Repeat = ParsePositive(name, Value()) }; break;

@@ -11,7 +11,9 @@ Each report has:
 
 - the date (UTC), the bench and server versions (version and release tag, never a local path);
 - the machine: OS edition, version and build, CPU model, cores and clocks, RAM (type and speed when
-  readable without admin), GPUs and driver versions, power plan;
+  readable without admin), GPUs and driver versions, power plan, whether remote session software
+  is detected (virtual and remote display adapters, not named unless `--include-virtual-displays`)
+  and whether the bench ran in a remote session;
 - all the fixed drives (file system, Dev Drive, size, free space, media, model, bus, change journal)
   and the drive of the test;
 - the security software (product names, Defender mode, filter drivers when listed elevated), unless

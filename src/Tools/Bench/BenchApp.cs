@@ -159,6 +159,7 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
         MachineId = machineId,
         MachineLabel = label,
         RedactSecurity = options.RedactSecurity,
+        IncludeVirtualDisplays = options.IncludeVirtualDisplays,
       }, directory, paths);
       Log($"Shareable report (no personal data, can be committed to docs/benchmarks/results/): {path}");
       return true;
@@ -258,7 +259,7 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
     var corporaDir = resolved.CorporaDirectory ?? CorpusCatalog.DefaultCorporaDirectory(disk.MountPoint);
 
     // 3. Corpus.
-    var spec = SelectCorpus(disk, corporaDir, ref resolved);
+    var spec = SelectCorpus(disk, corporaDir, ref resolved, out var symlinkNote);
     var existing = CorpusCache.TryGet(corporaDir, spec);
     var estimate = CorpusCatalog.Estimate(spec, existing != null);
     if (!estimate.Fits(disk.FreeBytes)) {
@@ -336,7 +337,7 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
         SearchableFileCount = corpus.Manifest.SearchableFileCount,
         SymlinkFileCount = corpus.Manifest.SymlinkFileCount,
         SymlinkDirectoryCount = corpus.Manifest.SymlinkDirectoryCount,
-        Symlinks = corpus.Manifest.Symlinks,
+        Symlinks = symlinkNote ?? corpus.Manifest.Symlinks,
         GenerationSeconds = corpus.Generated ? corpus.Manifest.GenerationSeconds : null,
         FilesPerDirectoryHistogram = corpus.Manifest.FilesPerDirectoryHistogram,
       },
@@ -415,11 +416,19 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
     return disks[index];
   }
 
-  private CorpusSpec SelectCorpus(DiskInfo disk, string corporaDir, ref BenchOptions resolved) {
-    var symlinks = resolved.Symlinks ?? false;
+  /// <summary>
+  /// The corpus. Symbolic links are included by default when the OS allows them (Windows: Developer
+  /// Mode or elevation); otherwise the corpus without links is used, and <paramref name="symlinkNote"/>
+  /// says why ("skipped (reason)").
+  /// </summary>
+  private CorpusSpec SelectCorpus(DiskInfo disk, string corporaDir, ref BenchOptions resolved, out string? symlinkNote) {
+    symlinkNote = null;
+    Directory.CreateDirectory(corporaDir);
+    var symlinkProblem = CodeBaseGenerator.CanCreateSymlinks(corporaDir);
+    var symlinks = resolved.Symlinks ?? symlinkProblem == null;
     if (resolved.Corpus == null && Interactive) {
       var items = CorpusCatalog.MenuNames.Select(name => {
-        var spec = CorpusCatalog.Spec(name, symlinks);
+        var spec = CorpusCatalog.Spec(name, symlinks && symlinkProblem == null);
         var exists = CorpusCache.TryGet(corporaDir, spec) != null;
         var estimate = CorpusCatalog.Estimate(spec, exists);
         var text = $"{name,-5} {spec.FileCount,10:n0} files, ~{DiskInfo.FormatBytes(estimate.CorpusBytes)} of files " +
@@ -429,14 +438,19 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
       var defaultIndex = Math.Max(0, items.FindIndex(i => i.Item2 == null));
       var choice = prompt.Choose($"Corpus (on {disk.MountPoint}, {DiskInfo.FormatBytes(disk.FreeBytes)} free):", items, defaultIndex);
       resolved = resolved with { Corpus = CorpusCatalog.MenuNames[choice] };
-      if (resolved.Symlinks == null) {
-        symlinks = prompt.YesNo("Add symbolic links to the corpus (file and directory links, a separate corpus)?", false);
+      if (resolved.Symlinks == null && symlinkProblem == null) {
+        symlinks = prompt.YesNo("Include symbolic links in the corpus (file and directory links)?", true);
       }
     }
-    resolved = resolved with { Corpus = resolved.Corpus ?? BenchOptions.DefaultCorpus, Symlinks = symlinks };
+    // Note: An explicit "no" is part of the rerun command line; "yes" is the default.
+    resolved = resolved with { Corpus = resolved.Corpus ?? BenchOptions.DefaultCorpus, Symlinks = symlinks ? null : false };
+    if (symlinks && symlinkProblem != null) {
+      symlinkNote = $"skipped ({symlinkProblem})";
+      Log($"Symbolic links skipped: {symlinkProblem}");
+      symlinks = false;
+    }
     return CorpusCatalog.Spec(resolved.Corpus!, symlinks);
   }
-
   private async Task<ServerCandidate> SelectServerAsync(BenchOptions resolved, CancellationToken cancellation) {
     var locator = new ServerLocator(DataDirectory, Log);
     if (resolved.Server != null || !Interactive) {

@@ -483,6 +483,58 @@ describe('diskUsage view model', () => {
     assert.equal(cache.notSearchableBarPercent, 50);
   });
 
+  it('describes the symbolic links (not counted, linked to their target)', () => {
+    const entry = (name: string, isDirectory: boolean, symbolicLink: object) => ({
+      name, isDirectory, excluded: false, measureState: 'done' as const, totalBytes: 0, searchableBytes: 0, notSearchableBytes: 0,
+      fileCount: 0, searchableFileCount: 0, pattern: `/${name}${isDirectory ? '/' : ''}`, symbolicLink: symbolicLink as never,
+    });
+    const none = { external: false, network: false, dangling: false };
+    const vm = buildViewModel({
+      host: host(),
+      diskUsage: {
+        projectPath: 'C:\\repo',
+        relativePath: '',
+        loading: false,
+        sizes: {
+          projectPath: 'C:\\repo', relativePath: '', projectFile: 'C:\\repo\\vs-chromium-project.txt', snapshotVersion: 1, computeMs: 1,
+          totals: {
+            name: 'repo', isDirectory: true, excluded: false, measureState: 'done', totalBytes: 100, searchableBytes: 100,
+            notSearchableBytes: 0, fileCount: 1, searchableFileCount: 1,
+          },
+          children: [
+            entry('dirlink', true, { ...none, kind: 'directory', target: 'C:\\repo\\src', targetProjectPath: 'C:\\repo',
+              targetRelativePath: 'src', targetTotalBytes: 12.3 * 1024, targetFileCount: 4 }),
+            entry('ext.cc', false, { ...none, kind: 'file', target: 'D:\\shared\\ext.cc', external: true, targetTotalBytes: 30,
+              targetFileCount: 1 }),
+            entry('net', true, { ...none, kind: 'directory', target: '\\\\server\\share', network: true }),
+            entry('gone.cc', false, { ...none, kind: 'file', target: 'C:\\repo\\missing.cc', dangling: true }),
+          ],
+        },
+      },
+    }, options);
+    const [dirLink, ext, net, gone] = vm.diskUsage!.rows;
+    assert.equal(dirLink.drillable, false, 'Not explored through the link');
+    assert.equal(dirLink.showBar, false);
+    assert.equal(dirLink.sizeText, 'link (target 12.3 KB)');
+    assert.equal(dirLink.filesText, '\u2014');
+    assert.match(dirLink.sizeTitle!, /not counted in the sizes/);
+    assert.equal(dirLink.link?.targetText, 'repo/src');
+    assert.deepEqual(dirLink.link?.navigate, { projectPath: 'C:\\repo', relativePath: 'src' });
+    assert.equal(dirLink.link?.badge, undefined);
+    assert.equal(dirLink.canAddExplorerIgnore, true, 'The link itself can be ignored');
+
+    assert.equal(ext.link?.navigate, undefined);
+    assert.equal(ext.link?.badge, 'outside the project');
+    assert.equal(ext.link?.targetText, 'D:\\shared\\ext.cc');
+    assert.equal(ext.link?.copyPath, 'D:\\shared\\ext.cc');
+    assert.equal(ext.sizeText, 'link (target 30 B)');
+    assert.equal(net.link?.badge, 'network');
+    assert.equal(net.sizeText, 'link');
+    assert.equal(gone.link?.badge, 'dangling');
+    assert.equal(gone.link?.navigate, undefined);
+    assert.equal(gone.highlighted, false);
+  });
+
   it('disables adding ignore rules when the project has no editable vs-chromium-project.txt', () => {
     const vm = buildViewModel({
       host: host(),

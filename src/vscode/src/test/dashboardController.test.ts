@@ -491,6 +491,49 @@ describe('DashboardController disk usage', () => {
     assert.equal(last().diskUsage, undefined);
   });
 
+  it('follows a file link to its target in another project and highlights it', async () => {
+    const { host, controller, last } = await setupRunning();
+    host.posted.length = 0;
+    const linkRow = {
+      name: 'link.cc', isDirectory: false, excluded: false, measureState: 'done', totalBytes: 0, searchableBytes: 0,
+      notSearchableBytes: 0, fileCount: 0, searchableFileCount: 0, pattern: '/link.cc',
+      symbolicLink: {
+        kind: 'file', target: 'C:\\b\\lib\\real.cc', targetProjectPath: 'C:\\b', targetRelativePath: 'lib/real.cc',
+        external: false, network: false, dangling: false, targetTotalBytes: 300, targetFileCount: 1,
+      },
+    };
+    const open = controller.execute({ action: 'openDiskUsage', projectPath: 'C:\\a' });
+    host.answer(host.takeRequests(), { 'project/directorySizes': sampleSizes('', [linkRow]) });
+    await open;
+    const row = last().diskUsage!.rows[0];
+    assert.equal(row.link?.targetText, 'b/lib/real.cc');
+    assert.deepEqual(row.link?.navigate, { projectPath: 'C:\\b', relativePath: 'lib', highlightName: 'real.cc' });
+
+    const follow = controller.execute({ action: 'openDiskUsage', ...row.link!.navigate! });
+    const requests = host.takeRequests();
+    assert.deepEqual(requests.map(r => [r.method, r.params]), [
+      ['project/directorySizes', { projectPath: 'C:\\b', relativePath: 'lib' }],
+    ]);
+    const realRow = {
+      name: 'real.cc', isDirectory: false, excluded: false, measureState: 'done', totalBytes: 300, searchableBytes: 300,
+      notSearchableBytes: 0, fileCount: 1, searchableFileCount: 1, pattern: '/lib/real.cc',
+    };
+    host.answer(requests, {
+      'project/directorySizes': { ...sampleSizes('lib', [{ ...realRow, name: 'other.cc' }, realRow]), projectPath: 'C:\\b' },
+    });
+    await follow;
+    const du = last().diskUsage!;
+    assert.equal(du.projectPath, 'C:\\b');
+    assert.equal(du.relativePath, 'lib');
+    assert.deepEqual(du.rows.map(r => [r.name, r.highlighted]), [['other.cc', false], ['real.cc', true]]);
+
+    // Another location: no highlight.
+    const up = controller.execute({ action: 'openDiskUsage', projectPath: 'C:\\b', relativePath: '' });
+    host.answer(host.takeRequests(), { 'project/directorySizes': { ...sampleSizes('', [realRow]), projectPath: 'C:\\b' } });
+    await up;
+    assert.equal(last().diskUsage!.rows[0].highlighted, false);
+  });
+
   it('starts excluded directory measurement, polls while running, and cancels', async () => {
     const { host, timers, controller, last } = await setupRunning();
     host.posted.length = 0;

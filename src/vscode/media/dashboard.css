@@ -989,6 +989,48 @@ button:disabled {
   opacity: 0.8;
 }
 
+/* Symbolic link: a small arrow head on the folder or file shape (pure CSS) */
+.entry-icon.symlink::after {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  width: 5px;
+  height: 5px;
+  border-top: 2px solid var(--vscode-textLink-foreground);
+  border-right: 2px solid var(--vscode-textLink-foreground);
+  transform: rotate(45deg);
+  content: "";
+}
+
+.link-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.link-target-text {
+  overflow: hidden;
+  font-family: var(--vscode-editor-font-family, monospace);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-target .entry-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.highlighted-row > td {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.highlighted-row > td:first-child {
+  box-shadow: inset 2px 0 0 var(--vscode-focusBorder);
+}
+
 .entry-link,
 .entry-name {
   font-family: var(--vscode-editor-font-family, monospace);

@@ -65,6 +65,11 @@ interface RowElements {
   link: HTMLButtonElement;
   name: HTMLElement;
   excludedBadge: HTMLElement;
+  linkTarget: HTMLElement;
+  targetBtn: HTMLButtonElement;
+  targetText: HTMLElement;
+  linkBadge: HTMLElement;
+  copyPathBtn: HTMLButtonElement;
   sizeCell: HTMLElement;
   bar: HTMLElement;
   barSearchable: HTMLElement;
@@ -102,6 +107,8 @@ export class DiskUsageView {
   private renderedKeys: string[] = [];
   private currentVm: DiskUsageViewModel | undefined;
   private currentCopiedUntilMs = 0;
+  /** The highlighted row already scrolled into view ("project|directory|name"). */
+  private scrolledHighlight: string | undefined;
 
   constructor(private readonly execute: (action: DashboardAction) => void) {
     this.element = el('section', 'section disk-usage');
@@ -326,6 +333,14 @@ export class DiskUsageView {
       this.tbody.replaceChildren(...rowElements.map(r => r.tr));
       this.renderedKeys = nextKeys;
     }
+
+    // The target of a followed file link: scrolled into view once.
+    const highlighted = rowElements.find(r => r.current.highlighted);
+    const highlightKey = highlighted ? `${vm.projectPath}|${vm.relativePath}|${highlighted.current.name}` : undefined;
+    if (highlighted && highlightKey !== this.scrolledHighlight) {
+      highlighted.tr.scrollIntoView?.({ block: 'center' });
+    }
+    this.scrolledHighlight = highlightKey;
   }
 
   private createRow(initial: DiskUsageRowView): RowElements {
@@ -345,7 +360,29 @@ export class DiskUsageView {
     const name = el('span', 'entry-name');
     const excludedBadge = el('span', 'excluded-badge', 'excluded');
     excludedBadge.title = 'Excluded from the index by [SourceExplorer.ignore]';
-    nameWrap.append(icon, link, name, excludedBadge);
+    // Symbolic link: "→ <target>" (navigable if in a loaded project), or a badge and Copy Path.
+    const linkTarget = el('span', 'link-target');
+    const targetBtn = actionButton('link entry-link', '', () => {
+      const navigate = elements.current.link?.navigate;
+      if (navigate) {
+        this.execute({
+          action: 'openDiskUsage',
+          projectPath: navigate.projectPath,
+          relativePath: navigate.relativePath,
+          highlightName: navigate.highlightName,
+        });
+      }
+    });
+    const targetText = el('span', 'link-target-text');
+    const linkBadge = el('span', 'excluded-badge');
+    const copyPathBtn = actionButton('link', 'Copy Path', () => {
+      const path = elements.current.link?.copyPath;
+      if (path) {
+        this.execute({ action: 'copyPattern', pattern: path });
+      }
+    }, 'Copy the path of the target to the clipboard');
+    linkTarget.append(el('span', undefined, '\u2192'), targetBtn, targetText, linkBadge, copyPathBtn);
+    nameWrap.append(icon, link, name, excludedBadge, linkTarget);
     nameTd.append(nameWrap);
 
     // Size column
@@ -420,6 +457,11 @@ export class DiskUsageView {
       link,
       name,
       excludedBadge,
+      linkTarget,
+      targetBtn,
+      targetText,
+      linkBadge,
+      copyPathBtn,
       sizeCell,
       bar,
       barSearchable,
@@ -439,8 +481,8 @@ export class DiskUsageView {
 
   private updateRow(e: RowElements, item: DiskUsageRowView) {
     e.current = item;
-    setClass(e.tr, item.excluded ? 'excluded-row' : '');
-    setClass(e.icon, `entry-icon ${item.isDirectory ? 'folder' : 'file'}`);
+    setClass(e.tr, [item.excluded ? 'excluded-row' : '', item.highlighted ? 'highlighted-row' : ''].filter(Boolean).join(' '));
+    setClass(e.icon, `entry-icon ${item.isDirectory ? 'folder' : 'file'}${item.link ? ' symlink' : ''}`);
 
     setHidden(e.link, !item.drillable);
     setHidden(e.name, item.drillable);
@@ -452,6 +494,17 @@ export class DiskUsageView {
       setTitle(e.name, item.relativePath);
     }
     setHidden(e.excludedBadge, !item.excluded);
+    const linkView = item.link;
+    setHidden(e.linkTarget, !linkView);
+    if (linkView) {
+      setHidden(e.targetBtn, !linkView.navigate);
+      setHidden(e.targetText, Boolean(linkView.navigate));
+      setText(linkView.navigate ? e.targetBtn : e.targetText, linkView.targetText);
+      setTitle(linkView.navigate ? e.targetBtn : e.targetText, linkView.targetTitle);
+      setHidden(e.linkBadge, !linkView.badge);
+      setText(e.linkBadge, linkView.badge ?? '');
+      setHidden(e.copyPathBtn, !linkView.copyPath);
+    }
 
     setHidden(e.bar, !item.showBar);
     if (item.showBar) {
@@ -461,7 +514,7 @@ export class DiskUsageView {
       setClass(e.barOther, item.notSearchableBarPercent > 0 ? 'size-bar-other non-zero' : 'size-bar-other');
     }
     setText(e.sizeText, item.sizeText);
-    setClass(e.sizeText, item.excluded && item.measureState !== 'done' ? 'size-text muted' : 'size-text');
+    setClass(e.sizeText, (item.excluded && item.measureState !== 'done') || item.link ? 'size-text muted' : 'size-text');
     setTitle(e.sizeCell, item.sizeTitle);
 
     const showMeasureBtn = item.measureAction === 'measure' || item.measureAction === 'cancel';

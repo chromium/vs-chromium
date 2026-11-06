@@ -65,7 +65,8 @@ export type DashboardAction =
   | { action: 'setProjectCacheEnabled'; projectPath: string; enabled: boolean }
   | { action: 'setProjectWatchExternalLinkTargets'; projectPath: string; enabled: boolean }
   | { action: 'openProjectCacheFolder'; projectPath: string }
-  | { action: 'openDiskUsage'; projectPath: string; relativePath?: string }
+  /** `highlightName`: the row to highlight (e.g. the target of a file link). */
+  | { action: 'openDiskUsage'; projectPath: string; relativePath?: string; highlightName?: string }
   | { action: 'closeDiskUsage' }
   | { action: 'measureDirectory'; projectPath: string; relativePath: string; restart?: boolean }
   | { action: 'cancelMeasure'; projectPath: string; relativePath: string }
@@ -248,6 +249,7 @@ export class DashboardController {
             relativePath,
             loading: true,
             sizes: sameLocation ? prev?.sizes : undefined,
+            highlightName: action.highlightName,
           };
           this.update();
           await this.loadDiskUsage(action.projectPath, relativePath, /*allowFallbackToParent*/ false);
@@ -431,11 +433,15 @@ export class DashboardController {
         if (this.disposed || seq !== this.diskUsageSeq || !this.data.diskUsage) {
           return;
         }
+        const previous = this.data.diskUsage;
+        const relative = normalizeRelativePath(sizes.relativePath);
         this.data.diskUsage = {
           projectPath,
-          relativePath: normalizeRelativePath(sizes.relativePath),
+          relativePath: relative,
           loading: false,
           sizes,
+          // Note: Kept by the refreshes of the same directory.
+          highlightName: previous?.projectPath === projectPath && previous.relativePath === relative ? previous.highlightName : undefined,
         };
         this.syncMeasurePoll();
         this.update();

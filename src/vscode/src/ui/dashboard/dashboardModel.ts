@@ -16,6 +16,7 @@ import type {
   ProjectDetails,
   ServerHistory,
   ServerStatistics,
+  SymbolicLinkInfo,
   SymbolicLinkSummary,
 } from '../../protocol/protocol.g';
 import { describeIndexCache } from '../indexCacheStatus';
@@ -74,6 +75,8 @@ export interface DiskUsageState {
   loading: boolean;
   sizes?: DirectorySizes;
   error?: string;
+  /** The name of the row to highlight (and scroll into view), e.g. the target of a file link. */
+  highlightName?: string;
 }
 
 /** The data displayed by the page. */
@@ -268,6 +271,24 @@ export interface DiskUsageRowView {
   explorerIgnoreTitle: string;
   canAddSearchableIgnore: boolean;
   searchableIgnoreTitle: string;
+  /** A symbolic link (not counted in the sizes): its target. */
+  link?: DiskUsageLinkView;
+  /** The row to highlight and scroll into view (target of a followed file link). */
+  highlighted: boolean;
+}
+
+/** The target of a symbolic link of the disk usage explorer. */
+export interface DiskUsageLinkView {
+  kind: 'file' | 'directory';
+  /** "<project>/<relative path>" if the target is in a loaded project, otherwise the full path. */
+  targetText: string;
+  targetTitle: string;
+  /** The explorer location of the target (in a loaded project, possibly another one). */
+  navigate?: { projectPath: string; relativePath: string; highlightName?: string };
+  /** "outside the project", "network" or "dangling" (not navigable). */
+  badge?: string;
+  /** The path to copy (not navigable targets). */
+  copyPath?: string;
 }
 
 /** View model of the drill-down project disk usage explorer. */
@@ -645,10 +666,13 @@ function describeDiskUsageRow(
   maxBytes: number,
   serverRunning: boolean,
   projectFile: string | undefined,
+  highlightName?: string,
 ): DiskUsageRowView {
   const relativePath = parentRelPath ? `${parentRelPath}/${entry.name}` : entry.name;
   const displayName = entry.isDirectory ? `${entry.name}/` : entry.name;
-  const drillable = entry.isDirectory && !entry.excluded && serverRunning;
+  const link = entry.symbolicLink ? describeLink(entry.symbolicLink, serverRunning) : undefined;
+  // Note: A directory link is not explored through the link: its target is the place to go.
+  const drillable = entry.isDirectory && !entry.excluded && serverRunning && !link;
 
   let sizeText: string;
   let sizeTitle: string | undefined;
@@ -659,7 +683,15 @@ function describeDiskUsageRow(
   let filesTitle: string | undefined;
   let measureAction: DiskUsageRowView['measureAction'];
 
-  if (entry.excluded && entry.isDirectory && entry.measureState === 'notMeasured') {
+  if (entry.symbolicLink) {
+    const target = entry.symbolicLink.targetTotalBytes;
+    sizeText = target !== undefined ? `link (target ${formatBytes(target)})` : 'link';
+    sizeTitle = 'Symbolic link: not counted in the sizes (its target is counted where it is indexed)' +
+      (target !== undefined ? `; the target has ${formatBytes(target)}` +
+        (entry.symbolicLink.kind === 'directory' ? ` in ${formatCount(entry.symbolicLink.targetFileCount ?? 0)} files` : '') : '');
+    filesText = '\u2014';
+    filesTitle = 'Symbolic links are not counted in the totals';
+  } else if (entry.excluded && entry.isDirectory && entry.measureState === 'notMeasured') {
     sizeText = 'excluded \u2014 size not measured';
     sizeTitle = 'Excluded by [SourceExplorer.ignore] and skipped during scans. Click Measure to enumerate its size on disk.';
     filesText = '\u2014';
@@ -758,6 +790,46 @@ function describeDiskUsageRow(
     explorerIgnoreTitle,
     canAddSearchableIgnore,
     searchableIgnoreTitle,
+    link,
+    highlighted: highlightName !== undefined && entry.name === highlightName,
+  };
+}
+
+function lastSegment(path: string): string {
+  const trimmed = path.replace(/[\\/]+$/, '');
+  const index = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
+  return index >= 0 ? trimmed.slice(index + 1) : trimmed;
+}
+
+function describeLink(link: SymbolicLinkInfo, serverRunning: boolean): DiskUsageLinkView {
+  const kind = link.kind === 'directory' ? 'directory' : 'file';
+  if (link.targetProjectPath !== undefined && link.targetRelativePath !== undefined && !link.dangling) {
+    const relativePath = normalizeRelativePath(link.targetRelativePath);
+    const projectName = lastSegment(link.targetProjectPath);
+    const slash = relativePath.lastIndexOf('/');
+    return {
+      kind,
+      targetText: relativePath ? `${projectName}/${relativePath}` : projectName,
+      targetTitle: `${link.target}\nGo to the target in the explorer`,
+      navigate: !serverRunning ? undefined : kind === 'directory'
+        ? { projectPath: link.targetProjectPath, relativePath }
+        : {
+          projectPath: link.targetProjectPath,
+          relativePath: slash >= 0 ? relativePath.slice(0, slash) : '',
+          highlightName: slash >= 0 ? relativePath.slice(slash + 1) : relativePath,
+        },
+    };
+  }
+  const badge = link.dangling ? 'dangling' : link.network ? 'network' : 'outside the project';
+  const why = link.dangling ? 'The target doesn\u2019t exist'
+    : link.network ? 'The target is on a network volume'
+      : link.external ? 'The target is outside of the loaded projects' : 'The target is not in the index of a loaded project';
+  return {
+    kind,
+    targetText: link.target || '(unknown target)',
+    targetTitle: link.target ? `${link.target}\n${why}` : why,
+    badge,
+    copyPath: link.target || undefined,
   };
 }
 
@@ -811,7 +883,7 @@ function describeDiskUsage(data: DashboardData): DiskUsageViewModel | undefined 
     canCopyCurrentPattern: currentPattern !== undefined,
     canExcludeCurrentExplorer: editable && currentPattern !== undefined,
     canExcludeCurrentSearchable: editable && currentPattern !== undefined && (sizes?.totals.searchableBytes ?? 0) > 0,
-    rows: children.map(entry => describeDiskUsageRow(entry, rel, maxBytes, serverRunning, projectFile)),
+    rows: children.map(entry => describeDiskUsageRow(entry, rel, maxBytes, serverRunning, projectFile, state.highlightName)),
   };
 }
 

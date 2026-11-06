@@ -80,6 +80,21 @@ public class ReleaseAssetTests {
   }
 
   [TestMethod]
+  public void FindsTheVsixNamedAfterTheVsCodeTarget() {
+    // The assets of a release (see docs/release.md): VS Code target names for the VS Code extension.
+    var assets = new[] {
+      Asset("vs-chromium-0.10.0-win32-x64.vsix"), Asset("vs-chromium-0.10.0-win32-arm64.vsix"),
+      Asset("vs-chromium-0.10.0-darwin-arm64.vsix"), Asset("vs-chromium-0.10.0-visualstudio.vsix"), Asset("SHA256SUMS.txt"),
+    };
+    Assert.AreEqual("vs-chromium-0.10.0-win32-arm64.vsix", ReleaseAssets.Select(assets, "win-arm64")?.Package.Name);
+    Assert.AreEqual("vs-chromium-0.10.0-darwin-arm64.vsix", ReleaseAssets.Select(assets, "osx-arm64")?.Package.Name);
+    Assert.AreEqual("SHA256SUMS.txt", ReleaseAssets.Select(assets, "win-x64")?.Checksums?.Name);
+    Assert.IsNull(ReleaseAssets.Select(assets, "linux-x64"));
+    Assert.AreEqual("darwin-x64", ReleaseAssets.VsCodeTarget("osx-x64"));
+    Assert.IsNull(ReleaseAssets.VsCodeTarget("freebsd-x64"));
+  }
+
+  [TestMethod]
   public void NoMatchingAssetIsReported() {
     // Releases of today: a single platform-independent VS extension.
     var release = new Release("v0.9.38", "0.9.38", false, [Asset("VsChromium.vsix"), Asset("vs-chromium-0.13.0-osx-arm64.vsix")]);

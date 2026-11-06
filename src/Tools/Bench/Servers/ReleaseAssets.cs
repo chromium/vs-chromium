@@ -19,8 +19,8 @@ public sealed record AssetSelection(ReleaseAsset Package, ReleaseAsset? Checksum
 /// <summary>
 /// Pure logic of the selection of the server package of a release: assets with clear names only,
 /// <c>vschromium-server-&lt;version&gt;-&lt;rid&gt;.zip</c> (preferred) or
-/// <c>vs-chromium-&lt;version&gt;-&lt;rid&gt;.vsix</c> (the per-platform VS Code extension package, a zip
-/// file), and the SHA-256 checksums.
+/// <c>vs-chromium-&lt;version&gt;-&lt;VS Code target&gt;.vsix</c> (the per-platform VS Code extension
+/// package, a zip file), and the SHA-256 checksums.
 /// </summary>
 public static partial class ReleaseAssets {
   /// <summary>The runtime identifier of this machine: win-x64, win-arm64, linux-x64, linux-arm64, osx-arm64, osx-x64.</summary>
@@ -40,14 +40,20 @@ public static partial class ReleaseAssets {
   /// <summary>Selects the package of <paramref name="rid"/>, or null if the release has none.</summary>
   public static AssetSelection? Select(IReadOnlyList<ReleaseAsset> assets, string rid) {
     var suffix = "-" + rid;
-    ReleaseAsset? Find(string prefix, string extension) => assets
+    ReleaseAsset? Find(string prefix, string extension) => FindWithSuffix(prefix, suffix, extension);
+    ReleaseAsset? FindWithSuffix(string prefix, string platformSuffix, string extension) => assets
       .Where(a => a.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
-                  a.Name.EndsWith(suffix + extension, StringComparison.OrdinalIgnoreCase) &&
-                  a.Name.Length > prefix.Length + suffix.Length + extension.Length)
+                  a.Name.EndsWith(platformSuffix + extension, StringComparison.OrdinalIgnoreCase) &&
+                  a.Name.Length > prefix.Length + platformSuffix.Length + extension.Length)
       .OrderByDescending(a => a.Name, StringComparer.OrdinalIgnoreCase)
       .FirstOrDefault();
+    // The VS Code extension packages of the releases are named after the VS Code target platform
+    // (vs-chromium-<version>-win32-x64.vsix, see docs/release.md); runtime identifier names
+    // (vs-chromium-<version>-win-x64.vsix) are accepted too.
+    ReleaseAsset? FindVsix() =>
+      (VsCodeTarget(rid) is { } target ? FindWithSuffix("vs-chromium-", "-" + target, ".vsix") : null) ?? Find("vs-chromium-", ".vsix");
     var zip = Find("vschromium-server-", ".zip");
-    var vsix = zip == null ? Find("vs-chromium-", ".vsix") : null;
+    var vsix = zip == null ? FindVsix() : null;
     var package = zip ?? vsix;
     if (package == null) {
       return null;
@@ -56,6 +62,20 @@ public static partial class ReleaseAssets {
                     ?? assets.FirstOrDefault(a => a.Name.ToUpperInvariant() is "SHA256SUMS" or "SHA256SUMS.TXT" or "CHECKSUMS.TXT" or "SHA256SUMS.SHA256");
     return new AssetSelection(package, checksums, IsVsix: vsix != null);
   }
+
+  /// <summary>
+  /// The VS Code target platform of a runtime identifier (win-x64 -> win32-x64, osx-arm64 ->
+  /// darwin-arm64, linux-x64 -> linux-x64), or null for an unknown runtime identifier.
+  /// </summary>
+  public static string? VsCodeTarget(string rid) => rid switch {
+    "win-x64" => "win32-x64",
+    "win-arm64" => "win32-arm64",
+    "linux-x64" => "linux-x64",
+    "linux-arm64" => "linux-arm64",
+    "osx-x64" => "darwin-x64",
+    "osx-arm64" => "darwin-arm64",
+    _ => null,
+  };
 
   /// <summary>
   /// The SHA-256 of <paramref name="fileName"/> in a checksums file: "&lt;hex&gt;  &lt;name&gt;" or

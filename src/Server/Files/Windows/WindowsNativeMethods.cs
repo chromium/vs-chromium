@@ -48,6 +48,35 @@ namespace VsChromium.Core.Files.Windows {
     /// <summary>FILE_INFO_BY_HANDLE_CLASS: FILE_ID_INFO.</summary>
     public const int FileIdInfo = 18;
 
+    /// <summary>FILE_INFO_BY_HANDLE_CLASS: FILE_BASIC_INFO.</summary>
+    public const int FileBasicInfo = 0;
+
+    /// <summary>FILE_INFO_BY_HANDLE_CLASS: FILE_STANDARD_INFO.</summary>
+    public const int FileStandardInfo = 1;
+
+    /// <summary>The reparse tag of symbolic links (IO_REPARSE_TAG_SYMLINK).</summary>
+    public const uint IO_REPARSE_TAG_SYMLINK = 0xA000000C;
+
+    /// <summary>FILE_BASIC_INFO.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FILE_BASIC_INFO {
+      public long CreationTime;
+      public long LastAccessTime;
+      public long LastWriteTime;
+      public long ChangeTime;
+      public uint FileAttributes;
+    }
+
+    /// <summary>FILE_STANDARD_INFO.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FILE_STANDARD_INFO {
+      public long AllocationSize;
+      public long EndOfFile;
+      public uint NumberOfLinks;
+      public byte DeletePending;
+      public byte Directory;
+    }
+
     public const uint FSCTL_QUERY_USN_JOURNAL = 0x000900f4;
     public const uint FSCTL_READ_UNPRIVILEGED_USN_JOURNAL = 0x000903ab;
 

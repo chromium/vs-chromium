@@ -46,5 +46,18 @@ namespace VsChromium.Core.Files {
       fileId = default;
       return false;
     }
+
+    /// <summary>
+    /// The metadata of the file symbolic link <paramref name="path"/> as reported by the
+    /// enumeration of its directory (see <see cref="DirectoryEntry.Metadata"/>): the metadata of its
+    /// final target, or of the link itself if its target doesn't exist. Null if it doesn't exist or
+    /// is not a file.
+    /// </summary>
+    FileMetadata? GetSymLinkFileMetadata(FullPath path) {
+      var info = GetFileInfoSnapshot(path);
+      if (!info.Exists || !info.IsFile)
+        return null;
+      return new FileMetadata(info.LastWriteTimeUtc, info.Length);
+    }
   }
 }

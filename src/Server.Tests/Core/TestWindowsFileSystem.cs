@@ -89,6 +89,28 @@ namespace VsChromium.Tests.Core {
     }
 
     [TestMethod]
+    public void SymLinkFileMetadataIsTheMetadataOfTheEnumeration() {
+      System.IO.Directory.CreateDirectory(Path.Combine(Root, "tools"));
+      var target = Path.Combine(Root, "tools", "target.txt");
+      File.WriteAllText(target, "contents of the target");
+      File.SetLastWriteTimeUtc(target, new DateTime(2026, 8, 19, 14, 39, 41, DateTimeKind.Utc));
+      CreateFileSymbolicLink(Path.Combine(Root, "link.txt"), Path.Combine("tools", "target.txt"));
+      CreateFileSymbolicLink(Path.Combine(Root, "dangling.txt"), "missing.txt");
+      var entries = FileSystem.GetDirectoryEntries(RootPath);
+      var portable = new PortableFileSystem();
+      foreach (var name in new[] { "link.txt", "dangling.txt" }) {
+        var path = RootPath.Combine(new RelativePath(name));
+        var expected = portable.GetDirectoryEntries(RootPath).Single(x => x.Name == name).Metadata;
+        Assert.AreEqual(expected, entries.Single(x => x.Name == name).Metadata, name);
+        Assert.AreEqual(expected, ((IFileSystem)FileSystem).GetSymLinkFileMetadata(path), name);
+        Assert.AreEqual(expected, ((IFileSystem)portable).GetSymLinkFileMetadata(path), name);
+      }
+      Assert.AreEqual(new FileMetadata(File.GetLastWriteTimeUtc(target), new FileInfo(target).Length),
+        ((IFileSystem)FileSystem).GetSymLinkFileMetadata(RootPath.Combine(new RelativePath("link.txt"))));
+      Assert.IsNull(((IFileSystem)FileSystem).GetSymLinkFileMetadata(RootPath.Combine(new RelativePath("missing"))));
+    }
+
+    [TestMethod]
     public void FileIdOfMissingFileIsZero() {
       Assert.AreEqual(UInt128.Zero, FileSystem.GetFileInfoSnapshot(RootPath.Combine(new RelativePath("missing"))).FileId);
     }

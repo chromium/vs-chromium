@@ -428,12 +428,12 @@ namespace VsChromium.Server.FileSystem.Builder {
       var metadata = directory.ChildFileMetadataArray;
       foreach (var index in directory.SymLinkFileIndices) {
         Interlocked.Increment(ref context.Statistics.SymLinkFileCount);
-        var info = _fileSystem.GetFileInfoSnapshot(directory.ChildFiles[index].FullPath);
-        if (!info.Exists || !info.IsFile) {
+        var linkMetadata = _fileSystem.GetSymLinkFileMetadata(directory.ChildFiles[index].FullPath);
+        if (linkMetadata == null) {
           // Not expected (the link would have a record): listed again.
           return await RelistDirectoryAsync(directory, context);
         }
-        var newMetadata = new FileMetadata(info.LastWriteTimeUtc, info.Length);
+        var newMetadata = linkMetadata.Value;
         if (newMetadata != metadata[index]) {
           if (ReferenceEquals(metadata, directory.ChildFileMetadataArray)) {
             metadata = (FileMetadata[])metadata.Clone();

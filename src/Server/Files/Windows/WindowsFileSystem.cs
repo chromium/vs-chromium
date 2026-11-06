@@ -84,6 +84,7 @@ namespace VsChromium.Core.Files.Windows {
     private const int EndOfFileOffset = 40;
     private const int FileAttributesOffset = 56;
     private const int FileNameLengthOffset = 60;
+    private const int ReparsePointTagOffset = 68;
     private const int FileIdOffset = 72;
     private const int FileNameOffset = 88;
 
@@ -99,9 +100,12 @@ namespace VsChromium.Core.Files.Windows {
           var fileId = new UInt128(*(ulong*)(entry + FileIdOffset + 8), *(ulong*)(entry + FileIdOffset));
           var nameString = name.ToString();
           var metadata = new FileMetadata(DateTime.FromFileTimeUtc(Math.Max(0, lastWriteTime)), length);
-          // Note: Same as PortableFileSystem: the metadata of the target of file symbolic links.
-          if (IsFileReparsePoint(attributes) &&
-              TryGetLinkTargetMetadata(Path.Join(directory, nameString), out var targetMetadata)) {
+          // Note: Same as PortableFileSystem: the metadata of the target of file symbolic links
+          // (only symbolic links: other reparse points, e.g. cloud files, are not opened), with a
+          // single open of the target.
+          if (IsFileReparsePoint(attributes) && *(uint*)(entry + ReparsePointTagOffset) == IO_REPARSE_TAG_SYMLINK &&
+              TryGetMetadata(Path.Join(directory, nameString), followLink: true, out var targetMetadata, out var isDirectory) &&
+              !isDirectory) {
             metadata = targetMetadata;
           }
           result.Add(new DirectoryEntry(nameString, attributes, metadata, fileId));
@@ -110,6 +114,38 @@ namespace VsChromium.Core.Files.Windows {
         if (next == 0)
           break;
         entry += next;
+      }
+    }
+
+    public FileMetadata? GetSymLinkFileMetadata(FullPath path) {
+      if (TryGetMetadata(path.Value, followLink: true, out var metadata, out var isDirectory) && !isDirectory)
+        return metadata;
+      // Dangling link (or to a directory): the metadata of the link itself, as in the enumeration.
+      if (TryGetMetadata(path.Value, followLink: false, out metadata, out isDirectory) && !isDirectory)
+        return metadata;
+      return null;
+    }
+
+    /// <summary>
+    /// The last write time and size of a file (of the final target of a symbolic link if <paramref
+    /// name="followLink"/>), with a single open (FILE_READ_ATTRIBUTES).
+    /// </summary>
+    private static unsafe bool TryGetMetadata(string path, bool followLink, out FileMetadata metadata, out bool isDirectory) {
+      metadata = default;
+      isDirectory = false;
+      var handle = CreateFile(ToNativePath(path), FILE_READ_ATTRIBUTES, FILE_SHARE_ALL, IntPtr.Zero, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS | (followLink ? 0 : FILE_FLAG_OPEN_REPARSE_POINT), IntPtr.Zero);
+      using (handle) {
+        if (handle.IsInvalid)
+          return false;
+        FILE_BASIC_INFO basic;
+        FILE_STANDARD_INFO standard;
+        if (!GetFileInformationByHandleEx(handle, FileBasicInfo, &basic, (uint)sizeof(FILE_BASIC_INFO)) ||
+            !GetFileInformationByHandleEx(handle, FileStandardInfo, &standard, (uint)sizeof(FILE_STANDARD_INFO)))
+          return false;
+        isDirectory = standard.Directory != 0;
+        metadata = new FileMetadata(DateTime.FromFileTimeUtc(Math.Max(0, basic.LastWriteTime)), standard.EndOfFile);
+        return true;
       }
     }
 

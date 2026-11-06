@@ -98,6 +98,12 @@ namespace VsChromium.Server.Cache {
     /// is saved.
     /// </summary>
     IndexCacheCheckpointProvider CheckpointProvider { get; set; }
+
+    /// <summary>
+    /// True if the idle advance of the change journal checkpoints can run on the saved state of
+    /// <paramref name="snapshot"/> (e.g. not paused, not indexing): see <see cref="IndexCache.AdvanceCheckpoints"/>.
+    /// </summary>
+    Func<FileSystemSnapshot, bool> CheckpointAdvanceAllowed { get; set; }
   }
 
   /// <summary>
@@ -158,6 +164,8 @@ namespace VsChromium.Server.Cache {
     public int LastWriteChangedFileCount;
     public int LastWriteCompactedArenaCount;
     public long LastWriteCompactedBytes;
+    /// <summary>The change journal checkpoints saved alone (idle advance, see <see cref="IndexCache.AdvanceCheckpoints"/>).</summary>
+    public int CheckpointUpdateCount;
   }
 
   public sealed class IndexCache : IIndexCache, IDisposable {
@@ -182,6 +190,7 @@ namespace VsChromium.Server.Cache {
       _scheduler = new IndexCacheSaveScheduler(options.SaveSettleDelay, options.SaveMaxDelay, Save);
       if (options.IsEnabled) {
         Logger.LogInfo("Index cache directory: \"{0}\"", options.CacheDirectory);
+        _checkpointTimer = new Timer(_ => AdvanceCheckpoints(), null, options.CheckpointInterval, options.CheckpointInterval);
       } else {
         Logger.LogInfo("Index cache disabled");
       }
@@ -190,6 +199,18 @@ namespace VsChromium.Server.Cache {
     public bool IsEnabled => _options.IsEnabled;
 
     public IndexCacheCheckpointProvider CheckpointProvider { get; set; }
+
+    public Func<FileSystemSnapshot, bool> CheckpointAdvanceAllowed { get; set; }
+
+    /// <summary>
+    /// The state saved by the last write of the cache of each project (guarded by <see cref="_lock"/>),
+    /// until the project changes again: the idle advance of the checkpoints checks it (no extra memory:
+    /// it is the current state while the project doesn't change).
+    /// </summary>
+    private readonly Dictionary<FullPath, (FileSystemSnapshot Snapshot, ProjectRootSnapshot Root, FileDatabaseSnapshot Database)> _written =
+      new Dictionary<FullPath, (FileSystemSnapshot, ProjectRootSnapshot, FileDatabaseSnapshot)>();
+    private readonly Timer _checkpointTimer;
+    private int _advancingCheckpoints;
 
     public ProjectIndexCache GetProjectCache(FullPath rootPath) {
       if (!IsEnabled)
@@ -295,6 +316,7 @@ namespace VsChromium.Server.Cache {
           var root = new FullPath(cache.RootPath);
           if (changedProjects == null || changedProjects.Contains(root)) {
             _dirtyProjects.Add(root);
+            _written.Remove(root);
           }
         }
       }
@@ -373,6 +395,11 @@ namespace VsChromium.Server.Cache {
           }
           if (result == null)
             continue;
+          lock (_lock) {
+            if (!_dirtyProjects.Contains(projectRoot.Project.RootPath)) {
+              _written[projectRoot.Project.RootPath] = (snapshot, projectRoot, database);
+            }
+          }
           Logger.LogInfo("Wrote the index cache of \"{0}\" in {1:n0} ms: {2:n0} entries, {3:n0} new files " +
                          "({4:n0} bytes written, {5:n0} new arena files, {6:n0} deleted), skipped {7:n0} files " +
                          "modified less than 2 s before they were read, {8:n0} files read with another time or size than the scan, {9:n0} large files; " +
@@ -402,6 +429,63 @@ namespace VsChromium.Server.Cache {
         Logger.LogInfo("Writing the index cache was cancelled.");
         throw;
       }
+    }
+
+    /// <summary>
+    /// The idle advance of the change journal checkpoints (every <see
+    /// cref="IndexCacheOptions.CheckpointInterval"/>): the journal of a volume keeps a few hours of
+    /// changes, so the checkpoint of a cache saved long ago (the index didn't change since) would be
+    /// overwritten, and the next start would scan everything. For each project whose saved state is
+    /// still the current one (not dirty, no save running, <see cref="CheckpointAdvanceAllowed"/>),
+    /// runs the journal self-check (<see cref="CheckpointProvider"/>) on the saved state; if it
+    /// finds no difference, only the new checkpoint is saved (<see
+    /// cref="ProjectIndexCache.UpdateCheckpoint"/>, not a write of the cache). Returns the number of
+    /// checkpoints saved.
+    /// </summary>
+    public int AdvanceCheckpoints() {
+      if (Interlocked.Exchange(ref _advancingCheckpoints, 1) == 1)
+        return 0;
+      var count = 0;
+      try {
+        var provider = CheckpointProvider;
+        if (provider == null)
+          return 0;
+        List<(FileSystemSnapshot Snapshot, ProjectRootSnapshot Root, FileDatabaseSnapshot Database)> items;
+        lock (_lock) {
+          if (_disposed || _pendingSnapshot != null || _dirtyProjects.Count > 0)
+            return 0;
+          items = _written.Values.ToList();
+        }
+        foreach (var (snapshot, projectRoot, database) in items) {
+          if (_scheduler.IsSaving || _scheduler.IsDirty)
+            return count;
+          if (!(CheckpointAdvanceAllowed?.Invoke(snapshot) ?? true))
+            continue;
+          var cache = GetOpenProjectCache(projectRoot.Project.RootPath);
+          if (cache == null || !cache.IsWritable || projectRoot.Checkpoint == null)
+            continue;
+          var (saved, stamp) = cache.SavedCheckpoint;
+          if (saved == null)
+            continue;
+          var checkpoint = provider(projectRoot, (file, scanMetadata) => GetSavedMetadata(database, file, scanMetadata),
+            CancellationToken.None);
+          if (checkpoint != null && !checkpoint.Equals(saved) && cache.UpdateCheckpoint(checkpoint, stamp)) {
+            count++;
+            Logger.LogInfo("Saved the change journal checkpoint of the index cache of \"{0}\": {1}.", projectRoot.Project.RootPath,
+              checkpoint);
+            lock (_statistics) {
+              _statistics.CheckpointUpdateCount++;
+            }
+          }
+        }
+      }
+      catch (Exception e) {
+        Logger.LogWarn(e, "Error advancing the change journal checkpoints of the index cache.");
+      }
+      finally {
+        Interlocked.Exchange(ref _advancingCheckpoints, 0);
+      }
+      return count;
     }
 
     /// <summary>
@@ -468,6 +552,9 @@ namespace VsChromium.Server.Cache {
         Logger.LogWarn("Timeout waiting for the index cache write to be cancelled.");
       }
       foreach (var rootPath in rootPaths) {
+        lock (_lock) {
+          _written.Remove(rootPath);
+        }
         var cache = GetProjectCache(rootPath);
         if (cache != null) {
           Logger.LogInfo("Deleting the index cache of \"{0}\".", rootPath);
@@ -495,6 +582,7 @@ namespace VsChromium.Server.Cache {
         _projects.TryGetValue(rootPath, out cache);
         _projects.Remove(rootPath);
         _dirtyProjects.Remove(rootPath);
+        _written.Remove(rootPath);
       }
       Logger.LogInfo("Index cache of \"{0}\" disabled: deleting it.", rootPath);
       CancelWrites();
@@ -587,6 +675,7 @@ namespace VsChromium.Server.Cache {
         result.LastWriteChangedFileCount = _statistics.LastWriteChangedFileCount;
         result.LastWriteCompactedArenaCount = _statistics.LastWriteCompactedArenaCount;
         result.LastWriteCompactedBytes = _statistics.LastWriteCompactedBytes;
+        result.CheckpointUpdateCount = _statistics.CheckpointUpdateCount;
       }
       result.Enabled = IsEnabled;
       result.CacheDirectory = _options.CacheDirectory;
@@ -607,8 +696,10 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     public void Dispose() {
       _scheduler.Dispose();
+      _checkpointTimer?.Dispose();
       lock (_lock) {
         _disposed = true;
+        _written.Clear();
         _cleanupTimer?.Dispose();
         _pendingSnapshot = null;
         _pendingDatabase = null;

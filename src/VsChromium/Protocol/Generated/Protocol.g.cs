@@ -1419,6 +1419,12 @@ namespace VsChromium.Protocol.Generated {
     public long? LastWriteCompactedBytes { get; set; }
 
     /// <summary>
+    /// Change journal checkpoints saved alone while the index didn't change (idle advance, every 30 minutes).
+    /// </summary>
+    [JsonProperty("checkpointUpdateCount", NullValueHandling = NullValueHandling.Ignore)]
+    public int? CheckpointUpdateCount { get; set; }
+
+    /// <summary>
     /// Files not written by the last write because their time in the scan is not the time of their
     /// contents: modified after the scan, or (on Windows) stale directory entries of hard links and
     /// files being written, file symbolic links. Read from disk at each load.

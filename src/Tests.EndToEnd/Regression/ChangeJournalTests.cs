@@ -137,6 +137,42 @@ public class ChangeJournalTests {
   }
 
   /// <summary>
+  /// The idle advance of the checkpoint: while the index doesn't change, the checkpoint of the
+  /// cache is saved alone (journal.bin, the index is not written) after a journal self-check.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task IdleServerAdvancesTheCheckpointOfTheCache() {
+    using var tree = new TestTree(TestTree.TempRoot());
+    tree.Generate();
+    await using (var server = await StartAndLoadAsync(tree, checkpointIntervalMs: 500)) {
+      await WaitForIdleAsync(server.Client);
+      await WaitForAsync(async () => await CacheWriteCountAsync(server.Client) >= 1, "the cache is written");
+      var index = Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Single();
+      var indexTime = File.GetLastWriteTimeUtc(index);
+      var writes = await CacheWriteCountAsync(server.Client);
+      // Changes outside of the project (the journal moves on).
+      for (var i = 0; i < 3; i++) {
+        File.WriteAllText(Path.Combine(tree.Parent, $"outside{i}.txt"), "outside");
+        await Task.Delay(300);
+      }
+      await WaitForAsync(async () => {
+        var cache = (await server.Client.RequestAsync(ServerProtocol.GetServerStatistics())).Data["indexCache"]!;
+        return (cache["checkpointUpdateCount"]?.GetValue<int>() ?? 0) >= 1;
+      }, "the checkpoint is saved");
+      Assert.IsTrue(File.Exists(Path.Combine(Path.GetDirectoryName(index)!, "journal.bin")));
+      Assert.AreEqual(indexTime, File.GetLastWriteTimeUtc(index), "The index is not written");
+      Assert.AreEqual(writes, await CacheWriteCountAsync(server.Client));
+    }
+
+    await using var restarted = await StartAndLoadAsync(tree);
+    await WaitForIdleAsync(restarted.Client);
+    var verification = await LastVerificationAsync(restarted.Client, tree);
+    AssertJournalVerification(verification);
+    Assert.AreEqual(0, verification["listedDirectoryCount"]!.GetValue<int>(), verification.ToJsonString());
+  }
+
+  /// <summary>
   /// Directory symbolic links to the same volume: the changes in their target are caught up from
   /// the journal (the subtree is not scanned), a retargeted link and a link whose target was
   /// renamed outside of the project are scanned entirely.
@@ -340,15 +376,17 @@ public class ChangeJournalTests {
     public ValueTask DisposeAsync() => Client.DisposeAsync();
   }
 
-  private static Task<LoadedServer> StartAndLoadAsync(TestTree tree, int verifyDelayMs = 0, string? saveDelays = null) {
-    return StartAndLoadAsync(tree, tree.CacheDirectory, verifyDelayMs, saveDelays);
+  private static Task<LoadedServer> StartAndLoadAsync(TestTree tree, int verifyDelayMs = 0, string? saveDelays = null,
+                                                      int checkpointIntervalMs = 0) {
+    return StartAndLoadAsync(tree, tree.CacheDirectory, verifyDelayMs, saveDelays, checkpointIntervalMs);
   }
 
   private static async Task<LoadedServer> StartAndLoadAsync(TestTree tree, string? cacheDirectory, int verifyDelayMs = 0,
-                                                            string? saveDelays = null) {
+                                                            string? saveDelays = null, int checkpointIntervalMs = 0) {
     var environment = new Dictionary<string, string?> {
       [VerifyDelayVariable] = verifyDelayMs > 0 ? verifyDelayMs.ToString() : null,
       ["VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS"] = saveDelays,
+      ["VSCHROMIUM_TEST_CHECKPOINT_INTERVAL_MS"] = checkpointIntervalMs > 0 ? checkpointIntervalMs.ToString() : null,
     };
     var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath, cacheDirectory, environment);
     var loaded = await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),

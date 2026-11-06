@@ -205,6 +205,7 @@ namespace VsChromium.Server.JsonRpc {
         LastWriteChangedFileCount = statistics.LastWriteChangedFileCount,
         LastWriteCompactedArenaCount = statistics.LastWriteCompactedArenaCount,
         LastWriteCompactedBytes = statistics.LastWriteCompactedBytes,
+        CheckpointUpdateCount = statistics.CheckpointUpdateCount,
       };
     }
 

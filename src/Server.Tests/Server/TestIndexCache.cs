@@ -785,6 +785,54 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
+    public void CheckpointCanBeUpdatedAlone() {
+      var checkpoint = new ChangeJournalCheckpoint(0x1234, 0x5678, 1000, new DateTime(2026, 11, 6, 1, 0, 0, DateTimeKind.Utc));
+      var directories = new List<IndexCacheWriteDirectory> { new IndexCacheWriteDirectory("", false, new UInt128(0, 1), new[] { ToWriteItem(TextItem("a.cc", "int a;")) }) };
+      var cache = OpenNew();
+      cache.Write(directories, VersionHash, checkpoint, CancellationToken.None);
+      var (saved, stamp) = cache.SavedCheckpoint;
+      Assert.AreEqual(checkpoint, saved);
+      var indexBytes = File.ReadAllBytes(IndexPath);
+
+      // Only the checkpoint is saved (journal.bin), the index is not written.
+      var advanced = checkpoint.WithUsn(5000, new DateTime(2026, 11, 6, 2, 0, 0, DateTimeKind.Utc));
+      Assert.IsTrue(cache.UpdateCheckpoint(advanced, stamp));
+      CollectionAssert.AreEqual(indexBytes, File.ReadAllBytes(IndexPath));
+      Assert.AreEqual(advanced, cache.SavedCheckpoint.Checkpoint);
+      cache.Dispose();
+      var tree = OpenNew().TryLoadTree(VersionHash, new FileSystemNameFactory(), new FullPath(_projectRoot), CancellationToken.None);
+      Assert.AreEqual(advanced, tree.Checkpoint);
+      Assert.AreEqual(advanced.TimeUtc, tree.Checkpoint.TimeUtc);
+    }
+
+    [TestMethod]
+    public void CheckpointUpdateOfAnotherIndexIsIgnored() {
+      var checkpoint = new ChangeJournalCheckpoint(0x1234, 0x5678, 1000);
+      var directories = new List<IndexCacheWriteDirectory> { new IndexCacheWriteDirectory("", false, new UInt128(0, 1), new[] { ToWriteItem(TextItem("a.cc", "int a;")) }) };
+      var cache = OpenNew();
+      cache.Write(directories, VersionHash, checkpoint, CancellationToken.None);
+      var (_, stamp) = cache.SavedCheckpoint;
+      Assert.IsTrue(cache.UpdateCheckpoint(checkpoint.WithUsn(5000), stamp));
+      // The index is written again (e.g. a save): the checkpoint of the previous index is obsolete.
+      Thread.Sleep(20);
+      cache.Write(directories, VersionHash, checkpoint.WithUsn(2000), CancellationToken.None);
+      Assert.IsFalse(cache.UpdateCheckpoint(checkpoint.WithUsn(9000), stamp), "Another index");
+      cache.Dispose();
+      var tree = OpenNew().TryLoadTree(VersionHash, new FileSystemNameFactory(), new FullPath(_projectRoot), CancellationToken.None);
+      Assert.AreEqual(2000L, tree.Checkpoint.Usn);
+
+      // A journal.bin of another index (e.g. left by a crash) is ignored and deleted.
+      var reopened = _caches.Last();
+      var (_, newStamp) = reopened.SavedCheckpoint;
+      Assert.IsTrue(reopened.UpdateCheckpoint(checkpoint.WithUsn(3000), newStamp));
+      reopened.Dispose();
+      File.SetLastWriteTimeUtc(IndexPath, DateTime.UtcNow.AddMinutes(-5));
+      tree = OpenNew().TryLoadTree(VersionHash, new FileSystemNameFactory(), new FullPath(_projectRoot), CancellationToken.None);
+      Assert.AreEqual(2000L, tree.Checkpoint.Usn);
+      Assert.IsFalse(File.Exists(Path.Combine(CacheDirectory, "journal.bin")));
+    }
+
+    [TestMethod]
     public void TreeIsNotUsedIfTheConfigurationChanged() {
       Write(new[] { TextItem("a.cc", "int a;") });
       var cache = OpenNew();

@@ -154,6 +154,10 @@ namespace VsChromium.Server.Cache {
     private const string LockFileName = "lock";
     private const string RootFileName = "root.txt";
     private const string TempIndexFileName = IndexCacheFile.IndexFileName + ".tmp";
+    private const string JournalFileName = "journal.bin";
+    private const string TempJournalFileName = JournalFileName + ".tmp";
+    private const uint JournalHeaderMagic = 0x4A435356; // "VSCJ"
+    private const int JournalFormatVersion = 1;
 
     private readonly object _writeLock = new object();
     private readonly string _rootPath;
@@ -358,7 +362,13 @@ namespace VsChromium.Server.Cache {
       if (File.Exists(_indexPath)) {
         var stopwatch = Stopwatch.StartNew();
         try {
+          var stampBefore = GetIndexStamp();
           (data, arenas) = ReadIndexAndMapArenas();
+          // The checkpoint of the last idle advance (journal.bin), if it belongs to this index.
+          var stamp = GetIndexStamp();
+          if (data != null && stamp == stampBefore) {
+            ApplyJournalFile(data, stamp);
+          }
           if (data != null) {
             Logger.LogInfo("Loaded the index cache of \"{0}\": {1:n0} entries, {2:n0} arena files, in {3:n0} ms.",
               _rootPath, data.Files.Length, data.Arenas.Count, stopwatch.ElapsedMilliseconds);
@@ -393,6 +403,8 @@ namespace VsChromium.Server.Cache {
           }
           _arenaUsage = ComputeUsage(data);
           SetDiskState(new FileInfo(_indexPath).Length, data.Arenas.Values);
+          _savedCheckpoint = data.Checkpoint;
+          _savedIndexStamp = GetIndexStamp();
         }
         var stopwatch = Stopwatch.StartNew();
         _lookup = new IndexCacheLookup(data, arenas, _caseSensitive);
@@ -588,8 +600,12 @@ namespace VsChromium.Server.Cache {
           }
         }
 
-        // Replace the index (atomic rename).
+        // Replace the index (atomic rename). The checkpoint of the previous index (journal.bin) is
+        // obsolete (it is also ignored if it can't be deleted: it is bound to the previous index).
+        TryDeleteFile(Path.Combine(Directory, JournalFileName));
         File.Move(tempPath, _indexPath, overwrite: true);
+        _savedCheckpoint = checkpoint;
+        _savedIndexStamp = GetIndexStamp();
 
         // Delete the arena files not referenced anymore (may fail if still mapped: they are deleted
         // by a later write, or when the cache is opened next time).
@@ -789,6 +805,7 @@ namespace VsChromium.Server.Cache {
     }
 
     private void DeleteContents() {
+      TryDeleteFile(Path.Combine(Directory, JournalFileName));
       TryDeleteFile(_indexPath);
       foreach (var (_, path) in EnumerateArenaFiles()) {
         TryDeleteFile(path);
@@ -850,6 +867,89 @@ namespace VsChromium.Server.Cache {
 
     /// <summary>True if the cache has an index (it was saved).</summary>
     public bool HasIndex => File.Exists(_indexPath);
+
+    // Change journal checkpoint of the saved index (under _writeLock).
+    private ChangeJournalCheckpoint _savedCheckpoint;
+    private IndexStamp _savedIndexStamp;
+
+    /// <summary>The identity of a written index: its size and last write time.</summary>
+    public readonly record struct IndexStamp(long Length, long LastWriteTimeTicks);
+
+    /// <summary>The change journal checkpoint of the saved index (or of its last idle advance), and the index it belongs to.</summary>
+    public (ChangeJournalCheckpoint Checkpoint, IndexStamp Stamp) SavedCheckpoint {
+      get {
+        lock (_writeLock) {
+          return (_savedCheckpoint, _savedIndexStamp);
+        }
+      }
+    }
+
+    private IndexStamp GetIndexStamp() {
+      var info = new FileInfo(_indexPath);
+      return info.Exists ? new IndexStamp(info.Length, info.LastWriteTimeUtc.Ticks) : default;
+    }
+
+    /// <summary>
+    /// Saves only a new change journal checkpoint of the saved index (idle advance: the tree didn't
+    /// change, the journal self-check found no difference), in <c>journal.bin</c> (written to a
+    /// temporary file, then renamed: atomic), bound to the index by its size and last write time.
+    /// Returns false if this server doesn't write the cache, or if the index is not <paramref
+    /// name="stamp"/> anymore (rewritten meanwhile).
+    /// </summary>
+    public bool UpdateCheckpoint(ChangeJournalCheckpoint checkpoint, IndexStamp stamp) {
+      lock (_writeLock) {
+        if (!IsWritable || stamp == default || GetIndexStamp() != stamp)
+          return false;
+        var tempPath = Path.Combine(Directory, TempJournalFileName);
+        using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096)) {
+          using (var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true)) {
+            writer.Write(JournalHeaderMagic);
+            writer.Write(JournalFormatVersion);
+            writer.Write(stamp.Length);
+            writer.Write(stamp.LastWriteTimeTicks);
+            IndexCacheFile.WriteCheckpoint(writer, checkpoint);
+            writer.Write(IndexCacheFile.TrailerMagic);
+          }
+          stream.Flush(flushToDisk: true);
+        }
+        File.Move(tempPath, Path.Combine(Directory, JournalFileName), overwrite: true);
+        _savedCheckpoint = checkpoint;
+        return true;
+      }
+    }
+
+    /// <summary>
+    /// Replaces the checkpoint of <paramref name="data"/> with the one of <c>journal.bin</c> if it
+    /// belongs to the index (<paramref name="stamp"/>) and is a later position of the same journal;
+    /// otherwise the file is ignored (and deleted by the writing server).
+    /// </summary>
+    private void ApplyJournalFile(IndexCacheIndex data, IndexStamp stamp) {
+      var path = Path.Combine(Directory, JournalFileName);
+      if (!File.Exists(path))
+        return;
+      ChangeJournalCheckpoint checkpoint = null;
+      try {
+        using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete, 4096))
+        using (var reader = new BinaryReader(stream, Encoding.UTF8)) {
+          if (reader.ReadUInt32() == JournalHeaderMagic && reader.ReadInt32() == JournalFormatVersion &&
+              reader.ReadInt64() == stamp.Length && reader.ReadInt64() == stamp.LastWriteTimeTicks) {
+            var candidate = IndexCacheFile.ReadCheckpoint(reader);
+            if (reader.ReadUInt32() == IndexCacheFile.TrailerMagic && stream.Position == stream.Length) {
+              checkpoint = candidate;
+            }
+          }
+        }
+      }
+      catch (Exception e) when (e is IOException || e is InvalidDataException || e is UnauthorizedAccessException) {
+        Logger.LogInfo("The change journal checkpoint of the index cache of \"{0}\" is invalid: {1}", _rootPath, e.Message);
+      }
+      if (checkpoint != null && data.Checkpoint != null && checkpoint.IsSameJournal(data.Checkpoint) && checkpoint.Usn >= data.Checkpoint.Usn) {
+        Logger.LogInfo("The change journal checkpoint of the index cache of \"{0}\" was advanced: {1}.", _rootPath, checkpoint);
+        data.Checkpoint = checkpoint;
+      } else if (IsWritable) {
+        TryDeleteFile(path);
+      }
+    }
 
     /// <summary>
     /// Note: Doesn't wait for a running write (no save at shutdown: it is cancelled by the caller,

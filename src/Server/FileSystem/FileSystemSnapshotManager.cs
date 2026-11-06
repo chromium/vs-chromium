@@ -110,6 +110,10 @@ namespace VsChromium.Server.FileSystem {
         // The journal self-check of the saves of the index cache: the differences it finds are
         // missed changes, applied as changes of the directory watcher.
         indexCache.CheckpointProvider = new ChangeJournalSelfCheck(changeJournal, fileSystem, DirectoryChangeWatcherOnPathsChanged).Run;
+        // The idle advance of the checkpoints: only on the current snapshot, when it is verified and
+        // the file system watch is active (not paused).
+        indexCache.CheckpointAdvanceAllowed = snapshot =>
+          !_isPaused && ReferenceEquals(snapshot, _currentSnapshot) && !snapshot.IsFromCache;
       }
       _fileSystemNameFactory = fileSystemNameFactory;
       _fileSystem = fileSystem;

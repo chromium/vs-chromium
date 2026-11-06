@@ -659,6 +659,8 @@ export interface IndexCacheStatistics {
   lastWriteCompactedArenaCount?: number;
   /** Bytes copied by the compaction of the last write. */
   lastWriteCompactedBytes?: number;
+  /** Change journal checkpoints saved alone while the index didn't change (idle advance, every 30 minutes). */
+  checkpointUpdateCount?: number;
   /**
    * Files not written by the last write because their time in the scan is not the time of their
    * contents: modified after the scan, or (on Windows) stale directory entries of hard links and

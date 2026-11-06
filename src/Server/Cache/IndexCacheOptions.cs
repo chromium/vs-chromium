@@ -38,6 +38,16 @@ namespace VsChromium.Server.Cache {
     /// <summary>... but at most this delay after the first unsaved index update.</summary>
     public static readonly TimeSpan DefaultSaveMaxDelay = TimeSpan.FromMinutes(5);
 
+    /// <summary>Test only: the interval of the idle advance of the change journal checkpoints, in milliseconds.</summary>
+    public const string CheckpointIntervalVariable = "VSCHROMIUM_TEST_CHECKPOINT_INTERVAL_MS";
+
+    /// <summary>
+    /// The interval of the idle advance of the change journal checkpoints of the caches (see
+    /// <c>IndexCache.AdvanceCheckpoints</c>): the journal of a volume keeps a few hours of changes
+    /// (32 MB by default on the system volume), a checkpoint older than that is lost.
+    /// </summary>
+    public static readonly TimeSpan DefaultCheckpointInterval = TimeSpan.FromMinutes(30);
+
     public IndexCacheOptions(string cacheDirectory) {
       CacheDirectory = cacheDirectory;
       SaveSettleDelay = DefaultSaveSettleDelay;
@@ -47,7 +57,13 @@ namespace VsChromium.Server.Cache {
         SaveSettleDelay = TimeSpan.FromMilliseconds(settle);
         SaveMaxDelay = TimeSpan.FromMilliseconds(max);
       }
+      CheckpointInterval = int.TryParse(Environment.GetEnvironmentVariable(CheckpointIntervalVariable), out var interval) && interval > 0
+        ? TimeSpan.FromMilliseconds(interval)
+        : DefaultCheckpointInterval;
     }
+
+    /// <summary>The interval of the idle advance of the change journal checkpoints of the caches.</summary>
+    public TimeSpan CheckpointInterval { get; set; }
 
     /// <summary>The cache is saved once the index is not updated during this delay (see <see cref="IndexCacheSaveScheduler"/>).</summary>
     public TimeSpan SaveSettleDelay { get; set; }

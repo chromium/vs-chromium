@@ -1101,6 +1101,18 @@ NTFS/ReFS change journal (USN journal). Windows specific code (see "Windows spec
   not active (the Dev Drive by default: enabling it needs an administrator, `fsutil usn
   createjournal`), recreated or wrapped, network drives and non NTFS/ReFS volumes, read errors,
   "Rebuild index" and refreshes.
+- **Idle checkpoint advance**: the journal keeps a few hours of changes (32 MB by default on
+  `C:`: ~4h45 overnight on the test machine), and the cache is only saved when the index changes:
+  the checkpoint of an idle server would be overwritten. Every 30 minutes
+  (`IndexCacheOptions.CheckpointInterval`, test override `VSCHROMIUM_TEST_CHECKPOINT_INTERVAL_MS`),
+  `IndexCache.AdvanceCheckpoints` runs the journal self-check on the saved state of each project
+  that didn't change since its last save (not dirty, no save running, not paused, not from the
+  cache, the current snapshot; projects without journal checkpoint are skipped); if it finds no
+  difference, only the new checkpoint is saved: `journal.bin` next to `index.bin` (written to a
+  temporary file, flushed, renamed: atomic), bound to the index by its size and last write time.
+  When the cache is opened, `journal.bin` replaces the checkpoint of the index if it belongs to it
+  (same index, same journal, later USN); a write of the index deletes it (it is ignored anyway if
+  that fails). Server statistics: `indexCache.checkpointUpdateCount`.
 - **Wrapped or recreated journal diagnostics**: the log and `lastVerification` give the USN and
   time of the checkpoint, the time of the oldest record of the journal (its history), its maximum
   size, and a hint (dashboard note): a wrapped journal is too small for the time since the cache

@@ -124,6 +124,11 @@ namespace VsChromium.Core.Files.Windows {
                                                             out uint volumeSerialNumber, out uint maximumComponentLength,
                                                             out uint fileSystemFlags, char* fileSystemName, uint fileSystemNameSize);
 
+    [LibraryImport("kernel32.dll", EntryPoint = "GetDriveTypeW", StringMarshalling = StringMarshalling.Utf16)]
+    public static partial uint GetDriveType(string rootPathName);
+
+    public const uint DRIVE_REMOTE = 4;
+
     /// <summary>
     /// The path to pass to the Win32 APIs: long paths (more than MAX_PATH characters) need the
     /// <c>\\?\</c> prefix (the .NET APIs add it themselves).

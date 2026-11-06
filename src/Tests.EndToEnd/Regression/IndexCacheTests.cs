@@ -605,6 +605,51 @@ public class IndexCacheTests {
     Assert.AreEqual(1, Directory.GetFiles(tree.CacheDirectory, "index.bin", SearchOption.AllDirectories).Length, "Saved again");
   }
 
+  /// <summary>
+  /// File symbolic links: their directory entry has the time and size of the link (e.g. 0 bytes),
+  /// their contents are the contents of the target. The scan uses the metadata of the target, so
+  /// that the verification after a restart doesn't read them again (they matched the cache), and
+  /// sees the changes of their target made while no server runs.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task FileSymbolicLinksAreNotReadAgainByTheVerification() {
+    using var tree = new TestTree();
+    var fileCount = tree.Generate();
+    Directory.CreateDirectory(Path.Combine(tree.Root, "tools"));
+    var target = Path.Combine(tree.Root, "tools", "target.cc");
+    TestTree.WriteFile(target, "// SYMLINK_TARGET_MARKER\n", OldTime);
+    for (var i = 0; i < 3; i++) {
+      try {
+        File.CreateSymbolicLink(Path.Combine(tree.Root, $"dir00{i}", "link.cc"), Path.Combine("..", "tools", "target.cc"));
+      }
+      catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+        Assert.Inconclusive("Symbolic links can't be created: " + e.Message);
+      }
+    }
+    fileCount += 4;
+    await ColdLoadAndWriteCacheAsync(tree);
+
+    await using (var server = await StartAndLoadAsync(tree, verifyDelayMs: 3000)) {
+      Assert.IsTrue(server.FirstLoaded["fromCache"]?.GetValue<bool>() ?? false);
+      Assert.AreEqual(4, await HitCountAsync(server.Client, "SYMLINK_TARGET_MARKER"), "The links are in the cache");
+      var cache = (await server.Client.RequestAsync(ServerProtocol.GetServerStatistics())).Data["indexCache"]!;
+      Assert.AreEqual(fileCount - 1, cache["lastLoadFilesFromCache"]!.GetValue<int>(), cache.ToJsonString());
+      await WaitForIdleAsync(server.Client);
+      // The verification only reads the large file (not the links).
+      cache = (await server.Client.RequestAsync(ServerProtocol.GetServerStatistics())).Data["indexCache"]!;
+      Assert.AreEqual(1, cache["lastLoadFilesFromDisk"]!.GetValue<int>(), cache.ToJsonString());
+    }
+
+    // The target changes while no server runs: the links change too.
+    TestTree.WriteFile(target, "// SYMLINK_TARGET_CHANGED\n", OldTime.AddMinutes(1));
+    await using (var server = await StartAndLoadAsync(tree, verifyDelayMs: 1000)) {
+      await WaitForIdleAsync(server.Client);
+      Assert.AreEqual(4, await HitCountAsync(server.Client, "SYMLINK_TARGET_CHANGED"));
+      Assert.AreEqual(0, await HitCountAsync(server.Client, "SYMLINK_TARGET_MARKER"));
+    }
+  }
+
   private static async Task<JsonNode> WaitForIndexCacheAsync(JsonRpcServerClient server, Func<JsonNode, bool> predicate, string description) {
     var stopwatch = Stopwatch.StartNew();
     while (true) {

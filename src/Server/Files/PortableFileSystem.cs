@@ -141,18 +141,56 @@ namespace VsChromium.Core.Files {
       // than MAX_PATH are not skipped (see "Behavior changes" in PORTING_PRINCIPLES.md).
       return new FileSystemEnumerable<DirectoryEntry>(
           path.Value,
-          (ref FileSystemEntry entry) => new DirectoryEntry(entry.FileName.ToString(), entry.Attributes,
-          new FileMetadata(entry.LastWriteTimeUtc.UtcDateTime, entry.Length)),
+          (ref FileSystemEntry entry) => CreateDirectoryEntry(ref entry),
           DirectoryEnumerationOptions)
         .ToList();
     }
+
+    private static DirectoryEntry CreateDirectoryEntry(ref FileSystemEntry entry) {
+      var attributes = entry.Attributes;
+      var metadata = new FileMetadata(entry.LastWriteTimeUtc.UtcDateTime, entry.Length);
+      // Note: The directory entry of a file symbolic link has the time and size of the link itself
+      // (e.g. 0 bytes), not of its target, while reading the file reads its target. The metadata
+      // of the target are used, so that the metadata of the scan are the metadata of the contents:
+      // the index cache matches them at the next start (instead of reading these files again each
+      // time), and changes of the target are seen by the scans.
+      if (IsFileReparsePoint(attributes) &&
+          TryGetLinkTargetMetadata(Path.Join(entry.Directory, entry.FileName), out var targetMetadata)) {
+        metadata = targetMetadata;
+      }
+      return new DirectoryEntry(entry.FileName.ToString(), attributes, metadata);
+    }
+
+    private static bool IsFileReparsePoint(FileAttributes attributes) {
+      return (attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == FileAttributes.ReparsePoint;
+    }
+
+    /// <summary>
+    /// The metadata of the final target of the file symbolic link <paramref name="path"/>. False if
+    /// the file is not a symbolic link (e.g. another kind of reparse point, like a cloud file
+    /// placeholder: not opened, so not downloaded), or if its target doesn't exist.
+    /// </summary>
+    public static bool TryGetLinkTargetMetadata(string path, out FileMetadata metadata) {
+      metadata = default;
+      try {
+        if (new FileInfo(path).ResolveLinkTarget(returnFinalTarget: true) is not FileInfo target || !target.Exists)
+          return false;
+        metadata = new FileMetadata(target.LastWriteTimeUtc, target.Length);
+        return true;
+      }
+      catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+        return false;
+      }
+    }
+
     public IFileSystemWatcher CreateDirectoryWatcher(FullPath path) {
       return new FileSystemWatcherImpl(path);
     }
 
     /// <summary>
     /// Snapshot of the attributes of a file or directory, read when the
-    /// instance is created.
+    /// instance is created. For file symbolic links: the time and size of
+    /// their target (see <see cref="CreateDirectoryEntry"/>).
     /// </summary>
     private sealed class PortableFileInfoSnapshot : IFileInfoSnapshot {
       private readonly FullPath _path;
@@ -174,6 +212,10 @@ namespace VsChromium.Core.Files {
           _attributes = attributes;
           _lastWriteTimeUtc = info.LastWriteTimeUtc;
           _length = ((attributes & FileAttributes.Directory) == 0) ? info.Length : 0;
+          if (IsFileReparsePoint(attributes) && TryGetLinkTargetMetadata(path.Value, out var targetMetadata)) {
+            _lastWriteTimeUtc = targetMetadata.LastWriteTimeUtc;
+            _length = targetMetadata.Length;
+          }
         }
         catch (Exception e) {
           _error = e;

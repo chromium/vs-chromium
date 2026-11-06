@@ -137,5 +137,57 @@ namespace VsChromium.Tests.Core {
     public void GetDirectoryEntriesOfMissingDirectoryThrows() {
       Assert.Throws<IOException>(() => _fileSystem.GetDirectoryEntries(RootPath.Combine(new RelativePath("missing"))));
     }
+
+    /// <summary>
+    /// Creates a file symbolic link (relative target), or marks the test inconclusive if symbolic
+    /// links can't be created (Windows without developer mode or elevation).
+    /// </summary>
+    private static void CreateFileSymbolicLink(string linkPath, string relativeTarget) {
+      try {
+        File.CreateSymbolicLink(linkPath, relativeTarget);
+      }
+      catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+        Assert.Inconclusive("Symbolic links can't be created: " + e.Message);
+      }
+    }
+
+    [TestMethod]
+    public void GetDirectoryEntriesReturnsTheMetadataOfTheTargetOfFileSymbolicLinks() {
+      Directory.CreateDirectory(Path.Combine(_root, "tools"));
+      var target = Path.Combine(_root, "tools", "target.txt");
+      File.WriteAllText(target, "contents of the target");
+      File.SetLastWriteTimeUtc(target, new DateTime(2026, 8, 19, 14, 39, 41, DateTimeKind.Utc));
+      CreateFileSymbolicLink(Path.Combine(_root, "link.txt"), Path.Combine("tools", "target.txt"));
+
+      var link = _fileSystem.GetDirectoryEntries(RootPath).Single(x => x.Name == "link.txt");
+      Assert.IsTrue(link.IsFile);
+      Assert.IsTrue(link.IsSymLink);
+      Assert.AreEqual(new FileMetadata(File.GetLastWriteTimeUtc(target), new FileInfo(target).Length), link.Metadata);
+
+      // The metadata of the contents read through the link are the same (index cache match).
+      using (var block = _fileSystem.ReadFileNulTerminated(RootPath.Combine(new RelativePath("link.txt")), 2, out var readTime)) {
+        Assert.AreEqual(link.Metadata.LastWriteTimeUtc, readTime);
+        Assert.AreEqual(link.Metadata.Length + 2, block.ByteLength);
+      }
+
+      // A change of the target is a change of the link.
+      File.WriteAllText(target, "new contents of the target, longer");
+      var changed = _fileSystem.GetDirectoryEntries(RootPath).Single(x => x.Name == "link.txt");
+      Assert.AreEqual(new FileInfo(target).Length, changed.Metadata.Length);
+      Assert.AreNotEqual(link.Metadata, changed.Metadata);
+
+      var info = _fileSystem.GetFileInfoSnapshot(RootPath.Combine(new RelativePath("link.txt")));
+      Assert.IsTrue(info.IsSymLink);
+      Assert.AreEqual(changed.Metadata, new FileMetadata(info.LastWriteTimeUtc, info.Length));
+    }
+
+    [TestMethod]
+    public void GetDirectoryEntriesKeepsTheMetadataOfDanglingFileSymbolicLinks() {
+      CreateFileSymbolicLink(Path.Combine(_root, "dangling.txt"), "missing.txt");
+      var link = _fileSystem.GetDirectoryEntries(RootPath).Single(x => x.Name == "dangling.txt");
+      Assert.IsTrue(link.IsFile);
+      Assert.IsTrue(link.IsSymLink);
+      Assert.AreEqual(0L, link.Metadata.Length);
+    }
   }
 }

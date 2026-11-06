@@ -2,7 +2,7 @@
   "name": "vs-chromium",
   "displayName": "VsChromium",
   "description": "Instant indexed code search for very large source trees (e.g. Chromium), powered by the VsChromium indexing server.",
-  "version": "0.1.0",
+  "version": "0.10.0",
   "publisher": "chromium",
   "license": "BSD-3-Clause",
   "repository": {

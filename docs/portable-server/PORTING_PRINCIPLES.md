@@ -1006,7 +1006,7 @@ nothing to the steady state managed heap. Searches are unchanged (within run-to-
 
 ### Persistent index cache (phase 2: cached tree, verified in the background)
 
-`index.bin` (format version 3) also contains the tree of the project (all the directories in depth
+`index.bin` (format version 3, 4 since the change journal verification below) also contains the tree of the project (all the directories in depth
 first order with their symbolic link flag, all the files with their last write time and size,
 including the files without cached contents: larger than 512 KB, not searchable, modified during
 the load) and the version hash of the project configuration. When a project is registered and its
@@ -1051,7 +1051,86 @@ The verification (scan, comparison, incremental update of 400 large files) takes
 corpus, whose scan is fast (D:, ReFS, 393k files): on a 2.65M entry tree, the scan (15–17 s) is
 most of the time to first search of phase 1, and phase 2 publishes the cached index before it.
 
-### Persistent index cache: save policy
+### Index cache verification from the change journal (Windows)
+
+The verification of phase 2 scans the whole project: 10 s on a 2.65M-file project (640k
+directories) on an idle machine, 15-54 s at startup (worker pool throttled to 4 threads), almost all
+kernel time (about 240 µs per directory, mostly file system filter drivers). On Windows, the
+verification lists again only the directories that changed while no server was running, from the
+NTFS/ReFS change journal (USN journal). Windows specific code (see "Windows specific code" in
+[File system](#file-system)), selected at runtime; the full scan stays the fallback.
+
+- **Reading the journal without privilege**: a handle to the volume needs administrator rights,
+  but a handle to any directory of the volume (the project root) works with
+  `FSCTL_QUERY_USN_JOURNAL` and `FSCTL_READ_UNPRIVILEGED_USN_JOURNAL` (`WindowsChangeJournal`).
+  The unprivileged records have no name: file id, parent directory id, reasons, attributes
+  (`USN_RECORD_V2/V3/V4`, `UsnRecordParser`). The read must start at a record boundary (the next
+  USN of a query, saved as the checkpoint).
+- **Directory ids** (`WindowsFileSystem`: `NtQueryDirectoryFile` with
+  `FileIdExtdDirectoryInformation`, 64 KB buffer): the 128-bit id of each directory, from the
+  enumeration of its parent, is in the snapshot (`DirectoryData.FileId`) and in the cache. Cache
+  format 4: directory ids (16 bytes per directory), a "symbolic link" flag per file, and the
+  checkpoint in the header (volume serial number, journal id, USN). Scan of the large project:
+  10.4-10.5 s portable vs 10.7-11.1 s (23 threads), 31-32.5 s vs 28.7 s (4 threads): no
+  significant difference (kernel time dominates).
+- **Catch-up** (`FileSystemSnapshotBuilder.TryCatchUp`, `ChangeJournalDirectoryMapper`,
+  `ProjectRootSnapshotBuilder.CatchUp`): query the journal (same volume and journal id as the
+  checkpoint, checkpoint not overwritten), read the records from the checkpoint to the end read
+  first, map them: a known parent id marks that directory; a known id of a directory record marks
+  its parent in the tree (moves out of the project have the new parent); directory records only
+  count for create, delete, rename and reparse point reasons; unknown ids are ignored (outside the
+  project, ignored directories, new directories: found by the listing of their parent). Marked
+  directories and directories without id are listed again; their new or replaced subdirectories
+  (other id) are scanned entirely, as well as the subtrees of directory symbolic links and
+  junctions (their records have the ids of the target, possibly on another volume); file symbolic
+  links are checked again in parallel (their metadata are the target's, whose changes are not
+  changes of their directory); everything else is reused. Then `SnapshotDiff` and the
+  incremental update, as before.
+- **Fallbacks** (full scan, reason logged and in `project/details`
+  `operations.lastVerification`, shown by the dashboard): other OSes, no checkpoint or no
+  directory ids in the cache (older format, or saved while the journal was not usable), journal
+  not active (the Dev Drive by default: enabling it needs an administrator, `fsutil usn
+  createjournal`), recreated or wrapped, network drives and non NTFS/ReFS volumes, read errors,
+  "Rebuild index" and refreshes.
+- **Checkpoint**: every change before it must be in the saved tree. After a full scan: the end of
+  the journal read before the scan (changes during the scan are listed twice, never missed); the
+  incremental updates share the checkpoint of the scan they derive from
+  (`ChangeJournalCheckpointHolder`). Each save of the cache runs a **journal self-check**
+  (`ChangeJournalSelfCheck`): it reads the records from the checkpoint to the current end U', lists
+  the marked directories again and compares them with the saved tree (names, directory ids, saved
+  metadata of the files); no difference: saved with U' (and the checkpoint in memory advances);
+  differences (missed or late watcher events): applied as changes, and saved with the current
+  checkpoint. A verification without tree change still saves the cache when its checkpoint must
+  change (after a full scan with a checkpoint, or after a catch-up that read more than half of the
+  journal).
+
+Benchmarks (`verifybench`, Release, Windows enumerator; catch-up time = journal read + mapping +
+listings; 23 threads unless noted):
+
+| Tree | Full scan | Catch-up, no change | Catch-up, changes |
+|---|---|---|---|
+| Synthetic, 100k files, 10.4k directories (C:, NTFS) | 130-139 ms | 2-12 ms (0 directories listed) | 100 touched files: 6-16 ms (99-393 directories); 2,000: 39-80 ms (1.8k-5.5k directories) |
+| `large-1-400000-v1` (D:, Dev Drive, ReFS) | 255-325 ms | fallback: "the change journal is not active on D:\" | - |
+| A large project, 2.65M files, 640k directories (C:) | 10.4-10.6 s | 6.6-6.9 s (0 directories listed, 194 directory symbolic links scanned, 5,412 file links checked) | from the oldest record (485k records, 37 MB): 6.7-6.8 s |
+| Same, 4 threads | 28.9 s | 18.8-19.5 s | - |
+
+On the large project the journal read and the mapping are negligible: the catch-up time is the
+full scan of the subtrees of its 194 directory symbolic links, which hold most of its directories
+(see "Known limitations").
+
+Known limitations:
+
+- Directory symbolic links and junctions are always scanned entirely by the catch-up.
+- Hard links: the directory entry of the other names of a file modified through one name is not
+  updated by NTFS, nor is its parent recorded for them: same limitation as the full scan.
+- The self-check advances the checkpoint shared by the incremental updates: an incremental update
+  applied wrongly from a watcher event (not observed in practice) to a directory whose last record
+  is before the checkpoint would not be listed again at the next start.
+- The files of a deleted directory can be reported deleted by the self-check (its records mark
+  the deleted directory, listed again by path): harmless.
+- ReFS (128-bit ids, V3 records) is untested: the Dev Drive journal is not active on the test
+  machine.
+
 
 The cache is saved when the index changed since the last save (any update: full load, tree
 changes, edits of existing files), once the changes settle: 30 s without index update, but at most

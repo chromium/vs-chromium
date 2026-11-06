@@ -157,7 +157,10 @@ namespace VsChromium.Server.FileSystem.Builder {
         return null;
       }
       if (checkpoint == null) {
-        Fail("the index cache has no change journal checkpoint");
+        // Note: The reason why the journal can't be used, if any (e.g. not active on the volume:
+        // the cache was saved without checkpoint).
+        var state = _changeJournal.Query(project.RootPath);
+        Fail(state.IsSuccess ? "the index cache has no change journal checkpoint" : state.FailureReason);
         return null;
       }
       if (oldRoot.Directory.FileId == UInt128.Zero) {

@@ -108,7 +108,7 @@ options; the bench detects them in the usage text of the server (`<server> --hel
 
 `pwsh src/Tools/Bench/publish.ps1` (or `src/Tools/Bench/publish.sh`) publishes self-contained
 single-file executables to `Binaries/Publish/Bench/<rid>/` for `win-x64`, `win-arm64`, `linux-x64`,
-`linux-arm64`, `osx-arm64`:
+`linux-arm64`, `osx-x64`, `osx-arm64`:
 
 - NativeAOT for the platforms of the OS running the script (NativeAOT doesn't cross-compile to
   another OS). The app has no dependency blocking NativeAOT (source generated JSON, `LibraryImport`).
@@ -116,6 +116,11 @@ single-file executables to `Binaries/Publish/Bench/<rid>/` for `win-x64`, `win-a
   native tools of the target architecture are missing.
 
 No .NET is needed on the target machine.
+
+The releases include vschromium-bench for every platform (`vschromium-bench-<version>-<rid>.zip`),
+each built on its platform (NativeAOT, code signed on macOS), and the server archives that
+`--server release:<tag>` downloads (`vschromium-server-<version>-<rid>.zip`): see
+[docs/release.md](../../../docs/release.md).
 
 Status (published from Windows x64, SDK 10.0.401):
 

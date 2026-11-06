@@ -2,20 +2,10 @@ When making a new release
 
 Master branch
 =============
-1. Update version # in all files:
-  * "Find In Files": "0.9.xx", "Entire Solution"
-    * src\Core\VsChromiumVersion.cs
-    * src\VsChromium\source.extension.vsixmanifest (PackageManifest\Metadata\Identity\@Version)
-
-2. Build
-
-3. Check all unit test pass
-
-4. Commit and push to github
-
-5. Create a release named "vx.y.x" (e.g. v0.2.2) on github
-   * Create the tag "vx.y.z"
-   * Attach the vsix file built in step 2.
+See docs/release.md: bump the version (node tools/release/set-version.js
+<version>), write docs/release-notes/<version>.md, build and test the packages
+locally (tools/release/build-release.ps1), push the tag v<version>, review and
+publish the draft GitHub release created by .github/workflows/release.yml.
 
 
 gh-pages branch

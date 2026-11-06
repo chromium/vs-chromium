@@ -5,7 +5,7 @@
 #     another OS; falls back to single-file if the native tools of the target are missing);
 #   - single-file, trimmed, compressed (.NET runtime included) for the other platforms.
 #
-# Usage: src/Tools/Bench/publish.sh [rid...]   (default: win-x64 win-arm64 linux-x64 linux-arm64 osx-arm64)
+# Usage: src/Tools/Bench/publish.sh [rid...]   (default: win-x64 win-arm64 linux-x64 linux-arm64 osx-x64 osx-arm64)
 #        NO_AOT=1 src/Tools/Bench/publish.sh   (single-file only)
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
@@ -17,7 +17,7 @@ case "$(uname -s)" in
   Linux) host_os=linux ;;
   *) host_os=win ;;
 esac
-[ $# -gt 0 ] || set -- win-x64 win-arm64 linux-x64 linux-arm64 osx-arm64
+[ $# -gt 0 ] || set -- win-x64 win-arm64 linux-x64 linux-arm64 osx-x64 osx-arm64
 
 summary=""
 for rid in "$@"; do

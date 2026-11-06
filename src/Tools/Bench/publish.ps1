@@ -7,7 +7,7 @@
 #
 # Usage: pwsh src/Tools/Bench/publish.ps1 [-Rids win-x64,linux-x64] [-NoAot] [-Configuration Release]
 param(
-  [string[]]$Rids = @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-arm64'),
+  [string[]]$Rids = @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64'),
   [string]$Configuration = 'Release',
   [switch]$NoAot
 )

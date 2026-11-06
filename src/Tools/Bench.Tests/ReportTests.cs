@@ -315,3 +315,31 @@ public class ShareableReportTests {
     Assert.DoesNotContain(Host, text);
   }
 }
+
+[TestClass]
+public class FileChangesTests {
+  /// <summary>Files seen through symbolic links are never modified (their links would keep the old contents in the index).</summary>
+  [TestMethod]
+  public void LinkTargetsAreNotModified() {
+    var root = Path.Combine(Path.GetTempPath(), "VsChromiumBenchChanges-" + Guid.NewGuid().ToString("N"));
+    try {
+      Directory.CreateDirectory(Path.Combine(root, "a"));
+      Directory.CreateDirectory(Path.Combine(root, "linked"));
+      Directory.CreateDirectory(Path.Combine(root, "out"));
+      File.WriteAllText(Path.Combine(root, "a", "plain.cc"), "x");
+      File.WriteAllText(Path.Combine(root, "a", "target.cc"), "x");
+      File.WriteAllText(Path.Combine(root, "linked", "inside.cc"), "x");
+      File.WriteAllText(Path.Combine(root, "out", "build.cc"), "x");
+      if (CodeBaseGenerator.CanCreateSymlinks(root) is { } reason) {
+        Assert.Inconclusive($"Symbolic links not available: {reason}");
+      }
+      File.CreateSymbolicLink(Path.Combine(root, "a", "target_link.cc"), "target.cc");
+      Directory.CreateSymbolicLink(Path.Combine(root, "a", "linked_dirlink"), Path.Combine("..", "linked"));
+      var changes = Scenarios.FileChanges.Scan(root);
+      Assert.AreEqual(1, changes.CandidateCount);
+      CollectionAssert.AreEqual(new[] { Path.Combine(root, "a", "plain.cc") }, changes.Select(10, salt: 1));
+    } finally {
+      Directory.Delete(root, recursive: true);
+    }
+  }
+}

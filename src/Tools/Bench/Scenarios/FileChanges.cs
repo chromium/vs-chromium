@@ -26,17 +26,39 @@ public sealed class FileChanges {
 
   /// <summary>
   /// The text files of the corpus (not in "out/", not links, smaller than 1 MB), sorted by path:
-  /// the same list on every machine for the same corpus.
+  /// the same list on every machine for the same corpus. Files seen through symbolic links (targets
+  /// of file links, files of linked directories) are excluded: a change of a link target is not a
+  /// change of the link for the file system watcher, so the expected number of hits of the marker
+  /// would depend on the server's handling of links.
   /// </summary>
   public static FileChanges Scan(string root) {
-    var options = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true };
     var outDir = Path.Combine(root, "out") + Path.DirectorySeparatorChar;
     var files = new List<string>();
-    foreach (var info in new DirectoryInfo(root).EnumerateFiles("*", options)) {
-      if (TextExtensions.Contains(info.Extension) && info.Length < 1 << 20 && !info.FullName.StartsWith(outDir, StringComparison.Ordinal)) {
-        files.Add(info.FullName);
+    var linkedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var linkedDirectories = new List<string>();
+    var pending = new Stack<string>();
+    pending.Push(root);
+    while (pending.Count > 0) {
+      var directory = new DirectoryInfo(pending.Pop());
+      foreach (var entry in directory.EnumerateFileSystemInfos("*", new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = 0 })) {
+        if (entry.LinkTarget != null) {
+          var target = Path.GetFullPath(Path.Combine(directory.FullName, entry.LinkTarget));
+          if (entry is DirectoryInfo) {
+            linkedDirectories.Add(target.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+          } else {
+            linkedFiles.Add(target);
+          }
+          continue;
+        }
+        if (entry is DirectoryInfo) {
+          pending.Push(entry.FullName);
+        } else if (entry is FileInfo info && TextExtensions.Contains(info.Extension) && info.Length < 1 << 20 &&
+                   !info.FullName.StartsWith(outDir, StringComparison.Ordinal)) {
+          files.Add(info.FullName);
+        }
       }
     }
+    files.RemoveAll(f => linkedFiles.Contains(f) || linkedDirectories.Any(d => f.StartsWith(d, StringComparison.OrdinalIgnoreCase)));
     files.Sort(StringComparer.Ordinal);
     return new FileChanges(files);
   }

@@ -11,7 +11,8 @@ namespace VsChromium.Bench.Servers;
 /// <summary>
 /// The benchmark features supported by a server, detected without assuming a version: the options
 /// listed in the usage text of the server (printed for an unknown argument, e.g. "--help"), and the
-/// "bench/*" requests listed by "server/initialize" when the server runs with "--bench". Older
+/// "bench/*" requests listed by "server/initialize" ("bench": { "requests": [...] }) when the server
+/// runs with "--bench". Older
 /// servers have none of them: the bench then uses the existing protocol only.
 /// </summary>
 public sealed partial record ServerCapabilities(IReadOnlySet<string> Options, IReadOnlySet<string> BenchRequests) {
@@ -46,9 +47,9 @@ public sealed partial record ServerCapabilities(IReadOnlySet<string> Options, IR
   public static ServerCapabilities FromUsage(string usage) =>
     new(OptionPattern().Matches(usage).Select(m => m.Value).ToHashSet(), new HashSet<string>());
 
-  /// <summary>Adds the "bench/*" requests listed by "server/initialize" ("benchRequests": [...]).</summary>
+  /// <summary>Adds the "bench/*" requests listed by "server/initialize" ("bench": { "requests": [...] }).</summary>
   public ServerCapabilities WithInitializeResult(JsonObject initializeResult) {
-    var requests = (initializeResult["benchRequests"] as JsonArray ?? []).Select(n => (string?)n).OfType<string>().ToHashSet();
+    var requests = (initializeResult["bench"]?["requests"] as JsonArray ?? []).Select(n => (string?)n).OfType<string>().ToHashSet();
     return this with { BenchRequests = requests };
   }
 

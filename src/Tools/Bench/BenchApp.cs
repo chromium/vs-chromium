@@ -235,18 +235,21 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
 
     // 7. Scenarios.
     var cacheDirectory = Path.Combine(corporaDir, "bench-cache-" + spec.DirectoryName);
-    var context = new RunContext(corpus, server.Path, capabilities, cacheDirectory, resolved.Scenarios!, resolved.Repeat!.Value, flush,
-                                 resolved.ChangeCounts ?? BenchOptions.DefaultChangeCounts, resolved.ThreadCounts ?? BenchOptions.DefaultThreadCounts,
-                                 resolved.KeepServer, Log, cancellation);
     List<ScenarioResult> scenarios;
     string serverVersion = "", serverRuntime = "";
     var protocolVersion = 0;
+    RunContext context;
     try {
+      // The version of the server, and its "bench/*" requests (listed by "server/initialize").
       await using (var probe = await ServerHost.StartAsync(server.Path, null, capabilities, _clock)) {
         serverVersion = (string?)probe.Client.InitializeResult["serverVersion"] ?? "";
         protocolVersion = (int?)probe.Client.InitializeResult["protocolVersion"] ?? 0;
         serverRuntime = (string?)(await probe.StatisticsAsync())["runtimeDescription"] ?? "";
+        capabilities = probe.Capabilities;
       }
+      context = new RunContext(corpus, server.Path, capabilities, cacheDirectory, resolved.Scenarios!, resolved.Repeat!.Value, flush,
+                               resolved.ChangeCounts ?? BenchOptions.DefaultChangeCounts, resolved.ThreadCounts ?? BenchOptions.DefaultThreadCounts,
+                               resolved.KeepServer, Log, cancellation);
       await using var runner = new ScenarioRunner(context);
       scenarios = await runner.RunAsync();
     } finally {

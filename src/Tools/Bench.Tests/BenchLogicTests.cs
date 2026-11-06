@@ -120,11 +120,11 @@ public class ReleaseAssetTests {
     Assert.IsFalse(old.Threads);
     Assert.IsEmpty(old.ToList());
     var recent = ServerCapabilities.FromUsage("--jsonrpc [--bench] [--threads <n>] [--watcher-delay-ms <ms>] [--no-journal]")
-      .WithInitializeResult(JsonNode.Parse("""{ "benchRequests": ["bench/saveCache", "bench/phases"] }""")!.AsObject());
+      .WithInitializeResult(JsonNode.Parse("""{ "bench": { "requests": ["bench/saveCache", "bench/phases"] } }""")!.AsObject());
     Assert.IsTrue(recent.Bench && recent.Threads && recent.WatcherDelay && recent.NoJournal && recent.SaveCache && recent.Phases);
     CollectionAssert.AreEqual(new[] { "--bench", "--no-journal", "--threads", "--watcher-delay-ms", "bench/phases", "bench/saveCache" }, recent.ToList());
     // bench/* requests need --bench.
-    var noBench = ServerCapabilities.FromUsage("--threads").WithInitializeResult(JsonNode.Parse("""{ "benchRequests": ["bench/saveCache"] }""")!.AsObject());
+    var noBench = ServerCapabilities.FromUsage("--threads").WithInitializeResult(JsonNode.Parse("""{ "bench": { "requests": ["bench/saveCache"] } }""")!.AsObject());
     Assert.IsFalse(noBench.SaveCache);
   }
 }

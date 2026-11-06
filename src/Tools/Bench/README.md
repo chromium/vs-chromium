@@ -76,13 +76,13 @@ At the end of an interactive run, the bench offers to save `rerun-<name>.cmd` (W
 The bench only uses the existing protocol (`index/loaded` notifications, `server/statistics`,
 `project/details` with `operations.lastVerification`, `--cache-dir`, `--no-cache`) and the
 `VSCHROMIUM_TEST_CACHE_SAVE_DELAYS_MS` variable (cache saved 1 s after the index settles instead of
-30 s, so that the bench doesn't wait). Newer servers can offer more; the bench detects them in the
-usage text of the server (`<server> --help`) and in `server/initialize`, and uses them only when
-present:
+30 s, so that the bench doesn't wait). Newer servers (from the commit adding them) have benchmark
+options; the bench detects them in the usage text of the server (`<server> --help`) and in
+`server/initialize`, and uses them only when present (older servers and releases keep working):
 
 | Server feature | Used for |
 |---|---|
-| `--bench` | Started with it; enables the `bench/*` requests listed in `server/initialize` (`benchRequests`) |
+| `--bench` | Started with it; enables the `bench/*` requests listed in `server/initialize` (`bench.requests`) |
 | `--threads N` | Scenario 8 (skipped otherwise) |
 | `--watcher-delay-ms N` | Reported in scenario 4 |
 | `--no-journal` | Scenario 5 also measures the full-scan catch-up |

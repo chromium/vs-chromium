@@ -165,7 +165,16 @@ public sealed class ScenarioRunner(RunContext context) : IAsyncDisposable {
     }
     try {
       var phases = await host.RequestAsync(new ServerRequest(ServerCapabilities.PhasesRequest, new JsonObject { ["projectPath"] = Root }));
+      // "phases": the last duration of each operation of the server.
+      foreach (var phase in (phases["phases"] as JsonArray ?? []).OfType<JsonObject>()) {
+        if ((string?)phase["name"] is { } phaseName && Stats.Double(phase, "lastMs") is { } lastMs) {
+          metrics.Add($"{prefix}{phaseName}", "ms", lastMs);
+        }
+      }
       foreach (var (name, value) in Flatten(phases, "")) {
+        if (name.StartsWith("cpu", StringComparison.Ordinal)) {
+          continue; // CPU time since the start of the process: measured per phase from outside.
+        }
         metrics.Add($"{prefix}{name}", name.EndsWith("Ms", StringComparison.Ordinal) ? "ms" : "count", value);
       }
     } catch (ServerErrorException e) {
@@ -377,7 +386,7 @@ public sealed class ScenarioRunner(RunContext context) : IAsyncDisposable {
   private async Task<ScenarioResult> LiveAsync() {
     var metrics = new MetricSet();
     var info = new Dictionary<string, string> {
-      ["watcher delay"] = context.Capabilities.WatcherDelay ? "server default" : "server default (0.5 s debounce, not configurable by this server)",
+      ["watcher delay"] = context.Capabilities.WatcherDelay ? "server default (0.5 s debounce; the server supports --watcher-delay-ms)" : "server default (0.5 s debounce, not configurable by this server)",
     };
     var notes = new List<string> { "time from the last write to the index update with all the changes (index/loaded notification); includes the watcher delay" };
     var host = await GetReadyServerAsync();

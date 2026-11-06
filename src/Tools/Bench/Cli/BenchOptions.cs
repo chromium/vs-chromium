@@ -5,7 +5,7 @@
 namespace VsChromium.Bench.Cli;
 
 /// <summary>The commands of the benchmark app.</summary>
-public enum BenchCommand { Run, Compare, Cleanup, Inventory, Help }
+public enum BenchCommand { Run, Compare, Report, Cleanup, Inventory, Help }
 
 /// <summary>Answer to a question asked when the bench runs elevated (admin/root): yes, no, or ask.</summary>
 public enum YesNoAsk { Ask, Yes, No }
@@ -74,7 +74,18 @@ public sealed record BenchOptions {
   /// <summary>Data directory of the bench (downloaded servers, index caches).</summary>
   public string? DataDirectory { get; init; }
 
-  /// <summary>"compare": the result files.</summary>
+  /// <summary>
+  /// Free text label of the machine in the shareable reports (included verbatim: no personal data).
+  /// </summary>
+  public string? MachineLabel { get; init; }
+
+  /// <summary>The directory of the shareable reports (default: the results directory).</summary>
+  public string? ReportDirectory { get; init; }
+
+  /// <summary>Omit the security products and filter drivers from the shareable reports.</summary>
+  public bool RedactSecurity { get; init; }
+
+  /// <summary>"compare" and "report": the result files.</summary>
   public IReadOnlyList<string> Files { get; init; } = [];
 
   /// <summary>"compare": the output Markdown file (default: printed only).</summary>

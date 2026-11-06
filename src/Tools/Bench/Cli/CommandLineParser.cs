@@ -15,11 +15,12 @@ public sealed class CommandLineException(string message) : Exception(message);
 /// </summary>
 public static class CommandLineParser {
   public const string Usage = """
-    Usage: vschromium-bench [run|compare|cleanup|inventory|help] [options]
+    Usage: vschromium-bench [run|compare|report|cleanup|inventory|help] [options]
 
     Commands:
       run (default)   Run the benchmark (interactive unless --non-interactive).
       compare <files> Side-by-side Markdown table of result files (.json).
+      report <files>  Shareable report (Markdown, no personal data) of result files (.json).
       cleanup         Delete generated corpora, index caches, downloaded servers.
       inventory       Show the machine and disk inventory.
 
@@ -42,8 +43,12 @@ public static class CommandLineParser {
       --label <text>             Label of the run (column header of compare).
       --rerun-script <path|none> Rerun script to write (default: asked, or rerun-<name>.cmd/.sh).
       --data-dir <dir>           Data directory of the bench (downloaded servers, caches).
+      --report-dir <dir>         Directory of the shareable report (default: the results directory).
+      --machine-label <text>     Label of the machine in the shareable report (included verbatim).
+      --redact-security          Omit security products and filter drivers from the shareable report.
 
     Options of "compare":   <files...> [--output <file.md>]
+    Options of "report":    <files...> [--report-dir <dir>] [--machine-label <text>] [--redact-security]
     Options of "cleanup":   [--corpora] [--caches] [--servers] [--results] [--all] [--disk <d>] [--yes]
     Options of "inventory": [--json] [--list-filters <yes|no>]
     """;
@@ -64,7 +69,7 @@ public static class CommandLineParser {
           options = options with { Command = BenchCommand.Help };
           continue;
         }
-        if (options.Command == BenchCommand.Compare) {
+        if (options.Command is BenchCommand.Compare or BenchCommand.Report) {
           files.Add(arg);
           continue;
         }
@@ -115,6 +120,9 @@ public static class CommandLineParser {
         case "label": options = options with { Label = Value() }; break;
         case "rerun-script": options = options with { RerunScript = Value() }; break;
         case "data-dir": options = options with { DataDirectory = Value() }; break;
+        case "machine-label": options = options with { MachineLabel = Value() }; break;
+        case "report-dir": options = options with { ReportDirectory = Value() }; break;
+        case "redact-security": NoValue(); options = options with { RedactSecurity = true }; break;
         case "output": options = options with { Output = Value() }; break;
         case "corpora" or "caches" or "servers" or "results" or "all": NoValue(); cleanup.Add(name); break;
         case "yes" or "y": NoValue(); options = options with { Yes = true }; break;
@@ -122,8 +130,8 @@ public static class CommandLineParser {
         default: throw new CommandLineException($"Unknown option --{name}.");
       }
     }
-    if (options.Command == BenchCommand.Compare && files.Count == 0) {
-      throw new CommandLineException("compare: no result files.");
+    if (options.Command is BenchCommand.Compare or BenchCommand.Report && files.Count == 0) {
+      throw new CommandLineException($"{options.Command.ToString().ToLowerInvariant()}: no result files.");
     }
     if (cleanup.Count > 0 && options.Command != BenchCommand.Cleanup) {
       throw new CommandLineException($"--{cleanup[0]} is an option of \"cleanup\".");
@@ -134,6 +142,7 @@ public static class CommandLineParser {
   private static BenchCommand ParseCommand(string text) => text.ToLowerInvariant() switch {
     "run" => BenchCommand.Run,
     "compare" => BenchCommand.Compare,
+    "report" => BenchCommand.Report,
     "cleanup" => BenchCommand.Cleanup,
     "inventory" => BenchCommand.Inventory,
     "help" => BenchCommand.Help,

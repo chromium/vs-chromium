@@ -12,6 +12,7 @@ vschromium-bench                       # interactive: menus with defaults (Enter
 vschromium-bench run --non-interactive --disk D: --corpus 400k --server auto --repeat 3 --cache warm
 vschromium-bench inventory [--json]    # machine, disks, antivirus
 vschromium-bench compare results/*.json [--output comparison.md]
+vschromium-bench report results/<run>.json [--report-dir docs/benchmarks/results] [--machine-label <text>] [--redact-security]
 vschromium-bench cleanup [--corpora] [--caches] [--servers] [--results] [--all] [--disk D:] [--yes]
 vschromium-bench help                  # all the options
 ```
@@ -70,6 +71,15 @@ At the end of an interactive run, the bench offers to save `rerun-<name>.cmd` (W
    otherwise the run is labeled "warm only".
 6. **Results**: `results/<machine>-<disk>-<corpus>-<timestamp>.json` (inventory, server, options,
    every value) and a Markdown summary next to it. Results stay local.
+7. **Shareable report**: `<yyyy-MM-dd>-<machine id>-<fs>[-devdrive]-<corpus>.md` in `--report-dir`
+   (default: the results directory), also from an existing results file with
+   `vschromium-bench report <results.json>`. The machine specs and all the results, without
+   identifying data (no machine, user or domain name, no path, no volume label, no serial number;
+   an anonymous random machine id). Meant to be committed to
+   [docs/benchmarks/results/](../../../docs/benchmarks/results/README.md). `--machine-label <text>`
+   adds a label (included verbatim), `--redact-security` omits the security products and filter
+   drivers. The text is scrubbed, and the report is not written if the user, machine or domain name,
+   a local path, a SID or a GUID is still in it.
 
 ## Server features
 

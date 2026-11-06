@@ -55,6 +55,11 @@ public static class RerunScript {
     Add("results-dir", options.ResultsDirectory);
     Add("label", options.Label);
     Add("data-dir", options.DataDirectory);
+    Add("report-dir", options.ReportDirectory);
+    Add("machine-label", options.MachineLabel);
+    if (options.RedactSecurity) {
+      args.Add("--redact-security");
+    }
     // The rerun of a rerun script doesn't write another script.
     Add("rerun-script", "none");
     return args;

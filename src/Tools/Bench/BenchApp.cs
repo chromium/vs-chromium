@@ -9,6 +9,7 @@ using VsChromium.Bench.Cli;
 using VsChromium.Bench.Corpora;
 using VsChromium.Bench.Inventory;
 using VsChromium.Bench.Platform;
+using VsChromium.Bench.Reports;
 using VsChromium.Bench.Results;
 using VsChromium.Bench.Scenarios;
 using VsChromium.Bench.Servers;
@@ -39,6 +40,8 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
         return InventoryCommand();
       case BenchCommand.Compare:
         return CompareCommand();
+      case BenchCommand.Report:
+        return ReportCommand();
       case BenchCommand.Cleanup:
         return CleanupCommand();
       default:
@@ -116,6 +119,53 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
       output.WriteLine($"Written to {options.Output}");
     }
     return 0;
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // report
+
+  private int ReportCommand() {
+    var failed = false;
+    foreach (var file in options.Files) {
+      if (!File.Exists(file)) {
+        output.WriteLine($"Not found: {file}");
+        return 2;
+      }
+      var result = BenchResult.FromJson(File.ReadAllText(file));
+      var directory = options.ReportDirectory ?? Path.GetDirectoryName(Path.GetFullPath(file))!;
+      failed |= !WriteShareableReport(result, directory, [(Path.GetDirectoryName(Path.GetFullPath(file))!, "<results-dir>")]);
+    }
+    return failed ? 1 : 0;
+  }
+
+  /// <summary>Writes the shareable report of a result (scrubbed and verified); false if it was refused.</summary>
+  private bool WriteShareableReport(BenchResult result, string directory, IEnumerable<(string Path, string Placeholder)> extraPaths) {
+    var machineId = result.MachineId ?? MachineIdentity.GetOrCreate(DataDirectory).ToString("D");
+    var label = options.MachineLabel ?? result.MachineLabel;
+    if (!string.IsNullOrWhiteSpace(label)) {
+      output.WriteLine($"Note: the machine label \"{label}\" is included verbatim in the shareable report.");
+    }
+    var paths = new List<(string, string)>(extraPaths) {
+      (Path.GetFullPath(directory), "<report-dir>"),
+      (DataDirectory, "<data-dir>"),
+      (Environment.CurrentDirectory, "<current-dir>"),
+    };
+    if (Environment.ProcessPath is { } benchPath) {
+      paths.Add((benchPath, "<bench>"));
+      paths.Add((Path.GetDirectoryName(benchPath)!, "<bench-dir>"));
+    }
+    try {
+      var path = ShareableReport.Write(result, new ReportOptions {
+        MachineId = machineId,
+        MachineLabel = label,
+        RedactSecurity = options.RedactSecurity,
+      }, directory, paths);
+      Log($"Shareable report (no personal data, can be committed to docs/benchmarks/results/): {path}");
+      return true;
+    } catch (SensitiveDataException e) {
+      output.WriteLine($"Error: {e.Message}");
+      return false;
+    }
   }
 
   // -----------------------------------------------------------------------------------------------
@@ -270,8 +320,11 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
       StartedUtc = startedUtc,
       EndedUtc = DateTime.UtcNow,
       Label = label,
+      MachineId = MachineIdentity.GetOrCreate(DataDirectory).ToString("D"),
+      MachineLabel = resolved.MachineLabel,
       Machine = inventory.Machine,
       Disk = disk,
+      Disks = inventory.Disks,
       Security = inventory.Security,
       Corpus = new CorpusInfo {
         Name = CommandLineParser.ParseCorpus(spec.Name),
@@ -285,6 +338,7 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
         SymlinkDirectoryCount = corpus.Manifest.SymlinkDirectoryCount,
         Symlinks = corpus.Manifest.Symlinks,
         GenerationSeconds = corpus.Generated ? corpus.Manifest.GenerationSeconds : null,
+        FilesPerDirectoryHistogram = corpus.Manifest.FilesPerDirectoryHistogram,
       },
       Server = new ServerInfo {
         Source = server.Source,
@@ -316,7 +370,14 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
     output.WriteLine(summary);
     Log($"Results: {jsonPath}");
 
-    // 9. Rerun script.
+    // 9. Shareable report (no personal data).
+    WriteShareableReport(result, Path.GetFullPath(resolved.ReportDirectory ?? resultsDir), [
+      (corporaDir, "<corpora-dir>"),
+      (cacheDirectory, "<cache-dir>"),
+      (resultsDir, "<results-dir>"),
+    ]);
+
+    // 10. Rerun script.
     WriteRerunScript(resolved, arguments, baseName, resultsDir, label);
     return scenarios.Any(s => s.Error != null) ? 1 : 0;
   }

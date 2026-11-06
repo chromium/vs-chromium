@@ -69,7 +69,7 @@ public static partial class InventoryCollector {
         osDescription = $"macOS {version} ({build})";
       }
     }
-    return new MachineInfo {
+    return AddHardwareDetails(new MachineInfo {
       HostName = Environment.MachineName,
       Os = os,
       OsDescription = osDescription,
@@ -80,7 +80,7 @@ public static partial class InventoryCollector {
       PowerPlan = powerPlan,
       BenchRuntime = RuntimeInformation.FrameworkDescription + (RuntimeFeature.IsDynamicCodeSupported ? "" : " (NativeAOT)"),
       IsElevated = IsElevated(),
-    };
+    });
   }
 
   private static class RuntimeFeature {

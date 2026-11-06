@@ -58,8 +58,15 @@ public static class MarkdownReport {
       text.Append($"| Corpus generation | {generation:n1} s |\n");
     }
     text.Append('\n');
+    text.Append(ScenarioTables(result, "##"));
+    return text.ToString();
+  }
+
+  /// <summary>One table per scenario (median, min, max), with its facts and notes.</summary>
+  public static string ScenarioTables(BenchResult result, string heading) {
+    var text = new StringBuilder();
     foreach (var scenario in result.Scenarios) {
-      text.Append("## ").Append(scenario.Name).Append("\n\n");
+      text.Append(heading).Append(' ').Append(scenario.Name).Append("\n\n");
       if (scenario.Error != null) {
         text.Append("**Error:** ").Append(Escape(scenario.Error)).Append("\n\n");
       }

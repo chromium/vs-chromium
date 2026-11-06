@@ -22,7 +22,18 @@ public sealed record MachineInfo {
   public string Architecture { get; init; } = "";
   public string CpuModel { get; init; } = "";
   public int LogicalCores { get; init; }
+  /// <summary>Physical cores (null if unknown).</summary>
+  public int? PhysicalCores { get; init; }
+  /// <summary>Base (nominal) clock of the CPU in MHz, if known.</summary>
+  public int? BaseClockMHz { get; init; }
+  /// <summary>Maximum (boost) clock of the CPU in MHz, if known.</summary>
+  public int? MaxClockMHz { get; init; }
   public long PhysicalMemoryBytes { get; init; }
+  /// <summary>Memory type (e.g. "DDR5"), if readable without admin.</summary>
+  public string? MemoryType { get; init; }
+  /// <summary>Memory speed in MT/s, if readable without admin.</summary>
+  public int? MemorySpeedMTs { get; init; }
+  public List<GpuInfo> Gpus { get; init; } = [];
   /// <summary>Windows power plan (e.g. "Balanced"), null elsewhere.</summary>
   public string? PowerPlan { get; init; }
   /// <summary>The .NET runtime of the bench.</summary>
@@ -64,6 +75,11 @@ public sealed record DiskInfo {
     bytes >= 1L << 30 ? $"{bytes / (double)(1L << 30):n1} GB" :
     bytes >= 1L << 20 ? $"{bytes / (double)(1L << 20):n1} MB" :
     $"{bytes / 1024.0:n1} KB";
+}
+
+public sealed record GpuInfo {
+  public string Name { get; init; } = "";
+  public string? DriverVersion { get; init; }
 }
 
 public sealed record AntivirusProduct {

@@ -31,6 +31,7 @@ public static class CommandLineParser {
       --corpus <400k|1M|2M>      Corpus size (default: 400k; small and medium for quick tests).
       --symlinks <yes|no>        Corpus with symbolic links (default: yes when the OS allows them).
       --no-symlinks              Same as --symlinks no.
+      --change-link-targets      The live and offline changes also modify files seen through symbolic links.
       --server <source>          auto (default), repo, vscode, release:latest, release:<tag>, or a path.
       --scenarios <list>         cold,save,restart,live,offline,search,rawfs,threads (default: all but threads).
       --repeat <n>               Repeats of each scenario (default: 3).
@@ -109,6 +110,7 @@ public static class CommandLineParser {
         case "corpus": options = options with { Corpus = ParseCorpus(Value()) }; break;
         case "symlinks": options = options with { Symlinks = ParseYesNo(name, Value()) }; break;
         case "no-symlinks": NoValue(); options = options with { Symlinks = false }; break;
+        case "change-link-targets": NoValue(); options = options with { ChangeLinkTargets = true }; break;
         case "include-virtual-displays": NoValue(); options = options with { IncludeVirtualDisplays = true }; break;
         case "server": options = options with { Server = ParseServer(Value()) }; break;
         case "scenarios": options = options with { Scenarios = ParseScenarios(Value()) }; break;

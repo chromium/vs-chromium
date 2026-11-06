@@ -62,6 +62,13 @@ public sealed record BenchOptions {
   /// <summary>The numbers of files modified by the "live" and "offline" scenarios.</summary>
   public IReadOnlyList<int>? ChangeCounts { get; init; }
 
+  /// <summary>
+  /// The "live" and "offline" scenarios also modify files seen through symbolic links (targets of
+  /// file links, files of linked directories): their changes are changes of the links too (more hits
+  /// of the marker). Off by default: the results stay comparable with the runs without it.
+  /// </summary>
+  public bool ChangeLinkTargets { get; init; }
+
   /// <summary>The thread counts of the "threads" scenario (needs a server supporting "--threads").</summary>
   public IReadOnlyList<int>? ThreadCounts { get; init; }
 

@@ -17,9 +17,20 @@ public sealed class FileChanges {
   };
 
   private readonly List<string> _candidates;
+  /// <summary>The number of indexed paths of the candidates seen through symbolic links (1 for the others).</summary>
+  private readonly Dictionary<string, int> _visiblePaths;
 
-  private FileChanges(List<string> candidates) {
+  private FileChanges(List<string> candidates, Dictionary<string, int> visiblePaths) {
     _candidates = candidates;
+    _visiblePaths = visiblePaths;
+  }
+
+  /// <summary>
+  /// The hits of a marker added to <paramref name="files"/>: one per indexed path of each file (its
+  /// path, and the paths of the links that see it).
+  /// </summary>
+  public int ExpectedHits(IReadOnlyList<string> files) {
+    return files.Sum(f => _visiblePaths.TryGetValue(f, out var count) ? count : 1);
   }
 
   public int CandidateCount => _candidates.Count;
@@ -29,12 +40,13 @@ public sealed class FileChanges {
   /// the same list on every machine for the same corpus. Files seen through symbolic links (targets
   /// of file links, files of linked directories) are excluded: a change of a link target is not a
   /// change of the link for the file system watcher, so the expected number of hits of the marker
-  /// would depend on the server's handling of links.
+  /// would depend on the server's handling of links. With <paramref name="includeLinkTargets"/>,
+  /// they are included, and <see cref="ExpectedHits"/> counts the paths of the links that see them.
   /// </summary>
-  public static FileChanges Scan(string root) {
+  public static FileChanges Scan(string root, bool includeLinkTargets = false) {
     var outDir = Path.Combine(root, "out") + Path.DirectorySeparatorChar;
     var files = new List<string>();
-    var linkedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var linkedFiles = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     var linkedDirectories = new List<string>();
     var pending = new Stack<string>();
     pending.Push(root);
@@ -46,7 +58,7 @@ public sealed class FileChanges {
           if (entry is DirectoryInfo) {
             linkedDirectories.Add(target.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
           } else {
-            linkedFiles.Add(target);
+            linkedFiles[target] = linkedFiles.GetValueOrDefault(target) + 1;
           }
           continue;
         }
@@ -58,9 +70,19 @@ public sealed class FileChanges {
         }
       }
     }
-    files.RemoveAll(f => linkedFiles.Contains(f) || linkedDirectories.Any(d => f.StartsWith(d, StringComparison.OrdinalIgnoreCase)));
+    var visiblePaths = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    foreach (var file in files) {
+      var links = linkedFiles.GetValueOrDefault(file) + linkedDirectories.Count(d => file.StartsWith(d, StringComparison.OrdinalIgnoreCase));
+      if (links > 0) {
+        visiblePaths[file] = 1 + links;
+      }
+    }
+    if (!includeLinkTargets) {
+      files.RemoveAll(visiblePaths.ContainsKey);
+      visiblePaths.Clear();
+    }
     files.Sort(StringComparer.Ordinal);
-    return new FileChanges(files);
+    return new FileChanges(files, visiblePaths);
   }
 
   /// <summary>

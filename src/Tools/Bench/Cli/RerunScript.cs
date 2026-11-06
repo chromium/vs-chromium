@@ -31,6 +31,9 @@ public static class RerunScript {
     if (options.Symlinks == false) {
       args.Add("--no-symlinks");
     }
+    if (options.ChangeLinkTargets) {
+      args.Add("--change-link-targets");
+    }
     Add("server", options.Server);
     if (options.Scenarios != null) {
       Add("scenarios", string.Join(",", options.Scenarios.Select(CommandLineParser.ScenarioName)));

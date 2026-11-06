@@ -27,7 +27,8 @@ public sealed record RunContext(
   IReadOnlyList<int> ThreadCounts,
   bool KeepServer,
   Action<string> Log,
-  CancellationToken Cancellation);
+  CancellationToken Cancellation,
+  bool ChangeLinkTargets = false);
 
 /// <summary>
 /// Runs the scenarios of the design (1-8) with the existing protocol of the server, using the bench
@@ -377,7 +378,7 @@ public sealed class ScenarioRunner(RunContext context) : IAsyncDisposable {
     get {
       if (_changes == null) {
         Log("Listing the text files of the corpus (file changes)...");
-        _changes = FileChanges.Scan(Root);
+        _changes = FileChanges.Scan(Root, context.ChangeLinkTargets);
       }
       return _changes;
     }
@@ -403,7 +404,7 @@ public sealed class ScenarioRunner(RunContext context) : IAsyncDisposable {
         var lastWrite = host.Now;
         TimeSpan latency;
         try {
-          latency = await WaitForHitsAsync(host, marker, files.Count, cursor, lastWrite) - lastWrite;
+          latency = await WaitForHitsAsync(host, marker, Changes.ExpectedHits(files), cursor, lastWrite) - lastWrite;
         } finally {
           backup.Restore();
         }
@@ -498,8 +499,8 @@ public sealed class ScenarioRunner(RunContext context) : IAsyncDisposable {
             metrics.Add($"{label}: files read from disk", "count", Stats.Double(stats, "indexCache", "lastLoadFilesFromDisk") ?? 0);
             metrics.Add($"{label}: server CPU", "s", (after.UserCpu + after.KernelCpu - before.UserCpu - before.KernelCpu).TotalSeconds);
             info[$"{label}: verification method"] = Stats.String(verification, "method") ?? (fromCache ? "?" : "cold load");
-            if (hits != files.Count) {
-              notes.Add($"{label}, repeat {i + 1}: {hits} hits of the marker after the catch-up, expected {files.Count}");
+            if (hits != Changes.ExpectedHits(files)) {
+              notes.Add($"{label}, repeat {i + 1}: {hits} hits of the marker after the catch-up, expected {Changes.ExpectedHits(files)}");
             }
             Log($"  offline {label} ({i + 1}/{context.Repeat}): catch-up {verified.TotalSeconds:n2} s ({info[$"{label}: verification method"]})");
           } finally {

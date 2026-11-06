@@ -300,7 +300,7 @@ public sealed class BenchApp(BenchOptions options, Prompt prompt, TextWriter out
       }
       context = new RunContext(corpus, server.Path, capabilities, cacheDirectory, resolved.Scenarios!, resolved.Repeat!.Value, flush,
                                resolved.ChangeCounts ?? BenchOptions.DefaultChangeCounts, resolved.ThreadCounts ?? BenchOptions.DefaultThreadCounts,
-                               resolved.KeepServer, Log, cancellation);
+                               resolved.KeepServer, Log, cancellation, resolved.ChangeLinkTargets);
       await using var runner = new ScenarioRunner(context);
       scenarios = await runner.RunAsync();
     } finally {

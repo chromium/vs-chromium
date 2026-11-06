@@ -65,7 +65,9 @@ At the end of an interactive run, the bench offers to save `rerun-<name>.cmd` (W
 
    The modified files get a marker line appended, then their contents and times are restored (also
    on Ctrl+C). The index cache of the run is in `<corpora dir>/bench-cache-<corpus>` and deleted at
-   the end.
+   the end. Files seen through symbolic links (targets of file links, files of linked directories)
+   are not modified by default (comparable results); `--change-link-targets` modifies them too, and
+   expects one hit of the marker per indexed path (the file and each link that sees it).
 5. **Warm or cold file cache.** Cold flushes the OS file cache before each measured phase: Windows
    purges the standby list (`NtSetSystemInformation`, needs admin), Linux writes `drop_caches` (root),
    macOS runs `purge` (root). Only when elevated and when you agree (or `--flush-cache yes`);

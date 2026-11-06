@@ -338,6 +338,16 @@ public class FileChangesTests {
       var changes = Scenarios.FileChanges.Scan(root);
       Assert.AreEqual(1, changes.CandidateCount);
       CollectionAssert.AreEqual(new[] { Path.Combine(root, "a", "plain.cc") }, changes.Select(10, salt: 1));
+
+      // --change-link-targets: modified too, and their links count in the expected hits.
+      var withTargets = Scenarios.FileChanges.Scan(root, includeLinkTargets: true);
+      Assert.AreEqual(3, withTargets.CandidateCount);
+      var all = withTargets.Select(10, salt: 1);
+      CollectionAssert.AreEquivalent(new[] {
+        Path.Combine(root, "a", "plain.cc"), Path.Combine(root, "a", "target.cc"), Path.Combine(root, "linked", "inside.cc"),
+      }, all);
+      Assert.AreEqual(1 + 2 + 2, withTargets.ExpectedHits(all));
+      Assert.AreEqual(1, changes.ExpectedHits(changes.Select(10, salt: 1)));
     } finally {
       Directory.Delete(root, recursive: true);
     }

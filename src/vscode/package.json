@@ -151,6 +151,12 @@
           "default": false,
           "scope": "resource",
           "markdownDescription": "Use trigram filters for the projects of the workspace (can be set per workspace folder): much faster selective code searches (e.g. symbol names), at the cost of memory (about 5% of the size of the indexed file contents, e.g. ~900 MB for 15 GB of text). Disabled by default. Also available from the status bar item (**Show Indexing Server Status**) and the **VsChromium: Toggle Trigram Filters** command."
+        },
+        "vschromium.watchExternalLinkTargets": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "markdownDescription": "Watch the targets of the symbolic links of the projects of this folder that point outside of the project, so that changes to these targets update the index while the server runs. Costs one directory watcher per target directory (~8 KB of kernel memory each, at most 512). Disabled by default: changes to these targets are picked up when the server restarts. Targets on network drives are never watched. Can be set per workspace folder; also available in the server dashboard."
         }
       }
     }

@@ -16,6 +16,7 @@ import type {
   ProjectDetails,
   ServerHistory,
   ServerStatistics,
+  SymbolicLinkSummary,
 } from '../../protocol/protocol.g';
 import { describeIndexCache } from '../indexCacheStatus';
 import {
@@ -153,7 +154,21 @@ export interface ProjectBlock {
   trigramFiltersEnabled: boolean;
   /** "812.0 MB" (memory of the filters) or "off". */
   trigramFilters: string;
+  /** The symbolic links to targets outside of the project roots (absent if none). */
+  externalLinks?: ProjectExternalLinksView;
   operations: ProjectOperationRow[];
+}
+
+/** The symbolic links of a project whose targets are outside of the project roots. */
+export interface ProjectExternalLinksView {
+  /** The targets are watched (option of the project). */
+  watched: boolean;
+  /** "N symbolic links point outside the project (M directories): ..." when not watched. */
+  warning?: string;
+  /** "· 12 watchers" when watched. */
+  state: string;
+  /** Tooltip of the checkbox (the cost of the watchers). */
+  title: string;
 }
 
 /** Projects expanded by default up to this count. */
@@ -518,6 +533,10 @@ function describeProjects(data: DashboardData, options: FormatOptions): ProjectB
     const index: KeyValue[] = [
       { key: 'files', label: 'Files', value: `${formatCount(d.fileCount)} files \u00b7 ${formatCount(d.searchableFilesCount)} searchable \u00b7 ${formatBytes(d.searchableFilesByteLength)} of text` },
     ];
+    const links = project.symbolicLinks;
+    if (links && links.fileLinkCount + links.directoryLinkCount > 0) {
+      index.push({ key: 'symlinks', label: 'Symbolic links', value: describeSymbolicLinks(links) });
+    }
     if (isValidTime(updated)) {
       index.push({ key: 'updated', label: 'Updated', value: options.formatTime(updated), title: 'Last update of the index (all the projects)' });
     }
@@ -550,9 +569,47 @@ function describeProjects(data: DashboardData, options: FormatOptions): ProjectB
       trigramFilters: project.trigramFiltersEnabled
         ? (m.trigramFiltersBytes > 0 ? formatBytes(m.trigramFiltersBytes) : 'on')
         : 'off',
+      externalLinks: describeExternalLinks(links),
       operations: describeProjectOperations(project),
     };
   });
+}
+
+function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
+  return `${formatCount(count)} ${count === 1 ? singular : pluralForm}`;
+}
+
+/** "44,520 file links · 838 directory links". */
+function describeSymbolicLinks(links: SymbolicLinkSummary): string {
+  const parts: string[] = [];
+  if (links.fileLinkCount > 0) {
+    parts.push(plural(links.fileLinkCount, 'file link'));
+  }
+  if (links.directoryLinkCount > 0) {
+    parts.push(plural(links.directoryLinkCount, 'directory link'));
+  }
+  if (links.networkTargetLinkCount > 0) {
+    parts.push(`${plural(links.networkTargetLinkCount, 'link')} to network volumes (not watched)`);
+  }
+  return parts.join(' \u00b7 ');
+}
+
+function describeExternalLinks(links: SymbolicLinkSummary | undefined): ProjectExternalLinksView | undefined {
+  if (!links || (links.externalTargetLinkCount === 0 && !links.externalTargetsWatched)) {
+    return undefined;
+  }
+  const watched = links.externalTargetsWatched;
+  const directories = links.externalTargetDirectoryCount;
+  return {
+    watched,
+    warning: watched || links.externalTargetLinkCount === 0 ? undefined
+      : `${plural(links.externalTargetLinkCount, 'symbolic link')} ${links.externalTargetLinkCount === 1 ? 'points' : 'point'} outside the project ` +
+        `(${plural(directories, 'directory', 'directories')}): changes to their targets are only picked up when the server restarts.`,
+    state: watched ? `\u00b7 ${plural(links.watcherCount, 'watcher')}` : '',
+    title: `Watch the directories of the targets of the symbolic links outside the project, so that changes to the targets ` +
+      `update the index while the server runs. Costs one directory watcher per target directory ` +
+      `(${formatCount(directories)} for this project, ~8 KB of kernel memory each, at most 512 for all the projects).`,
+  };
 }
 
 /** Normalizes a project-relative directory path to `/` separators without leading/trailing slashes. */

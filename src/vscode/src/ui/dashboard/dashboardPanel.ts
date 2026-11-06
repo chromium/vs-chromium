@@ -27,6 +27,8 @@ export interface DashboardServices {
   setProjectTrigramFilters(projectPath: string, enabled: boolean): Promise<void>;
   /** Sets the cache setting of a project (disabling it deletes its cache, after a confirmation). */
   setProjectCacheEnabled(projectPath: string, enabled: boolean): Promise<void>;
+  /** Sets the setting of a project watching the targets of its symbolic links outside of the project. */
+  setProjectWatchExternalLinkTargets(projectPath: string, enabled: boolean): Promise<void>;
   errorMessage(e: unknown): string;
   /** The cache settings (applied when the server restarts). */
   cacheSettings(): { enabled: boolean; directory: string };
@@ -143,6 +145,9 @@ export class DashboardPanel implements vscode.Disposable {
           break;
         case 'setProjectCacheEnabled':
           await this.services.setProjectCacheEnabled(command.projectPath, command.enabled);
+          break;
+        case 'setProjectWatchExternalLinkTargets':
+          await this.services.setProjectWatchExternalLinkTargets(command.projectPath, command.enabled);
           break;
         case 'openProjectCacheFolder':
           await this.openProjectCacheFolder(command.projectPath);

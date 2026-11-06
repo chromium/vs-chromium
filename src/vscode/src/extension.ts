@@ -58,7 +58,8 @@ class ServerManager implements vscode.Disposable {
       vscode.workspace.onDidChangeWorkspaceFolders(e => this.onWorkspaceFoldersChanged(e)),
       vscode.workspace.onDidOpenTextDocument(doc => this.registerDocument(doc)),
       vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('vschromium.trigramFilters') || e.affectsConfiguration('vschromium.cacheEnabled')) {
+        if (e.affectsConfiguration('vschromium.trigramFilters') || e.affectsConfiguration('vschromium.cacheEnabled') ||
+            e.affectsConfiguration('vschromium.watchExternalLinkTargets')) {
           void this.applyProjectOptions(/*includeIndexedProjects*/ true, /*confirmCacheDeletion*/ true);
         }
         if (ServerRestartSettings.some(name => e.affectsConfiguration(name))) {
@@ -263,6 +264,15 @@ class ServerManager implements vscode.Disposable {
     await this.updateProjectSetting(projectPath, 'cacheEnabled', enabled);
   }
 
+  /**
+   * Watches (or not) the targets of the symbolic links of a project outside of the project: sets
+   * the setting "vschromium.watchExternalLinkTargets" of the workspace folder of the project (or of
+   * the workspace).
+   */
+  async setProjectWatchExternalLinkTargets(projectPath: string, enabled: boolean): Promise<void> {
+    await this.updateProjectSetting(projectPath, 'watchExternalLinkTargets', enabled);
+  }
+
   private async updateProjectSetting(projectPath: string, name: string, value: boolean): Promise<void> {
     const { config, folder } = this.projectConfiguration(projectPath);
     const target = folder ? vscode.ConfigurationTarget.WorkspaceFolder
@@ -272,8 +282,8 @@ class ServerManager implements vscode.Disposable {
   }
 
   /**
-   * Sends the project options (settings "vschromium.trigramFilters" and "vschromium.cacheEnabled"
-   * of the workspace folder of each project) for the workspace folders (any path inside a project
+   * Sends the project options (settings "vschromium.trigramFilters", "vschromium.cacheEnabled" and
+   * "vschromium.watchExternalLinkTargets" of the workspace folder of each project) for the workspace folders (any path inside a project
    * identifies the project) and, if `includeIndexedProjects`, for the projects known to the server.
    * `confirmCacheDeletion`: asks before disabling the cache of a project (its cache is deleted).
    */
@@ -315,6 +325,7 @@ class ServerManager implements vscode.Disposable {
           projectPath,
           trigramFiltersEnabled: config.get<boolean>('trigramFilters') ?? false,
           cacheEnabled,
+          watchExternalLinkTargets: config.get<boolean>('watchExternalLinkTargets') ?? false,
         });
       }
     } catch (e) {
@@ -440,6 +451,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     setTrigramFiltersSetting: enabled => manager.setTrigramFilters(enabled),
     setProjectTrigramFilters: (projectPath, enabled) => manager.setProjectTrigramFilters(projectPath, enabled),
     setProjectCacheEnabled: (projectPath, enabled) => manager.setProjectCacheEnabled(projectPath, enabled),
+    setProjectWatchExternalLinkTargets: (projectPath, enabled) => manager.setProjectWatchExternalLinkTargets(projectPath, enabled),
     errorMessage: e => userErrorMessage(e) ?? String(e),
     cacheSettings: () => {
       const config = vscode.workspace.getConfiguration('vschromium');

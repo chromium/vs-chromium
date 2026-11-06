@@ -100,6 +100,7 @@ Paths copied from build output are understood: `base/foo.cc(19,18)`,
 | `vschromium.cacheEnabled` | `true` | Persistent index cache of the projects (per workspace folder): the index is available a few seconds after a restart (then verified in the background). Disabling it deletes the cache of the projects of the folder, after a confirmation |
 | `vschromium.cacheDirectory` | (empty) | Root directory of the index cache (absolute path), passed as `--cache-dir`; empty: `%LOCALAPPDATA%\VsChromium\Cache` |
 | `vschromium.trigramFilters` | `false` | Trigram filters for the projects (per workspace folder: faster selective searches, ~5% of the text size in memory); the dashboard toggle of a project writes the setting of its folder |
+| `vschromium.watchExternalLinkTargets` | `false` | Watch the targets of the symbolic links pointing outside of the projects (per workspace folder: one directory watcher per target directory); off: changes to these targets are picked up when the server restarts. The dashboard checkbox of a project writes the setting of its folder |
 | `vschromium.searchCode.maxResults` | `10000` | Maximum number of matches of Search Code |
 | `vschromium.searchCode.maxExtractLength` | `120` | Maximum number of characters per line in the Search Code results |
 | `vschromium.searchCode.autoSearchDelayMs` | `100` | Delay after typing before searching (Search Code, Find File Names) |
@@ -107,8 +108,8 @@ Paths copied from build output are understood: `base/foo.cc(19,18)`,
 | `vschromium.trace.server` | `false` | Log all the messages exchanged with the server to the VsChromium output |
 
 `vschromium.cacheDirectory` is applied when the server starts: when it changes, the extension
-offers to restart the server. `vschromium.trigramFilters` and `vschromium.cacheEnabled` are
-resource settings: they can be set per workspace folder (`.vscode/settings.json` of the folder),
+offers to restart the server. `vschromium.trigramFilters`, `vschromium.cacheEnabled` and
+`vschromium.watchExternalLinkTargets` are resource settings: they can be set per workspace folder (`.vscode/settings.json` of the folder),
 and apply to the project containing the folder (or contained in it).
 
 `vschromium.cacheDirectory` must be on a local disk: the servers coordinate through a lock file in

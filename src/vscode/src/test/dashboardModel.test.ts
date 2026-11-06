@@ -215,6 +215,41 @@ describe('buildViewModel', () => {
     assert.equal(a.trigramFilters, 'off');
     assert.equal(vm.projects[1].trigramFilters, '812.0 MB');
     assert.equal(vm.projects[1].trigramFiltersEnabled, true);
+    assert.equal(a.externalLinks, undefined, 'No symbolic link');
+  });
+
+  it('warns about the symbolic links to targets outside of the project', () => {
+    const links = {
+      fileLinkCount: 44_520, directoryLinkCount: 838, externalTargetLinkCount: 1_204, externalTargetDirectoryCount: 428,
+      networkTargetLinkCount: 2, externalTargetsWatched: false, watcherCount: 0,
+    };
+    const details = {
+      projects: [
+        sampleProjectDetails('C:\\a', { symbolicLinks: links }),
+        sampleProjectDetails('C:\\b', { symbolicLinks: { ...links, externalTargetsWatched: true, watcherCount: 428 } }),
+        sampleProjectDetails('C:\\c', { symbolicLinks: { ...links, externalTargetLinkCount: 0, externalTargetDirectoryCount: 0 } }),
+      ],
+    };
+    const vm = buildViewModel({ ...data(), details }, options);
+    const [a, b, c] = vm.projects;
+    assert.equal(a.index.find(kv => kv.key === 'symlinks')?.value,
+      '44,520 file links \u00b7 838 directory links \u00b7 2 links to network volumes (not watched)');
+    assert.equal(a.externalLinks?.watched, false);
+    assert.equal(a.externalLinks?.warning,
+      '1,204 symbolic links point outside the project (428 directories): changes to their targets are only picked up when the server restarts.');
+    assert.equal(a.externalLinks?.state, '');
+    assert.match(a.externalLinks!.title, /one directory watcher per target directory \(428 for this project, ~8 KB of kernel memory each/);
+    // Watched: no warning, the count of watchers.
+    assert.equal(b.externalLinks?.watched, true);
+    assert.equal(b.externalLinks?.warning, undefined);
+    assert.equal(b.externalLinks?.state, '\u00b7 428 watchers');
+    // No target outside of the project: no checkbox.
+    assert.equal(c.externalLinks, undefined);
+    const single = buildViewModel({ ...data(), details: { projects: [sampleProjectDetails('C:\\d', {
+      symbolicLinks: { ...links, externalTargetLinkCount: 1, externalTargetDirectoryCount: 1 },
+    })] } }, options).projects[0];
+    assert.equal(single.externalLinks?.warning,
+      '1 symbolic link points outside the project (1 directory): changes to their targets are only picked up when the server restarts.');
   });
 
   it('collapses the projects by default when there are more than 2', () => {

@@ -399,11 +399,13 @@ describe('DashboardController', () => {
     await controller.execute({ action: 'rebuildProject', projectPath: 'C:\\a' });
     await controller.execute({ action: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false });
     await controller.execute({ action: 'setProjectTrigramFilters', projectPath: 'C:\\a', enabled: true });
+    await controller.execute({ action: 'setProjectWatchExternalLinkTargets', projectPath: 'C:\\a', enabled: true });
     await controller.execute({ action: 'openProjectCacheFolder', projectPath: 'C:\\a' });
     assert.deepEqual(host.posted.filter(m => m.type === 'command'), [
       { type: 'command', command: 'rebuildProject', projectPath: 'C:\\a' },
       { type: 'command', command: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false },
       { type: 'command', command: 'setProjectTrigramFilters', projectPath: 'C:\\a', enabled: true },
+      { type: 'command', command: 'setProjectWatchExternalLinkTargets', projectPath: 'C:\\a', enabled: true },
       { type: 'command', command: 'openProjectCacheFolder', projectPath: 'C:\\a' },
     ]);
     assert.deepEqual(timers.delays, [NotificationRefreshDelayMs]);

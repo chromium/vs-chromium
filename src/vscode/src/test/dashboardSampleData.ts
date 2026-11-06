@@ -140,7 +140,12 @@ export function sampleProjectDetails(rootPath: string, overrides: Partial<Projec
         method: 'changeJournal', durationMs: 420, journalRecordCount: 52_000, listedDirectoryCount: 312, scannedDirectoryCount: 3,
         symLinkDirectoryCount: 0, symLinkFileCount: 42_800,
       },
-    },    ...overrides,
+    },
+    symbolicLinks: {
+      fileLinkCount: 0, directoryLinkCount: 0, externalTargetLinkCount: 0, externalTargetDirectoryCount: 0, networkTargetLinkCount: 0,
+      externalTargetsWatched: false, watcherCount: 0,
+    },
+    ...overrides,
   };
 }
 

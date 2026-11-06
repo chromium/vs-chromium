@@ -209,6 +209,10 @@ interface ProjectElements {
   readOnly: HTMLElement;
   trigramFilters: HTMLInputElement;
   trigramFiltersText: HTMLElement;
+  externalLinksWarning: HTMLElement;
+  watchExternalLine: HTMLElement;
+  watchExternal: HTMLInputElement;
+  watchExternalText: HTMLElement;
   operations: KeyedRows<ProjectOperationRow>;
 }
 
@@ -485,7 +489,16 @@ class DashboardView {
     }));
     const trigramText = el('span', 'description');
     optionsLine.append(trigramCheckbox.root, el('span', 'control-label', 'Trigram filters'), trigramText);
-    group('Options', optionsLine);
+    // The symbolic links to targets outside of the project (shown if any).
+    const externalLinksWarning = el('div', 'line restart-needed');
+    const watchExternalLine = el('label', 'line control-line');
+    const watchExternalCheckbox = checkbox(`Watch the targets outside of ${item.rootPath}`);
+    watchExternalCheckbox.input.addEventListener('change', () => this.execute({
+      action: 'setProjectWatchExternalLinkTargets', projectPath: item.rootPath, enabled: watchExternalCheckbox.input.checked,
+    }));
+    const watchExternalText = el('span', 'description');
+    watchExternalLine.append(watchExternalCheckbox.root, el('span', 'control-label', 'Watch the targets outside the project'), watchExternalText);
+    group('Options', optionsLine, externalLinksWarning, watchExternalLine);
 
     const operationsTable = table(['Operation', 'Count', 'Min', 'Avg', 'Max', 'Last', ''], [1, 2, 3, 4, 5], 'table compact');
     group('Operations', operationsTable.table);
@@ -507,7 +520,8 @@ class DashboardView {
     const elements: ProjectElements = {
       root, toggle, path, summary, body, diskUsage, rebuild, clearCache, index, memory,
       cacheEnabled: cacheCheckbox.input, cacheState, cacheDirectory, openFolder, readOnly,
-      trigramFilters: trigramCheckbox.input, trigramFiltersText: trigramText, operations,
+      trigramFilters: trigramCheckbox.input, trigramFiltersText: trigramText,
+      externalLinksWarning, watchExternalLine, watchExternal: watchExternalCheckbox.input, watchExternalText, operations,
     };
     this.projectElements.set(root, elements);
     this.applyExpanded(elements, this.expanded.get(item.rootPath) ?? item.defaultExpanded);
@@ -541,6 +555,13 @@ class DashboardView {
     setHidden(e.readOnly, !item.cache.enabled || item.cache.writable);
     setChecked(e.trigramFilters, item.trigramFiltersEnabled, vm.actions.toggleTrigramFilters);
     setText(e.trigramFiltersText, item.trigramFiltersEnabled ? `\u00b7 ${item.trigramFilters}` : '');
+    const external = item.externalLinks;
+    setText(e.externalLinksWarning, external?.warning ?? '');
+    setHidden(e.externalLinksWarning, !external?.warning);
+    setHidden(e.watchExternalLine, !external);
+    setChecked(e.watchExternal, external?.watched === true, vm.actions.toggleTrigramFilters);
+    setText(e.watchExternalText, external?.state ?? '');
+    setTitle(e.watchExternalLine, external?.title);
     e.operations.render(item.operations);
   }
 }

@@ -5,8 +5,8 @@
 import * as path from 'path';
 
 /**
- * Per project settings ("vschromium.trigramFilters", "vschromium.cacheEnabled": resource scoped,
- * i.e. per workspace folder): the workspace folder whose settings apply to a project.
+ * Per project settings ("vschromium.trigramFilters", "vschromium.cacheEnabled",
+ * "vschromium.watchExternalLinkTargets": resource scoped, i.e. per workspace folder): the workspace folder whose settings apply to a project.
  */
 
 /** True if `child` is `parent` or a path inside it (case-insensitive on Windows). */

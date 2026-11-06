@@ -66,6 +66,11 @@ export type HostCommand =
    * VS Code folder setting): disabling it deletes the cache, after a confirmation by the host.
    */
   | { command: 'setProjectCacheEnabled'; projectPath: string; enabled: boolean }
+  /**
+   * Watches (or not) the targets of the symbolic links of a project outside of the project roots
+   * (the host setting of the project, e.g. the VS Code folder setting).
+   */
+  | { command: 'setProjectWatchExternalLinkTargets'; projectPath: string; enabled: boolean }
   /** Opens the cache directory of a project (resolved by the host from "project/details"). */
   | { command: 'openProjectCacheFolder'; projectPath: string }
   /** Copies text (e.g. an ignore pattern) to the system clipboard. */

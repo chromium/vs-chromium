@@ -229,11 +229,13 @@ describe('DashboardBridge', () => {
     const context = setup();
     await context.bridge.handleMessage({ type: 'command', command: 'rebuildProject', projectPath: 'C:\\a' });
     await context.bridge.handleMessage({ type: 'command', command: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false });
+    await context.bridge.handleMessage({ type: 'command', command: 'setProjectWatchExternalLinkTargets', projectPath: 'C:\\a', enabled: true });
     await context.bridge.handleMessage({ type: 'command', command: 'openProjectCacheFolder', projectPath: 'C:\\a' });
     await context.bridge.handleMessage({ type: 'command', command: 'clearCache' });
     assert.deepEqual(context.commands, [
       { command: 'rebuildProject', projectPath: 'C:\\a' },
       { command: 'setProjectCacheEnabled', projectPath: 'C:\\a', enabled: false },
+      { command: 'setProjectWatchExternalLinkTargets', projectPath: 'C:\\a', enabled: true },
       { command: 'openProjectCacheFolder', projectPath: 'C:\\a' },
       { command: 'clearCache' },
     ]);

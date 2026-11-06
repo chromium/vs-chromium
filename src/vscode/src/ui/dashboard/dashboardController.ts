@@ -63,6 +63,7 @@ export type DashboardAction =
   | { action: 'openCacheSettings' }
   | { action: 'rebuildProject'; projectPath: string }
   | { action: 'setProjectCacheEnabled'; projectPath: string; enabled: boolean }
+  | { action: 'setProjectWatchExternalLinkTargets'; projectPath: string; enabled: boolean }
   | { action: 'openProjectCacheFolder'; projectPath: string }
   | { action: 'openDiskUsage'; projectPath: string; relativePath?: string }
   | { action: 'closeDiskUsage' }
@@ -231,6 +232,9 @@ export class DashboardController {
           break;
         case 'setProjectCacheEnabled':
           this.command({ command: 'setProjectCacheEnabled', projectPath: action.projectPath, enabled: action.enabled });
+          break;
+        case 'setProjectWatchExternalLinkTargets':
+          this.command({ command: 'setProjectWatchExternalLinkTargets', projectPath: action.projectPath, enabled: action.enabled });
           break;
         case 'openProjectCacheFolder':
           this.command({ command: 'openProjectCacheFolder', projectPath: action.projectPath });

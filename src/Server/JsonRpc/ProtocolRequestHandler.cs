@@ -501,6 +501,11 @@ namespace VsChromium.Server.JsonRpc {
         ScannedDirectoryCount = verification.ScannedSubtreeCount,
         SymLinkDirectoryCount = verification.SymLinkSubtreeCount,
         SymLinkFileCount = verification.SymLinkFileCount,
+        CheckpointUsn = verification.CheckpointUsn,
+        CheckpointTimeUtc = verification.CheckpointTimeUtc,
+        OldestRecordTimeUtc = verification.OldestRecordTimeUtc,
+        JournalMaximumSizeBytes = verification.JournalMaximumSize,
+        Hint = verification.Hint,
       };
     }
 

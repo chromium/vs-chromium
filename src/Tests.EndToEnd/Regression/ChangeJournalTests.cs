@@ -218,6 +218,9 @@ public class ChangeJournalTests {
     }
     Assert.AreEqual("fullScan", verification["method"]!.GetValue<string>(), verification.ToJsonString());
     StringAssert.Contains(verification["fallbackReason"]!.GetValue<string>(), "wrapped");
+    StringAssert.Contains(verification["hint"]!.GetValue<string>(), "fsutil usn createjournal");
+    Assert.AreEqual(-8L, verification["checkpointUsn"]!.GetValue<long>());
+    Assert.IsNotNull(verification["checkpointTimeUtc"]);
     Assert.AreEqual(1, await HitCountAsync(server.Client, "CHANGED_NEW_FILE"));
   }
 
@@ -271,6 +274,7 @@ public class ChangeJournalTests {
     Assert.IsTrue(reader.ReadBoolean(), "The cache has a checkpoint");
     reader.ReadUInt64(); // Volume serial number
     reader.ReadUInt64(); // Journal id
+    // Note: Followed by the time of the checkpoint (kept).
     using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
     writer.Write(usn);
   }

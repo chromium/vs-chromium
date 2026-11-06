@@ -13,23 +13,30 @@ namespace VsChromium.Core.Files {
   /// only lists again the directories with a record after it.
   /// </summary>
   public sealed class ChangeJournalCheckpoint : IEquatable<ChangeJournalCheckpoint> {
-    public ChangeJournalCheckpoint(ulong volumeSerialNumber, ulong journalId, long usn) {
+    public ChangeJournalCheckpoint(ulong volumeSerialNumber, ulong journalId, long usn, DateTime? timeUtc = null) {
       VolumeSerialNumber = volumeSerialNumber;
       JournalId = journalId;
       Usn = usn;
+      TimeUtc = timeUtc;
     }
 
     public ulong VolumeSerialNumber { get; }
     public ulong JournalId { get; }
     public long Usn { get; }
 
+    /// <summary>
+    /// When the position was read (diagnostics: how old the checkpoint is when the journal wrapped),
+    /// if known. Not part of the equality.
+    /// </summary>
+    public DateTime? TimeUtc { get; }
+
     /// <summary>The same journal (volume and journal id) as <paramref name="other"/>.</summary>
     public bool IsSameJournal(ChangeJournalCheckpoint other) {
       return other != null && VolumeSerialNumber == other.VolumeSerialNumber && JournalId == other.JournalId;
     }
 
-    public ChangeJournalCheckpoint WithUsn(long usn) {
-      return new ChangeJournalCheckpoint(VolumeSerialNumber, JournalId, usn);
+    public ChangeJournalCheckpoint WithUsn(long usn, DateTime? timeUtc = null) {
+      return new ChangeJournalCheckpoint(VolumeSerialNumber, JournalId, usn, timeUtc);
     }
 
     public bool Equals(ChangeJournalCheckpoint other) {
@@ -45,7 +52,7 @@ namespace VsChromium.Core.Files {
     }
 
     public override string ToString() {
-      return $"volume {VolumeSerialNumber:x}, journal {JournalId:x}, USN {Usn:n0}";
+      return $"volume {VolumeSerialNumber:x}, journal {JournalId:x}, USN {Usn:n0}" + (TimeUtc.HasValue ? $" ({TimeUtc.Value:u})" : "");
     }
   }
 }

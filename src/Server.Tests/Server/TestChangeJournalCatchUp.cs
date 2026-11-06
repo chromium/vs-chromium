@@ -422,6 +422,12 @@ namespace VsChromium.Tests.Server {
       var (snapshot, verification) = Verify(old, Root(old).Checkpoint.WithUsn(query.FirstUsn - 8));
       Assert.AreEqual(VerificationMethod.FullScan, verification.Method);
       StringAssert.Contains(verification.FallbackReason, "wrapped");
+      // Diagnostics: the journal is too small.
+      Assert.AreEqual(query.FirstUsn - 8, verification.CheckpointUsn);
+      Assert.IsTrue(verification.JournalMaximumSize > 0);
+      Assert.IsNotNull(verification.OldestRecordTimeUtc);
+      StringAssert.Contains(verification.Hint, "fsutil usn createjournal");
+      StringAssert.Contains(verification.ToString(), "fsutil usn createjournal");
       AssertSameTree(Root(FullScan()).Directory, Root(snapshot).Directory);
       // The checkpoint of the full scan.
       Assert.IsTrue(Root(snapshot).Checkpoint.Usn >= query.Next.Usn);
@@ -431,9 +437,13 @@ namespace VsChromium.Tests.Server {
     public void OtherJournalFallsBackToAFullScan() {
       var old = FullScan();
       var checkpoint = Root(old).Checkpoint;
-      var (_, verification) = Verify(old, new ChangeJournalCheckpoint(checkpoint.VolumeSerialNumber, checkpoint.JournalId + 1, checkpoint.Usn));
+      var (_, verification) = Verify(old, new ChangeJournalCheckpoint(checkpoint.VolumeSerialNumber, checkpoint.JournalId + 1, checkpoint.Usn,
+        checkpoint.TimeUtc));
       Assert.AreEqual(VerificationMethod.FullScan, verification.Method);
       Assert.AreEqual("the change journal was recreated", verification.FallbackReason);
+      Assert.AreEqual(checkpoint.Usn, verification.CheckpointUsn);
+      Assert.AreEqual(checkpoint.TimeUtc, verification.CheckpointTimeUtc);
+      StringAssert.Contains(verification.Hint, "created again");
     }
 
     [TestMethod]

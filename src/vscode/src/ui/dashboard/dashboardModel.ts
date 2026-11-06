@@ -489,7 +489,23 @@ export function describeCacheVerification(verification: CacheVerificationStatist
   if (verification.method === 'changeJournal') {
     return `verified from the change journal: ${formatCount(verification.listedDirectoryCount)} directories listed again in ${formatDuration(verification.durationMs)}`;
   }
-  return `verified by a full scan${verification.fallbackReason ? ` (${verification.fallbackReason})` : ''}`;
+  return `verified by a full scan${verification.fallbackReason ? ` (${verification.fallbackReason})` : ''}${describeJournalHistory(verification)}${verification.hint ? `. ${verification.hint}` : ''}`;
+}
+
+/** The history kept by a wrapped change journal, e.g. "; journal since 2026-11-06 03:12 UTC, saved 2026-11-05 22:40 UTC". */
+function describeJournalHistory(verification: CacheVerificationStatistics): string {
+  const parts: string[] = [];
+  if (isValidTime(verification.oldestRecordTimeUtc)) {
+    parts.push(`journal since ${formatUtc(verification.oldestRecordTimeUtc)}`);
+  }
+  if (isValidTime(verification.checkpointTimeUtc)) {
+    parts.push(`checkpoint of ${formatUtc(verification.checkpointTimeUtc)}`);
+  }
+  return parts.length === 0 ? '' : `; ${parts.join(', ')}`;
+}
+
+function formatUtc(time: string): string {
+  return new Date(time).toISOString().replace('T', ' ').replace(/:\d\d\.\d+Z$/, ' UTC');
 }
 
 function describeProjects(data: DashboardData, options: FormatOptions): ProjectBlock[] {

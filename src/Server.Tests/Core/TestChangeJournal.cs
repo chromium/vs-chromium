@@ -26,6 +26,7 @@ namespace VsChromium.Tests.Core {
       BinaryPrimitives.WriteUInt64LittleEndian(record.AsSpan(8), 0x0001_0000_0000_1234);
       BinaryPrimitives.WriteUInt64LittleEndian(record.AsSpan(16), 0x0002_0000_0000_0005);
       BinaryPrimitives.WriteInt64LittleEndian(record.AsSpan(24), 4096);
+      BinaryPrimitives.WriteInt64LittleEndian(record.AsSpan(32), 133_000_000_000_000_000);
       BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(40), UsnRecordParser.FileCreate | UsnRecordParser.Close);
       BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(52), (uint)FileAttributes.Directory);
       var records = Parse(9000, record, out var nextUsn);
@@ -36,6 +37,7 @@ namespace VsChromium.Tests.Core {
       Assert.AreEqual(new UInt128(0, 0x0002_0000_0000_0005), r.ParentFileId);
       Assert.AreEqual(UsnRecordParser.FileCreate | UsnRecordParser.Close, r.Reason);
       Assert.IsTrue(r.IsDirectory);
+      Assert.AreEqual(133_000_000_000_000_000L, r.TimeStamp);
     }
 
     [TestMethod]
@@ -45,6 +47,7 @@ namespace VsChromium.Tests.Core {
       WriteId(record, 8, FileId);
       WriteId(record, 24, ParentId);
       BinaryPrimitives.WriteInt64LittleEndian(record.AsSpan(40), 123_456);
+      BinaryPrimitives.WriteInt64LittleEndian(record.AsSpan(48), 134_000_000_000_000_000);
       BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(56), UsnRecordParser.DataExtend);
       BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(68), (uint)FileAttributes.Archive);
       var r = Parse(200_000, record, out _).Single();
@@ -53,6 +56,7 @@ namespace VsChromium.Tests.Core {
       Assert.AreEqual(ParentId, r.ParentFileId);
       Assert.AreEqual(UsnRecordParser.DataExtend, r.Reason);
       Assert.IsFalse(r.IsDirectory);
+      Assert.AreEqual(134_000_000_000_000_000L, r.TimeStamp);
     }
 
     [TestMethod]
@@ -197,6 +201,11 @@ namespace VsChromium.Tests.Core {
     [TestMethod]
     public void CheckpointBeforeTheFirstUsnIsNotReadable() {
       var start = QueryOrInconclusive(new WindowsChangeJournal());
+      Assert.IsTrue(start.MaximumSize > 0);
+      Assert.IsNotNull(start.Next.TimeUtc);
+      var oldest = new WindowsChangeJournal().GetOldestRecordTime(new FullPath(_root), start);
+      Assert.IsNotNull(oldest);
+      Assert.IsTrue(oldest.Value <= DateTime.UtcNow.AddMinutes(1));
       var wrapped = start.Next.WithUsn(start.FirstUsn - 8);
       StringAssert.Contains(start.CheckReadable(wrapped), "wrapped");
       StringAssert.Contains(start.CheckReadable(start.Next.WithUsn(start.Next.Usn + 8)), "after the end");

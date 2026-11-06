@@ -169,7 +169,7 @@ namespace VsChromium.Server.Cache {
   /// cref="IndexCacheFileWriter"/>): the tree of the project (all the directories and files of
   /// the snapshot) and the location of the cached contents. Header (magic, format version, path
   /// case sensitivity, root path, version hash of the project configuration, change journal
-  /// checkpoint if any: volume serial number, journal id, USN); directories in depth first order
+  /// checkpoint if any: volume serial number, journal id, USN, time); directories in depth first order
   /// (record kind 1, flags (symbolic link, has a file id), file id (16 bytes, if any), relative
   /// path front-coded with the previous directory, file count, then per file: name, flags (ASCII,
   /// binary, not cached, not searchable, symbolic link), last write time delta, size, and for cached text files arena id delta, offset
@@ -181,7 +181,7 @@ namespace VsChromium.Server.Cache {
   public static class IndexCacheFile {
     public const uint HeaderMagic = 0x49435356; // "VSCI"
     public const uint TrailerMagic = 0x45435356; // "VSCE"
-    public const int FormatVersion = 4;
+    public const int FormatVersion = 5;
     public const int ArenaSize = ArenaAllocator.DefaultArenaSize;
     public const int TrailingByteCount = 2;
     public const string IndexFileName = "index.bin";
@@ -202,6 +202,24 @@ namespace VsChromium.Server.Cache {
         return -1;
       var name = fileName.AsSpan(0, fileName.Length - ArenaExtension.Length);
       return int.TryParse(name, System.Globalization.NumberStyles.None, null, out var id) && id > 0 ? id : -1;
+    }
+
+    /// <summary>A change journal checkpoint: volume serial number, journal id, USN, time (UTC ticks, 0 if unknown).</summary>
+    internal static ChangeJournalCheckpoint ReadCheckpoint(BinaryReader reader) {
+      var volume = reader.ReadUInt64();
+      var journal = reader.ReadUInt64();
+      var usn = reader.ReadInt64();
+      var ticks = reader.ReadInt64();
+      if (ticks < 0 || ticks > DateTime.MaxValue.Ticks)
+        throw new InvalidDataException("Invalid checkpoint time");
+      return new ChangeJournalCheckpoint(volume, journal, usn, ticks == 0 ? null : new DateTime(ticks, DateTimeKind.Utc));
+    }
+
+    internal static void WriteCheckpoint(BinaryWriter writer, ChangeJournalCheckpoint checkpoint) {
+      writer.Write(checkpoint.VolumeSerialNumber);
+      writer.Write(checkpoint.JournalId);
+      writer.Write(checkpoint.Usn);
+      writer.Write(checkpoint.TimeUtc?.Ticks ?? 0L);
     }
 
     internal static long ZigZag(long value) => (value << 1) ^ (value >> 63);
@@ -236,7 +254,7 @@ namespace VsChromium.Server.Cache {
         throw new InvalidDataException("Different path case sensitivity");
       var index = new IndexCacheIndex { RootPath = reader.ReadString(), VersionHash = reader.ReadString() };
       if (reader.ReadBoolean()) {
-        index.Checkpoint = new ChangeJournalCheckpoint(reader.ReadUInt64(), reader.ReadUInt64(), reader.ReadInt64());
+        index.Checkpoint = ReadCheckpoint(reader);
       }
       var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
       if (!string.Equals(index.RootPath, expectedRootPath, comparison))
@@ -497,9 +515,7 @@ namespace VsChromium.Server.Cache {
       _writer.Write(versionHash ?? "");
       _writer.Write(checkpoint != null);
       if (checkpoint != null) {
-        _writer.Write(checkpoint.VolumeSerialNumber);
-        _writer.Write(checkpoint.JournalId);
-        _writer.Write(checkpoint.Usn);
+        IndexCacheFile.WriteCheckpoint(_writer, checkpoint);
       }
     }
 

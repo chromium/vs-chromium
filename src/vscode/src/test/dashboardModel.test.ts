@@ -245,6 +245,13 @@ describe('buildViewModel', () => {
       method: 'fullScan', fallbackReason: 'the change journal is not active on "D:\\"', durationMs: 900, journalRecordCount: 0,
       listedDirectoryCount: 0, scannedDirectoryCount: 0, symLinkDirectoryCount: 0, symLinkFileCount: 0,
     }), 'verified by a full scan (the change journal is not active on "D:\\")');
+    assert.equal(describeCacheVerification({
+      method: 'fullScan', fallbackReason: 'the change journal wrapped', durationMs: 900, journalRecordCount: 0,
+      listedDirectoryCount: 0, scannedDirectoryCount: 0, symLinkDirectoryCount: 0, symLinkFileCount: 0,
+      checkpointUsn: 1234, checkpointTimeUtc: '2026-11-05T22:40:10Z', oldestRecordTimeUtc: '2026-11-06T03:12:45.123Z',
+      journalMaximumSizeBytes: 33_554_432, hint: 'Enlarge it: fsutil usn createjournal m=1073741824 a=134217728 C:',
+    }), 'verified by a full scan (the change journal wrapped); journal since 2026-11-06 03:12 UTC, checkpoint of 2026-11-05 22:40 UTC. ' +
+      'Enlarge it: fsutil usn createjournal m=1073741824 a=134217728 C:');
     const none = describeProjectOperations(sampleProjectDetails('C:\\a', {
       operations: {
         initialLoad: { count: 0, minMs: 0, avgMs: 0, maxMs: 0, lastMs: 0, scanMs: 0, fromCache: false },

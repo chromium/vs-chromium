@@ -40,8 +40,9 @@ namespace VsChromium.Core.Files.Windows {
               new Win32Exception(Marshal.GetLastPInvokeError()).Message, fileSystemName);
           if (!TryQuery(handle, out var data, out var error))
             return ChangeJournalQueryResult.Failure(DescribeError(error, root), fileSystemName);
-          return ChangeJournalQueryResult.Success(new ChangeJournalCheckpoint(volumeSerialNumber, data.UsnJournalID, data.NextUsn),
-            data.FirstUsn, fileSystemName);
+          return ChangeJournalQueryResult.Success(
+            new ChangeJournalCheckpoint(volumeSerialNumber, data.UsnJournalID, data.NextUsn, DateTime.UtcNow),
+            data.FirstUsn, fileSystemName, (long)data.MaximumSize);
         }
       }
       catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
@@ -88,6 +89,24 @@ namespace VsChromium.Core.Files.Windows {
           }
         }
       }
+    }
+
+    public DateTime? GetOldestRecordTime(FullPath directory, ChangeJournalQueryResult state) {
+      if (!state.IsSuccess)
+        return null;
+      DateTime? result = null;
+      try {
+        // Note: The records from the first USN of the journal (the oldest), the first one with a time.
+        ReadRecords(directory, state.Next.WithUsn(state.FirstUsn), state.FirstUsn + 1, (in ChangeJournalRecord record) => {
+          if (result == null && record.TimeStamp > 0) {
+            result = DateTime.FromFileTimeUtc(record.TimeStamp);
+          }
+        }, CancellationToken.None);
+      }
+      catch (ChangeJournalException) {
+        // E.g. the first records were overwritten meanwhile.
+      }
+      return result;
     }
 
     private static unsafe bool TryQuery(SafeFileHandle handle, out USN_JOURNAL_DATA data, out int error) {

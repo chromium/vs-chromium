@@ -68,7 +68,8 @@ namespace VsChromium.Core.Files.Windows {
             fileId: BinaryPrimitives.ReadUInt64LittleEndian(record.Slice(8)),
             parentFileId: BinaryPrimitives.ReadUInt64LittleEndian(record.Slice(16)),
             reason: BinaryPrimitives.ReadUInt32LittleEndian(record.Slice(40)),
-            fileAttributes: BinaryPrimitives.ReadUInt32LittleEndian(record.Slice(52)));
+            fileAttributes: BinaryPrimitives.ReadUInt32LittleEndian(record.Slice(52)),
+            timeStamp: BinaryPrimitives.ReadInt64LittleEndian(record.Slice(32)));
         case 3:
           // USN_RECORD_V3: FILE_ID_128 file references (FileName at 76).
           RequireLength(record, 76, majorVersion);
@@ -77,7 +78,8 @@ namespace VsChromium.Core.Files.Windows {
             fileId: ReadFileId128(record.Slice(8)),
             parentFileId: ReadFileId128(record.Slice(24)),
             reason: BinaryPrimitives.ReadUInt32LittleEndian(record.Slice(56)),
-            fileAttributes: BinaryPrimitives.ReadUInt32LittleEndian(record.Slice(68)));
+            fileAttributes: BinaryPrimitives.ReadUInt32LittleEndian(record.Slice(68)),
+            timeStamp: BinaryPrimitives.ReadInt64LittleEndian(record.Slice(48)));
         case 4:
           // USN_RECORD_V4 (range tracking): FILE_ID_128 file references, no attributes (extents at 64).
           RequireLength(record, 64, majorVersion);

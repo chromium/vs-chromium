@@ -122,6 +122,36 @@ namespace VsChromium.Server.FileSystem.Builder {
       }
     }
 
+    /// <summary>
+    /// Diagnostics of a checkpoint that can't be read from the journal: wrapped (the journal is too
+    /// small for the time since the last save of the cache) or recreated.
+    /// </summary>
+    private void AddJournalDiagnostics(FullPath rootPath, ChangeJournalQueryResult query, ChangeJournalCheckpoint checkpoint,
+                                       ProjectVerification verification) {
+      var drive = (System.IO.Path.GetPathRoot(rootPath.Value) ?? rootPath.Value).TrimEnd('\\', '/');
+      var wrapped = checkpoint.JournalId == query.Next.JournalId && checkpoint.Usn < query.FirstUsn;
+      var recreated = checkpoint.VolumeSerialNumber == query.Next.VolumeSerialNumber && checkpoint.JournalId != query.Next.JournalId;
+      if (!wrapped && !recreated)
+        return;
+      verification.CheckpointUsn = checkpoint.Usn;
+      verification.CheckpointTimeUtc = checkpoint.TimeUtc;
+      verification.JournalMaximumSize = query.MaximumSize > 0 ? query.MaximumSize : null;
+      if (recreated) {
+        verification.Hint = $"The change journal of {drive} was deleted and created again since the index cache was saved.";
+        return;
+      }
+      var oldest = _changeJournal.GetOldestRecordTime(rootPath, query);
+      verification.OldestRecordTimeUtc = oldest;
+      var history = oldest.HasValue ? $"about {FormatDuration(DateTime.UtcNow - oldest.Value)} of changes" : "less history";
+      var size = query.MaximumSize > 0 ? $" ({query.MaximumSize / 1024 / 1024:n0} MB)" : "";
+      verification.Hint = $"The change journal of {drive}{size} keeps {history}, less than the time since the index cache " +
+                          $"was saved: enlarge it, as an administrator: fsutil usn createjournal m=1073741824 a=134217728 {drive}";
+    }
+
+    private static string FormatDuration(TimeSpan duration) {
+      return duration.TotalHours >= 1 ? $"{duration.TotalHours:0.#} hours" : $"{Math.Max(1, duration.TotalMinutes):0} minutes";
+    }
+
     /// <summary>The end of the change journal of the volume of a project (before a scan), or null.</summary>
     private ChangeJournalCheckpoint QueryCheckpoint(FullPath rootPath) {
       if (_changeJournal == null)
@@ -171,6 +201,9 @@ namespace VsChromium.Server.FileSystem.Builder {
       var reason = query.CheckReadable(checkpoint);
       if (reason != null) {
         Fail(reason);
+        if (query.IsSuccess) {
+          AddJournalDiagnostics(project.RootPath, query, checkpoint, verification);
+        }
         return null;
       }
 

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Text;
 
 namespace VsChromium.Server.FileSystem {
@@ -42,6 +43,20 @@ namespace VsChromium.Server.FileSystem {
     /// </summary>
     public bool CheckpointNeedsSave { get; set; }
 
+    // Diagnostics of a checkpoint that can't be used because the journal wrapped (records after it
+    // were overwritten) or was recreated.
+
+    /// <summary>The USN of the checkpoint of the cache (wrapped or recreated journal).</summary>
+    public long? CheckpointUsn { get; set; }
+    /// <summary>When the checkpoint of the cache was read, if known (wrapped or recreated journal).</summary>
+    public DateTime? CheckpointTimeUtc { get; set; }
+    /// <summary>The time of the oldest record of the journal, if known (wrapped journal).</summary>
+    public DateTime? OldestRecordTimeUtc { get; set; }
+    /// <summary>The maximum size of the journal, if known (wrapped or recreated journal).</summary>
+    public long? JournalMaximumSize { get; set; }
+    /// <summary>What to do about it, e.g. enlarge the journal (wrapped or recreated journal).</summary>
+    public string Hint { get; set; }
+
     public override string ToString() {
       var result = new StringBuilder();
       if (Method == VerificationMethod.ChangeJournal) {
@@ -50,6 +65,18 @@ namespace VsChromium.Server.FileSystem {
           ListedDirectoryCount, ElapsedMs, RecordCount, ScannedSubtreeCount, SymLinkSubtreeCount, CheckedSymLinkCount, SymLinkFileCount);
       } else {
         result.AppendFormat("full scan in {0:n0} ms: {1}", ElapsedMs, FallbackReason ?? "change journal not used");
+        if (CheckpointUsn.HasValue) {
+          result.AppendFormat(" (checkpoint USN {0:n0}", CheckpointUsn.Value);
+          if (CheckpointTimeUtc.HasValue)
+            result.AppendFormat(" of {0:u}", CheckpointTimeUtc.Value);
+          if (OldestRecordTimeUtc.HasValue)
+            result.AppendFormat(", oldest record of the journal {0:u}", OldestRecordTimeUtc.Value);
+          if (JournalMaximumSize.HasValue)
+            result.AppendFormat(", journal maximum size {0:n0} bytes", JournalMaximumSize.Value);
+          result.Append(')');
+        }
+        if (Hint != null)
+          result.Append(". ").Append(Hint);
       }
       return result.ToString();
     }

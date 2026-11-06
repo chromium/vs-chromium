@@ -392,6 +392,16 @@ export interface CacheVerificationStatistics {
   symLinkDirectoryCount: number;
   /** The file symbolic links checked again (`changeJournal`). */
   symLinkFileCount: number;
+  /** The USN of the change journal checkpoint of the cache, when the journal wrapped (records after it overwritten) or was recreated. */
+  checkpointUsn?: number;
+  /** When the checkpoint of the cache was read, if known (wrapped or recreated journal). */
+  checkpointTimeUtc?: string;
+  /** The time of the oldest record of the journal, if known (wrapped journal): the history it keeps. */
+  oldestRecordTimeUtc?: string;
+  /** The maximum size of the journal (wrapped or recreated journal). */
+  journalMaximumSizeBytes?: number;
+  /** What to do about it, e.g. enlarge the journal with `fsutil usn createjournal` (wrapped or recreated journal). */
+  hint?: string;
 }
 
 export interface ProjectDetails {

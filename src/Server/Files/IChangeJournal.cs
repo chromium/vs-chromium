@@ -29,20 +29,32 @@ namespace VsChromium.Core.Files {
     /// </summary>
     void ReadRecords(FullPath directory, ChangeJournalCheckpoint start, long endUsn, ChangeJournalRecordHandler handler,
                      CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The time of the oldest record of the journal of the volume of <paramref name="directory"/>
+    /// (diagnostics: how much history the journal keeps), or null if unknown.
+    /// </summary>
+    DateTime? GetOldestRecordTime(FullPath directory, ChangeJournalQueryResult state) => null;
   }
 
   /// <summary>The state of the change journal of a volume (see <see cref="IChangeJournal.Query"/>).</summary>
   public sealed class ChangeJournalQueryResult {
-    private ChangeJournalQueryResult(ChangeJournalCheckpoint next, long firstUsn, string fileSystemName, string failureReason) {
+    private ChangeJournalQueryResult(ChangeJournalCheckpoint next, long firstUsn, string fileSystemName, string failureReason,
+                                     long maximumSize = 0) {
       Next = next;
       FirstUsn = firstUsn;
       FileSystemName = fileSystemName;
       FailureReason = failureReason;
+      MaximumSize = maximumSize;
     }
 
-    public static ChangeJournalQueryResult Success(ChangeJournalCheckpoint next, long firstUsn, string fileSystemName) {
-      return new ChangeJournalQueryResult(next, firstUsn, fileSystemName, null);
+    public static ChangeJournalQueryResult Success(ChangeJournalCheckpoint next, long firstUsn, string fileSystemName,
+                                                   long maximumSize = 0) {
+      return new ChangeJournalQueryResult(next, firstUsn, fileSystemName, null, maximumSize);
     }
+
+    /// <summary>The maximum size of the journal in bytes (0 if unknown): it keeps less history when it is small.</summary>
+    public long MaximumSize { get; }
 
     public static ChangeJournalQueryResult Failure(string reason, string fileSystemName = null) {
       return new ChangeJournalQueryResult(null, 0, fileSystemName, reason);
@@ -88,13 +100,17 @@ namespace VsChromium.Core.Files {
 
   /// <summary>A record of the change journal (see <see cref="IChangeJournal.ReadRecords"/>).</summary>
   public readonly struct ChangeJournalRecord {
-    public ChangeJournalRecord(long usn, UInt128 fileId, UInt128 parentFileId, uint reason, uint fileAttributes) {
+    public ChangeJournalRecord(long usn, UInt128 fileId, UInt128 parentFileId, uint reason, uint fileAttributes, long timeStamp = 0) {
       Usn = usn;
       FileId = fileId;
       ParentFileId = parentFileId;
       Reason = reason;
       FileAttributes = fileAttributes;
+      TimeStamp = timeStamp;
     }
+
+    /// <summary>The time of the record (FILETIME, UTC), 0 if unknown (version 4 records).</summary>
+    public long TimeStamp { get; }
 
     public long Usn { get; }
     /// <summary>The 128-bit id of the file or directory (see <see cref="DirectoryEntry.FileId"/>).</summary>

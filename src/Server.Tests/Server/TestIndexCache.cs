@@ -762,7 +762,7 @@ namespace VsChromium.Tests.Server {
         }),
         new IndexCacheWriteDirectory(Path.Combine("a", "unknown"), false, Array.Empty<IndexCacheWriteItem>()),
       };
-      var checkpoint = new ChangeJournalCheckpoint(0x1234, 0xabcd_0000_1111, 987_654_321);
+      var checkpoint = new ChangeJournalCheckpoint(0x1234, 0xabcd_0000_1111, 987_654_321, new DateTime(2026, 11, 6, 3, 4, 5, DateTimeKind.Utc));
       var cache = OpenNew();
       cache.Write(directories, VersionHash, checkpoint, CancellationToken.None);
       cache.Dispose();
@@ -770,6 +770,7 @@ namespace VsChromium.Tests.Server {
       var reopened = OpenNew();
       var tree = reopened.TryLoadTree(VersionHash, factory, new FullPath(_projectRoot), CancellationToken.None);
       Assert.AreEqual(checkpoint, tree.Checkpoint);
+      Assert.AreEqual(checkpoint.TimeUtc, tree.Checkpoint.TimeUtc);
       Assert.AreEqual(rootId, tree.Root.FileId);
       var a = tree.Root.ChildDirectories.Single();
       Assert.AreEqual(aId, a.FileId);

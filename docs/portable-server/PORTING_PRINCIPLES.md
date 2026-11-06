@@ -1006,7 +1006,7 @@ nothing to the steady state managed heap. Searches are unchanged (within run-to-
 
 ### Persistent index cache (phase 2: cached tree, verified in the background)
 
-`index.bin` (format version 3, 4 since the change journal verification below) also contains the tree of the project (all the directories in depth
+`index.bin` (format version 3, 5 since the change journal verification below) also contains the tree of the project (all the directories in depth
 first order with their symbolic link flag, all the files with their last write time and size,
 including the files without cached contents: larger than 512 KB, not searchable, modified during
 the load) and the version hash of the project configuration. When a project is registered and its
@@ -1070,7 +1070,8 @@ NTFS/ReFS change journal (USN journal). Windows specific code (see "Windows spec
   `FileIdExtdDirectoryInformation`, 64 KB buffer): the 128-bit id of each directory, from the
   enumeration of its parent, is in the snapshot (`DirectoryData.FileId`) and in the cache. Cache
   format 4: directory ids (16 bytes per directory), a "symbolic link" flag per file, and the
-  checkpoint in the header (volume serial number, journal id, USN). Scan of the large project:
+  checkpoint in the header (volume serial number, journal id, USN); format 5: and the time of the
+  checkpoint. Scan of the large project:
   10.4-10.5 s portable vs 10.7-11.1 s (23 threads), 31-32.5 s vs 28.7 s (4 threads): no
   significant difference (kernel time dominates).
 - **Catch-up** (`FileSystemSnapshotBuilder.TryCatchUp`, `ChangeJournalDirectoryMapper`,
@@ -1100,6 +1101,17 @@ NTFS/ReFS change journal (USN journal). Windows specific code (see "Windows spec
   not active (the Dev Drive by default: enabling it needs an administrator, `fsutil usn
   createjournal`), recreated or wrapped, network drives and non NTFS/ReFS volumes, read errors,
   "Rebuild index" and refreshes.
+- **Wrapped or recreated journal diagnostics**: the log and `lastVerification` give the USN and
+  time of the checkpoint, the time of the oldest record of the journal (its history), its maximum
+  size, and a hint (dashboard note): a wrapped journal is too small for the time since the cache
+  was saved: `fsutil usn createjournal m=1073741824 a=134217728 C:` (administrator). The default
+  journal of `C:` is 32 MB: it kept about 4h45 of history overnight (~20 MB/h) on the test machine.
+  Modifying an active journal with `fsutil usn createjournal` (`FSCTL_CREATE_USN_JOURNAL` on a
+  volume with a journal) changes its maximum size and allocation delta and keeps the journal and
+  its records (documented behavior, "Creating, Modifying, and Deleting a Change Journal"); a new
+  journal id is only assigned when the journal is deleted (`fsutil usn deletejournal`) and created
+  again. Not verified on the test machine (needs an administrator); either way a new id only
+  means one full scan (fallback "recreated").
 - **Checkpoint**: every change before it must be in the saved tree. After a full scan: the end of
   the journal read before the scan (changes during the scan are listed twice, never missed); the
   incremental updates share the checkpoint of the scan they derive from
@@ -1119,21 +1131,21 @@ listings; 23 threads unless noted):
 |---|---|---|---|
 | Synthetic, 100k files, 10.4k directories (C:, NTFS) | 130-139 ms | 2-12 ms (0 directories listed) | 100 touched files: 6-16 ms (99-393 directories); 2,000: 39-80 ms (1.8k-5.5k directories) |
 | `large-1-400000-v1` (D:, Dev Drive, ReFS) | 255-325 ms | fallback: "the change journal is not active on D:\" | - |
-| A large project, 2.65M files, 640k directories (C:) | 10.2-11.1 s | 1.9-2.2 s (0 directories listed, 838 directory links resolved, 1 scanned (other volume), 44,575 file links checked) | from the oldest record (442k records, 34 MB): 2.1-2.4 s |
-| Same, 4 threads | 28.9-36.0 s | 6.0-6.2 s | - |
+| A large project, 2.65M files, 640k directories (C:) | 9.4-9.7 s | 0.73-0.97 s (0 directories listed, 838 directory links resolved, 1 scanned (other volume), 44,575 file links checked) | from the oldest record (442k records, 34 MB): 2.1-2.4 s (before the one-open file link check) |
+| Same, 4 threads | 27.7-36.0 s | 1.5-1.6 s | - |
 
 On the large project the journal read and the mapping are negligible (even from the oldest record
 of the journal). Most of its directories are in the subtrees of directory symbolic links: when
 these subtrees were always scanned entirely (first version), the catch-up took 6.6-6.9 s (18.8-19.5 s
-with 4 threads). The remaining time is the check of the 44,575 file symbolic links (kernel time:
-`FileInfo` and `ResolveLinkTarget`, several opens per link).
+with 4 threads); with the check of the file symbolic links by `FileInfo` and `ResolveLinkTarget`
+(several opens per link), 1.9-2.2 s (6.0-6.2 s with 4 threads): the check is now a single open of
+the target (`WindowsFileSystem.GetSymLinkFileMetadata`, also used by the scan).
 
 Known limitations:
 
 - Directory symbolic links and junctions to another volume, and the ones of the directories listed
-  again, are scanned entirely by the catch-up; every file symbolic link is checked again (a
-  cheaper check, one open of the target, or a mapping of the targets on the same volume, would
-  reduce the remaining catch-up time).
+  again, are scanned entirely by the catch-up; every file symbolic link is checked again (one
+  open each).
 - Hard links: the directory entry of the other names of a file modified through one name is not
   updated by NTFS, nor is its parent recorded for them: same limitation as the full scan.
 - The self-check advances the checkpoint shared by the incremental updates: an incremental update

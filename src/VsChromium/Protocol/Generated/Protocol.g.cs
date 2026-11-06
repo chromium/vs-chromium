@@ -827,6 +827,36 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonProperty("symLinkFileCount")]
     public int SymLinkFileCount { get; set; }
+
+    /// <summary>
+    /// The USN of the change journal checkpoint of the cache, when the journal wrapped (records after it overwritten) or was recreated.
+    /// </summary>
+    [JsonProperty("checkpointUsn", NullValueHandling = NullValueHandling.Ignore)]
+    public long? CheckpointUsn { get; set; }
+
+    /// <summary>
+    /// When the checkpoint of the cache was read, if known (wrapped or recreated journal).
+    /// </summary>
+    [JsonProperty("checkpointTimeUtc", NullValueHandling = NullValueHandling.Ignore)]
+    public DateTime? CheckpointTimeUtc { get; set; }
+
+    /// <summary>
+    /// The time of the oldest record of the journal, if known (wrapped journal): the history it keeps.
+    /// </summary>
+    [JsonProperty("oldestRecordTimeUtc", NullValueHandling = NullValueHandling.Ignore)]
+    public DateTime? OldestRecordTimeUtc { get; set; }
+
+    /// <summary>
+    /// The maximum size of the journal (wrapped or recreated journal).
+    /// </summary>
+    [JsonProperty("journalMaximumSizeBytes", NullValueHandling = NullValueHandling.Ignore)]
+    public long? JournalMaximumSizeBytes { get; set; }
+
+    /// <summary>
+    /// What to do about it, e.g. enlarge the journal with `fsutil usn createjournal` (wrapped or recreated journal).
+    /// </summary>
+    [JsonProperty("hint", NullValueHandling = NullValueHandling.Ignore)]
+    public string Hint { get; set; }
   }
 
   public sealed partial class ProjectDetails {

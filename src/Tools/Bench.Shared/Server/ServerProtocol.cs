@@ -4,7 +4,7 @@
 
 using System.Text.Json.Nodes;
 
-namespace VsChromium.Tests.EndToEnd.Server;
+namespace VsChromium.Bench.Shared.Server;
 
 /// <summary>A file of a search result: full path, path relative to its project, match positions.</summary>
 public sealed record SearchResultFile(string FullPath, string RelativePath, IReadOnlyList<(int Position, int Length)> Positions);
@@ -17,8 +17,8 @@ public sealed record ServerRequest(string Method, JsonObject Params);
 /// (see protocol/*.tsp and protocol/README.md).
 /// </summary>
 public static class ServerProtocol {
-  public static ServerRequest Initialize() =>
-    new("server/initialize", new JsonObject { ["clientName"] = "VsChromium.Tests.EndToEnd", ["protocolVersion"] = 1 });
+  public static ServerRequest Initialize(string clientName = "VsChromium.Tests.EndToEnd") =>
+    new("server/initialize", new JsonObject { ["clientName"] = clientName, ["protocolVersion"] = 1 });
 
   public static ServerRequest RegisterFile(string path) =>
     new("files/register", new JsonObject { ["path"] = path });

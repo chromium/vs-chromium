@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Code shared by the end-to-end tests (src/Tests.EndToEnd) and the benchmark app (src/Tools/Bench):
+    the generator of real-world-like code bases (Corpus/) and the JSON-RPC client of the server
+    (Server/), used as a black box over its protocol (protocol/*.tsp).
+  -->
+
+  <Import Project="..\..\..\Build\Common.Sdk.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>VsChromium.Bench.Shared</AssemblyName>
+    <RootNamespace>VsChromium.Bench.Shared</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Tools\Bench.Shared\</OutputPath>
+    <!-- Used by the benchmark app, published with NativeAOT. -->
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+</Project>

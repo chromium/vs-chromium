@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace VsChromium.Tests.EndToEnd.Corpus;
+namespace VsChromium.Bench.Shared.Corpus;
 
 /// <summary>
 /// Parameters of a generated code base. Two specs with the same values (and the same generator

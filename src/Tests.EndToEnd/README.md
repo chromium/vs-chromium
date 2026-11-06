@@ -17,9 +17,9 @@ dotnet test --filter "TestCategory=Benchmark"    # benchmarks
 
 | Directory | Content |
 |---|---|
-| `Server/` | JSON-RPC client (`JsonRpcServerClient`, LSP framing) and protocol helpers |
+| `../Tools/Bench.Shared/Server/` | JSON-RPC client (`JsonRpcServerClient`, LSP framing) and protocol helpers (shared with the benchmark app) |
 | `Protocol/` | Tests of the JSON-RPC protocol (`JsonRpcProtocolTests`) |
-| `Corpus/` | Generator of real-world-like code bases (`CodeBaseGenerator`) and their on-disk cache (`CorpusCache`) |
+| `../Tools/Bench.Shared/Corpus/` | Generator of real-world-like code bases (`CodeBaseGenerator`) and their on-disk cache (`CorpusCache`) (shared with the benchmark app) |
 | `Regression/` | Regression tests of the behavior changes of the port. Tests of known bugs of the current server are reported as **skipped** (inconclusive) with the reason, and **fail** once the bug is fixed, as a reminder to remove the `KnownBug` marker |
 | `Benchmarks/` | Benchmarks: cold indexing, idle/steady state memory, code/file path searches, extracts. Measure response time, CPU time and memory (working set and private bytes, which include native memory, sampled from outside the server process every 50 ms, plus the server's own `server/statistics`) |
 

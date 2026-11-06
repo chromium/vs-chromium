@@ -4,7 +4,7 @@
 
 using System.Diagnostics;
 using System.Text;
-using VsChromium.Tests.EndToEnd.Server;
+using VsChromium.Bench.Shared.Server;
 
 namespace VsChromium.Tests.EndToEnd.Regression;
 

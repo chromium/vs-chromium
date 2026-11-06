@@ -34,6 +34,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProtocolGen", "Tools\Protoc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProtocolGen.Tests", "Tools\ProtocolGen.Tests\ProtocolGen.Tests.csproj", "{A3D5E7F9-1B2C-4D6E-8F0A-5C7B9D1E3F42}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bench.Shared", "Tools\Bench.Shared\Bench.Shared.csproj", "{B7E2C4A1-5D3F-4E8B-9A6C-1F2D3E4B5A61}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,6 +78,10 @@ Global
 		{A3D5E7F9-1B2C-4D6E-8F0A-5C7B9D1E3F42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3D5E7F9-1B2C-4D6E-8F0A-5C7B9D1E3F42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3D5E7F9-1B2C-4D6E-8F0A-5C7B9D1E3F42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7E2C4A1-5D3F-4E8B-9A6C-1F2D3E4B5A61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7E2C4A1-5D3F-4E8B-9A6C-1F2D3E4B5A61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7E2C4A1-5D3F-4E8B-9A6C-1F2D3E4B5A61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7E2C4A1-5D3F-4E8B-9A6C-1F2D3E4B5A61}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace VsChromium.Tests.EndToEnd.Server;
+namespace VsChromium.Bench.Shared.Server;
 
 /// <summary>
 /// An error response returned by the server. <see cref="Error"/> is the JSON-RPC error object
@@ -24,6 +24,29 @@ public sealed class ServerErrorException(string message, JsonObject error) : Exc
 
 /// <summary>A response from the server (the result of a request), with the time it took (measured by the client).</summary>
 public sealed record TimedResponse(JsonObject Data, TimeSpan Elapsed, int ResponseSizeBytes);
+
+/// <summary>Options of a server started by <see cref="JsonRpcServerClient"/>.</summary>
+public sealed record ServerStartOptions {
+  /// <summary>
+  /// The index cache directory ("--cache-dir"), or null for a new one deleted when the server exits
+  /// (unless <see cref="NoCache"/>).
+  /// </summary>
+  public string? CacheDirectory { get; init; }
+
+  /// <summary>Disables the index cache ("--no-cache").</summary>
+  public bool NoCache { get; init; }
+
+  /// <summary>More command line arguments (e.g. options supported by recent servers only).</summary>
+  public IReadOnlyList<string>? ExtraArguments { get; init; }
+
+  /// <summary>Environment variables of the server process.</summary>
+  public IReadOnlyDictionary<string, string?>? Environment { get; init; }
+
+  /// <summary>The name of the client sent in "server/initialize".</summary>
+  public string ClientName { get; init; } = "VsChromium.Tests.EndToEnd";
+
+  public TimeSpan InitializeTimeout { get; init; } = TimeSpan.FromSeconds(30);
+}
 
 /// <summary>
 /// Client for VsChromium.Server.exe running in "--jsonrpc" mode: JSON-RPC 2.0 over stdin/stdout,
@@ -51,22 +74,32 @@ public sealed class JsonRpcServerClient : IAsyncDisposable {
   /// </summary>
   private readonly string? _ownedCacheDirectory;
 
-  private JsonRpcServerClient(string serverPath, string? cacheDirectory, IReadOnlyDictionary<string, string?>? environment) {
-    if (cacheDirectory == null) {
+  private JsonRpcServerClient(string serverPath, ServerStartOptions options) {
+    string? cacheDirectory = options.CacheDirectory;
+    if (cacheDirectory == null && !options.NoCache) {
       // Note: Never the cache of the user (default directory): a new cache for each server.
       cacheDirectory = Path.Combine(Path.GetTempPath(), "VsChromiumTestCache-" + Guid.NewGuid().ToString("N"));
       _ownedCacheDirectory = cacheDirectory;
     }
     var startInfo = new ProcessStartInfo {
       FileName = serverPath,
-      Arguments = $"--jsonrpc --cache-dir \"{cacheDirectory}\"",
       UseShellExecute = false,
       CreateNoWindow = true,
       RedirectStandardInput = true,
       RedirectStandardOutput = true,
       RedirectStandardError = true,
     };
-    foreach (var (name, value) in environment ?? new Dictionary<string, string?>()) {
+    startInfo.ArgumentList.Add("--jsonrpc");
+    if (options.NoCache) {
+      startInfo.ArgumentList.Add("--no-cache");
+    } else {
+      startInfo.ArgumentList.Add("--cache-dir");
+      startInfo.ArgumentList.Add(cacheDirectory!);
+    }
+    foreach (var argument in options.ExtraArguments ?? []) {
+      startInfo.ArgumentList.Add(argument);
+    }
+    foreach (var (name, value) in options.Environment ?? new Dictionary<string, string?>()) {
       startInfo.Environment[name] = value;
     }
     _process = Process.Start(startInfo) ?? throw new InvalidOperationException($"Cannot start server \"{serverPath}\"");
@@ -95,15 +128,19 @@ public sealed class JsonRpcServerClient : IAsyncDisposable {
   /// other), or a new one deleted when the server exits. <paramref name="environment"/>: variables of the
   /// server process.
   /// </summary>
-  public static async Task<JsonRpcServerClient> StartAsync(string serverPath, string? cacheDirectory = null,
-                                                        IReadOnlyDictionary<string, string?>? environment = null) {
+  public static Task<JsonRpcServerClient> StartAsync(string serverPath, string? cacheDirectory = null,
+                                                    IReadOnlyDictionary<string, string?>? environment = null) =>
+    StartAsync(serverPath, new ServerStartOptions { CacheDirectory = cacheDirectory, Environment = environment });
+
+  /// <summary>Starts the server with the given options and sends the "server/initialize" request.</summary>
+  public static async Task<JsonRpcServerClient> StartAsync(string serverPath, ServerStartOptions options) {
     if (!File.Exists(serverPath)) {
       throw new FileNotFoundException($"Server executable not found: \"{serverPath}\". Build the solution first, " +
                                       "or set VSCHROMIUM_SERVER_PATH.", serverPath);
     }
-    var client = new JsonRpcServerClient(serverPath, cacheDirectory, environment);
+    var client = new JsonRpcServerClient(serverPath, options);
     try {
-      var response = await client.RequestAsync(ServerProtocol.Initialize(), TimeSpan.FromSeconds(30));
+      var response = await client.RequestAsync(ServerProtocol.Initialize(options.ClientName), options.InitializeTimeout);
       client.InitializeResult = response.Data;
     } catch (Exception e) {
       await client.DisposeAsync();

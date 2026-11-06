@@ -38,4 +38,9 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The code base generator and the JSON-RPC client, shared with the benchmark app (src/Tools/Bench). -->
+    <ProjectReference Include="..\Tools\Bench.Shared\Bench.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

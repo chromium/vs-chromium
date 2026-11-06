@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 using System.Text.Json.Nodes;
-using VsChromium.Tests.EndToEnd.Corpus;
-using VsChromium.Tests.EndToEnd.Server;
+using VsChromium.Bench.Shared.Corpus;
+using VsChromium.Bench.Shared.Server;
 
 namespace VsChromium.Tests.EndToEnd.Benchmarks;
 
@@ -28,7 +28,7 @@ public class ServerBenchmarks {
   [Timeout(4 * 60 * 60 * 1000, CooperativeCancellation = true)]
   public async Task RunBenchmark() {
     var spec = CorpusSpec.FromName(TestSettings.BenchmarkSize);
-    var corpus = CorpusCache.GetOrCreate(spec, Log);
+    var corpus = CorpusCache.GetOrCreate(TestSettings.CorporaDirectory, spec, Log);
     var runs = spec == CorpusSpec.Small ? 10 : spec == CorpusSpec.Medium ? 5 : 3;
     if (int.TryParse(Environment.GetEnvironmentVariable("VSCHROMIUM_BENCHMARK_RUNS"), out var runsOverride) && runsOverride > 0)
       runs = runsOverride;

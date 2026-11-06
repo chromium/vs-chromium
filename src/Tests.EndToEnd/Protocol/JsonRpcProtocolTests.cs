@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 using System.Text.Json.Nodes;
-using VsChromium.Tests.EndToEnd.Corpus;
-using VsChromium.Tests.EndToEnd.Server;
+using VsChromium.Bench.Shared.Corpus;
+using VsChromium.Bench.Shared.Server;
 
 namespace VsChromium.Tests.EndToEnd.Protocol;
 
@@ -26,7 +26,7 @@ public class JsonRpcProtocolTests {
     File.WriteAllText(Path.Combine(root, "readme.txt"), "no marker here\n");
   }
 
-  private static string Root => CorpusCache.GetOrCreateCustom("jsonrpc-protocol", version: 1, GenerateFiles);
+  private static string Root => CorpusCache.GetOrCreateCustom(TestSettings.CorporaDirectory, "jsonrpc-protocol", version: 1, GenerateFiles);
 
   private static async Task<JsonRpcServerClient> StartIndexedServerAsync(List<string>? notifications = null) {
     var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);

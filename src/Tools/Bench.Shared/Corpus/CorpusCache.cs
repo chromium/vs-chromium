@@ -4,8 +4,10 @@
 
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
-namespace VsChromium.Tests.EndToEnd.Corpus;
+namespace VsChromium.Bench.Shared.Corpus;
 
 /// <summary>A generated code base on disk.</summary>
 public sealed record GeneratedCorpus(string RootPath, CorpusManifest Manifest) {
@@ -14,8 +16,8 @@ public sealed record GeneratedCorpus(string RootPath, CorpusManifest Manifest) {
 
 /// <summary>
 /// Gives access to generated code bases, which are **kept between test runs** (never deleted by the
-/// tests) in <see cref="TestSettings.CorporaDirectory"/>, so that running tests over and over does
-/// not delete/re-create hundreds of thousands of files.
+/// tests) in a directory given by the caller (e.g. the corpora directory of the test settings), so
+/// that running tests over and over does not delete/re-create hundreds of thousands of files.
 ///
 /// A corpus is generated in a temporary directory, which is then renamed to its final name; the
 /// manifest is written last, <b>next to</b> the corpus directory (<c>&lt;dir&gt;.manifest.json</c>,
@@ -24,11 +26,9 @@ public sealed record GeneratedCorpus(string RootPath, CorpusManifest Manifest) {
 /// an interrupted generation, is deleted and re-generated.
 /// </summary>
 public static class CorpusCache {
-  private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-
-  public static GeneratedCorpus GetOrCreate(CorpusSpec spec, Action<string>? log = null) {
+  /// <summary>Returns the corpus <paramref name="spec"/> of the directory <paramref name="corporaDir"/>, generated if needed.</summary>
+  public static GeneratedCorpus GetOrCreate(string corporaDir, CorpusSpec spec, Action<string>? log = null) {
     log ??= _ => { };
-    var corporaDir = TestSettings.CorporaDirectory;
     Directory.CreateDirectory(corporaDir);
     var finalDir = Path.Combine(corporaDir, spec.DirectoryName);
     var manifestPath = ManifestPath(finalDir);
@@ -47,7 +47,7 @@ public static class CorpusCache {
     var tempDir = PrepareDirectories(finalDir, manifestPath);
     var manifest = new CodeBaseGenerator(spec).Generate(tempDir);
     Directory.Move(tempDir, finalDir);
-    File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, JsonOptions));
+    File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, CorpusJsonContext.Default.CorpusManifest));
     log($"Generated {manifest.FileCount:n0} files ({manifest.TotalBytes:n0} bytes) in {sw.Elapsed.TotalSeconds:n1} s.");
     return new GeneratedCorpus(finalDir, manifest);
   }
@@ -56,8 +56,7 @@ public static class CorpusCache {
   /// Same caching scheme for small hand-written corpora: <paramref name="generate"/> writes the files
   /// into the given (empty) directory. Increment <paramref name="version"/> when the files change.
   /// </summary>
-  public static string GetOrCreateCustom(string name, int version, Action<string> generate) {
-    var corporaDir = TestSettings.CorporaDirectory;
+  public static string GetOrCreateCustom(string corporaDir, string name, int version, Action<string> generate) {
     Directory.CreateDirectory(corporaDir);
     var dirName = $"{name}-v{version}";
     var finalDir = Path.Combine(corporaDir, dirName);
@@ -69,7 +68,7 @@ public static class CorpusCache {
     var tempDir = PrepareDirectories(finalDir, manifestPath);
     generate(tempDir);
     Directory.Move(tempDir, finalDir);
-    File.WriteAllText(manifestPath, JsonSerializer.Serialize(new { name, version }));
+    File.WriteAllText(manifestPath, new JsonObject { ["name"] = name, ["version"] = version }.ToJsonString());
     return finalDir;
   }
 
@@ -94,7 +93,7 @@ public static class CorpusCache {
       return null;
     }
     try {
-      return JsonSerializer.Deserialize<CorpusManifest>(File.ReadAllText(path));
+      return JsonSerializer.Deserialize(File.ReadAllText(path), CorpusJsonContext.Default.CorpusManifest);
     } catch (JsonException) {
       return null;
     }
@@ -111,3 +110,8 @@ public static class CorpusCache {
     }
   }
 }
+
+/// <summary>Serialization of the manifests (source generated: the benchmark app is published with NativeAOT).</summary>
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(CorpusManifest))]
+internal sealed partial class CorpusJsonContext : JsonSerializerContext;

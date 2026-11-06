@@ -5,7 +5,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Nodes;
-using VsChromium.Tests.EndToEnd.Server;
+using VsChromium.Bench.Shared.Server;
 
 namespace VsChromium.Tests.EndToEnd.Regression;
 

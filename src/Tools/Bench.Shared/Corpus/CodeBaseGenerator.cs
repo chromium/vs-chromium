@@ -4,7 +4,7 @@
 
 using System.Text;
 
-namespace VsChromium.Tests.EndToEnd.Corpus;
+namespace VsChromium.Bench.Shared.Corpus;
 
 /// <summary>
 /// Generates a deterministic, real-world-like large code base (Chromium-like): realistic directory

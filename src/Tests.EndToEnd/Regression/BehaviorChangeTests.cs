@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 using System.Text;
-using VsChromium.Tests.EndToEnd.Corpus;
-using VsChromium.Tests.EndToEnd.Server;
+using VsChromium.Bench.Shared.Corpus;
+using VsChromium.Bench.Shared.Server;
 
 namespace VsChromium.Tests.EndToEnd.Regression;
 
@@ -121,7 +121,7 @@ public class BehaviorChangeTests {
 
   [ClassInitialize]
   public static async Task ClassInitialize(TestContext context) {
-    s_root = CorpusCache.GetOrCreateCustom("behavior-changes", version: 5, GenerateFiles);
+    s_root = CorpusCache.GetOrCreateCustom(TestSettings.CorporaDirectory, "behavior-changes", version: 5, GenerateFiles);
     s_server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
     await Server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
       () => Server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(s_root, "vs-chromium-project.txt"))));

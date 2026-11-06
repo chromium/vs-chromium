@@ -18,11 +18,18 @@ namespace VsChromium.Server.Cache {
   /// </summary>
   public sealed class CachedProjectTree {
     public CachedProjectTree(DirectorySnapshot root, IReadOnlyCollection<FileName> filesWithoutContents,
-                             bool filesWithoutContentsAreLarge) {
+                             bool filesWithoutContentsAreLarge, ChangeJournalCheckpoint checkpoint = null) {
       Root = root;
       FilesWithoutContents = filesWithoutContents;
       FilesWithoutContentsAreLarge = filesWithoutContentsAreLarge;
+      Checkpoint = checkpoint;
     }
+
+    /// <summary>
+    /// The change journal checkpoint of the tree (every change before it is in the tree), or null:
+    /// the verification of the tree uses the change journal from there if possible.
+    /// </summary>
+    public ChangeJournalCheckpoint Checkpoint { get; }
 
     /// <summary>
     /// True if the files without contents are all larger than the cached files (not cached
@@ -66,11 +73,15 @@ namespace VsChromium.Server.Cache {
         var directory = directories[i];
         var fileNames = new FileName[directory.FileCount];
         var metadata = directory.FileCount == 0 ? Array.Empty<FileMetadata>() : new FileMetadata[directory.FileCount];
+        List<int> symLinkFiles = null;
         for (var j = 0; j < directory.FileCount; j++) {
           var fileIndex = directory.FileStart + j;
           var file = index.Files[fileIndex];
           fileNames[j] = nameFactory.CreateFileName(names[i], index.GetName(fileIndex).ToString());
           metadata[j] = new FileMetadata(new DateTime(file.LastWriteTimeTicks, DateTimeKind.Utc), file.FileLength);
+          if ((file.Flags & IndexCacheEntryFlags.SymLink) != 0) {
+            (symLinkFiles ??= new List<int>()).Add(j);
+          }
           if ((file.Flags & IndexCacheEntryFlags.NoContents) != 0) {
             withoutContents.Add(fileNames[j]);
             withoutContentsAreLarge &= file.FileLength > ProjectIndexCache.MaxCachedFileLength;
@@ -88,10 +99,10 @@ namespace VsChromium.Server.Cache {
           childSnapshots = list;
         }
         var isSymLink = (directory.Flags & IndexCacheDirectoryFlags.SymLink) != 0;
-        snapshots[i] = new DirectorySnapshot(new DirectoryData(names[i], isSymLink), childSnapshots.ToReadOnlyList(),
-          fileNames.ToReadOnlyList(), metadata);
+        snapshots[i] = new DirectorySnapshot(new DirectoryData(names[i], isSymLink, directory.FileId), childSnapshots.ToReadOnlyList(),
+          fileNames.ToReadOnlyList(), metadata, symLinkFiles?.ToArray());
       }
-      return new CachedProjectTree(snapshots[0], withoutContents, withoutContentsAreLarge);
+      return new CachedProjectTree(snapshots[0], withoutContents, withoutContentsAreLarge, index.Checkpoint);
     }
   }
 }

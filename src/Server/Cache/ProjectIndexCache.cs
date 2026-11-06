@@ -27,15 +27,18 @@ namespace VsChromium.Server.Cache {
   /// index (null if it is not searchable).
   /// </summary>
   public readonly struct IndexCacheWriteItem {
-    public IndexCacheWriteItem(string name, FileMetadata metadata, FileContents contents) {
+    public IndexCacheWriteItem(string name, FileMetadata metadata, FileContents contents, bool isSymLink = false) {
       Name = name;
       Metadata = metadata;
       Contents = contents;
+      IsSymLink = isSymLink;
     }
 
     public string Name { get; }
     public FileMetadata Metadata { get; }
     public FileContents Contents { get; }
+    /// <summary>The file is a symbolic link (see <see cref="IndexCacheEntryFlags.SymLink"/>).</summary>
+    public bool IsSymLink { get; }
   }
 
   /// <summary>
@@ -43,14 +46,21 @@ namespace VsChromium.Server.Cache {
   /// the root) and its files. The directories are written in depth first order (parents first).
   /// </summary>
   public sealed class IndexCacheWriteDirectory {
-    public IndexCacheWriteDirectory(string path, bool isSymLink, IReadOnlyList<IndexCacheWriteItem> files) {
+    public IndexCacheWriteDirectory(string path, bool isSymLink, IReadOnlyList<IndexCacheWriteItem> files)
+      : this(path, isSymLink, default, files) {
+    }
+
+    public IndexCacheWriteDirectory(string path, bool isSymLink, UInt128 fileId, IReadOnlyList<IndexCacheWriteItem> files) {
       Path = path;
       IsSymLink = isSymLink;
+      FileId = fileId;
       Files = files;
     }
 
     public string Path { get; }
     public bool IsSymLink { get; }
+    /// <summary>The 128-bit file id of the directory, 0 if unknown.</summary>
+    public UInt128 FileId { get; }
     public IReadOnlyList<IndexCacheWriteItem> Files { get; }
   }
 
@@ -302,6 +312,9 @@ namespace VsChromium.Server.Cache {
       }
       var stopwatch = Stopwatch.StartNew();
       var tree = CachedTreeBuilder.Build(lookup.Index, nameFactory, rootPath, cancellationToken);
+      if (tree.Checkpoint != null) {
+        Logger.LogInfo("The tree of the index cache of \"{0}\" has a change journal checkpoint: {1}.", _rootPath, tree.Checkpoint);
+      }
       Logger.LogInfo("Loaded the tree of \"{0}\" from the index cache in {1:n0} ms: {2:n0} directories, {3:n0} files ({4:n0} without contents).",
         _rootPath, stopwatch.ElapsedMilliseconds, lookup.Index.Directories.Length, lookup.Index.Files.Length,
         tree.FilesWithoutContents.Count);
@@ -500,6 +513,15 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     public IndexCacheWriteResult Write(IEnumerable<IndexCacheWriteDirectory> directories, string versionHash,
                                        CancellationToken cancellationToken) {
+      return Write(directories, versionHash, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="Write(IEnumerable{IndexCacheWriteDirectory}, string, CancellationToken)"/>, with the
+    /// change journal checkpoint of the tree (null if none, see <see cref="ChangeJournalCheckpoint"/>).
+    /// </summary>
+    public IndexCacheWriteResult Write(IEnumerable<IndexCacheWriteDirectory> directories, string versionHash,
+                                       ChangeJournalCheckpoint checkpoint, CancellationToken cancellationToken) {
       lock (_writeLock) {
         if (!IsWritable)
           return null;
@@ -523,12 +545,17 @@ namespace VsChromium.Server.Cache {
         var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024);
         var completed = false;
         try {
-          using (var indexWriter = new IndexCacheFileWriter(stream, _rootPath, versionHash, _caseSensitive)) {
+          using (var indexWriter = new IndexCacheFileWriter(stream, _rootPath, versionHash, _caseSensitive, checkpoint)) {
             foreach (var directory in directories) {
               cancellationToken.ThrowIfCancellationRequested();
-              indexWriter.AddDirectory(directory.Path, directory.IsSymLink ? IndexCacheDirectoryFlags.SymLink : IndexCacheDirectoryFlags.None);
+              indexWriter.AddDirectory(directory.Path, directory.IsSymLink ? IndexCacheDirectoryFlags.SymLink : IndexCacheDirectoryFlags.None,
+                directory.FileId);
               foreach (var item in directory.Files) {
                 var entry = GetEntry(directory, item, arenaWriter, compacted, result);
+                if (item.IsSymLink) {
+                  entry = new IndexCacheEntry(entry.LastWriteTimeTicks, entry.FileLength, entry.Flags | IndexCacheEntryFlags.SymLink,
+                    entry.ArenaId, entry.Offset, entry.Length);
+                }
                 indexWriter.AddFile(item.Name, entry);
                 if (!entry.HasNoLocation) {
                   referencedArenas.Add(entry.ArenaId);

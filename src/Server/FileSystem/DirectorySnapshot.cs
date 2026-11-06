@@ -18,15 +18,21 @@ namespace VsChromium.Server.FileSystem {
     private readonly IList<DirectorySnapshot> _childDirectories;
     private readonly IList<FileName> _childFiles;
     private readonly FileMetadata[] _childFileMetadata;
+    private readonly int[] _symLinkFileIndices;
 
     public DirectorySnapshot(DirectoryData directoryData, IList<DirectorySnapshot> childDirectories, IList<FileName> childFiles,
-      FileMetadata[] childFileMetadata) {
+      FileMetadata[] childFileMetadata) : this(directoryData, childDirectories, childFiles, childFileMetadata, null) {
+    }
+
+    public DirectorySnapshot(DirectoryData directoryData, IList<DirectorySnapshot> childDirectories, IList<FileName> childFiles,
+      FileMetadata[] childFileMetadata, int[] symLinkFileIndices) {
       if (childFileMetadata.Length != childFiles.Count)
         throw new ArgumentException("There must be one metadata entry per file.", nameof(childFileMetadata));
       _directoryData = directoryData;
       _childDirectories = childDirectories;
       _childFiles = childFiles;
       _childFileMetadata = childFileMetadata;
+      _symLinkFileIndices = symLinkFileIndices != null && symLinkFileIndices.Length == 0 ? null : symLinkFileIndices;
     }
 
     /// <summary>
@@ -38,6 +44,32 @@ namespace VsChromium.Server.FileSystem {
 
     public bool IsSymLink {
       get { return _directoryData.IsSymLink; }
+    }
+
+    /// <summary>The 128-bit file id of the directory, 0 if unknown (see <see cref="FileSystem.DirectoryData.FileId"/>).</summary>
+    public UInt128 FileId {
+      get { return _directoryData.FileId; }
+    }
+
+    public DirectoryData DirectoryData {
+      get { return _directoryData; }
+    }
+
+    /// <summary>
+    /// The indices (in <see cref="ChildFiles"/>, increasing) of the files that are symbolic links
+    /// (reparse points): their metadata are the metadata of their target, whose changes are not
+    /// changes of this directory (see the change journal catch-up).
+    /// </summary>
+    public ReadOnlySpan<int> SymLinkFileIndices {
+      get { return _symLinkFileIndices; }
+    }
+
+    internal int[] SymLinkFileIndicesArray {
+      get { return _symLinkFileIndices; }
+    }
+
+    public bool IsSymLinkFile(int index) {
+      return _symLinkFileIndices != null && Array.BinarySearch(_symLinkFileIndices, index) >= 0;
     }
     /// <summary>
     /// The list of sub-directories.

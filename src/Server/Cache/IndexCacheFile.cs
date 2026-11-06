@@ -24,6 +24,12 @@ namespace VsChromium.Server.Cache {
     NoContents = 4,
     /// <summary>A file of the tree that is not searchable (no contents in the index).</summary>
     NotSearchable = 8,
+    /// <summary>
+    /// The file is a symbolic link (a reparse point): its metadata are the metadata of its target,
+    /// checked again by the change journal catch-up (changes of the target are not changes of the
+    /// directory of the link).
+    /// </summary>
+    SymLink = 16,
   }
 
   [Flags]
@@ -31,6 +37,8 @@ namespace VsChromium.Server.Cache {
     None = 0,
     /// <summary>The directory is a symbolic link (or a junction).</summary>
     SymLink = 1,
+    /// <summary>The record has the 128-bit file id of the directory (16 bytes after the flags).</summary>
+    HasFileId = 2,
   }
 
   /// <summary>
@@ -89,6 +97,8 @@ namespace VsChromium.Server.Cache {
       public int FileStart;
       public int FileCount;
       public IndexCacheDirectoryFlags Flags;
+      /// <summary>The 128-bit file id of the directory, 0 if unknown.</summary>
+      public UInt128 FileId;
     }
 
     public struct FileEntry {
@@ -110,6 +120,11 @@ namespace VsChromium.Server.Cache {
     public string RootPath;
     /// <summary>The version hash of the project configuration when the tree was written.</summary>
     public string VersionHash;
+    /// <summary>
+    /// The position in the change journal of the volume of the project such that every change
+    /// before it is in the tree, or null (see <see cref="ChangeJournalCheckpoint"/>).
+    /// </summary>
+    public ChangeJournalCheckpoint Checkpoint;
     public char[] Chars;
     /// <summary>The directories of the tree, in depth first order (parents first).</summary>
     public DirectoryEntry[] Directories;
@@ -140,7 +155,7 @@ namespace VsChromium.Server.Cache {
     }
 
     /// <summary>The managed memory of the index (approximate).</summary>
-    public long ByteSize => (long)Chars.Length * sizeof(char) + (long)Directories.Length * 28 + (long)Files.Length * 40;
+    public long ByteSize => (long)Chars.Length * sizeof(char) + (long)Directories.Length * 44 + (long)Files.Length * 40;
   }
 
   /// <summary>
@@ -153,10 +168,11 @@ namespace VsChromium.Server.Cache {
   /// <item><c>index.bin</c> (little endian, 7-bit encoded integers, written by <see
   /// cref="IndexCacheFileWriter"/>): the tree of the project (all the directories and files of
   /// the snapshot) and the location of the cached contents. Header (magic, format version, path
-  /// case sensitivity, root path, version hash of the project configuration); directories in
-  /// depth first order (record kind 1, flags (symbolic link), relative path front-coded with the
-  /// previous directory, file count, then per file: name, flags (ASCII, binary, not cached, not
-  /// searchable), last write time delta, size, and for cached text files arena id delta, offset
+  /// case sensitivity, root path, version hash of the project configuration, change journal
+  /// checkpoint if any: volume serial number, journal id, USN); directories in depth first order
+  /// (record kind 1, flags (symbolic link, has a file id), file id (16 bytes, if any), relative
+  /// path front-coded with the previous directory, file count, then per file: name, flags (ASCII,
+  /// binary, not cached, not searchable, symbolic link), last write time delta, size, and for cached text files arena id delta, offset
   /// delta, size minus text length), terminated by a record kind 0; arena table (id, bytes used);
   /// trailer (magic, file count). Written to a temporary file, then renamed over the previous
   /// one.</item>
@@ -165,7 +181,7 @@ namespace VsChromium.Server.Cache {
   public static class IndexCacheFile {
     public const uint HeaderMagic = 0x49435356; // "VSCI"
     public const uint TrailerMagic = 0x45435356; // "VSCE"
-    public const int FormatVersion = 3;
+    public const int FormatVersion = 4;
     public const int ArenaSize = ArenaAllocator.DefaultArenaSize;
     public const int TrailingByteCount = 2;
     public const string IndexFileName = "index.bin";
@@ -219,6 +235,9 @@ namespace VsChromium.Server.Cache {
       if (reader.ReadBoolean() != caseSensitive)
         throw new InvalidDataException("Different path case sensitivity");
       var index = new IndexCacheIndex { RootPath = reader.ReadString(), VersionHash = reader.ReadString() };
+      if (reader.ReadBoolean()) {
+        index.Checkpoint = new ChangeJournalCheckpoint(reader.ReadUInt64(), reader.ReadUInt64(), reader.ReadInt64());
+      }
       var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
       if (!string.Equals(index.RootPath, expectedRootPath, comparison))
         throw new InvalidDataException($"Root path \"{index.RootPath}\" instead of \"{expectedRootPath}\"");
@@ -241,6 +260,11 @@ namespace VsChromium.Server.Cache {
 
         // Directory: flags, shared prefix with the previous directory, then the suffix.
         var directoryFlags = (IndexCacheDirectoryFlags)reader.ReadByte();
+        var fileId = UInt128.Zero;
+        if ((directoryFlags & IndexCacheDirectoryFlags.HasFileId) != 0) {
+          var low = reader.ReadUInt64();
+          fileId = new UInt128(reader.ReadUInt64(), low);
+        }
         var prefixLength = reader.Read7BitEncodedInt();
         if (prefixLength < 0 || prefixLength > previousDirectoryLength)
           throw new InvalidDataException("Invalid directory prefix");
@@ -255,6 +279,7 @@ namespace VsChromium.Server.Cache {
           NameStart = directoryStart,
           Parent = -1,
           Flags = directoryFlags,
+          FileId = fileId,
         };
         // The parent is the closest previous directory whose path is a prefix (depth first order):
         // the first directory is the project root (""), the others are its descendants.
@@ -454,13 +479,15 @@ namespace VsChromium.Server.Cache {
     private readonly BinaryWriter _groupWriter;
     private string _groupDirectory;
     private IndexCacheDirectoryFlags _groupFlags;
+    private UInt128 _groupFileId;
     private int _groupFileCount;
     private string _previousDirectory = "";
     private long _previousTicks;
     private int _previousArena;
     private int _expectedOffset;
 
-    public IndexCacheFileWriter(Stream stream, string rootPath, string versionHash, bool caseSensitive) {
+    public IndexCacheFileWriter(Stream stream, string rootPath, string versionHash, bool caseSensitive,
+                                ChangeJournalCheckpoint checkpoint = null) {
       _writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
       _groupWriter = new BinaryWriter(_group, Encoding.UTF8, leaveOpen: true);
       _writer.Write(IndexCacheFile.HeaderMagic);
@@ -468,18 +495,26 @@ namespace VsChromium.Server.Cache {
       _writer.Write(caseSensitive);
       _writer.Write(rootPath);
       _writer.Write(versionHash ?? "");
+      _writer.Write(checkpoint != null);
+      if (checkpoint != null) {
+        _writer.Write(checkpoint.VolumeSerialNumber);
+        _writer.Write(checkpoint.JournalId);
+        _writer.Write(checkpoint.Usn);
+      }
     }
 
     public int FileCount { get; private set; }
     public int DirectoryCount { get; private set; }
 
     /// <summary>
-    /// Starts a directory (relative path, "" for the project root): the next files are its files.
+    /// Starts a directory (relative path, "" for the project root, file id or 0): the next files
+    /// are its files.
     /// </summary>
-    public void AddDirectory(string path, IndexCacheDirectoryFlags flags) {
+    public void AddDirectory(string path, IndexCacheDirectoryFlags flags, UInt128 fileId = default) {
       FlushDirectory();
       _groupDirectory = path;
-      _groupFlags = flags;
+      _groupFlags = fileId == UInt128.Zero ? flags & ~IndexCacheDirectoryFlags.HasFileId : flags | IndexCacheDirectoryFlags.HasFileId;
+      _groupFileId = fileId;
       DirectoryCount++;
     }
 
@@ -511,6 +546,10 @@ namespace VsChromium.Server.Cache {
       _groupWriter.Flush();
       _writer.Write(IndexCacheFile.DirectoryRecord);
       _writer.Write((byte)_groupFlags);
+      if ((_groupFlags & IndexCacheDirectoryFlags.HasFileId) != 0) {
+        _writer.Write((ulong)_groupFileId);
+        _writer.Write((ulong)(_groupFileId >> 64));
+      }
       var prefix = _previousDirectory.AsSpan().CommonPrefixLength(_groupDirectory);
       _writer.Write7BitEncodedInt(prefix);
       _writer.Write(_groupDirectory.Substring(prefix));

@@ -744,6 +744,43 @@ namespace VsChromium.Tests.Server {
       // The searchable files without cached contents are read by the verification of the tree.
       CollectionAssert.AreEquivalent(new[] { "large.txt", "racy.cc" }, tree.FilesWithoutContents.Select(x => x.Name).ToArray());
       Assert.IsFalse(tree.FilesWithoutContentsAreLarge, "racy.cc is not large");
+      Assert.IsNull(tree.Checkpoint);
+      Assert.AreEqual(UInt128.Zero, root.FileId);
+    }
+
+    [TestMethod]
+    public void TreeRoundTripWithFileIdsSymLinksAndCheckpoint() {
+      var factory = new FileSystemNameFactory();
+      var rootId = new UInt128(0, 5);
+      var aId = new UInt128(0x0123456789abcdef, 0xfedcba9876543210);
+      var linkItem = ToWriteItem(TextItem(Path.Combine("a", "link.cc"), "int link;"));
+      var directories = new List<IndexCacheWriteDirectory> {
+        new IndexCacheWriteDirectory("", false, rootId, new[] { ToWriteItem(TextItem("root.cc", "int root;")) }),
+        new IndexCacheWriteDirectory("a", false, aId, new[] {
+          ToWriteItem(TextItem(Path.Combine("a", "file.cc"), "int file;")),
+          new IndexCacheWriteItem(linkItem.Name, linkItem.Metadata, linkItem.Contents, isSymLink: true),
+        }),
+        new IndexCacheWriteDirectory(Path.Combine("a", "unknown"), false, Array.Empty<IndexCacheWriteItem>()),
+      };
+      var checkpoint = new ChangeJournalCheckpoint(0x1234, 0xabcd_0000_1111, 987_654_321);
+      var cache = OpenNew();
+      cache.Write(directories, VersionHash, checkpoint, CancellationToken.None);
+      cache.Dispose();
+
+      var reopened = OpenNew();
+      var tree = reopened.TryLoadTree(VersionHash, factory, new FullPath(_projectRoot), CancellationToken.None);
+      Assert.AreEqual(checkpoint, tree.Checkpoint);
+      Assert.AreEqual(rootId, tree.Root.FileId);
+      var a = tree.Root.ChildDirectories.Single();
+      Assert.AreEqual(aId, a.FileId);
+      Assert.AreEqual(UInt128.Zero, a.ChildDirectories.Single().FileId);
+      CollectionAssert.AreEqual(new[] { "file.cc", "link.cc" }, a.ChildFiles.Select(x => x.Name).ToArray());
+      Assert.IsFalse(a.IsSymLinkFile(0));
+      Assert.IsTrue(a.IsSymLinkFile(1));
+      CollectionAssert.AreEqual(new[] { 1 }, a.SymLinkFileIndices.ToArray());
+      Assert.AreEqual(0, tree.Root.SymLinkFileIndices.Length);
+      // The contents of the link are cached as any file.
+      Assert.IsNotNull(reopened.Lookup.TryGetContents(Path.Combine("a", "link.cc"), linkItem.Metadata));
     }
 
     [TestMethod]

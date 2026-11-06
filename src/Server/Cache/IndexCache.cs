@@ -341,7 +341,7 @@ namespace VsChromium.Server.Cache {
           _writingProject = cache.RootPath;
           try {
             result = cache.Write(GetWriteDirectories(projectRoot, database), projectRoot.Project.VersionHash,
-              cancellationToken);
+              projectRoot.Checkpoint, cancellationToken);
           }
           catch (OperationCanceledException) {
             lock (_lock) {
@@ -401,10 +401,11 @@ namespace VsChromium.Server.Cache {
         for (var i = 0; i < files.Count; i++) {
           var fileName = files[i];
           var contents = database.TryGetFileIndex(fileName, out var index) ? database.GetContents(index) : null;
-          items[i] = new IndexCacheWriteItem(fileName.Name, metadata[i], contents);
+          items[i] = new IndexCacheWriteItem(fileName.Name, metadata[i], contents, directory.IsSymLinkFile(i));
         }
         // Note: One string per directory (the files use their name).
-        yield return new IndexCacheWriteDirectory(directory.DirectoryName.RelativePath.Value ?? "", directory.IsSymLink, items);
+        yield return new IndexCacheWriteDirectory(directory.DirectoryName.RelativePath.Value ?? "", directory.IsSymLink,
+          directory.FileId, items);
         for (var i = directory.ChildDirectories.Count - 1; i >= 0; i--) {
           stack.Push(directory.ChildDirectories[i]);
         }

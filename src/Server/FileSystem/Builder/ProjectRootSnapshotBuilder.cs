@@ -64,18 +64,20 @@ namespace VsChromium.Server.FileSystem.Builder {
     private DirectorySnapshot CreateProjectDirectorySnapshot() {
       using (new TimeElapsedLogger($"Creating directory snapshot from file system files of \"{_project.RootPath}\"", _cancellationToken)) {
         var projectPath = _fileSystemNameFactory.CreateAbsoluteDirectoryName(_project.RootPath);
-        return CreateDirectorySnapshot(projectPath, false);
+        // Note: The id of the project root (the other directories have the id of their entry in
+        // their parent).
+        return CreateDirectorySnapshot(projectPath, false, _fileSystem.GetFileInfoSnapshot(_project.RootPath).FileId);
       }
     }
 
-    private DirectorySnapshot CreateDirectorySnapshot(DirectoryName directory, bool isSymLink) {
+    private DirectorySnapshot CreateDirectorySnapshot(DirectoryName directory, bool isSymLink, UInt128 fileId) {
       _cancellationToken.ThrowIfCancellationRequested();
 
       using (new TimeElapsedLogger($"Traversing directory \"{directory.FullPath}\" to collect directory/file names", _cancellationToken, InfoLogger.Instance)) {
         // The snapshot tree is built bottom up during the traversal: each
         // directory task waits for its child directory tasks, then creates its
         // own snapshot (same design as mtsuite "IDirectorCollector<T>").
-        var task = TraverseDirectoryAsync(new DirectoryData(directory, isSymLink), _cancellationToken);
+        var task = TraverseDirectoryAsync(new DirectoryData(directory, isSymLink, fileId), _cancellationToken);
         task.Wait(_cancellationToken);
         var result = task.Result;
         Invariants.Assert(result != null);
@@ -126,7 +128,7 @@ namespace VsChromium.Server.FileSystem.Builder {
           _cancellationToken.ThrowIfCancellationRequested(); // cancellation
 
           var createdDirectoryName = _fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName, info.IsSymLink);
-          var childSnapshot = CreateDirectorySnapshot(createdDirectoryName, info.IsSymLink);
+          var childSnapshot = CreateDirectorySnapshot(createdDirectoryName, info.IsSymLink, info.FileId);
 
           // Note: File system change notifications are not always 100%
           // reliable. We may get a "create" event for directory we already know
@@ -146,16 +148,18 @@ namespace VsChromium.Server.FileSystem.Builder {
       // Sepcial case: if no file deleted or created, just re-use the list.
       IList<FileName> newFileList;
       FileMetadata[] newFileMetadata;
+      int[] newSymLinkFiles;
       if (_pathChanges.GetDeletedEntries(oldDirectoryPath).Count == 0 && createdFiles == null) {
         newFileList = oldDirectory.ChildFiles;
         newFileMetadata = oldDirectory.ChildFileMetadataArray;
+        newSymLinkFiles = oldDirectory.SymLinkFileIndicesArray;
       } else {
         // Copy the list of previous children, minus deleted files.
-        var newFileListTemp = new List<(FileName Name, FileMetadata Metadata)>();
+        var newFileListTemp = new List<(FileName Name, FileMetadata Metadata, bool IsSymLink)>();
         for (var i = 0; i < oldDirectory.ChildFiles.Count; i++) {
           var name = oldDirectory.ChildFiles[i];
           if (!_pathChanges.IsDeleted(name.RelativePath)) {
-            newFileListTemp.Add((name, oldDirectory.ChildFileMetadata[i]));
+            newFileListTemp.Add((name, oldDirectory.ChildFileMetadata[i], oldDirectory.IsSymLinkFile(i)));
           }
         }
 
@@ -167,7 +171,7 @@ namespace VsChromium.Server.FileSystem.Builder {
             // reliable. We may get a "create" event for files we already know
             // about: the new metadata replaces the previous one.
             newFileListTemp.RemoveAll(x => SystemPathComparer.EqualsNames(x.Name.Name, name.Name));
-            newFileListTemp.Add((name, new FileMetadata(info.LastWriteTimeUtc, info.Length)));
+            newFileListTemp.Add((name, new FileMetadata(info.LastWriteTimeUtc, info.Length), info.IsSymLink));
           }
 
           // We need to re-sort the array since we added new entries
@@ -175,15 +179,28 @@ namespace VsChromium.Server.FileSystem.Builder {
         }
         newFileList = newFileListTemp.Select(x => x.Name).ToReadOnlyList();
         newFileMetadata = newFileListTemp.Select(x => x.Metadata).ToArray();
+        newSymLinkFiles = GetSymLinkIndices(newFileListTemp, x => x.IsSymLink);
       }
 
-      var newData = new DirectoryData(oldDirectory.DirectoryName, oldDirectory.IsSymLink);
+      var newData = oldDirectory.DirectoryData;
 
       return new DirectorySnapshot(
         newData,
         childDirectories.ToReadOnlyList(),
         newFileList.ToReadOnlyList(),
-        newFileMetadata);
+        newFileMetadata,
+        newSymLinkFiles);
+    }
+
+    /// <summary>The indices of the items that are symbolic links, null if none.</summary>
+    internal static int[] GetSymLinkIndices<T>(IList<T> items, Func<T, bool> isSymLink) {
+      List<int> result = null;
+      for (var i = 0; i < items.Count; i++) {
+        if (isSymLink(items[i])) {
+          (result ??= new List<int>()).Add(i);
+        }
+      }
+      return result?.ToArray();
     }
 
     /// <summary>
@@ -208,29 +225,22 @@ namespace VsChromium.Server.FileSystem.Builder {
 
       List<Task<DirectorySnapshot>> childTasks = null;
       var childEntries = GetDirectoryEntries(directory);
-      var childFiles = new List<(FileName Name, FileMetadata Metadata)>();
+      var childFiles = new List<(FileName Name, FileMetadata Metadata, bool IsSymLink)>();
       // Note: Use "for" loop to avoid memory allocations.
       for (var i = 0; i < childEntries.Count; i++) {
         var entry = childEntries[i];
         if (entry.IsDirectory) {
           var subDirName = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name, entry.IsSymLink);
-          var subDir = new DirectoryData(subDirName, entry.IsSymLink);
+          var subDir = new DirectoryData(subDirName, entry.IsSymLink, entry.FileId);
           if (childTasks == null)
             childTasks = new List<Task<DirectorySnapshot>>();
           childTasks.Add(TraverseDirectoryAsync(subDir, token));
         } else if (entry.IsFile) {
-          childFiles.Add((_fileSystemNameFactory.CreateFileName(directory.DirectoryName, entry.Name), entry.Metadata));
+          childFiles.Add((_fileSystemNameFactory.CreateFileName(directory.DirectoryName, entry.Name), entry.Metadata, entry.IsSymLink));
         }
       }
 
-      var files = childFiles
-        .Where(x => x.Name.TestRelativePath(static (path, filter) => filter.Include(path), _project.FileFilter))
-        // Note: Ordinal (case-insensitive on Windows/macOS) sort, same as ApplyDirectorySnapshotDelta
-        // (see "Behavior changes" in PORTING_PRINCIPLES.md).
-        .OrderBy(x => x.Name.Name, SystemPathComparer.NameComparer)
-        .ToList();
-      var fileNames = files.Select(x => x.Name).ToReadOnlyList();
-      var fileMetadata = files.Count == 0 ? Array.Empty<FileMetadata>() : files.Select(x => x.Metadata).ToArray();
+      var (fileNames, fileMetadata, symLinkFiles) = FilterAndSortFiles(childFiles);
 
       // Note: The progress of the traversal counts the files found (displayed by the clients).
       if (_progress.Step(fileNames.Count)) {
@@ -252,7 +262,24 @@ namespace VsChromium.Server.FileSystem.Builder {
           .ToReadOnlyList();
       }
 
-      return new DirectorySnapshot(directory, childDirectories, fileNames, fileMetadata);
+      return new DirectorySnapshot(directory, childDirectories, fileNames, fileMetadata, symLinkFiles);
+    }
+
+    /// <summary>
+    /// The files of a directory included by the file filter of the project, sorted by name, with
+    /// their metadata and the indices of the symbolic links.
+    /// </summary>
+    private (IList<FileName> Names, FileMetadata[] Metadata, int[] SymLinks) FilterAndSortFiles(
+      List<(FileName Name, FileMetadata Metadata, bool IsSymLink)> childFiles) {
+      var files = childFiles
+        .Where(x => x.Name.TestRelativePath(static (path, filter) => filter.Include(path), _project.FileFilter))
+        // Note: Ordinal (case-insensitive on Windows/macOS) sort, same as ApplyDirectorySnapshotDelta
+        // (see "Behavior changes" in PORTING_PRINCIPLES.md).
+        .OrderBy(x => x.Name.Name, SystemPathComparer.NameComparer)
+        .ToList();
+      var fileNames = files.Select(x => x.Name).ToReadOnlyList();
+      var fileMetadata = files.Count == 0 ? Array.Empty<FileMetadata>() : files.Select(x => x.Metadata).ToArray();
+      return (fileNames, fileMetadata, GetSymLinkIndices(files, x => x.IsSymLink));
     }
 
     private IList<DirectoryEntry> GetDirectoryEntries(DirectoryData directory) {

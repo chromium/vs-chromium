@@ -49,6 +49,23 @@ namespace VsChromium.Protocol.Generated {
   }
 
   /// <summary>
+  /// How the tree of the index cache of a project was verified.
+  /// </summary>
+  [JsonConverter(typeof(JsonStringEnumConverter<VerificationMethod>))]
+  public enum VerificationMethod {
+    /// <summary>
+    /// The project was scanned entirely.
+    /// </summary>
+    [JsonStringEnumMemberName("fullScan")]
+    FullScan,
+    /// <summary>
+    /// Only the directories with records in the change journal (NTFS/ReFS, Windows) since the save of the cache were listed again.
+    /// </summary>
+    [JsonStringEnumMemberName("changeJournal")]
+    ChangeJournal,
+  }
+
+  /// <summary>
   /// A section of the project file (`vs-chromium-project.txt`) listing path patterns.
   /// </summary>
   [JsonConverter(typeof(JsonStringEnumConverter<IgnoreSection>))]
@@ -769,6 +786,65 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("incrementalUpdates")]
     public DurationStatistics IncrementalUpdates { get; set; } = null!;
+
+    /// <summary>
+    /// The last verification of the tree of the index cache of the project (none if it was never loaded from the cache).
+    /// </summary>
+    [JsonPropertyName("lastVerification")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CacheVerificationStatistics? LastVerification { get; set; }
+  }
+
+  /// <summary>
+  /// The verification of the tree of the index cache of a project after a load from the cache: from
+  /// the change journal of its volume (catch-up) if possible, otherwise by a full scan.
+  /// </summary>
+  public sealed partial class CacheVerificationStatistics {
+    [JsonPropertyName("method")]
+    public VerificationMethod Method { get; set; }
+
+    /// <summary>
+    /// Why the change journal was not used (`fullScan`), e.g. "the change journal is not active on \"D:\\\"".
+    /// </summary>
+    [JsonPropertyName("fallbackReason")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FallbackReason { get; set; }
+
+    /// <summary>
+    /// The duration of the scan or of the catch-up (journal read included).
+    /// </summary>
+    [JsonPropertyName("durationMs")]
+    public double DurationMs { get; set; }
+
+    /// <summary>
+    /// The records of the change journal read (`changeJournal`).
+    /// </summary>
+    [JsonPropertyName("journalRecordCount")]
+    public long JournalRecordCount { get; set; }
+
+    /// <summary>
+    /// The directories listed again (`changeJournal`).
+    /// </summary>
+    [JsonPropertyName("listedDirectoryCount")]
+    public int ListedDirectoryCount { get; set; }
+
+    /// <summary>
+    /// The new (or replaced) directories scanned entirely (`changeJournal`).
+    /// </summary>
+    [JsonPropertyName("scannedDirectoryCount")]
+    public int ScannedDirectoryCount { get; set; }
+
+    /// <summary>
+    /// The directory symbolic links and junctions scanned entirely (`changeJournal`).
+    /// </summary>
+    [JsonPropertyName("symLinkDirectoryCount")]
+    public int SymLinkDirectoryCount { get; set; }
+
+    /// <summary>
+    /// The file symbolic links checked again (`changeJournal`).
+    /// </summary>
+    [JsonPropertyName("symLinkFileCount")]
+    public int SymLinkFileCount { get; set; }
   }
 
   public sealed partial class ProjectDetails {
@@ -2151,6 +2227,7 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(DurationStatistics))]
   [JsonSerializable(typeof(InitialLoadStatistics))]
   [JsonSerializable(typeof(ProjectOperationsStatistics))]
+  [JsonSerializable(typeof(CacheVerificationStatistics))]
   [JsonSerializable(typeof(ProjectDetails))]
   [JsonSerializable(typeof(DirectoryPathParams))]
   [JsonSerializable(typeof(DirectorySizeEntry))]

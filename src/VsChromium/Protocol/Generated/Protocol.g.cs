@@ -48,6 +48,23 @@ namespace VsChromium.Protocol.Generated {
   }
 
   /// <summary>
+  /// How the tree of the index cache of a project was verified.
+  /// </summary>
+  [JsonConverter(typeof(StringEnumConverter))]
+  public enum VerificationMethod {
+    /// <summary>
+    /// The project was scanned entirely.
+    /// </summary>
+    [EnumMember(Value = "fullScan")]
+    FullScan,
+    /// <summary>
+    /// Only the directories with records in the change journal (NTFS/ReFS, Windows) since the save of the cache were listed again.
+    /// </summary>
+    [EnumMember(Value = "changeJournal")]
+    ChangeJournal,
+  }
+
+  /// <summary>
   /// A section of the project file (`vs-chromium-project.txt`) listing path patterns.
   /// </summary>
   [JsonConverter(typeof(StringEnumConverter))]
@@ -753,6 +770,63 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonProperty("incrementalUpdates")]
     public DurationStatistics IncrementalUpdates { get; set; }
+
+    /// <summary>
+    /// The last verification of the tree of the index cache of the project (none if it was never loaded from the cache).
+    /// </summary>
+    [JsonProperty("lastVerification", NullValueHandling = NullValueHandling.Ignore)]
+    public CacheVerificationStatistics LastVerification { get; set; }
+  }
+
+  /// <summary>
+  /// The verification of the tree of the index cache of a project after a load from the cache: from
+  /// the change journal of its volume (catch-up) if possible, otherwise by a full scan.
+  /// </summary>
+  public sealed partial class CacheVerificationStatistics {
+    [JsonProperty("method")]
+    public VerificationMethod Method { get; set; }
+
+    /// <summary>
+    /// Why the change journal was not used (`fullScan`), e.g. "the change journal is not active on \"D:\\\"".
+    /// </summary>
+    [JsonProperty("fallbackReason", NullValueHandling = NullValueHandling.Ignore)]
+    public string FallbackReason { get; set; }
+
+    /// <summary>
+    /// The duration of the scan or of the catch-up (journal read included).
+    /// </summary>
+    [JsonProperty("durationMs")]
+    public double DurationMs { get; set; }
+
+    /// <summary>
+    /// The records of the change journal read (`changeJournal`).
+    /// </summary>
+    [JsonProperty("journalRecordCount")]
+    public long JournalRecordCount { get; set; }
+
+    /// <summary>
+    /// The directories listed again (`changeJournal`).
+    /// </summary>
+    [JsonProperty("listedDirectoryCount")]
+    public int ListedDirectoryCount { get; set; }
+
+    /// <summary>
+    /// The new (or replaced) directories scanned entirely (`changeJournal`).
+    /// </summary>
+    [JsonProperty("scannedDirectoryCount")]
+    public int ScannedDirectoryCount { get; set; }
+
+    /// <summary>
+    /// The directory symbolic links and junctions scanned entirely (`changeJournal`).
+    /// </summary>
+    [JsonProperty("symLinkDirectoryCount")]
+    public int SymLinkDirectoryCount { get; set; }
+
+    /// <summary>
+    /// The file symbolic links checked again (`changeJournal`).
+    /// </summary>
+    [JsonProperty("symLinkFileCount")]
+    public int SymLinkFileCount { get; set; }
   }
 
   public sealed partial class ProjectDetails {

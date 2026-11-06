@@ -292,5 +292,190 @@ namespace VsChromium.Server.FileSystem.Builder {
         return ArrayUtilities.EmptyList<DirectoryEntry>.Instance;
       }
     }
+
+    /// <summary>
+    /// The catch-up of the verification of the tree of the index cache from the change journal:
+    /// the tree of the project built from <paramref name="oldRoot"/> (the tree of the cache) by
+    /// listing again only <paramref name="changedDirectories"/> (the directories with a record in
+    /// the journal since the checkpoint of the cache, see <see cref="ChangeJournalDirectoryMapper"/>)
+    /// and the directories without file id; the new subdirectories (or replaced: other file id) of
+    /// the directories listed again, and the subtrees of directory symbolic links and junctions are
+    /// scanned entirely; the file symbolic links are checked again (the metadata of their target).
+    /// The other directories are reused as is. The result is the same as a full scan (<see
+    /// cref="Build"/>), provided the journal recorded all the changes since the checkpoint.
+    /// </summary>
+    public DirectorySnapshot CatchUp(DirectorySnapshot oldRoot, IReadOnlySet<DirectorySnapshot> changedDirectories,
+                                     CatchUpStatistics statistics) {
+      using (new TimeElapsedLogger($"Catching up the tree of \"{_project.RootPath}\" from the change journal", _cancellationToken)) {
+        var visit = new HashSet<DirectorySnapshot>();
+        MarkDirectoriesToVisit(oldRoot, changedDirectories, visit);
+        var context = new CatchUpContext(changedDirectories, visit, statistics);
+        var task = Task.Factory.StartNew(
+          () => CatchUpDirectoryAsync(oldRoot, context),
+          _cancellationToken,
+          TaskCreationOptions.DenyChildAttach,
+          _indexingWorkerPool.Scheduler).Unwrap();
+        task.Wait(_cancellationToken);
+        Invariants.Assert(task.Result != null);
+        return task.Result;
+      }
+    }
+
+    private sealed class CatchUpContext {
+      public CatchUpContext(IReadOnlySet<DirectorySnapshot> changed, HashSet<DirectorySnapshot> visit, CatchUpStatistics statistics) {
+        Changed = changed;
+        Visit = visit;
+        Statistics = statistics;
+      }
+
+      public IReadOnlySet<DirectorySnapshot> Changed { get; }
+      /// <summary>The directories to visit (read only during the catch-up: thread safe).</summary>
+      public HashSet<DirectorySnapshot> Visit { get; }
+      public CatchUpStatistics Statistics { get; }
+    }
+
+    /// <summary>
+    /// Adds to <paramref name="visit"/> the directories of the tree that need work (listed again,
+    /// scanned, or with file symbolic links to check) and their ancestors.
+    /// </summary>
+    private static bool MarkDirectoriesToVisit(DirectorySnapshot directory, IReadOnlySet<DirectorySnapshot> changed,
+                                               HashSet<DirectorySnapshot> visit) {
+      var result = directory.IsSymLink || directory.FileId == UInt128.Zero || directory.SymLinkFileIndices.Length > 0 ||
+                   changed.Contains(directory);
+      if (!directory.IsSymLink) {
+        foreach (var child in directory.ChildDirectories.ToForeachEnum()) {
+          result |= MarkDirectoriesToVisit(child, changed, visit);
+        }
+      }
+      if (result) {
+        visit.Add(directory);
+      }
+      return result;
+    }
+
+    private Task<DirectorySnapshot> StartCatchUpDirectory(DirectorySnapshot directory, CatchUpContext context) {
+      if (!directory.IsSymLink && !context.Visit.Contains(directory))
+        return Task.FromResult(directory);
+      return Task.Factory.StartNew(
+        () => CatchUpDirectoryAsync(directory, context),
+        _cancellationToken,
+        TaskCreationOptions.DenyChildAttach,
+        _indexingWorkerPool.Scheduler).Unwrap();
+    }
+
+    private async Task<DirectorySnapshot> CatchUpDirectoryAsync(DirectorySnapshot directory, CatchUpContext context) {
+      _cancellationToken.ThrowIfCancellationRequested();
+      if (directory.IsSymLink) {
+        // The changes made through a directory symbolic link or a junction have records with the
+        // ids of the target (possibly on another volume): scanned entirely.
+        Interlocked.Increment(ref context.Statistics.SymLinkSubtreeCount);
+        return await ProcessDirectoryAsync(directory.DirectoryData, _cancellationToken);
+      }
+      if (!context.Visit.Contains(directory))
+        return directory;
+      if (directory.FileId == UInt128.Zero || context.Changed.Contains(directory))
+        return await RelistDirectoryAsync(directory, context);
+
+      // The listing of the directory is unchanged: its file symbolic links (metadata of their
+      // target) and its subdirectories.
+      var metadata = directory.ChildFileMetadataArray;
+      foreach (var index in directory.SymLinkFileIndices) {
+        Interlocked.Increment(ref context.Statistics.SymLinkFileCount);
+        var info = _fileSystem.GetFileInfoSnapshot(directory.ChildFiles[index].FullPath);
+        if (!info.Exists || !info.IsFile) {
+          // Not expected (the link would have a record): listed again.
+          return await RelistDirectoryAsync(directory, context);
+        }
+        var newMetadata = new FileMetadata(info.LastWriteTimeUtc, info.Length);
+        if (newMetadata != metadata[index]) {
+          if (ReferenceEquals(metadata, directory.ChildFileMetadataArray)) {
+            metadata = (FileMetadata[])metadata.Clone();
+          }
+          metadata[index] = newMetadata;
+        }
+      }
+
+      var childTasks = new Task<DirectorySnapshot>[directory.ChildDirectories.Count];
+      for (var i = 0; i < childTasks.Length; i++) {
+        childTasks[i] = StartCatchUpDirectory(directory.ChildDirectories[i], context);
+      }
+      var children = await Task.WhenAll(childTasks);
+      var childrenChanged = false;
+      for (var i = 0; i < children.Length; i++) {
+        childrenChanged |= !ReferenceEquals(children[i], directory.ChildDirectories[i]);
+      }
+      if (!childrenChanged && ReferenceEquals(metadata, directory.ChildFileMetadataArray))
+        return directory;
+      IList<DirectorySnapshot> childDirectories = childrenChanged
+        ? children.Where(x => x != null).ToReadOnlyList()
+        : directory.ChildDirectories;
+      return new DirectorySnapshot(directory.DirectoryData, childDirectories, directory.ChildFiles, metadata,
+        directory.SymLinkFileIndicesArray);
+    }
+
+    /// <summary>
+    /// Lists a directory again: its files, the subdirectories of the tree with the same name and
+    /// file id (caught up), and the new or replaced subdirectories (scanned entirely).
+    /// </summary>
+    private async Task<DirectorySnapshot> RelistDirectoryAsync(DirectorySnapshot directory, CatchUpContext context) {
+      Interlocked.Increment(ref context.Statistics.ListedDirectoryCount);
+      var entries = GetDirectoryEntries(directory.DirectoryData);
+      Dictionary<string, DirectorySnapshot> oldChildren = null;
+      if (directory.ChildDirectories.Count > 0) {
+        oldChildren = new Dictionary<string, DirectorySnapshot>(SystemPathComparer.NameComparer);
+        foreach (var child in directory.ChildDirectories.ToForeachEnum()) {
+          oldChildren[child.DirectoryName.Name] = child;
+        }
+      }
+
+      List<Task<DirectorySnapshot>> childTasks = null;
+      var childFiles = new List<(FileName Name, FileMetadata Metadata, bool IsSymLink)>();
+      for (var i = 0; i < entries.Count; i++) {
+        var entry = entries[i];
+        if (entry.IsDirectory) {
+          Task<DirectorySnapshot> childTask;
+          if (oldChildren != null && oldChildren.TryGetValue(entry.Name, out var oldChild) &&
+              string.Equals(oldChild.DirectoryName.Name, entry.Name, StringComparison.Ordinal) &&
+              oldChild.FileId != UInt128.Zero && oldChild.FileId == entry.FileId &&
+              !oldChild.IsSymLink && !entry.IsSymLink) {
+            // The same directory: its changes (if any) have their own records.
+            childTask = StartCatchUpDirectory(oldChild, context);
+          } else {
+            // A new directory (or replaced, renamed, moved in): scanned entirely.
+            Interlocked.Increment(ref context.Statistics.ScannedSubtreeCount);
+            var name = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name, entry.IsSymLink);
+            childTask = TraverseDirectoryAsync(new DirectoryData(name, entry.IsSymLink, entry.FileId), _cancellationToken);
+          }
+          (childTasks ??= new List<Task<DirectorySnapshot>>()).Add(childTask);
+        } else if (entry.IsFile) {
+          childFiles.Add((_fileSystemNameFactory.CreateFileName(directory.DirectoryName, entry.Name), entry.Metadata, entry.IsSymLink));
+        }
+      }
+
+      var (fileNames, fileMetadata, symLinkFiles) = FilterAndSortFiles(childFiles);
+      IList<DirectorySnapshot> childDirectories;
+      if (childTasks == null) {
+        childDirectories = ArrayUtilities.EmptyList<DirectorySnapshot>.Instance;
+      } else {
+        var childSnapshots = await Task.WhenAll(childTasks);
+        childDirectories = childSnapshots
+          .Where(x => x != null)
+          .OrderBy(x => x.DirectoryName.Name, SystemPathComparer.NameComparer)
+          .ToReadOnlyList();
+      }
+      return new DirectorySnapshot(directory.DirectoryData, childDirectories, fileNames, fileMetadata, symLinkFiles);
+    }
+  }
+
+  /// <summary>The work of a catch-up from the change journal (<see cref="ProjectRootSnapshotBuilder.CatchUp"/>).</summary>
+  public sealed class CatchUpStatistics {
+    /// <summary>The directories listed again (with records in the journal, or without file id).</summary>
+    public int ListedDirectoryCount;
+    /// <summary>The new or replaced directories scanned entirely.</summary>
+    public int ScannedSubtreeCount;
+    /// <summary>The directory symbolic links and junctions scanned entirely.</summary>
+    public int SymLinkSubtreeCount;
+    /// <summary>The file symbolic links checked again.</summary>
+    public int SymLinkFileCount;
   }
 }

@@ -100,7 +100,23 @@ namespace VsChromium.Server {
 
     // Server/FileSystem
     private IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
-    public IFileSystemSnapshotBuilder FileSystemSnapshotBuilder => _fileSystemSnapshotBuilder ??= Create(new FileSystemSnapshotBuilder(FileSystem, ProgressTrackerFactory, IndexingWorkerPool));
+    public IFileSystemSnapshotBuilder FileSystemSnapshotBuilder => _fileSystemSnapshotBuilder ??= Create(new FileSystemSnapshotBuilder(FileSystem, ProgressTrackerFactory, IndexingWorkerPool, ChangeJournal));
+
+    private IChangeJournal _changeJournal;
+    private bool _changeJournalCreated;
+    /// <summary>
+    /// The change journal of the volumes (verification of the index cache): Windows only (see
+    /// "Windows specific code" in PORTING_PRINCIPLES.md), null on the other OSes (full scans).
+    /// </summary>
+    public IChangeJournal ChangeJournal {
+      get {
+        if (!_changeJournalCreated) {
+          _changeJournalCreated = true;
+          _changeJournal = OperatingSystem.IsWindows() ? Create(new WindowsChangeJournal()) : null;
+        }
+        return _changeJournal;
+      }
+    }
 
     private IFileRegistrationTracker _fileRegistrationTracker;
     public IFileRegistrationTracker FileRegistrationTracker => _fileRegistrationTracker ??= Create(new FileRegistrationTracker(FileSystem, ProjectDiscovery, TaskQueueFactory));

@@ -8,6 +8,7 @@ import type { IndexingStatus } from '../protocol/protocol.g';
 import type { HostState } from '../ui/dashboard/dashboardMessages';
 import {
   buildViewModel,
+  describeCacheVerification,
   describeProjectOperations,
   cpuUsagePercent,
   describeStatus,
@@ -237,9 +238,13 @@ describe('buildViewModel', () => {
   it('describes the operations of the projects (no search times)', () => {
     const vm = buildViewModel(data(), options);
     assert.deepEqual(vm.projects[0].operations, [
-      { key: 'initialLoad', name: 'Initial load', count: '1', min: '1 min 6 s', avg: '1 min 6 s', max: '1 min 6 s', last: '1 min 6 s', note: 'scan 15.0 s, from the cache: 4.9 s' },
+      { key: 'initialLoad', name: 'Initial load', count: '1', min: '1 min 6 s', avg: '1 min 6 s', max: '1 min 6 s', last: '1 min 6 s', note: 'scan 15.0 s, from the cache: 4.9 s, verified from the change journal: 312 directories listed again in 420 ms' },
       { key: 'incrementalUpdates', name: 'Incremental updates', count: '48', min: '40 ms', avg: '300 ms', max: '2.1 s', last: '120 ms', note: '' },
     ]);
+    assert.equal(describeCacheVerification({
+      method: 'fullScan', fallbackReason: 'the change journal is not active on "D:\\"', durationMs: 900, journalRecordCount: 0,
+      listedDirectoryCount: 0, scannedDirectoryCount: 0, symLinkDirectoryCount: 0, symLinkFileCount: 0,
+    }), 'verified by a full scan (the change journal is not active on "D:\\")');
     const none = describeProjectOperations(sampleProjectDetails('C:\\a', {
       operations: {
         initialLoad: { count: 0, minMs: 0, avgMs: 0, maxMs: 0, lastMs: 0, scanMs: 0, fromCache: false },

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import type {
+  CacheVerificationStatistics,
   DirectorySizeEntry,
   DirectorySizes,
   IndexDetails,
@@ -470,10 +471,25 @@ export function describeProjectOperations(project: ProjectDetails): ProjectOpera
   if (load.fromCache) {
     notes.push(load.cachedIndexMs !== undefined ? `from the cache: ${formatDuration(load.cachedIndexMs)}` : 'from the cache');
   }
+  const verification = project.operations.lastVerification;
+  if (verification) {
+    notes.push(describeCacheVerification(verification));
+  }
   return [
     durationRow('initialLoad', 'Initial load', load, notes.join(', ')),
     durationRow('incrementalUpdates', 'Incremental updates', project.operations.incrementalUpdates, ''),
   ];
+}
+
+/**
+ * How the tree of the index cache was verified, e.g. "verified from the change journal: 312
+ * directories listed again in 400 ms" or "verified by a full scan: the change journal is not active".
+ */
+export function describeCacheVerification(verification: CacheVerificationStatistics): string {
+  if (verification.method === 'changeJournal') {
+    return `verified from the change journal: ${formatCount(verification.listedDirectoryCount)} directories listed again in ${formatDuration(verification.durationMs)}`;
+  }
+  return `verified by a full scan${verification.fallbackReason ? ` (${verification.fallbackReason})` : ''}`;
 }
 
 function describeProjects(data: DashboardData, options: FormatOptions): ProjectBlock[] {

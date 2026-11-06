@@ -136,6 +136,10 @@ export function sampleProjectDetails(rootPath: string, overrides: Partial<Projec
     operations: {
       initialLoad: { count: 1, minMs: 66_000, avgMs: 66_000, maxMs: 66_000, lastMs: 66_000, scanMs: 15_000, fromCache: true, cachedIndexMs: 4_900 },
       incrementalUpdates: { count: 48, minMs: 40, avgMs: 300, maxMs: 2_100, lastMs: 120 },
+      lastVerification: {
+        method: 'changeJournal', durationMs: 420, journalRecordCount: 52_000, listedDirectoryCount: 312, scannedDirectoryCount: 3,
+        symLinkDirectoryCount: 0, symLinkFileCount: 42_800,
+      },
     },    ...overrides,
   };
 }

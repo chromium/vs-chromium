@@ -12,6 +12,7 @@ using VsChromium.Core.Linq;
 using VsChromium.Core.Logging;
 using VsChromium.Core.Utility;
 using VsChromium.Server.Cache;
+using VsChromium.Server.Diagnostics;
 using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemNames;
 using VsChromium.Server.Operations;
@@ -70,6 +71,8 @@ namespace VsChromium.Server.FileSystem {
       public HashSet<FileName> FilesToReload;
       /// <summary>True if they are all larger than the files cached (not cached anyway).</summary>
       public bool FilesToReloadAreLarge;
+      /// <summary>The change journal checkpoint of the tree of the cache (null if none).</summary>
+      public ChangeJournalCheckpoint Checkpoint;
     }
 
     /// <summary>
@@ -179,8 +182,8 @@ namespace VsChromium.Server.FileSystem {
         Execute = info => {
           Logger.LogInfo("FileSystemSnapshotManager: Rebuilding the project \"{0}\".", projectRoot);
           var oldSnapshot = _currentSnapshot;
-          var newSnapshot = BuildNewFileSystemSnapshot(_registeredProjects, oldSnapshot, EmptyChanges, null,
-            new HashSet<FullPath> { projectRoot }, cancellationToken);
+          var newSnapshot = BuildNewFileSystemSnapshot(_registeredProjects, oldSnapshot, EmptyChanges,
+            new SnapshotComputeOptions { FullScanRoots = new HashSet<FullPath> { projectRoot } }, cancellationToken);
           // The scan verifies the tree of the cache of the project, if any.
           _unverifiedProjects.Remove(projectRoot);
           newSnapshot = newSnapshot.WithCachedProjectRoots(_unverifiedProjects.Keys.ToList());
@@ -386,7 +389,9 @@ namespace VsChromium.Server.FileSystem {
           // scanned (verified later). Not for full rescans ("Rebuild index").
           var cachedTrees = pathChanges == null ? null : LoadCachedTrees(projects, oldSnapshot, cancellationToken);
           var newSnapshot = BuildNewFileSystemSnapshot(projects, oldSnapshot, pathChanges,
-            cachedTrees?.ToDictionary(x => x.Key, x => x.Value.Root), null, cancellationToken);
+            cachedTrees == null ? null : new SnapshotComputeOptions {
+              PrecomputedRoots = cachedTrees.ToDictionary(x => x.Key, x => (x.Value.Root, x.Value.Checkpoint)),
+            }, cancellationToken);
           UpdateUnverifiedProjects(projects, pathChanges, cachedTrees);
           newSnapshot = newSnapshot.WithCachedProjectRoots(_unverifiedProjects.Keys.ToList());
           // Update of new tree (assert calls are serialized).
@@ -446,6 +451,7 @@ namespace VsChromium.Server.FileSystem {
           _unverifiedProjects[root] = new UnverifiedProject {
             FilesToReload = new HashSet<FileName>(tree.FilesWithoutContents),
             FilesToReloadAreLarge = tree.FilesWithoutContentsAreLarge,
+            Checkpoint = tree.Checkpoint,
           };
         }
       }
@@ -496,8 +502,18 @@ namespace VsChromium.Server.FileSystem {
 
         Execute = info => {
           var oldSnapshot = _currentSnapshot;
-          var newSnapshot = BuildNewFileSystemSnapshot(_registeredProjects, oldSnapshot, EmptyChanges, null, roots,
+          // From the change journal if possible (catch-up), otherwise by a full scan.
+          var options = new SnapshotComputeOptions {
+            FullScanRoots = roots,
+            VerifyRoots = roots.ToDictionary(x => x, x => _unverifiedProjects[x].Checkpoint),
+          };
+          var newSnapshot = BuildNewFileSystemSnapshot(_registeredProjects, oldSnapshot, EmptyChanges, options,
             cancellationToken);
+          foreach (var (root, verification) in options.Verifications) {
+            Logger.LogInfo("FileSystemSnapshotManager: Verification of the tree of the index cache of \"{0}\": {1}.", root,
+              verification);
+            ProjectOperations.RecordVerification(root, verification);
+          }
           var changes = new List<PathChangeEntry>();
           // True if the verified index is the same as the cache: same trees, and the files read
           // from disk are not cached anyway (larger than 512 KB): nothing to save.
@@ -542,8 +558,7 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private FileSystemSnapshot BuildNewFileSystemSnapshot(IList<IProject> projects,
-      FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges,
-      IReadOnlyDictionary<FullPath, DirectorySnapshot> precomputedRoots, ISet<FullPath> fullScanRoots,
+      FileSystemSnapshot oldSnapshot, FullPathChanges pathChanges, SnapshotComputeOptions options,
       CancellationToken cancellationToken) {
 
       using (new TimeElapsedLogger("FileSystemSnapshotManager: Computing snapshot delta from list of file changes", cancellationToken, InfoLogger.Instance)) {
@@ -555,8 +570,7 @@ namespace VsChromium.Server.FileSystem {
           projects,
           Interlocked.Increment(ref _version),
           cancellationToken,
-          precomputedRoots,
-          fullScanRoots);
+          options);
 
         // Monitor all project roots for file changes.
         var newRoots = newSnapshot.ProjectRoots

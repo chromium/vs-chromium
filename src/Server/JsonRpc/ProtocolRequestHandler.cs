@@ -483,6 +483,24 @@ namespace VsChromium.Server.JsonRpc {
         IncrementalUpdates = new DurationStatistics {
           Count = updates.Count, MinMs = updates.MinMs, AvgMs = updates.AverageMs, MaxMs = updates.MaxMs, LastMs = updates.LastMs,
         },
+        LastVerification = CreateCacheVerification(statistics.LastVerification),
+      };
+    }
+
+    private static CacheVerificationStatistics CreateCacheVerification(ProjectVerification verification) {
+      if (verification == null)
+        return null;
+      return new CacheVerificationStatistics {
+        Method = verification.Method == FileSystem.VerificationMethod.ChangeJournal
+          ? Protocol.Generated.VerificationMethod.ChangeJournal
+          : Protocol.Generated.VerificationMethod.FullScan,
+        FallbackReason = verification.FallbackReason,
+        DurationMs = verification.ElapsedMs,
+        JournalRecordCount = verification.RecordCount,
+        ListedDirectoryCount = verification.ListedDirectoryCount,
+        ScannedDirectoryCount = verification.ScannedSubtreeCount,
+        SymLinkDirectoryCount = verification.SymLinkSubtreeCount,
+        SymLinkFileCount = verification.SymLinkFileCount,
       };
     }
 

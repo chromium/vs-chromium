@@ -42,6 +42,11 @@ namespace VsChromium.Server.Diagnostics {
     public double LastCachedIndexMs;
     /// <summary>The incremental updates of the project (file system changes, edited files).</summary>
     public DurationAccumulator IncrementalUpdates;
+    /// <summary>
+    /// The last verification of the tree of the index cache: from the change journal or by a full
+    /// scan, and why (null if none).
+    /// </summary>
+    public ProjectVerification LastVerification;
   }
 
   /// <summary>
@@ -98,6 +103,13 @@ namespace VsChromium.Server.Diagnostics {
           entry.PendingCachedIndexMs = 0;
         }
         entry.PendingScanMs = scanMs;
+      }
+    }
+
+    /// <summary>The verification of the tree of the index cache of a project (not modified after this call).</summary>
+    public static void RecordVerification(FullPath root, ProjectVerification verification) {
+      lock (Lock) {
+        GetEntry(root).Statistics.LastVerification = verification;
       }
     }
 

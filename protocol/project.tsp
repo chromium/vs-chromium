@@ -157,6 +157,38 @@ model InitialLoadStatistics {
 model ProjectOperationsStatistics {
   initialLoad: InitialLoadStatistics;
   incrementalUpdates: DurationStatistics;
+  /** The last verification of the tree of the index cache of the project (none if it was never loaded from the cache). */
+  lastVerification?: CacheVerificationStatistics;
+}
+
+/** How the tree of the index cache of a project was verified. */
+enum VerificationMethod {
+  /** The project was scanned entirely. */
+  fullScan,
+  /** Only the directories with records in the change journal (NTFS/ReFS, Windows) since the save of the cache were listed again. */
+  changeJournal,
+}
+
+/**
+ * The verification of the tree of the index cache of a project after a load from the cache: from
+ * the change journal of its volume (catch-up) if possible, otherwise by a full scan.
+ */
+model CacheVerificationStatistics {
+  method: VerificationMethod;
+  /** Why the change journal was not used (`fullScan`), e.g. "the change journal is not active on \"D:\\\"". */
+  fallbackReason?: string;
+  /** The duration of the scan or of the catch-up (journal read included). */
+  durationMs: float64;
+  /** The records of the change journal read (`changeJournal`). */
+  journalRecordCount: int64;
+  /** The directories listed again (`changeJournal`). */
+  listedDirectoryCount: int32;
+  /** The new (or replaced) directories scanned entirely (`changeJournal`). */
+  scannedDirectoryCount: int32;
+  /** The directory symbolic links and junctions scanned entirely (`changeJournal`). */
+  symLinkDirectoryCount: int32;
+  /** The file symbolic links checked again (`changeJournal`). */
+  symLinkFileCount: int32;
 }
 
 model ProjectDetails {

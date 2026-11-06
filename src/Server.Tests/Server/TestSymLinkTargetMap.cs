@@ -154,5 +154,38 @@ namespace VsChromium.Tests.Server {
       // outside of the project (not recursive); not the target inside the project (watched).
       CollectionAssert.AreEqual(new[] { $"{Outside()} False", $"{Outside("linked")} True" }, directories);
     }
+
+    [TestMethod]
+    public void TargetDirectoriesAreOnlyThoseOfTheIncludedProjects() {
+      var map = Build();
+      Assert.AreEqual(2, map.GetTargetDirectoriesToWatch(x => x.Equals(Root)).Count);
+      Assert.AreEqual(0, map.GetTargetDirectoriesToWatch(x => false).Count, "Option off: no watcher");
+    }
+
+    [TestMethod]
+    public void TargetsOnNetworkVolumesAreNotWatched() {
+      _targets[Inside("src", "link.cc")] = @"\\server\share\target.cc";
+      var map = Build();
+      CollectionAssert.AreEqual(new[] { $"{Outside("linked")} True" },
+        map.GetTargetDirectoriesToWatch().Select(x => $"{x.Directory.Value} {x.Recursive}").ToList());
+      var statistics = map.GetStatistics(Root);
+      Assert.AreEqual(1, statistics.NetworkTargetLinkCount);
+      Assert.AreEqual(1, statistics.ExternalTargetLinkCount);
+      Assert.IsTrue(SymLinkTargetMap.IsOnNetworkVolume(@"\\server\share"));
+      Assert.IsFalse(SymLinkTargetMap.IsOnNetworkVolume(Outside("target.cc")));
+    }
+
+    [TestMethod]
+    public void StatisticsOfAProject() {
+      var map = Build();
+      var statistics = map.GetStatistics(Root);
+      Assert.AreEqual(2, statistics.FileLinkCount);
+      Assert.AreEqual(1, statistics.DirectoryLinkCount);
+      Assert.AreEqual(2, statistics.ExternalTargetLinkCount, "link.cc and dirlink (not local.cc)");
+      Assert.AreEqual(0, statistics.NetworkTargetLinkCount);
+      Assert.AreEqual(2, statistics.ExternalTargetDirectories.Count);
+      var other = map.GetStatistics(new FullPath(Outside()));
+      Assert.AreEqual(0, other.FileLinkCount + other.DirectoryLinkCount + other.ExternalTargetDirectories.Count, "Not a project");
+    }
   }
 }

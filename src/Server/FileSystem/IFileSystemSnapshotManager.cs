@@ -29,6 +29,17 @@ namespace VsChromium.Server.FileSystem {
     void RebuildProject(FullPath projectRoot);
 
     /// <summary>
+    /// Enables or disables the watchers of the targets of the symbolic links of the project whose
+    /// root is <paramref name="projectRoot"/> outside of the project roots (disabled by default; see
+    /// <see cref="SymLinkTargetWatcher"/>). Kept for the lifetime of the server (also for a project
+    /// not loaded yet).
+    /// </summary>
+    void SetWatchExternalLinkTargets(FullPath projectRoot, bool enabled) { }
+
+    /// <summary>The symbolic links of a project and the watchers of their targets (no disk access).</summary>
+    SymLinkStatistics GetSymLinkStatistics(FullPath projectRoot) => new SymLinkStatistics();
+
+    /// <summary>
     /// Event raised when a file system scan operation has started
     /// </summary>
     event EventHandler<OperationInfo> SnapshotScanStarted;

@@ -489,6 +489,10 @@ namespace VsChromium.Server.JsonRpc {
           SaveIndexCacheLater(_snapshotManager.CurrentSnapshot);
         }
       }
+      if (parameters.WatchExternalLinkTargets.HasValue) {
+        _snapshotManager.SetWatchExternalLinkTargets(_searchEngine.GetProjectRoot(new FullPath(parameters.ProjectPath)),
+          parameters.WatchExternalLinkTargets.Value);
+      }
       return default;
     }
 
@@ -520,6 +524,20 @@ namespace VsChromium.Server.JsonRpc {
         Memory = CreateProjectMemory(database, project.Project.RootPath),
         Cache = CreateProjectCacheState(project.Project.RootPath),
         Operations = CreateProjectOperations(project.Project.RootPath),
+        SymbolicLinks = CreateSymbolicLinkSummary(project.Project.RootPath),
+      };
+    }
+
+    private SymbolicLinkSummary CreateSymbolicLinkSummary(FullPath rootPath) {
+      var statistics = _snapshotManager.GetSymLinkStatistics(rootPath);
+      return new SymbolicLinkSummary {
+        FileLinkCount = statistics.FileLinkCount,
+        DirectoryLinkCount = statistics.DirectoryLinkCount,
+        ExternalTargetLinkCount = statistics.ExternalTargetLinkCount,
+        ExternalTargetDirectoryCount = statistics.ExternalTargetDirectories.Count,
+        NetworkTargetLinkCount = statistics.NetworkTargetLinkCount,
+        ExternalTargetsWatched = statistics.ExternalTargetsWatched,
+        WatcherCount = statistics.WatcherCount,
       };
     }
 

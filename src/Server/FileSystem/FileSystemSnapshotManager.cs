@@ -328,13 +328,58 @@ namespace VsChromium.Server.FileSystem {
       var map = SymLinkTargetMap.Build(snapshot, _symLinkTargets, invalidated, (path, allowCached) => _fileSystem.ResolveSymLinkTarget(path, allowCached));
       _symLinkTargets = map;
       _symLinkTargetsRoots = roots;
-      var directories = map.GetTargetDirectoriesToWatch();
-      _symLinkTargetWatcher.Update(directories);
+      var directories = UpdateSymLinkTargetWatchersLocked();
       if (map.FileLinkCount + map.DirectoryLinkCount > 0) {
         Logger.LogInfo("FileSystemSnapshotManager: {0:n0} file and {1:n0} directory symbolic links ({2:n0} target directories " +
-                       "outside of the projects), mapped in {3:n0} ms.", map.FileLinkCount, map.DirectoryLinkCount, directories.Count,
+                       "outside of the projects watched), mapped in {3:n0} ms.", map.FileLinkCount, map.DirectoryLinkCount, directories.Count,
           stopwatch.ElapsedMilliseconds);
       }
+    }
+
+    /// <summary>
+    /// The project roots whose targets of symbolic links outside of the project roots are watched
+    /// ("project/setOptions", kept for the lifetime of the server).
+    /// </summary>
+    private readonly HashSet<FullPath> _watchExternalLinkTargets = new HashSet<FullPath>();
+
+    public void SetWatchExternalLinkTargets(FullPath projectRoot, bool enabled) {
+      lock (_watchExternalLinkTargets) {
+        if (!(enabled ? _watchExternalLinkTargets.Add(projectRoot) : _watchExternalLinkTargets.Remove(projectRoot)))
+          return;
+      }
+      Logger.LogInfo("FileSystemSnapshotManager: targets of symbolic links outside of \"{0}\" {1}.", projectRoot,
+        enabled ? "watched" : "not watched anymore");
+      // Note: The map is unchanged: only the watchers.
+      _symLinkTargetsTaskQueue.Enqueue(SymLinkTargetWatchersTaskId, token => {
+        lock (_symLinkTargetsLock) {
+          UpdateSymLinkTargetWatchersLocked();
+        }
+      });
+    }
+
+    private bool IsWatchingExternalLinkTargets(FullPath projectRoot) {
+      lock (_watchExternalLinkTargets) {
+        return _watchExternalLinkTargets.Contains(projectRoot);
+      }
+    }
+
+    private static readonly TaskId SymLinkTargetWatchersTaskId = new TaskId("SymLinkTargetWatchersTaskId");
+
+    /// <summary>Watches the targets outside of the projects of the links of the projects with the option.</summary>
+    private IReadOnlyList<(FullPath Directory, bool Recursive)> UpdateSymLinkTargetWatchersLocked() {
+      var directories = _symLinkTargets.GetTargetDirectoriesToWatch(IsWatchingExternalLinkTargets);
+      _symLinkTargetWatcher.Update(directories);
+      return directories;
+    }
+
+    public SymLinkStatistics GetSymLinkStatistics(FullPath projectRoot) {
+      var statistics = _symLinkTargets.GetStatistics(projectRoot);
+      statistics.ExternalTargetsWatched = IsWatchingExternalLinkTargets(projectRoot);
+      if (statistics.ExternalTargetsWatched && statistics.ExternalTargetDirectories.Count > 0) {
+        var watched = new HashSet<(FullPath, bool)>(_symLinkTargetWatcher.WatchedDirectories);
+        statistics.WatcherCount = statistics.ExternalTargetDirectories.Count(x => watched.Contains(x));
+      }
+      return statistics;
     }
 
     /// <summary>

@@ -72,10 +72,13 @@ public static class ServerProtocol {
   public static ServerRequest GetServerStatistics(bool forceGc = false) =>
     new("server/statistics", new JsonObject { ["forceGarbageCollection"] = forceGc });
 
-  public static ServerRequest SetProjectOptions(string projectPath, bool? trigramFiltersEnabled) {
+  public static ServerRequest SetProjectOptions(string projectPath, bool? trigramFiltersEnabled, bool? watchExternalLinkTargets = null) {
     var parameters = new JsonObject { ["projectPath"] = projectPath };
     if (trigramFiltersEnabled != null) {
       parameters["trigramFiltersEnabled"] = trigramFiltersEnabled;
+    }
+    if (watchExternalLinkTargets != null) {
+      parameters["watchExternalLinkTargets"] = watchExternalLinkTargets;
     }
     return new("project/setOptions", parameters);
   }

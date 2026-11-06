@@ -180,8 +180,14 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   large project, 44.5k file and 838 directory links, not on the path of the index updates). Each
   batch of watcher changes is
   expanded: a change of the target of a file link is a change of the link file; a change under the
-  target of a directory link is the same change under the link. `SymLinkTargetWatcher` watches the
-  targets outside of the projects: the directory of each file link target (not recursive), each
+  target of a directory link is the same change under the link (always on: the targets inside the
+  projects need no extra watcher). `SymLinkTargetWatcher` watches the
+  targets outside of the projects, **opt-in per project** (decided 2026-11: off by default,
+  `project/setOptions { watchExternalLinkTargets }`, kept for the lifetime of the server; VS Code:
+  `vschromium.watchExternalLinkTargets` per workspace folder; Visual Studio: options page default
+  and per project override; dashboard warning and checkbox; off, the changes of these targets are
+  picked up by the next restart catch-up or rescan; `project/details` reports `symbolicLinks`:
+  link counts, external/network targets, watched or not, watchers): the directory of each file link target (not recursive), each
   directory link target (recursive), deduplicated, at most 512 directories (logged above; 8 KB
   notification buffers for the non-recursive ones: non-paged memory; the large project has 428), not on
   network drives (their links are refreshed by the next scan or catch-up); its errors restart it

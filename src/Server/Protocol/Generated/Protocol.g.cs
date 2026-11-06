@@ -574,6 +574,18 @@ namespace VsChromium.Protocol.Generated {
     [JsonPropertyName("cacheEnabled")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? CacheEnabled { get; set; }
+
+    /// <summary>
+    /// Enables or disables the watchers of the targets of the symbolic links of the project outside of
+    /// the project roots (disabled by default): one directory watcher per target directory (the
+    /// directory of the target of a file link, the target of a directory link), so that the changes of
+    /// the targets update the links while the server runs. Disabled: the changes of these targets are
+    /// picked up when the server restarts (catch-up) or the project is rescanned. The targets inside
+    /// the projects are always followed (no extra watcher). Unchanged if omitted.
+    /// </summary>
+    [JsonPropertyName("watchExternalLinkTargets")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? WatchExternalLinkTargets { get; set; }
   }
 
   public sealed partial class ProjectPathParams {
@@ -986,6 +998,52 @@ namespace VsChromium.Protocol.Generated {
     public string? Hint { get; set; }
   }
 
+  /// <summary>
+  /// The symbolic links of a project (file symbolic links, directory symbolic links and junctions) and
+  /// the watchers of their targets outside of the project roots (see `watchExternalLinkTargets` of
+  /// "project/setOptions"). From the last map of the links (built in the background after each scan).
+  /// </summary>
+  public sealed partial class SymbolicLinkSummary {
+    [JsonPropertyName("fileLinkCount")]
+    public int FileLinkCount { get; set; }
+
+    /// <summary>
+    /// Directory symbolic links and junctions.
+    /// </summary>
+    [JsonPropertyName("directoryLinkCount")]
+    public int DirectoryLinkCount { get; set; }
+
+    /// <summary>
+    /// The links whose final target is outside of the project roots, on a local volume (watchable).
+    /// </summary>
+    [JsonPropertyName("externalTargetLinkCount")]
+    public int ExternalTargetLinkCount { get; set; }
+
+    /// <summary>
+    /// The directories to watch for these targets (one watcher each when watched).
+    /// </summary>
+    [JsonPropertyName("externalTargetDirectoryCount")]
+    public int ExternalTargetDirectoryCount { get; set; }
+
+    /// <summary>
+    /// The links whose final target is on a network volume (never watched).
+    /// </summary>
+    [JsonPropertyName("networkTargetLinkCount")]
+    public int NetworkTargetLinkCount { get; set; }
+
+    /// <summary>
+    /// True if the targets outside of the project roots are watched (`watchExternalLinkTargets`).
+    /// </summary>
+    [JsonPropertyName("externalTargetsWatched")]
+    public bool ExternalTargetsWatched { get; set; }
+
+    /// <summary>
+    /// The directory watchers running for the targets of the project (at most 512 for all the projects).
+    /// </summary>
+    [JsonPropertyName("watcherCount")]
+    public int WatcherCount { get; set; }
+  }
+
   public sealed partial class ProjectDetails {
     [JsonPropertyName("rootPath")]
     public string RootPath { get; set; } = "";
@@ -1016,6 +1074,9 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("operations")]
     public ProjectOperationsStatistics Operations { get; set; } = null!;
+
+    [JsonPropertyName("symbolicLinks")]
+    public SymbolicLinkSummary SymbolicLinks { get; set; } = null!;
   }
 
   public sealed partial class DirectoryPathParams {
@@ -2408,6 +2469,7 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(InitialLoadStatistics))]
   [JsonSerializable(typeof(ProjectOperationsStatistics))]
   [JsonSerializable(typeof(CacheVerificationStatistics))]
+  [JsonSerializable(typeof(SymbolicLinkSummary))]
   [JsonSerializable(typeof(ProjectDetails))]
   [JsonSerializable(typeof(DirectoryPathParams))]
   [JsonSerializable(typeof(DirectorySizeEntry))]

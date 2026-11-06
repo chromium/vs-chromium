@@ -274,6 +274,15 @@ export interface SetProjectOptionsParams {
    * policy (once the index settles). Unchanged if omitted.
    */
   cacheEnabled?: boolean;
+  /**
+   * Enables or disables the watchers of the targets of the symbolic links of the project outside of
+   * the project roots (disabled by default): one directory watcher per target directory (the
+   * directory of the target of a file link, the target of a directory link), so that the changes of
+   * the targets update the links while the server runs. Disabled: the changes of these targets are
+   * picked up when the server restarts (catch-up) or the project is rescanned. The targets inside
+   * the projects are always followed (no extra watcher). Unchanged if omitted.
+   */
+  watchExternalLinkTargets?: boolean;
 }
 
 export interface ProjectPathParams {
@@ -456,6 +465,27 @@ export interface CacheVerificationStatistics {
   hint?: string;
 }
 
+/**
+ * The symbolic links of a project (file symbolic links, directory symbolic links and junctions) and
+ * the watchers of their targets outside of the project roots (see `watchExternalLinkTargets` of
+ * "project/setOptions"). From the last map of the links (built in the background after each scan).
+ */
+export interface SymbolicLinkSummary {
+  fileLinkCount: number;
+  /** Directory symbolic links and junctions. */
+  directoryLinkCount: number;
+  /** The links whose final target is outside of the project roots, on a local volume (watchable). */
+  externalTargetLinkCount: number;
+  /** The directories to watch for these targets (one watcher each when watched). */
+  externalTargetDirectoryCount: number;
+  /** The links whose final target is on a network volume (never watched). */
+  networkTargetLinkCount: number;
+  /** True if the targets outside of the project roots are watched (`watchExternalLinkTargets`). */
+  externalTargetsWatched: boolean;
+  /** The directory watchers running for the targets of the project (at most 512 for all the projects). */
+  watcherCount: number;
+}
+
 export interface ProjectDetails {
   rootPath: string;
   directoryDetails: DirectoryDetails;
@@ -467,6 +497,7 @@ export interface ProjectDetails {
   memory: ProjectMemory;
   cache: ProjectCacheState;
   operations: ProjectOperationsStatistics;
+  symbolicLinks: SymbolicLinkSummary;
 }
 
 export interface DirectoryPathParams {

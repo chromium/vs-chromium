@@ -11,9 +11,9 @@ namespace VsChromium.Tests.EndToEnd.Regression;
 /// <summary>
 /// Changes of the targets of symbolic links while the server runs: the directory watcher reports
 /// the changes of a target under its real path only (and only if it is watched), the server maps
-/// them to the paths of the links (and watches the targets outside of the projects), so that the
-/// index of the links is updated. Inconclusive if symbolic links can't be created (Windows without
-/// Developer Mode or elevation).
+/// them to the paths of the links (and watches the targets outside of the projects if the option
+/// "watchExternalLinkTargets" of the project is on), so that the index of the links is updated.
+/// Inconclusive if symbolic links can't be created (Windows without Developer Mode or elevation).
 /// </summary>
 [TestClass]
 public class SymLinkChangeTests {
@@ -40,8 +40,14 @@ public class SymLinkChangeTests {
     var target = Path.Combine(tree.Outside, "target.cc");
     File.WriteAllText(target, "// OUTSIDE_ORIGINAL\n");
     tree.FileLink(Path.Combine("src", "link.cc"), target);
-    await using var server = await tree.StartAsync();
+    await using var server = await tree.StartAsync(watchExternalLinkTargets: true);
     Assert.AreEqual(1, await HitCountAsync(server, "OUTSIDE_ORIGINAL"));
+    var links = await tree.SymbolicLinksAsync(server);
+    Assert.AreEqual(1, links["fileLinkCount"]!.GetValue<int>(), links.ToJsonString());
+    Assert.AreEqual(1, links["externalTargetLinkCount"]!.GetValue<int>(), links.ToJsonString());
+    Assert.AreEqual(1, links["externalTargetDirectoryCount"]!.GetValue<int>(), links.ToJsonString());
+    Assert.IsTrue(links["externalTargetsWatched"]!.GetValue<bool>(), links.ToJsonString());
+    Assert.AreEqual(1, links["watcherCount"]!.GetValue<int>(), links.ToJsonString());
 
     File.WriteAllText(target, "// OUTSIDE_MODIFIED, longer\n");
     await WaitForHitsAsync(server, "OUTSIDE_MODIFIED", 1);
@@ -62,7 +68,7 @@ public class SymLinkChangeTests {
     File.WriteAllText(Path.Combine(target, "sub", "a.cc"), "// LINKED_A_ORIGINAL\n");
     File.WriteAllText(Path.Combine(target, "b.cc"), "// LINKED_B\n");
     tree.DirectoryLink("dirlink", target);
-    await using var server = await tree.StartAsync();
+    await using var server = await tree.StartAsync(watchExternalLinkTargets: true);
     Assert.AreEqual(1, await HitCountAsync(server, "LINKED_A_ORIGINAL"));
 
     // Modified, created and deleted files of the target: under the link path.
@@ -76,6 +82,39 @@ public class SymLinkChangeTests {
     CollectionAssert.Contains(paths, Path.Combine(tree.Root, "dirlink", "sub", "new.cc"));
   }
 
+  /// <summary>
+  /// The option "watchExternalLinkTargets" off (the default): a change of a target outside of the
+  /// project is not applied while the server runs, but when it restarts (catch-up of the cache).
+  /// </summary>
+  [TestMethod]
+  [Timeout(5 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task TargetOutsideOfTheProjectNotWatchedByDefault() {
+    using var tree = new TestTree();
+    var target = Path.Combine(tree.Outside, "target.cc");
+    File.WriteAllText(target, "// UNWATCHED_ORIGINAL\n");
+    tree.FileLink(Path.Combine("src", "link.cc"), target);
+    await using (var server = await tree.StartAsync(cacheDirectory: tree.CacheDirectory)) {
+      Assert.AreEqual(1, await HitCountAsync(server, "UNWATCHED_ORIGINAL"));
+      var links = await tree.SymbolicLinksAsync(server);
+      Assert.AreEqual(1, links["externalTargetLinkCount"]!.GetValue<int>(), links.ToJsonString());
+      Assert.AreEqual(1, links["externalTargetDirectoryCount"]!.GetValue<int>(), links.ToJsonString());
+      Assert.IsFalse(links["externalTargetsWatched"]!.GetValue<bool>(), links.ToJsonString());
+      Assert.AreEqual(0, links["watcherCount"]!.GetValue<int>(), links.ToJsonString());
+      await WaitForAsync(async () => (await server.RequestAsync(ServerProtocol.GetServerStatistics())).Data["indexCache"]!["writeCount"]!
+        .GetValue<int>() >= 1, "the cache is written");
+
+      File.WriteAllText(target, "// UNWATCHED_MODIFIED, longer\n");
+      await Task.Delay(TimeSpan.FromSeconds(3));
+      Assert.AreEqual(1, await HitCountAsync(server, "UNWATCHED_ORIGINAL"), "Not watched: the link keeps its contents");
+      Assert.AreEqual(0, await HitCountAsync(server, "UNWATCHED_MODIFIED"));
+    }
+
+    // Restarted: the file links are checked again (catch-up or full scan).
+    await using var restarted = await tree.StartAsync(cacheDirectory: tree.CacheDirectory);
+    await WaitForHitsAsync(restarted, "UNWATCHED_MODIFIED", 1);
+    Assert.AreEqual(0, await HitCountAsync(restarted, "UNWATCHED_ORIGINAL"));
+  }
+
   [TestMethod]
   [Timeout(5 * 60 * 1000, CooperativeCancellation = true)]
   public async Task RetargetedFileLink() {
@@ -83,7 +122,7 @@ public class SymLinkChangeTests {
     File.WriteAllText(Path.Combine(tree.Outside, "first.cc"), "// RETARGET_FIRST\n");
     File.WriteAllText(Path.Combine(tree.Outside, "second.cc"), "// RETARGET_SECOND, longer\n");
     tree.FileLink(Path.Combine("src", "link.cc"), Path.Combine(tree.Outside, "first.cc"));
-    await using var server = await tree.StartAsync();
+    await using var server = await tree.StartAsync(watchExternalLinkTargets: true);
     Assert.AreEqual(1, await HitCountAsync(server, "RETARGET_FIRST"));
 
     // The link is replaced (its directory changes): the new target, then its changes.
@@ -114,6 +153,14 @@ public class SymLinkChangeTests {
     }
   }
 
+  private static async Task WaitForAsync(Func<Task<bool>> condition, string description) {
+    var stopwatch = Stopwatch.StartNew();
+    while (!await condition()) {
+      Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(30), $"Timeout waiting for: {description}");
+      await Task.Delay(100);
+    }
+  }
+
   /// <summary>A project and a directory outside of it (deleted when disposed).</summary>
   private sealed class TestTree : IDisposable {
     private readonly string _parent = Path.Combine(Path.GetTempPath(), "VsChromiumSymLinkChangeTest-" + Guid.NewGuid().ToString("N"));
@@ -129,6 +176,7 @@ public class SymLinkChangeTests {
 
     public string Root => Path.Combine(_parent, "project");
     public string Outside => Path.Combine(_parent, "outside");
+    public string CacheDirectory => Path.Combine(_parent, "cache");
 
     public void WriteFile(string relativePath, string text) {
       var path = Path.Combine(Root, relativePath);
@@ -154,8 +202,16 @@ public class SymLinkChangeTests {
       }
     }
 
-    public async Task<JsonRpcServerClient> StartAsync() {
-      var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
+    /// <summary>
+    /// Starts a server (with the index cache <paramref name="cacheDirectory"/>, a new one if null)
+    /// and loads the project, with the option "watchExternalLinkTargets" (set before the load) and
+    /// its watchers started.
+    /// </summary>
+    public async Task<JsonRpcServerClient> StartAsync(bool watchExternalLinkTargets = false, string? cacheDirectory = null) {
+      var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath, cacheDirectory);
+      if (watchExternalLinkTargets) {
+        await server.RequestAsync(ServerProtocol.SetProjectOptions(Root, trigramFiltersEnabled: null, watchExternalLinkTargets: true));
+      }
       await server.WaitForNotificationAsync("index/loaded", TimeSpan.FromMinutes(2),
         () => server.RequestAsync(ServerProtocol.RegisterFile(Path.Combine(Root, "vs-chromium-project.txt"))));
       var stopwatch = Stopwatch.StartNew();
@@ -163,7 +219,18 @@ public class SymLinkChangeTests {
         Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(60), "Timeout waiting for the status \"idle\"");
         await Task.Delay(100);
       }
+      // Note: The map of the links (and the watchers) is built in the background after the scan.
+      await WaitForAsync(async () => {
+        var links = await SymbolicLinksAsync(server);
+        return links["fileLinkCount"]!.GetValue<int>() + links["directoryLinkCount"]!.GetValue<int>() > 0 &&
+               (!watchExternalLinkTargets || links["watcherCount"]!.GetValue<int>() >= links["externalTargetDirectoryCount"]!.GetValue<int>());
+      }, "the map of the symbolic links");
       return server;
+    }
+
+    public async Task<System.Text.Json.Nodes.JsonNode> SymbolicLinksAsync(JsonRpcServerClient server) {
+      var details = (await server.RequestAsync(ServerProtocol.GetProjectDetails(Root))).Data;
+      return details["symbolicLinks"]!;
     }
 
     public void Dispose() {

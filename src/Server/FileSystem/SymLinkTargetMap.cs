@@ -203,11 +203,15 @@ namespace VsChromium.Server.FileSystem {
     /// <summary>
     /// The directories to watch for the targets outside of the projects (watched already): the
     /// directory of the target of each file link (not recursive), the target of each directory link
-    /// (recursive), without duplicates nor directories inside another watched directory.
+    /// (recursive), without duplicates nor directories inside another watched directory. Only the
+    /// targets of the links of the projects accepted by <paramref name="includeProject"/> (all if
+    /// null). The targets on network volumes are excluded (not watchable).
     /// </summary>
-    public IReadOnlyList<(FullPath Directory, bool Recursive)> GetTargetDirectoriesToWatch() {
-      var recursive = _directoryTargets.Keys
-        .Where(x => !IsInsideAny(x, _projectRoots.Select(r => r.Value)))
+    public IReadOnlyList<(FullPath Directory, bool Recursive)> GetTargetDirectoriesToWatch(Func<FullPath, bool> includeProject = null) {
+      bool Included(List<LinkPath> links) => includeProject == null || links.Any(x => includeProject(x.ProjectRoot));
+      var recursive = _directoryTargets
+        .Where(x => Included(x.Value) && IsExternal(x.Key))
+        .Select(x => x.Key)
         .OrderBy(x => x.Length)
         .ToList();
       // Not inside another recursive directory.
@@ -217,15 +221,76 @@ namespace VsChromium.Server.FileSystem {
           recursiveKept.Add(directory);
         }
       }
-      var nonRecursive = _fileTargets.Keys
-        .Select(x => ParentOf(x))
+      var nonRecursive = _fileTargets
+        .Where(x => Included(x.Value) && IsExternal(x.Key))
+        .Select(x => ParentOf(x.Key))
         .Where(x => !string.IsNullOrEmpty(x))
         .Distinct(Comparer)
-        .Where(x => !IsInsideAny(x, _projectRoots.Select(r => r.Value)) && !IsInsideAny(x, recursiveKept))
+        .Where(x => !IsInsideAny(x, recursiveKept))
         .ToList();
       return recursiveKept.Select(x => (new FullPath(x), true))
         .Concat(nonRecursive.Select(x => (new FullPath(x), false)))
         .ToList();
+    }
+
+    /// <summary>The statistics of the links of a project (see <see cref="SymLinkStatistics"/>).</summary>
+    public SymLinkStatistics GetStatistics(FullPath projectRoot) {
+      bool OfProject(LinkPath link) => link.ProjectRoot.Equals(projectRoot);
+      var statistics = new SymLinkStatistics();
+      foreach (var (targets, isFile) in new[] { (_fileTargets, true), (_directoryTargets, false) }) {
+        foreach (var entry in targets) {
+          var count = entry.Value.Count(OfProject);
+          if (count == 0)
+            continue;
+          if (isFile) {
+            statistics.FileLinkCount += count;
+          } else {
+            statistics.DirectoryLinkCount += count;
+          }
+          if (IsInsideAny(entry.Key, _projectRoots.Select(r => r.Value)))
+            continue;
+          if (IsOnNetworkVolume(entry.Key)) {
+            statistics.NetworkTargetLinkCount += count;
+          } else {
+            statistics.ExternalTargetLinkCount += count;
+          }
+        }
+      }
+      statistics.ExternalTargetDirectories = GetTargetDirectoriesToWatch(x => x.Equals(projectRoot));
+      return statistics;
+    }
+
+    /// <summary>Outside of the projects (not watched by their watchers) and not on a network volume.</summary>
+    private bool IsExternal(string target) {
+      return !IsInsideAny(target, _projectRoots.Select(r => r.Value)) && !IsOnNetworkVolume(target);
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> NetworkVolumes =
+      new System.Collections.Concurrent.ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A UNC path, or a path of a network drive (cached by volume root).</summary>
+    public static bool IsOnNetworkVolume(string path) {
+      if (path.StartsWith(@"\\", StringComparison.Ordinal) || path.StartsWith("//", StringComparison.Ordinal))
+        return true;
+      if (!OperatingSystem.IsWindows())
+        return false;
+      string root;
+      try {
+        root = System.IO.Path.GetPathRoot(path);
+      }
+      catch (ArgumentException) {
+        return false;
+      }
+      if (string.IsNullOrEmpty(root))
+        return false;
+      return NetworkVolumes.GetOrAdd(root, r => {
+        try {
+          return new System.IO.DriveInfo(r).DriveType == System.IO.DriveType.Network;
+        }
+        catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException || e is ArgumentException) {
+          return false;
+        }
+      });
     }
 
     private static bool IsInsideAny(string path, IEnumerable<string> directories) {
@@ -253,5 +318,23 @@ namespace VsChromium.Server.FileSystem {
       }
       return parent.Length < path.Length ? parent : null;
     }
+  }
+
+  /// <summary>The symbolic links of a project (see <see cref="SymLinkTargetMap.GetStatistics"/>).</summary>
+  public sealed class SymLinkStatistics {
+    public int FileLinkCount { get; set; }
+    /// <summary>Directory symbolic links and junctions.</summary>
+    public int DirectoryLinkCount { get; set; }
+    /// <summary>The links whose final target is outside of the project roots, on a local volume.</summary>
+    public int ExternalTargetLinkCount { get; set; }
+    /// <summary>The links whose final target is on a network volume (never watched).</summary>
+    public int NetworkTargetLinkCount { get; set; }
+    /// <summary>The directories to watch for the targets outside of the project roots.</summary>
+    public IReadOnlyList<(FullPath Directory, bool Recursive)> ExternalTargetDirectories { get; set; } =
+      Array.Empty<(FullPath, bool)>();
+    /// <summary>The targets outside of the project roots are watched (option of the project).</summary>
+    public bool ExternalTargetsWatched { get; set; }
+    /// <summary>The watchers running for <see cref="ExternalTargetDirectories"/>.</summary>
+    public int WatcherCount { get; set; }
   }
 }

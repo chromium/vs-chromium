@@ -20,6 +20,8 @@ namespace VsChromium.Server.FileSystem {
   /// <see cref="MaxWatchers"/> directories; directories on network drives are not watched (their
   /// links are refreshed by the next scan or catch-up). A watcher error (e.g. overflow) is logged
   /// and the watcher restarted: the changes it missed are found by the next scan or catch-up.
+  /// Only for the projects with the option "watchExternalLinkTargets" (off by default: the changes
+  /// of the targets outside of the projects are then found by the next restart or rescan).
   /// </summary>
   public sealed class SymLinkTargetWatcher : IDisposable {
     public const int MaxWatchers = 512;

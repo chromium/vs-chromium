@@ -41,6 +41,58 @@ export type IgnoreSection = 'sourceExplorerIgnore' | 'searchableFilesIgnore';
  */
 export type MeasureState = 'notMeasured' | 'running' | 'done' | 'cancelled' | 'failed';
 
+/** The benchmark features of a server started with "--bench" (in the result of "server/initialize"). */
+export interface BenchCapabilities {
+  /** The "bench/*" requests supported by the server. */
+  requests: string[];
+}
+
+/**
+ * The result of "bench/saveCache": the save of the index cache started by the request (none if the
+ * index didn't change since the last save).
+ */
+export interface BenchSaveCacheResult {
+  /** False if there was nothing to save (the cache is up to date). */
+  saved: boolean;
+  /** Duration of the save (the last save if `saved` is false). */
+  durationMs: number;
+  /** Bytes written by the save (new arena files and index). */
+  bytes: number;
+  /** Files in the cache after the save. */
+  entryCount: number;
+}
+
+export interface BenchPhasesParams {
+  /** The project of the "initialLoad" and "verification" values (the first project if absent). */
+  projectPath?: string;
+}
+
+/** The last duration of a named operation of the server (e.g. "FileSystemScan", "FileDatabaseUpdate.Load"). */
+export interface BenchPhase {
+  name: string;
+  lastMs: number;
+  count: number;
+  totalMs: number;
+}
+
+/**
+ * The phases of the last loads, for benchmarks: the last duration of each operation of the server
+ * (scan, load of the files, index cache), the initial load and the verification of a project, and
+ * the CPU time of the process.
+ */
+export interface BenchPhases {
+  phases: BenchPhase[];
+  /** The last initial load of the project (scan to complete index). */
+  initialLoadMs: number;
+  initialLoadScanMs: number;
+  /** The time to the published index of the cache of the last initial load (0 if not from the cache). */
+  cachedIndexMs: number;
+  /** The last verification of the tree of the index cache (0 if none). */
+  verificationMs: number;
+  cpuUserMs: number;
+  cpuKernelMs: number;
+}
+
 /** A span of text in a file: offset and length in UTF-16 code units. */
 export interface TextSpan {
   /** Offset of the first character of the span, from the beginning of the file. */
@@ -583,6 +635,8 @@ export interface InitializeResult {
   /** Version of the protocol implemented by the server. */
   protocolVersion: number;
   serverProcessId: number;
+  /** Only when the server runs with "--bench" (benchmarks). */
+  bench?: BenchCapabilities;
 }
 
 export interface ServerStatisticsParams {
@@ -809,6 +863,18 @@ export interface FilesRegisterParams {
 /** Parameters of an operation (generated from its inline parameters). */
 export interface FilesUnregisterParams {
   path: string;
+}
+
+/** Request (client to server) "bench/saveCache": Saves the index cache now (if it changed) and returns when the save is done. */
+export namespace BenchSaveCacheRequest {
+  export const method = 'bench/saveCache';
+  export const type = new RequestType0<BenchSaveCacheResult, void>(method);
+}
+
+/** Request (client to server) "bench/phases": The phases of the last loads. */
+export namespace BenchPhasesRequest {
+  export const method = 'bench/phases';
+  export const type = new RequestType<BenchPhasesParams, BenchPhases, void>(method);
 }
 
 /**

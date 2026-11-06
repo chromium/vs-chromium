@@ -22,16 +22,22 @@ namespace VsChromium.Server.FileSystem.Builder {
     private readonly IProgressTrackerFactory _progressTrackerFactory;
     private readonly IIndexingWorkerPool _indexingWorkerPool;
     private readonly IChangeJournal _changeJournal;
+    private readonly bool _journalCatchUpEnabled;
 
+    /// <param name="journalCatchUpEnabled">False: the trees of the index cache are verified by a full
+    /// scan, not from the change journal (benchmarks, "--no-journal"); the checkpoints are still
+    /// recorded.</param>
     public FileSystemSnapshotBuilder(
       IFileSystem fileSystem,
       IProgressTrackerFactory progressTrackerFactory,
       IIndexingWorkerPool indexingWorkerPool,
-      IChangeJournal changeJournal = null) {
+      IChangeJournal changeJournal = null,
+      bool journalCatchUpEnabled = true) {
       _fileSystem = fileSystem;
       _progressTrackerFactory = progressTrackerFactory;
       _indexingWorkerPool = indexingWorkerPool;
       _changeJournal = changeJournal;
+      _journalCatchUpEnabled = journalCatchUpEnabled;
     }
 
     public FileSystemSnapshot Compute(IFileSystemNameFactory fileNameFactory,
@@ -180,6 +186,10 @@ namespace VsChromium.Server.FileSystem.Builder {
 
       if (_changeJournal == null) {
         Fail("no change journal on this platform");
+        return null;
+      }
+      if (!_journalCatchUpEnabled) {
+        Fail("the change journal is disabled (--no-journal)");
         return null;
       }
       if (oldRoot == null) {

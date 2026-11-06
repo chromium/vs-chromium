@@ -60,6 +60,12 @@ namespace VsChromium.Server.Cache {
     /// </summary>
     bool WaitForWrites(TimeSpan timeout);
 
+    /// <summary>
+    /// Saves the index now if it changed since the last save, and waits for the save (benchmarks,
+    /// "bench/saveCache"). Returns false if there was nothing to save.
+    /// </summary>
+    bool SaveNow(TimeSpan timeout);
+
     /// <summary>Deletes the cache of projects ("Rebuild index").</summary>
     void Invalidate(IEnumerable<FullPath> rootPaths);
 
@@ -339,6 +345,10 @@ namespace VsChromium.Server.Cache {
 
     public bool WaitForWrites(TimeSpan timeout) {
       return _scheduler.WaitForSave(timeout);
+    }
+
+    public bool SaveNow(TimeSpan timeout) {
+      return _scheduler.SaveNow(timeout);
     }
 
     /// <summary>Saves the state of the last update (on the thread of the scheduler).</summary>

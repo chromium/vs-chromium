@@ -31,6 +31,13 @@ namespace VsChromium.Core.Files {
     public TimeSpan PollingFallbackPeriod { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
+    /// The delay without new change after which the changes are posted (debouncing), for all the
+    /// kinds of changes; null for the default delays (0.5 s for file changes, 1 s for creations and
+    /// deletions). Benchmarks only ("--watcher-delay-ms"). Set before the watcher starts.
+    /// </summary>
+    public TimeSpan? ChangeDelay { get; set; }
+
+    /// <summary>
     /// Buffer for file change notifications. The buffer has its own lock to make sure
     /// watcher event are processed as fast as possible without any lock contention,
     /// to prevent internal buffer overflow exceptions (from watchers) as much as possible.

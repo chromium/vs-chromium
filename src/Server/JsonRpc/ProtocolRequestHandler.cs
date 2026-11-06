@@ -49,6 +49,10 @@ namespace VsChromium.Server.JsonRpc {
     private readonly IIndexCache _indexCache;
     private readonly ServerHistorySampler _historySampler;
     private readonly ProjectDiskUsageService _diskUsage;
+    private readonly bool _benchEnabled;
+
+    /// <summary>The "bench/*" requests, enabled by "--bench".</summary>
+    public static readonly IReadOnlyList<string> BenchRequests = new[] { "bench/saveCache", "bench/phases" };
 
     public ProtocolRequestHandler(
       IFileSystemSnapshotManager snapshotManager,
@@ -58,7 +62,9 @@ namespace VsChromium.Server.JsonRpc {
       ProjectArenaAllocators arenaAllocators,
       IIndexCache indexCache = null,
       ServerHistorySampler historySampler = null,
-      ProjectDiskUsageService diskUsage = null) {
+      ProjectDiskUsageService diskUsage = null,
+      bool benchEnabled = false) {
+      _benchEnabled = benchEnabled;
       _diskUsage = diskUsage;
       _indexCache = indexCache;
       _historySampler = historySampler;
@@ -82,7 +88,54 @@ namespace VsChromium.Server.JsonRpc {
         ServerVersion = VsChromiumVersion.Product,
         ProtocolVersion = ProtocolVersion,
         ServerProcessId = Environment.ProcessId,
+        Bench = _benchEnabled ? new BenchCapabilities { Requests = BenchRequests.ToList() } : null,
       });
+    }
+
+    // bench/* (only with "--bench")
+
+    private void CheckBenchEnabled(string method) {
+      if (!_benchEnabled) {
+        throw new ProtocolMethodNotFoundException(method);
+      }
+    }
+
+    public ValueTask<BenchSaveCacheResult> BenchSaveCacheAsync(CancellationToken cancellationToken) {
+      CheckBenchEnabled("bench/saveCache");
+      if (_indexCache == null || !_indexCache.IsEnabled) {
+        throw new RecoverableErrorException("The index cache is disabled.");
+      }
+      var saved = _indexCache.SaveNow(TimeSpan.FromHours(1));
+      var statistics = _indexCache.GetStatistics();
+      return new ValueTask<BenchSaveCacheResult>(new BenchSaveCacheResult {
+        Saved = saved,
+        DurationMs = statistics.LastWriteMs,
+        Bytes = statistics.LastWriteBytes,
+        EntryCount = statistics.LastWriteEntryCount,
+      });
+    }
+
+    public ValueTask<BenchPhases> BenchPhasesAsync(BenchPhasesParams parameters, CancellationToken cancellationToken) {
+      CheckBenchEnabled("bench/phases");
+      var roots = _snapshotManager.CurrentSnapshot.ProjectRoots;
+      var root = parameters.ProjectPath != null
+        ? roots.FirstOrDefault(x => x.Project.RootPath.Equals(new FullPath(parameters.ProjectPath)))
+        : roots.FirstOrDefault();
+      var operations = root != null ? CreateProjectOperations(root.Project.RootPath) : null;
+      using (var process = System.Diagnostics.Process.GetCurrentProcess()) {
+        return new ValueTask<BenchPhases>(new BenchPhases {
+          Phases = OperationTimings.GetSnapshot()
+            .Where(x => !x.Name.StartsWith("Request:", StringComparison.Ordinal))
+            .Select(x => new BenchPhase { Name = x.Name, LastMs = x.LastMs, Count = x.Count, TotalMs = x.TotalMs })
+            .ToList(),
+          InitialLoadMs = operations?.InitialLoad.LastMs ?? 0,
+          InitialLoadScanMs = operations?.InitialLoad.ScanMs ?? 0,
+          CachedIndexMs = operations?.InitialLoad.CachedIndexMs ?? 0,
+          VerificationMs = operations?.LastVerification?.DurationMs ?? 0,
+          CpuUserMs = process.UserProcessorTime.TotalMilliseconds,
+          CpuKernelMs = process.PrivilegedProcessorTime.TotalMilliseconds,
+        });
+      }
     }
 
     public ValueTask<ServerStatistics> ServerStatisticsAsync(ServerStatisticsParams parameters, CancellationToken cancellationToken) {

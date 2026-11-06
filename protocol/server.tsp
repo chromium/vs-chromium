@@ -13,6 +13,8 @@ model InitializeResult {
   /** Version of the protocol implemented by the server. */
   protocolVersion: int32;
   serverProcessId: int32;
+  /** Only when the server runs with "--bench" (benchmarks). */
+  bench?: BenchCapabilities;
 }
 
 model ServerStatisticsParams {

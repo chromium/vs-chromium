@@ -38,6 +38,7 @@ namespace VsChromium.Server {
   /// </summary>
   public sealed class ServerComponents : IDisposable {
     private readonly List<IDisposable> _disposables = new List<IDisposable>();
+    private readonly ServerOptions _options;
     private readonly IndexCacheOptions _indexCacheOptions;
 
     /// <summary>
@@ -46,8 +47,12 @@ namespace VsChromium.Server {
     public ServerComponents() : this(IndexCacheOptions.Disabled) {
     }
 
-    public ServerComponents(IndexCacheOptions indexCacheOptions) {
-      _indexCacheOptions = indexCacheOptions;
+    public ServerComponents(IndexCacheOptions indexCacheOptions) : this(new ServerOptions { IndexCache = indexCacheOptions }) {
+    }
+
+    public ServerComponents(ServerOptions options) {
+      _options = options;
+      _indexCacheOptions = options.IndexCache;
     }
 
     private T Create<T>(T component) {
@@ -88,7 +93,8 @@ namespace VsChromium.Server {
 
     // Core/Files
     private IDirectoryChangeWatcherFactory _directoryChangeWatcherFactory;
-    public IDirectoryChangeWatcherFactory DirectoryChangeWatcherFactory => _directoryChangeWatcherFactory ??= Create(new DirectoryChangeWatcherFactory(FileSystem, DateTimeProvider));
+    public IDirectoryChangeWatcherFactory DirectoryChangeWatcherFactory =>
+      _directoryChangeWatcherFactory ??= Create(new DirectoryChangeWatcherFactory(FileSystem, DateTimeProvider, _options.WatcherDelay));
 
     private IFileSystem _fileSystem;
     /// <summary>
@@ -100,7 +106,8 @@ namespace VsChromium.Server {
 
     // Server/FileSystem
     private IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;
-    public IFileSystemSnapshotBuilder FileSystemSnapshotBuilder => _fileSystemSnapshotBuilder ??= Create(new FileSystemSnapshotBuilder(FileSystem, ProgressTrackerFactory, IndexingWorkerPool, ChangeJournal));
+    public IFileSystemSnapshotBuilder FileSystemSnapshotBuilder => _fileSystemSnapshotBuilder ??= Create(new FileSystemSnapshotBuilder(
+      FileSystem, ProgressTrackerFactory, IndexingWorkerPool, ChangeJournal, journalCatchUpEnabled: !_options.NoJournal));
 
     private IChangeJournal _changeJournal;
     private bool _changeJournalCreated;
@@ -155,7 +162,7 @@ namespace VsChromium.Server {
     private IProtocolRequestHandler _protocolRequestHandler;
     public IProtocolRequestHandler ProtocolRequestHandler => _protocolRequestHandler ??= Create(new ProtocolRequestHandler(
       FileSystemSnapshotManager, SearchEngine, FileRegistrationTracker, IndexingServer, ArenaAllocators, IndexCache,
-      ServerHistorySampler, ProjectDiskUsageService));
+      ServerHistorySampler, ProjectDiskUsageService, benchEnabled: _options.Bench));
 
     private JsonRpcNotificationSender _jsonRpcNotificationSender;
     public JsonRpcNotificationSender JsonRpcNotificationSender => _jsonRpcNotificationSender ??= Create(new JsonRpcNotificationSender(JsonRpcOutput));
@@ -208,7 +215,13 @@ namespace VsChromium.Server {
     public ICustomThreadPool CustomThreadPool => _customThreadPool ??= Create(new CustomThreadPool(DateTimeProvider));
 
     private IIndexingWorkerPool _indexingWorkerPool;
-    public IIndexingWorkerPool IndexingWorkerPool => _indexingWorkerPool ??= Create(new IndexingWorkerPool());
+    /// <summary>
+    /// The default pool (throttled when the machine is busy), or with "--threads N" (benchmarks): N
+    /// threads (0: one per processor) always running.
+    /// </summary>
+    public IIndexingWorkerPool IndexingWorkerPool => _indexingWorkerPool ??= Create(_options.Threads is int threads
+      ? new IndexingWorkerPool(threads == 0 ? Environment.ProcessorCount : threads, 0, Threads.IndexingWorkerPool.ContentionMode.AlwaysUncontended)
+      : new IndexingWorkerPool());
 
     private ILongRunningFileSystemTaskQueue _longRunningFileSystemTaskQueue;
     public ILongRunningFileSystemTaskQueue LongRunningFileSystemTaskQueue => _longRunningFileSystemTaskQueue ??= Create(new LongRunningFileSystemTaskQueue(TaskQueueFactory));

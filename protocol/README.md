@@ -109,6 +109,7 @@ anonymous models, default values, namespace blocks, other scalar types.
 | `index/statistics`, `index/details` | `GetDatabaseStatisticsRequest`, `GetDatabaseDetailsRequest` |
 | `index/status` | (new: `index/statistics` without the arena statistics, for frequent refreshes) |
 | `index/clearCache` | (new: deletes the index cache of all the projects, without rescan; see `project/clearCache` for a project) |
+| `bench/saveCache`, `bench/phases` | (new: benchmarks only, when the server runs with `--bench`: save the index cache now, phases of the last loads; see src/Tools/Bench) |
 | Notifications `index/stateChanged`, `index/scanStarted`, `index/scanFinished`, `index/loading`, `index/loadingProgress`, `index/loaded`, `index/progress` | `IndexingServerStateChangedEvent`, `FileSystemScanStarted/Finished`, `SearchEngineFilesLoading/LoadingProgress/Loaded`, `ProgressReportEvent` |
 | (dropped) | `GetFileSystemRequest` (obsolete), `GetFileSystemVersionRequest` (unused), `GetDirectoryStatisticsRequest` (unused, always returned zeros; `tree/directoryStatistics` was dropped in P5) |
 

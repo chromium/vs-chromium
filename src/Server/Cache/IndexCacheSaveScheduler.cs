@@ -165,6 +165,42 @@ namespace VsChromium.Server.Cache {
     }
 
     /// <summary>
+    /// Saves a dirty index now (benchmarks, "bench/saveCache"): waits for the running save, then
+    /// starts a save if the index is dirty and waits for it. Returns false if there was nothing to
+    /// save. Throws <see cref="TimeoutException"/> after <paramref name="timeout"/>.
+    /// </summary>
+    public bool SaveNow(TimeSpan timeout) {
+      var deadline = DateTime.UtcNow + timeout;
+      if (!WaitForSave(timeout))
+        throw new TimeoutException("The running save of the index cache did not complete.");
+      lock (_lock) {
+        if (_disposed || !_dirty)
+          return false;
+        _saveRequested = true;
+        ScheduleLocked();
+      }
+      while (true) {
+        Task task;
+        bool dirty;
+        lock (_lock) {
+          task = _saveTask;
+          dirty = _dirty;
+        }
+        var remaining = deadline - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+          throw new TimeoutException("The index cache was not saved in time.");
+        if (dirty) {
+          // The save didn't start yet (timer), or the index changed again meanwhile.
+          Thread.Sleep(10);
+          continue;
+        }
+        if (task.IsCompleted)
+          return true;
+        WaitForSave(remaining);
+      }
+    }
+
+    /// <summary>
     /// Stops: no more saves, a running save is cancelled and not waited for (no save at shutdown).
     /// </summary>
     public void Dispose() {

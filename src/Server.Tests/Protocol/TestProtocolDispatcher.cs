@@ -162,6 +162,8 @@ namespace VsChromium.Tests.Protocol {
       public ValueTask<ServerHistory> ServerHistoryAsync(ServerHistoryParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<IndexStatus> IndexStatusAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<ClearCacheResult> IndexClearCacheAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+      public ValueTask<BenchSaveCacheResult> BenchSaveCacheAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+      public ValueTask<BenchPhases> BenchPhasesAsync(BenchPhasesParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<ClearCacheResult> ProjectClearCacheAsync(ProjectPathParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask ProjectRebuildAsync(ProjectPathParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();
       public ValueTask<DirectorySizes> ProjectDirectorySizesAsync(DirectoryPathParams parameters, CancellationToken cancellationToken) => throw new NotImplementedException();

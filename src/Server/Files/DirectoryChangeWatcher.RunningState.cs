@@ -39,8 +39,9 @@ namespace VsChromium.Core.Files {
         // (debouncing), or after a maximum delay if changes keep coming (e.g. a build). Incremental
         // updates of the index take tens of milliseconds (see "Incremental updates" in
         // PORTING_PRINCIPLES.md), so the delays are short: they are the latency of the index.
-        _simplePathChangesPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(5.0));
-        _pathChangesPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(30.0));
+        var changeDelay = stateHost.ParentWatcher.ChangeDelay;
+        _simplePathChangesPolling = new PollingDelayPolicy(DateTimeProvider, changeDelay ?? TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(5.0));
+        _pathChangesPolling = new PollingDelayPolicy(DateTimeProvider, changeDelay ?? TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(30.0));
         _checkRootsPolling = new PollingDelayPolicy(DateTimeProvider, TimeSpan.FromSeconds(15.0), TimeSpan.FromSeconds(60.0));
       }
 

@@ -103,6 +103,110 @@ namespace VsChromium.Protocol.Generated {
   }
 
   /// <summary>
+  /// The benchmark features of a server started with "--bench" (in the result of "server/initialize").
+  /// </summary>
+  public sealed partial class BenchCapabilities {
+    /// <summary>
+    /// The "bench/*" requests supported by the server.
+    /// </summary>
+    [JsonPropertyName("requests")]
+    public List<string> Requests { get; set; } = new();
+  }
+
+  /// <summary>
+  /// The result of "bench/saveCache": the save of the index cache started by the request (none if the
+  /// index didn't change since the last save).
+  /// </summary>
+  public sealed partial class BenchSaveCacheResult {
+    /// <summary>
+    /// False if there was nothing to save (the cache is up to date).
+    /// </summary>
+    [JsonPropertyName("saved")]
+    public bool Saved { get; set; }
+
+    /// <summary>
+    /// Duration of the save (the last save if `saved` is false).
+    /// </summary>
+    [JsonPropertyName("durationMs")]
+    public double DurationMs { get; set; }
+
+    /// <summary>
+    /// Bytes written by the save (new arena files and index).
+    /// </summary>
+    [JsonPropertyName("bytes")]
+    public long Bytes { get; set; }
+
+    /// <summary>
+    /// Files in the cache after the save.
+    /// </summary>
+    [JsonPropertyName("entryCount")]
+    public int EntryCount { get; set; }
+  }
+
+  public sealed partial class BenchPhasesParams {
+    /// <summary>
+    /// The project of the "initialLoad" and "verification" values (the first project if absent).
+    /// </summary>
+    [JsonPropertyName("projectPath")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProjectPath { get; set; }
+  }
+
+  /// <summary>
+  /// The last duration of a named operation of the server (e.g. "FileSystemScan", "FileDatabaseUpdate.Load").
+  /// </summary>
+  public sealed partial class BenchPhase {
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("lastMs")]
+    public double LastMs { get; set; }
+
+    [JsonPropertyName("count")]
+    public long Count { get; set; }
+
+    [JsonPropertyName("totalMs")]
+    public double TotalMs { get; set; }
+  }
+
+  /// <summary>
+  /// The phases of the last loads, for benchmarks: the last duration of each operation of the server
+  /// (scan, load of the files, index cache), the initial load and the verification of a project, and
+  /// the CPU time of the process.
+  /// </summary>
+  public sealed partial class BenchPhases {
+    [JsonPropertyName("phases")]
+    public List<BenchPhase> Phases { get; set; } = new();
+
+    /// <summary>
+    /// The last initial load of the project (scan to complete index).
+    /// </summary>
+    [JsonPropertyName("initialLoadMs")]
+    public double InitialLoadMs { get; set; }
+
+    [JsonPropertyName("initialLoadScanMs")]
+    public double InitialLoadScanMs { get; set; }
+
+    /// <summary>
+    /// The time to the published index of the cache of the last initial load (0 if not from the cache).
+    /// </summary>
+    [JsonPropertyName("cachedIndexMs")]
+    public double CachedIndexMs { get; set; }
+
+    /// <summary>
+    /// The last verification of the tree of the index cache (0 if none).
+    /// </summary>
+    [JsonPropertyName("verificationMs")]
+    public double VerificationMs { get; set; }
+
+    [JsonPropertyName("cpuUserMs")]
+    public double CpuUserMs { get; set; }
+
+    [JsonPropertyName("cpuKernelMs")]
+    public double CpuKernelMs { get; set; }
+  }
+
+  /// <summary>
   /// A span of text in a file: offset and length in UTF-16 code units.
   /// </summary>
   public sealed partial class TextSpan {
@@ -1287,6 +1391,13 @@ namespace VsChromium.Protocol.Generated {
 
     [JsonPropertyName("serverProcessId")]
     public int ServerProcessId { get; set; }
+
+    /// <summary>
+    /// Only when the server runs with "--bench" (benchmarks).
+    /// </summary>
+    [JsonPropertyName("bench")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public BenchCapabilities? Bench { get; set; }
   }
 
   public sealed partial class ServerStatisticsParams {
@@ -1786,6 +1897,8 @@ namespace VsChromium.Protocol.Generated {
   /// The names of the methods of the protocol (JSON-RPC "method").
   /// </summary>
   public static class ProtocolMethods {
+    public const string BenchSaveCache = "bench/saveCache";
+    public const string BenchPhases = "bench/phases";
     public const string FilesRegister = "files/register";
     public const string FilesUnregister = "files/unregister";
     public const string FilesExtracts = "files/extracts";
@@ -1826,6 +1939,16 @@ namespace VsChromium.Protocol.Generated {
   /// The requests of the protocol, implemented by the server.
   /// </summary>
   public interface IProtocolRequestHandler {
+    /// <summary>
+    /// "bench/saveCache": Saves the index cache now (if it changed) and returns when the save is done.
+    /// </summary>
+    ValueTask<BenchSaveCacheResult> BenchSaveCacheAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// "bench/phases": The phases of the last loads.
+    /// </summary>
+    ValueTask<BenchPhases> BenchPhasesAsync(BenchPhasesParams parameters, CancellationToken cancellationToken);
+
     /// <summary>
     /// "files/register": Registers a file opened by the client: the project containing the file is discovered (e.g. a
     /// directory with a vs-chromium-project.txt file) and indexed.
@@ -1989,6 +2112,8 @@ namespace VsChromium.Protocol.Generated {
     /// True if <paramref name="method"/> is a request of the protocol.
     /// </summary>
     public static bool IsRequest(string method) => method switch {
+      ProtocolMethods.BenchSaveCache => true,
+      ProtocolMethods.BenchPhases => true,
       ProtocolMethods.FilesRegister => true,
       ProtocolMethods.FilesUnregister => true,
       ProtocolMethods.FilesExtracts => true,
@@ -2027,6 +2152,14 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     public static async ValueTask<JsonElement?> DispatchRequestAsync(IProtocolRequestHandler handler, string method, JsonElement? parameters, CancellationToken cancellationToken) {
       switch (method) {
+        case ProtocolMethods.BenchSaveCache: {
+          var result = await handler.BenchSaveCacheAsync(cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.BenchSaveCacheResult);
+        }
+        case ProtocolMethods.BenchPhases: {
+          var result = await handler.BenchPhasesAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.BenchPhasesParams), cancellationToken).ConfigureAwait(false);
+          return JsonSerializer.SerializeToElement(result, ProtocolJsonContext.Default.BenchPhases);
+        }
         case ProtocolMethods.FilesRegister: {
           await handler.FilesRegisterAsync(DeserializeParameters(parameters, ProtocolJsonContext.Default.FilesRegisterParams), cancellationToken).ConfigureAwait(false);
           return null;
@@ -2239,6 +2372,11 @@ namespace VsChromium.Protocol.Generated {
   [JsonSourceGenerationOptions(
     NumberHandling = JsonNumberHandling.AllowReadingFromString,
     DefaultIgnoreCondition = JsonIgnoreCondition.Never)]
+  [JsonSerializable(typeof(BenchCapabilities))]
+  [JsonSerializable(typeof(BenchSaveCacheResult))]
+  [JsonSerializable(typeof(BenchPhasesParams))]
+  [JsonSerializable(typeof(BenchPhase))]
+  [JsonSerializable(typeof(BenchPhases))]
   [JsonSerializable(typeof(TextSpan))]
   [JsonSerializable(typeof(ErrorInfo))]
   [JsonSerializable(typeof(FileExtractsParams))]

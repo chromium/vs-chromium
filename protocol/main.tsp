@@ -12,3 +12,4 @@ import "./project.tsp";
 import "./search.tsp";
 import "./tree.tsp";
 import "./index.tsp";
+import "./bench.tsp";

@@ -25,7 +25,16 @@ namespace VsChromium.Server {
       try {
         if (args.Length > 0 && (args[0] == JsonRpcArgument || args[0] == StdioArgument)) {
           Logger.LogInfo("Server starting (JSON-RPC over stdin/stdout).");
-          RunJsonRpc(IndexCacheOptions.FromCommandLine(args));
+          ServerOptions options;
+          try {
+            options = ServerOptions.FromCommandLine(args);
+          }
+          catch (ArgumentException e) {
+            Console.Error.WriteLine(e.Message);
+            Environment.ExitCode = 1;
+            return;
+          }
+          RunJsonRpc(options);
         } else {
           Console.Error.WriteLine("Usage: VsChromium.Server.exe {0} | {1} [{2} <directory> | {3}]", JsonRpcArgument, StdioArgument,
             IndexCacheOptions.CacheDirectoryArgument, IndexCacheOptions.NoCacheArgument);
@@ -36,6 +45,11 @@ namespace VsChromium.Server {
             IndexCacheOptions.CacheDirectoryArgument, IndexCacheOptions.CacheDirectoryVariable);
           Console.Error.WriteLine("    {0}).", IndexCacheOptions.GetDefaultCacheDirectory());
           Console.Error.WriteLine("  {0}: disables the index cache.", IndexCacheOptions.NoCacheArgument);
+          Console.Error.WriteLine("Benchmark options (vschromium-bench, not for normal use):");
+          Console.Error.WriteLine("  {0}: enables the bench/* requests.", ServerOptions.BenchArgument);
+          Console.Error.WriteLine("  {0} <n>: threads of the indexing worker pool, never throttled (0: one per processor).", ServerOptions.ThreadsArgument);
+          Console.Error.WriteLine("  {0} <ms>: delay of the processing of the file system changes (default 500 ms).", ServerOptions.WatcherDelayArgument);
+          Console.Error.WriteLine("  {0}: verifies the index cache by a full scan, not from the change journal.", ServerOptions.NoJournalArgument);
           Environment.ExitCode = 1;
         }
       }
@@ -45,14 +59,14 @@ namespace VsChromium.Server {
       }
     }
 
-    private static void RunJsonRpc(IndexCacheOptions indexCacheOptions) {
+    private static void RunJsonRpc(ServerOptions options) {
       var input = Console.OpenStandardInput();
       var output = Console.OpenStandardOutput();
 
       // stdout is reserved for protocol messages: redirect any other console output to stderr.
       Console.SetOut(Console.Error);
 
-      new ServerStub().Run(input, output, indexCacheOptions);
+      new ServerStub().Run(input, output, options);
     }
   }
 }

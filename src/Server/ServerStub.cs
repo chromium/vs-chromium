@@ -16,7 +16,14 @@ namespace VsChromium.Server {
     /// Runs the server (JSON-RPC protocol) until <paramref name="input"/> is closed.
     /// </summary>
     public void Run(Stream input, Stream output, IndexCacheOptions indexCacheOptions) {
-      using (var components = new ServerComponents(indexCacheOptions)) {
+      Run(input, output, new ServerOptions { IndexCache = indexCacheOptions });
+    }
+
+    /// <summary>
+    /// Runs the server (JSON-RPC protocol) with <paramref name="options"/> until <paramref name="input"/> is closed.
+    /// </summary>
+    public void Run(Stream input, Stream output, ServerOptions options) {
+      using (var components = new ServerComponents(options)) {
         Instance = components; // For debugging only.
         components.ServerHistorySampler.Start();
         components.JsonRpcServer.Run(input, output);

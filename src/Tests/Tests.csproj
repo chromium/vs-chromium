@@ -52,6 +52,7 @@
     <Compile Include="Mocks\TextSnapshotMock.cs" />
     <Compile Include="VsChromium\CodeSearch\TestSearchResultTreeBuilder.cs" />
     <Compile Include="VsChromium\ServerProxy\TestServerError.cs" />
+    <Compile Include="VsChromium\ServerProxy\TestServerLocation.cs" />
     <Compile Include="VsChromium\ServerDashboard\TestDashboardBridge.cs" />
     <Compile Include="VsChromium\ServerDashboard\TestDashboardTheme.cs" />
     <Compile Include="VsChromium\ToolsOptions\TestGlobalSettings.cs" />

@@ -439,6 +439,7 @@
     <Compile Include="ServerProxy\IServerProcessLauncher.cs" />
     <Compile Include="ServerProxy\ServerClient.cs" />
     <Compile Include="ServerProxy\ServerError.cs" />
+    <Compile Include="ServerProxy\ServerLocation.cs" />
     <Compile Include="ServerProxy\ServerProcessLauncher.cs" />
     <Compile Include="Settings\GlobalSettings.cs" />
     <Compile Include="Settings\GlobalSettingsProvider.cs" />
@@ -552,30 +553,55 @@
     <UseCodebase>true</UseCodebase>
   </PropertyGroup>
   <!-- The indexing server (modern .NET, Server.csproj) is included in the VSIX in a "Server"
-       sub-directory (see ServerProcessLauncher):
-       - Release: the self-contained, single file, ReadyToRun executable published for win-x64
-         (Binaries\Release\ServerPublish\win-x64\, published here with "dotnet publish"), so that
-         users don't need to install a .NET runtime.
-       - Debug: the framework-dependent build (Binaries\Debug\Server\, built before this project, see
-         the solution dependencies), faster to build and to debug; requires the .NET runtime. -->
+       sub-directory (see ServerLocation and ServerProcessLauncher):
+       - Release ("Published" layout): the self-contained, single file, ReadyToRun executables
+         published for win-x64 and win-arm64 (Binaries\Release\ServerPublish\<rid>\, published here
+         with "dotnet publish"), in Server\win-x64\ and Server\win-arm64\: one VSIX for x64 and
+         ARM64 Visual Studio; the package starts the server of the native architecture of Windows
+         (also when Visual Studio runs as an emulated x64 process on ARM64 Windows), and users don't
+         need to install a .NET runtime. With -p:VsChromiumPublishServer=false, the servers already
+         published in Binaries\Release\ServerPublish\<rid>\ are packaged as is (release workflow,
+         see docs/release.md).
+       - Debug ("Build" layout): the framework-dependent build (Binaries\Debug\Server\, built before
+         this project, see the solution dependencies), in Server\, faster to build and to debug;
+         requires the .NET runtime. -->
   <PropertyGroup>
-    <VsChromiumServerRuntimeIdentifier>win-x64</VsChromiumServerRuntimeIdentifier>
-    <VsChromiumPublishServer Condition="'$(VsChromiumPublishServer)' == '' And '$(Configuration)' == 'Release'">true</VsChromiumPublishServer>
-    <VsChromiumServerDir Condition="'$(VsChromiumPublishServer)' == 'true'">$(OutputPath)ServerPublish\$(VsChromiumServerRuntimeIdentifier)\</VsChromiumServerDir>
-    <VsChromiumServerDir Condition="'$(VsChromiumPublishServer)' != 'true'">$(OutputPath)Server\</VsChromiumServerDir>
+    <VsChromiumServerLayout Condition="'$(VsChromiumServerLayout)' == '' And '$(Configuration)' == 'Release'">Published</VsChromiumServerLayout>
+    <VsChromiumServerLayout Condition="'$(VsChromiumServerLayout)' == ''">Build</VsChromiumServerLayout>
+    <VsChromiumPublishServer Condition="'$(VsChromiumPublishServer)' == ''">true</VsChromiumPublishServer>
+    <VsChromiumServerPublishDir>$(OutputPath)ServerPublish\</VsChromiumServerPublishDir>
+    <VsChromiumServerBuildDir>$(OutputPath)Server\</VsChromiumServerBuildDir>
   </PropertyGroup>
-  <Target Name="PublishServerForVsix" BeforeTargets="GetVsixSourceItems" Condition="'$(VsChromiumPublishServer)' == 'true'">
-    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\..\Server\Server.csproj&quot; -c $(Configuration) -r $(VsChromiumServerRuntimeIdentifier) --nologo -v:quiet" />
+  <ItemGroup>
+    <!-- Must match the folders of ServerLocation. -->
+    <VsChromiumServerRuntimeIdentifier Include="win-x64;win-arm64" />
+  </ItemGroup>
+  <Target Name="PublishServerForVsix" BeforeTargets="GetVsixSourceItems" Condition="'$(VsChromiumServerLayout)' == 'Published' And '$(VsChromiumPublishServer)' == 'true'">
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\..\Server\Server.csproj&quot; -c $(Configuration) -r %(VsChromiumServerRuntimeIdentifier.Identity) --nologo -v:quiet" />
   </Target>
   <Target Name="IncludeServerInVsix" BeforeTargets="GetVsixSourceItems" DependsOnTargets="PublishServerForVsix">
-    <Error Condition="!Exists('$(VsChromiumServerDir)VsChromium.Server.exe')" Text="The server must be built before the VSIX: $(VsChromiumServerDir)VsChromium.Server.exe not found." />
+    <Error Condition="'$(VsChromiumServerLayout)' == 'Published' And !Exists('$(VsChromiumServerPublishDir)%(VsChromiumServerRuntimeIdentifier.Identity)\VsChromium.Server.exe')"
+           Text="The server must be published before the VSIX: $(VsChromiumServerPublishDir)%(VsChromiumServerRuntimeIdentifier.Identity)\VsChromium.Server.exe not found." />
+    <Error Condition="'$(VsChromiumServerLayout)' == 'Build' And !Exists('$(VsChromiumServerBuildDir)VsChromium.Server.exe')"
+           Text="The server must be built before the VSIX: $(VsChromiumServerBuildDir)VsChromium.Server.exe not found." />
+    <ItemGroup Condition="'$(VsChromiumServerLayout)' == 'Published'">
+      <_VsChromiumServerFile Include="$(VsChromiumServerPublishDir)win-x64\**\*" Exclude="$(VsChromiumServerPublishDir)win-x64\**\*.pdb">
+        <ServerSubPath>win-x64\</ServerSubPath>
+      </_VsChromiumServerFile>
+      <_VsChromiumServerFile Include="$(VsChromiumServerPublishDir)win-arm64\**\*" Exclude="$(VsChromiumServerPublishDir)win-arm64\**\*.pdb">
+        <ServerSubPath>win-arm64\</ServerSubPath>
+      </_VsChromiumServerFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(VsChromiumServerLayout)' == 'Build'">
+      <_VsChromiumServerFile Include="$(VsChromiumServerBuildDir)**\*">
+        <ServerSubPath></ServerSubPath>
+      </_VsChromiumServerFile>
+    </ItemGroup>
     <ItemGroup>
-      <_VsChromiumServerFile Include="$(VsChromiumServerDir)**\*" Exclude="$(VsChromiumServerDir)**\*.pdb" Condition="'$(VsChromiumPublishServer)' == 'true'" />
-      <_VsChromiumServerFile Include="$(VsChromiumServerDir)**\*" Condition="'$(VsChromiumPublishServer)' != 'true'" />
       <!-- Note: "%(_VsChromiumServerFile.RecursiveDir)" (batching) is needed to preserve the
            sub-directories (e.g. Configuration\), "%(RecursiveDir)" is empty here. -->
       <VSIXSourceItem Include="@(_VsChromiumServerFile)">
-        <VSIXSubPath>Server\%(_VsChromiumServerFile.RecursiveDir)</VSIXSubPath>
+        <VSIXSubPath>Server\%(_VsChromiumServerFile.ServerSubPath)%(_VsChromiumServerFile.RecursiveDir)</VSIXSubPath>
       </VSIXSourceItem>
     </ItemGroup>
   </Target>  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

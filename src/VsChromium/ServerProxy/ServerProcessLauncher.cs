@@ -7,6 +7,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using VsChromium.Core.Logging;
@@ -15,8 +16,9 @@ using VsChromium.Settings;
 
 namespace VsChromium.ServerProxy {
   /// <summary>
-  /// Starts the indexing server (<c>Server\VsChromium.Server.exe</c>, next to
-  /// the package assemblies, both in the build output and in the VSIX)
+  /// Starts the indexing server (in the "Server" directory next to the package
+  /// assemblies, both in the build output and in the VSIX: the server of the
+  /// native architecture of Windows, see <see cref="ServerLocation"/>)
   /// directly, with the <c>--jsonrpc</c> argument: JSON-RPC messages are
   /// exchanged over the standard input/output of the server (see
   /// protocol/README.md), which exits when its standard input is closed (i.e.
@@ -26,11 +28,6 @@ namespace VsChromium.ServerProxy {
   [Export(typeof(IServerProcessLauncher))]
   [Export(typeof(IPackagePostDispose))]
   public class ServerProcessLauncher : IServerProcessLauncher, IPackagePostDispose {
-    /// <summary>
-    /// The server (modern .NET) is in a "Server" sub-directory of the
-    /// directory containing the package assemblies.
-    /// </summary>
-    private const string ServerName = "Server\\VsChromium.Server.exe";
     private const string JsonRpcArgument = "--jsonrpc";
     private const string CacheDirectoryArgument = "--cache-dir";
 
@@ -91,9 +88,16 @@ namespace VsChromium.ServerProxy {
     private static ServerProcess StartServerWorker(string arguments, CancellationToken token) {
       token.ThrowIfCancellationRequested();
 
-      var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-      var serverPath = Path.Combine(folder ?? "", ServerName);
-      Logger.LogInfo("Starting server process: \"{0}\" {1}", serverPath, arguments);
+      var folder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+      var nativeMachine = ServerLocation.GetNativeMachine();
+      var runtimeIdentifier = ServerLocation.GetRuntimeIdentifier(nativeMachine, RuntimeInformation.OSArchitecture);
+      var serverPath = ServerLocation.FindServerPath(folder, runtimeIdentifier, File.Exists);
+      if (serverPath == null) {
+        throw new FileNotFoundException(string.Format("The indexing server was not found in \"{0}\" (runtime identifier: {1}, tried: {2})",
+          folder, runtimeIdentifier ?? "unknown", string.Join(", ", ServerLocation.GetCandidatePaths(runtimeIdentifier))));
+      }
+      Logger.LogInfo("Starting server process (native machine 0x{0:X4}, process {1}, server {2}): \"{3}\" {4}",
+        nativeMachine, RuntimeInformation.ProcessArchitecture, runtimeIdentifier ?? "unknown", serverPath, arguments);
 
       var startInfo = new ProcessStartInfo(serverPath, arguments) {
         UseShellExecute = false,

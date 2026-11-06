@@ -1102,3 +1102,24 @@ button:disabled {
   align-items: center;
   gap: 6px;
 }
+
+/* Long link targets are truncated (full path in the tooltip) so that the ignore rule buttons
+   stay on one line. */
+.disk-usage-table td.entry-td {
+  max-width: 28vw;
+  overflow: hidden;
+}
+
+.disk-usage-table .entry-cell {
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.disk-usage-table .link-target {
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.disk-usage-table .row-actions {
+  flex-wrap: nowrap;
+}

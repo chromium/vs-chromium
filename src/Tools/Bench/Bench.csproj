@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    vschromium-bench: portable benchmark of the indexing server (see README.md). Published as a
+    self-contained single file per platform (NativeAOT where possible), see publish.ps1 / publish.sh.
+
+    Run from the repository: cd src/Tools/Bench; dotnet run -c Release (arguments after a double dash)
+  -->
+
+  <Import Project="..\..\..\Build\Common.Sdk.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>vschromium-bench</AssemblyName>
+    <RootNamespace>VsChromium.Bench</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>1.0.0</Version>
+    <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Tools\Bench\</OutputPath>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!--
+      Publishing (publish.ps1 / publish.sh pass the runtime identifier, and BenchAot=true for
+      NativeAOT: a property of this project only, so that the referenced projects are not built
+      with PublishAot).
+    -->
+    <PublishAot Condition="'$(BenchAot)' == 'true'">true</PublishAot>
+    <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
+    <PublishSingleFile Condition="'$(BenchAot)' != 'true' and '$(RuntimeIdentifier)' != ''">true</PublishSingleFile>
+    <PublishTrimmed Condition="'$(RuntimeIdentifier)' != ''">true</PublishTrimmed>
+    <EnableCompressionInSingleFile Condition="'$(BenchAot)' != 'true'">true</EnableCompressionInSingleFile>
+    <DebuggerSupport>false</DebuggerSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(BenchAot)' == 'true'">
+    <!--
+      The NativeAOT compiler: the latest patch (the one of the installed SDK can be flagged by the
+      NuGet audit, e.g. 10.0.12).
+    -->
+    <PackageReference Include="Microsoft.DotNet.ILCompiler" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bench.Shared\Bench.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

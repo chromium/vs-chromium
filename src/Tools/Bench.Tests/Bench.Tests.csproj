@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bench.Shared\Bench.Shared.csproj" />
+    <ProjectReference Include="..\Bench\Bench.csproj" />
   </ItemGroup>
 
 </Project>

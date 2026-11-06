@@ -45,6 +45,32 @@ namespace VsChromium.Server.FileSystem.Builder {
       _pathChanges = pathChanges;
       _indexingWorkerPool = indexingWorkerPool;
       _cancellationToken = cancellationToken;
+      _rootVolume = new Lazy<ulong?>(() =>
+        _fileSystem.TryGetDirectoryTarget(_project.RootPath, out var volume, out _) ? volume : null);
+    }
+
+    /// <summary>The volume serial number of the project root, if known.</summary>
+    private readonly Lazy<ulong?> _rootVolume;
+
+    /// <summary>
+    /// The id of a directory of the tree (see <see cref="DirectoryData.FileId"/>): its id in the
+    /// listing of its parent, or for a directory symbolic link or junction, the id of its target if
+    /// it is on the volume of the project (0 otherwise).
+    /// </summary>
+    private UInt128 GetDirectoryId(DirectoryName directory, bool isSymLink, UInt128 entryId) {
+      if (!isSymLink)
+        return entryId;
+      return GetSymLinkTargetId(_fileSystem, _project.RootPath.Combine(directory.RelativePath), _rootVolume.Value);
+    }
+
+    /// <summary>
+    /// The id of the target of a directory symbolic link or junction if it is on the volume
+    /// <paramref name="projectVolume"/>, otherwise 0.
+    /// </summary>
+    public static UInt128 GetSymLinkTargetId(IFileSystem fileSystem, FullPath path, ulong? projectVolume) {
+      if (projectVolume == null || !fileSystem.TryGetDirectoryTarget(path, out var volume, out var id) || volume != projectVolume.Value)
+        return UInt128.Zero;
+      return id;
     }
 
     public DirectorySnapshot Build() {
@@ -128,7 +154,8 @@ namespace VsChromium.Server.FileSystem.Builder {
           _cancellationToken.ThrowIfCancellationRequested(); // cancellation
 
           var createdDirectoryName = _fileSystemNameFactory.CreateDirectoryName(oldDirectory.DirectoryName, info.Path.FileName, info.IsSymLink);
-          var childSnapshot = CreateDirectorySnapshot(createdDirectoryName, info.IsSymLink, info.FileId);
+          var childSnapshot = CreateDirectorySnapshot(createdDirectoryName, info.IsSymLink,
+            GetDirectoryId(createdDirectoryName, info.IsSymLink, info.IsSymLink ? UInt128.Zero : info.FileId));
 
           // Note: File system change notifications are not always 100%
           // reliable. We may get a "create" event for directory we already know
@@ -231,7 +258,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         var entry = childEntries[i];
         if (entry.IsDirectory) {
           var subDirName = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name, entry.IsSymLink);
-          var subDir = new DirectoryData(subDirName, entry.IsSymLink, entry.FileId);
+          var subDir = new DirectoryData(subDirName, entry.IsSymLink, GetDirectoryId(subDirName, entry.IsSymLink, entry.FileId));
           if (childTasks == null)
             childTasks = new List<Task<DirectorySnapshot>>();
           childTasks.Add(TraverseDirectoryAsync(subDir, token));
@@ -299,17 +326,20 @@ namespace VsChromium.Server.FileSystem.Builder {
     /// listing again only <paramref name="changedDirectories"/> (the directories with a record in
     /// the journal since the checkpoint of the cache, see <see cref="ChangeJournalDirectoryMapper"/>)
     /// and the directories without file id; the new subdirectories (or replaced: other file id) of
-    /// the directories listed again, and the subtrees of directory symbolic links and junctions are
-    /// scanned entirely; the file symbolic links are checked again (the metadata of their target).
-    /// The other directories are reused as is. The result is the same as a full scan (<see
+    /// the directories listed again, and the subtrees of the directory symbolic links and junctions
+    /// whose target is on another volume or changed (<paramref name="symLinksToScan"/>, see <see
+    /// cref="ChangeJournalDirectoryMapper.CheckSymLinks"/>) are scanned entirely; the file symbolic
+    /// links are checked again (the metadata of their target). The other directories (including
+    /// the subtrees of the directory symbolic links to the volume of the project: their records
+    /// have the ids of their target) are reused as is. The result is the same as a full scan (<see
     /// cref="Build"/>), provided the journal recorded all the changes since the checkpoint.
     /// </summary>
     public DirectorySnapshot CatchUp(DirectorySnapshot oldRoot, IReadOnlySet<DirectorySnapshot> changedDirectories,
-                                     CatchUpStatistics statistics) {
+                                     IReadOnlySet<DirectorySnapshot> symLinksToScan, CatchUpStatistics statistics) {
       using (new TimeElapsedLogger($"Catching up the tree of \"{_project.RootPath}\" from the change journal", _cancellationToken)) {
         var visit = new HashSet<DirectorySnapshot>();
-        MarkDirectoriesToVisit(oldRoot, changedDirectories, visit);
-        var context = new CatchUpContext(changedDirectories, visit, statistics);
+        MarkDirectoriesToVisit(oldRoot, changedDirectories, symLinksToScan, visit);
+        var context = new CatchUpContext(changedDirectories, symLinksToScan, visit, statistics);
         var task = Task.Factory.StartNew(
           () => CatchUpDirectoryAsync(oldRoot, context),
           _cancellationToken,
@@ -322,13 +352,19 @@ namespace VsChromium.Server.FileSystem.Builder {
     }
 
     private sealed class CatchUpContext {
-      public CatchUpContext(IReadOnlySet<DirectorySnapshot> changed, HashSet<DirectorySnapshot> visit, CatchUpStatistics statistics) {
+      public CatchUpContext(IReadOnlySet<DirectorySnapshot> changed, IReadOnlySet<DirectorySnapshot> symLinksToScan,
+                            HashSet<DirectorySnapshot> visit, CatchUpStatistics statistics) {
         Changed = changed;
+        SymLinksToScan = symLinksToScan;
         Visit = visit;
         Statistics = statistics;
       }
 
       public IReadOnlySet<DirectorySnapshot> Changed { get; }
+      public IReadOnlySet<DirectorySnapshot> SymLinksToScan { get; }
+
+      /// <summary>A directory symbolic link or junction to scan entirely (other volume, or changed target).</summary>
+      public bool MustScan(DirectorySnapshot directory) => MustScanSymLink(directory, SymLinksToScan);
       /// <summary>The directories to visit (read only during the catch-up: thread safe).</summary>
       public HashSet<DirectorySnapshot> Visit { get; }
       public CatchUpStatistics Statistics { get; }
@@ -339,12 +375,13 @@ namespace VsChromium.Server.FileSystem.Builder {
     /// scanned, or with file symbolic links to check) and their ancestors.
     /// </summary>
     private static bool MarkDirectoriesToVisit(DirectorySnapshot directory, IReadOnlySet<DirectorySnapshot> changed,
-                                               HashSet<DirectorySnapshot> visit) {
-      var result = directory.IsSymLink || directory.FileId == UInt128.Zero || directory.SymLinkFileIndices.Length > 0 ||
+                                               IReadOnlySet<DirectorySnapshot> symLinksToScan, HashSet<DirectorySnapshot> visit) {
+      var scan = MustScanSymLink(directory, symLinksToScan);
+      var result = scan || directory.FileId == UInt128.Zero || directory.SymLinkFileIndices.Length > 0 ||
                    changed.Contains(directory);
-      if (!directory.IsSymLink) {
+      if (!scan) {
         foreach (var child in directory.ChildDirectories.ToForeachEnum()) {
-          result |= MarkDirectoriesToVisit(child, changed, visit);
+          result |= MarkDirectoriesToVisit(child, changed, symLinksToScan, visit);
         }
       }
       if (result) {
@@ -353,8 +390,16 @@ namespace VsChromium.Server.FileSystem.Builder {
       return result;
     }
 
+    /// <summary>
+    /// True for a directory symbolic link or junction whose subtree must be scanned entirely: its
+    /// target is on another volume (no id), or changed.
+    /// </summary>
+    internal static bool MustScanSymLink(DirectorySnapshot directory, IReadOnlySet<DirectorySnapshot> symLinksToScan) {
+      return directory.IsSymLink && (directory.FileId == UInt128.Zero || (symLinksToScan != null && symLinksToScan.Contains(directory)));
+    }
+
     private Task<DirectorySnapshot> StartCatchUpDirectory(DirectorySnapshot directory, CatchUpContext context) {
-      if (!directory.IsSymLink && !context.Visit.Contains(directory))
+      if (!context.Visit.Contains(directory))
         return Task.FromResult(directory);
       return Task.Factory.StartNew(
         () => CatchUpDirectoryAsync(directory, context),
@@ -365,11 +410,13 @@ namespace VsChromium.Server.FileSystem.Builder {
 
     private async Task<DirectorySnapshot> CatchUpDirectoryAsync(DirectorySnapshot directory, CatchUpContext context) {
       _cancellationToken.ThrowIfCancellationRequested();
-      if (directory.IsSymLink) {
+      if (context.MustScan(directory)) {
         // The changes made through a directory symbolic link or a junction have records with the
-        // ids of the target (possibly on another volume): scanned entirely.
+        // ids of the target: scanned entirely if the target is on another volume, or changed.
         Interlocked.Increment(ref context.Statistics.SymLinkSubtreeCount);
-        return await ProcessDirectoryAsync(directory.DirectoryData, _cancellationToken);
+        var data = directory.DirectoryData;
+        return await ProcessDirectoryAsync(new DirectoryData(data.DirectoryName, true,
+          GetDirectoryId(data.DirectoryName, true, UInt128.Zero)), _cancellationToken);
       }
       if (!context.Visit.Contains(directory))
         return directory;
@@ -444,7 +491,8 @@ namespace VsChromium.Server.FileSystem.Builder {
             // A new directory (or replaced, renamed, moved in): scanned entirely.
             Interlocked.Increment(ref context.Statistics.ScannedSubtreeCount);
             var name = _fileSystemNameFactory.CreateDirectoryName(directory.DirectoryName, entry.Name, entry.IsSymLink);
-            childTask = TraverseDirectoryAsync(new DirectoryData(name, entry.IsSymLink, entry.FileId), _cancellationToken);
+            childTask = TraverseDirectoryAsync(new DirectoryData(name, entry.IsSymLink, GetDirectoryId(name, entry.IsSymLink, entry.FileId)),
+              _cancellationToken);
           }
           (childTasks ??= new List<Task<DirectorySnapshot>>()).Add(childTask);
         } else if (entry.IsFile) {

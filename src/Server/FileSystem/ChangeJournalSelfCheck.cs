@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using VsChromium.Core.Files;
 using VsChromium.Core.Logging;
+using VsChromium.Server.FileSystem.Builder;
 using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.FileSystem {
@@ -96,10 +97,16 @@ namespace VsChromium.Server.FileSystem {
       }
       result.RecordCount = mapper.RecordCount;
 
+      // The directory symbolic links whose target changed (e.g. retargeted): scanned again.
+      mapper.CheckSymLinks(_fileSystem, rootPath, end.VolumeSerialNumber);
+      foreach (var symLink in mapper.SymLinksToScan) {
+        result.Changes.Add(new PathChangeEntry(rootPath, symLink.DirectoryName.RelativePath, PathChangeKind.Deleted, PathKind.Directory));
+        result.Changes.Add(new PathChangeEntry(rootPath, symLink.DirectoryName.RelativePath, PathChangeKind.Created, PathKind.Directory));
+      }
       foreach (var directory in mapper.ChangedDirectories) {
         cancellationToken.ThrowIfCancellationRequested();
         result.ListedDirectoryCount++;
-        CompareDirectory(projectRoot, directory, savedMetadata, result.Changes);
+        CompareDirectory(projectRoot, directory, savedMetadata, end.VolumeSerialNumber, result.Changes);
       }
       if (result.Changes.Count == 0) {
         holder.Advance(end);
@@ -110,7 +117,8 @@ namespace VsChromium.Server.FileSystem {
 
     /// <summary>Adds the differences between a directory of the tree and its listing.</summary>
     private void CompareDirectory(ProjectRootSnapshot projectRoot, DirectorySnapshot directory,
-                                  Func<FileName, FileMetadata, FileMetadata> savedMetadata, List<PathChangeEntry> changes) {
+                                  Func<FileName, FileMetadata, FileMetadata> savedMetadata, ulong projectVolume,
+                                  List<PathChangeEntry> changes) {
       var project = projectRoot.Project;
       var rootPath = project.RootPath;
       var relativePath = directory.DirectoryName.RelativePath;
@@ -164,9 +172,14 @@ namespace VsChromium.Server.FileSystem {
           changes.Add(new PathChangeEntry(rootPath, child.DirectoryName.RelativePath, PathChangeKind.Deleted, PathKind.Directory));
           continue;
         }
+        // Note: The id of a directory symbolic link is the id of its target (on the volume of the
+        // project, see DirectoryData.FileId).
+        var listedId = listed.IsSymLink
+          ? ProjectRootSnapshotBuilder.GetSymLinkTargetId(_fileSystem, rootPath.Combine(Child(listed.Name)), projectVolume)
+          : listed.FileId;
         var replaced = listed.IsSymLink != child.IsSymLink ||
                        !string.Equals(listed.Name, name, StringComparison.Ordinal) ||
-                       (child.FileId != UInt128.Zero && listed.FileId != child.FileId);
+                       ((child.FileId != UInt128.Zero || child.IsSymLink) && listedId != child.FileId);
         if (replaced) {
           changes.Add(new PathChangeEntry(rootPath, child.DirectoryName.RelativePath, PathChangeKind.Deleted, PathKind.Directory));
           changes.Add(new PathChangeEntry(rootPath, Child(listed.Name), PathChangeKind.Created, PathKind.Directory));

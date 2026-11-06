@@ -23,12 +23,26 @@ namespace VsChromium.Core.Files.Windows {
   /// systems) are enumerated by <see cref="PortableFileSystem"/> (no file ids).
   /// </summary>
   [SupportedOSPlatform("windows")]
-  public sealed class WindowsFileSystem : PortableFileSystem {
+  public sealed class WindowsFileSystem : PortableFileSystem, IFileSystem {
     private const int BufferSize = 64 * 1024;
 
     /// <summary>The buffer of the enumeration of each thread (pinned: no copy).</summary>
     [ThreadStatic]
     private static byte[] t_buffer;
+
+    public bool TryGetDirectoryTarget(FullPath path, out ulong volumeSerialNumber, out UInt128 fileId) {
+      try {
+        // Note: Follows symbolic links and junctions (no FILE_FLAG_OPEN_REPARSE_POINT).
+        using (var handle = OpenHandle(path.Value, FILE_READ_ATTRIBUTES)) {
+          return TryGetFileId(handle, out volumeSerialNumber, out fileId);
+        }
+      }
+      catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+        volumeSerialNumber = 0;
+        fileId = default;
+        return false;
+      }
+    }
 
     public override IFileInfoSnapshot GetFileInfoSnapshot(FullPath path) {
       return new WindowsFileInfoSnapshot(base.GetFileInfoSnapshot(path));

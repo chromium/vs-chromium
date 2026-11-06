@@ -136,6 +136,70 @@ public class ChangeJournalTests {
     Assert.AreEqual(1, await HitCountAsync(restarted.Client, "CHANGED_WHILE_RUNNING"));
   }
 
+  /// <summary>
+  /// Directory symbolic links to the same volume: the changes in their target are caught up from
+  /// the journal (the subtree is not scanned), a retargeted link and a link whose target was
+  /// renamed outside of the project are scanned entirely.
+  /// </summary>
+  [TestMethod]
+  [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task DirectorySymbolicLinksToTheSameVolume() {
+    using var tree = new TestTree(TestTree.TempRoot());
+    tree.Generate();
+    var outside = Path.Combine(tree.Parent, "outside");
+    foreach (var name in new[] { "changed", "retarget1", "retarget_two", Path.Combine("parent", "target"), Path.Combine("other", "target") }) {
+      Directory.CreateDirectory(Path.Combine(outside, name, "inner"));
+      TestTree.WriteFile(Path.Combine(outside, name, "inner", "file.cc"), $"// SYMLINK_TARGET_ {name.Replace('\\', '/')}\n", OldTime);
+    }
+    try {
+      Directory.CreateSymbolicLink(Path.Combine(tree.Root, "link_changed"), Path.Combine(outside, "changed"));
+      Directory.CreateSymbolicLink(Path.Combine(tree.Root, "link_retarget"), Path.Combine(outside, "retarget1"));
+      // Note: In another directory than the retargeted link (whose directory is listed again: its
+      // symbolic links are scanned entirely).
+      Directory.CreateSymbolicLink(Path.Combine(tree.Root, "dir010", "link_renamed"), Path.Combine(outside, "parent", "target"));
+    }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+      Assert.Inconclusive("Symbolic links can't be created: " + e.Message);
+    }
+    await ColdLoadAndWriteCacheAsync(tree);
+
+    // 1. A change in the target of a link, while no server runs: from the journal.
+    TestTree.WriteFile(Path.Combine(outside, "changed", "inner", "new.cc"), "// CHANGED_IN_TARGET\n", OldTime);
+    await using (var server = await StartAndLoadAsync(tree)) {
+      await WaitForIdleAsync(server.Client);
+      var verification = await LastVerificationAsync(server.Client, tree);
+      AssertJournalVerification(verification);
+      Assert.AreEqual(0, verification["symLinkDirectoryCount"]!.GetValue<int>(), "No subtree scanned: " + verification.ToJsonString());
+      Assert.AreEqual(1, await HitCountAsync(server.Client, "CHANGED_IN_TARGET"));
+    }
+
+    // 2. A link retargeted, and 3. the parent of the target of a link renamed outside of the
+    // project (the link resolves to another directory): scanned entirely.
+    Directory.Delete(Path.Combine(tree.Root, "link_retarget"));
+    Directory.CreateSymbolicLink(Path.Combine(tree.Root, "link_retarget"), Path.Combine(outside, "retarget_two"));
+    Directory.Move(Path.Combine(outside, "parent"), Path.Combine(outside, "parent_renamed"));
+    Directory.Move(Path.Combine(outside, "other"), Path.Combine(outside, "parent"));
+    await using (var server = await StartAndLoadAsync(tree)) {
+      await WaitForIdleAsync(server.Client);
+      var verification = await LastVerificationAsync(server.Client, tree);
+      AssertJournalVerification(verification);
+      // link_renamed: found by the check of the targets; link_retarget: a symbolic link of a
+      // directory listed again (the root), scanned as a new directory.
+      Assert.AreEqual(1, verification["symLinkDirectoryCount"]!.GetValue<int>(), verification.ToJsonString());
+      Assert.IsTrue(verification["scannedDirectoryCount"]!.GetValue<int>() >= 1, verification.ToJsonString());
+      Assert.AreEqual(1, await HitCountAsync(server.Client, "SYMLINK_TARGET_ retarget_two"));
+      Assert.AreEqual(0, await HitCountAsync(server.Client, "SYMLINK_TARGET_ retarget1"));
+      Assert.AreEqual(1, await HitCountAsync(server.Client, "SYMLINK_TARGET_ other/target"));
+      Assert.AreEqual(0, await HitCountAsync(server.Client, "SYMLINK_TARGET_ parent/target"));
+      var verified = await AllResultsAsync(server.Client);
+
+      // Same index as a cold load.
+      await using var coldServer = await StartAndLoadAsync(tree, cacheDirectory: null);
+      await WaitForIdleAsync(coldServer.Client);
+      AssertSameResults(await AllResultsAsync(coldServer.Client), verified);
+    }
+  }
+
   [TestMethod]
   [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
   public async Task InvalidCheckpointFallsBackToAFullScan() {

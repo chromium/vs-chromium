@@ -35,5 +35,16 @@ namespace VsChromium.Core.Files {
     /// Returns a new <see cref="IFileSystemWatcher"/> instances for the given directory path.
     /// </summary>
     IFileSystemWatcher CreateDirectoryWatcher(FullPath path);
+
+    /// <summary>
+    /// The volume serial number and the 128-bit file id of the directory <paramref name="path"/>,
+    /// following symbolic links and junctions (the id of their target). False if unknown or not
+    /// supported (see <see cref="Windows.WindowsFileSystem"/>).
+    /// </summary>
+    bool TryGetDirectoryTarget(FullPath path, out ulong volumeSerialNumber, out System.UInt128 fileId) {
+      volumeSerialNumber = 0;
+      fileId = default;
+      return false;
+    }
   }
 }

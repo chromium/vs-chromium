@@ -34,7 +34,9 @@ namespace VsChromium.Server.FileSystem {
     /// <summary>
     /// The 128-bit file id of the directory (from the enumeration of its parent, see <see
     /// cref="Core.Files.DirectoryEntry.FileId"/>), 0 if unknown: used to map the records of the
-    /// change journal to directories.
+    /// change journal to directories. For directory symbolic links and junctions: the id of their
+    /// target directory if it is on the volume of the project (its changes have records with the
+    /// ids of the target), otherwise 0.
     /// </summary>
     public UInt128 FileId {
       get { return _fileId; }

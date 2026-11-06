@@ -186,10 +186,14 @@ namespace VsChromium.Server.FileSystem.Builder {
         return null;
       }
       verification.RecordCount = mapper.RecordCount;
+      // The directory symbolic links to the volume of the project are mapped: their targets are
+      // checked again (the changes outside of the project, e.g. a retargeted link, have no record
+      // in the tree).
+      verification.CheckedSymLinkCount = mapper.CheckSymLinks(_fileSystem, project.RootPath, end.VolumeSerialNumber);
       verification.CheckpointNeedsSave = end.Usn - checkpoint.Usn > (end.Usn - query.FirstUsn) / 2;
 
       var statistics = new CatchUpStatistics();
-      var root = builder.CatchUp(oldRoot.Directory, mapper.ChangedDirectories, statistics);
+      var root = builder.CatchUp(oldRoot.Directory, mapper.ChangedDirectories, mapper.SymLinksToScan, statistics);
       verification.ListedDirectoryCount = statistics.ListedDirectoryCount;
       verification.ScannedSubtreeCount = statistics.ScannedSubtreeCount;
       verification.SymLinkSubtreeCount = statistics.SymLinkSubtreeCount;

@@ -28,6 +28,8 @@ namespace VsChromium.Server.FileSystem {
     public int ScannedSubtreeCount { get; set; }
     /// <summary>The directory symbolic links and junctions scanned entirely (change journal).</summary>
     public int SymLinkSubtreeCount { get; set; }
+    /// <summary>The directory symbolic links and junctions to the volume of the project whose target was checked (change journal).</summary>
+    public int CheckedSymLinkCount { get; set; }
     /// <summary>The file symbolic links checked again (change journal).</summary>
     public int SymLinkFileCount { get; set; }
     /// <summary>The time of the scan or of the catch-up (journal read included).</summary>
@@ -44,8 +46,8 @@ namespace VsChromium.Server.FileSystem {
       var result = new StringBuilder();
       if (Method == VerificationMethod.ChangeJournal) {
         result.AppendFormat("change journal: {0:n0} directories listed again in {1:n0} ms ({2:n0} records, " +
-                            "{3:n0} new directories and {4:n0} directory symbolic links scanned, {5:n0} file symbolic links checked)",
-          ListedDirectoryCount, ElapsedMs, RecordCount, ScannedSubtreeCount, SymLinkSubtreeCount, SymLinkFileCount);
+                            "{3:n0} new directories and {4:n0} directory symbolic links scanned, {5:n0} directory and {6:n0} file symbolic links checked)",
+          ListedDirectoryCount, ElapsedMs, RecordCount, ScannedSubtreeCount, SymLinkSubtreeCount, CheckedSymLinkCount, SymLinkFileCount);
       } else {
         result.AppendFormat("full scan in {0:n0} ms: {1}", ElapsedMs, FallbackReason ?? "change journal not used");
       }

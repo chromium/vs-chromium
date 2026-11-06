@@ -34,10 +34,12 @@ namespace VsChromium.Tests.Server {
     // root (1)
     //   a (2)
     //     b (3)
-    //   link (4, symbolic link)
-    //     inner (5, other volume)
+    //   link (4, symbolic link to the same volume: the id of its target)
+    //     inner (5)
+    //   otherlink (0, symbolic link to another volume)
+    //     otherinner (6, other volume)
     //   noid (0)
-    private DirectorySnapshot _root, _a, _b, _link, _noId;
+    private DirectorySnapshot _root, _a, _b, _link, _inner, _otherLink, _noId;
 
     [TestInitialize]
     public void Initialize() {
@@ -47,11 +49,15 @@ namespace VsChromium.Tests.Server {
       var linkName = _factory.CreateDirectoryName(rootName, "link", true);
       var innerName = _factory.CreateDirectoryName(linkName, "inner");
       var noIdName = _factory.CreateDirectoryName(rootName, "noid");
+      var otherLinkName = _factory.CreateDirectoryName(rootName, "otherlink", true);
+      var otherInnerName = _factory.CreateDirectoryName(otherLinkName, "otherinner");
       _b = Dir(bName, 3, false);
       _a = Dir(aName, 2, false, _b);
-      _link = Dir(linkName, 4, true, Dir(innerName, 5, false));
+      _inner = Dir(innerName, 5, false);
+      _link = Dir(linkName, 4, true, _inner);
+      _otherLink = Dir(otherLinkName, 0, true, Dir(otherInnerName, 6, false));
       _noId = Dir(noIdName, 0, false);
-      _root = Dir(rootName, 1, false, _a, _link, _noId);
+      _root = Dir(rootName, 1, false, _a, _link, _otherLink, _noId);
     }
 
     private static DirectorySnapshot Dir(DirectoryName name, ulong id, bool isSymLink, params DirectorySnapshot[] children) {
@@ -73,9 +79,10 @@ namespace VsChromium.Tests.Server {
     [TestMethod]
     public void DirectoriesOfSymbolicLinkSubtreesAndWithoutIdAreNotMapped() {
       var mapper = Map();
-      Assert.AreEqual(4, mapper.DirectoryCount, "root, a, b, link (not inner: other volume)");
+      Assert.AreEqual(5, mapper.DirectoryCount, "root, a, b, link, inner (not otherinner: other volume)");
       Assert.AreEqual(1, mapper.ZeroIdDirectoryCount);
       Assert.AreEqual(0, mapper.ChangedDirectories.Count);
+      CollectionAssert.AreEqual(new[] { _link }, mapper.SymLinks.ToList());
     }
 
     [TestMethod]
@@ -96,7 +103,7 @@ namespace VsChromium.Tests.Server {
     [TestMethod]
     public void RecordsOfUnknownParentsAreIgnored() {
       // Outside of the project, in an ignored directory, or in a symbolic link subtree (other volume).
-      var mapper = Map(Record(1000, 999, UsnRecordParser.FileCreate, File), Record(1001, 5, UsnRecordParser.FileCreate, File));
+      var mapper = Map(Record(1000, 999, UsnRecordParser.FileCreate, File), Record(1001, 6, UsnRecordParser.FileCreate, File));
       Assert.AreEqual(0, mapper.ChangedDirectories.Count);
     }
 
@@ -142,6 +149,35 @@ namespace VsChromium.Tests.Server {
     public void ReplacedSymbolicLinksMarkTheirParent() {
       var mapper = Map(Record(4, 1, UsnRecordParser.ReparsePointChange, Directory));
       CollectionAssert.AreEquivalent(new[] { _root }, mapper.ChangedDirectories.ToList());
+    }
+
+    [TestMethod]
+    public void RecordsInTheTargetOfASymbolicLinkMarkTheLink() {
+      // A file created in the target of "link" (id 4) and in "inner".
+      var mapper = Map(Record(1000, 4, UsnRecordParser.FileCreate, File), Record(1001, 5, UsnRecordParser.FileCreate, File));
+      CollectionAssert.AreEquivalent(new[] { _link, _inner }, mapper.ChangedDirectories.ToList());
+      Assert.AreEqual(0, mapper.SymLinksToScan.Count);
+    }
+
+    [TestMethod]
+    public void TargetOfASymbolicLinkRenamedMarksTheLinkToScan() {
+      // The target (id 4) moved out of its parent (unknown: outside of the project).
+      var mapper = Map(Record(4, 999, UsnRecordParser.RenameOldName, Directory));
+      CollectionAssert.AreEquivalent(new[] { _link }, mapper.SymLinksToScan.ToList());
+      CollectionAssert.AreEquivalent(new[] { _root }, mapper.ChangedDirectories.ToList());
+    }
+
+    [TestMethod]
+    public void TargetsInsideTheProjectMarkAllTheirDirectories() {
+      // "alias" is a link to "a": both have the id 2.
+      var rootName = _root.DirectoryName;
+      var alias = Dir(_factory.CreateDirectoryName(rootName, "alias", true), 2, true,
+        Dir(_factory.CreateDirectoryName(_factory.CreateDirectoryName(rootName, "alias", true), "b"), 3, false));
+      var root = new DirectorySnapshot(_root.DirectoryData, _root.ChildDirectories.Append(alias).ToList(),
+        Array.Empty<FileName>(), Array.Empty<FileMetadata>());
+      var mapper = new ChangeJournalDirectoryMapper(root);
+      mapper.Add(Record(1000, 3, UsnRecordParser.FileCreate, File));
+      CollectionAssert.AreEquivalent(new[] { _b, alias.ChildDirectories[0] }, mapper.ChangedDirectories.ToList());
     }
 
     [TestMethod]
@@ -301,22 +337,81 @@ namespace VsChromium.Tests.Server {
     }
 
     [TestMethod]
-    public void DirectorySymbolicLinksAreScannedEntirely() {
+    public void DirectorySymbolicLinksToTheSameVolumeAreCaughtUpFromTheJournal() {
+      System.IO.Directory.CreateDirectory(Path.Combine(_outside, "target", "inner"));
+      System.IO.File.WriteAllText(Path.Combine(_outside, "target", "inner", "file.txt"), "in the target");
+      CreateDirectoryLink("dirlink", Path.Combine(_outside, "target"));
+      // A link to a directory of the project too: its target is in the tree twice.
+      CreateDirectoryLink("dirlink_a", Path.Combine(_root, "a"));
+      var old = FullScan();
+      var link = Root(old).Directory.ChildDirectories.Single(x => x.DirectoryName.Name == "dirlink");
+      Assert.AreEqual(WindowsFileSystem.GetFileId(Path.Combine(_outside, "target")), link.FileId, "The id of the target");
+
+      // Changes through the links (the records have the ids of the targets).
+      System.IO.File.WriteAllText(Path.Combine(_outside, "target", "inner", "new.txt"), "new");
+      WriteFile(Path.Combine("a", "new.txt"), "new in a");
+      var (snapshot, verification) = Verify(old, Root(old).Checkpoint);
+      Assert.AreEqual(VerificationMethod.ChangeJournal, verification.Method, verification.ToString());
+      Assert.AreEqual(0, verification.SymLinkSubtreeCount, "Not scanned: " + verification);
+      Assert.AreEqual(2, verification.CheckedSymLinkCount, verification.ToString());
+      Assert.AreEqual(3, verification.ListedDirectoryCount, "target/inner, a and dirlink_a: " + verification);
+      AssertSameTree(Root(FullScan()).Directory, Root(snapshot).Directory);
+    }
+
+    [TestMethod]
+    public void RetargetedDirectorySymbolicLinksAreScannedEntirely() {
+      System.IO.Directory.CreateDirectory(Path.Combine(_outside, "target1"));
+      System.IO.Directory.CreateDirectory(Path.Combine(_outside, "target2"));
+      System.IO.File.WriteAllText(Path.Combine(_outside, "target2", "file.txt"), "in target 2");
+      CreateDirectoryLink("dirlink", Path.Combine(_outside, "target1"));
+      var old = FullScan();
+      System.IO.Directory.Delete(Path.Combine(_root, "dirlink"));
+      CreateDirectoryLink("dirlink", Path.Combine(_outside, "target2"));
+      var (snapshot, verification) = Verify(old, Root(old).Checkpoint);
+      Assert.AreEqual(VerificationMethod.ChangeJournal, verification.Method, verification.ToString());
+      AssertSameTree(Root(FullScan()).Directory, Root(snapshot).Directory);
+    }
+
+    [TestMethod]
+    public void DirectorySymbolicLinksWhoseTargetIsRenamedOutsideOfTheProjectAreScannedEntirely() {
+      System.IO.Directory.CreateDirectory(Path.Combine(_outside, "parent", "target"));
+      System.IO.File.WriteAllText(Path.Combine(_outside, "parent", "target", "file.txt"), "in the target");
+      System.IO.Directory.CreateDirectory(Path.Combine(_outside, "other", "target"));
+      System.IO.File.WriteAllText(Path.Combine(_outside, "other", "target", "other.txt"), "in another target");
+      CreateDirectoryLink("dirlink", Path.Combine(_outside, "parent", "target"));
+      var old = FullScan();
+      // The link resolves to another directory now (no record in the tree).
+      System.IO.Directory.Move(Path.Combine(_outside, "parent"), Path.Combine(_outside, "parent_renamed"));
+      System.IO.Directory.Move(Path.Combine(_outside, "other"), Path.Combine(_outside, "parent"));
+      var (snapshot, verification) = Verify(old, Root(old).Checkpoint);
+      Assert.AreEqual(VerificationMethod.ChangeJournal, verification.Method, verification.ToString());
+      Assert.AreEqual(1, verification.SymLinkSubtreeCount, verification.ToString());
+      AssertSameTree(Root(FullScan()).Directory, Root(snapshot).Directory);
+      Assert.IsTrue(Root(snapshot).Directory.ChildDirectories.Single(x => x.DirectoryName.Name == "dirlink").ChildFiles
+        .Any(x => x.Name == "other.txt"));
+    }
+
+    [TestMethod]
+    public void SelfCheckFindsRetargetedDirectorySymbolicLinks() {
+      System.IO.Directory.CreateDirectory(Path.Combine(_outside, "target1"));
+      System.IO.Directory.CreateDirectory(Path.Combine(_outside, "target2"));
+      CreateDirectoryLink("dirlink", Path.Combine(_outside, "target1"));
+      var old = FullScan();
+      System.IO.Directory.Delete(Path.Combine(_root, "dirlink"));
+      CreateDirectoryLink("dirlink", Path.Combine(_outside, "target2"));
+      var (checkpoint, _, reported) = SelfCheck(Root(old));
+      Assert.AreEqual(Root(old).Checkpoint, checkpoint, "Kept");
+      Assert.IsTrue(reported.Any(x => x.RelativePath.Value == "dirlink" && x.ChangeKind == PathChangeKind.Created),
+        string.Join(", ", reported));
+    }
+
+    private void CreateDirectoryLink(string name, string target) {
       try {
-        System.IO.Directory.CreateSymbolicLink(Path.Combine(_root, "dirlink"), _outside);
+        System.IO.Directory.CreateSymbolicLink(Path.Combine(_root, name), target);
       }
       catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
         Assert.Inconclusive("Symbolic links can't be created: " + e.Message);
       }
-      var old = FullScan();
-      // A change through the link (the record has the ids of the target).
-      System.IO.File.WriteAllText(Path.Combine(_outside, "through-link.txt"), "new");
-      var (snapshot, verification) = Verify(old, Root(old).Checkpoint);
-      Assert.AreEqual(VerificationMethod.ChangeJournal, verification.Method, verification.ToString());
-      Assert.AreEqual(1, verification.SymLinkSubtreeCount);
-      AssertSameTree(Root(FullScan()).Directory, Root(snapshot).Directory);
-      Assert.IsTrue(Root(snapshot).Directory.ChildDirectories.Single(x => x.DirectoryName.Name == "dirlink").ChildFiles
-        .Any(x => x.Name == "through-link.txt"));
     }
 
     [TestMethod]

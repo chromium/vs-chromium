@@ -1081,11 +1081,19 @@ NTFS/ReFS change journal (USN journal). Windows specific code (see "Windows spec
   count for create, delete, rename and reparse point reasons; unknown ids are ignored (outside the
   project, ignored directories, new directories: found by the listing of their parent). Marked
   directories and directories without id are listed again; their new or replaced subdirectories
-  (other id) are scanned entirely, as well as the subtrees of directory symbolic links and
-  junctions (their records have the ids of the target, possibly on another volume); file symbolic
-  links are checked again in parallel (their metadata are the target's, whose changes are not
-  changes of their directory); everything else is reused. Then `SnapshotDiff` and the
+  (other id) are scanned entirely, as well as their directory symbolic links and junctions; file
+  symbolic links are checked again in parallel (their metadata are the target's, whose changes are
+  not changes of their directory); everything else is reused. Then `SnapshotDiff` and the
   incremental update, as before.
+- **Directory symbolic links and junctions**: the changes made through them have records with the
+  ids of their target. If the target is on the volume of the project, the id of the link in the
+  tree is the id of its target (`DirectoryData.FileId`), and its subtree is mapped like any
+  directory (a target inside the project is in the tree twice: several directories per id). At
+  each catch-up (and self-check), the target of every mapped link is resolved again (one open per
+  link): a different id or volume (retargeted link, target deleted and recreated, an ancestor of
+  the target renamed outside of the project, dangling link) means a full scan of that subtree, as
+  well as a record of the target itself with a delete or rename reason. Links to another volume
+  (no id) are always scanned entirely.
 - **Fallbacks** (full scan, reason logged and in `project/details`
   `operations.lastVerification`, shown by the dashboard): other OSes, no checkpoint or no
   directory ids in the cache (older format, or saved while the journal was not usable), journal
@@ -1111,16 +1119,21 @@ listings; 23 threads unless noted):
 |---|---|---|---|
 | Synthetic, 100k files, 10.4k directories (C:, NTFS) | 130-139 ms | 2-12 ms (0 directories listed) | 100 touched files: 6-16 ms (99-393 directories); 2,000: 39-80 ms (1.8k-5.5k directories) |
 | `large-1-400000-v1` (D:, Dev Drive, ReFS) | 255-325 ms | fallback: "the change journal is not active on D:\" | - |
-| A large project, 2.65M files, 640k directories (C:) | 10.4-10.6 s | 6.6-6.9 s (0 directories listed, 194 directory symbolic links scanned, 5,412 file links checked) | from the oldest record (485k records, 37 MB): 6.7-6.8 s |
-| Same, 4 threads | 28.9 s | 18.8-19.5 s | - |
+| A large project, 2.65M files, 640k directories (C:) | 10.2-11.1 s | 1.9-2.2 s (0 directories listed, 838 directory links resolved, 1 scanned (other volume), 44,575 file links checked) | from the oldest record (442k records, 34 MB): 2.1-2.4 s |
+| Same, 4 threads | 28.9-36.0 s | 6.0-6.2 s | - |
 
-On the large project the journal read and the mapping are negligible: the catch-up time is the
-full scan of the subtrees of its 194 directory symbolic links, which hold most of its directories
-(see "Known limitations").
+On the large project the journal read and the mapping are negligible (even from the oldest record
+of the journal). Most of its directories are in the subtrees of directory symbolic links: when
+these subtrees were always scanned entirely (first version), the catch-up took 6.6-6.9 s (18.8-19.5 s
+with 4 threads). The remaining time is the check of the 44,575 file symbolic links (kernel time:
+`FileInfo` and `ResolveLinkTarget`, several opens per link).
 
 Known limitations:
 
-- Directory symbolic links and junctions are always scanned entirely by the catch-up.
+- Directory symbolic links and junctions to another volume, and the ones of the directories listed
+  again, are scanned entirely by the catch-up; every file symbolic link is checked again (a
+  cheaper check, one open of the target, or a mapping of the targets on the same volume, would
+  reduce the remaining catch-up time).
 - Hard links: the directory entry of the other names of a file modified through one name is not
   updated by NTFS, nor is its parent recorded for them: same limitation as the full scan.
 - The self-check advances the checkpoint shared by the incremental updates: an incremental update

@@ -7,9 +7,10 @@
 // <repo>/Binaries/<Configuration>/ServerPublish/<runtime identifier>, see src/Server/Server.csproj)
 // and copies it into <extension>/bin, for packaging: users don't need to install a .NET runtime.
 // Also copies the repository LICENSE file.
-// Usage: node scripts/copy-server.js [Release|Debug] [<VS Code target>]
+// Usage: node scripts/copy-server.js [Release|Debug] [<VS Code target>] [--no-publish]
 // (defaults: Release, win32-x64; targets: win32-x64, win32-arm64, linux-x64, linux-arm64,
-// darwin-x64, darwin-arm64)
+// darwin-x64, darwin-arm64). --no-publish: copies the server already published in
+// Binaries/<Configuration>/ServerPublish/<runtime identifier> (release builds, see docs/release.md).
 
 'use strict';
 
@@ -17,10 +18,12 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const configuration = process.argv[2] || 'Release';
+const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
+const noPublish = process.argv.includes('--no-publish');
+const configuration = args[0] || 'Release';
 const extensionRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(extensionRoot, '..', '..');
-const target = process.argv[3] || 'win32-x64';
+const target = args[1] || 'win32-x64';
 // VS Code target platform -> .NET runtime identifier
 const runtimeIdentifiers = {
   'win32-x64': 'win-x64',
@@ -53,12 +56,14 @@ if (!runtimeIdentifier) {
 }
 
 const serverProject = path.join(repoRoot, 'src', 'Server', 'Server.csproj');
-console.log(`copy-server: publishing ${serverProject} (${configuration}, ${runtimeIdentifier})...`);
-try {
-  execFileSync('dotnet', ['publish', serverProject, '-c', configuration, '-r', runtimeIdentifier, '--nologo', '-v:quiet'],
-    { stdio: 'inherit' });
-} catch (e) {
-  fail(`dotnet publish failed: ${e.message}`);
+if (!noPublish) {
+  console.log(`copy-server: publishing ${serverProject} (${configuration}, ${runtimeIdentifier})...`);
+  try {
+    execFileSync('dotnet', ['publish', serverProject, '-c', configuration, '-r', runtimeIdentifier, '--nologo', '-v:quiet'],
+      { stdio: 'inherit' });
+  } catch (e) {
+    fail(`dotnet publish failed: ${e.message}`);
+  }
 }
 
 const missing = requiredFiles.filter(f => !fs.existsSync(path.join(sourceDir, f)));

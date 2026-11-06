@@ -170,6 +170,7 @@
     "package": "node scripts/copy-server.js Release win32-x64 && vsce package --target win32-x64",
     "package:linux-x64": "node scripts/copy-server.js Release linux-x64 && vsce package --target linux-x64",
     "package:linux-arm64": "node scripts/copy-server.js Release linux-arm64 && vsce package --target linux-arm64",
+    "package:darwin-x64": "node scripts/copy-server.js Release darwin-x64 && vsce package --target darwin-x64",
     "package:darwin-arm64": "node scripts/copy-server.js Release darwin-arm64 && vsce package --target darwin-arm64",
     "package:win32-arm64": "node scripts/copy-server.js Release win32-arm64 && vsce package --target win32-arm64",
     "package:debug": "node scripts/copy-server.js Debug win32-x64 && vsce package --target win32-x64"

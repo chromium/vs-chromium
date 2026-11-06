@@ -1,0 +1,151 @@
+﻿// Copyright 2026 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using Microsoft.Win32.SafeHandles;
+using static VsChromium.Core.Files.Windows.WindowsNativeMethods;
+
+namespace VsChromium.Core.Files.Windows {
+  /// <summary>
+  /// Implementation of <see cref="IFileSystem"/> for Windows (selected at runtime, see
+  /// <c>ServerComponents</c>), an exception to the "portable .NET only" rule (see "Windows specific
+  /// code" in PORTING_PRINCIPLES.md): the same as <see cref="PortableFileSystem"/>, except that
+  /// directories are enumerated with <c>NtQueryDirectoryFile</c> and
+  /// <c>FileIdExtdDirectoryInformation</c>, which returns the 128-bit file id of each entry (used
+  /// to map the records of the change journal to directories, see <c>ChangeJournalCatchUp</c>),
+  /// with a 64 KB buffer instead of the 4 KB of <see cref="System.IO.Enumeration.FileSystemEnumerable{TResult}"/>.
+  /// The file systems that don't support this information class (e.g. FAT, some network file
+  /// systems) are enumerated by <see cref="PortableFileSystem"/> (no file ids).
+  /// </summary>
+  [SupportedOSPlatform("windows")]
+  public sealed class WindowsFileSystem : PortableFileSystem {
+    private const int BufferSize = 64 * 1024;
+
+    /// <summary>The buffer of the enumeration of each thread (pinned: no copy).</summary>
+    [ThreadStatic]
+    private static byte[] t_buffer;
+
+    public override IFileInfoSnapshot GetFileInfoSnapshot(FullPath path) {
+      return new WindowsFileInfoSnapshot(base.GetFileInfoSnapshot(path));
+    }
+
+    public override IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {
+      var result = TryGetDirectoryEntries(path.Value);
+      return result ?? base.GetDirectoryEntries(path);
+    }
+
+    /// <summary>
+    /// The entries of a directory, or null if its file system doesn't support
+    /// <c>FileIdExtdDirectoryInformation</c>.
+    /// </summary>
+    private static unsafe List<DirectoryEntry> TryGetDirectoryEntries(string path) {
+      using (var handle = OpenHandle(path, FILE_LIST_DIRECTORY)) {
+        var buffer = t_buffer ??= GC.AllocateUninitializedArray<byte>(BufferSize, pinned: true);
+        var result = new List<DirectoryEntry>();
+        fixed (byte* bufferStart = buffer) {
+          for (var first = true; ; first = false) {
+            var status = NtQueryDirectoryFile(handle, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, out _, bufferStart, BufferSize,
+              FileIdExtdDirectoryInformation, 0, IntPtr.Zero, (byte)(first ? 1 : 0));
+            if (status == STATUS_NO_MORE_FILES || status == STATUS_NO_SUCH_FILE)
+              break;
+            if (first && (status == STATUS_INVALID_INFO_CLASS || status == STATUS_NOT_SUPPORTED || status == STATUS_INVALID_PARAMETER))
+              return null;
+            if (status != STATUS_SUCCESS)
+              throw CreateException((int)RtlNtStatusToDosError(status), path);
+            ParseEntries(path, bufferStart, result);
+          }
+        }
+        return result;
+      }
+    }
+
+    // Offsets of the fields of FILE_ID_EXTD_DIR_INFORMATION.
+    private const int NextEntryOffsetOffset = 0;
+    private const int LastWriteTimeOffset = 24;
+    private const int EndOfFileOffset = 40;
+    private const int FileAttributesOffset = 56;
+    private const int FileNameLengthOffset = 60;
+    private const int FileIdOffset = 72;
+    private const int FileNameOffset = 88;
+
+    private static unsafe void ParseEntries(string directory, byte* buffer, List<DirectoryEntry> result) {
+      var entry = buffer;
+      while (true) {
+        var nameLength = *(int*)(entry + FileNameLengthOffset) / sizeof(char);
+        var name = new ReadOnlySpan<char>(entry + FileNameOffset, nameLength);
+        if (!IsSpecialDirectoryName(name)) {
+          var attributes = (FileAttributes)(*(uint*)(entry + FileAttributesOffset));
+          var lastWriteTime = *(long*)(entry + LastWriteTimeOffset);
+          var length = *(long*)(entry + EndOfFileOffset);
+          var fileId = new UInt128(*(ulong*)(entry + FileIdOffset + 8), *(ulong*)(entry + FileIdOffset));
+          var nameString = name.ToString();
+          var metadata = new FileMetadata(DateTime.FromFileTimeUtc(Math.Max(0, lastWriteTime)), length);
+          // Note: Same as PortableFileSystem: the metadata of the target of file symbolic links.
+          if (IsFileReparsePoint(attributes) &&
+              TryGetLinkTargetMetadata(Path.Join(directory, nameString), out var targetMetadata)) {
+            metadata = targetMetadata;
+          }
+          result.Add(new DirectoryEntry(nameString, attributes, metadata, fileId));
+        }
+        var next = *(int*)(entry + NextEntryOffsetOffset);
+        if (next == 0)
+          break;
+        entry += next;
+      }
+    }
+
+    private static bool IsSpecialDirectoryName(ReadOnlySpan<char> name) {
+      return (name.Length == 1 && name[0] == '.') || (name.Length == 2 && name[0] == '.' && name[1] == '.');
+    }
+
+    /// <summary>
+    /// The 128-bit id of a file or directory (of the reparse point itself for symbolic links and
+    /// junctions, as in the enumeration of its parent), 0 if it can't be read.
+    /// </summary>
+    public static UInt128 GetFileId(string path) {
+      try {
+        using (var handle = OpenHandle(path, FILE_READ_ATTRIBUTES, openReparsePoint: true)) {
+          return TryGetFileId(handle, out _, out var fileId) ? fileId : default;
+        }
+      }
+      catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
+        return default;
+      }
+    }
+
+    /// <summary>
+    /// <see cref="PortableFileSystem"/> snapshot, with the file id (read when first used: it opens
+    /// the file).
+    /// </summary>
+    private sealed class WindowsFileInfoSnapshot : IFileInfoSnapshot {
+      private readonly IFileInfoSnapshot _snapshot;
+      private UInt128? _fileId;
+
+      public WindowsFileInfoSnapshot(IFileInfoSnapshot snapshot) {
+        _snapshot = snapshot;
+      }
+
+      public FullPath Path => _snapshot.Path;
+      public bool Exists => _snapshot.Exists;
+      public bool IsFile => _snapshot.IsFile;
+      public bool IsDirectory => _snapshot.IsDirectory;
+      public bool IsSymLink => _snapshot.IsSymLink;
+      public DateTime LastWriteTimeUtc => _snapshot.LastWriteTimeUtc;
+      public long Length => _snapshot.Length;
+
+      public UInt128 FileId {
+        get {
+          if (!_fileId.HasValue) {
+            _fileId = Exists ? GetFileId(Path.Value) : default;
+          }
+          return _fileId.Value;
+        }
+      }
+    }
+  }
+}

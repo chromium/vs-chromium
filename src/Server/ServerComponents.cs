@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using VsChromium.Core.Configuration;
 using VsChromium.Core.Files;
+using VsChromium.Core.Files.Windows;
 using VsChromium.Core.Memory;
 using VsChromium.Core.Threads;
 using VsChromium.Protocol.Generated;
@@ -90,7 +91,12 @@ namespace VsChromium.Server {
     public IDirectoryChangeWatcherFactory DirectoryChangeWatcherFactory => _directoryChangeWatcherFactory ??= Create(new DirectoryChangeWatcherFactory(FileSystem, DateTimeProvider));
 
     private IFileSystem _fileSystem;
-    public IFileSystem FileSystem => _fileSystem ??= Create(new PortableFileSystem());
+    /// <summary>
+    /// Windows: <see cref="WindowsFileSystem"/> (file ids of the directories, for the change
+    /// journal), portable code otherwise (see "Windows specific code" in PORTING_PRINCIPLES.md).
+    /// </summary>
+    public IFileSystem FileSystem =>
+      _fileSystem ??= Create(OperatingSystem.IsWindows() ? new WindowsFileSystem() : new PortableFileSystem());
 
     // Server/FileSystem
     private IFileSystemSnapshotBuilder _fileSystemSnapshotBuilder;

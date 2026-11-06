@@ -37,7 +37,7 @@ namespace VsChromium.Core.Files {
       MatchCasing = MatchCasing.PlatformDefault,
     };
 
-    public IFileInfoSnapshot GetFileInfoSnapshot(FullPath path) {
+    public virtual IFileInfoSnapshot GetFileInfoSnapshot(FullPath path) {
       return new PortableFileInfoSnapshot(path);
     }
 
@@ -136,7 +136,7 @@ namespace VsChromium.Core.Files {
       }
     }
 
-    public IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {
+    public virtual IList<DirectoryEntry> GetDirectoryEntries(FullPath path) {
       // Note: Unlike the Win32 implementation of the Visual Studio side, entries with paths longer
       // than MAX_PATH are not skipped (see "Behavior changes" in PORTING_PRINCIPLES.md).
       return new FileSystemEnumerable<DirectoryEntry>(
@@ -161,7 +161,7 @@ namespace VsChromium.Core.Files {
       return new DirectoryEntry(entry.FileName.ToString(), attributes, metadata);
     }
 
-    private static bool IsFileReparsePoint(FileAttributes attributes) {
+    protected static bool IsFileReparsePoint(FileAttributes attributes) {
       return (attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == FileAttributes.ReparsePoint;
     }
 

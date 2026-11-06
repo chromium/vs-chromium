@@ -14,10 +14,20 @@ namespace VsChromium.Tests.Core {
   [TestClass]
   public class TestPortableFileSystem {
     private string _root;
-    private readonly PortableFileSystem _fileSystem = new PortableFileSystem();
+    private PortableFileSystem _fileSystem;
+
+    /// <summary>The implementation tested (the tests of <see cref="TestWindowsFileSystem"/> run the same tests).</summary>
+    protected virtual PortableFileSystem CreateFileSystem() {
+      return new PortableFileSystem();
+    }
+
+    protected PortableFileSystem FileSystem => _fileSystem;
+
+    protected string Root => _root;
 
     [TestInitialize]
     public void Initialize() {
+      _fileSystem = CreateFileSystem();
       _root = Path.Combine(Path.GetTempPath(), "VsChromium.Tests", "PortableFileSystem-" + Guid.NewGuid().ToString("N"));
       Directory.CreateDirectory(_root);
     }
@@ -35,7 +45,7 @@ namespace VsChromium.Tests.Core {
       }
     }
 
-    private FullPath RootPath => new FullPath(_root);
+    protected FullPath RootPath => new FullPath(_root);
 
     [TestMethod]
     public void FileInfoSnapshotOfFileWorks() {
@@ -142,7 +152,7 @@ namespace VsChromium.Tests.Core {
     /// Creates a file symbolic link (relative target), or marks the test inconclusive if symbolic
     /// links can't be created (Windows without developer mode or elevation).
     /// </summary>
-    private static void CreateFileSymbolicLink(string linkPath, string relativeTarget) {
+    protected static void CreateFileSymbolicLink(string linkPath, string relativeTarget) {
       try {
         File.CreateSymbolicLink(linkPath, relativeTarget);
       }

@@ -51,5 +51,11 @@ namespace VsChromium.Core.Files {
     /// file does not exist or cannot be accessed.
     /// </summary>
     long Length { get; }
+
+    /// <summary>
+    /// The 128-bit file id of the entry (of the reparse point itself for symbolic links), 0 if
+    /// unknown or not supported (see <see cref="Windows.WindowsFileSystem"/>).
+    /// </summary>
+    UInt128 FileId => default;
   }
 }

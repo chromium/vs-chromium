@@ -60,6 +60,8 @@ Status: milestones 1 (benchmarks + baseline), 2 (project restructuring), 3 (serv
 6. **Portable by default, OS-specific only when measured.** Use the BCL first
    (`FileSystemEnumerator`, `RandomAccess`, `FileSystemWatcher`, `SearchValues`, `Regex`); add
    OS-specific fast paths only with benchmark evidence (mtsuite's Linux/macOS enumerators qualify).
+   Exception: the Windows change journal code (see "Windows specific code" in
+   [File system](#file-system)), for a feature that has no portable equivalent.
 7. **No Windows assumptions in the server**: path separators, drive letters, case sensitivity
    (case-insensitive on Windows/macOS, case-sensitive on Linux, as in mtsuite `PathHelpers`), line
    endings, file sharing semantics, `\\?\` long paths.
@@ -168,6 +170,16 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 - **Change notifications**: `FileSystemWatcher` (already portable). On Linux, use **one** watcher per
   root (not 3) to limit inotify watches (`fs.inotify.max_user_watches`), with a documented polling /
   rescan fallback when the limit is hit.
+- **Windows specific code (decided exception, 2026-11)**: the verification of the index cache from
+  the NTFS/ReFS change journal (see "Index cache verification from the change journal") needs the
+  128-bit file id of each directory and the change journal, which have no portable API. This code
+  is isolated in `src/Server/Files/Windows` (`WindowsFileSystem`: `NtQueryDirectoryFile` with
+  `FileIdExtdDirectoryInformation` and a 64 KB buffer; the change journal reader), uses
+  `LibraryImport` only (source generated marshalling: trimming and NativeAOT compatible), is
+  marked `[SupportedOSPlatform("windows")]`, and is selected at runtime
+  (`OperatingSystem.IsWindows()` in `ServerComponents`). The portable code stays the fallback: on
+  other OSes, and for the volumes that don't support these APIs (e.g. FAT, network drives: no file
+  ids, full scan). No other Windows assumption may depend on it.
 
 ### File contents and search
 

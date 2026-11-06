@@ -204,8 +204,8 @@ namespace VsChromium.Server.Cache {
 
     /// <summary>
     /// The state saved by the last write of the cache of each project (guarded by <see cref="_lock"/>),
-    /// until the project changes again: the idle advance of the checkpoints checks it (no extra memory:
-    /// it is the current state while the project doesn't change).
+    /// until the next update of the index: the idle advance of the checkpoints checks it (no extra
+    /// memory: it is the current state until the next update, which clears it).
     /// </summary>
     private readonly Dictionary<FullPath, (FileSystemSnapshot Snapshot, ProjectRootSnapshot Root, FileDatabaseSnapshot Database)> _written =
       new Dictionary<FullPath, (FileSystemSnapshot, ProjectRootSnapshot, FileDatabaseSnapshot)>();
@@ -316,9 +316,11 @@ namespace VsChromium.Server.Cache {
           var root = new FullPath(cache.RootPath);
           if (changedProjects == null || changedProjects.Contains(root)) {
             _dirtyProjects.Add(root);
-            _written.Remove(root);
           }
         }
+        // Note: The saved states reference the previous database (all the projects, e.g. a project
+        // removed since): released, set again by the next save.
+        _written.Clear();
       }
       _scheduler.NotifyChanged(immediate);
     }
@@ -374,8 +376,13 @@ namespace VsChromium.Server.Cache {
           lock (_lock) {
             // Only the projects whose index changed since the last save of their cache (e.g. not
             // the other projects after a rebuild of a project).
-            if (!_dirtyProjects.Remove(projectRoot.Project.RootPath) && cache.HasIndex)
+            if (!_dirtyProjects.Remove(projectRoot.Project.RootPath) && cache.HasIndex) {
+              // Not changed since its last save: its saved state is the one of this snapshot.
+              if (_pendingSnapshot == null) {
+                _written[projectRoot.Project.RootPath] = (snapshot, projectRoot, database);
+              }
               continue;
+            }
           }
           IndexCacheWriteResult result;
           _writingProject = cache.RootPath;
@@ -396,7 +403,7 @@ namespace VsChromium.Server.Cache {
           if (result == null)
             continue;
           lock (_lock) {
-            if (!_dirtyProjects.Contains(projectRoot.Project.RootPath)) {
+            if (!_dirtyProjects.Contains(projectRoot.Project.RootPath) && _pendingSnapshot == null) {
               _written[projectRoot.Project.RootPath] = (snapshot, projectRoot, database);
             }
           }

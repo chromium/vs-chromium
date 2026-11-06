@@ -170,6 +170,24 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
 - **Change notifications**: `FileSystemWatcher` (already portable). On Linux, use **one** watcher per
   root (not 3) to limit inotify watches (`fs.inotify.max_user_watches`), with a documented polling /
   rescan fallback when the limit is hit.
+- **Changes of the targets of symbolic links** (2026-11): the watcher reports the changes of a
+  target under its real path only, and only if it is watched (inside a project), never under the
+  path of the link: a modified target of a file link left the old contents of the link in the
+  index. `SymLinkTargetMap` maps the final target of each file link and directory link/junction
+  (resolved by the scans: `IFileSystem.ResolveSymLinkTarget`, the Windows file system reuses the
+  final path of the open made by the scan, `GetFinalPathNameByHandle`) to the project paths that
+  see it, rebuilt in the background when the trees change (or a link is replaced: ~0.2 s on the
+  large project, 44.5k file and 838 directory links, not on the path of the index updates). Each
+  batch of watcher changes is
+  expanded: a change of the target of a file link is a change of the link file; a change under the
+  target of a directory link is the same change under the link. `SymLinkTargetWatcher` watches the
+  targets outside of the projects: the directory of each file link target (not recursive), each
+  directory link target (recursive), deduplicated, at most 512 directories (logged above; 8 KB
+  notification buffers for the non-recursive ones: non-paged memory; the large project has 428), not on
+  network drives (their links are refreshed by the next scan or catch-up); its errors restart it
+  (the missed changes are found by the next scan or catch-up). The journal self-check already maps
+  the records in the targets of the directory links of the same volume (catch-up mapping), and
+  skips the file links (checked again at each catch-up): no change needed.
 - **Windows specific code (decided exception, 2026-11)**: the verification of the index cache from
   the NTFS/ReFS change journal (see "Index cache verification from the change journal") needs the
   128-bit file id of each directory and the change journal, which have no portable API. This code

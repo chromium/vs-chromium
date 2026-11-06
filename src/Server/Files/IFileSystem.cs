@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using VsChromium.Core.Memory;
 
@@ -53,6 +54,27 @@ namespace VsChromium.Core.Files {
     /// final target, or of the link itself if its target doesn't exist. Null if it doesn't exist or
     /// is not a file.
     /// </summary>
+    /// <summary>
+    /// The final target of the symbolic link (or junction) <paramref name="path"/>, all the links
+    /// resolved, or null if it can't be resolved (e.g. dangling). <paramref name="allowCached"/>:
+    /// the target resolved by the last scan of the link may be returned (no disk access).
+    /// </summary>
+    string ResolveSymLinkTarget(FullPath path, bool allowCached) {
+      try {
+        System.IO.FileSystemInfo info = new System.IO.FileInfo(path.Value);
+        if ((int)info.Attributes == -1)
+          return null;
+        if ((info.Attributes & System.IO.FileAttributes.Directory) != 0) {
+          info = new System.IO.DirectoryInfo(path.Value);
+        }
+        var target = info.ResolveLinkTarget(returnFinalTarget: true);
+        return target != null && target.Exists ? target.FullName : null;
+      }
+      catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException) {
+        return null;
+      }
+    }
+
     FileMetadata? GetSymLinkFileMetadata(FullPath path) {
       var info = GetFileInfoSnapshot(path);
       if (!info.Exists || !info.IsFile)

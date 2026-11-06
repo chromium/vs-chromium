@@ -125,6 +125,7 @@ namespace VsChromium.Server.FileSystem {
 
       _flushPathChangesTaskQueue = taskQueueFactory.CreateQueue("FileSystemSnapshotManager Path Changes Task Queue");
       _taskExecutor = taskQueueFactory.CreateQueue("FileSystemSnapshotManager State Change Task Queue");
+      _symLinkTargetsTaskQueue = taskQueueFactory.CreateQueue("FileSystemSnapshotManager Symbolic Link Targets Task Queue");
       _fileRegistrationTracker.ProjectListChanged += FileRegistrationTrackerOnProjectListChanged;
       _currentSnapshot = FileSystemSnapshot.Empty;
       _directoryChangeWatcher = directoryChangeWatcherFactory.CreateWatcher(TimeSpan.FromSeconds(2));
@@ -133,6 +134,7 @@ namespace VsChromium.Server.FileSystem {
       _directoryChangeWatcher.Paused += DirectoryChangeWatcherOnPaused;
       _directoryChangeWatcher.Resumed += DirectoryChangeWatcherOnResumed;
       _directoryChangeWatcher.RescanRequired += DirectoryChangeWatcherOnRescanRequired;
+      _symLinkTargetWatcher = new SymLinkTargetWatcher(fileSystem, DirectoryChangeWatcherOnPathsChanged);
     }
 
     public FileSystemSnapshot CurrentSnapshot {
@@ -208,6 +210,7 @@ namespace VsChromium.Server.FileSystem {
             }),
             NewSnapshot = newSnapshot,
           });
+          UpdateSymLinkTargets(newSnapshot);
         }
       });
     }
@@ -274,7 +277,88 @@ namespace VsChromium.Server.FileSystem {
       });
     }
 
+    /// <summary>
+    /// The symbolic links of the current snapshot by target (see <see cref="SymLinkTargetMap"/>):
+    /// the changes of the targets are changes of the links.
+    /// </summary>
+    private volatile SymLinkTargetMap _symLinkTargets = SymLinkTargetMap.Empty;
+    /// <summary>The project trees of <see cref="_symLinkTargets"/> (rebuilt when they change).</summary>
+    private IReadOnlyList<DirectorySnapshot> _symLinkTargetsRoots = Array.Empty<DirectorySnapshot>();
+    /// <summary>The links created, deleted or replaced since <see cref="_symLinkTargets"/> (their target is resolved again).</summary>
+    private readonly HashSet<string> _invalidatedSymLinks = new HashSet<string>(PathHelpers.FileNameComparer);
+    private readonly SymLinkTargetWatcher _symLinkTargetWatcher;
+
+    /// <summary>
+    /// Rebuilds the map of the symbolic links (and the watchers of their targets outside of the
+    /// projects) if the trees of the projects changed. Not for the trees of the index cache not
+    /// verified yet: done after their verification (it resolves the links: no disk access).
+    /// </summary>
+    private void UpdateSymLinkTargets(FileSystemSnapshot snapshot) {
+      if (snapshot.IsFromCache)
+        return;
+      // Note: In the background (~0.2 s on a 640k directory tree with 45k links): not on the path
+      // of the index updates. The changes are expanded with the previous map meanwhile.
+      _symLinkTargetsTaskQueue.Enqueue(SymLinkTargetsTaskId, token => {
+        var current = _currentSnapshot;
+        if (current.IsFromCache)
+          return;
+        lock (_symLinkTargetsLock) {
+          UpdateSymLinkTargetsLocked(current);
+        }
+      });
+    }
+
+    private static readonly TaskId SymLinkTargetsTaskId = new TaskId("SymLinkTargetsTaskId");
+    private readonly ITaskQueue _symLinkTargetsTaskQueue;
+    private readonly object _symLinkTargetsLock = new object();
+
+    private void UpdateSymLinkTargetsLocked(FileSystemSnapshot snapshot) {
+      var roots = snapshot.ProjectRoots.Select(x => x.Directory).ToList();
+      HashSet<string> invalidated;
+      lock (_invalidatedSymLinks) {
+        // Note: Rebuilt if the trees changed, or if links were replaced (e.g. a file link deleted
+        // and created again: a "changed" file, the tree is the same).
+        if (_invalidatedSymLinks.Count == 0 && roots.Count == _symLinkTargetsRoots.Count &&
+            roots.Zip(_symLinkTargetsRoots).All(x => ReferenceEquals(x.First, x.Second)))
+          return;
+        invalidated = new HashSet<string>(_invalidatedSymLinks, PathHelpers.FileNameComparer);
+        _invalidatedSymLinks.Clear();
+      }
+      var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+      var map = SymLinkTargetMap.Build(snapshot, _symLinkTargets, invalidated, (path, allowCached) => _fileSystem.ResolveSymLinkTarget(path, allowCached));
+      _symLinkTargets = map;
+      _symLinkTargetsRoots = roots;
+      var directories = map.GetTargetDirectoriesToWatch();
+      _symLinkTargetWatcher.Update(directories);
+      if (map.FileLinkCount + map.DirectoryLinkCount > 0) {
+        Logger.LogInfo("FileSystemSnapshotManager: {0:n0} file and {1:n0} directory symbolic links ({2:n0} target directories " +
+                       "outside of the projects), mapped in {3:n0} ms.", map.FileLinkCount, map.DirectoryLinkCount, directories.Count,
+          stopwatch.ElapsedMilliseconds);
+      }
+    }
+
+    /// <summary>
+    /// Adds the changes of the paths of the symbolic links that see the changed paths (targets), and
+    /// records the links whose own path changed (their target is resolved again).
+    /// </summary>
+    private IList<PathChangeEntry> ExpandSymLinkChanges(IList<PathChangeEntry> changes) {
+      var map = _symLinkTargets;
+      foreach (var change in changes) {
+        // Note: A link replaced (deleted and created again) can be a "changed" file.
+        var links = change.ChangeKind == PathChangeKind.Changed
+          ? (map.IsLink(change.Path) ? new[] { SymLinkTargetMap.Normalize(change.Path.Value) } : Array.Empty<string>())
+          : map.LinksAtOrUnder(change.Path);
+        foreach (var link in links) {
+          lock (_invalidatedSymLinks) {
+            _invalidatedSymLinks.Add(link);
+          }
+        }
+      }
+      return map.ExpandAll(changes);
+    }
+
     private void DirectoryChangeWatcherOnPathsChanged(IList<PathChangeEntry> changes) {
+      changes = ExpandSymLinkChanges(changes);
       _taskExecutor.ExecuteAsync(token => {
         if (!_isPaused) {
           _pathsChangedQueue.Enqueue(changes);
@@ -355,6 +439,8 @@ namespace VsChromium.Server.FileSystem {
             FileSystemSnapshot = _currentSnapshot,
             ChangedFiles = validationResult.ModifiedFiles.ToReadOnlyCollection()
           });
+          // Links replaced (the tree is the same): their targets are resolved again.
+          UpdateSymLinkTargets(_currentSnapshot);
           return;
 
         case FileSystemValidationResultKind.VariousFileChanges:
@@ -421,6 +507,8 @@ namespace VsChromium.Server.FileSystem {
             FullPathChanges = pathChanges,
             NewSnapshot = newSnapshot
           });
+
+          UpdateSymLinkTargets(newSnapshot);
 
           // Note: After the event, so that the index of the cached trees is loaded first (same task
           // queue).
@@ -566,6 +654,7 @@ namespace VsChromium.Server.FileSystem {
             NewSnapshot = newSnapshot,
             CacheUnchanged = cacheUnchanged,
           });
+          UpdateSymLinkTargets(newSnapshot);
         }
       });
     }

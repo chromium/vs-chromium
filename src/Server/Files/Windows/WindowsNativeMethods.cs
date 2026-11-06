@@ -158,6 +158,39 @@ namespace VsChromium.Core.Files.Windows {
 
     public const uint DRIVE_REMOTE = 4;
 
+    [LibraryImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", SetLastError = true)]
+    public static partial uint GetFinalPathNameByHandle(SafeFileHandle file, char* filePath, uint filePathLength, uint flags);
+
+    /// <summary>
+    /// The final path of an open file or directory (symbolic links and junctions resolved), without
+    /// the <c>\\?\</c> prefix, or null.
+    /// </summary>
+    public static string GetFinalPath(SafeFileHandle handle) {
+      Span<char> stackBuffer = stackalloc char[512];
+      string result;
+      fixed (char* buffer = stackBuffer) {
+        var length = GetFinalPathNameByHandle(handle, buffer, (uint)stackBuffer.Length, 0);
+        if (length == 0)
+          return null;
+        if (length < stackBuffer.Length) {
+          result = new string(buffer, 0, (int)length);
+        } else {
+          var heapBuffer = new char[length + 1];
+          fixed (char* heap = heapBuffer) {
+            length = GetFinalPathNameByHandle(handle, heap, (uint)heapBuffer.Length, 0);
+            if (length == 0 || length >= heapBuffer.Length)
+              return null;
+            result = new string(heap, 0, (int)length);
+          }
+        }
+      }
+      if (result.StartsWith(@"\\?\UNC\", StringComparison.Ordinal))
+        return @"\\" + result.Substring(8);
+      if (result.StartsWith(@"\\?\", StringComparison.Ordinal))
+        return result.Substring(4);
+      return result;
+    }
+
     /// <summary>
     /// The path to pass to the Win32 APIs: long paths (more than MAX_PATH characters) need the
     /// <c>\\?\</c> prefix (the .NET APIs add it themselves).

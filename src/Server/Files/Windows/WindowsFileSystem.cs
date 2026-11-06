@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -34,7 +35,9 @@ namespace VsChromium.Core.Files.Windows {
       try {
         // Note: Follows symbolic links and junctions (no FILE_FLAG_OPEN_REPARSE_POINT).
         using (var handle = OpenHandle(path.Value, FILE_READ_ATTRIBUTES)) {
-          return TryGetFileId(handle, out volumeSerialNumber, out fileId);
+          var result = TryGetFileId(handle, out volumeSerialNumber, out fileId);
+          RecordFinalPath(path.Value, handle);
+          return result;
         }
       }
       catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
@@ -145,7 +148,44 @@ namespace VsChromium.Core.Files.Windows {
           return false;
         isDirectory = standard.Directory != 0;
         metadata = new FileMetadata(DateTime.FromFileTimeUtc(Math.Max(0, basic.LastWriteTime)), standard.EndOfFile);
+        if (followLink) {
+          RecordFinalPath(path, handle);
+        }
         return true;
+      }
+    }
+
+    /// <summary>
+    /// The final targets of the symbolic links resolved by the scans (link path => final path),
+    /// reused by <see cref="ResolveSymLinkTarget"/> (no other open of the link).
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, string> SymLinkTargets = new ConcurrentDictionary<string, string>(PathHelpers.FileNameComparer);
+
+    private static void RecordFinalPath(string path, SafeFileHandle handle) {
+      var target = GetFinalPath(handle);
+      if (target != null) {
+        SymLinkTargets[path] = target;
+      }
+    }
+
+    public string ResolveSymLinkTarget(FullPath path, bool allowCached) {
+      if (allowCached && SymLinkTargets.TryGetValue(path.Value, out var cached))
+        return cached;
+      var handle = CreateFile(ToNativePath(path.Value), FILE_READ_ATTRIBUTES, FILE_SHARE_ALL, IntPtr.Zero, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS, IntPtr.Zero);
+      using (handle) {
+        if (handle.IsInvalid) {
+          // E.g. dangling link.
+          SymLinkTargets.TryRemove(path.Value, out _);
+          return null;
+        }
+        var target = GetFinalPath(handle);
+        if (target == null) {
+          SymLinkTargets.TryRemove(path.Value, out _);
+        } else {
+          SymLinkTargets[path.Value] = target;
+        }
+        return target;
       }
     }
 

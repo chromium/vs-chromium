@@ -168,5 +168,18 @@ namespace VsChromium.Tests.VsChromium.ServerDashboard {
       Assert.AreEqual(false, both.TrigramFiltersEnabled);
       Assert.AreEqual(true, both.CacheEnabled);
     }
+
+    [TestMethod]
+    public void WatchesTheExternalLinkTargetsOfAProjectOnlyIfEnabled() {
+      Assert.AreEqual(false, ProjectOptionsStore.GetEffectiveOptions(new ProjectOptionsOverride(), false, true).WatchExternalLinkTargets,
+        "Off by default");
+      Assert.AreEqual(true, ProjectOptionsStore.GetEffectiveOptions(new ProjectOptionsOverride(), false, true, true).WatchExternalLinkTargets);
+      var store = new ProjectOptionsStore(_file);
+      store.Update("C:\\a", o => o.WatchExternalLinkTargets = true);
+      var value = new ProjectOptionsStore(_file).Get("C:\\a");
+      Assert.IsFalse(value.IsEmpty);
+      Assert.AreEqual(true, value.WatchExternalLinkTargets);
+      Assert.AreEqual(true, ProjectOptionsStore.GetEffectiveOptions(value, false, true, false).WatchExternalLinkTargets);
+    }
   }
 }

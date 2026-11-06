@@ -10,14 +10,18 @@ using VsChromium.ToolsOptions;
 namespace VsChromium.Settings {
   /// <summary>The values of the "Index Server" options page at a point in time (immutable).</summary>
   public sealed class IndexServerSettings {
-    public IndexServerSettings(bool trigramFiltersEnabled, bool cacheEnabled, string cacheDirectory) {
+    public IndexServerSettings(bool trigramFiltersEnabled, bool cacheEnabled, string cacheDirectory,
+                               bool watchExternalLinkTargets = false) {
       TrigramFiltersEnabled = trigramFiltersEnabled;
       CacheEnabled = cacheEnabled;
       CacheDirectory = cacheDirectory ?? "";
+      WatchExternalLinkTargets = watchExternalLinkTargets;
     }
 
     public bool TrigramFiltersEnabled { get; }
     public bool CacheEnabled { get; }
+    /// <summary>Default of the projects: watch the targets of the symbolic links outside of the project roots.</summary>
+    public bool WatchExternalLinkTargets { get; }
     public string CacheDirectory { get; }
   }
 
@@ -82,7 +86,8 @@ namespace VsChromium.Settings {
 
     private void Refresh() {
       var page = _packageProvider.Package.GetToolsOptionsPage<IndexServerOptions>();
-      _settings = new IndexServerSettings(page.TrigramFiltersEnabled, page.CacheEnabled, page.CacheDirectory);
+      _settings = new IndexServerSettings(page.TrigramFiltersEnabled, page.CacheEnabled, page.CacheDirectory,
+        page.WatchExternalLinkTargets);
     }
   }
 }

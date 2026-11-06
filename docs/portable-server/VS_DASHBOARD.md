@@ -23,7 +23,7 @@ The "VsChromium Server" tool window of the Visual Studio extension hosts the ser
 | `openProjectCacheFolder` | Resolves the directory with `project/details` (the page never sends a path to open) |
 | `clearCache`, `rebuildProject` | Confirmation (message box), then `project/clearCache` / `index/clearCache` / `project/rebuild` |
 | `setTrigramFiltersSetting` | The default of the options page |
-| `setProjectTrigramFilters`, `setProjectCacheEnabled` | Per project override (see below); disabling the cache of a project asks for a confirmation (its cache is deleted) |
+| `setProjectTrigramFilters`, `setProjectCacheEnabled`, `setProjectWatchExternalLinkTargets` | Per project override (see below); disabling the cache of a project asks for a confirmation (its cache is deleted) |
 | `copyToClipboard` | Copies an ignore pattern from the project disk usage explorer to the clipboard |
 | `addIgnorePattern` | Confirmation (message box showing the exact pattern and `[SourceExplorer.ignore]` or `[SearchableFiles.ignore]`), then `project/addIgnorePattern` (updates `vs-chromium-project.txt` and triggers a rescan) |
 
@@ -31,7 +31,7 @@ The "VsChromium Server" tool window of the Visual Studio extension hosts the ser
 
 Visual Studio has no per folder settings like VS Code:
 
-- **Defaults**: "Tools > Options > VS Chromium > Index Server": trigram filters (off), index cache (on), cache directory (empty: default; applied when the server starts, the dashboard shows "applied when the server restarts" when it differs from the running server).
+- **Defaults**: "Tools > Options > VS Chromium > Index Server": trigram filters (off), index cache (on), watch the targets of symbolic links outside the project (off: their changes are picked up when the server restarts; the dashboard shows a warning and a checkbox per project when it has such links), cache directory (empty: default; applied when the server starts, the dashboard shows "applied when the server restarts" when it differs from the running server).
 - **Per project overrides** (set from the dashboard): stored per user in `%LOCALAPPDATA%\VsChromium\ProjectOptions.json`, by project root path (case-insensitive). VsChromium projects are directories, not solutions: the same project gets the same options whatever solution is open (and without solution).
 - `ProjectOptionsService` sends `project/setOptions` (override, otherwise default) for the projects known to the server when it starts, after each `index/loaded` (new projects) and when the options change.
 

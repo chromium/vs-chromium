@@ -14,19 +14,23 @@ namespace VsChromium.Features.ServerDashboard {
   public class ProjectOptionsOverride {
     public bool? TrigramFiltersEnabled { get; set; }
     public bool? CacheEnabled { get; set; }
+    /// <summary>Watch the targets of the symbolic links outside of the project roots.</summary>
+    public bool? WatchExternalLinkTargets { get; set; }
 
-    public bool IsEmpty => TrigramFiltersEnabled == null && CacheEnabled == null;
+    public bool IsEmpty => TrigramFiltersEnabled == null && CacheEnabled == null && WatchExternalLinkTargets == null;
   }
 
   /// <summary>The options sent to the server for a project ("project/setOptions").</summary>
   public struct EffectiveProjectOptions {
-    public EffectiveProjectOptions(bool trigramFiltersEnabled, bool cacheEnabled) {
+    public EffectiveProjectOptions(bool trigramFiltersEnabled, bool cacheEnabled, bool watchExternalLinkTargets = false) {
       TrigramFiltersEnabled = trigramFiltersEnabled;
       CacheEnabled = cacheEnabled;
+      WatchExternalLinkTargets = watchExternalLinkTargets;
     }
 
     public bool TrigramFiltersEnabled { get; }
     public bool CacheEnabled { get; }
+    public bool WatchExternalLinkTargets { get; }
   }
 
   /// <summary>
@@ -56,7 +60,11 @@ namespace VsChromium.Features.ServerDashboard {
       lock (_lock) {
         ProjectOptionsOverride value;
         if (Load().TryGetValue(projectPath, out value)) {
-          return new ProjectOptionsOverride { TrigramFiltersEnabled = value.TrigramFiltersEnabled, CacheEnabled = value.CacheEnabled };
+          return new ProjectOptionsOverride {
+            TrigramFiltersEnabled = value.TrigramFiltersEnabled,
+            CacheEnabled = value.CacheEnabled,
+            WatchExternalLinkTargets = value.WatchExternalLinkTargets,
+          };
         }
         return new ProjectOptionsOverride();
       }
@@ -88,10 +96,12 @@ namespace VsChromium.Features.ServerDashboard {
     /// override equal to the default is kept (the default may change later).
     /// </summary>
     public static EffectiveProjectOptions GetEffectiveOptions(ProjectOptionsOverride projectOverride,
-                                                              bool defaultTrigramFilters, bool defaultCacheEnabled) {
+                                                              bool defaultTrigramFilters, bool defaultCacheEnabled,
+                                                              bool defaultWatchExternalLinkTargets = false) {
       return new EffectiveProjectOptions(
         projectOverride?.TrigramFiltersEnabled ?? defaultTrigramFilters,
-        projectOverride?.CacheEnabled ?? defaultCacheEnabled);
+        projectOverride?.CacheEnabled ?? defaultCacheEnabled,
+        projectOverride?.WatchExternalLinkTargets ?? defaultWatchExternalLinkTargets);
     }
 
     private Dictionary<string, ProjectOptionsOverride> Load() {

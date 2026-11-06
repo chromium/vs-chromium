@@ -106,6 +106,10 @@ namespace VsChromium.Features.ServerDashboard {
           _projectOptions.Store.Update(projectPath, o => o.CacheEnabled = enabled);
           await _projectOptions.ApplyAsync();
           break;
+        case "setProjectWatchExternalLinkTargets":
+          _projectOptions.Store.Update(projectPath, o => o.WatchExternalLinkTargets = enabled);
+          await _projectOptions.ApplyAsync();
+          break;
         case "clearCache":
           await ClearCacheAsync(projectPath);
           break;

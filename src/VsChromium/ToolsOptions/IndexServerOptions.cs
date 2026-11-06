@@ -32,6 +32,7 @@ namespace VsChromium.ToolsOptions {
     private void ResetValues() {
       TrigramFiltersEnabled = false;
       CacheEnabled = true;
+      WatchExternalLinkTargets = false;
       CacheDirectory = "";
     }
 
@@ -55,6 +56,15 @@ namespace VsChromium.ToolsOptions {
                  "Disabling it deletes the cache of these projects.")]
     [DefaultValue(true)]
     public bool CacheEnabled { get; set; }
+
+    [Category(ProjectsCategory)]
+    [DisplayName("Watch the targets of symbolic links outside the project")]
+    [Description("Watch the targets of the symbolic links that point outside of the project, so that changes to these targets " +
+                 "update the index while the server runs. Costs one directory watcher per target directory (~8 KB of kernel " +
+                 "memory each, at most 512). Disabled: changes to these targets are picked up when the server restarts. Default " +
+                 "of the projects without their own value (set from the server dashboard).")]
+    [DefaultValue(false)]
+    public bool WatchExternalLinkTargets { get; set; }
 
     [Category(CacheCategory)]
     [DisplayName("Cache directory")]

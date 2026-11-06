@@ -68,11 +68,12 @@ namespace VsChromium.Features.ServerDashboard {
         var settings = _settingsProvider.Settings;
         foreach (var project in tree.Projects) {
           var options = ProjectOptionsStore.GetEffectiveOptions(Store.Get(project.RootPath),
-            settings.TrigramFiltersEnabled, settings.CacheEnabled);
+            settings.TrigramFiltersEnabled, settings.CacheEnabled, settings.WatchExternalLinkTargets);
           await client.ProjectSetOptionsAsync(new SetProjectOptionsParams {
             ProjectPath = project.RootPath,
             TrigramFiltersEnabled = options.TrigramFiltersEnabled,
             CacheEnabled = options.CacheEnabled,
+            WatchExternalLinkTargets = options.WatchExternalLinkTargets,
           }).ConfigureAwait(false);
         }
       }

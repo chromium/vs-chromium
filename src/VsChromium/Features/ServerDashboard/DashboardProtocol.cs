@@ -50,6 +50,7 @@ namespace VsChromium.Features.ServerDashboard {
       "openCacheSettings",
       "rebuildProject",
       "setProjectCacheEnabled",
+      "setProjectWatchExternalLinkTargets",
       "openProjectCacheFolder",
       "copyToClipboard",
       "addIgnorePattern",

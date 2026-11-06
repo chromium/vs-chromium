@@ -32,6 +32,13 @@ namespace VsChromium.Server.FileSystem {
     public int SymLinkFileCount { get; set; }
     /// <summary>The time of the scan or of the catch-up (journal read included).</summary>
     public double ElapsedMs { get; set; }
+    /// <summary>
+    /// The change journal checkpoint of the cache must be updated, even if the tree is unchanged:
+    /// after a full scan with a new checkpoint, or a catch-up that read more than half of the
+    /// journal (the checkpoint of the cache would be overwritten soon: the next start would scan
+    /// everything).
+    /// </summary>
+    public bool CheckpointNeedsSave { get; set; }
 
     public override string ToString() {
       var result = new StringBuilder();

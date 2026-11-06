@@ -102,6 +102,7 @@ namespace VsChromium.Server.FileSystem.Builder {
                 if (options != null && options.Verifications.TryGetValue(project.RootPath, out var fullScanVerification)) {
                   fullScanVerification.Method = VerificationMethod.FullScan;
                   fullScanVerification.ElapsedMs = scanMs;
+                  fullScanVerification.CheckpointNeedsSave = checkpoint != null;
                 }
                 return new ProjectRootSnapshot(project, scannedRoot, new ChangeJournalCheckpointHolder(checkpoint));
               })
@@ -182,6 +183,7 @@ namespace VsChromium.Server.FileSystem.Builder {
         return null;
       }
       verification.RecordCount = mapper.RecordCount;
+      verification.CheckpointNeedsSave = end.Usn - checkpoint.Usn > (end.Usn - query.FirstUsn) / 2;
 
       var statistics = new CatchUpStatistics();
       var root = builder.CatchUp(oldRoot.Directory, mapper.ChangedDirectories, statistics);

@@ -14,6 +14,7 @@ using VsChromium.Core.Logging;
 using VsChromium.Server.FileSystem;
 using VsChromium.Server.FileSystemContents;
 using VsChromium.Server.FileSystemDatabase;
+using VsChromium.Server.FileSystemNames;
 
 namespace VsChromium.Server.Cache {
   /// <summary>
@@ -90,7 +91,22 @@ namespace VsChromium.Server.Cache {
     /// <see cref="GetDiskState"/>.
     /// </summary>
     IndexCacheProjectState GetProjectState(FullPath rootPath);
+
+    /// <summary>
+    /// Computes the change journal checkpoint saved with the tree of a project (the journal
+    /// self-check, see <see cref="ChangeJournalSelfCheck"/>), or null: the checkpoint of the tree
+    /// is saved.
+    /// </summary>
+    IndexCacheCheckpointProvider CheckpointProvider { get; set; }
   }
+
+  /// <summary>
+  /// The change journal checkpoint to save with the tree of <paramref name="projectRoot"/>:
+  /// <paramref name="savedMetadata"/> returns the metadata saved for a file (from its metadata in
+  /// the tree).
+  /// </summary>
+  public delegate ChangeJournalCheckpoint IndexCacheCheckpointProvider(ProjectRootSnapshot projectRoot,
+    Func<FileName, FileMetadata, FileMetadata> savedMetadata, CancellationToken cancellationToken);
 
   /// <summary>The state of the cache of a project (see <see cref="IIndexCache.GetProjectState"/>).</summary>
   public sealed class IndexCacheProjectState {
@@ -172,6 +188,8 @@ namespace VsChromium.Server.Cache {
     }
 
     public bool IsEnabled => _options.IsEnabled;
+
+    public IndexCacheCheckpointProvider CheckpointProvider { get; set; }
 
     public ProjectIndexCache GetProjectCache(FullPath rootPath) {
       if (!IsEnabled)
@@ -341,7 +359,7 @@ namespace VsChromium.Server.Cache {
           _writingProject = cache.RootPath;
           try {
             result = cache.Write(GetWriteDirectories(projectRoot, database), projectRoot.Project.VersionHash,
-              projectRoot.Checkpoint, cancellationToken);
+              GetCheckpoint(projectRoot, database, cancellationToken), cancellationToken);
           }
           catch (OperationCanceledException) {
             lock (_lock) {
@@ -384,6 +402,36 @@ namespace VsChromium.Server.Cache {
         Logger.LogInfo("Writing the index cache was cancelled.");
         throw;
       }
+    }
+
+    /// <summary>
+    /// The change journal checkpoint to save with the tree of a project: from the journal
+    /// self-check (<see cref="CheckpointProvider"/>), or the checkpoint of the tree.
+    /// </summary>
+    private ChangeJournalCheckpoint GetCheckpoint(ProjectRootSnapshot projectRoot, FileDatabaseSnapshot database,
+                                                  CancellationToken cancellationToken) {
+      var provider = CheckpointProvider;
+      if (provider == null || projectRoot.Checkpoint == null)
+        return projectRoot.Checkpoint;
+      try {
+        return provider(projectRoot, (file, scanMetadata) => GetSavedMetadata(database, file, scanMetadata), cancellationToken);
+      }
+      catch (Exception e) when (e is not OperationCanceledException) {
+        // The checkpoint of the tree is always valid.
+        Logger.LogWarn(e, "Error checking the change journal of \"{0}\".", projectRoot.Project.RootPath);
+        return projectRoot.Checkpoint;
+      }
+    }
+
+    /// <summary>
+    /// The metadata of a file saved in the tree (see <see cref="ProjectIndexCache.Write(IEnumerable{IndexCacheWriteDirectory}, string, ChangeJournalCheckpoint, CancellationToken)"/>):
+    /// the metadata of the read of its contents if known, otherwise of the scan.
+    /// </summary>
+    private static FileMetadata GetSavedMetadata(FileDatabaseSnapshot database, FileName fileName, FileMetadata scanMetadata) {
+      var contents = database.TryGetFileIndex(fileName, out var index) ? database.GetContents(index) : null;
+      if (contents == null || contents.FileLength < 0)
+        return scanMetadata;
+      return new FileMetadata(contents.UtcLastModified, contents.FileLength);
     }
 
     /// <summary>

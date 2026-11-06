@@ -103,8 +103,14 @@ namespace VsChromium.Server.FileSystem {
       IDirectoryChangeWatcherFactory directoryChangeWatcherFactory,
       ITaskQueueFactory taskQueueFactory,
       ILongRunningFileSystemTaskQueue longRunningFileSystemTaskQueue,
-      IIndexCache indexCache = null) {
+      IIndexCache indexCache = null,
+      IChangeJournal changeJournal = null) {
       _indexCache = indexCache;
+      if (indexCache != null && changeJournal != null) {
+        // The journal self-check of the saves of the index cache: the differences it finds are
+        // missed changes, applied as changes of the directory watcher.
+        indexCache.CheckpointProvider = new ChangeJournalSelfCheck(changeJournal, fileSystem, DirectoryChangeWatcherOnPathsChanged).Run;
+      }
       _fileSystemNameFactory = fileSystemNameFactory;
       _fileSystem = fileSystem;
       _fileSystemSnapshotBuilder = fileSystemSnapshotBuilder;
@@ -527,6 +533,9 @@ namespace VsChromium.Server.FileSystem {
                 var projectChanges = SnapshotDiff.Compute(root, oldRoot.Directory, newRoot.Directory, project.FilesToReload,
                   cancellationToken);
                 changes.AddRange(projectChanges);
+                // Note: The cache is saved if its change journal checkpoint must be updated (e.g.
+                // after a full scan, so that the next start uses the journal).
+                cacheUnchanged &= !(options.Verifications.TryGetValue(root, out var verification) && verification.CheckpointNeedsSave);
                 cacheUnchanged &= project.FilesToReloadAreLarge &&
                   projectChanges.Count == project.FilesToReload.Count &&
                   SnapshotDiff.Compute(root, oldRoot.Directory, newRoot.Directory, null, cancellationToken).Count == 0;

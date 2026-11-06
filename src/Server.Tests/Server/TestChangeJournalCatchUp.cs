@@ -384,6 +384,106 @@ namespace VsChromium.Tests.Server {
       Assert.IsNull(Root(snapshot).Checkpoint, "No checkpoint without journal");
     }
 
+    // Journal self-check of the saves of the index cache (ChangeJournalSelfCheck)
+
+    private (ChangeJournalCheckpoint Checkpoint, ChangeJournalSelfCheckResult Result, List<PathChangeEntry> Reported) SelfCheck(
+      ProjectRootSnapshot root, Func<FileName, FileMetadata, FileMetadata> savedMetadata = null, IChangeJournal journal = null) {
+      var reported = new List<PathChangeEntry>();
+      var check = new ChangeJournalSelfCheck(journal ?? new WindowsChangeJournal(), _fileSystem, changes => reported.AddRange(changes));
+      var checkpoint = check.Run(root, savedMetadata ?? ((file, metadata) => metadata), CancellationToken.None);
+      return (checkpoint, check.LastResult, reported);
+    }
+
+    private FileSystemSnapshot ApplyChanges(FileSystemSnapshot old, params PathChangeEntry[] changes) {
+      var builder = new FileSystemSnapshotBuilder(_fileSystem, new NullProgressTrackerFactory(), _workerPool, new WindowsChangeJournal());
+      return builder.Compute(new FileSystemNameFactory(), old, new FullPathChanges(changes), new[] { _project }, 3, CancellationToken.None);
+    }
+
+    private PathChangeEntry Change(string relativePath, PathChangeKind kind, PathKind pathKind = PathKind.File) {
+      return new PathChangeEntry(new FullPath(_root), new RelativePath(relativePath), kind, pathKind);
+    }
+
+    [TestMethod]
+    public void SelfCheckAdvancesTheCheckpointWhenTheTreeIsUpToDate() {
+      var old = FullScan();
+      var checkpoint = Root(old).Checkpoint;
+      WriteFile(Path.Combine("a", "new.txt"), "new");
+      WriteFile(Path.Combine("ignored", "new.txt"), "ignored");
+      // The change is applied (as by the directory watcher).
+      var updated = ApplyChanges(old, Change(Path.Combine("a", "new.txt"), PathChangeKind.Created));
+      Assert.AreSame(Root(old).CheckpointHolder, Root(updated).CheckpointHolder, "Incremental updates share the checkpoint");
+
+      var (newCheckpoint, result, reported) = SelfCheck(Root(updated));
+      Assert.AreEqual(0, reported.Count, string.Join(", ", reported));
+      Assert.IsNull(result.FailureReason);
+      Assert.IsTrue(newCheckpoint.Usn > checkpoint.Usn);
+      Assert.AreEqual(1, result.ListedDirectoryCount, "a");
+      Assert.AreEqual(newCheckpoint, Root(updated).Checkpoint, "The checkpoint of the tree advanced");
+
+      // The next catch-up starts from there: nothing to list again.
+      var (_, verification) = Verify(updated, newCheckpoint);
+      Assert.AreEqual(VerificationMethod.ChangeJournal, verification.Method);
+      Assert.AreEqual(0, verification.ListedDirectoryCount, verification.ToString());
+    }
+
+    [TestMethod]
+    public void SelfCheckReportsMissedChangesAndKeepsTheCheckpoint() {
+      var old = FullScan();
+      var checkpoint = Root(old).Checkpoint;
+      // Changes not applied to the tree (missed by the directory watcher).
+      WriteFile(Path.Combine("a", "new.txt"), "new");
+      System.IO.File.Delete(Path.Combine(_root, "d", "file1.txt"));
+      WriteFile(Path.Combine("d", "file2.txt"), "other size than before", OldTime.AddMinutes(1));
+      System.IO.Directory.CreateDirectory(Path.Combine(_root, "newdir"));
+      System.IO.Directory.Delete(Path.Combine(_root, "c"), recursive: true);
+      System.IO.Directory.CreateDirectory(Path.Combine(_root, "c"));
+
+      var (newCheckpoint, result, reported) = SelfCheck(Root(old));
+      Assert.AreEqual(checkpoint, newCheckpoint, "The checkpoint is kept");
+      Assert.AreEqual(checkpoint, Root(old).Checkpoint);
+      var descriptions = reported.Select(x => $"{x.ChangeKind} {x.PathKind} {x.RelativePath.Value}").OrderBy(x => x).ToList();
+      // Note: The files of the deleted directory "c" can be reported deleted too (their records
+      // mark the deleted directory, listed again by its path): harmless.
+      var withoutFilesOfC = descriptions.Where(x => !x.StartsWith("Deleted File c" + Path.DirectorySeparatorChar)).ToList();
+      CollectionAssert.AreEqual(new[] {
+        $"Changed File {Path.Combine("d", "file2.txt")}",
+        "Created Directory c",
+        "Created Directory newdir",
+        $"Created File {Path.Combine("a", "new.txt")}",
+        "Deleted Directory c",
+        $"Deleted File {Path.Combine("d", "file1.txt")}",
+      }, withoutFilesOfC, string.Join(", ", descriptions));
+      Assert.AreEqual(result.Changes.Count, reported.Count);
+    }
+
+    [TestMethod]
+    public void SelfCheckComparesTheSavedMetadataOfTheFiles() {
+      var old = FullScan();
+      var path = Path.Combine("a", "file1.txt");
+      WriteFile(path, "edited contents, longer than before", OldTime.AddMinutes(2));
+      var edited = new FileMetadata(OldTime.AddMinutes(2), "edited contents, longer than before".Length);
+      // The edit was not read: a difference.
+      Assert.AreEqual(1, SelfCheck(Root(old)).Reported.Count);
+      // The edit was read (the cache saves the metadata of the read): no difference.
+      var (checkpoint, _, reported) = SelfCheck(Root(old), (file, metadata) => file.Name == "file1.txt" && file.Parent.Name == "a" ? edited : metadata);
+      Assert.AreEqual(0, reported.Count, string.Join(", ", reported));
+      Assert.AreEqual(checkpoint, Root(old).Checkpoint);
+    }
+
+    [TestMethod]
+    public void SelfCheckKeepsTheCheckpointIfTheJournalCantBeRead() {
+      var old = FullScan();
+      var checkpoint = Root(old).Checkpoint;
+      WriteFile(Path.Combine("a", "new.txt"), "new");
+      var (newCheckpoint, result, reported) = SelfCheck(Root(old), journal: new InactiveJournal());
+      Assert.AreEqual(checkpoint, newCheckpoint);
+      Assert.AreEqual("the change journal is not active", result.FailureReason);
+      Assert.AreEqual(0, reported.Count);
+      (newCheckpoint, result, _) = SelfCheck(Root(old), journal: new FailingReadJournal(new WindowsChangeJournal()));
+      Assert.AreEqual(checkpoint, newCheckpoint);
+      Assert.AreEqual("read error", result.FailureReason);
+    }
+
     /// <summary>The same tree: names, metadata, symbolic links, directory ids.</summary>
     private static void AssertSameTree(DirectorySnapshot expected, DirectorySnapshot actual) {
       var path = expected.DirectoryName.RelativePath.Value ?? "<root>";

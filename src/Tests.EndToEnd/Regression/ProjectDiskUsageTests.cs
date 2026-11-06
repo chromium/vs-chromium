@@ -143,6 +143,100 @@ public class ProjectDiskUsageTests {
     }
   }
 
+  /// <summary>
+  /// Symbolic links (inside, outside, dangling): listed with their target, not counted in the
+  /// sizes. Inconclusive if symbolic links can't be created.
+  /// </summary>
+  [TestMethod]
+  [Timeout(2 * 60 * 1000, CooperativeCancellation = true)]
+  public async Task DirectorySizesOfSymbolicLinks() {
+    var parent = Path.Combine(Path.GetTempPath(), "VsChromiumDiskUsageLinksE2E-" + Guid.NewGuid().ToString("N"));
+    var root = Path.Combine(parent, "project");
+    var outside = Path.Combine(parent, "outside");
+    Directory.CreateDirectory(Path.Combine(root, "src"));
+    Directory.CreateDirectory(Path.Combine(outside, "dir"));
+    try {
+      var projectFile = Path.Combine(root, "vs-chromium-project.txt");
+      File.WriteAllText(projectFile, "[SourceExplorer.ignore]\n\n[SearchableFiles.include]\n*\n\n[SearchableFiles.ignore]\n",
+        new UTF8Encoding(false));
+      File.WriteAllText(Path.Combine(root, "src", "real.cc"), new string('r', 100));
+      File.WriteAllText(Path.Combine(outside, "out.cc"), new string('o', 50));
+      File.WriteAllText(Path.Combine(outside, "dir", "d.cc"), new string('d', 70));
+      try {
+        File.CreateSymbolicLink(Path.Combine(root, "src", "link.cc"), Path.Combine(root, "src", "real.cc"));
+        Directory.CreateSymbolicLink(Path.Combine(root, "dirlink"), Path.Combine(root, "src"));
+        File.CreateSymbolicLink(Path.Combine(root, "outfile.cc"), Path.Combine(outside, "out.cc"));
+        Directory.CreateSymbolicLink(Path.Combine(root, "outdir"), Path.Combine(outside, "dir"));
+        File.CreateSymbolicLink(Path.Combine(root, "dangling.cc"), Path.Combine(root, "missing.cc"));
+      }
+      catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+        Assert.Inconclusive("Symbolic links can't be created: " + e.Message);
+      }
+
+      await using var server = await JsonRpcServerClient.StartAsync(TestSettings.ServerPath);
+      await server.RequestAsync(ServerProtocol.RegisterFile(projectFile));
+      await WaitForConditionAsync(async () => {
+        var status = (await server.RequestAsync(ServerProtocol.GetIndexStatus())).Data;
+        return status["projectCount"]!.GetValue<int>() == 1 && status["status"]!.GetValue<string>() == "idle" &&
+               status["fileCount"]!.GetValue<int>() >= 5;
+      }, "project loaded");
+
+      var sizes = (await server.RequestAsync(ServerProtocol.GetDirectorySizes(root, ""))).Data;
+      TestContext.WriteLine(sizes.ToJsonString());
+      var projectFileLength = new FileInfo(projectFile).Length;
+      Assert.AreEqual(100 + projectFileLength, sizes["totals"]!["totalBytes"]!.GetValue<long>(), "Only the real files");
+      Assert.AreEqual(2L, sizes["totals"]!["fileCount"]!.GetValue<long>());
+      var children = sizes["children"]!.AsArray().ToDictionary(x => x!["name"]!.GetValue<string>(), x => x!);
+      Assert.AreEqual(100L, children["src"]["totalBytes"]!.GetValue<long>(), "src/link.cc not counted");
+
+      JsonNode Link(string name) {
+        var entry = children[name];
+        Assert.AreEqual(0L, entry["totalBytes"]!.GetValue<long>(), name);
+        Assert.AreEqual(0L, entry["fileCount"]!.GetValue<long>(), name);
+        Assert.IsNotNull(entry["symbolicLink"], name);
+        return entry["symbolicLink"]!;
+      }
+      var dirLink = Link("dirlink");
+      Assert.AreEqual("directory", dirLink["kind"]!.GetValue<string>());
+      Assert.AreEqual(root, dirLink["targetProjectPath"]!.GetValue<string>());
+      Assert.AreEqual("src", dirLink["targetRelativePath"]!.GetValue<string>());
+      Assert.AreEqual(100L, dirLink["targetTotalBytes"]!.GetValue<long>(), dirLink.ToJsonString());
+      Assert.AreEqual("/dirlink/", children["dirlink"]["pattern"]!.GetValue<string>());
+
+      var outFile = Link("outfile.cc");
+      Assert.AreEqual("file", outFile["kind"]!.GetValue<string>());
+      Assert.IsTrue(outFile["external"]!.GetValue<bool>());
+      Assert.AreEqual(Path.Combine(outside, "out.cc"), outFile["target"]!.GetValue<string>(), ignoreCase: true);
+      Assert.AreEqual(50L, outFile["targetTotalBytes"]!.GetValue<long>());
+      Assert.IsNull(outFile["targetProjectPath"]);
+
+      var outDir = Link("outdir");
+      Assert.IsTrue(outDir["external"]!.GetValue<bool>());
+      Assert.AreEqual(70L, outDir["targetTotalBytes"]!.GetValue<long>());
+      Assert.AreEqual(1L, outDir["targetFileCount"]!.GetValue<long>());
+
+      {
+        // Note: The scan keeps the dangling links (a file of length 0).
+        var dangling = Link("dangling.cc");
+        Assert.IsTrue(dangling["dangling"]!.GetValue<bool>(), dangling.ToJsonString());
+        Assert.AreEqual(Path.Combine(root, "missing.cc"), dangling["target"]!.GetValue<string>(), ignoreCase: true);
+      }
+
+      var srcSizes = (await server.RequestAsync(ServerProtocol.GetDirectorySizes(root, "src"))).Data;
+      var fileLink = srcSizes["children"]!.AsArray().Single(x => x!["name"]!.GetValue<string>() == "link.cc")!;
+      Assert.AreEqual(0L, fileLink["totalBytes"]!.GetValue<long>());
+      Assert.AreEqual("src/real.cc", fileLink["symbolicLink"]!["targetRelativePath"]!.GetValue<string>());
+      Assert.AreEqual(100L, fileLink["symbolicLink"]!["targetTotalBytes"]!.GetValue<long>());
+    }
+    finally {
+      try {
+        Directory.Delete(parent, recursive: true);
+      }
+      catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+      }
+    }
+  }
+
   [TestMethod]
   [TestCategory("Benchmark")]
   [Timeout(5 * 60 * 1000, CooperativeCancellation = true)]

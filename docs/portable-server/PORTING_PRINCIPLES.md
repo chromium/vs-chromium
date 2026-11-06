@@ -194,6 +194,18 @@ All new/ported projects use **SDK-style** csproj (shared settings: `Build/Common
   (the missed changes are found by the next scan or catch-up). The journal self-check already maps
   the records in the targets of the directory links of the same volume (catch-up mapping), and
   skips the file links (checked again at each catch-up): no change needed.
+- **Symbolic links in the disk usage explorer** (2026-11, `project/directorySizes`): a link entry
+  (file link, directory link or junction) has a `symbolicLink` object (kind, final target, the
+  loaded project and relative path of the target if it is in an index, external/network/dangling,
+  size of the target) and is not counted: its own sizes are 0 and the files seen through a
+  directory link are not added to the totals of its ancestors (before, they were counted twice
+  when the target is in the project). The targets come from `SymLinkTargetMap` (no disk access;
+  otherwise `IFileSystem.ResolveSymLinkTarget` with the resolution of the scan). The size of the
+  target of a directory link is the size of the files seen through the link (the project filters
+  apply). Rows: sized entries, links, excluded directories not measured, other entries of size 0.
+  The page doesn't explore a directory through its link: the target is navigable when it is in a
+  loaded project (possibly another one; the target of a file link is highlighted in its
+  directory), otherwise a badge (outside the project, network, dangling) and Copy Path.
 - **Windows specific code (decided exception, 2026-11)**: the verification of the index cache from
   the NTFS/ReFS change journal (see "Index cache verification from the change journal") needs the
   128-bit file id of each directory and the change journal, which have no portable API. This code

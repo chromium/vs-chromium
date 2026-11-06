@@ -102,6 +102,17 @@ namespace VsChromium.Protocol.Generated {
     Failed,
   }
 
+  [JsonConverter(typeof(JsonStringEnumConverter<SymbolicLinkKind>))]
+  public enum SymbolicLinkKind {
+    [JsonStringEnumMemberName("file")]
+    File,
+    /// <summary>
+    /// A directory symbolic link or a junction.
+    /// </summary>
+    [JsonStringEnumMemberName("directory")]
+    Directory,
+  }
+
   /// <summary>
   /// The benchmark features of a server started with "--bench" (in the result of "server/initialize").
   /// </summary>
@@ -1149,6 +1160,76 @@ namespace VsChromium.Protocol.Generated {
     [JsonPropertyName("pattern")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Pattern { get; set; }
+
+    /// <summary>
+    /// Set if the entry is a symbolic link (or a junction): links are not counted in the sizes (the
+    /// sizes and counts of the entry are 0, and the files seen through a directory link are not
+    /// counted in the totals of its ancestors either).
+    /// </summary>
+    [JsonPropertyName("symbolicLink")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SymbolicLinkInfo? SymbolicLink { get; set; }
+  }
+
+  /// <summary>
+  /// The target of a symbolic link of the disk usage view.
+  /// </summary>
+  public sealed partial class SymbolicLinkInfo {
+    [JsonPropertyName("kind")]
+    public SymbolicLinkKind Kind { get; set; }
+
+    /// <summary>
+    /// The final target (full path, all the links resolved); the target as written in the link if dangling ("" if unknown).
+    /// </summary>
+    [JsonPropertyName("target")]
+    public string Target { get; set; } = "";
+
+    /// <summary>
+    /// The root of the loaded project containing the target (possibly another project), if any and if
+    /// the target is in its index (directory link: the target directory; file link: its directory).
+    /// </summary>
+    [JsonPropertyName("targetProjectPath")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? TargetProjectPath { get; set; }
+
+    /// <summary>
+    /// The path of the target relative to `targetProjectPath` ("/" separators, "" for the root).
+    /// </summary>
+    [JsonPropertyName("targetRelativePath")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? TargetRelativePath { get; set; }
+
+    /// <summary>
+    /// The target is outside of the loaded project roots, on a local volume.
+    /// </summary>
+    [JsonPropertyName("external")]
+    public bool External { get; set; }
+
+    /// <summary>
+    /// The target is on a network volume.
+    /// </summary>
+    [JsonPropertyName("network")]
+    public bool Network { get; set; }
+
+    /// <summary>
+    /// The target doesn't exist.
+    /// </summary>
+    [JsonPropertyName("dangling")]
+    public bool Dangling { get; set; }
+
+    /// <summary>
+    /// The size of the target: the length of the file, or the indexed files seen through the directory link. Absent if unknown.
+    /// </summary>
+    [JsonPropertyName("targetTotalBytes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? TargetTotalBytes { get; set; }
+
+    /// <summary>
+    /// The number of files of `targetTotalBytes` (1 for a file link).
+    /// </summary>
+    [JsonPropertyName("targetFileCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? TargetFileCount { get; set; }
   }
 
   /// <summary>
@@ -1171,7 +1252,8 @@ namespace VsChromium.Protocol.Generated {
     public DirectorySizeEntry Totals { get; set; } = null!;
 
     /// <summary>
-    /// The children of the directory: directories and files, the largest first, then the excluded entries.
+    /// The children of the directory: directories and files, the largest first, then the symbolic
+    /// links, then the excluded directories not measured, then the other entries of size 0.
     /// </summary>
     [JsonPropertyName("children")]
     public List<DirectorySizeEntry> Children { get; set; } = new();
@@ -2473,6 +2555,7 @@ namespace VsChromium.Protocol.Generated {
   [JsonSerializable(typeof(ProjectDetails))]
   [JsonSerializable(typeof(DirectoryPathParams))]
   [JsonSerializable(typeof(DirectorySizeEntry))]
+  [JsonSerializable(typeof(SymbolicLinkInfo))]
   [JsonSerializable(typeof(DirectorySizes))]
   [JsonSerializable(typeof(MeasureDirectoryParams))]
   [JsonSerializable(typeof(DirectoryMeasurement))]

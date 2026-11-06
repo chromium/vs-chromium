@@ -297,6 +297,42 @@ model DirectorySizeEntry {
    * exactly by a pattern (a name containing "*").
    */
   pattern?: string;
+  /**
+   * Set if the entry is a symbolic link (or a junction): links are not counted in the sizes (the
+   * sizes and counts of the entry are 0, and the files seen through a directory link are not
+   * counted in the totals of its ancestors either).
+   */
+  symbolicLink?: SymbolicLinkInfo;
+}
+
+enum SymbolicLinkKind {
+  file,
+  /** A directory symbolic link or a junction. */
+  directory,
+}
+
+/** The target of a symbolic link of the disk usage view. */
+model SymbolicLinkInfo {
+  kind: SymbolicLinkKind;
+  /** The final target (full path, all the links resolved); the target as written in the link if dangling ("" if unknown). */
+  target: string;
+  /**
+   * The root of the loaded project containing the target (possibly another project), if any and if
+   * the target is in its index (directory link: the target directory; file link: its directory).
+   */
+  targetProjectPath?: string;
+  /** The path of the target relative to `targetProjectPath` ("/" separators, "" for the root). */
+  targetRelativePath?: string;
+  /** The target is outside of the loaded project roots, on a local volume. */
+  external: boolean;
+  /** The target is on a network volume. */
+  network: boolean;
+  /** The target doesn't exist. */
+  dangling: boolean;
+  /** The size of the target: the length of the file, or the indexed files seen through the directory link. Absent if unknown. */
+  targetTotalBytes?: int64;
+  /** The number of files of `targetTotalBytes` (1 for a file link). */
+  targetFileCount?: int64;
 }
 
 /** The sizes of a directory of a project and of its children ("project/directorySizes"). */
@@ -306,7 +342,10 @@ model DirectorySizes {
   relativePath: string;
   /** The totals of the directory (indexed files only: excluded entries not included). */
   totals: DirectorySizeEntry;
-  /** The children of the directory: directories and files, the largest first, then the excluded entries. */
+  /**
+   * The children of the directory: directories and files, the largest first, then the symbolic
+   * links, then the excluded directories not measured, then the other entries of size 0.
+   */
   children: DirectorySizeEntry[];
   /** The project file, if it can be edited ("project/addIgnorePattern"); absent otherwise (e.g. Chromium projects). */
   projectFile?: string;

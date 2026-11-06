@@ -372,6 +372,8 @@ namespace VsChromium.Server.FileSystem {
       return directories;
     }
 
+    public SymLinkTargetMap SymLinkTargets => _symLinkTargets;
+
     public SymLinkStatistics GetSymLinkStatistics(FullPath projectRoot) {
       var statistics = _symLinkTargets.GetStatistics(projectRoot);
       statistics.ExternalTargetsWatched = IsWatchingExternalLinkTargets(projectRoot);

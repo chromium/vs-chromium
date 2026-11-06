@@ -101,7 +101,7 @@ anonymous models, default values, namespace blocks, other scalar types.
 | `files/extracts` | `GetFileExtractsRequest` |
 | `project/setOptions`, `project/details` | `SetProjectOptionsRequest`, `GetProjectDetailsRequest` (new: per project options `cacheEnabled`, `watchExternalLinkTargets`; per project `memory`, `cache` state, `operations` statistics and `symbolicLinks` summary in `ProjectDetails`) |
 | `project/rebuild`, `project/clearCache` | (new: rebuild the index of a project, delete the index cache of a project) |
-| `project/directorySizes`, `project/measureDirectory`, `project/cancelMeasure`, `project/addIgnorePattern` | (new: per-directory disk usage, background size measurement of excluded directories, and adding ignore patterns to `vs-chromium-project.txt`) |
+| `project/directorySizes`, `project/measureDirectory`, `project/cancelMeasure`, `project/addIgnorePattern` | (new: per-directory disk usage, background size measurement of excluded directories, and adding ignore patterns to `vs-chromium-project.txt`; symbolic links listed with their target (`symbolicLink`) and not counted in the sizes) |
 | `search/code`, `search/paths` | `SearchCodeRequest`, `SearchFilePathsRequest` (results: flat lists of files per project instead of a directory tree) |
 | `tree/get`, `tree/entries`, `tree/entriesMultiple`, `tree/refresh` | `GetFileSystemTreeRequest`, `GetDirectoryEntriesRequest`, `GetDirectoryEntriesMultipleRequest`, `RefreshFileSystemTreeRequest` |
 | `tree/directoryDetails` | `GetDirectoryDetailsRequest` |

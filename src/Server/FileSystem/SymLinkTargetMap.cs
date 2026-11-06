@@ -125,6 +125,11 @@ namespace VsChromium.Server.FileSystem {
       return trimmed.Length == 0 ? path : trimmed;
     }
 
+    /// <summary>The final target of the link <paramref name="path"/>, or null if not a link of the map (or dangling).</summary>
+    public string GetTarget(FullPath path) {
+      return _targetsByLink.TryGetValue(Normalize(path.Value), out var target) ? target : null;
+    }
+
     /// <summary>True if <paramref name="path"/> is a link of the map.</summary>
     public bool IsLink(FullPath path) {
       return _targetsByLink.ContainsKey(Normalize(path.Value));
@@ -297,7 +302,8 @@ namespace VsChromium.Server.FileSystem {
       return directories.Any(d => IsSameOrUnder(path, Normalize(d)));
     }
 
-    private static bool IsSameOrUnder(string path, string directory) {
+    /// <summary>True if <paramref name="path"/> is <paramref name="directory"/> or under it (normalized paths).</summary>
+    public static bool IsSameOrUnder(string path, string directory) {
       if (path.Length == directory.Length)
         return Comparer.Equals(path, directory);
       return path.Length > directory.Length &&

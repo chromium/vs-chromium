@@ -101,6 +101,17 @@ namespace VsChromium.Protocol.Generated {
     Failed,
   }
 
+  [JsonConverter(typeof(StringEnumConverter))]
+  public enum SymbolicLinkKind {
+    [EnumMember(Value = "file")]
+    File,
+    /// <summary>
+    /// A directory symbolic link or a junction.
+    /// </summary>
+    [EnumMember(Value = "directory")]
+    Directory,
+  }
+
   /// <summary>
   /// The benchmark features of a server started with "--bench" (in the result of "server/initialize").
   /// </summary>
@@ -1123,6 +1134,71 @@ namespace VsChromium.Protocol.Generated {
     /// </summary>
     [JsonProperty("pattern", NullValueHandling = NullValueHandling.Ignore)]
     public string Pattern { get; set; }
+
+    /// <summary>
+    /// Set if the entry is a symbolic link (or a junction): links are not counted in the sizes (the
+    /// sizes and counts of the entry are 0, and the files seen through a directory link are not
+    /// counted in the totals of its ancestors either).
+    /// </summary>
+    [JsonProperty("symbolicLink", NullValueHandling = NullValueHandling.Ignore)]
+    public SymbolicLinkInfo SymbolicLink { get; set; }
+  }
+
+  /// <summary>
+  /// The target of a symbolic link of the disk usage view.
+  /// </summary>
+  public sealed partial class SymbolicLinkInfo {
+    [JsonProperty("kind")]
+    public SymbolicLinkKind Kind { get; set; }
+
+    /// <summary>
+    /// The final target (full path, all the links resolved); the target as written in the link if dangling ("" if unknown).
+    /// </summary>
+    [JsonProperty("target")]
+    public string Target { get; set; }
+
+    /// <summary>
+    /// The root of the loaded project containing the target (possibly another project), if any and if
+    /// the target is in its index (directory link: the target directory; file link: its directory).
+    /// </summary>
+    [JsonProperty("targetProjectPath", NullValueHandling = NullValueHandling.Ignore)]
+    public string TargetProjectPath { get; set; }
+
+    /// <summary>
+    /// The path of the target relative to `targetProjectPath` ("/" separators, "" for the root).
+    /// </summary>
+    [JsonProperty("targetRelativePath", NullValueHandling = NullValueHandling.Ignore)]
+    public string TargetRelativePath { get; set; }
+
+    /// <summary>
+    /// The target is outside of the loaded project roots, on a local volume.
+    /// </summary>
+    [JsonProperty("external")]
+    public bool External { get; set; }
+
+    /// <summary>
+    /// The target is on a network volume.
+    /// </summary>
+    [JsonProperty("network")]
+    public bool Network { get; set; }
+
+    /// <summary>
+    /// The target doesn't exist.
+    /// </summary>
+    [JsonProperty("dangling")]
+    public bool Dangling { get; set; }
+
+    /// <summary>
+    /// The size of the target: the length of the file, or the indexed files seen through the directory link. Absent if unknown.
+    /// </summary>
+    [JsonProperty("targetTotalBytes", NullValueHandling = NullValueHandling.Ignore)]
+    public long? TargetTotalBytes { get; set; }
+
+    /// <summary>
+    /// The number of files of `targetTotalBytes` (1 for a file link).
+    /// </summary>
+    [JsonProperty("targetFileCount", NullValueHandling = NullValueHandling.Ignore)]
+    public long? TargetFileCount { get; set; }
   }
 
   /// <summary>
@@ -1145,7 +1221,8 @@ namespace VsChromium.Protocol.Generated {
     public DirectorySizeEntry Totals { get; set; }
 
     /// <summary>
-    /// The children of the directory: directories and files, the largest first, then the excluded entries.
+    /// The children of the directory: directories and files, the largest first, then the symbolic
+    /// links, then the excluded directories not measured, then the other entries of size 0.
     /// </summary>
     [JsonProperty("children")]
     public List<DirectorySizeEntry> Children { get; set; } = new List<DirectorySizeEntry>();

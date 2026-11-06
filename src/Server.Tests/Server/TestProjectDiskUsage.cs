@@ -290,6 +290,97 @@ namespace VsChromium.Tests.Server {
       }));
     }
 
+    /// <summary>
+    /// Symbolic links: listed with their target, not counted in the sizes (file links, and the files
+    /// seen through a directory link).
+    /// </summary>
+    [TestMethod]
+    public void SymbolicLinksAreNotCountedAndLinkToTheirTarget() {
+      var factory = new FileSystemNameFactory();
+      var rootPath = new FullPath(Path.Combine(Path.GetTempPath(), "disk-usage-links-root"));
+      var projectFilePath = rootPath.Combine(new RelativePath(ConfigurationFileNames.ProjectFileName));
+      var none = new ConfigurationSectionContents(projectFilePath, ConfigurationSectionNames.SourceExplorerIgnore, Array.Empty<string>());
+      var include = new ConfigurationSectionContents(projectFilePath, ConfigurationSectionNames.SearchableFilesInclude, new[] { "*" });
+      var project = new Project(rootPath, none, none, include, new FileFilter(none), new DirectoryFilter(none),
+        new SearchableFilesFilter(none, include), "hash-links");
+
+      // root
+      //   src/real.cc (100), src/link.cc -> src/real.cc
+      //   dirlink -> src (real.cc seen through the link)
+      //   netlink -> \\server\share\dir (data.bin seen through the link)
+      //   outside.txt -> <temp>/disk-usage-outside/x.txt (30), dangling.cc -> (none)
+      var now = DateTime.UtcNow;
+      var rootDirName = factory.CreateAbsoluteDirectoryName(rootPath);
+      var srcDirName = factory.CreateDirectoryName(rootDirName, "src");
+      var dirLinkName = factory.CreateDirectoryName(rootDirName, "dirlink", true);
+      var netLinkName = factory.CreateDirectoryName(rootDirName, "netlink", true);
+      var src = new DirectorySnapshot(new DirectoryData(srcDirName, isSymLink: false), Array.Empty<DirectorySnapshot>(),
+        new[] { factory.CreateFileName(srcDirName, "link.cc"), factory.CreateFileName(srcDirName, "real.cc") },
+        new[] { new FileMetadata(now, 100), new FileMetadata(now, 100) }, new[] { 0 });
+      var dirLink = new DirectorySnapshot(new DirectoryData(dirLinkName, isSymLink: true), Array.Empty<DirectorySnapshot>(),
+        new[] { factory.CreateFileName(dirLinkName, "real.cc") }, new[] { new FileMetadata(now, 100) });
+      var netLink = new DirectorySnapshot(new DirectoryData(netLinkName, isSymLink: true), Array.Empty<DirectorySnapshot>(),
+        new[] { factory.CreateFileName(netLinkName, "data.bin") }, new[] { new FileMetadata(now, 50) });
+      var root = new DirectorySnapshot(new DirectoryData(rootDirName, isSymLink: false), new[] { dirLink, netLink, src },
+        new[] { factory.CreateFileName(rootDirName, "dangling.cc"), factory.CreateFileName(rootDirName, "outside.txt") },
+        new[] { new FileMetadata(now, 0), new FileMetadata(now, 30) }, new[] { 0, 1 });
+      var fsSnapshot = new FileSystemSnapshot(1, new ReadOnlyCollection<ProjectRootSnapshot>(new[] { new ProjectRootSnapshot(project, root) }));
+
+      var outsideTarget = Path.Combine(Path.GetTempPath(), "disk-usage-outside", "x.txt");
+      var fs = new FakeDiskFileSystem();
+      fs.LinkTargets[rootPath.Combine(new RelativePath("src").CreateChild("link.cc")).Value] = rootPath.Combine(new RelativePath("src").CreateChild("real.cc")).Value;
+      fs.LinkTargets[rootPath.Combine(new RelativePath("dirlink")).Value] = rootPath.Combine(new RelativePath("src")).Value;
+      fs.LinkTargets[rootPath.Combine(new RelativePath("netlink")).Value] = @"\\server\share\dir";
+      fs.LinkTargets[rootPath.Combine(new RelativePath("outside.txt")).Value] = outsideTarget;
+      using var service = new ProjectDiskUsageService(fs, new StubSnapshotManager(fsSnapshot), new StubSearchEngine(null));
+
+      var sizes = service.GetDirectorySizes(new DirectoryPathParams { ProjectPath = rootPath.Value, RelativePath = "" });
+      Assert.AreEqual(100L, sizes.Totals.TotalBytes, "Only src/real.cc: not the links nor the files seen through them");
+      Assert.AreEqual(1L, sizes.Totals.FileCount);
+      CollectionAssert.AreEqual(new[] { "src", "dirlink", "netlink", "dangling.cc", "outside.txt" }, sizes.Children.Select(x => x.Name).ToList(),
+        "The sized entries, then the links");
+      var bySize = sizes.Children.ToDictionary(x => x.Name);
+      Assert.AreEqual(100L, bySize["src"].TotalBytes, "src/link.cc not counted");
+      Assert.IsNull(bySize["src"].SymbolicLink);
+
+      var dirLinkEntry = bySize["dirlink"];
+      Assert.AreEqual(0L, dirLinkEntry.TotalBytes);
+      Assert.AreEqual(0L, dirLinkEntry.FileCount);
+      Assert.AreEqual(SymbolicLinkKind.Directory, dirLinkEntry.SymbolicLink.Kind);
+      Assert.AreEqual(rootPath.Combine(new RelativePath("src")).Value, dirLinkEntry.SymbolicLink.Target);
+      Assert.AreEqual(rootPath.Value, dirLinkEntry.SymbolicLink.TargetProjectPath);
+      Assert.AreEqual("src", dirLinkEntry.SymbolicLink.TargetRelativePath);
+      Assert.AreEqual(100L, dirLinkEntry.SymbolicLink.TargetTotalBytes);
+      Assert.AreEqual(1L, dirLinkEntry.SymbolicLink.TargetFileCount);
+      Assert.IsFalse(dirLinkEntry.SymbolicLink.External || dirLinkEntry.SymbolicLink.Network || dirLinkEntry.SymbolicLink.Dangling);
+      Assert.AreEqual("/dirlink/", dirLinkEntry.Pattern, "The pattern of the link itself");
+
+      var net = bySize["netlink"].SymbolicLink;
+      Assert.IsTrue(net.Network);
+      Assert.IsFalse(net.External);
+      Assert.IsNull(net.TargetProjectPath);
+      Assert.AreEqual(50L, net.TargetTotalBytes);
+
+      var outside = bySize["outside.txt"].SymbolicLink;
+      Assert.AreEqual(SymbolicLinkKind.File, outside.Kind);
+      Assert.IsTrue(outside.External);
+      Assert.AreEqual(outsideTarget, outside.Target);
+      Assert.AreEqual(30L, outside.TargetTotalBytes);
+      Assert.AreEqual(0L, bySize["outside.txt"].TotalBytes);
+
+      var dangling = bySize["dangling.cc"].SymbolicLink;
+      Assert.IsTrue(dangling.Dangling);
+      Assert.IsNull(dangling.TargetTotalBytes);
+
+      var srcSizes = service.GetDirectorySizes(new DirectoryPathParams { ProjectPath = rootPath.Value, RelativePath = "src" });
+      var fileLink = srcSizes.Children.Single(x => x.Name == "link.cc");
+      Assert.AreEqual(0L, fileLink.TotalBytes);
+      Assert.AreEqual("src/real.cc", fileLink.SymbolicLink.TargetRelativePath);
+      Assert.AreEqual(100L, fileLink.SymbolicLink.TargetTotalBytes);
+      Assert.AreEqual(1L, fileLink.SymbolicLink.TargetFileCount);
+      Assert.AreEqual(100L, srcSizes.Totals.TotalBytes);
+    }
+
     private static FileContents CreateUtf8(ArenaAllocator arena, string text, long fileLength) {
       var bytes = Encoding.UTF8.GetBytes(text);
       var slice = arena.Allocate(bytes.Length + 2);
@@ -313,6 +404,12 @@ namespace VsChromium.Tests.Server {
 
     private sealed class FakeDiskFileSystem : IFileSystem {
       private readonly Dictionary<FullPath, Func<IList<DirectoryEntry>>> _dirs = new Dictionary<FullPath, Func<IList<DirectoryEntry>>>();
+
+      /// <summary>Link full path => final target (null: dangling).</summary>
+      public readonly Dictionary<string, string> LinkTargets = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+      public string ResolveSymLinkTarget(FullPath path, bool allowCached) =>
+        LinkTargets.TryGetValue(path.Value, out var target) ? target : null;
 
       public void SetDirectory(FullPath path, params DirectoryEntry[] entries) {
         _dirs[path] = () => entries;

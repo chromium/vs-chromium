@@ -40,6 +40,12 @@ namespace VsChromium.Server.FileSystem {
     SymLinkStatistics GetSymLinkStatistics(FullPath projectRoot) => new SymLinkStatistics();
 
     /// <summary>
+    /// The symbolic links of the current snapshot by target (built in the background after each
+    /// scan: may lag behind <see cref="CurrentSnapshot"/>).
+    /// </summary>
+    SymLinkTargetMap SymLinkTargets => SymLinkTargetMap.Empty;
+
+    /// <summary>
     /// Event raised when a file system scan operation has started
     /// </summary>
     event EventHandler<OperationInfo> SnapshotScanStarted;

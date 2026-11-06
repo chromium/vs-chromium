@@ -98,13 +98,18 @@ namespace VsChromium.Server.Projects {
         var name = childDir.DirectoryName.Name;
         indexedDirNames.Add(name);
         var childTotals = projectSizes.DirectoryTotals.TryGetValue(childDir, out var ct) ? ct : default;
-        children.Add(CreateEntry(
+        var entry = CreateEntry(
           name: name,
           isDirectory: true,
           excluded: false,
           measureState: MeasureState.Done,
-          totals: childTotals,
-          pattern: ProjectFileEditor.BuildExactPattern(normalizedRelPath, name, isDirectory: true)));
+          totals: childDir.IsSymLink ? default : childTotals,
+          pattern: ProjectFileEditor.BuildExactPattern(normalizedRelPath, name, isDirectory: true));
+        if (childDir.IsSymLink) {
+          // Note: The totals of the link are those of the files seen through it (its target).
+          entry.SymbolicLink = DescribeSymbolicLink(snapshot, childDir.DirectoryName.FullPath, isDirectory: true, childTotals);
+        }
+        children.Add(entry);
       }
 
       var indexedFileNames = new HashSet<string>(SystemPathComparer.NameComparer);
@@ -118,13 +123,18 @@ namespace VsChromium.Server.Projects {
         indexedFileNames.Add(fileName.Name);
         var contents = GetFileContents(database, dbContents, hasDbRange, dbRange, dbAligned, fileName, i);
         var fileTotals = ComputeFileTotals(childMetadata[i], contents);
-        children.Add(CreateEntry(
+        var isLink = targetDir.IsSymLinkFile(i);
+        var entry = CreateEntry(
           name: fileName.Name,
           isDirectory: false,
           excluded: false,
           measureState: MeasureState.Done,
-          totals: fileTotals,
-          pattern: ProjectFileEditor.BuildExactPattern(normalizedRelPath, fileName.Name, isDirectory: false)));
+          totals: isLink ? default : fileTotals,
+          pattern: ProjectFileEditor.BuildExactPattern(normalizedRelPath, fileName.Name, isDirectory: false));
+        if (isLink) {
+          entry.SymbolicLink = DescribeSymbolicLink(snapshot, fileName.FullPath, isDirectory: false, fileTotals);
+        }
+        children.Add(entry);
       }
 
       AppendExcludedDiskChildren(
@@ -329,9 +339,12 @@ namespace VsChromium.Server.Projects {
         var dir = order[idx];
         var totals = default(EntryTotals);
 
+        // Note: The symbolic links are not counted (their targets are counted where they are, if
+        // indexed): the totals of a directory link (the files seen through it) are kept for the
+        // link entry, not added to its parent.
         var childDirs = dir.ChildDirectories;
         for (var j = 0; j < childDirs.Count; j++) {
-          if (totalsByDir.TryGetValue(childDirs[j], out var childTotals)) {
+          if (!childDirs[j].IsSymLink && totalsByDir.TryGetValue(childDirs[j], out var childTotals)) {
             totals.Add(childTotals);
           }
         }
@@ -340,6 +353,9 @@ namespace VsChromium.Server.Projects {
         var metadata = dir.ChildFileMetadata;
         var hasRange = TryGetDirectoryRange(database, dir, out var range, out var aligned);
         for (var j = 0; j < childFiles.Count; j++) {
+          if (dir.IsSymLinkFile(j)) {
+            continue;
+          }
           var contents = GetFileContents(database, dbContents, hasRange, range, aligned, childFiles[j], j);
           totals.Add(ComputeFileTotals(metadata[j], contents));
         }
@@ -577,14 +593,93 @@ namespace VsChromium.Server.Projects {
       return SystemPathComparer.CompareNames(a.Name, b.Name);
     }
 
+    /// <summary>
+    /// The sized entries first (largest first), then the symbolic links (not counted), then the
+    /// excluded directories not measured, then the other entries of size 0.
+    /// </summary>
     private static int GetSortRank(DirectorySizeEntry entry) {
       if (entry.TotalBytes > 0) {
         return 0;
       }
-      if (entry.Excluded && entry.IsDirectory && entry.MeasureState != MeasureState.Done) {
+      if (entry.SymbolicLink != null) {
         return 1;
       }
-      return 2;
+      if (entry.Excluded && entry.IsDirectory && entry.MeasureState != MeasureState.Done) {
+        return 2;
+      }
+      return 3;
+    }
+
+    /// <summary>
+    /// The target of the symbolic link <paramref name="link"/>: from the map of the links (no disk
+    /// access), otherwise resolved (the Windows file system reuses the resolution of the scan).
+    /// <paramref name="targetTotals"/>: the size of the target (the file, or the files seen through
+    /// the directory link).
+    /// </summary>
+    private SymbolicLinkInfo DescribeSymbolicLink(FileSystemSnapshot snapshot, FullPath link, bool isDirectory, EntryTotals targetTotals) {
+      var info = new SymbolicLinkInfo {
+        Kind = isDirectory ? SymbolicLinkKind.Directory : SymbolicLinkKind.File,
+        Target = "",
+      };
+      var target = _snapshotManager.SymLinkTargets.GetTarget(link) ?? _fileSystem.ResolveSymLinkTarget(link, allowCached: true);
+      if (target == null || !FullPath.IsValid(target)) {
+        info.Dangling = true;
+        info.Target = ReadLinkText(link, isDirectory);
+        return info;
+      }
+      target = SymLinkTargetMap.Normalize(target);
+      info.Target = target;
+      info.TargetTotalBytes = targetTotals.TotalBytes;
+      info.TargetFileCount = targetTotals.FileCount;
+      var project = snapshot.ProjectRoots.FirstOrDefault(
+        x => SymLinkTargetMap.IsSameOrUnder(target, SymLinkTargetMap.Normalize(x.Project.RootPath.Value)));
+      if (project != null) {
+        var root = SymLinkTargetMap.Normalize(project.Project.RootPath.Value);
+        var relativePath = target.Substring(root.Length)
+          .TrimStart(PathHelpers.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar)
+          .Replace(System.IO.Path.DirectorySeparatorChar, '/');
+        var slash = relativePath.LastIndexOf('/');
+        var directory = isDirectory ? relativePath : (slash >= 0 ? relativePath.Substring(0, slash) : "");
+        // Note: Only if the explorer can show it (e.g. not in an ignored directory).
+        if (TryFindIndexedDirectory(project, directory) != null) {
+          info.TargetProjectPath = project.Project.RootPath.Value;
+          info.TargetRelativePath = relativePath;
+        }
+      } else if (SymLinkTargetMap.IsOnNetworkVolume(target)) {
+        info.Network = true;
+      } else {
+        info.External = true;
+      }
+      return info;
+    }
+
+    /// <summary>The target written in a dangling link (full path), "" if unknown.</summary>
+    private static string ReadLinkText(FullPath link, bool isDirectory) {
+      try {
+        System.IO.FileSystemInfo info = isDirectory
+          ? new System.IO.DirectoryInfo(link.Value)
+          : new System.IO.FileInfo(link.Value);
+        var text = info.LinkTarget;
+        if (string.IsNullOrEmpty(text)) {
+          return "";
+        }
+        return System.IO.Path.GetFullPath(text, System.IO.Path.GetDirectoryName(link.Value) ?? link.Value);
+      }
+      catch (Exception e) when (e is System.IO.IOException || e is UnauthorizedAccessException || e is ArgumentException ||
+                                e is NotSupportedException) {
+        return "";
+      }
+    }
+
+    private static DirectorySnapshot TryFindIndexedDirectory(ProjectRootSnapshot project, string relativePath) {
+      var directory = project.Directory;
+      foreach (var part in PathHelpers.SplitPath(relativePath ?? "")) {
+        directory = directory.ChildDirectories.FirstOrDefault(x => SystemPathComparer.EqualsNames(x.DirectoryName.Name, part));
+        if (directory == null) {
+          return null;
+        }
+      }
+      return directory;
     }
 
     private static ProjectRootSnapshot FindProject(FileSystemSnapshot snapshot, string projectPath) {

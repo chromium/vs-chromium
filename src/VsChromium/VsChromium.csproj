@@ -608,7 +608,7 @@
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <!-- Builds the server dashboard page with the VS Code extension tooling (src\vscode: TypeScript
        compiler and bundler) when its sources changed, so that the solution builds and runs (F5)
-       without manual steps: "npm ci" the first time (node_modules missing), then
+       without manual steps: "npm ci" (or "npm install") the first time (node_modules missing), then
        "npm run compile:page". Requires Node.js. -->
   <PropertyGroup>
     <DashboardPageProjectDir>$(BuildRoot)src\vscode\</DashboardPageProjectDir>
@@ -625,7 +625,10 @@
     </Exec>
     <Error Condition="'$(_DashboardNodeExitCode)' != '0'"
            Text="Node.js is required to build the server dashboard page (src\vscode): install Node.js (https://nodejs.org), then rebuild." />
-    <Exec Condition="!Exists('$(DashboardPageProjectDir)node_modules\typescript')" Command="npm ci --no-audit --no-fund" WorkingDirectory="$(DashboardPageProjectDir)" />
+    <!-- package-lock.json is not committed (see src\vscode\.gitignore): "npm install" on a fresh
+         clone (dependencies are pinned to exact versions in package.json). -->
+    <Exec Condition="!Exists('$(DashboardPageProjectDir)node_modules\typescript') And Exists('$(DashboardPageProjectDir)package-lock.json')" Command="npm ci --no-audit --no-fund" WorkingDirectory="$(DashboardPageProjectDir)" />
+    <Exec Condition="!Exists('$(DashboardPageProjectDir)node_modules\typescript') And !Exists('$(DashboardPageProjectDir)package-lock.json')" Command="npm install --no-audit --no-fund" WorkingDirectory="$(DashboardPageProjectDir)" />
     <Exec Command="npm run compile:page" WorkingDirectory="$(DashboardPageProjectDir)" />
   </Target>
   <Target Name="CheckDashboardPage" BeforeTargets="BeforeBuild" DependsOnTargets="BuildDashboardPage">

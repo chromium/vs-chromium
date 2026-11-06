@@ -15,7 +15,8 @@ namespace VsChromium.Tests.EndToEnd.Regression;
 /// listed again (catch-up), and the index must be the same as a cold load. The project is in the
 /// temporary directory: the tests are inconclusive if its volume has no active change journal.
 /// The fallbacks to the full scan are tested too: invalid checkpoint (as if the journal wrapped),
-/// and a volume without journal (the Dev Drive by default, <see cref="NoJournalDirectoryVariable"/>).
+/// and a volume without journal (D:\VsChromiumTests by default: the Dev Drive, whose journal is not
+/// active by default; <see cref="NoJournalDirectoryVariable"/>).
 /// </summary>
 [TestClass]
 public class ChangeJournalTests {
@@ -28,7 +29,7 @@ public class ChangeJournalTests {
 
   /// <summary>
   /// A directory on a volume whose change journal is not active (e.g. a Dev Drive), for the test of
-  /// the fallback (inconclusive if not set).
+  /// the fallback (default: D:\VsChromiumTests if D: exists; inconclusive if its journal is active).
   /// </summary>
   public const string NoJournalDirectoryVariable = "VSCHROMIUM_TEST_NO_JOURNAL_DIR";
 
@@ -263,22 +264,50 @@ public class ChangeJournalTests {
   [TestMethod]
   [Timeout(10 * 60 * 1000, CooperativeCancellation = true)]
   public async Task VolumeWithoutJournalFallsBackToAFullScan() {
+    // The directory of the variable, or by default D:\VsChromiumTests (the Dev Drive of the
+    // development machines, whose journal is not active by default), created and deleted by the test.
     var directory = Environment.GetEnvironmentVariable(NoJournalDirectoryVariable);
-    if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
-      Assert.Inconclusive($"Set {NoJournalDirectoryVariable} to a directory of a volume without change journal (e.g. a Dev Drive).");
-    using var tree = new TestTree(Path.Combine(directory, "VsChromiumChangeJournalTest-" + Guid.NewGuid().ToString("N")));
-    tree.Generate();
-    await ColdLoadAndWriteCacheAsync(tree);
-    TestTree.WriteFile(Path.Combine(tree.Root, "dir002", "new.cc"), "// CHANGED_NEW_FILE\n", OldTime);
+    var isDefault = string.IsNullOrEmpty(directory);
+    if (isDefault) {
+      if (!OperatingSystem.IsWindows() || !Directory.Exists(@"D:\"))
+        Assert.Inconclusive($"No D: volume: set {NoJournalDirectoryVariable} to a directory of a volume without change journal.");
+      directory = DefaultNoJournalDirectory;
+    } else if (!Directory.Exists(directory)) {
+      Assert.Inconclusive($"{NoJournalDirectoryVariable}: \"{directory}\" doesn't exist.");
+    }
+    var created = isDefault && !Directory.Exists(directory);
+    Directory.CreateDirectory(directory!);
+    try {
+      using var tree = new TestTree(Path.Combine(directory!, "VsChromiumChangeJournalTest-" + Guid.NewGuid().ToString("N")));
+      tree.Generate();
+      await ColdLoadAndWriteCacheAsync(tree);
+      TestTree.WriteFile(Path.Combine(tree.Root, "dir002", "new.cc"), "// CHANGED_NEW_FILE\n", OldTime);
 
-    await using var server = await StartAndLoadAsync(tree);
-    await WaitForIdleAsync(server.Client);
-    var verification = await LastVerificationAsync(server.Client, tree);
-    Assert.AreEqual("fullScan", verification["method"]!.GetValue<string>(), verification.ToJsonString());
-    TestContext.WriteLine("Fallback: " + verification["fallbackReason"]);
-    Assert.IsFalse(string.IsNullOrEmpty(verification["fallbackReason"]?.GetValue<string>()));
-    Assert.AreEqual(1, await HitCountAsync(server.Client, "CHANGED_NEW_FILE"));
+      await using var server = await StartAndLoadAsync(tree);
+      await WaitForIdleAsync(server.Client);
+      var verification = await LastVerificationAsync(server.Client, tree);
+      if (isDefault && verification["method"]!.GetValue<string>() == "changeJournal") {
+        Assert.Inconclusive($"The change journal of D: is active: set {NoJournalDirectoryVariable} to a directory of a volume without journal.");
+      }
+      Assert.AreEqual("fullScan", verification["method"]!.GetValue<string>(), verification.ToJsonString());
+      TestContext.WriteLine("Fallback: " + verification["fallbackReason"]);
+      Assert.IsFalse(string.IsNullOrEmpty(verification["fallbackReason"]?.GetValue<string>()));
+      Assert.AreEqual(1, await HitCountAsync(server.Client, "CHANGED_NEW_FILE"));
+    }
+    finally {
+      if (created) {
+        try {
+          Directory.Delete(directory!, recursive: true);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+          // Best effort
+        }
+      }
+    }
   }
+
+  /// <summary>The default directory of <see cref="VolumeWithoutJournalFallsBackToAFullScan"/> (a Dev Drive).</summary>
+  private const string DefaultNoJournalDirectory = @"D:\VsChromiumTests";
 
   private static void AssertJournalVerification(JsonNode verification) {
     if (verification["method"]!.GetValue<string>() != "changeJournal") {

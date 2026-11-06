@@ -28,6 +28,8 @@
       with PublishAot).
     -->
     <PublishAot Condition="'$(BenchAot)' == 'true'">true</PublishAot>
+    <!-- One output and intermediate directory per runtime (apphost, native files). -->
+    <AppendRuntimeIdentifierToOutputPath>true</AppendRuntimeIdentifierToOutputPath>
     <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
     <PublishSingleFile Condition="'$(BenchAot)' != 'true' and '$(RuntimeIdentifier)' != ''">true</PublishSingleFile>
     <PublishTrimmed Condition="'$(RuntimeIdentifier)' != ''">true</PublishTrimmed>

@@ -101,3 +101,17 @@ single-file executables to `Binaries/Publish/Bench/<rid>/` for `win-x64`, `win-a
   native tools of the target architecture are missing.
 
 No .NET is needed on the target machine.
+
+Status (published from Windows x64, SDK 10.0.401):
+
+| Platform | Mode | Size |
+|---|---|---|
+| win-x64 | NativeAOT | 7.8 MB |
+| win-arm64 | single-file (NativeAOT cross-architecture fails: "PrivateSdkAssemblies ItemGroup is required") | 12.0 MB |
+| linux-x64 | single-file (NativeAOT needs a Linux host) | 13.5 MB |
+| linux-arm64 | single-file | 12.9 MB |
+| osx-arm64 | single-file (NativeAOT needs a macOS host; not code signed) | 12.3 MB |
+
+The NativeAOT compiler is referenced explicitly (`Microsoft.DotNet.ILCompiler` 10.0.14): the one of the
+SDK 10.0.401 (10.0.12) is flagged by the NuGet audit (GHSA-p3jp-9v83-76w9), which fails the build
+(warnings are errors). Update the version with the SDK.

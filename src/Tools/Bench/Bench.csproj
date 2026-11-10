@@ -18,7 +18,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <Version>0.10.0</Version>
+    <Version>0.10.1</Version>
     <OutputPath>$(BuildRoot)Binaries\$(Configuration)\Tools\Bench\</OutputPath>
     <InvariantGlobalization>true</InvariantGlobalization>
     <IsAotCompatible>true</IsAotCompatible>

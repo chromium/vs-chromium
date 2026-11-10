@@ -9,11 +9,12 @@ namespace VsChromium.Core.Files {
   public class FileSystemWatcherImpl : IFileSystemWatcher {
     private readonly FullPath _path;
     private FileSystemWatcher _fileSystemWatcherImplementation;
+    private NotifyFilters _notifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+    private int _internalBufferSize = 8192;
+    private bool _includeSubdirectories;
 
     public FileSystemWatcherImpl(FullPath path) {
       _path = path;
-      _fileSystemWatcherImplementation = new FileSystemWatcher(path.Value);
-      AddHandlers(_fileSystemWatcherImplementation);
     }
 
     private void AddHandlers(FileSystemWatcher watcher) {
@@ -53,7 +54,7 @@ namespace VsChromium.Core.Files {
     }
 
     public void Dispose() {
-      _fileSystemWatcherImplementation.Dispose();
+      Stop();
     }
 
     public FullPath Path {
@@ -61,15 +62,30 @@ namespace VsChromium.Core.Files {
     }
 
     public NotifyFilters NotifyFilter {
-      set { _fileSystemWatcherImplementation.NotifyFilter = value; }
+      set {
+        _notifyFilter = value;
+        if (_fileSystemWatcherImplementation != null) {
+          _fileSystemWatcherImplementation.NotifyFilter = value;
+        }
+      }
     }
 
     public int InternalBufferSize {
-      set { _fileSystemWatcherImplementation.InternalBufferSize = value; }
+      set {
+        _internalBufferSize = value;
+        if (_fileSystemWatcherImplementation != null) {
+          _fileSystemWatcherImplementation.InternalBufferSize = value;
+        }
+      }
     }
 
     public bool IncludeSubdirectories {
-      set { _fileSystemWatcherImplementation.IncludeSubdirectories = value; }
+      set {
+        _includeSubdirectories = value;
+        if (_fileSystemWatcherImplementation != null) {
+          _fileSystemWatcherImplementation.IncludeSubdirectories = value;
+        }
+      }
     }
 
     public event FileSystemEventHandler Changed;
@@ -79,26 +95,51 @@ namespace VsChromium.Core.Files {
     public event ErrorEventHandler Error;
 
     public void Start() {
-      if (_fileSystemWatcherImplementation.EnableRaisingEvents) {
+      if (_fileSystemWatcherImplementation != null && _fileSystemWatcherImplementation.EnableRaisingEvents) {
         return;
       }
 
-      var newImpl = new FileSystemWatcher(Path.Value);
-      newImpl.NotifyFilter = _fileSystemWatcherImplementation.NotifyFilter;
-      newImpl.InternalBufferSize = _fileSystemWatcherImplementation.InternalBufferSize;
-      newImpl.IncludeSubdirectories = _fileSystemWatcherImplementation.IncludeSubdirectories;
-      AddHandlers(newImpl);
-      newImpl.EnableRaisingEvents = true;
+      Stop();
 
-      _fileSystemWatcherImplementation = newImpl;
+      FileSystemWatcher newImpl = null;
+      try {
+        newImpl = new FileSystemWatcher(Path.Value) {
+          NotifyFilter = _notifyFilter,
+          InternalBufferSize = _internalBufferSize,
+          IncludeSubdirectories = _includeSubdirectories,
+        };
+        AddHandlers(newImpl);
+        // Set _fileSystemWatcherImplementation before EnableRaisingEvents = true because on Linux
+        // EnableRaisingEvents walks subdirectories synchronously and may fire Error re-entrantly.
+        _fileSystemWatcherImplementation = newImpl;
+        newImpl.EnableRaisingEvents = true;
+      }
+      catch (Exception e) {
+        Stop();
+        OnError(new ErrorEventArgs(e));
+      }
     }
 
     public void Stop() {
-      if (!_fileSystemWatcherImplementation.EnableRaisingEvents) {
+      var impl = _fileSystemWatcherImplementation;
+      if (impl == null) {
         return;
       }
-      _fileSystemWatcherImplementation.EnableRaisingEvents = false;
-      RemoveHandlers(_fileSystemWatcherImplementation);
+      _fileSystemWatcherImplementation = null;
+      RemoveHandlers(impl);
+      try {
+        if (impl.EnableRaisingEvents) {
+          impl.EnableRaisingEvents = false;
+        }
+      }
+      catch (Exception) {
+        // Ignore errors when stopping a failed or disposed watcher.
+      }
+      try {
+        impl.Dispose();
+      }
+      catch (Exception) {
+      }
     }
 
     protected virtual void OnChanged(FileSystemEventArgs e) {

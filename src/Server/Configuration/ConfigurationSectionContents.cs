@@ -23,7 +23,7 @@ namespace VsChromium.Core.Configuration {
       return arg
         .Where(line => !IsCommentLine(line))
         .Where(line => !string.IsNullOrWhiteSpace(line))
-        .Select(line => line.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar));
+        .Select(line => line.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
     }
 
     private static bool IsCommentLine(string x) {

@@ -137,6 +137,16 @@ namespace VsChromium.Server.FileSystem {
     }
 
     private void OnError(FullPath directory, bool recursive, Exception error) {
+      if (DirectoryChangeWatcher.IsWatchLimitError(error)) {
+        Logger.LogWarn(error, "Cannot watch the target directory of symbolic links \"{0}\" (operating system watch limit reached).", directory);
+        lock (_lock) {
+          if (_disposed || !_watchers.TryGetValue((directory, recursive), out var w))
+            return;
+          w.Dispose();
+          _watchers.Remove((directory, recursive));
+        }
+        return;
+      }
       Logger.LogWarn(error, "Error watching the target directory of symbolic links \"{0}\": restarted (the changes missed " +
                             "are found by the next scan or catch-up).", directory);
       lock (_lock) {

@@ -424,7 +424,7 @@ namespace VsChromium.Server.Search {
       var patterns = pattern
         .Split(new[] { ';' })
         .Where(x => !string.IsNullOrWhiteSpace(x.Trim()))
-        .Select(x => x.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar))
+        .Select(x => x.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar))
         .ToList();
 
       // Split patterns into "include" and "exclude" patterns.

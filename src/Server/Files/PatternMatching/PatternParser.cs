@@ -10,7 +10,7 @@ using System.Text;
 namespace VsChromium.Core.Files.PatternMatching {
   public static class PatternParser {
     public static PathMatcher ParsePattern(string pattern) {
-      if (pattern.IndexOf(Path.AltDirectorySeparatorChar) >= 0)
+      if (Path.AltDirectorySeparatorChar != Path.DirectorySeparatorChar && pattern.IndexOf(Path.AltDirectorySeparatorChar) >= 0)
         throw new ArgumentException("Pattern should not contain alternative directory seperator character.", "pattern");
 
       return new PathMatcher(ParsePatternWorker(new PatternWrapper(pattern)));

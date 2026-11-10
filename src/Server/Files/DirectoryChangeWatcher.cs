@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using VsChromium.Core.Collections;
@@ -63,24 +64,35 @@ namespace VsChromium.Core.Files {
       _state.StateHost.PollingThread.Polling += PollingThreadOnPolling;
     }
 
+    private void TransitionState(Func<State, State> transition) {
+      var previous = _state;
+      var next = transition(previous);
+      // If a synchronous callback (such as Error during Start on Linux) already transitioned
+      // _state re-entrantly while inside transition(previous), preserve that state transition.
+      if (!ReferenceEquals(_state, previous)) {
+        return;
+      }
+      if (!ReferenceEquals(previous, next)) {
+        _state = next;
+        _state.OnStateActive();
+      }
+    }
+
     public void WatchDirectories(IEnumerable<FullPath> directories) {
       lock (_stateLock) {
-        _state = _state.OnWatchDirectories(directories);
-        _state.OnStateActive();
+        TransitionState(s => s.OnWatchDirectories(directories));
       }
     }
 
     public void Pause() {
       lock (_stateLock) {
-        _state = _state.OnPause();
-        _state.OnStateActive();
+        TransitionState(s => s.OnPause());
       }
     }
 
     public void Resume() {
       lock (_stateLock) {
-        _state = _state.OnResume();
-        _state.OnStateActive();
+        TransitionState(s => s.OnResume());
       }
     }
 
@@ -119,7 +131,14 @@ namespace VsChromium.Core.Files {
       for (var e = exception; e != null; e = e.InnerException) {
         if (e is IOException &&
             e.Message != null &&
-            e.Message.IndexOf("inotify", StringComparison.OrdinalIgnoreCase) >= 0) {
+            (e.Message.IndexOf("inotify", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             e.Message.IndexOf("user limit", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             e.Message.IndexOf("No space left on device", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             e.Message.IndexOf("Too many open files", StringComparison.OrdinalIgnoreCase) >= 0)) {
+          return true;
+        }
+        if (!OperatingSystem.IsWindows() && e is Win32Exception w32 &&
+            (w32.NativeErrorCode == 28 /* ENOSPC */ || w32.NativeErrorCode == 24 /* EMFILE */ || w32.NativeErrorCode == 23 /* ENFILE */)) {
           return true;
         }
       }
@@ -128,8 +147,7 @@ namespace VsChromium.Core.Files {
 
     private void PollingThreadOnPolling(object sender, EventArgs eventArgs) {
       lock (_stateLock) {
-        _state = _state.OnPolling();
-        _state.OnStateActive();
+        TransitionState(s => s.OnPolling());
       }
 
       var actions = _watcherEventQueue.DequeueAll();
@@ -155,8 +173,7 @@ namespace VsChromium.Core.Files {
         }
 
         lock (_stateLock) {
-          _state = _state.OnWatcherErrorEvent(sender, args);
-          _state.OnStateActive();
+          TransitionState(s => s.OnWatcherErrorEvent(sender, args));
         }
       });
     }
@@ -164,8 +181,7 @@ namespace VsChromium.Core.Files {
     private void WatcherOnChanged(object sender, FileSystemEventArgs args, PathKind pathKind) {
       _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
-          _state = _state.OnWatcherFileChangedEvent(sender, args, pathKind);
-          _state.OnStateActive();
+          TransitionState(s => s.OnWatcherFileChangedEvent(sender, args, pathKind));
         }
       });
     }
@@ -173,8 +189,7 @@ namespace VsChromium.Core.Files {
     private void WatcherOnCreated(object sender, FileSystemEventArgs args, PathKind pathKind) {
       _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
-          _state = _state.OnWatcherFileCreatedEvent(sender, args, pathKind);
-          _state.OnStateActive();
+          TransitionState(s => s.OnWatcherFileCreatedEvent(sender, args, pathKind));
         }
       });
     }
@@ -182,8 +197,7 @@ namespace VsChromium.Core.Files {
     private void WatcherOnDeleted(object sender, FileSystemEventArgs args, PathKind pathKind) {
       _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
-          _state = _state.OnWatcherFileDeletedEvent(sender, args, pathKind);
-          _state.OnStateActive();
+          TransitionState(s => s.OnWatcherFileDeletedEvent(sender, args, pathKind));
         }
       });
     }
@@ -191,8 +205,7 @@ namespace VsChromium.Core.Files {
     private void WatcherOnRenamed(object sender, RenamedEventArgs args, PathKind pathKind) {
       _watcherEventQueue.Enqueue(() => {
         lock (_stateLock) {
-          _state = _state.OnWatcherFileRenamedEvent(sender, args, pathKind);
-          _state.OnStateActive();
+          TransitionState(s => s.OnWatcherFileRenamedEvent(sender, args, pathKind));
         }
       });
     }

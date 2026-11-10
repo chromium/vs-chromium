@@ -17,6 +17,8 @@ namespace VsChromium.Server.Diagnostics {
     public const string FileDatabaseUpdate = "FileDatabaseUpdate";
     /// <summary>Building the trigram filters in the background after a database update.</summary>
     public const string TrigramFiltersBuild = "TrigramFiltersBuild";
+    /// <summary>Starting the file system watchers of new project roots (inotify registration on Linux).</summary>
+    public const string DirectoryWatcherStart = "DirectoryWatcherStart";
     public const string RequestPrefix = "Request:";
 
     /// <summary>The number of recent durations kept per operation (see <see cref="OperationTiming.RecentMs"/>).</summary>

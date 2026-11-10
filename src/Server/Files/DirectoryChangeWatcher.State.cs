@@ -69,7 +69,13 @@ namespace VsChromium.Core.Files {
         added.ExceptWith(oldSet);
 
         removed.ForAll(RemoveDirectory);
-        added.ForAll(AddDirectory);
+        if (added.Count > 0) {
+          // Note: Starting the watchers of new roots is nearly free on Windows, but on Linux it
+          // registers one inotify watch per directory of the tree, synchronously.
+          using (VsChromium.Server.Diagnostics.OperationTimings.Measure(VsChromium.Server.Diagnostics.OperationTimings.DirectoryWatcherStart)) {
+            added.ForAll(AddDirectory);
+          }
+        }
       }
 
       protected void AddDirectory(FullPath directory) {
